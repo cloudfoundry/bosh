@@ -33,8 +33,8 @@ module Bosh::Director
     let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
 
     before do
-      allow(compilation_config).to receive_messages(deployment: deployment_plan,
-          network: network,
+      allow(compilation_config).to receive_messages(
+          network_name: 'network name',
           env: compilation_env,
           cloud_properties: cloud_properties,
           workers: n_workers,

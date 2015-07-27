@@ -40,8 +40,8 @@ module Bosh::Director
       allow(plan).to receive(:network).with('default').and_return(@network)
 
       @n_workers = 3
-      allow(config).to receive_messages(deployment: plan,
-                   network: @network,
+      allow(config).to receive_messages(
+                   network_name: 'default',
                    env: {},
                    cloud_properties: {},
                    workers: @n_workers,
@@ -255,8 +255,7 @@ module Bosh::Director
         )
 
         network = double('network', name: 'network_name')
-        compilation_config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
-                                    reuse_compilation_vms: true)
+        compilation_config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig', cloud_properties: {}, env: {}, workers: 1, reuse_compilation_vms: true, network_name: 'network_name')
         release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell = make_stemcell
@@ -268,6 +267,7 @@ module Bosh::Director
         allow(job).to receive_messages(templates: [template])
         planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
+        allow(planner).to receive(:network).with('network_name') { network }
         allow(planner).to receive(:jobs).and_return([job])
 
         compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner, compilation_instance_pool, logger, event_log, director_job)
@@ -517,7 +517,7 @@ module Bosh::Director
       let(:network) { double('network', name: 'default', network_settings: nil) }
       let(:compilation) do
         config = double('compilation_config')
-        allow(config).to receive_messages(network: network)
+        allow(config).to receive_messages(network_name: 'default')
         allow(config).to receive_messages(cloud_properties: double('cloud_properties'))
         allow(config).to receive_messages(env: double('env'))
         allow(config).to receive_messages(workers: 2)

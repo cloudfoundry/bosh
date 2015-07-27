@@ -66,7 +66,7 @@ module Bosh::Director
           @deployment_plan.compilation.cloud_properties,
           @deployment_plan.compilation.env
         )
-        compile_job = CompilationJob.new(resource_pool, @deployment_plan.compilation.network.name)
+        compile_job = CompilationJob.new(resource_pool, @deployment_plan.compilation.network_name)
         Instance.new(compile_job, 0, 'started', @deployment_plan, @logger)
       end
 
@@ -74,7 +74,8 @@ module Bosh::Director
         instance.bind_unallocated_vm
 
         reservation = NetworkReservation.new_dynamic
-        instance.add_network_reservation(@deployment_plan.compilation.network, reservation)
+        compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
+        instance.add_network_reservation(compilation_network, reservation)
         instance.reserve_networks
 
         @vm_creator.create_for_instance(instance, [])

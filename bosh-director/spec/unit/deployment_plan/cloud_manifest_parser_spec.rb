@@ -13,10 +13,8 @@ module Bosh::Director
     let(:event_log) { Config.event_log }
 
     describe '#parse' do
-      let(:parsed_deployment) { subject.parse(cloud_manifest) }
 
-      before { allow(DeploymentPlan::CompilationConfig).to receive(:new).and_return(compilation_config) }
-      let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
+      let(:parsed_deployment) { subject.parse(cloud_manifest) }
 
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
@@ -66,17 +64,20 @@ module Bosh::Director
       end
 
       describe 'compilation' do
+
+
         context 'when compilation section is specified' do
-          before { cloud_manifest.merge!('compilation' => {'foo' => 'bar'}) }
+          before do
+            cloud_manifest.merge!('compilation' => {
+                'network' => 'a',
+                'cloud_properties' => {'super' => 'important'},
+                'workers' => 3
+              })
+          end
 
-          it 'delegates parsing to CompilationConfig' do
-            compilation = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
-
-            expect(DeploymentPlan::CompilationConfig).to receive(:new).
-                with(be_a(DeploymentPlan::Planner), 'foo' => 'bar').
-                and_return(compilation)
-
-            expect(parsed_deployment.compilation).to eq(compilation)
+          it 'parses the compilation section' do
+            expect(parsed_deployment.compilation.network_name).to eq('a')
+            expect(parsed_deployment.compilation.cloud_properties).to eq({'super' => 'important'})
           end
         end
 
@@ -89,6 +90,24 @@ module Bosh::Director
             }.to raise_error(
                 ValidationMissingField,
                 /Required property `compilation' was not specified in object .+/,
+              )
+          end
+        end
+
+        context 'when compilation refers to a nonexistent network' do
+          before do
+            cloud_manifest.merge!('compilation' => {
+                'network' => 'nonexistent-network',
+                'cloud_properties' => {'super' => 'important'},
+                'workers' => 3
+              })
+          end
+
+          it 'raises an error' do
+            expect {
+              parsed_deployment
+            }.to raise_error(
+                /unknown network `nonexistent-network'/,
               )
           end
         end

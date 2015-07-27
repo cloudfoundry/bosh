@@ -63,7 +63,13 @@ module Bosh::Director
 
       def parse_compilation
         compilation_spec = safe_property(@cloud_manifest, 'compilation', :class => Hash)
-        @deployment.compilation = CompilationConfig.new(@deployment, compilation_spec)
+        config = CompilationConfig.new(compilation_spec)
+        unless @deployment.network(config.network_name)
+            raise CompilationConfigUnknownNetwork,
+              "Compilation config references an unknown " +
+                "network `#{config.network_name}'"
+        end
+        @deployment.compilation = config
       end
 
       def parse_resource_pools
