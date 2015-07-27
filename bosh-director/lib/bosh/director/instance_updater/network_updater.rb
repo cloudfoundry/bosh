@@ -9,25 +9,27 @@ module Bosh::Director
 
     # return boolean indicating whether success to recreate vm
     def update
-      return @logger.info('Skipping network re-configuration') unless @instance.networks_changed?
+      return @logger.debug('Skipping network re-configuration') unless @instance.networks_changed?
 
+      vm_cid = @instance.model.vm.cid
       network_settings = @instance.network_settings
+
+      @logger.debug("[ip-reservation] Updating instance '#{vm_cid}' with new network settings: #{network_settings}")
+
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
         PrepareNetworkChangeStrategy.new(@agent_client, network_settings, @logger),
       ]
-
-      @logger.info("Planning to reconfigure network with settings: #{network_settings}")
       selected_strategy = strategies.find { |s| s.before_configure_networks }
 
       # If configure_networks CPI method cannot reconfigure VM networking
       # (e.g. when the security groups change on AWS)
       # it raises Bosh::Clouds::NotSupported to indicate network change failure.
       begin
-        @cloud.configure_networks(@instance.model.vm.cid, network_settings)
+        @cloud.configure_networks(vm_cid, network_settings)
         selected_strategy.after_configure_networks
       rescue Bosh::Clouds::NotSupported => e
-        @logger.info("Failed reconfiguring existing VM: #{e.inspect}")
+        @logger.debug("[ip-reservation] Failed to reconfigure VM '#{vm_cid}' in place: #{e.inspect}")
         return false
       end
 
