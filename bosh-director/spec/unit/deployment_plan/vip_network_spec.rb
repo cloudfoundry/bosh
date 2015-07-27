@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :initialize do
     it "defaults cloud properties to empty hash" do
-      network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
+      network = BD::DeploymentPlan::VipNetwork.new({
           "name" => "foo"
         })
       expect(network.cloud_properties).to eq({})
@@ -14,7 +14,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :reserve do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -51,7 +51,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :release do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -78,7 +78,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"

@@ -43,11 +43,12 @@ module Bosh::Director
 
           case type
             when 'manual'
-              network = ManualNetwork.new(@deployment, network_spec, global_network_resolver)
+              ip_provider_factory = IpProviderFactory.new(@deployment.model, global_networking: @deployment.using_global_networking?)
+              network = ManualNetwork.new(network_spec, global_network_resolver, ip_provider_factory)
             when 'dynamic'
-              network = DynamicNetwork.new(@deployment, network_spec)
+              network = DynamicNetwork.new(network_spec)
             when 'vip'
-              network = VipNetwork.new(@deployment, network_spec)
+              network = VipNetwork.new(network_spec)
             else
               raise DeploymentInvalidNetworkType,
                 "Invalid network type `#{type}'"

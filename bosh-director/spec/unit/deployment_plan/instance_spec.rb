@@ -108,7 +108,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          DynamicNetwork.new(plan, {
+          DynamicNetwork.new({
             'name' => network_name,
             'cloud_properties' => cloud_properties,
             'dns' => dns
@@ -133,7 +133,7 @@ module Bosh::Director::DeploymentPlan
       context 'manual network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          ManualNetwork.new(plan, {
+          ManualNetwork.new({
               'name' => network_name,
               'dns' => dns,
               'subnets' => [{
@@ -143,7 +143,8 @@ module Bosh::Director::DeploymentPlan
                   'cloud_properties' => cloud_properties
                 }]
             },
-            network_resolver
+            network_resolver,
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {})
           )
         end
 
@@ -163,7 +164,7 @@ module Bosh::Director::DeploymentPlan
 
       describe 'temporary errand hack' do
         let(:network) do
-          ManualNetwork.new(plan, {
+          ManualNetwork.new({
               'name' => network_name,
               'dns' => dns,
               'subnets' => [{
@@ -173,7 +174,8 @@ module Bosh::Director::DeploymentPlan
                   'cloud_properties' => cloud_properties
                 }]
             },
-            network_resolver
+            network_resolver,
+          Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {})
           )
         end
 
@@ -650,7 +652,7 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
       let(:network) {
-        network = DynamicNetwork.new(plan, network_spec)
+        network = DynamicNetwork.new(network_spec)
         network.reserve(reservation)
         network
       }

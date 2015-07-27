@@ -7,7 +7,6 @@ module Bosh::Director::DeploymentPlan
     describe :reserve! do
       let(:network) do
         BD::DeploymentPlan::DynamicNetwork.new(
-          deployment_plan,
           {
             "name" => "foo",
             "cloud_properties" => {

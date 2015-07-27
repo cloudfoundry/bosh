@@ -132,9 +132,9 @@ module Bosh::Director
           let(:planner_attributes) { {name: manifest_hash['name'], properties: manifest_hash['properties']} }
           let(:deployment_model) { Models::Deployment.make(manifest: Psych.dump(manifest_hash)) }
           let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-          let(:network_fake) { DeploymentPlan::Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
-          let(:network_bar) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'bar'}) }
-          let(:network_baz) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'baz'}) }
+          let(:network_fake) { DeploymentPlan::Network.new({'name' => resource_pool_manifest['network']}) }
+          let(:network_bar) { DeploymentPlan::Network.new({'name' => 'bar'}) }
+          let(:network_baz) { DeploymentPlan::Network.new({'name' => 'baz'}) }
           let(:resource_pool) { DeploymentPlan::ResourcePool.new(resource_pool_manifest, logger) }
           let(:resource_pool_manifest) do
             {

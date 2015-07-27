@@ -10,9 +10,6 @@ module Bosh::Director
 
       VALID_DEFAULTS = %w(dns gateway).sort
 
-      # @return [DeploymentPlan] associated deployment
-      attr_accessor :deployment
-
       # @return [String] network name
       attr_accessor :name
 
@@ -24,8 +21,7 @@ module Bosh::Director
       #
       # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(deployment, network_spec)
-        @deployment = deployment
+      def initialize(network_spec)
         @name = safe_property(network_spec, "name", :class => String)
         @canonical_name = canonical(@name)
       end

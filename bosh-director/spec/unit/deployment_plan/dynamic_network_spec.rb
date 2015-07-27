@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :initialize do
     it "should parse spec" do
-      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -17,14 +17,14 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "defaults cloud properties to empty hash" do
-      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
         })
       expect(network.cloud_properties).to eq({})
     end
 
     it "should parse dns servers" do
-      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
           "dns" => %w[1.2.3.4 5.6.7.8],
           "cloud_properties" => {
@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :reserve do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -64,7 +64,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :release do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -91,7 +91,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"

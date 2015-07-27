@@ -16,14 +16,12 @@ module Bosh::Director
       #
       # @param [DeploymentPlan::Planner] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(deployment, network_spec, global_network_resolver)
-        super(deployment, network_spec)
+      def initialize(network_spec, global_network_resolver, ip_provider_factory)
+        super(network_spec)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
         @subnets = []
         subnets = safe_property(network_spec, "subnets", :class => Array)
-
-        ip_provider_factory = IpProviderFactory.new(@deployment.model, global_networking: @deployment.using_global_networking?)
 
         subnets.each do |subnet_spec|
           new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)

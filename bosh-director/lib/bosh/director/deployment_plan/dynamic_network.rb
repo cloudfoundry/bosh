@@ -20,7 +20,7 @@ module Bosh::Director
       #
       # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(deployment, network_spec)
+      def initialize(network_spec)
         super
         @cloud_properties =
           safe_property(network_spec, "cloud_properties", class: Hash, default: {})

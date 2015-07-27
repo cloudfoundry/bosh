@@ -14,12 +14,13 @@ require 'spec_helper'
    let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
    let(:deployment_plan) { planner_factory.planner_without_vm_binding(manifest, nil, {}) }
    let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
+   let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(deployment_plan, {}) }
 
    subject(:manual_network) do
      BD::DeploymentPlan::ManualNetwork.new(
-       deployment_plan,
        network_spec,
-       global_network_resolver
+       global_network_resolver,
+       ip_provider_factory
      )
    end
 
