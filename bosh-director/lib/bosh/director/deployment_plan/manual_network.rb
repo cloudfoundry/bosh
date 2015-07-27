@@ -24,7 +24,6 @@ module Bosh::Director
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
         @subnets = []
         subnets = safe_property(network_spec, "subnets", :class => Array)
-
         subnets.each do |subnet_spec|
           new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)
           @subnets.each do |subnet|

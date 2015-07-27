@@ -8,6 +8,7 @@ module Bosh::Director::DeploymentPlan
         'fake-network',
         [cidr_ip('192.168.0.11')],
         [cidr_ip('192.168.0.5'), cidr_ip('192.168.0.10')],
+        logger
       )
     end
 
@@ -47,6 +48,7 @@ module Bosh::Director::DeploymentPlan
             'fake-network',
             [cidr_ip('192.168.0.0'), cidr_ip('192.168.0.1')],
             [],
+            logger
           )
         end
 
@@ -62,6 +64,7 @@ module Bosh::Director::DeploymentPlan
             'fake-network',
             [],
             [cidr_ip('192.168.0.0'), cidr_ip('192.168.0.1')],
+            logger
           )
         end
 
@@ -77,6 +80,7 @@ module Bosh::Director::DeploymentPlan
             'fake-network',
             [],
             [cidr_ip('192.168.0.2')],
+            logger
           )
         end
 
@@ -95,6 +99,7 @@ module Bosh::Director::DeploymentPlan
             'fake-network',
             [],
             [],
+            logger
           )
         end
 
@@ -111,6 +116,7 @@ module Bosh::Director::DeploymentPlan
             'fake-network',
             [],
             [],
+            logger
           )
         end
 
@@ -144,6 +150,7 @@ module Bosh::Director::DeploymentPlan
               cidr_ip('192.168.0.7'), cidr_ip('192.168.0.8'),
               cidr_ip('192.168.0.9'), cidr_ip('192.168.0.10')
             ],
+            logger
           )
         end
 

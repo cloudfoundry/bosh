@@ -144,7 +144,7 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {}),
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, logger, {}),
             logger
           )
         end
@@ -176,7 +176,7 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {}),
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, logger, {}),
             logger
           )
         end

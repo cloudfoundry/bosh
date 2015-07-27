@@ -43,7 +43,7 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ip_provider_factory = IpProviderFactory.new(@deployment.model, global_networking: @deployment.using_global_networking?)
+              ip_provider_factory = IpProviderFactory.new(@deployment.model, @logger, global_networking: @deployment.using_global_networking?)
               network = ManualNetwork.new(network_spec, global_network_resolver, ip_provider_factory, @logger)
             when 'dynamic'
               network = DynamicNetwork.new(network_spec, @logger)

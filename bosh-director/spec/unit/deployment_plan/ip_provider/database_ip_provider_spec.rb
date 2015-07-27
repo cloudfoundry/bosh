@@ -8,7 +8,8 @@ module Bosh::Director::DeploymentPlan
         range,
         'fake-network',
         restricted_ips,
-        static_ips
+        static_ips,
+        logger
       )
     end
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
@@ -223,7 +224,8 @@ module Bosh::Director::DeploymentPlan
               range,
               'fake-network',
               restricted_ips,
-              static_ips
+              static_ips,
+              logger
             )
           end
           let(:another_deployment) { Bosh::Director::Models::Deployment.make }
