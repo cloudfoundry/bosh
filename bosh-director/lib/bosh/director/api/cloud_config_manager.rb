@@ -6,7 +6,7 @@ module Bosh
           cloud_config = Bosh::Director::Models::CloudConfig.new(
             properties: cloud_config_yaml
           )
-          validate_manifest(cloud_config)
+          validate_manifest!(cloud_config)
           cloud_config.save
         end
 
@@ -20,7 +20,7 @@ module Bosh
 
         private
 
-        def validate_manifest(cloud_config)
+        def validate_manifest!(cloud_config)
           # FIXME: pass in null ip/networking objects
           # these objects won't work if you actually try to reserve IPs with them since the cloud_planner is empty,
           # but we really just need to validate the manifest, we don't care about the subnets being able to reserve IPs here
