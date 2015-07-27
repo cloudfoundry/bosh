@@ -48,70 +48,133 @@ module Bosh::Director
       end
     end
 
-    describe 'long running messages' do
-      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
-      before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
-
-      before do
-        allow(Config).to receive(:nats_rpc)
-        allow(Api::ResourceManager).to receive(:new)
-      end
-
-      it_acts_as_a_long_running_message :prepare
-      it_acts_as_a_long_running_message :apply
-      it_acts_as_a_long_running_message :compile_package
-      it_acts_as_a_long_running_message :drain
-      it_acts_as_a_long_running_message :fetch_logs
-      it_acts_as_a_long_running_message :migrate_disk
-      it_acts_as_a_long_running_message :mount_disk
-      it_acts_as_a_long_running_message :unmount_disk
-      it_acts_as_a_long_running_message :stop
-      it_acts_as_a_long_running_message :configure_networks
-    end
-
-    describe 'update_settings' do
-      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
-      let(:task) do
-        {
-            'agent_task_id' => 'fake-agent_task_id',
+    def self.it_acts_as_synchronous_message(message_name)
+      describe "##{message_name}" do
+        let(:task) do
+          {
             'state' => 'running',
             'value' => 'task value'
-        }
-      end
-      before do
-        allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model)
-      end
+          }
+        end
 
-      it 'packages the certificates into a map and sends to the agent' do
-        expect(client).to receive(:send_message).with(:update_settings, "trusted_certs" => "these are the certificates")
-        allow(client).to receive(:get_task)
-        client.update_settings("these are the certificates")
-      end
+        before do
+          allow(client).to receive_messages(send_message: task)
+          allow(client).to receive(:wait_for_task)
 
-      it 'periodically polls the update settings task while it is running' do
-        allow(client).to receive(:send_message).and_return task
-        allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
-        expect(client).to receive(:get_task).with('fake-agent_task_id')
-        client.update_settings("these are the certificates")
-      end
+          allow(client).to receive(:get_task) do
+            task['state'] = 'no longer running'
+            task
+          end
+        end
 
-      it 'is only a warning when the remote agent does not implement update_settings' do
-        allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
+        it 'does not wait for task' do
+          expect(client).not_to have_received(:wait_for_task)
+        end
 
-        expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
-        expect { client.update_settings("no certs") }.to_not raise_error
-      end
-
-      it 'still raises an exception for other RPC failures' do
-        allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
-
-        expect(client).to_not receive(:warning)
-        expect { client.update_settings("no certs") }.to raise_error
+        it 'returns the task value' do
+          expect(client.public_send(message_name, 'fake', 'args')).to eq('task value')
+        end
       end
     end
+
+    context 'task is asynchronous' do
+      describe 'it has agent_task_id' do
+
+        describe 'long running messages' do
+          subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+
+          before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
+          let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
+
+          before do
+            allow(Config).to receive(:nats_rpc)
+            allow(Api::ResourceManager).to receive(:new)
+          end
+
+          it_acts_as_a_long_running_message :prepare
+          it_acts_as_a_long_running_message :apply
+          it_acts_as_a_long_running_message :compile_package
+          it_acts_as_a_long_running_message :drain
+          it_acts_as_a_long_running_message :fetch_logs
+          it_acts_as_a_long_running_message :migrate_disk
+          it_acts_as_a_long_running_message :mount_disk
+          it_acts_as_a_long_running_message :unmount_disk
+          it_acts_as_a_long_running_message :configure_networks
+          it_acts_as_a_long_running_message :stop
+          it_acts_as_a_long_running_message :cancel_task
+          it_acts_as_a_long_running_message :get_state
+          it_acts_as_a_long_running_message :list_disk
+          it_acts_as_a_long_running_message :prepare_network_change
+          it_acts_as_a_long_running_message :start
+        end
+
+        describe 'update_settings' do
+          subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+          let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
+          let(:task) do
+            {
+              'agent_task_id' => 'fake-agent_task_id',
+              'state' => 'running',
+              'value' => 'task value'
+            }
+          end
+          before do
+            allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model)
+          end
+
+          it 'packages the certificates into a map and sends to the agent' do
+            expect(client).to receive(:send_message).with(:update_settings, "trusted_certs" => "these are the certificates")
+            allow(client).to receive(:get_task)
+            client.update_settings("these are the certificates")
+          end
+
+          it 'periodically polls the update settings task while it is running' do
+            allow(client).to receive(:send_message).and_return task
+            allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+            expect(client).to receive(:get_task).with('fake-agent_task_id')
+            client.update_settings("these are the certificates")
+          end
+
+          it 'is only a warning when the remote agent does not implement update_settings' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
+
+            expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
+            expect { client.update_settings("no certs") }.to_not raise_error
+          end
+
+          it 'still raises an exception for other RPC failures' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
+
+            expect(client).to_not receive(:warning)
+            expect { client.update_settings("no certs") }.to raise_error
+          end
+        end
+
+      end
+    end
+
+    context 'task is synchronous' do
+      describe 'it does not have agent_task_id' do
+        subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+
+        before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
+        let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
+
+        before do
+          allow(Config).to receive(:nats_rpc)
+          allow(Api::ResourceManager).to receive(:new)
+        end
+
+        it_acts_as_synchronous_message :stop
+        it_acts_as_synchronous_message :cancel_task
+        it_acts_as_synchronous_message :get_state
+        it_acts_as_synchronous_message :list_disk
+        it_acts_as_synchronous_message :prepare_network_change
+        it_acts_as_synchronous_message :start
+      end
+    end
+
 
     describe 'ping <=> pong' do
       let(:stemcell) do

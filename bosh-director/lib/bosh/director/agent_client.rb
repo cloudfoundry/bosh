@@ -55,24 +55,24 @@ module Bosh::Director
       send_message(method_name, *args)
     end
 
-    def cancel_task(*args)
-      send_message(:cancel_task, *args)
+    def get_state(*args)
+      send_long_running_message(:get_state, *args)
     end
 
-    def get_state(*args)
-      send_message(:cancel_task, *args)
+    def cancel_task(*args)
+      send_long_running_message(:cancel_task, *args)
     end
 
     def list_disk(*args)
-      send_message(:list_disk, *args)
+      send_long_running_message(:list_disk, *args)
     end
 
     def prepare_network_change(*args)
-      send_message(:prepare_network_change, *args)
+      send_long_running_message(:prepare_network_change, *args)
     end
 
     def start(*args)
-      send_message(:start, *args)
+      send_long_running_message(:start, *args)
     end
 
     def prepare(*args)
@@ -276,7 +276,11 @@ module Bosh::Director
 
     def send_long_running_message(method_name, *args, &blk)
       task = start_long_running_task(method_name, *args)
-      wait_for_task(task['agent_task_id'], &blk)
+      if task['agent_task_id']
+        wait_for_task(task['agent_task_id'], &blk)
+      else
+        task['value']
+      end
     end
 
     def start_long_running_task(method_name, *args)
