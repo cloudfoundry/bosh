@@ -55,19 +55,24 @@ module Bosh::Director
       send_message(method_name, *args)
     end
 
-    # Define methods on this class to make instance_double more useful
-    [
-      :cancel_task,
-      :get_state,
-      :get_task,
-      :list_disk,
-      :prepare_network_change,
-      :prepare_configure_networks,
-      :start,
-    ].each do |message|
-      define_method(message) do |*args|
-        send_message(message, *args)
-      end
+    def cancel_task(*args)
+      send_message(:cancel_task, *args)
+    end
+
+    def get_state(*args)
+      send_message(:cancel_task, *args)
+    end
+
+    def list_disk(*args)
+      send_message(:list_disk, *args)
+    end
+
+    def prepare_network_change(*args)
+      send_message(:prepare_network_change, *args)
+    end
+
+    def start(*args)
+      send_message(:start, *args)
     end
 
     def prepare(*args)
@@ -196,8 +201,8 @@ module Bosh::Director
           unless timeout > 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
-                  "Timed out sending `#{method_name}' to #{@client_id} " +
-                    "after #{@timeout} seconds"
+              "Timed out sending `#{method_name}' to #{@client_id} " +
+                "after #{@timeout} seconds"
           end
           cond.wait(timeout)
         end
