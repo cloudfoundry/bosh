@@ -3,14 +3,6 @@
 # This pre_packaging script runs only for IBM Power platform
 # It updates old versions of build configuration (config.guess and config.sub files)
 
-main(){
-  if [ "`uname -m`" == "ppc64le" ]; then
-    cd ${BUILD_DIR}
-    update_build_config ruby/yaml-0.1.5.tar.gz
-    update_build_config ruby/ruby-2.1.4.tar.gz
-  fi  
-}
-
 function update_build_config {
   local blob_path=$1
   local archive_file=$(basename $blob_path);
@@ -28,3 +20,9 @@ function update_build_config {
   popd
   tar -czvf $blob_path $folder_with_sources
 }
+
+if [ "`uname -m`" == "ppc64le" ]; then
+  cd ${BUILD_DIR}
+  update_build_config ruby/yaml-0.1.5.tar.gz
+  update_build_config ruby/ruby-2.1.4.tar.gz
+fi
