@@ -21,9 +21,10 @@ module Bosh::Director
       #
       # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(network_spec)
+      def initialize(network_spec, logger)
         @name = safe_property(network_spec, "name", :class => String)
         @canonical_name = canonical(@name)
+        @logger = logger
       end
 
       ##

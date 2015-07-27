@@ -112,7 +112,7 @@ module Bosh::Director::DeploymentPlan
             'name' => network_name,
             'cloud_properties' => cloud_properties,
             'dns' => dns
-          })
+          }, logger)
         end
 
         let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
@@ -144,7 +144,8 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {})
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {}),
+            logger
           )
         end
 
@@ -175,7 +176,8 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-          Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {})
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, {}),
+            logger
           )
         end
 
@@ -652,7 +654,7 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
       let(:network) {
-        network = DynamicNetwork.new(network_spec)
+        network = DynamicNetwork.new(network_spec, logger)
         network.reserve(reservation)
         network
       }

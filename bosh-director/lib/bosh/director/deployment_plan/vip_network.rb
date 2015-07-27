@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class VipNetwork < Network
@@ -11,9 +9,9 @@ module Bosh::Director
       ##
       # Creates a new network.
       #
-      # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(network_spec)
+      # @param [Logger] logger
+      def initialize(network_spec, logger)
         super
         @cloud_properties = safe_property(network_spec, "cloud_properties",
           class: Hash, default: {})
@@ -30,13 +28,17 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.ip.nil?
+          @logger.error("[ip-reservation] Failed to reserve IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
                 "Must have IP for static reservations"
         elsif reservation.dynamic?
+          @logger.error("[ip-reservation] Failed to reserve IP '#{reservation.ip}' for vip network '#{@name}': IP should not belong to dynamic range")
           reservation.error = NetworkReservation::WRONG_TYPE
         elsif @reserved_ips.include?(reservation.ip)
+          @logger.error("[ip-reservation] Failed to reserve IP '#{reservation.ip}' for vip network '#{@name}': IP already reserved")
           reservation.error = NetworkReservation::USED
         else
+          @logger.debug("[ip-reservation] Reserving IP '#{reservation.ip}' for vip network '#{@name}'")
           reservation.reserved = true
           reservation.type = NetworkReservation::STATIC
           @reserved_ips.add(reservation.ip)
@@ -49,6 +51,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
+        @logger.debug("[ip-reservation] Releasing IP '#{reservation.ip}' for vip network '#{@name}'")
         unless reservation.ip
           raise NetworkReservationIpMissing,
                 "Can't release reservation without an IP"

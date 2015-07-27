@@ -12,7 +12,8 @@ module Bosh::Director::DeploymentPlan
             "cloud_properties" => {
                 "foz" => "baz"
             }
-          }
+          },
+          logger
         )
       end
 

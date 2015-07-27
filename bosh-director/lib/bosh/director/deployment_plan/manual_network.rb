@@ -14,10 +14,12 @@ module Bosh::Director
       ##
       # Creates a new network.
       #
-      # @param [DeploymentPlan::Planner] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(network_spec, global_network_resolver, ip_provider_factory)
-        super(network_spec)
+      # @param [DeploymentPlan::GlobalNetworkResolver] global_network_resolver
+      # @param [DeploymentPlan::IpProviderFactory] ip_provider_factory
+      # @param [Logger] logger
+      def initialize(network_spec, global_network_resolver, ip_provider_factory, logger)
+        super(network_spec, logger)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
         @subnets = []
@@ -45,11 +47,14 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.ip
+          @logger.debug("[ip-reservation] Reserving static ip: '#{reservation.ip}' for manual network: '#{@name}'")
           find_subnet(reservation.ip) do |subnet|
             type = subnet.reserve_ip(reservation.ip)
             if type.nil?
+              @logger.debug("[ip-reservation] Ip '#{reservation.ip}' is in use")
               reservation.error = NetworkReservation::USED
             elsif reservation.type && reservation.type != type
+              @logger.debug("[ip-reservation] Ip '#{reservation.ip}' is not in static range")
               reservation.error = NetworkReservation::WRONG_TYPE
             else
               reservation.type = type
@@ -58,17 +63,21 @@ module Bosh::Director
           end
         else
           unless reservation.dynamic?
+            @logger.error("[ip-reservation] Failed to reserve IP for manual network: '#{@name}': IP was not provided for static reservation")
             raise NetworkReservationInvalidType,
                   "New reservations without IPs must be dynamic"
           end
+          @logger.debug("[ip-reservation] Reserving dynamic ip for manual network: '#{@name}'")
           @subnets.each do |subnet|
             reservation.ip = subnet.allocate_dynamic_ip
             if reservation.ip
+              @logger.debug("[ip-reservation] Reserved dynamic ip '#{reservation.ip}' for manual network: '#{@name}'")
               reservation.reserved = true
               break
             end
           end
           unless reservation.reserved?
+            @logger.error("[ip-reservation] Failed to reserve IP for manual network: '#{@name}': no more available")
             reservation.error = NetworkReservation::CAPACITY
           end
         end
@@ -80,6 +89,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
+        @logger.error("[ip-reservation] Releasing IP: '#{reservation.ip}'")
         unless reservation.ip
           raise NetworkReservationIpMissing,
                 "Can't release reservation without an IP"

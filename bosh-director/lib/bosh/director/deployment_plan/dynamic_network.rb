@@ -18,9 +18,9 @@ module Bosh::Director
       ##
       # Creates a new network.
       #
-      # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(network_spec)
+      # @param [Logger] logger
+      def initialize(network_spec, logger)
         super
         @cloud_properties =
           safe_property(network_spec, "cloud_properties", class: Hash, default: {})
@@ -38,8 +38,10 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.static?
+          @logger.error("[ip-reservation] Failed to reserve IP for dynamic network '#{@name}': IP belongs to static range")
           reservation.error = NetworkReservation::WRONG_TYPE
         else
+          @logger.debug("[ip-reservation] Reserving IP for dynamic network '#{@name}'")
           reservation.ip = DYNAMIC_IP
           reservation.reserved = true
           reservation.type = NetworkReservation::DYNAMIC
@@ -52,6 +54,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
+        @logger.debug("[ip-reservation] Releasing IP for dynamic network '#{@name}'")
         validate_ip(reservation)
       end
 

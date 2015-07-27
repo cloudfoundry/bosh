@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     it "defaults cloud properties to empty hash" do
       network = BD::DeploymentPlan::VipNetwork.new({
           "name" => "foo"
-        })
+        }, logger)
       expect(network.cloud_properties).to eq({})
     end
   end
@@ -19,7 +19,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should reserve existing reservations as static" do
@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should release the IP from the used pool" do
@@ -83,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should provide the VIP network settings" do

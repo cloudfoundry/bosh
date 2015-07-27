@@ -5,6 +5,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
   end
 
+  let(:logger) { Logging::Logger.new('TestLogger') }
+
   describe :initialize do
     it "should parse spec" do
       network = BD::DeploymentPlan::DynamicNetwork.new({
@@ -12,14 +14,14 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
       expect(network.cloud_properties).to eq({"foz" => "baz"})
     end
 
     it "defaults cloud properties to empty hash" do
       network = BD::DeploymentPlan::DynamicNetwork.new({
           "name" => "foo",
-        })
+        }, logger)
       expect(network.cloud_properties).to eq({})
     end
 
@@ -30,7 +32,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
       expect(network.dns).to eq(%w[1.2.3.4 5.6.7.8])
     end
   end
@@ -42,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should reserve an existing IP" do
@@ -69,7 +71,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should release the IP from the subnet" do
@@ -96,7 +98,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "cloud_properties" => {
               "foz" => "baz"
           }
-      })
+      }, logger)
     end
 
     it "should provide dynamic network settings" do

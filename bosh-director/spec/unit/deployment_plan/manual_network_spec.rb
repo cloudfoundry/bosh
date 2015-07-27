@@ -20,7 +20,8 @@ require 'spec_helper'
      BD::DeploymentPlan::ManualNetwork.new(
        network_spec,
        global_network_resolver,
-       ip_provider_factory
+       ip_provider_factory,
+       logger
      )
    end
 
