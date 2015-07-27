@@ -5,6 +5,7 @@ require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
+require 'bosh/dev/sandbox/services/uaa_service'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -28,6 +29,8 @@ namespace :spec do
           raise
         end
       end
+
+      Bosh::Dev::Sandbox::UaaService.install
     end
 
     def run_integration_specs

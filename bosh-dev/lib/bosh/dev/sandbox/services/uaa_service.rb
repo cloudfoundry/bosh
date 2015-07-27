@@ -2,25 +2,36 @@ module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
 
-    def initialize(port_provider, base_log_path, repo_root, logger)
-      @port = port_provider.get_port(:uaa)
-      @repo_root = repo_root
+    REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
+    INSTALL_DIR = File.join(REPO_ROOT, 'tmp', 'integration-uaa')
+    TOMCAT_DIR = File.join(INSTALL_DIR, 'apache-tomcat-8.0.21')
+
+    def initialize(port_provider, base_log_path, logger)
+      @port = port_provider.get_port(:uaa_http)
+      @server_port = port_provider.get_port(:uaa_server)
+
       @logger = logger
       @build_mutex = Mutex.new
       @log_location = "#{base_log_path}.uaa.out"
 
-      @uaa_ports = {
-        'cargo.servlet.port' => @port,
-        'cargo.tomcat.ajp.port' => port_provider.get_port(:uaa_tomcat),
-        'cargo.rmi.port' => port_provider.get_port(:uaa_rmi)
-      }
-
       @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', @port, @log_location, logger)
     end
 
-    def start
-      build
+    def self.install
+      FileUtils.rm_rf(INSTALL_DIR)
+      FileUtils.mkdir_p(INSTALL_DIR)
 
+      tomcat_url = 'https://s3.amazonaws.com/bosh-dependencies/apache-tomcat-8.0.21.tar.gz'
+      out = `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
+      raise out unless $? == 0
+
+      uaa_url = 'https://s3.amazonaws.com/bosh-dependencies/cloudfoundry-identity-uaa-2.0.3.war'
+      webapp_path = File.join(TOMCAT_DIR, 'webapps', 'uaa.war')
+      out = `curl --output #{webapp_path} -L #{uaa_url}`
+      raise out unless $? == 0
+    end
+
+    def start
       uaa_process.start
 
       begin
@@ -41,35 +52,48 @@ module Bosh::Dev::Sandbox
 
     private
 
-    def working_dir
-      File.expand_path('spec/assets/uaa', @repo_root)
-    end
-
     def uaa_process
       return @uaa_process if @uaa_process
 
-      arguments = @uaa_ports.map { |pair| "-D#{pair.join('=')}" }
-      arguments << %W(-P cargo.port=#{@port})
-      timeout_arg = '-P cargo.local.timeout=300000'
+      opts = {
+          'uaa.http_port' => @port,
+          'uaa.server_port' => @server_port,
+          'uaa.access_log_dir' => File.dirname(@log_location),
+      }
 
-      @uaa_process = Service.new(
-        ['./gradlew', arguments, timeout_arg, 'run',  '--stacktrace'].flatten,
-        {
-          output: @log_location,
-          working_dir: working_dir,
-          env: { 'UAA_CONFIG_PATH' => config_path }
-        },
-        @logger,
+      @service = Service.new(
+          [executable_path, 'run', '-config', server_xml],
+          {
+              output: @log_location,
+              env: {
+                  'CATALINA_OPTS' => opts.map { |k, v| "-D#{k}=#{v}" }.join(" "),
+                  'UAA_CONFIG_PATH' => config_path
+              }
+          },
+          @logger
       )
+
+    end
+
+    def working_dir
+      File.expand_path('spec/assets/uaa', REPO_ROOT)
+    end
+
+    def executable_path
+      File.join(TOMCAT_DIR, 'bin', 'catalina.sh')
+    end
+
+    def server_xml
+      File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
     def config_path
       base_path = 'spec/assets/uaa_config'
       if @encryption == 'asymmetric'
-        return File.expand_path(File.join(base_path, 'asymmetric'), @repo_root)
+        return File.expand_path(File.join(base_path, 'asymmetric'), REPO_ROOT)
       end
 
-      File.expand_path(File.join(base_path, 'symmetric'), @repo_root)
+      File.expand_path(File.join(base_path, 'symmetric'), REPO_ROOT)
     end
 
     DEBUG_HEADER = '*' * 20
@@ -82,19 +106,6 @@ module Bosh::Dev::Sandbox
       @logger.error("#{DEBUG_HEADER} start #{description} stderr #{DEBUG_HEADER}")
       @logger.error(stderr_contents)
       @logger.error("#{DEBUG_HEADER} end #{description} stderr #{DEBUG_HEADER}")
-    end
-
-    def build
-      @build_mutex.synchronize do
-        unless @built
-          stdout, stderr, status = Open3.capture3('./gradlew build -x test', chdir: working_dir)
-          unless status.success?
-            output_service_log('building uaa', stdout, stderr)
-            raise 'Failed to build Uaa'
-          end
-          @built = true
-        end
-      end
     end
   end
 end
