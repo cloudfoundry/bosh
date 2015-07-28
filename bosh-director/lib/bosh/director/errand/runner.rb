@@ -26,8 +26,8 @@ module Bosh::Director
 
       begin
         event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
-          start_errand_result = agent.start_errand
-          @agent_task_id = start_errand_result['agent_task_id']
+          run_errand_result = agent.run_errand
+          @agent_task_id = run_errand_result['agent_task_id']
           agent_task_result = agent.wait_for_task(agent_task_id, &blk)
         end
       rescue TaskCancelled => e

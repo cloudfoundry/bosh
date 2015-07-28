@@ -127,7 +127,7 @@ module Bosh::Director
       send_message(:stop, *args)
     end
 
-    def start_errand(*args)
+    def run_errand(*args)
       start_task(:run_errand, *args)
     end
 

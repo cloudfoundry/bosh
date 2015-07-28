@@ -447,7 +447,7 @@ module Bosh::Director
       end
     end
 
-    describe '#start_errand' do
+    describe '#run_errand' do
       it 'sends a run errand message over nats and returns a task' do
         nats_rpc = instance_double('Bosh::Director::NatsRpc')
         allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
@@ -466,7 +466,7 @@ module Bosh::Director
           'fake-service-name.fake-client-id', method: :run_errand, arguments: [args])
           .and_yield(nats_rpc_response)
 
-        expect(client.start_errand(args)).to eq({
+        expect(client.run_errand(args)).to eq({
           'state' => 'running',
           'agent_task_id' => 'fake-task-id',
         })
