@@ -379,7 +379,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'keeps IPs of a job when that job fails to deploy its VMs' do
-      pending("https://www.pivotaltracker.com/story/show/98127770")
+      skip 'https://www.pivotaltracker.com/story/show/98127770'
+
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
@@ -533,7 +534,8 @@ describe 'global networking', type: :integration do
       end
 
       it 'reuses IPs when one job is deleted and another created within a single deployment' do
-        pending("https://www.pivotaltracker.com/story/show/98057020")
+        skip 'https://www.pivotaltracker.com/story/show/98057020'
+
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', available_ips: 1)
         manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'first-job', instances: 1)]
 
