@@ -2,8 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::CloudManifestParser do
-    subject(:parser) { described_class.new(deployment, logger) }
-    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, {}, cloud_manifest, nil) }
+    subject(:parser) { described_class.new(logger) }
     let(:planner_attributes) {
       {
         name: 'deployment-name',
@@ -15,7 +14,7 @@ module Bosh::Director
     let(:ip_provider_factory) { instance_double(BD::DeploymentPlan::IpProviderFactory, create: nil) }
 
     describe '#parse' do
-      let(:parsed_deployment) { subject.parse(cloud_manifest, ip_provider_factory, global_network_resolver) }
+      let(:parsed_cloud_planner) { subject.parse(cloud_manifest, ip_provider_factory, global_network_resolver) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       describe 'availability zones' do
@@ -42,7 +41,7 @@ module Bosh::Director
           context 'if name is not present' do
             let(:availability_zones) { {'availability_zones' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
             it 'raises error' do
-              expect { parsed_deployment }.to raise_error(ValidationMissingField)
+              expect { parsed_cloud_planner }.to raise_error(ValidationMissingField)
             end
           end
 
@@ -50,15 +49,15 @@ module Bosh::Director
             let(:availability_zones) { {'availability_zones' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
 
             it 'raises error' do
-              expect { parsed_deployment }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate availability zone name `z1'")
+              expect { parsed_cloud_planner }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate availability zone name `z1'")
             end
           end
 
           it 'creates AvailabilityZone for each entry' do
-            expect(parsed_deployment.availability_zone('z1').name).to eq('z1')
-            expect(parsed_deployment.availability_zone('z1').cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
-            expect(parsed_deployment.availability_zone('z2').name).to eq('z2')
-            expect(parsed_deployment.availability_zone('z2').cloud_properties).to eq({'availability_zone' => 'us-east-2a'})
+            expect(parsed_cloud_planner.availability_zone('z1').name).to eq('z1')
+            expect(parsed_cloud_planner.availability_zone('z1').cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+            expect(parsed_cloud_planner.availability_zone('z2').name).to eq('z2')
+            expect(parsed_cloud_planner.availability_zone('z2').cloud_properties).to eq({'availability_zone' => 'us-east-2a'})
           end
         end
       end
@@ -74,8 +73,8 @@ module Bosh::Director
           end
 
           it 'parses the compilation section' do
-            expect(parsed_deployment.compilation.network_name).to eq('a')
-            expect(parsed_deployment.compilation.cloud_properties).to eq({'super' => 'important'})
+            expect(parsed_cloud_planner.compilation.network_name).to eq('a')
+            expect(parsed_cloud_planner.compilation.cloud_properties).to eq({'super' => 'important'})
           end
         end
 
@@ -84,7 +83,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              parsed_deployment
+              parsed_cloud_planner
             }.to raise_error(
                 ValidationMissingField,
                 /Required property `compilation' was not specified in object .+/,
@@ -103,7 +102,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              parsed_deployment
+              parsed_cloud_planner
             }.to raise_error(
                 /unknown network `nonexistent-network'/,
               )
@@ -123,14 +122,14 @@ module Bosh::Director
             end
 
             it 'should create manual network by default' do
-              expect(parsed_deployment.networks.count).to eq(1)
-              expect(parsed_deployment.networks.first).to be_a(DeploymentPlan::ManualNetwork)
-              expect(parsed_deployment.networks.first.name).to eq('a')
+              expect(parsed_cloud_planner.networks.count).to eq(1)
+              expect(parsed_cloud_planner.networks.first).to be_a(DeploymentPlan::ManualNetwork)
+              expect(parsed_cloud_planner.networks.first.name).to eq('a')
             end
 
             it 'allows to look up network by name' do
-              expect(parsed_deployment.network('a')).to be_a(DeploymentPlan::ManualNetwork)
-              expect(parsed_deployment.network('b')).to be_nil
+              expect(parsed_cloud_planner.network('a')).to be_a(DeploymentPlan::ManualNetwork)
+              expect(parsed_cloud_planner.network('b')).to be_nil
             end
           end
 
@@ -149,7 +148,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                parsed_deployment
+                parsed_cloud_planner
               }.to raise_error(
                   DeploymentCanonicalNetworkNameTaken,
                   "Invalid network name `Bar', canonical name already taken",
@@ -163,7 +162,7 @@ module Bosh::Director
 
           it 'raises an error because deployment must have at least one network' do
             expect {
-              parsed_deployment
+              parsed_cloud_planner
             }.to raise_error(DeploymentNoNetworks, 'No networks specified')
           end
         end
@@ -173,7 +172,7 @@ module Bosh::Director
 
           it 'raises an error because deployment must have at least one network' do
             expect {
-              parsed_deployment
+              parsed_cloud_planner
             }.to raise_error(
                 ValidationMissingField,
                 /Required property `networks' was not specified in object .+/,
@@ -193,13 +192,13 @@ module Bosh::Director
             end
 
             it 'creates ResourcePools for each entry' do
-              expect(parsed_deployment.resource_pools.map(&:class)).to eq([DeploymentPlan::ResourcePool, DeploymentPlan::ResourcePool])
-              expect(parsed_deployment.resource_pools.map(&:name)).to eq(['rp1-name', 'rp2-name'])
+              expect(parsed_cloud_planner.resource_pools.map(&:class)).to eq([DeploymentPlan::ResourcePool, DeploymentPlan::ResourcePool])
+              expect(parsed_cloud_planner.resource_pools.map(&:name)).to eq(['rp1-name', 'rp2-name'])
             end
 
             it 'allows to look up resource_pool by name' do
-              expect(parsed_deployment.resource_pool('rp1-name').name).to eq('rp1-name')
-              expect(parsed_deployment.resource_pool('rp2-name').name).to eq('rp2-name')
+              expect(parsed_cloud_planner.resource_pool('rp1-name').name).to eq('rp1-name')
+              expect(parsed_cloud_planner.resource_pool('rp2-name').name).to eq('rp2-name')
             end
           end
 
@@ -213,7 +212,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                parsed_deployment
+                parsed_cloud_planner
               }.to raise_error(
                   DeploymentDuplicateResourcePoolName,
                   "Duplicate resource pool name `same-name'",
@@ -229,7 +228,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              parsed_deployment
+              parsed_cloud_planner
             }.to raise_error(
                 DeploymentNoResourcePools,
                 "No resource_pools specified",
@@ -249,13 +248,13 @@ module Bosh::Director
             end
 
             it 'creates DiskPools for each entry' do
-              expect(parsed_deployment.disk_pools.map(&:class)).to eq([DeploymentPlan::DiskPool, DeploymentPlan::DiskPool])
-              expect(parsed_deployment.disk_pools.map(&:name)).to eq(['dk1-name', 'dk2-name'])
+              expect(parsed_cloud_planner.disk_pools.map(&:class)).to eq([DeploymentPlan::DiskPool, DeploymentPlan::DiskPool])
+              expect(parsed_cloud_planner.disk_pools.map(&:name)).to eq(['dk1-name', 'dk2-name'])
             end
 
             it 'allows to look up disk_pool by name' do
-              expect(parsed_deployment.disk_pool('dk1-name').name).to eq('dk1-name')
-              expect(parsed_deployment.disk_pool('dk2-name').name).to eq('dk2-name')
+              expect(parsed_cloud_planner.disk_pool('dk1-name').name).to eq('dk1-name')
+              expect(parsed_cloud_planner.disk_pool('dk2-name').name).to eq('dk2-name')
             end
           end
 
@@ -269,7 +268,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                parsed_deployment
+                parsed_cloud_planner
               }.to raise_error(
                   DeploymentDuplicateDiskPoolName,
                   "Duplicate disk pool name `same-name'",

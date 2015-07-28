@@ -7,17 +7,7 @@ module Bosh::Director
   # Encapsulates essential director data structures retrieved
   # from the deployment manifest and the running environment.
   module DeploymentPlan
-    class BasePlanner
-      def initialize(cloud_config)
-        @cloud_config = cloud_config
-      end
-
-      def model
-        nil
-      end
-    end
-
-    class Planner < BasePlanner
+    class Planner
       include LockHelper
       include DnsHelper
       include ValidationHelper
@@ -60,8 +50,10 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
+      attr_writer :cloud_planner
+
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
-        super(cloud_config)
+        @cloud_config = cloud_config
 
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -69,7 +61,6 @@ module Bosh::Director
 
         @manifest_text = manifest_text
         @cloud_config = cloud_config
-        @cloud_planner = CloudPlanner.new(cloud_config)
         @model = deployment_model
 
         @jobs = []
@@ -88,11 +79,16 @@ module Bosh::Director
         @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
       end
 
-      def_delegators :@cloud_planner, :add_network, :networks, :network,
-        :add_resource_pool, :add_availability_zone, :availability_zone,
-        :resource_pools, :resource_pool,
-        :add_disk_pool, :disk_pools, :disk_pool,
-        :compilation, :compilation=
+      def_delegators :@cloud_planner,
+        :networks,
+        :network,
+        :availability_zone,
+        :resource_pools,
+        :resource_pool,
+        :add_resource_pool, # for export release
+        :disk_pools,
+        :disk_pool,
+        :compilation
 
       def canonical_name
         canonical(@name)
@@ -215,21 +211,22 @@ module Bosh::Director
       end
     end
 
-    class CloudPlanner < BasePlanner
+    class CloudPlanner
       # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
       #   Resource pool and other configuration for compilation workers
       attr_accessor :compilation
 
-      def initialize(cloud_config)
-        super(cloud_config)
-
-        @cloud_config = cloud_config
+      def initialize
         @networks_canonical_name_index = Set.new
 
         @networks = {}
         @resource_pools = {}
         @disk_pools = {}
         @availability_zones = {}
+      end
+
+      def model
+        nil
       end
 
       def add_availability_zone(availability_zone)

@@ -157,10 +157,13 @@ module Bosh::Director
           end
 
           before do
+            # make a cloud plan
+            cloud_plan = DeploymentPlan::CloudPlanner.new
+
             # add mock network
-            deployment_plan.add_network(network_fake)
-            deployment_plan.add_network(network_bar)
-            deployment_plan.add_network(network_baz)
+            cloud_plan.add_network(network_fake)
+            cloud_plan.add_network(network_bar)
+            cloud_plan.add_network(network_baz)
 
             # release is not implemented in the base Network object
             allow(network_fake).to receive(:release)
@@ -168,7 +171,11 @@ module Bosh::Director
             allow(network_baz).to receive(:release)
 
             # add resource pool
-            deployment_plan.add_resource_pool(resource_pool)
+            cloud_plan.add_resource_pool(resource_pool)
+
+            # associate the two
+            deployment_plan.cloud_planner = cloud_plan
+
 
             state = {'resource_pool' => {'name' => 'baz'}}
 

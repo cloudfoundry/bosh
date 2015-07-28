@@ -5,12 +5,12 @@ module Bosh::Director
     class CloudManifestParser
       include ValidationHelper
 
-      def initialize(deployment, logger)
-        @deployment = deployment
+      def initialize(logger)
         @logger = logger
       end
 
       def parse(cloud_manifest, ip_provider_factory, global_network_resolver)
+        @cloud_planner = CloudPlanner.new
 
         parse_availability_zones(cloud_manifest)
         parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver)
@@ -18,7 +18,7 @@ module Bosh::Director
         parse_resource_pools(cloud_manifest)
         parse_disk_pools(cloud_manifest)
 
-        @deployment
+        @cloud_planner
       end
 
       private
@@ -27,7 +27,7 @@ module Bosh::Director
         availability_zones = safe_property(cloud_manifest, 'availability_zones', :class => Array, :optional => true)
         if availability_zones
           availability_zones.each do |availability_zone|
-            @deployment.add_availability_zone(AvailabilityZone.new(availability_zone))
+            @cloud_planner.add_availability_zone(AvailabilityZone.new(availability_zone))
           end
         end
       end
@@ -51,10 +51,10 @@ module Bosh::Director
                 "Invalid network type `#{type}'"
           end
 
-          @deployment.add_network(network)
+          @cloud_planner.add_network(network)
         end
 
-        if @deployment.networks.empty?
+        if @cloud_planner.networks.empty?
           raise DeploymentNoNetworks, 'No networks specified'
         end
       end
@@ -62,21 +62,21 @@ module Bosh::Director
       def parse_compilation(cloud_manifest)
         compilation_spec = safe_property(cloud_manifest, 'compilation', :class => Hash)
         config = CompilationConfig.new(compilation_spec)
-        unless @deployment.network(config.network_name)
+        unless @cloud_planner.network(config.network_name)
             raise CompilationConfigUnknownNetwork,
               "Compilation config references an unknown " +
                 "network `#{config.network_name}'"
         end
-        @deployment.compilation = config
+        @cloud_planner.compilation = config
       end
 
       def parse_resource_pools(cloud_manifest)
         resource_pools = safe_property(cloud_manifest, 'resource_pools', :class => Array)
         resource_pools.each do |rp_spec|
-          @deployment.add_resource_pool(ResourcePool.new(rp_spec, @logger))
+          @cloud_planner.add_resource_pool(ResourcePool.new(rp_spec, @logger))
         end
 
-        if @deployment.resource_pools.empty?
+        if @cloud_planner.resource_pools.empty?
           raise DeploymentNoResourcePools, 'No resource_pools specified'
         end
       end
@@ -85,7 +85,7 @@ module Bosh::Director
         disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true)
         return if disk_pools.nil?
         disk_pools.each do |dp_spec|
-          @deployment.add_disk_pool(DiskPool.parse(dp_spec))
+          @cloud_planner.add_disk_pool(DiskPool.parse(dp_spec))
         end
       end
     end
