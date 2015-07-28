@@ -432,6 +432,60 @@ describe 'global networking', type: :integration do
       expect(new_ips).to match_array(['192.168.1.2', '192.168.1.3'])
     end
 
+    context 'when using two networks' do
+      context 'when range does not include one of IPs' do
+        def make_network_spec(first_subnet, second_subnet)
+          [
+            {
+              'name' => 'first',
+              'subnets' => [first_subnet]
+            },
+            {
+              'name' => 'second',
+              'subnets' => [second_subnet]
+            }
+          ]
+        end
+
+        let(:job_with_two_networks) do
+          job_spec = Bosh::Spec::Deployments.simple_job(instances: 1)
+          job_spec['networks'] = [
+            { 'name' => 'first', 'default' => ['dns', 'gateway'] },
+            { 'name' => 'second' }
+          ]
+          job_spec
+        end
+
+        it 'redeploys VM updating IP that does not belong to range and keeping another IP' do
+          first_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
+          second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24')
+
+          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_hash['networks'] = make_network_spec(first_subnet, second_subnet)
+          cloud_config_hash['compilation']['network'] = 'first'
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest
+          manifest_hash['jobs'] = [job_with_two_networks]
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+
+          vms = director.vms
+          expect(vms.size).to eq(1)
+          expect(vms.map(&:ips).flatten).to match_array(['192.168.1.2', '10.10.0.2'])
+
+          new_second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24', shift_ip_range_by: 1)
+          cloud_config_hash['networks'] = make_network_spec(first_subnet, new_second_subnet)
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+
+          vms = director.vms
+          expect(vms.size).to eq(1)
+          expect(vms.map(&:ips).flatten).to match_array(['192.168.1.2', '10.10.0.3'])
+        end
+      end
+    end
+
     context 'using legacy network configuration (no cloud config)' do
       it 'gives the correct error message when there are not enough IPs for compilation' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)

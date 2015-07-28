@@ -26,7 +26,8 @@ module Bosh::Spec
     end
 
     def self.make_subnet(opts)
-      ip_range = NetAddr::CIDR.create('192.168.1.0/24')
+      range = opts.fetch(:range, '192.168.1.0/24')
+      ip_range = NetAddr::CIDR.create(range)
       ip_range_shift = opts.fetch(:shift_ip_range_by, 0)
       available_ips = opts.fetch(:available_ips)
       raise "not enough IPs, don't be so greedy" if available_ips > ip_range.size

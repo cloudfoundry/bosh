@@ -120,7 +120,20 @@ module Bosh::Spec
 
       headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
-      values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      vms = values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+
+      # collapse rows for single VM with multiple IPs
+      result = []
+      vms.each_with_index do |vm, i|
+        if vm[:job_index].empty?
+          vms[i-1][:ips] = Array(vms[i-1][:ips])
+          vms[i-1][:ips] << vm[:ips]
+        else
+          result << vm
+        end
+      end
+
+      result
     end
   end
 end
