@@ -217,8 +217,6 @@ module Bosh::Director
       attr_accessor :compilation
 
       def initialize
-        @networks_canonical_name_index = Set.new
-
         @networks = {}
         @resource_pools = {}
         @disk_pools = {}
@@ -230,10 +228,6 @@ module Bosh::Director
       end
 
       def add_availability_zone(availability_zone)
-        if @availability_zones[availability_zone.name]
-          raise DeploymentDuplicateAvailabilityZoneName,
-            "Duplicate availability zone name `#{availability_zone.name}'"
-        end
         @availability_zones[availability_zone.name] = availability_zone
       end
 
@@ -244,10 +238,6 @@ module Bosh::Director
       # Adds a resource pool by name
       # @param [Bosh::Director::DeploymentPlan::ResourcePool] resource_pool
       def add_resource_pool(resource_pool)
-        if @resource_pools[resource_pool.name]
-          raise DeploymentDuplicateResourcePoolName,
-            "Duplicate resource pool name `#{resource_pool.name}'"
-        end
         @resource_pools[resource_pool.name] = resource_pool
       end
 
@@ -267,14 +257,7 @@ module Bosh::Director
       # Adds a network by name
       # @param [Bosh::Director::DeploymentPlan::Network] network
       def add_network(network)
-        if @networks_canonical_name_index.include?(network.canonical_name)
-          raise DeploymentCanonicalNetworkNameTaken,
-            "Invalid network name `#{network.name}', " +
-              'canonical name already taken'
-        end
-
         @networks[network.name] = network
-        @networks_canonical_name_index << network.canonical_name
       end
 
       # Returns all networks in a deployment plan
@@ -293,10 +276,6 @@ module Bosh::Director
       # Adds a disk pool by name
       # @param [Bosh::Director::DeploymentPlan::DiskPool] disk_pool
       def add_disk_pool(disk_pool)
-        if @disk_pools[disk_pool.name]
-          raise DeploymentDuplicateDiskPoolName,
-            "Duplicate disk pool name `#{disk_pool.name}'"
-        end
         @disk_pools[disk_pool.name] = disk_pool
       end
 
