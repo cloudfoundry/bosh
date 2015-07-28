@@ -1,8 +1,12 @@
 set -e
 
 tar xzf postgres/postgresql-9.0.3.tar.gz
-
 cd postgresql-9.0.3
+
+if [ "`uname -m`" == "ppc64le" ]; then
+  cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./config
+fi
+
 ./configure --prefix=$BOSH_INSTALL_TARGET
 cp -R src/include $BOSH_INSTALL_TARGET
 cd src/interfaces/libpq

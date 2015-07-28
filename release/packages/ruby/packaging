@@ -4,6 +4,9 @@ tar xzf ruby/yaml-0.1.5.tar.gz
 (
   set -e
   cd yaml-0.1.5
+  if [ "`uname -m`" == "ppc64le" ]; then
+    cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./config
+  fi
   CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-shared
   make -j
   make -j install
@@ -13,6 +16,9 @@ tar xzf ruby/ruby-*.tar.gz
 (
   set -e
   cd ruby-2.1.4
+  if [ "`uname -m`" == "ppc64le" ]; then
+    cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./tool
+  fi
   LDFLAGS="-Wl,-rpath -Wl,${BOSH_INSTALL_TARGET}" CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc --with-opt-dir=${BOSH_INSTALL_TARGET} --without-gmp
   make -j
   make -j install

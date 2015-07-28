@@ -5,3 +5,5 @@ files:
 - ruby/ruby-2.1.4.tar.gz
 - ruby/rubygems-2.3.0.tgz
 - ruby/bundler-1.6.3.gem
+- config/config.guess
+- config/config.sub
