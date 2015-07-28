@@ -79,6 +79,10 @@ module Bosh::Director
           "cloud_properties" => @cloud_properties
         }
       end
+
+      def validate!(availability_zones)
+        # nothing to validate
+      end
     end
   end
 end

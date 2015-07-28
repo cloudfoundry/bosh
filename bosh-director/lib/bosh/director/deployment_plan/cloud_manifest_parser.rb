@@ -11,7 +11,7 @@ module Bosh::Director
 
       def parse(cloud_manifest, ip_provider_factory, global_network_resolver)
         azs = parse_availability_zones(cloud_manifest)
-        networks = parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver)
+        networks = parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver, azs)
         compilation_config = parse_compilation(cloud_manifest, networks)
         resource_pools = parse_resource_pools(cloud_manifest)
         disk_pools = parse_disk_pools(cloud_manifest)
@@ -42,7 +42,7 @@ module Bosh::Director
 
       end
 
-      def parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver)
+      def parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver, availability_zones)
         networks = safe_property(cloud_manifest, 'networks', :class => Array)
         if networks.empty?
           raise DeploymentNoNetworks, 'No networks specified'
@@ -62,6 +62,10 @@ module Bosh::Director
               raise DeploymentInvalidNetworkType,
                 "Invalid network type `#{type}'"
           end
+        end
+
+        parsed_networks.each do |network|
+          network.validate!(availability_zones)
         end
 
         duplicates = detect_duplicates(parsed_networks) { |network| network.canonical_name }

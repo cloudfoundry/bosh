@@ -126,14 +126,66 @@ module Bosh::Director
               expect(parsed_cloud_planner.networks.first).to be_a(DeploymentPlan::ManualNetwork)
               expect(parsed_cloud_planner.networks.first.name).to eq('a')
             end
+          end
 
-            it 'allows to look up network by name' do
-              expect(parsed_cloud_planner.network('a')).to be_a(DeploymentPlan::ManualNetwork)
-              expect(parsed_cloud_planner.network('b')).to be_nil
+          context 'when network type is manual' do
+            context 'when an availability zone is specified for a subnet' do
+              it 'validates that a zone with that name is present' do
+                valid_manifest = cloud_manifest.merge({
+                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'networks' => [
+                      {
+                        'name' => 'a', #for compilation
+                        'subnets' => []
+                      },
+                      {
+                        'name' => 'fake-network',
+                        'type' => 'manual',
+                        'subnets' => [
+                          {
+                            'range' => '192.168.1.0/24',
+                            'gateway' => '192.168.1.1',
+                            'dns' => ['192.168.1.1', '192.168.1.2'],
+                            'static' => ['192.168.1.10'],
+                            'reserved' => [],
+                            'cloud_properties' => {},
+                            'availability_zone' => 'fake-zone'
+                          }
+                        ]
+                      }]
+                  })
+                expect {
+                  subject.parse(valid_manifest, ip_provider_factory, global_network_resolver)
+                }.to_not raise_error
+              end
+
+              it 'errors if no zone with that name is present' do
+                invalid_manifest = cloud_manifest.merge({
+                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'networks' => [{
+                        'name' => 'fake-network',
+                        'type' => 'manual',
+                        'subnets' => [
+                          {
+                            'range' => '192.168.1.0/24',
+                            'gateway' => '192.168.1.1',
+                            'dns' => ['192.168.1.1', '192.168.1.2'],
+                            'static' => ['192.168.1.10'],
+                            'reserved' => [],
+                            'cloud_properties' => {},
+                            'availability_zone' => 'nonexistent-zone'
+                          }
+                        ]
+                      }]
+                  })
+
+                expect {
+                  subject.parse(invalid_manifest, ip_provider_factory, global_network_resolver)
+                }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
+              end
             end
           end
 
-          context 'when network type is manual'
           context 'when network type is dynamic'
           context 'when network type is vip'
           context 'when network type is unknown'

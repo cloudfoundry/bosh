@@ -82,6 +82,10 @@ module Bosh::Director
         config
       end
 
+      def validate!(availability_zones)
+        # nothing to validate
+      end
+
       private
 
       def validate_ip(reservation)

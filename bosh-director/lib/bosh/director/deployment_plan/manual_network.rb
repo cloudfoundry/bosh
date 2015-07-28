@@ -22,14 +22,14 @@ module Bosh::Director
         super(network_spec, logger)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
+        subnet_specs = safe_property(network_spec, "subnets", :class => Array)
+
         @subnets = []
-        subnets = safe_property(network_spec, "subnets", :class => Array)
-        subnets.each do |subnet_spec|
+        subnet_specs.each do |subnet_spec|
           new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
-              raise NetworkOverlappingSubnets,
-                    "Network `#{name}' has overlapping subnets"
+              raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
             end
           end
           @subnets << new_subnet
@@ -144,6 +144,10 @@ module Bosh::Director
             break
           end
         end
+      end
+
+      def validate!(availability_zones)
+        @subnets.each { |subnet| subnet.validate!(availability_zones) }
       end
     end
   end

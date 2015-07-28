@@ -5,28 +5,18 @@ module Bosh::Director
       include ValidationHelper
       include IpUtil
 
-      # @return [DeploymentPlan::Network] Network this subnet belongs to
       attr_reader :network
 
-      # @return [NetAddr::CIDR] Subnet range
       attr_reader :range
 
-      # @return [NetAddr::CIDR] Subnet gateway IP address
       attr_reader :gateway
 
-      # @return [Array<String>] Subnet DNS IP addresses
       attr_reader :dns
 
-      # @return [Hash] Subnet cloud properties (VLAN etc.)
       attr_reader :cloud_properties
 
-      # @return [String] Subnet netmask
       attr_reader :netmask
 
-      # @param [DeploymentPlan::Network] network Network
-      # @param [Hash] subnet_spec Raw subnet spec from deployment manifest
-      # @param [NetAddr::CIDR] legacy_reserved_ranges list of restricted ranges from legacy deployments
-      # @param [Bosh::Director::DeploymentPlan::IpProviderFactory] ip_provider_factory
       def initialize(network, subnet_spec, legacy_reserved_ranges, ip_provider_factory)
         @network = network
 
@@ -62,6 +52,8 @@ module Bosh::Director
         end
 
         @dns = dns_servers(@network.name, subnet_spec)
+
+        @availability_zone_name = parse_availability_zone_name(subnet_spec, network)
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties", class: Hash, default: {})
 
@@ -119,13 +111,43 @@ module Bosh::Director
         @ip_provider.allocate_dynamic_ip
       end
 
+      def validate!(availability_zones)
+        @availability_zone_name.assert_present!(availability_zones)
+      end
+
       private
 
-      # @param [String] reason
-      # @raise NetworkInvalidGateway
+      def parse_availability_zone_name(subnet_spec, network)
+        availability_zone_name = safe_property(subnet_spec, "availability_zone", optional: true)
+        if availability_zone_name.nil?
+          UnspecifiedAvailabilityZoneName.new
+        else
+          AvailabilityZoneName.new(availability_zone_name, network.name)
+        end
+      end
+
       def invalid_gateway(reason)
         raise NetworkInvalidGateway,
               "Invalid gateway for network `#{@network.name}': #{reason}"
+      end
+
+      class AvailabilityZoneName
+        def initialize(name, network_name)
+          @name = name
+          @network_name = network_name
+        end
+
+        def assert_present!(availability_zones)
+          unless availability_zones.any? { |az| az.name == @name }
+            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{@network_name}' refers to an unknown availability zone '#{@name}'"
+          end
+        end
+      end
+
+      class UnspecifiedAvailabilityZoneName
+        def assert_present!(availability_zones)
+          # don't care, wasn't specified
+        end
       end
     end
   end

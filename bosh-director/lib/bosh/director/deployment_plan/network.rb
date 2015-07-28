@@ -66,6 +66,10 @@ module Bosh::Director
         raise NotImplementedError,
               "#network_settings not implemented for #{self.class}"
       end
+
+      def validate!(availability_zones)
+        raise NotImplementedError
+      end
     end
   end
 end

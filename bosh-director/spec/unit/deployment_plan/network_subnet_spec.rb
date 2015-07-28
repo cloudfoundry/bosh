@@ -7,7 +7,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     BD::DeploymentPlan::IpProviderFactory.new(deployment_model, logger, cloud_config: true)
   end
 
-  def subnet_spec(properties)
+  def make_subnet(properties)
     BD::DeploymentPlan::NetworkSubnet.new(@network, properties, reserved_ranges, ip_provider_factory)
   end
 
@@ -15,7 +15,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
   describe :initialize do
     it 'should create a subnet spec' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24',
         'gateway' => '192.168.0.254',
         'cloud_properties' => {'foo' => 'bar'}
@@ -30,7 +30,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should require a range' do
       expect {
-        subnet_spec(
+        make_subnet(
           'cloud_properties' => {'foo' => 'bar'},
           'gateway' => '192.168.0.254',
         )
@@ -39,7 +39,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should require a gateway' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'cloud_properties' => {'foo' => 'bar'},
         )
@@ -47,7 +47,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'default cloud properties to empty hash' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24',
         'gateway' => '192.168.0.254',
       )
@@ -55,7 +55,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should allow a gateway' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24',
         'gateway' => '192.168.0.254',
         'cloud_properties' => {'foo' => 'bar'}
@@ -66,7 +66,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should make sure gateway is a single ip' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254/30',
           'cloud_properties' => {'foo' => 'bar'}
@@ -77,7 +77,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should make sure gateway is inside the subnet' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '190.168.0.254',
           'cloud_properties' => {'foo' => 'bar'}
@@ -88,7 +88,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should make sure gateway is not the network id' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.0',
           'cloud_properties' => {'foo' => 'bar'}
@@ -99,7 +99,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should make sure gateway is not the broadcast IP' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.255',
           'cloud_properties' => {'foo' => 'bar'}
@@ -109,7 +109,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should allow DNS servers' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24',
         'dns' => %w(1.2.3.4 5.6.7.8),
         'gateway' => '192.168.0.254',
@@ -120,7 +120,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should not allow reservation of reserved IPs' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24', # 254 IPs
         'reserved' => '192.168.0.5 - 192.168.0.10', # 6 IPs
         'gateway' => '192.168.0.254', # 1 IP
@@ -138,7 +138,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
       let(:reserved_ranges) { [NetAddr::CIDR.create('192.168.0.0/28')] }
 
       it 'should not allow reservation of IPs from legacy reserved ranges' do
-        subnet = subnet_spec(
+        subnet = make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
         )
@@ -147,7 +147,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
       end
 
       it 'should allocate dynamic IPs outside of those ranges' do
-        subnet = subnet_spec(
+        subnet = make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
         )
@@ -156,7 +156,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
       end
 
       it 'allows specifying static IPs that are in legacy reserved ranges' do
-        subnet = subnet_spec(
+        subnet = make_subnet(
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
           'static' => ['192.168.0.1']
@@ -168,7 +168,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should fail when reserved range is not valid' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'reserved' => '192.167.0.5 - 192.168.0.10',
           'gateway' => '192.168.0.254',
@@ -180,7 +180,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should allow reservation of static IPs' do
-      subnet = subnet_spec(
+      subnet = make_subnet(
         'range' => '192.168.0.0/24', # 254 IPs
         'static' => '192.168.0.5 - 192.168.0.10', # 6 IPs
         'gateway' => '192.168.0.254', # 1 IP
@@ -197,7 +197,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should fail when the static IP is not valid' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'static' => '192.167.0.5 - 192.168.0.10',
           'gateway' => '192.168.0.254',
@@ -210,7 +210,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
     it 'should fail when the static IP is in reserved range' do
       expect {
-        subnet_spec(
+        make_subnet(
           'range' => '192.168.0.0/24',
           'reserved' => '192.168.0.5 - 192.168.0.10',
           'static' => '192.168.0.5',
@@ -225,7 +225,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
   describe :overlaps? do
     before(:each) do
-      @subnet = subnet_spec(
+      @subnet = make_subnet(
         'range' => '192.168.0.0/24',
         'gateway' => '192.168.0.254',
         'cloud_properties' => {'foo' => 'bar'},
@@ -233,7 +233,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should return false when the given range does not overlap' do
-      other = subnet_spec(
+      other = make_subnet(
         'range' => '192.168.1.0/24',
         'gateway' => '192.168.1.254',
         'cloud_properties' => {'foo' => 'bar'},
@@ -242,12 +242,74 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
     end
 
     it 'should return true when the given range overlaps' do
-      other = subnet_spec(
+      other = make_subnet(
         'range' => '192.168.0.128/28',
         'gateway' => '192.168.0.142',
         'cloud_properties' => {'foo' => 'bar'},
       )
       expect(@subnet.overlaps?(other)).to eq(true)
+    end
+  end
+  
+  describe 'validate!' do
+    context 'with no availability zone specified' do
+      it 'does not care whether that az name is in the list' do
+        subnet = make_subnet(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+        )
+
+        expect { subnet.validate!([]) }.to_not raise_error
+      end
+    end
+    
+    context 'with a nil availability zone' do
+      it 'errors' do
+        subnet = make_subnet(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'availability_zone' => nil
+        )
+
+        expect { subnet.validate!([instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)]) }.to_not raise_error
+      end
+    end
+    
+    context 'with an availability zone that is present' do
+      it 'is valid' do
+        subnet = make_subnet(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'availability_zone' => 'foo'
+        )
+
+        expect {
+          subnet.validate!([
+              instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'bar'),
+              instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'foo'),
+            ])
+        }.to_not raise_error
+      end
+    end
+
+    context 'with an availability zone that is not present' do
+      it 'errors' do
+        subnet = make_subnet(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'availability_zone' => 'foo'
+        )
+
+        expect {
+          subnet.validate!([
+              instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'bar'),
+            ])
+        }.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'net_a' refers to an unknown availability zone 'foo'")
+      end
     end
   end
 end
