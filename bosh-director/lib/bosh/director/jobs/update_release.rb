@@ -59,10 +59,6 @@ module Bosh::Director
           process_release(release_dir)
         }
 
-        if @rebase && @packages_unchanged && @jobs_unchanged
-          raise DirectorError, "Rebase is attempted without any job or package changes"
-        end
-
         "Created release `#{@name}/#{@version}'"
 
       rescue Exception => e

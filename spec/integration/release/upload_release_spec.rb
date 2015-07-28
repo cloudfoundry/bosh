@@ -18,6 +18,30 @@ describe 'upload release', type: :integration do
     expect(out).to match /appcloud.+0\.1/
   end
 
+  it 'can upload a release without any package changes when using --rebase option' do
+    Dir.chdir(ClientSandbox.test_release_dir) do
+      FileUtils.rm_rf('dev_releases')
+
+      out = bosh_runner.run_in_current_dir('create release --with-tarball')
+      release_tarball = parse_release_tarball_path(out)
+
+      target_and_login
+
+      # upload the release for the first time
+      out = bosh_runner.run("upload release #{release_tarball}")
+      expect(out).to match /release uploaded/i
+
+      # upload the same release with --rebase option
+      out = bosh_runner.run("upload release #{release_tarball} --rebase")
+      expect(out).to match /release rebased/i
+
+      # bosh should be able to generate the next version of the release
+      out = bosh_runner.run('releases')
+      expect(out).to match /releases total: 1/i
+      expect(out).to match /bosh-release.+0\+dev\.1.*0\+dev\.2/m
+    end
+  end
+
   # ~33s
   it 'uploads the latest generated release if no release path given' do
     Dir.chdir(ClientSandbox.test_release_dir) do
