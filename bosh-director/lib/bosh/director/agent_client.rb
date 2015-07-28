@@ -52,64 +52,64 @@ module Bosh::Director
     end
 
     def method_missing(method_name, *args)
-      send_message(method_name, *args)
+      handle_message_with_retry(method_name, *args)
     end
 
     def get_state(*args)
-      send_long_running_message(:get_state, *args)
+      send_message(:get_state, *args)
     end
 
     def cancel_task(*args)
-      send_long_running_message(:cancel_task, *args)
+      send_message(:cancel_task, *args)
     end
 
     def list_disk(*args)
-      send_long_running_message(:list_disk, *args)
+      send_message(:list_disk, *args)
     end
 
     def prepare_network_change(*args)
-      send_long_running_message(:prepare_network_change, *args)
+      send_message(:prepare_network_change, *args)
     end
 
     def start(*args)
-      send_long_running_message(:start, *args)
+      send_message(:start, *args)
     end
 
     def prepare(*args)
-      send_long_running_message(:prepare, *args)
+      send_message(:prepare, *args)
     end
 
     def apply(*args)
-      send_long_running_message(:apply, *args)
+      send_message(:apply, *args)
     end
 
     def compile_package(*args)
-      send_long_running_message(:compile_package, *args)
+      send_message(:compile_package, *args)
     end
 
     def drain(*args)
-      send_long_running_message(:drain, *args)
+      send_message(:drain, *args)
     end
 
     def fetch_logs(*args)
-      send_long_running_message(:fetch_logs, *args)
+      send_message(:fetch_logs, *args)
     end
 
     def migrate_disk(*args)
-      send_long_running_message(:migrate_disk, *args)
+      send_message(:migrate_disk, *args)
     end
 
     def mount_disk(*args)
-      send_long_running_message(:mount_disk, *args)
+      send_message(:mount_disk, *args)
     end
 
     def unmount_disk(*args)
-      send_long_running_message(:unmount_disk, *args)
+      send_message(:unmount_disk, *args)
     end
 
     def update_settings(certs)
       begin
-        send_long_running_message(:update_settings, {"trusted_certs" => certs})
+        send_message(:update_settings, {"trusted_certs" => certs})
       rescue RpcRemoteException => e
         if e.message =~ /unknown message/
           @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")
@@ -120,11 +120,11 @@ module Bosh::Director
     end
 
     def stop(*args)
-      send_long_running_message(:stop, *args)
+      send_message(:stop, *args)
     end
 
     def start_errand(*args)
-      start_long_running_task(:run_errand, *args)
+      start_task(:run_errand, *args)
     end
 
     def wait_for_task(agent_task_id, &blk)
@@ -140,7 +140,7 @@ module Bosh::Director
     end
 
     def configure_networks(*args)
-      send_long_running_message(:configure_networks, *args)
+      send_message(:configure_networks, *args)
     end
 
     def wait_until_ready(deadline = 600)
@@ -261,7 +261,7 @@ module Bosh::Director
       @resource_manager.delete_resource(blob_id)
     end
 
-    def send_message(message_name, *args)
+    def handle_message_with_retry(message_name, *args)
       retries = @retry_methods[message_name] || 0
       begin
         handle_method(message_name, args)
@@ -274,8 +274,8 @@ module Bosh::Director
       end
     end
 
-    def send_long_running_message(method_name, *args, &blk)
-      task = start_long_running_task(method_name, *args)
+    def send_message(method_name, *args, &blk)
+      task = start_task(method_name, *args)
       if task['agent_task_id']
         wait_for_task(task['agent_task_id'], &blk)
       else
@@ -283,8 +283,8 @@ module Bosh::Director
       end
     end
 
-    def start_long_running_task(method_name, *args)
-      AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
+    def start_task(method_name, *args)
+      AgentMessageConverter.convert_old_message_to_new(handle_message_with_retry(method_name, *args))
     end
 
     def get_task_status(agent_task_id)

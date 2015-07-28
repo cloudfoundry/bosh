@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe AgentClient do
-    def self.it_acts_as_a_long_running_message(message_name)
+    def self.it_acts_as_asynchronous_message(message_name)
       describe "##{message_name}" do
         let(:task) do
           {
@@ -13,7 +13,7 @@ module Bosh::Director
         end
 
         before do
-          allow(client).to receive_messages(send_message: task)
+          allow(client).to receive_messages(handle_message_with_retry: task)
           allow(client).to receive(:get_task) do
             task['state'] = 'no longer running'
             task
@@ -28,7 +28,7 @@ module Bosh::Director
 
         it 'decorates the original send_message implementation' do
           client.public_send(message_name, 'fake', 'args')
-          expect(client).to have_received(:send_message).with(message_name, 'fake', 'args')
+          expect(client).to have_received(:handle_message_with_retry).with(message_name, 'fake', 'args')
         end
 
         it 'periodically polls the task while it is running' do
@@ -59,7 +59,7 @@ module Bosh::Director
         end
 
         before do
-          allow(client).to receive_messages(send_message: task)
+          allow(client).to receive_messages(handle_message_with_retry: task)
           allow(client).to receive(:wait_for_task)
 
           allow(client).to receive(:get_task) do
@@ -92,21 +92,20 @@ module Bosh::Director
             allow(Api::ResourceManager).to receive(:new)
           end
 
-          it_acts_as_a_long_running_message :prepare
-          it_acts_as_a_long_running_message :apply
-          it_acts_as_a_long_running_message :compile_package
-          it_acts_as_a_long_running_message :drain
-          it_acts_as_a_long_running_message :fetch_logs
-          it_acts_as_a_long_running_message :migrate_disk
-          it_acts_as_a_long_running_message :mount_disk
-          it_acts_as_a_long_running_message :unmount_disk
-          it_acts_as_a_long_running_message :configure_networks
-          it_acts_as_a_long_running_message :stop
-          it_acts_as_a_long_running_message :cancel_task
-          it_acts_as_a_long_running_message :get_state
-          it_acts_as_a_long_running_message :list_disk
-          it_acts_as_a_long_running_message :prepare_network_change
-          it_acts_as_a_long_running_message :start
+          it_acts_as_asynchronous_message :prepare
+          it_acts_as_asynchronous_message :apply
+          it_acts_as_asynchronous_message :compile_package
+          it_acts_as_asynchronous_message :drain
+          it_acts_as_asynchronous_message :fetch_logs
+          it_acts_as_asynchronous_message :migrate_disk
+          it_acts_as_asynchronous_message :mount_disk
+          it_acts_as_asynchronous_message :unmount_disk
+          it_acts_as_asynchronous_message :configure_networks
+          it_acts_as_asynchronous_message :stop
+          it_acts_as_asynchronous_message :cancel_task
+          it_acts_as_asynchronous_message :list_disk
+          it_acts_as_asynchronous_message :prepare_network_change
+          it_acts_as_asynchronous_message :start
         end
 
         describe 'update_settings' do
@@ -130,7 +129,7 @@ module Bosh::Director
           end
 
           it 'periodically polls the update settings task while it is running' do
-            allow(client).to receive(:send_message).and_return task
+            allow(client).to receive(:handle_message_with_retry).and_return task
             allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
             expect(client).to receive(:get_task).with('fake-agent_task_id')
             client.update_settings("these are the certificates")
