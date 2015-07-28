@@ -63,5 +63,22 @@ module Bosh::Director
       ip_to_netaddr(ip).ip
     end
 
+    class CIDRIP
+      def initialize(ip)
+        if ip.kind_of?(NetAddr::CIDR)
+          @cidr = ip
+        else
+          @cidr = NetAddr::CIDR.create(ip)
+        end
+      end
+
+      def to_i
+        @cidr.to_i
+      end
+
+      def to_s
+        @cidr.ip.to_s
+      end
+    end
   end
 end

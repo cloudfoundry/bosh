@@ -5,13 +5,12 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::IpUtil do
   include Bosh::Director::IpUtil
 
+  before(:each) do
+    @obj = Object.new
+    @obj.extend(Bosh::Director::IpUtil)
+  end
+
   describe "each_ip" do
-
-    before(:each) do
-      @obj = Object.new
-      @obj.extend(Bosh::Director::IpUtil)
-    end
-
     it "should handle single ip" do
       counter = 0
       @obj.each_ip("1.2.3.4") do |ip|
@@ -30,7 +29,7 @@ describe Bosh::Director::IpUtil do
       expect(counter).to eq(256)
     end
 
-    it "should handle an differently formatted range" do
+    it "should handle a differently formatted range" do
       counter = 0
       @obj.each_ip("1.0.0.0 - 1.0.1.0") do |ip|
         expect(ip).to eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
@@ -54,4 +53,9 @@ describe Bosh::Director::IpUtil do
 
   end
 
+  describe 'format_ip' do
+    it 'converts integer to CIDR IP' do
+      expect(@obj.format_ip(168427582)).to eq('10.10.0.62')
+    end
+  end
 end

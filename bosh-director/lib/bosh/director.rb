@@ -46,6 +46,7 @@ require 'bosh/director/ip_util'
 require 'bosh/director/lock_helper'
 require 'bosh/director/validation_helper'
 require 'bosh/director/download_helper'
+require 'bosh/director/tagged_logger'
 
 require 'bosh/director/version'
 require 'bosh/director/config'

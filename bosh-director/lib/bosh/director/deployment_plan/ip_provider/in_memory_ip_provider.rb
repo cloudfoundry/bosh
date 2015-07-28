@@ -6,6 +6,7 @@ module Bosh::Director
       def initialize(range, network_name, reserved_ips, static_ips, logger)
         @range = range
         @network_name = network_name
+        @network_desc = "network '#{@network_name}' (#{@range})"
         @available_dynamic_ips = Set.new
         @available_static_ips = Set.new
         @static_ip_pool = Set.new
@@ -30,45 +31,44 @@ module Bosh::Director
         @dynamic_ip_pool = @available_dynamic_ips.dup
         @static_ip_pool = @available_static_ips.dup
 
-        @logger = logger
-        @log_tag = '[ip-reservation][in-memory-ip-provider]'
+        @logger = TaggedLogger.new(logger, 'network-configuration', 'in-memory-ip-provider')
       end
 
       def allocate_dynamic_ip
         ip = @available_dynamic_ips.first
         if ip
-          @logger.debug("#{@log_tag} Allocating dynamic ip '#{ip}'")
+          @logger.debug("Allocated dynamic IP '#{format_ip(ip)}' for #{@network_desc}")
           @available_dynamic_ips.delete(ip)
         end
         ip
       end
 
       def reserve_ip(ip)
-        ip = ip.to_i
-        if @available_static_ips.delete?(ip)
-          @logger.debug("#{@log_tag} Reserved static ip '#{ip}'")
+        ip = CIDRIP.new(ip)
+        if @available_static_ips.delete?(ip.to_i)
+          @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")
           :static
-        elsif @available_dynamic_ips.delete?(ip)
-          @logger.debug("#{@log_tag} Reserved dynamic ip '#{ip}'")
+        elsif @available_dynamic_ips.delete?(ip.to_i)
+          @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
           :dynamic
         else
-          @logger.error("#{@log_tag} Failed to reserve ip '#{ip}'")
+          @logger.error("Failed to reserve ip '#{ip}' for #{@network_desc}: does not belong to static or dynamic pool")
           nil
         end
       end
 
       def release_ip(ip)
-        ip = ip.to_i
-        if @dynamic_ip_pool.include?(ip)
-          @logger.debug("#{@log_tag} Releasing dynamic ip '#{ip}'")
-          @available_dynamic_ips.add(ip)
-        elsif @static_ip_pool.include?(ip)
-          @logger.debug("#{@log_tag} Releasing static ip '#{ip}'")
-          @available_static_ips.add(ip)
+        ip = CIDRIP.new(ip)
+        if @dynamic_ip_pool.include?(ip.to_i)
+          @logger.debug("Releasing dynamic ip '#{ip}' for #{@network_desc}")
+          @available_dynamic_ips.add(ip.to_i)
+        elsif @static_ip_pool.include?(ip.to_i)
+          @logger.debug("Releasing static ip '#{ip}' for #{@network_desc}")
+          @available_static_ips.add(ip.to_i)
         else
-          @logger.debug("#{@log_tag} Failed to release ip '#{ip}': does not belong to static or dynamic pool")
+          @logger.debug("Failed to release ip '#{ip}' for #{@network_desc}: does not belong to static or dynamic pool")
           raise NetworkReservationIpNotOwned,
-            "Can't release IP `#{format_ip(ip)}' " +
+            "Can't release IP `#{ip}' " +
               "back to `#{@network_name}' network: " +
               "it's neither in dynamic nor in static pool"
         end

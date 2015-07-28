@@ -26,6 +26,8 @@ module Bosh::Director
           safe_property(network_spec, "cloud_properties", class: Hash, default: {})
 
         @dns = dns_servers(network_spec["name"], network_spec)
+
+        @logger = TaggedLogger.new(@logger, 'network-configuration')
       end
 
       ##
@@ -38,10 +40,10 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.static?
-          @logger.error("[ip-reservation] Failed to reserve IP for dynamic network '#{@name}': IP belongs to static range")
+          @logger.error("Failed to reserve IP for dynamic network '#{@name}': IP belongs to static range")
           reservation.error = NetworkReservation::WRONG_TYPE
         else
-          @logger.debug("[ip-reservation] Reserving IP for dynamic network '#{@name}'")
+          @logger.debug("Reserving IP for dynamic network '#{@name}'")
           reservation.ip = DYNAMIC_IP
           reservation.reserved = true
           reservation.type = NetworkReservation::DYNAMIC
@@ -54,7 +56,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
-        @logger.debug("[ip-reservation] Releasing IP for dynamic network '#{@name}'")
+        @logger.debug("Releasing IP for dynamic network '#{@name}'")
         validate_ip(reservation)
       end
 

@@ -273,7 +273,7 @@ module Bosh::Director::DeploymentPlan
           expect {
             ip_provider.release_ip(ip_address)
           }.to raise_error Bosh::Director::NetworkReservationIpNotOwned,
-              "Can't release IP `192.168.0.3' back to `fake-network' network: it's neither in dynamic nor in static pool"
+              "Can't release IP '192.168.0.3' back to network 'fake-network': it's neither in dynamic nor in static pool"
         end
       end
     end

@@ -16,6 +16,7 @@ module Bosh::Director
         @cloud_properties = safe_property(network_spec, "cloud_properties",
           class: Hash, default: {})
         @reserved_ips = Set.new
+        @logger = TaggedLogger.new(logger, 'network-configuration')
       end
 
       ##
@@ -28,17 +29,17 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.ip.nil?
-          @logger.error("[ip-reservation] Failed to reserve IP for vip network '#{@name}': IP must be provided")
+          @logger.error("Failed to reserve IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
                 "Must have IP for static reservations"
         elsif reservation.dynamic?
-          @logger.error("[ip-reservation] Failed to reserve IP '#{reservation.ip}' for vip network '#{@name}': IP should not belong to dynamic range")
+          @logger.error("Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP should not belong to dynamic range")
           reservation.error = NetworkReservation::WRONG_TYPE
         elsif @reserved_ips.include?(reservation.ip)
-          @logger.error("[ip-reservation] Failed to reserve IP '#{reservation.ip}' for vip network '#{@name}': IP already reserved")
+          @logger.error("Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP already reserved")
           reservation.error = NetworkReservation::USED
         else
-          @logger.debug("[ip-reservation] Reserving IP '#{reservation.ip}' for vip network '#{@name}'")
+          @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
           reservation.reserved = true
           reservation.type = NetworkReservation::STATIC
           @reserved_ips.add(reservation.ip)
@@ -51,11 +52,12 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
-        @logger.debug("[ip-reservation] Releasing IP '#{reservation.ip}' for vip network '#{@name}'")
         unless reservation.ip
+          @logger.error("Failed to release IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
                 "Can't release reservation without an IP"
         end
+        @logger.debug("Releasing IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
         @reserved_ips.delete(reservation.ip)
       end
 

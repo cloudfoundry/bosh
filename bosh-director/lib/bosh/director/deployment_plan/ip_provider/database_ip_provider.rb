@@ -11,69 +11,72 @@ module Bosh::Director::DeploymentPlan
       @deployment_model = deployment_model
       @range = range
       @network_name = network_name
+      @network_desc = "network '#{@network_name}' (#{@range})"
       @restricted_ips = restricted_ips
       @static_ips = static_ips
-      @logger = logger
-      @log_tag = '[ip-reservation][database-ip-provider]'
+      @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration', 'database-ip-provider')
     end
 
-    # @return [Integer] ip
+    # @return [NetAddr::CIDR] ip
     def allocate_dynamic_ip
       begin
         ip_address = try_to_allocate_dynamic_ip
       rescue OutsideRangeError
-        @logger.debug("#{@log_tag} Failed to allocate dynamic ip: no more available")
+        @logger.debug("Failed to allocate dynamic ip: no more available")
         return nil
       rescue IPAlreadyReserved
-        @logger.debug("#{@log_tag} Retrying to allocate dynamic ip: probably a race condition with another deployment")
+        @logger.debug("Retrying to allocate dynamic ip: probably a race condition with another deployment")
         # IP can be taken by other deployment that runs in parallel
         # retry until succeeds or out of range
         retry
       end
 
-      @logger.debug("#{@log_tag} Allocating dynamic ip '#{ip_address}'")
+      @logger.debug("Allocated dynamic IP '#{ip_address.ip}' for #{@network_desc}")
       ip_address.to_i
     end
 
     # @param [NetAddr::CIDR] ip
     def reserve_ip(ip)
-      if @restricted_ips.include?(ip.to_i)
-        @logger.error("#{@log_tag} Failed to reserve ip '#{ip}': IP belongs to reserved range")
+      cidr_ip = CIDRIP.new(ip)
+      if @restricted_ips.include?(cidr_ip.to_i)
+        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range")
         return nil
       end
 
       begin
-        reserve_with_deployment_validation(ip)
+        reserve_with_deployment_validation(cidr_ip)
       rescue IPOwnedByOtherDeployment
-        @logger.error("#{@log_tag} Failed to reserve ip '#{ip}': IP is reserved by another deployment")
+        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another deployment")
         return nil
       end
 
-      if @static_ips.include?(ip.to_i)
-        @logger.debug("#{@log_tag} Reserved static ip '#{ip}'")
+      if @static_ips.include?(cidr_ip.to_i)
+        @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
         :static
       else
-        @logger.debug("#{@log_tag} Reserved dynamic ip '#{ip}'")
+        @logger.debug("Reserved dynamic ip '#{cidr_ip}' for #{@network_desc}")
         :dynamic
       end
     end
 
-    # @param [NetAddr::CIDR] ip
+    # @param [NetAddr::CIDR] ip or [Integer] ip
     def release_ip(ip)
+      cidr_ip = CIDRIP.new(ip)
+
       ip_address = Bosh::Director::Models::IpAddress.first(
-        address: ip.to_i,
+        address: cidr_ip.to_i,
         network_name: @network_name,
       )
 
       unless ip_address
-        @logger.debug("#{@log_tag} Failed to release ip '#{ip}': IP is reserved by another deployment")
+        @logger.debug("Failed to release ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another deployment")
         raise Bosh::Director::NetworkReservationIpNotOwned,
-          "Can't release IP `#{format_ip(ip)}' " +
-            "back to `#{@network_name}' network: " +
+          "Can't release IP '#{cidr_ip}' " +
+            "back to network '#{@network_name}': " +
             "it's neither in dynamic nor in static pool"
       end
 
-      @logger.debug("#{@log_tag} Releasing ip '#{ip}'")
+      @logger.debug("Releasing ip '#{cidr_ip}'")
       ip_address.destroy
     end
 

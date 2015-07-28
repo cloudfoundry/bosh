@@ -4,7 +4,7 @@ module Bosh::Director
       @instance = instance
       @agent_client = agent_client
       @cloud = cloud
-      @logger = logger
+      @logger = TaggedLogger.new(logger, 'network-configuration')
     end
 
     # return boolean indicating whether success to recreate vm
@@ -14,7 +14,7 @@ module Bosh::Director
       vm_cid = @instance.model.vm.cid
       network_settings = @instance.network_settings
 
-      @logger.debug("[ip-reservation] Updating instance '#{vm_cid}' with new network settings: #{network_settings}")
+      @logger.debug("Updating instance '#{vm_cid}' with new network settings: #{network_settings}")
 
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
@@ -29,7 +29,7 @@ module Bosh::Director
         @cloud.configure_networks(vm_cid, network_settings)
         selected_strategy.after_configure_networks
       rescue Bosh::Clouds::NotSupported => e
-        @logger.debug("[ip-reservation] Failed to reconfigure VM '#{vm_cid}' in place: #{e.inspect}")
+        @logger.debug("Failed to reconfigure VM '#{vm_cid}' in place: #{e.inspect}")
         return false
       end
 
