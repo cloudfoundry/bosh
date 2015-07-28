@@ -83,25 +83,24 @@ module Bosh::Director
             {}
         )
         network_name = planner.networks.first.name
+        resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
+        planner.cloud_planner = DeploymentPlan::CloudPlanner.new({
+            networks: planner.networks,
+            disk_pools: planner.disk_pools,
+            availability_zones: planner.availability_zones,
+            resource_pools: [resource_pool],
+            compilation: planner.compilation,
+          })
 
-        fake_resource_pool_manifest = {
-            "name" => "just_for_compiling",
-            "network" => network_name,
-            "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
-        }
-
-        resource_pool = DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, Config.logger)
-        planner.add_resource_pool(resource_pool)
         planner.reset_jobs
-
-        fake_job = create_fake_job(planner, fake_resource_pool_manifest, network_name)
-        planner.add_job(fake_job)
+        planner.add_job(
+          create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
+        )
 
         planner
       end
 
       def create_tarball
-
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
         compiled_packages_group = CompiledPackageGroup.new(@release_version, @stemcell)
@@ -129,12 +128,21 @@ module Bosh::Director
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
-      def create_fake_job(planner, fake_resource_pool_manifest, network_name)
+      def create_resource_pool_with_the_right_stemcell(network_name)
+        fake_resource_pool_manifest = {
+          "name" => "just_for_compiling",
+          "network" => network_name,
+          "stemcell" => {"name" => @stemcell.name, "version" => @stemcell.version}
+        }
+        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, Config.logger)
+      end
+
+      def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)
         fake_job_spec_for_compiling = {
             "name" => "dummy-job-for-compilation",
             "release" => @release_name,
             "instances" => 1,
-            "resource_pool" => fake_resource_pool_manifest['name'],
+            "resource_pool" => fake_resource_pool_name,
             "templates" => @release_version.templates.map do |template|
               { "name" => template.name, "release" => @release_name }
             end,
@@ -148,7 +156,6 @@ module Bosh::Director
         fake_job.templates.each { |template| template.bind_models }
         fake_job
       end
-
     end
   end
 end

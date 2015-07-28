@@ -83,9 +83,9 @@ module Bosh::Director
         :networks,
         :network,
         :availability_zone,
+        :availability_zones,
         :resource_pools,
         :resource_pool,
-        :add_resource_pool, # for export release
         :disk_pools,
         :disk_pool,
         :compilation
@@ -212,71 +212,42 @@ module Bosh::Director
     end
 
     class CloudPlanner
-      # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
-      #   Resource pool and other configuration for compilation workers
       attr_accessor :compilation
 
-      def initialize
-        @networks = {}
-        @resource_pools = {}
-        @disk_pools = {}
-        @availability_zones = {}
+      def initialize(options)
+        @networks = index_by_name(options.fetch(:networks))
+        @resource_pools = index_by_name(options.fetch(:resource_pools))
+        @disk_pools = index_by_name(options.fetch(:disk_pools))
+        @availability_zones = index_by_name(options.fetch(:availability_zones))
+        @compilation = options.fetch(:compilation)
       end
 
       def model
         nil
       end
 
-      def add_availability_zone(availability_zone)
-        @availability_zones[availability_zone.name] = availability_zone
-      end
-
       def availability_zone(name)
         @availability_zones[name]
       end
 
-      # Adds a resource pool by name
-      # @param [Bosh::Director::DeploymentPlan::ResourcePool] resource_pool
-      def add_resource_pool(resource_pool)
-        @resource_pools[resource_pool.name] = resource_pool
+      def availability_zones
+        @availability_zones.values
       end
 
-      # Returns all resource pools in a deployment plan
-      # @return [Array<Bosh::Director::DeploymentPlan::ResourcePool>]
       def resource_pools
         @resource_pools.values
       end
 
-      # Returns a named resource pool spec
-      # @param [String] name Resource pool name
-      # @return [Bosh::Director::DeploymentPlan::ResourcePool]
       def resource_pool(name)
         @resource_pools[name]
       end
 
-      # Adds a network by name
-      # @param [Bosh::Director::DeploymentPlan::Network] network
-      def add_network(network)
-        @networks[network.name] = network
-      end
-
-      # Returns all networks in a deployment plan
-      # @return [Array<Bosh::Director::DeploymentPlan::Network>]
       def networks
         @networks.values
       end
 
-      # Returns a named network
-      # @param [String] name
-      # @return [Bosh::Director::DeploymentPlan::Network]
       def network(name)
         @networks[name]
-      end
-
-      # Adds a disk pool by name
-      # @param [Bosh::Director::DeploymentPlan::DiskPool] disk_pool
-      def add_disk_pool(disk_pool)
-        @disk_pools[disk_pool.name] = disk_pool
       end
 
       def disk_pools
@@ -289,6 +260,14 @@ module Bosh::Director
 
       def disk_pool(name)
         @disk_pools[name]
+      end
+
+      private
+
+      def index_by_name(collection)
+        collection.inject({}) do |index, item|
+          index.merge(item.name => item)
+        end
       end
     end
   end

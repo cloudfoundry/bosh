@@ -188,9 +188,13 @@ module Bosh::Director
                 'version' => '1'
               }
             }
-            cloud_planner = CloudPlanner.new
-            cloud_planner.add_network(Network.new({'name' => 'default'}, logger))
-            cloud_planner.add_resource_pool(ResourcePool.new(stemcell_spec, logger))
+            cloud_planner = CloudPlanner.new({
+                networks: [Network.new({'name' => 'default'}, logger)],
+                disk_pools: [],
+                availability_zones: [],
+                resource_pools: [ResourcePool.new(stemcell_spec, logger)],
+                compilation: nil,
+              })
             planner.cloud_planner = cloud_planner
             Assembler.new(planner, nil, cloud_config,  {}, Config.event_log, Config.logger).bind_stemcells
           end

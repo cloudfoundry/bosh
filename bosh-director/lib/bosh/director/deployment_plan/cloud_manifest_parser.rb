@@ -16,13 +16,13 @@ module Bosh::Director
         resource_pools = parse_resource_pools(cloud_manifest)
         disk_pools = parse_disk_pools(cloud_manifest)
 
-        cloud_planner = CloudPlanner.new
-        azs.each { |az| cloud_planner.add_availability_zone(az) }
-        networks.each { |network| cloud_planner.add_network(network) }
-        cloud_planner.compilation = compilation_config
-        resource_pools.each { |rp| cloud_planner.add_resource_pool(rp) }
-        disk_pools.each { |dp| cloud_planner.add_disk_pool(dp) }
-        cloud_planner
+         CloudPlanner.new({
+            availability_zones: azs,
+            networks: networks,
+            compilation: compilation_config,
+            resource_pools: resource_pools,
+            disk_pools: disk_pools,
+          })
       end
 
       private
@@ -66,7 +66,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_networks) { |network| network.canonical_name }
         unless duplicates.empty?
-          raise DeploymentCanonicalNetworkNameTaken,"Invalid network name `#{duplicates.first.name}', canonical name already taken"
+          raise DeploymentCanonicalNetworkNameTaken, "Invalid network name `#{duplicates.first.name}', canonical name already taken"
         end
 
         parsed_networks
