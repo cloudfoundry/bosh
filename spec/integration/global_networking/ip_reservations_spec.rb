@@ -414,6 +414,24 @@ describe 'global networking', type: :integration do
       expect(new_ips).to eq(['192.168.1.3'])
     end
 
+    it 'can use IP that is no longer in reserved section' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, shift_ip_range_by: 1)
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      expect(new_ips).to eq(['192.168.1.3'])
+
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
+
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      expect(new_ips).to match_array(['192.168.1.2', '192.168.1.3'])
+    end
+
     context 'using legacy network configuration (no cloud config)' do
       it 'gives the correct error message when there are not enough IPs for compilation' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
