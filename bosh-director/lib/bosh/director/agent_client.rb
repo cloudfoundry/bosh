@@ -67,6 +67,10 @@ module Bosh::Director
       send_message(:list_disk, *args)
     end
 
+    def prepare_configure_networks(*args)
+      send_message(:prepare_configure_networks, *args)
+    end
+
     def prepare_network_change(*args)
       send_message(:prepare_network_change, *args)
     end

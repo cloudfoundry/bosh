@@ -81,7 +81,7 @@ module Bosh::Director
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
 
-        describe 'long running messages' do
+        describe 'send asynchronous messages' do
           subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
           before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
@@ -105,6 +105,7 @@ module Bosh::Director
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
           it_acts_as_asynchronous_message :prepare_network_change
+          it_acts_as_asynchronous_message :prepare_configure_networks
           it_acts_as_asynchronous_message :start
         end
 
