@@ -18,6 +18,17 @@ describe 'delete release', type: :integration do
     OUT
   end
 
+  it 'can delete an uploaded compiled release (no source)' do
+    target_and_login
+
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+
+    out = bosh_runner.run("delete release hello-go 50")
+    expect(out).to match regexp("Started deleting packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393. Done")
+    expect(out).to match regexp('Deleted `hello-go/50')
+  end
+
   # ~22s
   it 'allows deleting a particular release version' do
     target_and_login
