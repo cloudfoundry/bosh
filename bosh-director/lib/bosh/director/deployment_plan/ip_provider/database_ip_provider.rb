@@ -3,12 +3,11 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
     class OutsideRangeError < StandardError; end
     class IPAlreadyReserved < StandardError; end
-    class IPOwnedByOtherDeployment < StandardError; end
+    class IPOwnedByOtherInstance < StandardError; end
 
     # @param [NetAddr::CIDR] range
     # @param [String] network_name
-    def initialize(deployment_model, range, network_name, restricted_ips, static_ips, logger)
-      @deployment_model = deployment_model
+    def initialize(range, network_name, restricted_ips, static_ips, logger)
       @range = range
       @network_name = network_name
       @network_desc = "network '#{@network_name}' (#{@range})"
@@ -18,9 +17,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     # @return [NetAddr::CIDR] ip
-    def allocate_dynamic_ip
+    def allocate_dynamic_ip(instance)
       begin
-        ip_address = try_to_allocate_dynamic_ip
+        ip_address = try_to_allocate_dynamic_ip(instance)
       rescue OutsideRangeError
         @logger.debug("Failed to allocate dynamic ip: no more available")
         return nil
@@ -36,7 +35,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     # @param [NetAddr::CIDR] ip
-    def reserve_ip(ip)
+    def reserve_ip(instance, ip)
       cidr_ip = CIDRIP.new(ip)
       if @restricted_ips.include?(cidr_ip.to_i)
         @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range")
@@ -44,9 +43,9 @@ module Bosh::Director::DeploymentPlan
       end
 
       begin
-        reserve_with_deployment_validation(cidr_ip)
-      rescue IPOwnedByOtherDeployment
-        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another deployment")
+        reserve_with_instance_validation(instance, cidr_ip)
+      rescue IPOwnedByOtherInstance
+        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another instance")
         return nil
       end
 
@@ -69,7 +68,7 @@ module Bosh::Director::DeploymentPlan
       )
 
       unless ip_address
-        @logger.debug("Failed to release ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another deployment")
+        @logger.debug("Failed to release ip '#{cidr_ip}' for #{@network_desc}: not reserved")
         raise Bosh::Director::NetworkReservationIpNotOwned,
           "Can't release IP '#{cidr_ip}' " +
             "back to network '#{@network_name}': " +
@@ -82,7 +81,7 @@ module Bosh::Director::DeploymentPlan
 
     private
 
-    def try_to_allocate_dynamic_ip
+    def try_to_allocate_dynamic_ip(instance)
       addrs = Set.new(network_addresses)
       addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
 
@@ -97,7 +96,7 @@ module Bosh::Director::DeploymentPlan
         raise OutsideRangeError
       end
 
-      save_ip(ip_address)
+      save_ip(instance, ip_address)
 
       ip_address
     end
@@ -108,9 +107,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     # @param [NetAddr::CIDR] ip
-    def reserve_with_deployment_validation(ip)
+    def reserve_with_instance_validation(instance, ip)
       # try to save IP first before validating it's deployment to prevent race conditions
-      save_ip(ip)
+      save_ip(instance, ip)
     rescue IPAlreadyReserved
       ip_address = Bosh::Director::Models::IpAddress.first(
         address: ip.to_i,
@@ -118,23 +117,23 @@ module Bosh::Director::DeploymentPlan
       )
 
       if ip_address
-        if ip_address.deployment == @deployment_model
+        if ip_address.instance == instance.model
           return ip_address
         else
-          raise IPOwnedByOtherDeployment
+          raise IPOwnedByOtherInstance
         end
       end
     end
 
     # @param [NetAddr::CIDR] ip
-    def save_ip(ip)
+    def save_ip(instance, ip)
       Bosh::Director::Models::IpAddress.new(
         address: ip.to_i,
         network_name: @network_name,
-        deployment: @deployment_model,
+        instance: instance.model,
         task_id: Bosh::Director::Config.current_job.task_id
       ).save
-    rescue Sequel::DatabaseError
+    rescue Sequel::ValidationFailed
       raise IPAlreadyReserved
     end
   end

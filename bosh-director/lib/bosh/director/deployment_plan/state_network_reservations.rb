@@ -5,12 +5,12 @@ module Bosh::Director
         @deployment = deployment
       end
 
-      def create_from_state(state)
+      def create_from_state(instance, state)
         reservations = {}
         state.fetch('networks', []).each do |name, network_config|
           network = @deployment.network(name)
           if network
-            reservation = NetworkReservation.new(:ip => network_config['ip'])
+            reservation = NetworkReservation.new_static(instance, network_config['ip'])
             network.reserve(reservation)
             if reservation.reserved?
               reservations[network] = reservation

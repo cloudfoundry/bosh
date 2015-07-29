@@ -34,7 +34,7 @@ module Bosh::Director
         @logger = TaggedLogger.new(logger, 'network-configuration', 'in-memory-ip-provider')
       end
 
-      def allocate_dynamic_ip
+      def allocate_dynamic_ip(_)
         ip = @available_dynamic_ips.first
         if ip
           @logger.debug("Allocated dynamic IP '#{format_ip(ip)}' for #{@network_desc}")
@@ -43,7 +43,7 @@ module Bosh::Director
         ip
       end
 
-      def reserve_ip(ip)
+      def reserve_ip(_, ip)
         ip = CIDRIP.new(ip)
         if @available_static_ips.delete?(ip.to_i)
           @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")

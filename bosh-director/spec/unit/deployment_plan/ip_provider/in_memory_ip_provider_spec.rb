@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     end
+    let(:instance) { instance_double(Instance, model: Bosh::Director::Models::Instance.make) }
 
     def cidr_ip(ip)
       NetAddr::CIDR.create(ip).to_i
@@ -18,26 +19,26 @@ module Bosh::Director::DeploymentPlan
 
     describe :reserve_ip do
       it 'should reserve dynamic IPs' do
-        expect(ip_provider.reserve_ip(cidr_ip('192.168.0.1'))).to eq(:dynamic)
+        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.1'))).to eq(:dynamic)
       end
 
       it 'should reserve static IPs' do
-        expect(ip_provider.reserve_ip(cidr_ip('192.168.0.5'))).to eq(:static)
+        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(:static)
       end
 
       it 'should fail to reserve restricted IPs' do
-        expect(ip_provider.reserve_ip(cidr_ip('192.168.0.11'))).to eq(nil)
+        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.11'))).to eq(nil)
       end
 
       it 'should fail to reserve the IP if it was already reserved' do
-        expect(ip_provider.reserve_ip(cidr_ip('192.168.0.5'))).to eq(:static)
-        expect(ip_provider.reserve_ip(cidr_ip('192.168.0.5'))).to eq(nil)
+        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(:static)
+        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(nil)
       end
     end
 
     describe :allocate_dynamic_ip do
       it 'should allocate an IP from the dynamic pool' do
-        ip = ip_provider.allocate_dynamic_ip
+        ip = ip_provider.allocate_dynamic_ip(instance)
         expect(ip).to eq(cidr_ip('192.168.0.0'))
       end
 
@@ -53,7 +54,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should not allocate from the restricted pool' do
-          expect(ip_provider.allocate_dynamic_ip).to eq(nil)
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(nil)
         end
       end
 
@@ -69,7 +70,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should not allocate from the static pool' do
-          expect(ip_provider.allocate_dynamic_ip).to eq(nil)
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(nil)
         end
       end
 
@@ -85,10 +86,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should not allocate from the static pool' do
-          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.0'))
-          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.1'))
-          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.3'))
-          expect(ip_provider.allocate_dynamic_ip).to be_nil
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.0'))
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.1'))
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.3'))
+          expect(ip_provider.allocate_dynamic_ip(instance)).to be_nil
         end
       end
 
@@ -104,8 +105,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return nil' do
-          8.times { expect(ip_provider.allocate_dynamic_ip).not_to eq(nil) }
-          expect(ip_provider.allocate_dynamic_ip).to eq(nil)
+          8.times { expect(ip_provider.allocate_dynamic_ip(instance)).not_to eq(nil) }
+          expect(ip_provider.allocate_dynamic_ip(instance)).to eq(nil)
         end
       end
 
@@ -122,7 +123,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'should allocate the least recently released IP' do
           allocations = []
-          while ip = ip_provider.allocate_dynamic_ip
+          while ip = ip_provider.allocate_dynamic_ip(instance)
             allocations << ip
           end
 
@@ -134,7 +135,7 @@ module Bosh::Director::DeploymentPlan
 
           # Verify that re-acquiring the released IPs retains order
           allocations.each do |ip|
-            expect(ip_provider.allocate_dynamic_ip).to eq(ip)
+            expect(ip_provider.allocate_dynamic_ip(instance)).to eq(ip)
           end
         end
       end
@@ -156,10 +157,10 @@ module Bosh::Director::DeploymentPlan
 
         it 'should release IPs' do
           ip_address = cidr_ip('192.168.0.1')
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
-          expect(ip_provider.reserve_ip(ip_address)).to eq(nil)
+          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(nil)
           ip_provider.release_ip(ip_address)
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
         end
 
         it 'should fail if the IP is restricted' do

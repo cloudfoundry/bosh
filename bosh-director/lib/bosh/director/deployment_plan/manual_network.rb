@@ -51,7 +51,7 @@ module Bosh::Director
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
           find_subnet(reservation.ip) do |subnet|
-            type = subnet.reserve_ip(reservation.ip)
+            type = subnet.reserve_ip(reservation.instance, reservation.ip)
             if type.nil?
               @logger.debug("Failed to reserve ip '#{cidr_ip}' for manual network '#{@name}': in use")
               reservation.error = NetworkReservation::USED
@@ -71,7 +71,7 @@ module Bosh::Director
           end
           @logger.debug("Reserving dynamic ip for manual network '#{@name}'")
           @subnets.each do |subnet|
-            reservation.ip = subnet.allocate_dynamic_ip
+            reservation.ip = subnet.allocate_dynamic_ip(reservation.instance)
             if reservation.ip
               @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for manual network '#{@name}'")
               reservation.reserved = true

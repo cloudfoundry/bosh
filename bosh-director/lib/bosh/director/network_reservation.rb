@@ -25,22 +25,25 @@ module Bosh::Director
     # @return [Symbol, nil] reservation error
     attr_accessor :error
 
-    def self.new_dynamic(ip = nil)
-      new(:type => NetworkReservation::DYNAMIC, :ip => ip)
+    attr_reader :instance
+
+    def self.new_dynamic(instance)
+      new(instance, nil, NetworkReservation::DYNAMIC)
     end
 
-    def self.new_static(ip = nil)
-      new(:type => NetworkReservation::STATIC, :ip => ip)
+    def self.new_static(instance, ip)
+      new(instance, ip, NetworkReservation::STATIC)
     end
 
     ##
     # Creates a new network reservation
-    # @param [Hash] options the options to create the reservation from
-    # @option options [Integer, String, NetAddr::CIDR] :ip reservation ip
-    # @option options [Symbol] :type reservation type
-    def initialize(options = {})
-      @ip = options[:ip]
-      @type = options[:type]
+    # @param [DeploymentPlan::Instance] instance
+    # @param [Integer, String, NetAddr::CIDR] ip reservation ip
+    # @param [Symbol] type of reservation
+    def initialize(instance, ip, type)
+      @instance = instance
+      @ip = ip
+      @type = type
       @reserved = false
       @error = nil
 

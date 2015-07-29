@@ -16,12 +16,10 @@ module Bosh::Director::DeploymentPlan
           logger
         )
       end
+      let(:instance) { instance_double(Instance, model: Bosh::Director::Models::Instance.make) }
 
       it 'delegates to #reserve' do
-        reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1",
-          :type => BD::NetworkReservation::DYNAMIC
-        )
+        reservation = BD::NetworkReservation.new_dynamic(instance)
 
         expect(network).to receive(:reserve) { reservation.reserved = true }
 
@@ -29,10 +27,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'delegates to reservation#handle_error' do
-        reservation = BD::NetworkReservation.new(
-          :ip => "0.0.0.1",
-          :type => BD::NetworkReservation::DYNAMIC
-        )
+        reservation = BD::NetworkReservation.new_dynamic(instance)
 
         expect(network).to receive(:reserve) { reservation.reserved = false }
         expect(reservation).to receive(:handle_error).with('fake-origin')

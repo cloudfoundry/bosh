@@ -101,7 +101,7 @@ module Bosh::Director
         allocate_vm
         @vm.model = instance_model.vm
 
-        reservations = StateNetworkReservations.new(@deployment).create_from_state(state)
+        reservations = StateNetworkReservations.new(@deployment).create_from_state(self, state)
         take_network_reservations(reservations)
 
         @current_state = state
@@ -455,6 +455,19 @@ module Bosh::Director
         @vm.bound_instance = self
       end
 
+      # Allocates an VM in this job resource pool and binds current instance to that VM.
+      # @return [void]
+      def allocate_vm
+        vm = Vm.new
+
+        # VM is not created yet: let's just make it reference this instance
+        # so later it knows what it needs to become
+        vm.bound_instance = self
+        @vm = vm
+      end
+
+      private
+
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
@@ -472,19 +485,6 @@ module Bosh::Director
           model.state = 'started'
         end
       end
-
-      # Allocates an VM in this job resource pool and binds current instance to that VM.
-      # @return [void]
-      def allocate_vm
-        vm = Vm.new
-
-        # VM is not created yet: let's just make it reference this instance
-        # so later it knows what it needs to become
-        vm.bound_instance = self
-        @vm = vm
-      end
-
-      private
 
       # @param <[String, String]> ips_set set of [network_name, ip]
       def release_ips(ips_set)

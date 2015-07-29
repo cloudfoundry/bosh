@@ -301,12 +301,10 @@ module Bosh::Director
           end
 
           @job.instances.each_with_index do |instance, index|
-            reservation = NetworkReservation.new
             if static_ips
-              reservation.ip = static_ips[index]
-              reservation.type = NetworkReservation::STATIC
+              reservation = NetworkReservation.new_static(instance, static_ips[index])
             else
-              reservation.type = NetworkReservation::DYNAMIC
+              reservation = NetworkReservation.new_dynamic(instance)
             end
             instance.add_network_reservation(network, reservation)
           end

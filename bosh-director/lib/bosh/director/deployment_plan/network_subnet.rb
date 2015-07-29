@@ -99,16 +99,16 @@ module Bosh::Director
           subnet.range.contains?(@range)
       end
 
-      def reserve_ip(ip)
-        @ip_provider.reserve_ip(ip)
+      def reserve_ip(instance, ip)
+        @ip_provider.reserve_ip(instance, ip)
       end
 
       def release_ip(ip)
         @ip_provider.release_ip(ip)
       end
 
-      def allocate_dynamic_ip
-        @ip_provider.allocate_dynamic_ip
+      def allocate_dynamic_ip(instance)
+        @ip_provider.allocate_dynamic_ip(instance)
       end
 
       def validate!(availability_zones)
