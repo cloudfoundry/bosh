@@ -10,10 +10,6 @@ module Bosh::Director
 
       @queue = :normal
 
-      @stemcell
-      @targeted_deployment
-      @release_version
-
       def self.job_type
         :export_release
       end

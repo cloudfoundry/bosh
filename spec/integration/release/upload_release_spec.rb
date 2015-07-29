@@ -188,8 +188,44 @@ describe 'upload release', type: :integration do
   describe 'upload compiled release' do
     before { target_and_login }
 
-    it 'upload a compiled release tarball' do
+    it 'should raise an error if no stemcell matched the criteria' do
+      expect {
+        bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      }.to raise_error(RuntimeError, /No stemcells matching OS centos-7 version 3001/)
+    end
+
+    it 'should populate compiled packages for one stemcell' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}", {
+          return_exit_code: true,
+      })
+
+      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d. Done (00:00:00)")
+      expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
+      expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
+      expect(output).to include('Started compiled release has been created > hello-go/50')
+      expect(output).to include("Compiled Release uploaded")
+    end
+
+    it 'should populate compiled packages for two matching stemcells' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}", {
+           return_exit_code: true,
+       })
+
+      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d. Done (00:00:00)")
+      expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-centos-7-go_agent/3001')
+      expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
+      expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-centos-7-go_agent/3001')
+      expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
+      expect(output).to include('Started compiled release has been created > hello-go/50')
+      expect(output).to include("Compiled Release uploaded")
+    end
+
+    it 'upload a compiled release tarball' do
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}", {
          return_exit_code: true,
        })
       expect(output).to include('Started creating new packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393')
@@ -200,21 +236,19 @@ describe 'upload release', type: :integration do
     end
 
     it 'show actions in the event log' do
-      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
       event_log = bosh_runner.run('task last --event --raw')
       expect(event_log).to include("Creating new jobs")
       expect(event_log).to include("hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08")
-
-      bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-centos-7-stemcell-3001.tgz')}")
-      event_log_2 = bosh_runner.run('task last --event --raw')
-      expect(event_log_2).to include("Processing 1 existing job")
     end
 
     it 'upload a new version of compiled release tarball when the compiled release is already uploaded' do
-      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
-      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-centos-7-stemcell-3001.tgz')}", {
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}", {
         return_exit_code: true,
       })
       expect(output).to include('Started processing 1 existing package > Processing 1 existing package')

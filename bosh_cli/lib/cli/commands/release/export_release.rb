@@ -21,7 +21,11 @@ module Bosh::Cli::Command
 
         client = Bosh::Cli::Client::ExportReleaseClient.new(director)
         status, task_id = client.export(manifest.name, release.name, release.version, stemcell_os, stemcell.version)
-        task_report(status, task_id)
+
+        if status != :done
+          task_report(status, task_id)
+          return
+        end
 
         task_result_file = director.get_task_result_log(task_id)
         task_result = JSON.parse(task_result_file)
@@ -43,6 +47,7 @@ module Bosh::Cli::Command
           err("Checksum mismatch for downloaded blob `#{tarball_file_path}'")
         end
 
+        task_report(status, task_id, "Exported Release `#{release.name.make_green}/#{release.version.make_green}` for `#{stemcell_os.make_green}/#{stemcell.version.make_green}`")
       end
 
       # Returns file SHA1 checksum

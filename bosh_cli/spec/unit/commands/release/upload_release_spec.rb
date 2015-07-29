@@ -153,6 +153,16 @@ module Bosh::Cli::Command::Release
             end
           end
 
+          context 'when uploading compiled release tarball' do
+            let(:tarball_path) { spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz') }
+
+            it 'should not check if file is in release directory' do
+              allow(director).to receive(:upload_release)
+              expect(command).to_not receive(:check_if_release_dir)
+              command.upload(tarball_path)
+            end
+          end
+
           context 'when release already exists' do
             before do
               allow(director).to receive(:get_status).and_return(

@@ -51,7 +51,7 @@ module Bosh::Director
           end
 
           before do
-            allow(agent_client).to receive(:start_errand).
+            allow(agent_client).to receive(:run_errand).
               and_return('agent_task_id' => 'fake-agent-task-id')
 
             allow(logs_fetcher).to receive(:fetch).
@@ -63,7 +63,7 @@ module Bosh::Director
           it 'runs a block argument to run function while polling for errand to finish' do
             fake_block = Proc.new {}
 
-            expect(agent_client).to receive(:start_errand).with(no_args)
+            expect(agent_client).to receive(:run_errand).with(no_args)
 
             expect(agent_client).to receive(:wait_for_task) do |args, &blk|
               expect(args).to eq('fake-agent-task-id')
@@ -185,7 +185,7 @@ module Bosh::Director
         end
 
         context 'when agent does not support run_errand command' do
-          before { allow(agent_client).to receive(:start_errand).and_raise(error) }
+          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
           let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
 
           it 'raises an error' do
@@ -204,7 +204,7 @@ module Bosh::Director
         end
 
         context 'when agent times out responding to start errand task status check' do
-          before { allow(agent_client).to receive(:start_errand).and_raise(error) }
+          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
           let(:error) { RpcRemoteException.new('timeout') }
 
           it 'raises original timeout error' do

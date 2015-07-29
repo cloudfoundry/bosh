@@ -19,7 +19,16 @@ module Bosh::Cli::Command
           :skip_if_exists => options[:skip_if_exists],
         }
 
-        if release_file.nil?
+        #only check release_dir if not compiled release tarball
+        file_type = `file --mime-type -b '#{release_file}'`
+
+        compiled_release = false
+        if file_type == /application\/x-gzip/
+          tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+          compiled_release = tarball.compiled_release?
+        end
+
+        if release_file.nil? and !compiled_release
           check_if_release_dir
           release_file = release.latest_release_filename
           if release_file.nil?
@@ -135,7 +144,7 @@ module Bosh::Cli::Command
           report = tarball.compiled_release? ? 'Compiled Release uploaded' : 'Release uploaded'
         end
 
-        status, task_id = director.upload_release(tarball_path, {rebase: rebase, compiled: tarball.compiled_release?})
+        status, task_id = director.upload_release(tarball_path, {rebase: rebase})
         task_report(status, task_id, report)
       end
 

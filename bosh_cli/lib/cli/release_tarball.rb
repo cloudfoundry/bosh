@@ -6,9 +6,6 @@ module Bosh::Cli
     attr_reader :release_name, :jobs, :packages, :version
     attr_reader :skipped, :unpack_dir # Mostly for tests
 
-    @compiled_release = false
-    @packages_folder = "packages"
-
     def initialize(tarball_path)
       @tarball_path = File.expand_path(tarball_path, Dir.pwd)
       @unpack_dir   = Dir.mktmpdir
