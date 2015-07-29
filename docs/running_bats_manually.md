@@ -33,6 +33,9 @@ export BAT_NETWORKING=
 
 # the path to ssh key, if set bosh ssh will use gateway host and user (optional; required when deployed to vpc)
 #export BAT_VCAP_PRIVATE_KEY=
+
+# Run tests with --fail-fast and skip cleanup in case of failure (optional)
+#export BAT_DEBUG_MODE=
 ```
 
 The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
