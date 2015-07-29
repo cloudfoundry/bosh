@@ -67,6 +67,8 @@ module Bosh::Director
       # @return [Hash<Integer, String>] Individual instance expected states
       attr_accessor :instance_states
 
+      attr_accessor :availability_zones
+
       attr_accessor :all_properties
 
       attr_reader :link_paths

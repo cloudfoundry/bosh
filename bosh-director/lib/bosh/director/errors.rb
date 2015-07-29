@@ -154,6 +154,9 @@ module Bosh::Director
   JobInvalidPersistentDisk = err(140011)
   JobMissingLink = err(140012)
   UnusedProvidedLink = err(140013)
+  JobInvalidAvailabilityZone = err(140014)
+  JobMissingAvailabilityZones = err(140015)
+  JobUnknownAvailabilityZone = err(140016)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)

@@ -38,6 +38,7 @@ module Bosh::Director
         parse_update_config
         parse_instances
         parse_networks
+        parse_availability_zones
 
         @job
       end
@@ -330,6 +331,28 @@ module Bosh::Director
             @job.default_network[property] ||= network
           end
         end
+      end
+
+      def parse_availability_zones
+        az_names = safe_property(@job_spec, 'availability_zones', class: Array, optional: true)
+
+        return if az_names.nil?
+
+        if az_names.empty?
+          raise JobMissingAvailabilityZones, "Job `fake-job-name' has empty availability zones"
+        end
+
+        az_names.each do |name|
+          unless name.is_a?(String)
+            raise JobInvalidAvailabilityZone, "Job `#{@job.name}' has invalid availability zone '#{name}', string expected"
+          end
+
+          if @deployment.availability_zone(name).nil?
+            raise JobUnknownAvailabilityZone, "Job `#{@job.name}' references unknown availability zone '#{name}'"
+          end
+        end
+
+        @job.availability_zones = az_names
       end
 
       def validate_templates

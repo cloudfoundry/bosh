@@ -675,6 +675,73 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
+    describe 'availability_zones key' do
+      context 'when there is no key' do
+        it 'does nothing because it is optional for now, and it is nil so we can detect this case' do
+          job_spec.delete('availability_zones')
+
+          expect(parser.parse(job_spec).availability_zones).to be_nil
+        end
+      end
+
+      context 'when there is a key but empty values' do
+        it 'raises an exception' do
+          job_spec['availability_zones'] = []
+
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::JobMissingAvailabilityZones, "Job `fake-job-name' has empty availability zones"
+            )
+        end
+      end
+
+      context 'when there is a key with values' do
+        it 'parses each value as a string' do
+          job_spec['availability_zones'] = ["zone1", "zone2"]
+          allow(deployment_plan).to receive(:availability_zone).with("zone1") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+          allow(deployment_plan).to receive(:availability_zone).with("zone2") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+
+          expect(parser.parse(job_spec).availability_zones).to eq(["zone1", "zone2"])
+        end
+
+        it 'raises an exception if the value are not strings' do
+          job_spec['availability_zones'] = ['valid_zone', 3]
+          allow(deployment_plan).to receive(:availability_zone).with("valid_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::JobInvalidAvailabilityZone, "Job `fake-job-name' has invalid availability zone '3', string expected"
+            )
+        end
+
+        it 'raises an exception if the referenced AZ doesnt exist in the deployment' do
+          job_spec['availability_zones'] = ['existent_zone', 'nonexistent_zone']
+          allow(deployment_plan).to receive(:availability_zone).with("existent_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+          allow(deployment_plan).to receive(:availability_zone).with("nonexistent_zone") { nil }
+
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::JobUnknownAvailabilityZone, "Job `fake-job-name' references unknown availability zone 'nonexistent_zone'"
+            )
+        end
+      end
+
+      context 'when there is a key with the wrong type' do
+        it 'an exception is raised' do
+          job_spec['availability_zones'] = 3
+
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::ValidationInvalidType, "Property `availability_zones' (value 3) did not match the required type `Array'"
+            )
+        end
+      end
+    end
+
     def make_template(name, rel_ver)
       instance_double(
         'Bosh::Director::DeploymentPlan::Template',
