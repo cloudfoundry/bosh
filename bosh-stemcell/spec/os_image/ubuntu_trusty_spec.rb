@@ -2,9 +2,9 @@ require 'spec_helper'
 require 'rbconfig'
 
 describe 'Ubuntu 14.04 OS image', os_image: true do
-  it_behaves_like 'every OS image'
+  # it_behaves_like 'every OS image'
   it_behaves_like 'an upstart-based OS image'
-  it_behaves_like 'a Linux kernel 3.x based OS image'
+  # it_behaves_like 'a Linux kernel 3.x based OS image'
 
   describe package('apt') do
     it { should be_installed }
