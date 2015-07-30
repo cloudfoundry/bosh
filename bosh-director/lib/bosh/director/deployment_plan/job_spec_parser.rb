@@ -256,80 +256,111 @@ module Bosh::Director
       end
 
       def parse_networks
-        network_specs = safe_property(@job_spec, "networks", :class => Array)
-        if network_specs.empty?
-          raise JobMissingNetwork,
-                "Job `#{@job.name}' must specify at least one network"
+        networks = valid_networks
+        reserve_ips_for_job(networks)
+        assign_default_networks(networks)
+      end
+
+      def reserve_ips_for_job(networks)
+        networks.each do |network|
+          validate_correct_number_of_static_ips(network)
+          reserve_static_ips_for(network)
         end
+      end
 
-        network_specs.each do |network_spec|
-          network_name = safe_property(network_spec, "name", :class => String)
-          network = @deployment.network(network_name)
-          if network.nil?
-            raise JobUnknownNetwork,
-                  "Job `#{@job.name}' references an unknown network `#{network_name}'"
+      def valid_networks
+        networks = networks_from(@job_spec)
+        networks.each do |network|
+          validate_default(network)
+        end
+        networks
+      end
+
+      def assign_default_networks(networks)
+          networks.first.make_default_for_all_properties! if networks.count == 1
+
+          default_networks_for_properties = default_networks_for_properties(networks)
+          validate_only_one_default_network(default_networks_for_properties)
+          validate_default_network_for_each_property(default_networks_for_properties)
+          set_default_network_on_job(default_networks_for_properties)
+      end
+
+      def reserve_static_ips_for(network)
+        @job.instances.each_with_index do |instance, index|
+          reservation = NetworkReservation.new
+          static_ips = network.static_ips
+
+          # TODO: NetworkReservation should be 2 classes, not a class with a type field
+          if static_ips
+            reservation.ip = static_ips[index]
+            reservation.type = NetworkReservation::STATIC
+          else
+            reservation.type = NetworkReservation::DYNAMIC
           end
+          instance.add_network_reservation(network.deployment_network, reservation)
+        end
+      end
 
-          static_ips = nil
-          if network_spec["static_ips"]
-            static_ips = []
-            each_ip(network_spec["static_ips"]) do |ip|
-              static_ips << ip
-            end
-            if static_ips.size != @job.instances.size
-              raise JobNetworkInstanceIpMismatch,
-                    "Job `#{@job.name}' has #{@job.instances.size} instances but was allocated #{static_ips.size} static IPs"
-            end
-          end
-
-          default_network = safe_property(network_spec, "default", :class => Array, :optional => true)
-          if default_network
-            default_network.each do |property|
-              unless Network::VALID_DEFAULTS.include?(property)
-                raise JobNetworkInvalidDefault,
-                      "Job `#{@job.name}' specified an invalid default network property `#{property}', " +
-                      "valid properties are: " + Network::VALID_DEFAULTS.join(", ")
-              end
-
-              if @job.default_network[property]
-                raise JobNetworkMultipleDefaults,
-                      "Job `#{@job.name}' specified more than one network to contain default #{property}"
-              else
-                @job.default_network[property] = network_name
-              end
-            end
-          end
-
-          @job.instances.each_with_index do |instance, index|
-            reservation = NetworkReservation.new
-            if static_ips
-              reservation.ip = static_ips[index]
-              reservation.type = NetworkReservation::STATIC
-            else
-              reservation.type = NetworkReservation::DYNAMIC
-            end
-            instance.add_network_reservation(network, reservation)
+      def validate_default(network)
+        network.properties_for_which_the_network_is_the_default.each do |property|
+          unless Network::VALID_DEFAULTS.include?(property)
+            raise JobNetworkInvalidDefault,
+              "Job `#{@job.name}' specified an invalid default network property `#{property}', " +
+                "valid properties are: " + Network::VALID_DEFAULTS.join(", ")
           end
         end
+      end
 
-        if network_specs.size > 1
-          missing_default_properties = Network::VALID_DEFAULTS.dup
-          @job.default_network.each_key do |key|
-            missing_default_properties.delete(key)
-          end
+      def validate_correct_number_of_static_ips(network)
+        static_ips = network.static_ips
+        if static_ips && static_ips.size != @job.instances.size
+          raise JobNetworkInstanceIpMismatch,
+            "Job `#{@job.name}' has #{@job.instances.size} instances but was allocated #{static_ips.size} static IPs"
+        end
+      end
 
-          unless missing_default_properties.empty?
-            raise JobNetworkMissingDefault,
-                  "Job `#{@job.name}' must specify which network is default for " +
-                  missing_default_properties.sort.join(", ") + ", since it has more than one network configured"
+      def set_default_network_on_job(default_networks_for_properties)
+        default_networks_for_properties.each do |property, networks|
+          @job.default_network[property] = networks.first
+        end
+      end
+
+      def default_networks_for_properties(networks)
+        Network::VALID_DEFAULTS.inject({}) do |defaults, property|
+          defaults.merge(property => networks.select { |network| network.default_for?(property) })
+        end
+      end
+
+      def validate_default_network_for_each_property(default_networks_for_properties)
+        missing_default_properties = default_networks_for_properties.select { |_, networks|
+          networks.empty?
+        }.map { |property, _|
+          property
+        }
+        unless missing_default_properties.empty?
+          raise JobNetworkMissingDefault,
+            "Job `#{@job.name}' must specify which network is default for " +
+              missing_default_properties.sort.join(", ") + ", since it has more than one network configured"
+        end
+      end
+
+      def validate_only_one_default_network(default_networks_for_properties)
+        multiple_defaults = default_networks_for_properties.select { |_, networks|
+          networks.count > 1
+        }
+        unless multiple_defaults.empty?
+          message_for_each_property = multiple_defaults.map do |property, networks|
+            quoted_network_names = networks.map { |network| "'#{network.name}'" }.join(', ')
+            "'#{property}' has default networks: #{quoted_network_names}."
           end
-        else
-          # Set the default network to the one and only available network
-          # (if not specified already)
-          network = safe_property(network_specs[0], "name", :class => String)
-          Network::VALID_DEFAULTS.each do |property|
-            @job.default_network[property] ||= network
-          end
+          raise JobNetworkMultipleDefaults,
+            "Job `#{@job.name}' specified more than one network to contain default. #{message_for_each_property.join(' ')}"
+        end
+      end
+
+      def set_default_network(network)
+        Network::VALID_DEFAULTS.each do |property|
+          @job.default_network[property] ||= network.name
         end
       end
 
@@ -338,6 +369,80 @@ module Bosh::Director
 
         return if az_names.nil?
 
+        check_validity_of(az_names)
+      end
+
+      def validate(network_specs)
+        if network_specs.empty?
+          raise JobMissingNetwork, "Job `#{@job.name}' must specify at least one network"
+        end
+      end
+
+      class NetworkWrapper
+        include IpUtil
+
+        def initialize(name, static_ips, default_for, deployment_network)
+          @name = name
+          @static_ips = parse_and_validate(static_ips)
+          @default_for = default_for
+          @deployment_network = deployment_network
+        end
+
+        attr_reader :name, :static_ips, :deployment_network
+
+        def availability_zones
+          @deployment_network.availability_zones
+        end
+
+        def properties_for_which_the_network_is_the_default
+          @default_for
+        end
+
+        def default_for?(property)
+          properties_for_which_the_network_is_the_default.include?(property)
+        end
+
+        def make_default_for_all_properties!
+          @default_for = Network::VALID_DEFAULTS
+        end
+
+        private
+
+        def parse_and_validate(static_ips_raw)
+          static_ips = nil
+          if static_ips_raw
+            static_ips = []
+            each_ip(static_ips_raw) do |ip|
+              static_ips << ip
+            end
+          end
+          static_ips
+        end
+      end
+
+      def networks_from(job_spec)
+        network_specs = network_specs(job_spec)
+        validate(network_specs)
+        network_specs.map do |network_spec|
+          network_name = safe_property(network_spec, "name", :class => String)
+          default_for = safe_property(network_spec, "default", :class => Array, :default => [])
+          network = @deployment.network(network_name)
+          validate_job_has(network)
+          NetworkWrapper.new(network_name, network_spec['static_ips'], default_for, network)
+        end
+      end
+
+      def network_specs(job_spec)
+        safe_property(job_spec, "networks", :class => Array)
+      end
+
+      def validate_job_has(network)
+        if network.nil?
+          raise JobUnknownNetwork, "Job `#{@job.name}' references an unknown network `#{network.name}'"
+        end
+      end
+
+      def check_validity_of(az_names)
         if az_names.empty?
           raise JobMissingAvailabilityZones, "Job `fake-job-name' has empty availability zones"
         end

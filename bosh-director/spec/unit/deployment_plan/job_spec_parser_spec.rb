@@ -33,8 +33,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       )
     end
 
-    before { allow(deployment_plan).to receive(:network).and_return(network) }
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+    before { allow(deployment_plan).to receive(:network).with('fake-network-name').and_return(network) }
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', {name: 'fake-network-name'}) }
 
     let(:job_spec) do
       {
@@ -671,6 +671,24 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'does not raise an exception' do
           job_spec['instances'] = 3
           expect { parser.parse(job_spec) }.to_not raise_error
+        end
+      end
+
+      context 'when there are multiple networks specified as default for a property' do
+        it 'errors' do
+          job_spec['instances'] = 3
+          job_spec['networks'].first['default'] = ['gateway', 'dns']
+          job_spec['networks'] << job_spec['networks'].first.merge('name' => 'duped-network') # dupe it
+          allow(deployment_plan).to receive(:network).with('duped-network') { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::JobNetworkMultipleDefaults,
+              "Job `fake-job-name' specified more than one network to contain default. " +
+                "'dns' has default networks: 'fake-network-name', 'duped-network'. "+
+                "'gateway' has default networks: 'fake-network-name', 'duped-network'."
+            )
         end
       end
     end
