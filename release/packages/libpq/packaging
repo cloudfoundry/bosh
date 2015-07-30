@@ -7,5 +7,5 @@ cd postgresql-9.0.3
 cp -R src/include $BOSH_INSTALL_TARGET
 cd src/interfaces/libpq
 
-make -j
-make -j install
+make
+make install
