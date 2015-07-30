@@ -17,25 +17,29 @@ module Bosh::Director::DeploymentPlan
       NetAddr::CIDR.create(ip).to_i
     end
 
+    def create_reservation(ip)
+      BD::NetworkReservation.new_static(instance, cidr_ip(ip))
+    end
+
     describe :reserve_ip do
       it 'should reserve dynamic IPs' do
-        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.1'))).to eq(:dynamic)
+        expect(ip_provider.reserve_ip(create_reservation('192.168.0.1'))).to eq(:dynamic)
       end
 
       it 'should reserve static IPs' do
-        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(:static)
+        expect(ip_provider.reserve_ip(create_reservation('192.168.0.5'))).to eq(:static)
       end
 
       it 'should fail to reserve restricted IPs' do
         expect {
-          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.11'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.11'))
         }.to raise_error BD::NetworkReservationAlreadyInUse
       end
 
       it 'should fail to reserve the IP if it was already reserved' do
-        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(:static)
+        expect(ip_provider.reserve_ip(create_reservation('192.168.0.5'))).to eq(:static)
         expect {
-          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.5'))
         }.to raise_error BD::NetworkReservationAlreadyInUse
       end
     end
@@ -161,13 +165,13 @@ module Bosh::Director::DeploymentPlan
 
         it 'should release IPs' do
           ip_address = cidr_ip('192.168.0.1')
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(create_reservation(ip_address))).to eq(:dynamic)
           expect {
-            ip_provider.reserve_ip(instance, ip_address)
+            ip_provider.reserve_ip(create_reservation(ip_address))
           }.to raise_error BD::NetworkReservationAlreadyInUse
 
           ip_provider.release_ip(ip_address)
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(create_reservation(ip_address))).to eq(:dynamic)
         end
 
         it 'should fail if the IP is restricted' do

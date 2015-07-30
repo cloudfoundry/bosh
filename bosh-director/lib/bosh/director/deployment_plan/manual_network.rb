@@ -51,7 +51,7 @@ module Bosh::Director
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
           find_subnet(reservation.ip) do |subnet|
-            type = subnet.reserve_ip(reservation.instance, reservation.ip)
+            type = subnet.reserve_ip(reservation)
 
             reservation.validate_type(type)
 
@@ -77,7 +77,7 @@ module Bosh::Director
 
           unless reservation.reserved?
             raise NetworkReservationNotEnoughCapacity,
-              "Failed to reserve IP for manual network '#{@name}': no more available"
+              "Failed to reserve IP for '#{reservation.instance}' for manual network '#{@name}': no more available"
           end
         end
         reservation.reserved?

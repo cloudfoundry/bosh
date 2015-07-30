@@ -99,8 +99,8 @@ module Bosh::Director
           subnet.range.contains?(@range)
       end
 
-      def reserve_ip(instance, ip)
-        @ip_provider.reserve_ip(instance, ip)
+      def reserve_ip(reservation)
+        @ip_provider.reserve_ip(reservation)
       end
 
       def release_ip(ip)

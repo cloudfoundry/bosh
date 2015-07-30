@@ -217,7 +217,7 @@ describe 'global networking', type: :integration do
       ]
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
       expect(exit_code).to_not eq(0)
-      expect(output).to include("asked for a static IP 192.168.1.11 but it's already reserved/in use")
+      expect(output).to include("Failed to reserve ip '192.168.1.11' for instance 'first-job/0': already reserved by instance 'second-job/0' from deployment 'my-deploy'")
     end
 
     it 'keeps static IPs reserved when a job fails to deploy its VMs' do
@@ -240,7 +240,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to include("asked for a static IP 192.168.1.10 but it's already reserved/in use")
+      expect(output).to include("Failed to reserve ip '192.168.1.10' for instance 'first-job/0': already reserved by instance 'first-job/0' from deployment 'my-deploy'")
     end
 
     context 'using legacy network configuration (no cloud config)' do
@@ -281,7 +281,7 @@ describe 'global networking', type: :integration do
         ]
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("asked for a static IP 192.168.1.11 but it's already reserved/in use")
+        expect(output).to include("Failed to reserve ip '192.168.1.11' for network 'a' (192.168.1.0/24): already reserved")
       end
     end
   end
@@ -299,7 +299,7 @@ describe 'global networking', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
-      expect(output).to match(/compilation-.* asked for a dynamic IP but there were no more available/)
+      expect(output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
     end
 
     it 'updates deployment when there is enough IPs for compilation' do
@@ -356,7 +356,7 @@ describe 'global networking', type: :integration do
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(output).to match(/foobar\/1' asked for a dynamic IP but there were no more available/)
+      expect(output).to include("Failed to reserve IP for 'foobar/1' for manual network 'a': no more available")
     end
 
     it 'reuses IPs when one job is deleted and another created within a single deployment' do
@@ -488,7 +488,7 @@ describe 'global networking', type: :integration do
       it 'gives the correct error message when there are not enough IPs for compilation' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
         output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
-        expect(output).to match(/compilation-.* asked for a dynamic IP but there were no more available/)
+        expect(output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
       end
 
       it 'gives the correct error message when there are not enough IPs for instances' do
@@ -498,7 +498,7 @@ describe 'global networking', type: :integration do
         output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).not_to eq(0)
-        expect(output).to include('asked for a dynamic IP but there were no more available')
+        expect(output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
       end
 
       it 'gives VMs the same IP on redeploy' do

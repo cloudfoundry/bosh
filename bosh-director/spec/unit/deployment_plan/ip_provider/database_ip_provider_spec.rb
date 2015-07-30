@@ -28,6 +28,10 @@ module Bosh::Director::DeploymentPlan
       NetAddr::CIDR.create(ip).to_i
     end
 
+    def create_reservation(ip)
+      BD::NetworkReservation.new_static(instance, cidr_ip(ip))
+    end
+
     describe 'allocate_dynamic_ip' do
       context 'when there are no IPs for that network' do
         it 'returns the first in the range' do
@@ -84,9 +88,9 @@ module Bosh::Director::DeploymentPlan
 
       context 'when there are available IPs between reserved IPs' do
         before do
-          ip_provider.reserve_ip(instance, NetAddr::CIDR.create('192.168.0.0'))
-          ip_provider.reserve_ip(instance, NetAddr::CIDR.create('192.168.0.1'))
-          ip_provider.reserve_ip(instance, NetAddr::CIDR.create('192.168.0.3'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.0'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.1'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.3'))
         end
 
         it 'returns first non-reserved IP' do
@@ -99,9 +103,9 @@ module Bosh::Director::DeploymentPlan
 
       context 'when all IPs are reserved without holes' do
         before do
-          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.0'))
-          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.1'))
-          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.2'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.0'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.1'))
+          ip_provider.reserve_ip(create_reservation('192.168.0.2'))
         end
 
         it 'returns IP next after reserved' do
@@ -179,15 +183,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'reserve_ip' do
-      let(:ip_address) { cidr_ip('192.168.0.2') }
-
+      let(:reservation) { create_reservation('192.168.0.2') }
       it 'creates IP in database' do
         ip_provider
         expect {
-          ip_provider.reserve_ip(instance, ip_address)
+          ip_provider.reserve_ip(reservation)
         }.to change(Bosh::Director::Models::IpAddress, :count).by(1)
         saved_address = Bosh::Director::Models::IpAddress.order(:address).last
-        expect(saved_address.address).to eq(ip_address.to_i)
+        expect(saved_address.address).to eq(cidr_ip('192.168.0.2'))
         expect(saved_address.network_name).to eq('fake-network')
         expect(saved_address.task_id).to eq('fake-task-id')
         expect(saved_address.created_at).to_not be_nil
@@ -195,7 +198,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when reserving dynamic IP' do
         it 'returns dynamic type' do
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(reservation)).to eq(:dynamic)
         end
       end
 
@@ -207,15 +210,15 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'returns static type' do
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:static)
+          expect(ip_provider.reserve_ip(reservation)).to eq(:static)
         end
       end
 
       context 'when attempting to reserve a reserved ip' do
         context 'when IP is reserved by the same deployment' do
           it 'returns ip type' do
-            expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
-            expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(reservation)).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(reservation)).to eq(:dynamic)
           end
         end
 
@@ -232,10 +235,10 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises an error' do
-            expect(ip_provider.reserve_ip(another_instance, ip_address)).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(BD::NetworkReservation.new_static(another_instance, '192.168.0.2'))).to eq(:dynamic)
 
             expect {
-              ip_provider.reserve_ip(instance, ip_address)
+              ip_provider.reserve_ip(BD::NetworkReservation.new_static(instance, '192.168.0.2'))
             }.to raise_error Bosh::Director::NetworkReservationAlreadyInUse,
               "Failed to reserve ip '192.168.0.2' for instance 'fake-job/0': " +
               "already reserved by instance 'another-job/5' from deployment 'fake-deployment'"
@@ -251,19 +254,17 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'returns nil' do
-          expect(ip_provider.reserve_ip(instance, ip_address)).to be_nil
+          expect(ip_provider.reserve_ip(create_reservation('192.168.0.2'))).to be_nil
         end
       end
     end
 
     describe 'release_ip' do
-      let(:ip_address) { NetAddr::CIDR.create('192.168.0.3') }
-
       context 'when IP was reserved' do
         it 'releases the IP' do
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(create_reservation('192.168.0.3'))).to eq(:dynamic)
           expect(Bosh::Director::Models::IpAddress.count).to eq(1)
-          ip_provider.release_ip(ip_address)
+          ip_provider.release_ip(cidr_ip('192.168.0.3'))
           expect(Bosh::Director::Models::IpAddress.count).to eq(0)
         end
       end
@@ -277,7 +278,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'raises an error' do
           expect {
-            ip_provider.release_ip(ip_address)
+            ip_provider.release_ip(cidr_ip('192.168.0.3'))
           }.to raise_error Bosh::Director::NetworkReservationIpNotOwned,
               "Can't release IP '192.168.0.3' back to network 'fake-network': it's neither in dynamic nor in static pool"
         end

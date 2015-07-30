@@ -43,8 +43,8 @@ module Bosh::Director
         ip
       end
 
-      def reserve_ip(_, ip)
-        ip = CIDRIP.new(ip)
+      def reserve_ip(reservation)
+        ip = CIDRIP.new(reservation.ip)
         if @available_static_ips.delete?(ip.to_i)
           @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")
           :static
@@ -52,9 +52,15 @@ module Bosh::Director
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
           :dynamic
         else
-          message = "Failed to reserve ip '#{ip}' for #{@network_desc}: already reserved"
-          @logger.error(message)
-          raise NetworkReservationAlreadyInUse, message
+          if reservation.resolved?
+            # if reservation is not resolved it is created from existing instance
+            # DatabaseIpProvider can verify if IP belongs to the same instance
+            # InMemoryIpProvider has no knowledge which instance is requesting IP
+            # so we allow this reservation to happen
+            message = "Failed to reserve ip '#{ip}' for #{@network_desc}: already reserved"
+            @logger.error(message)
+            raise NetworkReservationAlreadyInUse, message
+          end
         end
       end
 

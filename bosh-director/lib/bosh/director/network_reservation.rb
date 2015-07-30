@@ -34,7 +34,7 @@ module Bosh::Director
 
     # network reservation for existing instance
     # type is ignored in validation and will be set from network
-    def self.new_without_type(instance, ip)
+    def self.new_unresolved(instance, ip)
       new(instance, ip, nil)
     end
 
@@ -72,7 +72,7 @@ module Bosh::Director
     end
 
     def validate_type(type)
-      return unless @type
+      return unless resolved?
 
       if @type != type
         ip_desc = @ip.nil? ? 'IP' : "IP '#{formatted_ip}'"
@@ -82,6 +82,12 @@ module Bosh::Director
       end
     end
 
+    # If type is not set, reservation was created from existing
+    # instance state. This reservation is considered valid
+    # until it is resolved
+    def resolved?
+      !@type.nil?
+    end
 
     ##
     # Tries to take the provided reservation if it meets the requirements

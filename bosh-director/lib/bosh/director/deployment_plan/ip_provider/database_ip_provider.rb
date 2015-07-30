@@ -33,15 +33,15 @@ module Bosh::Director::DeploymentPlan
       ip_address.to_i
     end
 
-    # @param [NetAddr::CIDR] ip
-    def reserve_ip(instance, ip)
-      cidr_ip = CIDRIP.new(ip)
+    # @param [NetworkReservation] reservation
+    def reserve_ip(reservation)
+      cidr_ip = CIDRIP.new(reservation.ip)
       if @restricted_ips.include?(cidr_ip.to_i)
         @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range")
         return nil
       end
 
-      reserve_with_instance_validation(instance, cidr_ip)
+      reserve_with_instance_validation(reservation.instance, cidr_ip)
 
       if @static_ips.include?(cidr_ip.to_i)
         @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
