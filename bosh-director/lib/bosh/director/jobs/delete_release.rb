@@ -132,12 +132,13 @@ module Bosh::Director
                       "(#{compiled_package.blobstore_id}) " +
                       "#{package.name}/#{package.version} " +
                       "for #{stemcell.name}/#{stemcell.version}")
-          delete_blobstore_id(compiled_package.blobstore_id) do
+
+          if delete_blobstore_id(compiled_package.blobstore_id)
             compiled_package.destroy
           end
         end
 
-        delete_blobstore_id(package.blobstore_id) do
+        if delete_blobstore_id(package.blobstore_id, true)
           package.remove_all_release_versions
           package.destroy
         end
@@ -146,7 +147,7 @@ module Bosh::Director
       def delete_template(template)
         logger.info("Deleting template: #{template.name}/#{template.version}")
 
-        delete_blobstore_id(template.blobstore_id) do
+        if delete_blobstore_id(template.blobstore_id)
           template.remove_all_release_versions
           template.destroy
         end
@@ -201,17 +202,21 @@ module Bosh::Director
         "/release/#{@name}"
       end
 
-      def delete_blobstore_id(blobstore_id)
+      def delete_blobstore_id(blobstore_id, nil_id_allowed = false)
+        if blobstore_id.nil? && nil_id_allowed
+          return true
+        end
+
         deleted = false
         begin
           @blobstore.delete(blobstore_id)
           deleted = true
         rescue Exception => e
-          logger.warn("Could not delete from blobstore: #{e}\n " +
-                      e.backtrace.join("\n"))
+          logger.warn("Could not delete from blobstore: #{e}\n " + e.backtrace.join("\n"))
           @errors << e
         end
-        yield if deleted || @force
+
+        return deleted || @force
       end
 
     end

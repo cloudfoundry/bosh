@@ -87,6 +87,13 @@ describe 'export release', type: :integration do
       }.to raise_error(RuntimeError, /Error 50003: Stemcell version `1' for OS `nonexistos' doesn't exist/)
     end
 
+    it 'raises an error when exporting a release version not matching the manifest release version' do
+      bosh_runner.run("upload release #{spec_asset('valid_release_0.2_with_same_package_versions.tgz')}")
+      expect {
+        bosh_runner.run("export release appcloud/0.2 toronto-os/1")
+      }.to raise_error(RuntimeError, /Error 30011: Release appcloud\/0.2 not found in deployment minimal manifest/)
+    end
+
     it 'puts a tarball in the blobstore' do
       Dir.chdir(ClientSandbox.test_release_dir) do
         File.open('config/final.yml', 'w') do |final|
