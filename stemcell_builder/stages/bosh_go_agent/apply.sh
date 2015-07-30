@@ -29,6 +29,11 @@ agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
 cd $agent_dir
 bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
+if [ `uname -m` == "ppc64le" ]; then
+   # assume that gccgo is installed under /usr/local/gccgp
+   cp -rvH /usr/local/gccgo $chroot/var/vcap/bosh/
+fi
+
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 

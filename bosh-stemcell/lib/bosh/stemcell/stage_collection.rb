@@ -31,7 +31,7 @@ module Bosh::Stemcell
       [
         :bosh_ruby,
         :bosh_go_agent,
-        :bosh_micro_go,
+        # :bosh_micro_go,   # bosh-agent is crashing during stemcell creation
         :aws_cli,
         :logrotate_config,
       ]

@@ -14,6 +14,13 @@ libaio1 gdb libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted \
 anacron software-properties-common"
+
+if [ `uname -m` == "ppc64le" ]; then
+  debs="$debs \
+libreadline-dev libtool texinfo ppc64-diag libffi-dev \
+libruby bundler libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev"
+fi
+
 pkg_mgr install $debs
 
 # we need newer rsyslog; this comes from the upstream project's own repo
