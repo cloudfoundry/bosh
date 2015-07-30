@@ -38,7 +38,7 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false)
-      allow(network).to receive(:reserve) { |reservation| reservation.reserved = true }
+      allow(network).to receive(:reserve) { |reservation| reservation.reserve }
       allow(network).to receive(:network_settings).with(instance_of(NetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)

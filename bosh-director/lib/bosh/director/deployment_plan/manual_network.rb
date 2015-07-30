@@ -44,9 +44,7 @@ module Bosh::Director
       # This is either an already used reservation being verified or a new one
       # waiting to be fulfilled.
       # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
       def reserve(reservation)
-        reservation.reserved = false
         if reservation.ip
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
@@ -56,31 +54,31 @@ module Bosh::Director
             reservation.validate_type(type)
 
             reservation.type = type
-            reservation.reserved = true
-          end
-        else
-          unless reservation.dynamic?
-            @logger.error("Failed to reserve IP for manual network '#{@name}': IP was not provided for static reservation")
-            raise NetworkReservationInvalidType,
-                  "New reservations without IPs must be dynamic"
+            reservation.reserve
           end
 
-          @logger.debug("Reserving dynamic ip for manual network '#{@name}'")
-          @subnets.each do |subnet|
-            reservation.ip = subnet.allocate_dynamic_ip(reservation.instance)
-            if reservation.ip
-              @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for manual network '#{@name}'")
-              reservation.reserved = true
-              break
-            end
-          end
+          return
+        end
 
-          unless reservation.reserved?
-            raise NetworkReservationNotEnoughCapacity,
-              "Failed to reserve IP for '#{reservation.instance}' for manual network '#{@name}': no more available"
+        unless reservation.dynamic?
+          @logger.error("Failed to reserve IP for manual network '#{@name}': IP was not provided for static reservation")
+          raise NetworkReservationInvalidType,
+            "New reservations without IPs must be dynamic"
+        end
+
+        @logger.debug("Reserving dynamic ip for manual network '#{@name}'")
+        @subnets.each do |subnet|
+          ip = subnet.allocate_dynamic_ip(reservation.instance)
+          if ip
+            @logger.debug("Reserving IP '#{format_ip(ip)}' for manual network '#{@name}'")
+            reservation.reserve_with_ip(ip)
+
+            return
           end
         end
-        reservation.reserved?
+
+        raise NetworkReservationNotEnoughCapacity,
+          "Failed to reserve IP for '#{reservation.instance}' for manual network '#{@name}': no more available"
       end
 
       ##

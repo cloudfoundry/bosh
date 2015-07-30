@@ -19,9 +19,6 @@ module Bosh::Director
     # @return [Symbol, nil] type
     attr_accessor :type
 
-    # @return [Boolean] reserved
-    attr_accessor :reserved
-
     attr_reader :instance
 
     def self.new_dynamic(instance)
@@ -87,6 +84,15 @@ module Bosh::Director
     # until it is resolved
     def resolved?
       !@type.nil?
+    end
+
+    def reserve
+      @reserved = true
+    end
+
+    def reserve_with_ip(ip)
+      @ip = ip
+      @reserved = true
     end
 
     ##

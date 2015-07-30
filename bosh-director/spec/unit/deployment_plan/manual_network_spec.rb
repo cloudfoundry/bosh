@@ -60,7 +60,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
       manual_network.reserve(reservation)
 
-      expect(reservation.reserved).to eq(true)
+      expect(reservation.reserved?).to eq(true)
       expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.5').to_i)
     end
 
@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
       manual_network.reserve(reservation)
 
-      expect(reservation.reserved).to eq(true)
+      expect(reservation.reserved?).to eq(true)
       expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2').to_i)
     end
 
@@ -78,7 +78,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect {
         manual_network.reserve(reservation)
       }.to raise_error BD::NetworkReservationAlreadyInUse
-      expect(reservation.reserved).to eq(false)
+      expect(reservation.reserved?).to eq(false)
     end
 
     context 'when reserving IP from the wrong pool' do
@@ -119,7 +119,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       ip_reservation = BD::NetworkReservation.new_dynamic(instance)
 
       manual_network.reserve(ip_reservation)
-      expect(ip_reservation.reserved).to eq(true)
+      expect(ip_reservation.reserved?).to eq(true)
       expect(ip_reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2').to_i)
 
       dynamic_reservation = BD::NetworkReservation.new_dynamic(instance)
