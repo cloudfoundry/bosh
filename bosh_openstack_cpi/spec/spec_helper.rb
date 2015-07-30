@@ -18,7 +18,8 @@ def mock_cloud_options
         'tenant' => 'admin',
         'region' => 'RegionOne',
         'state_timeout' => 1,
-        'wait_resource_poll_interval' => 3
+        'wait_resource_poll_interval' => 3,
+        'use_openstack_volume_service' => 'true'
       },
       'registry' => {
         'endpoint' => 'localhost:42288',
