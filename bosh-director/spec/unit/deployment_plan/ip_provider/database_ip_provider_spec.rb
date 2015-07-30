@@ -15,7 +15,9 @@ module Bosh::Director::DeploymentPlan
     let(:restricted_ips) { Set.new }
     let(:static_ips) { Set.new }
     let(:range) { NetAddr::CIDR.create('192.168.0.1/24') }
-    let(:instance) { instance_double(Instance, model: Bosh::Director::Models::Instance.make) }
+    let(:instance) do
+      instance_double(Instance, model: Bosh::Director::Models::Instance.make, to_s: 'fake-job/0')
+    end
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -218,11 +220,25 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when IP is reserved by different instance' do
-          let(:another_instance) { instance_double(Instance, model: Bosh::Director::Models::Instance.make) }
+          let(:another_instance) do
+            instance_double(
+              Instance,
+              model: Bosh::Director::Models::Instance.make(
+                job: 'another-job',
+                index: 5,
+                deployment: Bosh::Director::Models::Deployment.make(name: 'fake-deployment')
+              )
+            )
+          end
 
-          it 'returns nil' do
+          it 'raises an error' do
             expect(ip_provider.reserve_ip(another_instance, ip_address)).to eq(:dynamic)
-            expect(ip_provider.reserve_ip(instance, ip_address)).to be_nil
+
+            expect {
+              ip_provider.reserve_ip(instance, ip_address)
+            }.to raise_error Bosh::Director::NetworkReservationAlreadyInUse,
+              "Failed to reserve ip '192.168.0.2' for instance 'fake-job/0': " +
+              "already reserved by instance 'another-job/5' from deployment 'fake-deployment'"
           end
         end
       end

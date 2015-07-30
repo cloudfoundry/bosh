@@ -75,10 +75,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
     it 'should not let you reserve an IP in the reserved range' do
       reservation = BD::NetworkReservation.new_static(instance, '192.168.1.3')
-      manual_network.reserve(reservation)
-
+      expect {
+        manual_network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationAlreadyInUse
       expect(reservation.reserved).to eq(false)
-      expect(reservation.error).to eq(BD::NetworkReservation::USED)
     end
 
     context 'when reserving IP from the wrong pool' do

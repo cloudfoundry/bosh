@@ -3,7 +3,6 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
     class OutsideRangeError < StandardError; end
     class IPAlreadyReserved < StandardError; end
-    class IPOwnedByOtherInstance < StandardError; end
 
     # @param [NetAddr::CIDR] range
     # @param [String] network_name
@@ -42,12 +41,7 @@ module Bosh::Director::DeploymentPlan
         return nil
       end
 
-      begin
-        reserve_with_instance_validation(instance, cidr_ip)
-      rescue IPOwnedByOtherInstance
-        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP is reserved by another instance")
-        return nil
-      end
+      reserve_with_instance_validation(instance, cidr_ip)
 
       if @static_ips.include?(cidr_ip.to_i)
         @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
@@ -117,10 +111,14 @@ module Bosh::Director::DeploymentPlan
       )
 
       if ip_address
-        if ip_address.instance == instance.model
+        reserved_instance = ip_address.instance
+        if reserved_instance == instance.model
           return ip_address
         else
-          raise IPOwnedByOtherInstance
+          raise Bosh::Director::NetworkReservationAlreadyInUse,
+            "Failed to reserve ip '#{ip}' for instance '#{instance}': " +
+            "already reserved by instance '#{reserved_instance.job}/#{reserved_instance.index}' " +
+            "from deployment '#{reserved_instance.deployment.name}'"
         end
       end
     end

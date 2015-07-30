@@ -150,7 +150,6 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          network.reserve(reservation)
           instance.add_network_reservation(network, reservation)
         end
 

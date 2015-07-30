@@ -52,8 +52,9 @@ module Bosh::Director
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
           :dynamic
         else
-          @logger.error("Failed to reserve ip '#{ip}' for #{@network_desc}: does not belong to static or dynamic pool")
-          nil
+          message = "Failed to reserve ip '#{ip}' for #{@network_desc}: already reserved"
+          @logger.error(message)
+          raise NetworkReservationAlreadyInUse, message
         end
       end
 

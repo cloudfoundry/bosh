@@ -147,7 +147,7 @@ describe 'cli: package compilation', type: :integration do
       )
 
       expect(deploy_output).to match(
-        /compilation-.* asked for a dynamic IP but there were no more available/
+        /Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/
       )
 
       expect(director.vms.size).to eq(0)

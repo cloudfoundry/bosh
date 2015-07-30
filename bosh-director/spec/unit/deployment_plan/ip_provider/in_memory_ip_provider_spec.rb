@@ -27,12 +27,16 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'should fail to reserve restricted IPs' do
-        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.11'))).to eq(nil)
+        expect {
+          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.11'))
+        }.to raise_error BD::NetworkReservationAlreadyInUse
       end
 
       it 'should fail to reserve the IP if it was already reserved' do
         expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(:static)
-        expect(ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))).to eq(nil)
+        expect {
+          ip_provider.reserve_ip(instance, cidr_ip('192.168.0.5'))
+        }.to raise_error BD::NetworkReservationAlreadyInUse
       end
     end
 
@@ -158,7 +162,10 @@ module Bosh::Director::DeploymentPlan
         it 'should release IPs' do
           ip_address = cidr_ip('192.168.0.1')
           expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
-          expect(ip_provider.reserve_ip(instance, ip_address)).to eq(nil)
+          expect {
+            ip_provider.reserve_ip(instance, ip_address)
+          }.to raise_error BD::NetworkReservationAlreadyInUse
+
           ip_provider.release_ip(ip_address)
           expect(ip_provider.reserve_ip(instance, ip_address)).to eq(:dynamic)
         end

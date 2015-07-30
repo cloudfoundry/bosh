@@ -52,10 +52,7 @@ module Bosh::Director
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
           find_subnet(reservation.ip) do |subnet|
             type = subnet.reserve_ip(reservation.instance, reservation.ip)
-            if type.nil?
-              @logger.debug("Failed to reserve ip '#{cidr_ip}' for manual network '#{@name}': in use")
-              reservation.error = NetworkReservation::USED
-            elsif reservation.type && reservation.type != type
+            if reservation.type && reservation.type != type
               @logger.debug("Failed to reserve ip '#{cidr_ip}' for manual network '#{@name}': not in static range")
               reservation.error = NetworkReservation::WRONG_TYPE
             else

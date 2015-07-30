@@ -53,7 +53,7 @@ describe 'simultaneous deploys', type: :integration do
 
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
       second_output = deploy_simple_manifest(manifest_hash: second_deployment_manifest, failure_expected: true)
-      expect(second_output).to match(/compilation.* asked for a dynamic IP but there were no more available/)
+      expect(second_output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
 
       compilation_vm.unblock_package
 
@@ -76,7 +76,7 @@ describe 'simultaneous deploys', type: :integration do
       second_output, second_success = Bosh::Spec::DeployHelper.wait_for_deploy(second_task_id)
 
       expect([first_success, second_success]).to match_array([true, false])
-      expect(first_output + second_output).to include('asked for a dynamic IP but there were no more available')
+      expect(first_output + second_output).to include('no more available')
     end
   end
 
@@ -111,7 +111,7 @@ describe 'simultaneous deploys', type: :integration do
       deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_deploy(deploy_task_id)
 
       expect([deploy_success, errand_success]).to match_array([true, false]), "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n"
-      expect(deploy_output + errand_output).to include("asked for a dynamic IP but there were no more available")
+      expect(deploy_output + errand_output).to include('no more available')
     end
   end
 
@@ -160,7 +160,7 @@ describe 'simultaneous deploys', type: :integration do
       second_errand_thread.join
 
       expect([first_result.fetch(:exit_code), second_result.fetch(:exit_code)]).to match_array([1, 0])
-      expect(first_result.fetch(:output)+ second_result.fetch(:output)).to include("asked for a dynamic IP but there were no more available")
+      expect(first_result.fetch(:output)+ second_result.fetch(:output)).to include('no more available')
     end
 
     def run_errand_in_thread(errand_manifest, errand_runner)
