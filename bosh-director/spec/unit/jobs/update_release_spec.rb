@@ -185,7 +185,8 @@ module Bosh::Director
           }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
         end
 
-        it 'deletes release archive' do
+        it 'deletes release archive and the release dir' do
+          expect(FileUtils).to receive(:rm_rf).with(release_dir)
           expect(FileUtils).to receive(:rm_rf).with(release_path)
 
           expect {
