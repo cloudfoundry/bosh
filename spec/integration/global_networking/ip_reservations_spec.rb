@@ -202,8 +202,6 @@ describe 'global networking', type: :integration do
     end
 
     it 'does not release static IPs too early (cant swap job static IPs)' do
-      pending "https://www.pivotaltracker.com/story/show/98155606"
-
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
 
