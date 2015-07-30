@@ -18,6 +18,13 @@ describe 'deploy', type: :integration do
     expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
   end
 
+  it 'deployment fails when starting task fails' do
+    deploy_from_scratch
+    director.vm('foobar/0').fail_start_task
+    _, exit_code = deploy(failure_expected: true, return_exit_code: true)
+    expect(exit_code).to_not eq(0)
+  end
+
   context 'when using legacy deployment configuration' do
     let(:legacy_manifest_hash ) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(Bosh::Spec::Deployments.simple_cloud_config)

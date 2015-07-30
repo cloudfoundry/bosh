@@ -54,6 +54,18 @@ module Bosh::Spec
       end
     end
 
+    def fail_start_task
+      @logger.info("Failing task #{@cid}")
+      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+        msg = Yajl::Encoder.encode(
+          method: 'set_task_fail',
+          status: 'fail_task',
+          reply_to: 'integration.tests',
+        )
+        NATS.publish("agent.#{@agent_id}", msg) { NATS.stop }
+      end
+    end
+
     def unblock_package
       @waiter.wait(300) do
         package_dir = package_path('blocking_package')
