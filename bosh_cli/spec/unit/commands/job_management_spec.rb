@@ -259,4 +259,13 @@ describe Bosh::Cli::Command::JobManagement do
                       verb: 'recreate', past_verb: 'recreated', extra_task_report_info: '', new_state: 'recreate'
     end
   end
+
+  context 'if the job is not supplied in the command' do
+    let(:instance_count) { 1 }
+    it 'displays an error about the missing argument' do
+      expect {
+        command.public_send(:stop_job)
+      }.to raise_error(ArgumentError, "wrong number of arguments (0 for 1..2)")
+    end
+  end
 end
