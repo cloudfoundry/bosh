@@ -58,9 +58,10 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
     it "should not let you reserve a static IP" do
       reservation = BD::NetworkReservation.new_static(instance, '0.0.0.1')
-      @network.reserve(reservation)
-      expect(reservation.reserved?).to eq(false)
-      expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
+
+      expect {
+        @network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationWrongType
     end
   end
 

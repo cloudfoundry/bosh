@@ -79,9 +79,7 @@ module Bosh::Director
 
       def reserve_networks
         @network_reservations.each do |network, reservation|
-          unless reservation.reserved?
-            network.reserve!(reservation, "`#{@name}'")
-          end
+          network.reserve(reservation) unless reservation.reserved?
         end
       end
 

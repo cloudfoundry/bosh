@@ -163,6 +163,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'temporary errand hack' do
+        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic(instance) }
         let(:network) do
           ManualNetwork.new({
               'name' => network_name,
@@ -756,7 +757,7 @@ module Bosh::Director::DeploymentPlan
         before { network_reservation.reserved = true }
 
         it 'does not reserve network reservation again' do
-          expect(network).to_not receive(:reserve!)
+          expect(network).to_not receive(:reserve)
           instance.reserve_networks
         end
       end
@@ -765,8 +766,7 @@ module Bosh::Director::DeploymentPlan
         before { network_reservation.reserved = false }
 
         it 'reserves network reservation with the network' do
-          expect(network).to receive(:reserve!).
-              with(network_reservation, "`fake-job/0'")
+          expect(network).to receive(:reserve).with(network_reservation)
 
           instance.reserve_networks
         end

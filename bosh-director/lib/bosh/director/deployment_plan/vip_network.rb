@@ -32,16 +32,18 @@ module Bosh::Director
           @logger.error("Failed to reserve IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
                 "Must have IP for static reservations"
-        elsif reservation.dynamic?
-          @logger.error("Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP should not belong to dynamic range")
-          reservation.error = NetworkReservation::WRONG_TYPE
-        elsif @reserved_ips.include?(reservation.ip)
-          @logger.error("Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP already reserved")
-          reservation.error = NetworkReservation::USED
+        end
+
+        reservation.validate_type(NetworkReservation::STATIC)
+
+        if @reserved_ips.include?(reservation.ip)
+          raise Bosh::Director::NetworkReservationAlreadyInUse,
+            "Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP already reserved"
         else
           @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
           reservation.reserved = true
           reservation.type = NetworkReservation::STATIC
+
           @reserved_ips.add(reservation.ip)
         end
         reservation.reserved?

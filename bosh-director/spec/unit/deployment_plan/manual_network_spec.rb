@@ -87,10 +87,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       it 'should not let you reserve an IP in the wrong pool' do
         reservation = BD::NetworkReservation.new_static(instance, '192.168.1.11')
 
-        manual_network.reserve(reservation)
-
-        expect(reservation.reserved).to eq(false)
-        expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
+        expect {
+          manual_network.reserve(reservation)
+        }.to raise_error BD::NetworkReservationWrongType
       end
     end
 
@@ -106,10 +105,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       it "should raise an error when it's out of capacity" do
         reservation = BD::NetworkReservation.new_dynamic(instance)
 
-        manual_network.reserve(reservation)
-
-        expect(reservation.reserved).to eq(false)
-        expect(reservation.error).to eq(BD::NetworkReservation::CAPACITY)
+        expect {
+          manual_network.reserve(reservation)
+        }.to raise_error BD::NetworkReservationNotEnoughCapacity
       end
     end
   end
@@ -126,8 +124,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
       dynamic_reservation = BD::NetworkReservation.new_dynamic(instance)
 
-      manual_network.reserve(dynamic_reservation)
-      expect(dynamic_reservation.ip).to eq(nil)
+      expect {
+        manual_network.reserve(dynamic_reservation)
+      }.to raise_error BD::NetworkReservationNotEnoughCapacity
 
       manual_network.release(ip_reservation)
 

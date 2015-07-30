@@ -54,55 +54,5 @@ module Bosh::Director
         expect(reservation.ip).to eq(nil)
       end
     end
-
-    describe :handle_error do
-      context 'when reservation is static' do
-        let(:reservation) { NetworkReservation.new_static(instance, '0.0.0.1') }
-
-        it 'handles already-in-use errors' do
-          reservation.error = NetworkReservation::USED
-
-          expect{
-            reservation.handle_error('fake-origin')
-          }.to raise_error(NetworkReservationAlreadyInUse)
-        end
-
-        it 'handles wrong pool type errors' do
-          reservation.error = NetworkReservation::WRONG_TYPE
-
-          expect{
-            reservation.handle_error('fake-origin')
-          }.to raise_error(NetworkReservationWrongType)
-        end
-
-        it 'handles other reservation errors' do
-          reservation.error = StandardError.new
-
-          expect{
-            reservation.handle_error('fake-origin')
-          }.to raise_error(NetworkReservationError)
-        end
-      end
-
-      context 'when reservation is dynamic' do
-        let(:reservation) { NetworkReservation.new_dynamic(instance) }
-
-        it 'handles pool capacity errors' do
-          reservation.error = NetworkReservation::CAPACITY
-
-          expect{
-            reservation.handle_error('fake-origin')
-          }.to raise_error(NetworkReservationNotEnoughCapacity)
-        end
-
-        it 'handles other reservation errors' do
-          reservation.error = StandardError.new
-
-          expect{
-            reservation.handle_error('fake-origin')
-          }.to raise_error(NetworkReservationError)
-        end
-      end
-    end
   end
 end

@@ -35,7 +35,7 @@ describe Bosh::Director::JobUpdater do
     before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
     context 'when job is up to date' do
-      let(:instances) { [instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false)] }
+      let(:instances) { [instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false, changes: [])] }
 
       it 'should render job instances' do
         expect(job_renderer).to receive(:render_job_instances)
@@ -52,10 +52,10 @@ describe Bosh::Director::JobUpdater do
     end
 
     context 'when job needs to be updated' do
-      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1, changed?: true) }
-      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2, changed?: true) }
+      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1, changed?: true, changes: ['dns']) }
+      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2, changed?: true, changes: ['network']) }
       let(:unchanged_instance) do
-        instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, changed?: false)
+        instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, changed?: false, changes: [])
       end
 
       let(:instances) { [canary, changed_instance, unchanged_instance] }

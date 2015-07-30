@@ -52,13 +52,11 @@ module Bosh::Director
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
           find_subnet(reservation.ip) do |subnet|
             type = subnet.reserve_ip(reservation.instance, reservation.ip)
-            if reservation.type && reservation.type != type
-              @logger.debug("Failed to reserve ip '#{cidr_ip}' for manual network '#{@name}': not in static range")
-              reservation.error = NetworkReservation::WRONG_TYPE
-            else
-              reservation.type = type
-              reservation.reserved = true
-            end
+
+            reservation.validate_type(type)
+
+            reservation.type = type
+            reservation.reserved = true
           end
         else
           unless reservation.dynamic?
@@ -66,6 +64,7 @@ module Bosh::Director
             raise NetworkReservationInvalidType,
                   "New reservations without IPs must be dynamic"
           end
+
           @logger.debug("Reserving dynamic ip for manual network '#{@name}'")
           @subnets.each do |subnet|
             reservation.ip = subnet.allocate_dynamic_ip(reservation.instance)
@@ -75,9 +74,10 @@ module Bosh::Director
               break
             end
           end
+
           unless reservation.reserved?
-            @logger.error("Failed to reserve IP for manual network '#{@name}': no more available")
-            reservation.error = NetworkReservation::CAPACITY
+            raise NetworkReservationNotEnoughCapacity,
+              "Failed to reserve IP for manual network '#{@name}': no more available"
           end
         end
         reservation.reserved?

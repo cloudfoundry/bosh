@@ -36,7 +36,7 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
-      @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', reserve!: nil)
+      @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', reserve: nil)
       allow(plan).to receive(:network).with('default').and_return(@network)
 
       @n_workers = 3
@@ -356,7 +356,7 @@ module Bosh::Director
         allow(config).to receive_messages(reuse_compilation_vms: true)
         allow(config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve!) { |reservation, _| reservation.reserved = true }
+        expect(@network).to receive(:reserve) { |reservation| reservation.reserved = true }
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -551,7 +551,7 @@ module Bosh::Director
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
           allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
-          allow(network).to receive(:reserve!).with(instance_of(Bosh::Director::NetworkReservation), /compilation-/)
+          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::NetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
           expect(vm_deleter).to receive(:delete_for_instance).ordered

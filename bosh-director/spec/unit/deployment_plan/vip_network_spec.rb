@@ -33,18 +33,18 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     it "should fail to reserve dynamic IPs" do
       reservation = BD::NetworkReservation.new_dynamic(instance)
       reservation.ip = "0.0.0.1"
-      @network.reserve(reservation)
-      expect(reservation.reserved?).to eq(false)
-      expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
+      expect {
+        @network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationWrongType
     end
 
     it "should not let you reserve a used IP" do
       reservation = BD::NetworkReservation.new_static(instance, "0.0.0.1")
       @network.reserve(reservation)
       expect(reservation.reserved?).to eq(true)
-      @network.reserve(reservation)
-      expect(reservation.reserved?).to eq(false)
-      expect(reservation.error).to eq(BD::NetworkReservation::USED)
+      expect {
+        @network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationAlreadyInUse
     end
   end
 
