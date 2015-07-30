@@ -88,6 +88,9 @@ spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml
 spec/assets/test_release/config/final.yml
 spec/assets/test_release/dev_releases
+spec/assets/compiled_releases/test_release/.dev_builds
+spec/assets/compiled_releases/test_release/config/dev.yml
+spec/assets/compiled_releases/test_release/dev_releases
 spec_coverage
 spec_reports
 

@@ -1,0 +1,60 @@
+---
+packages:
+- name: pkg_1
+  version: 16b4c8ef1574b3f98303307caad40227c208371f
+  fingerprint: 16b4c8ef1574b3f98303307caad40227c208371f
+  sha1: 93fade7dd8950d8a1dd2bf5ec751e478af3150e9
+  dependencies: []
+- name: pkg_2
+  version: f5c1c303c2308404983cf1e7566ddc0a22a22154
+  fingerprint: f5c1c303c2308404983cf1e7566ddc0a22a22154
+  sha1: b2751daee5ef20b3e4f3ebc3452943c28f584500
+  dependencies: []
+- name: pkg_3_depends_on_2
+  version: 413e3e9177f0037b1882d19fb6b377b5b715be1c
+  fingerprint: 413e3e9177f0037b1882d19fb6b377b5b715be1c
+  sha1: 62fff2291aac72f5bd703dba0c5d85d0e23532e0
+  dependencies:
+  - pkg_2
+- name: pkg_4_depends_on_3
+  version: 9207b8a277403477e50cfae52009b31c840c49d4
+  fingerprint: 9207b8a277403477e50cfae52009b31c840c49d4
+  sha1: 603f212d572b0307e4c51807c5e03c47944bb9c3
+  dependencies:
+  - pkg_3_depends_on_2
+- name: pkg_5_depends_on_4_and_1
+  version: 3cacf579322370734855c20557321dadeee3a7a4
+  fingerprint: 3cacf579322370734855c20557321dadeee3a7a4
+  sha1: ad733ca76ab4747747d8f9f1ddcfa568519a2e00
+  dependencies:
+  - pkg_1
+  - pkg_4_depends_on_3
+jobs:
+- name: job_using_pkg_1
+  version: 9a5f09364b2cdc18a45172c15dca21922b3ff196
+  fingerprint: 9a5f09364b2cdc18a45172c15dca21922b3ff196
+  sha1: a7d51f65cda79d2276dc9cc254e6fec523b07b02
+- name: job_using_pkg_1_and_2
+  version: 673c3689362f2adb37baed3d8d4344cf03ff7637
+  fingerprint: 673c3689362f2adb37baed3d8d4344cf03ff7637
+  sha1: c9acbf245d4b4721141b54b26bee20bfa58f4b54
+- name: job_using_pkg_2
+  version: 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74
+  fingerprint: 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74
+  sha1: 79475b0b035fe70f13a777758065210407170ec3
+- name: job_using_pkg_3
+  version: 54120dd68fab145433df83262a9ba9f3de527a4b
+  fingerprint: 54120dd68fab145433df83262a9ba9f3de527a4b
+  sha1: ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f
+- name: job_using_pkg_4
+  version: 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c
+  fingerprint: 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c
+  sha1: 1ff32a12e0c574720dd8e5111834bac67229f5c1
+- name: job_using_pkg_5
+  version: fb41300edf220b1823da5ab4c243b085f9f249af
+  fingerprint: fb41300edf220b1823da5ab4c243b085f9f249af
+  sha1: 37350e20c6f78ab96a1191e5d97981a8d2831665
+commit_hash: 50e58513
+uncommitted_changes: true
+name: test_release
+version: '1'

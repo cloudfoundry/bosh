@@ -374,7 +374,7 @@ module Bosh::Director
         compiled_package = Models::CompiledPackage.new
 
         compiled_package.blobstore_id = BlobUtil.create_blob(tgz)
-        compiled_package.sha1 = Digest::SHA1.hexdigest(tgz)
+        compiled_package.sha1 = Digest::SHA1.file(tgz).hexdigest
 
         transitive_dependencies = @release_version_model.transitive_dependencies(package)
         compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)

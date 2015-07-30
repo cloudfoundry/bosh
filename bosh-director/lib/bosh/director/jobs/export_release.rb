@@ -70,7 +70,7 @@ module Bosh::Director
 
       def deployment_manifest_has_release?
         @deployment_manifest["releases"].each do |release|
-          if (release["name"] == @release_name) && (release["version"] == @release_version)
+          if (release["name"] == @release_name) && (release["version"].to_s == @release_version.to_s)
             return true
           end
         end

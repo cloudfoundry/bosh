@@ -1,7 +1,5 @@
 module Bosh::Spec
   class Deployments
-    # This is a minimal manifest that deploys successfully.
-    # It doesn't have any jobs, so it's not very realistic though
     def self.minimal_cloud_config
       {
         'networks' => [{
@@ -104,6 +102,41 @@ module Bosh::Spec
                          'networks'      => [{ 'name' => 'a' }],
                      }]
       }
+    end
+
+    def self.test_deployment_manifest
+      {
+          'name' => 'test_deployment',
+          'director_uuid'  => 'deadbeef',
+
+          'releases' => [{
+                             'name'    => 'test_release',
+                             'version' => '1'
+                         }],
+
+          'update' => {
+              'canaries'          => 2,
+              'canary_watch_time' => 4000,
+              'max_in_flight'     => 1,
+              'update_watch_time' => 20
+          }
+      }
+    end
+
+    def self.test_deployment_manifest_with_job(job_name)
+      test_deployment_manifest.merge(
+        {
+          'jobs' => [{
+              'name'          => job_name,
+              'templates'     => [{
+                                      'name'    => job_name
+                                  }],
+              'resource_pool' => 'a',
+              'instances'     => 1,
+              'networks'      => [{ 'name' => 'a' }],
+          }]
+        }
+      )
     end
 
     def self.minimal_legacy_manifest

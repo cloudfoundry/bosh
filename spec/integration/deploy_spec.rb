@@ -165,6 +165,57 @@ describe 'deploy', type: :integration do
     expect_running_vms(%w(foobar/0))
   end
 
+  context 'it supports compiled releases' do
+    context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
+      before {
+        target_and_login
+
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+        cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+        cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+        upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      }
+
+      context 'and they contain identical packages' do
+        before {
+          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
+          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+          deployment_manifest['releases'][0]['version'] = '4'
+          set_deployment({manifest_hash: deployment_manifest })
+        }
+
+        it 'does not compile any packages' do
+          out = deploy({})
+
+          expect(out).to_not include("Started compiling packages")
+        end
+      end
+
+      context 'and they contain one different package' do
+        before {
+          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
+          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+          deployment_manifest['releases'][0]['version'] = '3'
+          set_deployment({manifest_hash: deployment_manifest })
+        }
+
+        xit 'compiles only the package with the different version and those that depend on it' do
+          out = deploy({})
+          expect(out).to include("Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f")
+          expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+
+          expect(out).to_not include('Started compiling packages > pkg_2/')
+          expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
+          expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
+        end
+      end
+    end
+  end
+
   def expect_running_vms(job_name_index_list)
     vms = director.vms
     check_for_unknowns(vms)

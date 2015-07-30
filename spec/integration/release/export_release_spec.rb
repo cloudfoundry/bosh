@@ -22,6 +22,85 @@ describe 'export release', type: :integration do
     end
   end
 
+  context 'when there are two versions of the same release uploaded' do
+    before {
+      target_and_login
+
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz')}")
+    }
+
+    it 'compiles the packages of the newer release when requested' do
+      deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
+      deployment_manifest['releases'][0]['version'] = '2'
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      out = bosh_runner.run("export release test_release/2 centos-7/3001")
+      expect(out).to include('Started compiling packages > pkg_2/e7f5b11c43476d74b2d12129b93cba584943e8d3')
+      expect(out).to include('Started compiling packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f')
+      expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
+      expect(out).to include('Started compiling packages > pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4')
+      expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+    end
+
+    it 'compiles the packages of the older release when requested' do
+      deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      out = bosh_runner.run("export release test_release/1 centos-7/3001")
+      expect(out).to include('Started compiling packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154')
+      expect(out).to include('Started compiling packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f')
+      expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
+      expect(out).to include('Started compiling packages > pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4')
+      expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+    end
+
+    it 'does not recompile packages unless they changed since last export' do
+      deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      bosh_runner.run("export release test_release/1 centos-7/3001")
+
+      deployment_manifest['releases'][0]['version'] = '2'
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      out = bosh_runner.run("export release test_release/2 centos-7/3001")
+
+      expect(out).to_not include('Started compiling packages > pkg_1/')
+      expect(out).to include('Started compiling packages > pkg_2/e7f5b11c43476d74b2d12129b93cba584943e8d3')
+      expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
+      expect(out).to include('Started compiling packages > pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4')
+      expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+    end
+
+    it 'respects transitive dependencies when recompiling packages' do
+      deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      bosh_runner.run("export release test_release/1 centos-7/3001")
+
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
+      deployment_manifest['releases'][0]['version'] = '3'
+      set_deployment({ manifest_hash: deployment_manifest })
+      deploy({})
+      out = bosh_runner.run("export release test_release/3 centos-7/3001")
+
+      expect(out).to include('Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f')
+      expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+
+      expect(out).to_not include('Started compiling packages > pkg_2/')
+      expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
+      expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
+    end
+  end
+
   context 'with a cloud config manifest' do
     before{
       target_and_login
