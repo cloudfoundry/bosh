@@ -249,7 +249,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         :bosh_sysstat,
         :system_kernel,
-        :system_ixgbevf,
+        # :system_ixgbevf,  # because of this issue https://gist.github.com/allomov-altoros/c63b326528beacd00e39
         bosh_steps,
         :rsyslog_config,
         :delay_monit_start,
