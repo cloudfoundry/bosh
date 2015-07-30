@@ -47,14 +47,11 @@ module Bosh::Dev
       branches.include?(branch_name)
     end
 
-    def verify_branch_was_merged(branch_name, candidate_sha)
-      stdout, stderr, status = exec_cmd("git fetch origin #{branch_name}")
-      raise "Failed fetching branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+    def verify_sha_contains_latest_master(candidate_sha)
+      latest_sha, stderr, status = exec_cmd('git rev-parse origin/master')
+      raise "Failed fetching branch master: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = exec_cmd("git branch --set-upstream-to=origin/#{branch_name} #{branch_name}")
-      raise "Failed to set upstream for branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
-
-      _, _, status = exec_cmd("git branch --merged #{candidate_sha} | grep #{branch_name}")
+      _, _, status = exec_cmd("git log #{candidate_sha} | grep #{latest_sha.strip}")
       status.success?
     end
   end
