@@ -25,7 +25,11 @@ pkg_mgr install $debs
 
 # we need newer rsyslog; this comes from the upstream project's own repo
 run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
-pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+# needed to remove rsyslog-mmjsonparse
+# because of this issue https://gist.github.com/allomov/63ffa084607705adf4a0
+# pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
+
 
 exclusions="postfix"
 pkg_mgr purge --auto-remove $exclusions

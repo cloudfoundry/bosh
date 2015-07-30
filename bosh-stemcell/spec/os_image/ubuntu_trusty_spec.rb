@@ -117,6 +117,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by base_ubuntu_packages' do
+    # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov/63ffa084607705adf4a0
     %w(
       libssl-dev
       lsof
@@ -148,7 +149,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       rsyslog
       rsyslog-relp
       rsyslog-gnutls
-      rsyslog-mmjsonparse
       openssh-server
       traceroute
       libncurses5-dev
