@@ -7,6 +7,19 @@ module Bosh::AwsCloud
        { '/dev/sdb' => 'ephemeral0' }
     end
 
+    def ebs_ephemeral_disk_mapping(volume_size_in_gb, volume_type)
+      [
+        {
+          device_name: '/dev/sdb',
+          ebs: {
+            volume_size: volume_size_in_gb,
+            volume_type: volume_type,
+            delete_on_termination: true,
+          },
+        },
+      ]
+    end
+
     ##
     # Raises CloudError exception
     #
