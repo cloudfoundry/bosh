@@ -267,8 +267,8 @@ cloud:
       <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
-      user: <%= reg_user %>
-      password: <%= reg_password %>
+      user: <%= JSON.dump(reg_user) %>
+      password: <%= JSON.dump(reg_password) %>
     <% if_p('aws.stemcell.kernel_id') do |kernel_id| %>
     stemcell:
       kernel_id: <%= kernel_id %>
@@ -328,8 +328,8 @@ cloud:
       <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
-      user: <%= reg_user %>
-      password: <%= reg_password %>
+      user: <%= JSON.dump(reg_user) %>
+      password: <%= JSON.dump(reg_password) %>
   <% end %>
 
   <% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
