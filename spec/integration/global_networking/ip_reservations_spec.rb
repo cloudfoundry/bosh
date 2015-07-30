@@ -221,7 +221,6 @@ describe 'global networking', type: :integration do
     end
 
     it 'keeps static IPs reserved when a job fails to deploy its VMs' do
-      pending("https://www.pivotaltracker.com/story/show/98127770")
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
@@ -241,7 +240,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to include('something about static ips being in use')
+      expect(output).to include("asked for a static IP 192.168.1.10 but it's already reserved/in use")
     end
 
     context 'using legacy network configuration (no cloud config)' do
