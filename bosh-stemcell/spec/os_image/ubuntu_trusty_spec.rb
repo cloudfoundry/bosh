@@ -117,7 +117,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by base_ubuntu_packages' do
-    # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov/63ffa084607705adf4a0
+    # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
     %w(
       libssl-dev
       lsof
