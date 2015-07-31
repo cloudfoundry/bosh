@@ -65,7 +65,7 @@ module Bosh::Director
         end
 
         parsed_networks.each do |network|
-          network.validate!(availability_zones)
+          network.validate_subnet_azs_contained_in!(availability_zones)
         end
 
         duplicates = detect_duplicates(parsed_networks) { |network| network.canonical_name }

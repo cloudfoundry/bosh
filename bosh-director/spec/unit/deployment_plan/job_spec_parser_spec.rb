@@ -717,6 +717,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       context 'when there is a key with values' do
         it 'parses each value as a string' do
           job_spec['availability_zones'] = ["zone1", "zone2"]
+          allow(network).to receive(:validate_has_job!)
           allow(deployment_plan).to receive(:availability_zone).with("zone1") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
           allow(deployment_plan).to receive(:availability_zone).with("zone2") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
@@ -725,6 +726,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         it 'raises an exception if the value are not strings' do
           job_spec['availability_zones'] = ['valid_zone', 3]
+          allow(network).to receive(:validate_has_job!)
           allow(deployment_plan).to receive(:availability_zone).with("valid_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
           expect {
@@ -736,6 +738,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         it 'raises an exception if the referenced AZ doesnt exist in the deployment' do
           job_spec['availability_zones'] = ['existent_zone', 'nonexistent_zone']
+          allow(network).to receive(:validate_has_job!)
           allow(deployment_plan).to receive(:availability_zone).with("existent_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
           allow(deployment_plan).to receive(:availability_zone).with("nonexistent_zone") { nil }
 
@@ -744,6 +747,32 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           }.to raise_error(
               Bosh::Director::JobUnknownAvailabilityZone, "Job `fake-job-name' references unknown availability zone 'nonexistent_zone'"
             )
+        end
+
+        describe 'validating AZs against the networks of the job' do
+          it 'validates that every network satisfies job AZ requirements' do
+            job_spec['availability_zones'] = ['zone1', 'zone2']
+            job_spec['networks'] = [
+              {'name' => 'first-network'},
+              {'name' => 'second-network', 'default' => ['dns', 'gateway']}
+            ]
+
+            first_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'first-network',)
+            second_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'second-network',)
+            allow(deployment_plan).to receive(:availability_zone).with("zone1") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+            allow(deployment_plan).to receive(:availability_zone).with("zone2") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+
+            allow(deployment_plan).to receive(:network).with('first-network') { first_network }
+            allow(deployment_plan).to receive(:network).with('second-network') { second_network }
+
+            allow(first_network).to receive(:validate_has_job!)
+            allow(second_network).to receive(:validate_has_job!)
+
+            parser.parse(job_spec)
+
+            expect(first_network).to have_received(:validate_has_job!).with(['zone1', 'zone2'], 'fake-job-name')
+            expect(second_network).to have_received(:validate_has_job!).with(['zone1', 'zone2'], 'fake-job-name')
+          end
         end
       end
 

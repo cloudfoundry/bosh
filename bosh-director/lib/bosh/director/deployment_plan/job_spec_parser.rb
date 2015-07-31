@@ -38,8 +38,9 @@ module Bosh::Director
         parse_resource_pool
         parse_update_config
         parse_instances
-        parse_networks
-        parse_availability_zones
+        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
+        assign_job_resources_for(networks)
+        parse_availability_zones(networks)
 
         @job
       end
@@ -256,8 +257,7 @@ module Bosh::Director
         end
       end
 
-      def parse_networks
-        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
+      def assign_job_resources_for(networks)
         reserve_ips_for_job(networks)
         assign_default_networks(networks)
       end
@@ -286,12 +286,22 @@ module Bosh::Director
         end
       end
 
-      def parse_availability_zones
+      def parse_availability_zones(networks)
         az_names = safe_property(@job_spec, 'availability_zones', class: Array, optional: true)
 
         return if az_names.nil?
 
         check_validity_of(az_names)
+
+        check_contains(az_names, networks)
+
+        @job.availability_zones = az_names
+      end
+
+      def check_contains(az_names, networks)
+        networks.each do |network|
+          network.validate_has_job!(az_names, @job.name)
+        end
       end
 
       def check_validity_of(az_names)
@@ -308,8 +318,6 @@ module Bosh::Director
             raise JobUnknownAvailabilityZone, "Job `#{@job.name}' references unknown availability zone '#{name}'"
           end
         end
-
-        @job.availability_zones = az_names
       end
 
       def validate_templates

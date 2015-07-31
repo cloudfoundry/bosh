@@ -67,7 +67,11 @@ module Bosh::Director
               "#network_settings not implemented for #{self.class}"
       end
 
-      def validate!(availability_zones)
+      def subnet_azs_contained_in(availability_zones)
+        raise NotImplementedError
+      end
+
+      def validate_has_job!(az_names, job_name)
         raise NotImplementedError
       end
     end

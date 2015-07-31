@@ -111,6 +111,10 @@ module Bosh::Director
         @ip_provider.allocate_dynamic_ip
       end
 
+      def availability_zone
+        @availability_zone_name.name
+      end
+
       def validate!(availability_zones)
         @availability_zone_name.assert_present!(availability_zones)
       end
@@ -131,20 +135,19 @@ module Bosh::Director
               "Invalid gateway for network `#{@network.name}': #{reason}"
       end
 
-      class AvailabilityZoneName
-        def initialize(name, network_name)
-          @name = name
-          @network_name = network_name
-        end
-
+      class AvailabilityZoneName < Struct.new(:name, :network_name)
         def assert_present!(availability_zones)
-          unless availability_zones.any? { |az| az.name == @name }
-            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{@network_name}' refers to an unknown availability zone '#{@name}'"
+          unless availability_zones.any? { |az| az.name == name }
+            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{network_name}' refers to an unknown availability zone '#{name}'"
           end
         end
       end
 
       class UnspecifiedAvailabilityZoneName
+        def name
+          nil
+        end
+
         def assert_present!(availability_zones)
           # don't care, wasn't specified
         end

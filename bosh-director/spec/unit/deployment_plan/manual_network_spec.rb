@@ -1,22 +1,22 @@
 require 'spec_helper'
 
- describe Bosh::Director::DeploymentPlan::ManualNetwork do
-   let(:manifest) do
-     manifest = Bosh::Spec::Deployments.legacy_manifest
-     manifest['networks'].first['subnets'].first['range'] = network_range
-     manifest['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
-     manifest['networks'].first['subnets'].first['static'] = static_ips
-     manifest
-   end
-   let(:network_range) { '192.168.1.0/24' }
-   let(:static_ips) { [] }
-   let(:network_spec) { manifest['networks'].first }
-   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
-   let(:deployment_plan) { planner_factory.planner_without_vm_binding(manifest, nil, {}) }
-   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
-   let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(deployment_plan, logger, {}) }
+describe Bosh::Director::DeploymentPlan::ManualNetwork do
+  let(:manifest) do
+   manifest = Bosh::Spec::Deployments.legacy_manifest
+   manifest['networks'].first['subnets'].first['range'] = network_range
+   manifest['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
+   manifest['networks'].first['subnets'].first['static'] = static_ips
+   manifest
+  end
+  let(:network_range) { '192.168.1.0/24' }
+  let(:static_ips) { [] }
+  let(:network_spec) { manifest['networks'].first }
+  let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
+  let(:deployment_plan) { planner_factory.planner_without_vm_binding(manifest, nil, {}) }
+  let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
+  let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(deployment_plan, logger, {}) }
 
-   subject(:manual_network) do
+  subject(:manual_network) do
      BD::DeploymentPlan::ManualNetwork.new(
        network_spec,
        global_network_resolver,
@@ -25,7 +25,7 @@ require 'spec_helper'
      )
    end
 
-   describe :initialize do
+  describe :initialize do
     it 'should parse subnets' do
       expect(manual_network.subnets.size).to eq(1)
       subnet = manual_network.subnets.first
@@ -184,5 +184,72 @@ require 'spec_helper'
         manual_network.network_settings(reservation)
       }.to raise_error(/without an IP/)
     end
-end
+  end
+
+  describe 'availability_zones' do
+    let(:network_spec) do
+      Bosh::Spec::Deployments.network.merge(
+        'subnets' => [
+          {
+            'range' => '10.1.0.0/24',
+            'gateway' => '10.1.0.1',
+            'availability_zone' => 'zone_1',
+          },
+          {
+            'range' => '10.2.0.0/24',
+            'gateway' => '10.2.0.1',
+            'availability_zone' => 'zone_2'
+          },
+          {
+            'range' => '10.3.0.0/24',
+            'gateway' => '10.3.0.1',
+          },
+          {
+            'range' => '10.4.0.0/24',
+            'gateway' => '10.4.0.1',
+            'availability_zone' => 'zone_1'
+          },
+        ]
+      )
+    end
+
+    it 'returns availability zones specified by subnets' do
+      expect(manual_network.availability_zones).to eq (['zone_1', 'zone_2'])
+    end
+  end
+
+  describe 'validate_has_job' do
+    let(:network_spec) do
+      Bosh::Spec::Deployments.network.merge(
+        'subnets' => [
+          {
+            'range' => '10.1.0.0/24',
+            'gateway' => '10.1.0.1',
+            'availability_zone' => 'zone_1',
+          },
+          {
+            'range' => '10.2.0.0/24',
+            'gateway' => '10.2.0.1',
+            'availability_zone' => 'zone_2'
+          },
+        ]
+      )
+    end
+
+    it 'passes when all availability zone names are contained by subnets' do
+      expect { manual_network.validate_has_job!([], 'foo-job') }.to_not raise_error
+      expect { manual_network.validate_has_job!(['zone_1'], 'foo-job') }.to_not raise_error
+      expect { manual_network.validate_has_job!(['zone_2'], 'foo-job') }.to_not raise_error
+      expect { manual_network.validate_has_job!(['zone_1', 'zone_2'], 'foo-job') }.to_not raise_error
+    end
+
+    it 'raises when any availability zone are not contained by a subnet' do
+      expect {
+        manual_network.validate_has_job!(['zone_1', 'zone_3', 'zone_2', 'zone_4'], 'foo-job')
+      }.to raise_error(
+          Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
+          "Job 'foo-job' refers to an availability zone(s) '[\"zone_3\", \"zone_4\"]' but 'a' has no matching subnet(s)."
+        )
+    end
+  end
 end

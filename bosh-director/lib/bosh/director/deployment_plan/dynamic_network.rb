@@ -82,7 +82,11 @@ module Bosh::Director
         config
       end
 
-      def validate!(availability_zones)
+      def validate_subnet_azs_contained_in!(availability_zones)
+        # nothing to validate
+      end
+
+      def validate_has_job!(az_names, job_name)
         # nothing to validate
       end
 

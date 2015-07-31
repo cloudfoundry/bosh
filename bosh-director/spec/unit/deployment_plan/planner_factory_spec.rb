@@ -118,25 +118,26 @@ module Bosh
 
             describe 'jobs' do
               let(:cloud_config_hash) do
-                Bosh::Spec::Deployments.simple_cloud_config.merge(
+                hash = Bosh::Spec::Deployments.simple_cloud_config.merge(
                   'availability_zones' => [
                     {'name' => 'zone1', 'cloud_properties' => {}},
-                    {'name' => 'zone2', 'cloud_properties' => {}},
                   ]
                 )
+                hash['networks'].first['subnets'].first['availability_zone'] = 'zone1'
+                hash
               end
 
               let(:manifest_hash) do
                 Bosh::Spec::Deployments.simple_manifest.merge(
                   'jobs' => [
-                    Bosh::Spec::Deployments.simple_job().merge('availability_zones' => ['zone1', 'zone2'])
+                    Bosh::Spec::Deployments.simple_job().merge('availability_zones' => ['zone1'])
                   ]
                 )
               end
 
               it 'has availability_zones as specified by users' do
                 expect(planner.jobs.length).to eq(1)
-                expect(planner.jobs.first.availability_zones).to eq(['zone1', 'zone2'])
+                expect(planner.jobs.first.availability_zones).to eq(['zone1'])
               end
             end
           end

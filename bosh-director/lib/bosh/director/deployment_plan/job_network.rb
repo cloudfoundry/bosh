@@ -25,6 +25,10 @@ module Bosh::Director
       def make_default_for(defaults)
         @default_for = defaults
       end
+
+      def validate_has_job!(az_names, job_name)
+        @deployment_network.validate_has_job!(az_names, job_name)
+      end
     end
   end
 end
