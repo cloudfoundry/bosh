@@ -265,7 +265,7 @@ describe Bosh::Cli::Command::JobManagement do
     it 'displays an error about the missing argument' do
       expect {
         command.public_send(:stop_job)
-      }.to raise_error(ArgumentError, "wrong number of arguments (0 for 1..2)")
+      }.to raise_error(ArgumentError)
     end
   end
 end
