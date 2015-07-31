@@ -3,5 +3,5 @@ name: nginx
 files:
 - nginx/nginx-1.4.5.tar.gz
 - nginx/headers-more-v0.25.tgz
-- nginx/pcre-8.34.tar.gz
+- nginx/pcre-8.37.tar.gz
 - nginx/nginx-upload-module-2.2.tar.gz
