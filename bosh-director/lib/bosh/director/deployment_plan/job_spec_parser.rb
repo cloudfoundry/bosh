@@ -1,6 +1,7 @@
 require 'common/deep_copy'
 require 'bosh/template/property_helper'
 require 'bosh/director/deployment_plan/job_network_parser'
+require 'bosh/director/deployment_plan/job_availability_zone_parser'
 
 module Bosh::Director
   module DeploymentPlan
@@ -40,7 +41,7 @@ module Bosh::Director
         parse_instances
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
         assign_job_resources_for(networks)
-        parse_availability_zones(networks)
+        @job.availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
 
         @job
       end
@@ -283,40 +284,6 @@ module Bosh::Director
       def assign_default_networks(networks)
         Network::VALID_DEFAULTS.each do |property|
           @job.default_network[property] = networks.find {|network| network.default_for?(property) }
-        end
-      end
-
-      def parse_availability_zones(networks)
-        az_names = safe_property(@job_spec, 'availability_zones', class: Array, optional: true)
-
-        return if az_names.nil?
-
-        check_validity_of(az_names)
-
-        check_contains(az_names, networks)
-
-        @job.availability_zones = az_names
-      end
-
-      def check_contains(az_names, networks)
-        networks.each do |network|
-          network.validate_has_job!(az_names, @job.name)
-        end
-      end
-
-      def check_validity_of(az_names)
-        if az_names.empty?
-          raise JobMissingAvailabilityZones, "Job `fake-job-name' has empty availability zones"
-        end
-
-        az_names.each do |name|
-          unless name.is_a?(String)
-            raise JobInvalidAvailabilityZone, "Job `#{@job.name}' has invalid availability zone '#{name}', string expected"
-          end
-
-          if @deployment.availability_zone(name).nil?
-            raise JobUnknownAvailabilityZone, "Job `#{@job.name}' references unknown availability zone '#{name}'"
-          end
         end
       end
 
