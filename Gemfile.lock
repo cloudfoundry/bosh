@@ -566,16 +566,13 @@ DEPENDENCIES
   rspec-its
   rubocop
   rugged
-  serverspec
+  serverspec (= 0.15.4)
   simple_blobstore_server!
   simplecov (~> 0.9.0)
   sinatra
   sinatra-contrib
-  specinfra
+  specinfra (= 1.15.0)
   sqlite3
   timecop (~> 0.7.1)
   vcr
   webmock
-
-BUNDLED WITH
-   1.10.5
