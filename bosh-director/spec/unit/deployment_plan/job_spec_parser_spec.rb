@@ -715,13 +715,15 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
 
       context 'when there is a key with values' do
-        it 'parses each value as a string' do
+        it 'parses each value into the AZ on the deployment' do
           job_spec['availability_zones'] = ["zone1", "zone2"]
           allow(network).to receive(:validate_has_job!)
-          allow(deployment_plan).to receive(:availability_zone).with("zone1") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
-          allow(deployment_plan).to receive(:availability_zone).with("zone2") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+          zone1 = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+          zone2 = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+          allow(deployment_plan).to receive(:availability_zone).with("zone1") { zone1 }
+          allow(deployment_plan).to receive(:availability_zone).with("zone2") { zone2 }
 
-          expect(parser.parse(job_spec).availability_zones).to eq(["zone1", "zone2"])
+          expect(parser.parse(job_spec).availability_zones).to eq([zone1, zone2])
         end
 
         it 'raises an exception if the value are not strings' do
