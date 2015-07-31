@@ -47,7 +47,7 @@ module Bosh::OpenStackCloud
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
       @use_dhcp = @openstack_properties.fetch('use_dhcp', true)
-      @use_openstack_volume_service = @openstack_properties["use_openstack_volume_service"]
+      @use_openstack_volume_service = @openstack_properties.fetch('use_openstack_volume_service', true)
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
