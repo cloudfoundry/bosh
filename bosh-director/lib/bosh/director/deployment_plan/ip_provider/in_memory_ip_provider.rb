@@ -34,7 +34,7 @@ module Bosh::Director
         @logger = TaggedLogger.new(logger, 'network-configuration', 'in-memory-ip-provider')
       end
 
-      def allocate_dynamic_ip
+      def allocate_dynamic_ip(_)
         ip = @available_dynamic_ips.first
         if ip
           @logger.debug("Allocated dynamic IP '#{format_ip(ip)}' for #{@network_desc}")
@@ -43,8 +43,8 @@ module Bosh::Director
         ip
       end
 
-      def reserve_ip(ip)
-        ip = CIDRIP.new(ip)
+      def reserve_ip(reservation)
+        ip = CIDRIP.new(reservation.ip)
         if @available_static_ips.delete?(ip.to_i)
           @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")
           :static
@@ -52,8 +52,15 @@ module Bosh::Director
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
           :dynamic
         else
-          @logger.error("Failed to reserve ip '#{ip}' for #{@network_desc}: does not belong to static or dynamic pool")
-          nil
+          if reservation.resolved?
+            # if reservation is not resolved it is created from existing instance
+            # DatabaseIpProvider can verify if IP belongs to the same instance
+            # InMemoryIpProvider has no knowledge which instance is requesting IP
+            # so we allow this reservation to happen
+            message = "Failed to reserve ip '#{ip}' for #{@network_desc}: already reserved"
+            @logger.error(message)
+            raise NetworkReservationAlreadyInUse, message
+          end
         end
       end
 

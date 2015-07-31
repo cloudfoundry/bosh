@@ -266,15 +266,13 @@ module Bosh::Director
       def reserve_ips_for_job(networks)
         networks.each do |network|
           @job.instances.each_with_index do |instance, index|
-            reservation = NetworkReservation.new
             static_ips = network.static_ips
 
             # TODO: NetworkReservation should be 2 classes, not a class with a type field
             if static_ips
-              reservation.ip = static_ips[index]
-              reservation.type = NetworkReservation::STATIC
+              reservation = NetworkReservation.new_static(instance, static_ips[index])
             else
-              reservation.type = NetworkReservation::DYNAMIC
+              reservation = NetworkReservation.new_dynamic(instance)
             end
             instance.add_network_reservation(network.deployment_network, reservation)
           end

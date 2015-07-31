@@ -32,7 +32,7 @@ module Bosh::Director
       end
 
       def bind_state(deployment, state)
-        @network_reservations = StateNetworkReservations.new(deployment).create_from_state(state)
+        @network_reservations = StateNetworkReservations.new(deployment).create_from_state(self, state)
       end
 
       def resource_pool

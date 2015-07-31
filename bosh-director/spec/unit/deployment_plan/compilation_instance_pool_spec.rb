@@ -19,7 +19,6 @@ module Bosh::Director
     let(:compilation_env) { {compilation: 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:reservation) { NetworkReservation.new({}) }
     let(:network_settings) { {'network name' => 'network settings'} }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
     let(:thread_pool) do
@@ -39,10 +38,8 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false)
-      allow(network).to receive(:reserve!) { |reservation, name| reservation.reserved = true }
-      allow(NetworkReservation).to receive(:new_dynamic).and_return(reservation)
-      allow(reservation).to receive(:reserved?).and_return(true)
-      allow(network).to receive(:network_settings).with(reservation, ['dns', 'gateway']).and_return('network settings')
+      allow(network).to receive(:reserve) { |reservation| reservation.reserve }
+      allow(network).to receive(:network_settings).with(instance_of(NetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
@@ -63,13 +60,9 @@ module Bosh::Director
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
 
     shared_examples_for 'a compilation vm pool' do
-      context 'when network is not reserved' do
-        before { allow(reservation).to receive(:reserved?).and_return(false) }
-
-        it 'reserves a network for a new vm' do
-          expect(network).to receive(:reserve!).with(reservation, /compilation-/)
-          action
-        end
+      it 'reserves a network for a new vm' do
+        expect(network).to receive(:reserve).with(instance_of(NetworkReservation))
+        action
       end
 
       it 'defers to the vm creator to create a vm' do
@@ -124,7 +117,7 @@ module Bosh::Director
         end
 
         it 'releases the network reservation' do
-          expect(network).to receive(:release).with(reservation)
+          expect(network).to receive(:release).with(instance_of(NetworkReservation))
           expect { action_that_raises }.to raise_error(create_instance_error)
         end
       end

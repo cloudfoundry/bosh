@@ -58,7 +58,7 @@ module Bosh::Director
 
       @instance.with_network_update do
         unless try_to_update_in_place
-          @logger.debug("Failed to update in place. Recreating VM")
+          @logger.debug('Failed to update in place. Recreating VM')
           recreate_vm(nil)
         end
       end
@@ -67,7 +67,7 @@ module Bosh::Director
       update_persistent_disk
 
       if only_trusted_certs_changed
-        @logger.debug("Skipping apply, trusted certs change only")
+        @logger.debug('Skipping apply, trusted certs change only')
       else
         apply_state
       end
@@ -87,10 +87,10 @@ module Bosh::Director
 
     def try_to_update_in_place
       if @instance.resource_pool_changed?
-        @logger.debug("Resource pool has changed. Can't update VM in place.")
+        @logger.debug("Resource pool has changed. Can't update VM in place")
         return false
       end
-      @logger.debug("Trying to update VM settings in place.")
+      @logger.debug('Trying to update VM settings in place')
 
       network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
       success = network_updater.update

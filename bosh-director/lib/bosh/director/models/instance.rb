@@ -4,6 +4,7 @@ module Bosh::Director::Models
     many_to_one :vm
     one_to_many :persistent_disks
     one_to_many :rendered_templates_archives
+    one_to_many :ip_addresses
 
     def validate
       validates_presence [:deployment_id, :job, :index, :state]
@@ -37,4 +38,7 @@ module Bosh::Director::Models
       end
     end
   end
+
+  Instance.plugin :association_dependencies
+  Instance.add_association_dependencies :ip_addresses => :destroy
 end

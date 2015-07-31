@@ -2,16 +2,18 @@ require 'spec_helper'
 
 describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
-  let(:ip_provider_factory) do
-    deployment_model = Bosh::Director::Models::Deployment.make
-    BD::DeploymentPlan::IpProviderFactory.new(deployment_model, logger, cloud_config: true)
-  end
+  let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, cloud_config: true) }
 
   def make_subnet(properties)
     BD::DeploymentPlan::NetworkSubnet.new(@network, properties, reserved_ranges, ip_provider_factory)
   end
 
   let(:reserved_ranges) { [] }
+  let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
+
+  def create_reservation(ip)
+    BD::NetworkReservation.new_static(instance, NetAddr::CIDR.create(ip))
+  end
 
   describe :initialize do
     it 'should create a subnet spec' do
@@ -126,12 +128,28 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
         'gateway' => '192.168.0.254', # 1 IP
       )
 
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.5'))).to be_nil
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.10'))).to be_nil
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.11'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.253'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.254'))).to be_nil
+      expect(subnet.reserve_ip(create_reservation('192.168.0.4'))).to eq(:dynamic)
+
+      expect {
+        subnet.reserve_ip(create_reservation('192.168.0.5'))
+      }.to raise_error BD::NetworkReservationAlreadyInUse,
+          "Failed to reserve ip '192.168.0.5' " +
+            "for network 'net_a' (192.168.0.0/24): already reserved"
+
+      expect {
+        subnet.reserve_ip(create_reservation('192.168.0.10'))
+      }.to raise_error BD::NetworkReservationAlreadyInUse,
+          "Failed to reserve ip '192.168.0.10' " +
+            "for network 'net_a' (192.168.0.0/24): already reserved"
+
+      expect(subnet.reserve_ip(create_reservation('192.168.0.11'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(create_reservation('192.168.0.253'))).to eq(:dynamic)
+
+      expect {
+        subnet.reserve_ip(create_reservation('192.168.0.254'))
+      }.to raise_error BD::NetworkReservationAlreadyInUse,
+          "Failed to reserve ip '192.168.0.254' " +
+            "for network 'net_a' (192.168.0.0/24): already reserved"
     end
 
     context 'when there are reserved ranges' do
@@ -143,7 +161,9 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
           'gateway' => '192.168.0.254',
         )
 
-        expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))).to be_nil
+        expect {
+          subnet.reserve_ip(create_reservation('192.168.0.1'))
+        }.to raise_error BD::NetworkReservationAlreadyInUse
       end
 
       it 'should allocate dynamic IPs outside of those ranges' do
@@ -152,7 +172,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
           'gateway' => '192.168.0.254',
         )
 
-        expect(subnet.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.16').to_i)
+        expect(subnet.allocate_dynamic_ip(instance)).to eq(NetAddr::CIDR.create('192.168.0.16').to_i)
       end
 
       it 'allows specifying static IPs that are in legacy reserved ranges' do
@@ -162,7 +182,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
           'static' => ['192.168.0.1']
         )
 
-        expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))).to eq(:static)
+        expect(subnet.reserve_ip(create_reservation('192.168.0.1'))).to eq(:static)
       end
     end
 
@@ -187,12 +207,15 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
         'cloud_properties' => {'foo' => 'bar'}
       )
 
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.5'))).to eq(:static)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.10'))).to eq(:static)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.11'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.253'))).to eq(:dynamic)
-      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.254'))).to be_nil
+      expect(subnet.reserve_ip(create_reservation('192.168.0.4'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(create_reservation('192.168.0.5'))).to eq(:static)
+      expect(subnet.reserve_ip(create_reservation('192.168.0.10'))).to eq(:static)
+      expect(subnet.reserve_ip(create_reservation('192.168.0.11'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(create_reservation('192.168.0.253'))).to eq(:dynamic)
+
+      expect {
+        subnet.reserve_ip(create_reservation('192.168.0.254'))
+      }.to raise_error BD::NetworkReservationAlreadyInUse
     end
 
     it 'should fail when the static IP is not valid' do
@@ -250,7 +273,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
       expect(@subnet.overlaps?(other)).to eq(true)
     end
   end
-  
+
   describe 'validate!' do
     context 'with no availability zone specified' do
       it 'does not care whether that az name is in the list' do
@@ -263,7 +286,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
         expect { subnet.validate!([]) }.to_not raise_error
       end
     end
-    
+
     context 'with a nil availability zone' do
       it 'errors' do
         subnet = make_subnet(
@@ -276,7 +299,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
         expect { subnet.validate!([instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)]) }.to_not raise_error
       end
     end
-    
+
     context 'with an availability zone that is present' do
       it 'is valid' do
         subnet = make_subnet(

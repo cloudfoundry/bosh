@@ -93,7 +93,7 @@ module Bosh::Director::DeploymentPlan
         })
       end
 
-      let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
+      let(:reservation) { Bosh::Director::NetworkReservation.new_static(instance, ipaddress) }
 
       let(:current_state) { {'networks' => {network_name => network_info}} }
       let(:logger) { double(:logger).as_null_object }
@@ -115,7 +115,7 @@ module Bosh::Director::DeploymentPlan
           }, logger)
         end
 
-        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic(instance) }
         before do
           network.reserve(reservation)
           instance.add_network_reservation(network, reservation)
@@ -144,13 +144,12 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, logger, {}),
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger, {}),
             logger
           )
         end
 
         before do
-          network.reserve(reservation)
           instance.add_network_reservation(network, reservation)
         end
 
@@ -164,6 +163,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'temporary errand hack' do
+        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic(instance) }
         let(:network) do
           ManualNetwork.new({
               'name' => network_name,
@@ -176,7 +176,7 @@ module Bosh::Director::DeploymentPlan
                 }]
             },
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(plan, logger, {}),
+            Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger, {}),
             logger
           )
         end
@@ -392,7 +392,7 @@ module Bosh::Director::DeploymentPlan
       before do
         instance.configuration_hash = 'fake-desired-configuration-hash'
 
-        reservation = Bosh::Director::NetworkReservation.new_dynamic
+        reservation = Bosh::Director::NetworkReservation.new_dynamic(instance)
         instance.add_network_reservation(network, reservation)
 
         instance.bind_unallocated_vm
@@ -649,7 +649,7 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
-      let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+      let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic(instance) }
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
@@ -746,7 +746,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#reserve_networks' do
-      let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+      let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic(instance) }
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
       before do
         instance.add_network_reservation(network, network_reservation)
@@ -754,20 +754,17 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when network reservation is already reserved' do
-        before { network_reservation.reserved = true }
+        before { network_reservation.reserve }
 
         it 'does not reserve network reservation again' do
-          expect(network).to_not receive(:reserve!)
+          expect(network).to_not receive(:reserve)
           instance.reserve_networks
         end
       end
 
       context 'when network reservation is not reserved' do
-        before { network_reservation.reserved = false }
-
         it 'reserves network reservation with the network' do
-          expect(network).to receive(:reserve!).
-              with(network_reservation, "`fake-job/0'")
+          expect(network).to receive(:reserve).with(network_reservation)
 
           instance.reserve_networks
         end
@@ -781,7 +778,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       def set_desired_state(instance, network_name, ip_address)
-        reservation = Bosh::Director::NetworkReservation.new_static(ip_address)
+        reservation = Bosh::Director::NetworkReservation.new_static(instance, ip_address)
         my_first_network = instance_double(Bosh::Director::DeploymentPlan::Network, name: network_name, network_settings: {'ip' => ip_address})
         instance.add_network_reservation(my_first_network, reservation)
       end

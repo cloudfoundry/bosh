@@ -38,17 +38,11 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [Boolean] true if the reservation was fulfilled
       def reserve(reservation)
-        reservation.reserved = false
-        if reservation.static?
-          @logger.error("Failed to reserve IP for dynamic network '#{@name}': IP belongs to static range")
-          reservation.error = NetworkReservation::WRONG_TYPE
-        else
-          @logger.debug("Reserving IP for dynamic network '#{@name}'")
-          reservation.ip = DYNAMIC_IP
-          reservation.reserved = true
-          reservation.type = NetworkReservation::DYNAMIC
-        end
-        reservation.reserved?
+        reservation.validate_type(NetworkReservation::DYNAMIC)
+
+        @logger.debug("Reserving IP for dynamic network '#{@name}'")
+        reservation.type = NetworkReservation::DYNAMIC
+        reservation.reserve_with_ip(DYNAMIC_IP)
       end
 
       ##

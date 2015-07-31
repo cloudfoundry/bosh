@@ -19,28 +19,31 @@ module Bosh::Director
     # @return [Symbol, nil] type
     attr_accessor :type
 
-    # @return [Boolean] reserved
-    attr_accessor :reserved
+    attr_reader :instance
 
-    # @return [Symbol, nil] reservation error
-    attr_accessor :error
-
-    def self.new_dynamic(ip = nil)
-      new(:type => NetworkReservation::DYNAMIC, :ip => ip)
+    def self.new_dynamic(instance)
+      new(instance, nil, NetworkReservation::DYNAMIC)
     end
 
-    def self.new_static(ip = nil)
-      new(:type => NetworkReservation::STATIC, :ip => ip)
+    def self.new_static(instance, ip)
+      new(instance, ip, NetworkReservation::STATIC)
+    end
+
+    # network reservation for existing instance
+    # type is ignored in validation and will be set from network
+    def self.new_unresolved(instance, ip)
+      new(instance, ip, nil)
     end
 
     ##
     # Creates a new network reservation
-    # @param [Hash] options the options to create the reservation from
-    # @option options [Integer, String, NetAddr::CIDR] :ip reservation ip
-    # @option options [Symbol] :type reservation type
-    def initialize(options = {})
-      @ip = options[:ip]
-      @type = options[:type]
+    # @param [DeploymentPlan::Instance] instance
+    # @param [Integer, String, NetAddr::CIDR] ip reservation ip
+    # @param [Symbol] type of reservation
+    def initialize(instance, ip, type)
+      @instance = instance
+      @ip = ip
+      @type = type
       @reserved = false
       @error = nil
 
@@ -65,6 +68,33 @@ module Bosh::Director
       !!@reserved
     end
 
+    def validate_type(type)
+      return unless resolved?
+
+      if @type != type
+        ip_desc = @ip.nil? ? 'IP' : "IP '#{formatted_ip}'"
+
+        raise NetworkReservationWrongType,
+          "Failed to assign #{@type} #{ip_desc} to '#{@instance}': does not belong to #{format_type(type)} pool"
+      end
+    end
+
+    # If type is not set, reservation was created from existing
+    # instance state. This reservation is considered valid
+    # until it is resolved
+    def resolved?
+      !@type.nil?
+    end
+
+    def reserve
+      @reserved = true
+    end
+
+    def reserve_with_ip(ip)
+      @ip = ip
+      @reserved = true
+    end
+
     ##
     # Tries to take the provided reservation if it meets the requirements
     # @return [void]
@@ -79,44 +109,6 @@ module Bosh::Director
       end
     end
 
-    ##
-    # Handles network reservation error and re-raises the proper exception
-    # @param [String] origin Whoever tried to take the reservation
-    # @raise [NetworkReservationAlreadyInUse]
-    # @raise [NetworkReservationWrongType]
-    # @raise [NetworkReservationNotEnoughCapacity]
-    # @raise [NetworkReservationError]
-    # @return void
-    def handle_error(origin)
-      if static?
-        case @error
-          when NetworkReservation::USED
-            raise NetworkReservationAlreadyInUse,
-                  "#{origin} asked for a static IP #{formatted_ip} " +
-                  "but it's already reserved/in use"
-          when NetworkReservation::WRONG_TYPE
-            raise NetworkReservationWrongType,
-                  "#{origin} asked for a static IP #{formatted_ip} " +
-                  "but it's in the dynamic pool"
-          else
-            raise NetworkReservationError,
-                  "#{origin} failed to reserve static IP " +
-                  "#{formatted_ip}: #{@error}"
-        end
-      else
-        case @error
-          when NetworkReservation::CAPACITY
-            raise NetworkReservationNotEnoughCapacity,
-                  "#{origin} asked for a dynamic IP " +
-                  "but there were no more available"
-          else
-            raise NetworkReservationError,
-                  "#{origin} failed to reserve dynamic IP " +
-                  "#{formatted_ip}: #{@error}"
-        end
-      end
-    end
-
     def to_s
       "{type=#{@type}, ip=#{formatted_ip.inspect}}"
     end
@@ -126,5 +118,17 @@ module Bosh::Director
     def formatted_ip
       @ip.nil? ? nil : ip_to_netaddr(@ip).ip
     end
+
+    def format_type(type)
+      case type
+        when NetworkReservation::STATIC
+          'static'
+        when NetworkReservation::DYNAMIC
+          'dynamic'
+        else
+          type
+      end
+    end
+
   end
 end

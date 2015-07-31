@@ -21,7 +21,10 @@ module Bosh::Director
 
       instances = []
       @job.instances.each do |instance|
-        instances << instance if instance.changed?
+        if instance.changed?
+          @logger.debug("Need to update instance '#{instance}', changes: #{instance.changes.inspect}")
+          instances << instance
+        end
       end
 
       if instances.empty?
