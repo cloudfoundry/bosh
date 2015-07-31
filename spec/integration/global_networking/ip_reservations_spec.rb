@@ -376,8 +376,6 @@ describe 'global networking', type: :integration do
     end
 
     it 'keeps IPs of a job when that job fails to deploy its VMs' do
-      skip 'https://www.pivotaltracker.com/story/show/98127770'
-
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
@@ -392,7 +390,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to include('asked for a dynamic IP but there were no more available')
+      expect(output).to include("Failed to reserve IP for 'foobar/0' for manual network 'a': no more available")
     end
 
     it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
