@@ -51,6 +51,7 @@ module Bosh::Director
         # Expanding virtual states
         case @state
           when 'recreate'
+            @recreate = true
             @state = 'started'
           when 'restart'
             @restart = true
@@ -269,7 +270,7 @@ module Bosh::Director
       ##
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
-        if @job.deployment.recreate
+        if @recreate || @job.deployment.recreate
           return true
         end
 
