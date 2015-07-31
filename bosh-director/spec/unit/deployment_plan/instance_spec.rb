@@ -298,6 +298,19 @@ module Bosh::Director::DeploymentPlan
         expect(instance.vm).not_to be_nil
         expect(instance.vm.bound_instance).to eq(instance)
       end
+
+      it 'creates a new uuid for each instance' do
+        first_instance = Instance.new(job, index, state, plan, logger)
+        first_instance.bind_unallocated_vm
+        first_uuid = first_instance.uuid
+        index = 1
+        second_instance = Instance.new(job, index, state, plan, logger)
+        second_instance.bind_unallocated_vm
+        second_uuid = second_instance.uuid
+        expect(first_uuid).to_not be_nil
+        expect(second_uuid).to_not be_nil
+        expect(first_uuid).to_not eq(second_uuid)
+      end
     end
 
     describe '#bind_current_state' do

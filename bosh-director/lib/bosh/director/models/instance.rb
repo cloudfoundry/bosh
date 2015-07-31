@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module Bosh::Director::Models
   class Instance < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :deployment
@@ -12,6 +14,10 @@ module Bosh::Director::Models
       validates_unique [:vm_id] if vm_id
       validates_integer :index
       validates_includes ["started", "stopped", "detached"], :state
+    end
+
+    def before_create
+      self.uuid = SecureRandom.uuid()
     end
 
     def persistent_disk
