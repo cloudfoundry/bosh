@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
   before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
-  let(:instance) { instance_double( BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
+  let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   describe :initialize do
     it "defaults cloud properties to empty hash" do
