@@ -19,10 +19,8 @@
     'cloud' => {}
   }
 
-  plugin = nil
   cloud_params = params['cloud']
   if_p('aws.access_key_id', 'aws.secret_access_key', 'aws.region') do |access_key_id, secret_access_key, region| 
-    plugin = 'aws'
     cloud_params['plugin'] = 'aws'
     cloud_params['aws'] = {
       'access_key_id' =>  access_key_id,
@@ -50,7 +48,6 @@
   end
 
   if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant|
-    plugin = 'openstack'
     cloud_params['plugin'] = 'openstack'
     cloud_params['openstack'] = {
       'auth_url' =>  auth_url,
@@ -65,11 +62,11 @@
       cloud_params['openstack']['endpoint_type'] = endpoint_type
     end
     if_p('openstack.connection_options') do |connection_options|
-      cloud_params['openstack']['connection_options'] = JSON.generate(connection_options)
+      cloud_params['openstack']['connection_options'] = connection_options
     end
   end
 
-  raise 'Could not find cloud plugin' if plugin.nil?
+  raise 'Could not find cloud plugin' if params['cloud']['plugin'].nil?
 
   JSON.dump(params)
 %>
