@@ -163,8 +163,8 @@ module Bosh
                   if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
                     compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
                     if compiled_packages_list.nil?
-                      msg = "Can't deploy `#{needed_package.name}' version `#{needed_package.version}': it is not " +
-                          "compiled for #{job.resource_pool.stemcell.model.desc} and no source package is available"
+                      msg = "Can't deploy `#{release_version_model.release.name}/#{release_version_model.version}': it is not " +
+                          "compiled for `#{job.resource_pool.stemcell.model.desc}' and no source package is available"
                       raise PackageMissingSourceCode, msg
                     end
                   end

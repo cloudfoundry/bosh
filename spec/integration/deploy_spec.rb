@@ -166,18 +166,19 @@ describe 'deploy', type: :integration do
   end
 
   context 'it supports compiled releases' do
+    before {
+      target_and_login
+
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+    }
+
     context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
       before {
-        target_and_login
-
-        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-
         cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
         cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
         upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
-
-        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       }
 
       context 'and they contain identical packages' do
@@ -211,6 +212,20 @@ describe 'deploy', type: :integration do
           expect(out).to_not include('Started compiling packages > pkg_2/')
           expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
           expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
+        end
+      end
+
+      context 'when deploying with a stemcell that does not match the compiled release' do
+        before {
+          # switch deployment to use "ubuntu-stemcell/1"
+          bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+          upload_cloud_config
+          set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5') })
+        }
+
+        it 'fails with an error message saying there is no way to compile for that stemcell' do
+          out = deploy(failure_expected: true)
+          expect(out).to include("Can't deploy `test_release/1': it is not compiled for `ubuntu-stemcell/1' and no source package is available")
         end
       end
     end
