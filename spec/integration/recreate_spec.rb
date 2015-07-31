@@ -19,4 +19,14 @@ describe 'recreate job', type: :integration do
     expect(bosh_runner.run('recreate foobar 1')).to match %r{foobar/1 has been recreated}
     expect(vm_cid('foobar/1')).to_not eq(old_second_vm_cid)
   end
+
+  it 'recreates a deployment' do
+    deploy_from_scratch
+    old_first_vm_cid = vm_cid('foobar/0')
+    old_second_vm_cid = vm_cid('foobar/1')
+
+    bosh_runner.run('deploy --recreate')
+    expect(vm_cid('foobar/0')).to_not eq(old_first_vm_cid)
+    expect(vm_cid('foobar/1')).to_not eq(old_second_vm_cid)
+  end
 end
