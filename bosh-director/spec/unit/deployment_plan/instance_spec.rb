@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-    subject(:instance) { Instance.new(job, index, state, plan, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
 
@@ -35,6 +35,7 @@ module Bosh::Director::DeploymentPlan
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
+    let(:availability_zone) { nil }
     let(:vm) { Vm.new }
     before do
       allow(job).to receive(:instance_state).with(0).and_return('started')

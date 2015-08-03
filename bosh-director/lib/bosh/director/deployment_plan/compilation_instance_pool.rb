@@ -67,7 +67,8 @@ module Bosh::Director
           @deployment_plan.compilation.env
         )
         compile_job = CompilationJob.new(resource_pool, @deployment_plan.compilation.network_name)
-        Instance.new(compile_job, 0, 'started', @deployment_plan, @logger)
+        availability_zone = nil # no AZs for compilation yet
+        Instance.new(compile_job, 0, 'started', @deployment_plan, availability_zone, @logger)
       end
 
       def configure_instance(instance)
@@ -112,6 +113,10 @@ module Bosh::Director
           'dns' => @network,
           'gateway' => @network
         }
+      end
+
+      def availability_zones
+        nil
       end
 
       def spec

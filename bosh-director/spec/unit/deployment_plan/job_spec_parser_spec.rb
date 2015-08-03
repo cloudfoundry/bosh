@@ -638,7 +638,34 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
     describe 'update key'
 
-    describe 'instances key'
+    describe 'instances key' do
+      context 'with availability zones' do
+        it 'distributes the instances evenly' do
+          set_up_azs!(['zone1', 'zone2', 'zone3'], job_spec, deployment_plan)
+          allow(network).to receive(:validate_has_job!)
+          job_spec['instances'] = 11
+
+          job = parser.parse(job_spec)
+
+          expect(job.instances.map(&:availability_zone).map(&:name)).to eq([
+                'zone1', 'zone2', 'zone3',
+                'zone1', 'zone2', 'zone3',
+                'zone1', 'zone2', 'zone3',
+                'zone1', 'zone2',
+              ])
+        end
+
+      end
+      context 'without availability zones' do
+        it 'puts the instances in no availability zone' do
+          job_spec['instances'] = 3
+
+          job = parser.parse(job_spec)
+
+          expect(job.instances.map(&:availability_zone)).to eq([nil, nil, nil])
+        end
+      end
+    end
 
     describe 'networks key' do
       before { job_spec['networks'].first['static_ips'] = '10.0.0.2 - 10.0.0.4' } # 2,3,4
@@ -716,13 +743,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
       context 'when there is a key with values' do
         it 'parses each value into the AZ on the deployment' do
-          job_spec['availability_zones'] = ["zone1", "zone2"]
+          zone1, zone2 = set_up_azs!(["zone1", "zone2"], job_spec, deployment_plan)
           allow(network).to receive(:validate_has_job!)
-          zone1 = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-          zone2 = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
-          allow(deployment_plan).to receive(:availability_zone).with("zone1") { zone1 }
-          allow(deployment_plan).to receive(:availability_zone).with("zone2") { zone2 }
-
           expect(parser.parse(job_spec).availability_zones).to eq([zone1, zone2])
         end
 
@@ -753,7 +775,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         describe 'validating AZs against the networks of the job' do
           it 'validates that every network satisfies job AZ requirements' do
-            job_spec['availability_zones'] = ['zone1', 'zone2']
+            set_up_azs!(['zone1', 'zone2'], job_spec, deployment_plan)
             job_spec['networks'] = [
               {'name' => 'first-network'},
               {'name' => 'second-network', 'default' => ['dns', 'gateway']}
@@ -761,8 +783,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             first_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'first-network',)
             second_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'second-network',)
-            allow(deployment_plan).to receive(:availability_zone).with("zone1") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
-            allow(deployment_plan).to receive(:availability_zone).with("zone2") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
             allow(deployment_plan).to receive(:network).with('first-network') { first_network }
             allow(deployment_plan).to receive(:network).with('second-network') { second_network }
@@ -788,6 +808,15 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               Bosh::Director::ValidationInvalidType, "Property `availability_zones' (value 3) did not match the required type `Array'"
             )
         end
+      end
+    end
+
+    def set_up_azs!(azs, job_spec, deployment_plan)
+      job_spec['availability_zones'] = azs
+      azs.map do |az_name|
+        fake_az = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: az_name)
+        allow(deployment_plan).to receive(:availability_zone).with(az_name) { fake_az }
+        fake_az
       end
     end
 

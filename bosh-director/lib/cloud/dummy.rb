@@ -19,6 +19,7 @@ module Bosh
         end
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
+        @vm_repo = VMRepo.new(@running_vms_dir)
         @tmp_dir = File.join(@base_dir, 'tmp')
         FileUtils.mkdir_p(@tmp_dir)
 
@@ -53,18 +54,18 @@ module Bosh
         {
           agent_id: String,
           stemcell_id: String,
-          resource_pool: Hash,
+          cloud_properties: Hash,
           networks: Hash,
           disk_cids: [String],
           env: Hash,
         }
       end
       # rubocop:disable ParameterLists
-      def create_vm(agent_id, stemcell_id, resource_pool, networks, disk_cids, env)
+      def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
       # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
 
-        validate_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, resource_pool, networks, disk_cids, env)
+        validate_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
         cmd = commands.next_create_vm_cmd
 
@@ -86,11 +87,11 @@ module Bosh
         })
 
         agent_pid = spawn_agent_process(agent_id)
+        vm = VM.new(agent_pid.to_s, agent_id, cloud_properties)
 
-        FileUtils.mkdir_p(@running_vms_dir)
-        File.write(vm_file(agent_pid), agent_id)
+        @vm_repo.save(vm)
 
-        agent_pid.to_s
+        vm.id
       end
 
       DELETE_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String} }
@@ -113,7 +114,7 @@ module Bosh
       HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String} }
       def has_vm?(vm_id)
         validate_inputs(HAS_VM_SCHEMA, __method__, vm_id)
-        File.exists?(vm_file(vm_id))
+        @vm_repo.exists?(vm_id)
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
@@ -220,6 +221,10 @@ module Bosh
 
       def set_vm_metadata(vm, metadata); end
 
+      def read_cloud_properties(vm_id)
+        @vm_repo.load(vm_id).cloud_properties
+      end
+
       private
 
       def spawn_agent_process(agent_id)
@@ -245,7 +250,7 @@ module Bosh
       end
 
       def agent_id_for_vm_id(vm_id)
-        File.read(vm_file(vm_id))
+        @vm_repo.load(vm_id).agent_id
       end
 
       def agent_settings_file(agent_id)
@@ -299,10 +304,6 @@ module Bosh
 
       def stemcell_file(stemcell_id)
         File.join(@base_dir, "stemcell_#{stemcell_id}")
-      end
-
-      def vm_file(vm_id)
-        File.join(@running_vms_dir, vm_id.to_s)
       end
 
       def disk_file(disk_id)
@@ -423,6 +424,39 @@ module Bosh
           hash[param[1]] = the_method_args[index]
         end
         hash
+      end
+
+      class VM < Struct.new(:id, :agent_id, :cloud_properties)
+      end
+
+      class VMRepo
+        def initialize(running_vms_dir)
+          @running_vms_dir = running_vms_dir
+          FileUtils.mkdir_p(@running_vms_dir)
+        end
+
+        def load(id)
+          attrs = JSON.parse(File.read(vm_file(id)))
+          VM.new(id, attrs.fetch('agent_id'), attrs.fetch('cloud_properties'))
+        end
+
+        def exists?(id)
+          File.exists?(vm_file(id))
+        end
+
+        def save(vm)
+          serialized_vm = JSON.dump({
+              'agent_id' => vm.agent_id,
+              'cloud_properties' => vm.cloud_properties
+            })
+          File.write(vm_file(vm.id), serialized_vm)
+        end
+
+        private
+
+        def vm_file(vm_id)
+          File.join(@running_vms_dir, vm_id)
+        end
       end
     end
   end

@@ -14,7 +14,6 @@ module Bosh::Director
         networks = parse_networks(job_spec, job.name, deployment)
         networks.each do |network|
           validate_default_properties(network, job.name)
-          validate_correct_number_of_static_ips(network, job)
         end
 
         validate_default_networks(networks, job.name)
@@ -64,14 +63,6 @@ module Bosh::Director
               "Job `#{job_name}' specified an invalid default network property `#{property}', " +
                 "valid properties are: " + @properties_that_require_defaults.join(", ")
           end
-        end
-      end
-
-      def validate_correct_number_of_static_ips(network, job)
-        static_ips = network.static_ips
-        if static_ips && static_ips.size != job.instances.size
-          raise JobNetworkInstanceIpMismatch,
-            "Job `#{job.name}' has #{job.instances.size} instances but was allocated #{static_ips.size} static IPs"
         end
       end
 

@@ -30,12 +30,15 @@ module Bosh::Director
 
       attr_reader :deployment
 
+      attr_reader :availability_zone
+
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, state, deployment, logger)
+      def initialize(job, index, state, deployment, availability_zone, logger)
         @job = job
         @index = index
+        @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
         @name = "#{@job.name}/#{@index}"

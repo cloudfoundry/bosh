@@ -31,6 +31,10 @@ module Bosh::Director
         @model.deployment
       end
 
+      def availability_zone
+        nil # @model.availabillity_zone when we start persisting it
+      end
+
       def bind_state(deployment, state)
         @network_reservations = StateNetworkReservations.new(deployment).create_from_state(self, state)
       end

@@ -34,10 +34,17 @@ module Bosh::Director
     def create_for_instance(instance, disks)
       @logger.info('Creating VM')
 
+      availability_zone = instance.availability_zone
+      if availability_zone.nil?
+        vm_cloud_properties = instance.resource_pool.cloud_properties
+      else
+        vm_cloud_properties = instance.availability_zone.cloud_properties.merge(instance.resource_pool.cloud_properties)
+      end
+
       vm_model = create(
         instance.deployment_model,
         instance.resource_pool.stemcell,
-        instance.resource_pool.cloud_properties,
+        vm_cloud_properties,
         instance.network_settings,
         disks,
         instance.resource_pool.env,

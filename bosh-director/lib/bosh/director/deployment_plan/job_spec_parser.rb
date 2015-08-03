@@ -2,6 +2,7 @@ require 'common/deep_copy'
 require 'bosh/template/property_helper'
 require 'bosh/director/deployment_plan/job_network_parser'
 require 'bosh/director/deployment_plan/job_availability_zone_parser'
+require 'bosh/director/deployment_plan/availability_zone_picker'
 
 module Bosh::Director
   module DeploymentPlan
@@ -38,10 +39,12 @@ module Bosh::Director
         parse_properties
         parse_resource_pool
         parse_update_config
-        parse_instances
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
-        assign_job_resources_for(networks)
-        @job.availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        @job.availability_zones = availability_zones
+
+        parse_instances(availability_zones, networks) # will populate job.instances
+        assign_job_resources_for(networks) # will change job.instances and set job.default_network
 
         @job
       end
@@ -221,10 +224,18 @@ module Bosh::Director
         @job.update = UpdateConfig.new(update_spec, @deployment.update)
       end
 
-      def parse_instances
+      def parse_instances(availability_zones, networks)
         @job.state = safe_property(@job_spec, "state", class: String, optional: true)
         job_size = safe_property(@job_spec, "instances", class: Integer)
         instance_states = safe_property(@job_spec, "instance_states", class: Hash, default: {})
+
+        networks.each do |network|
+          static_ips = network.static_ips
+          if static_ips && static_ips.size != job_size
+            raise JobNetworkInstanceIpMismatch,
+              "Job `#{@job.name}' has #{job_size} instances but was allocated #{static_ips.size} static IPs"
+          end
+        end
 
         instance_states.each_pair do |index, state|
           begin
@@ -254,7 +265,8 @@ module Bosh::Director
 
         job_size.times do |index|
           instance_state = @job.instance_state(index)
-          @job.instances[index] = Instance.new(@job, index, instance_state, @deployment, @logger)
+          availability_zone = AvailabilityZonePicker.new.pick_from(availability_zones, index)
+          @job.instances[index] = Instance.new(@job, index, instance_state, @deployment, availability_zone, @logger)
         end
       end
 
