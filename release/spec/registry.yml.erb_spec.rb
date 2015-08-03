@@ -21,7 +21,9 @@ describe 'registry.yml.erb' do
             'host' => 'bosh.hamazonhws.com',
             'port' => 3306,
             'database' => 'bosh',
-            'connection_options' => {},
+            'connection_options' => {
+              'max_connections' => 32
+            },
           },
         }
       }
@@ -39,6 +41,22 @@ describe 'registry.yml.erb' do
     expect { parsed_yaml }.to raise_error('Could not find cloud plugin')
   end
 
+  shared_examples :database_options do
+    it 'renders database properties' do
+      expect(parsed_yaml['db']).to eq({
+        'adapter' => 'mysql2',
+        'user' => 'ub45391e00',
+        'password' => 'p4cd567d84d0e012e9258d2da30',
+        'host' => 'bosh.hamazonhws.com',
+        'port' => 3306,
+        'database' => 'bosh',
+        'connection_options' => {
+          'max_connections' => 32
+        }
+      })
+    end
+  end
+
   context 'aws' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
@@ -53,6 +71,8 @@ describe 'registry.yml.erb' do
         'ssl_ca_path' => '/custom/cert/'
       }
     end
+
+    it_behaves_like :database_options
 
     it 'sets plugin to aws' do
       expect(parsed_yaml['cloud']).to include({
@@ -105,8 +125,6 @@ describe 'registry.yml.erb' do
     end
   end
 
-
-
   context 'openstack' do
     before do
       deployment_manifest_fragment['properties']['openstack'] = {
@@ -116,6 +134,8 @@ describe 'registry.yml.erb' do
         'tenant' => 'tenant',
       }
     end
+
+    it_behaves_like :database_options
 
     it 'renders openstack properties' do
       expect(parsed_yaml['cloud']['openstack']).to eq({
