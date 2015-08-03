@@ -333,6 +333,37 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'when openstack.registry.user contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['http']['user'] = "!openstack.user"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['user']).to eq("!openstack.user")
+      end
+    end
+
+    context 'when openstack.registry.password contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['http']['password'] = "!openstack.password"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['password']).to eq("!openstack.password")
+      end
+    end
+
+    context 'when openstack.registry.endpoint contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['address'] = "!openstack.address"
+        deployment_manifest_fragment['properties']['registry']['http']['port'] = "!4578"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['endpoint']).to eq("http://!openstack.address:!4578")
+      end
+    end
+
     context 'when openstack.api_key contains special characters' do
       before do
         deployment_manifest_fragment['properties']['openstack']['api_key'] = "!openstack.api_key''"
@@ -433,6 +464,37 @@ describe 'director.yml.erb.erb' do
         'ssl_ca_file' => '/custom/cert/ca-certificates',
         'ssl_ca_path' => '/custom/cert/'
       })
+    end
+
+    context 'when aws.registry.user contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['http']['user'] = "!aws.user"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['user']).to eq("!aws.user")
+      end
+    end
+
+    context 'when aws.registry.password contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['http']['password'] = "!aws.password"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['password']).to eq("!aws.password")
+      end
+    end
+
+    context 'when aws.registry.endpoint contains special characters' do
+      before do
+        deployment_manifest_fragment['properties']['registry']['address'] = "!aws.address"
+        deployment_manifest_fragment['properties']['registry']['http']['port'] = "!4578"
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['registry']['endpoint']).to eq("http://!aws.address:!4578")
+      end
     end
 
     context 'and using an s3 blobstore' do

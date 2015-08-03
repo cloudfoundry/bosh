@@ -25,7 +25,24 @@ module Bosh::Director
       # @return [void]
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
-        validate_and_prepare
+
+        stemcell_manager = Bosh::Director::Api::StemcellManager.new
+        @stemcell = stemcell_manager.find_by_os_and_version(@stemcell_os, @stemcell_version)
+
+        logger.info "Will compile with stemcell: #{@stemcell.desc}"
+
+        deployment_manager = Bosh::Director::Api::DeploymentManager.new
+        @targeted_deployment = deployment_manager.find_by_name(@deployment_name)
+        @deployment_manifest = Psych.load(@targeted_deployment.manifest)
+
+        release_manager = Bosh::Director::Api::ReleaseManager.new
+        release = release_manager.find_by_name(@release_name)
+        @release_version_model = release_manager.find_version(release, @release_version)
+
+        unless deployment_manifest_has_release?
+          raise ReleaseNotMatchingManifest, "Release #{@release_name}/#{@release_version} not found in deployment #{@deployment_name} manifest"
+        end
+
         lock_timeout = 15 * 60 # 15 minutes
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
@@ -37,11 +54,11 @@ module Bosh::Director
               planner = create_planner
               compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-                  planner,
-                  compilation_instance_pool,
-                  Config.logger,
-                  Config.event_log,
-                  self
+                planner,
+                compilation_instance_pool,
+                Config.logger,
+                Config.event_log,
+                self
               )
               package_compile_step.perform
 
@@ -54,29 +71,23 @@ module Bosh::Director
         "Exported release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}"
       end
 
-      def validate_and_prepare
-        stemcell_manager = Bosh::Director::Api::StemcellManager.new
-        @stemcell = stemcell_manager.find_by_os_and_version(@stemcell_os, @stemcell_version)
-
-        logger.info "Will compile with stemcell: #{@stemcell.desc}"
-
-        deployment_manager = Bosh::Director::Api::DeploymentManager.new
-        @targeted_deployment = deployment_manager.find_by_name(@deployment_name)
-
-        release_manager = Bosh::Director::Api::ReleaseManager.new
-        release = release_manager.find_by_name(@release_name)
-        @release_version = release_manager.find_version(release, @release_version)
+      def deployment_manifest_has_release?
+        @deployment_manifest["releases"].each do |release|
+          if (release["name"] == @release_name) && (release["version"] == @release_version)
+            return true
+          end
+        end
+        false
       end
 
       def create_planner
-        modified_deployment_manifest = Psych.load(@targeted_deployment.manifest)
         cloud_config_model = @targeted_deployment.cloud_config
 
         planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
         planner = planner_factory.planner_without_vm_binding(
-            modified_deployment_manifest,
-            cloud_config_model,
-            {}
+          @deployment_manifest,
+          cloud_config_model,
+          {}
         )
         network_name = planner.networks.first.name
         resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
@@ -99,8 +110,8 @@ module Bosh::Director
       def create_tarball
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(@release_version, @stemcell)
-        templates = @release_version.templates.map
+        compiled_packages_group = CompiledPackageGroup.new(@release_version_model, @stemcell)
+        templates = @release_version_model.templates.map
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
@@ -117,8 +128,8 @@ module Bosh::Director
         oid = blobstore_client.create(tarball_file)
 
         {
-            :blobstore_id => oid,
-            :sha1 => Digest::SHA1.file(output_path).hexdigest,
+          :blobstore_id => oid,
+          :sha1 => Digest::SHA1.file(output_path).hexdigest,
         }
       ensure
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
@@ -135,18 +146,18 @@ module Bosh::Director
 
       def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)
         fake_job_spec_for_compiling = {
-            "name" => "dummy-job-for-compilation",
-            "release" => @release_name,
-            "instances" => 1,
-            "resource_pool" => fake_resource_pool_name,
-            "templates" => @release_version.templates.map do |template|
-              { "name" => template.name, "release" => @release_name }
-            end,
-            "networks" => [ "name" => network_name ],
+          "name" => "dummy-job-for-compilation",
+          "release" => @release_name,
+          "instances" => 1,
+          "resource_pool" => fake_resource_pool_name,
+          "templates" => @release_version_model.templates.map do |template|
+            { "name" => template.name, "release" => @release_name }
+          end,
+          "networks" => [ "name" => network_name ],
         }
 
         fake_job = DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, Config.logger)
-        @release_version.packages.each { |package| fake_job.packages[package.name] = package }
+        @release_version_model.packages.each { |package| fake_job.packages[package.name] = package }
         fake_job.resource_pool.stemcell.bind_model(planner)
         fake_job.release.bind_model
         fake_job.templates.each { |template| template.bind_models }
@@ -155,4 +166,3 @@ module Bosh::Director
     end
   end
 end
-

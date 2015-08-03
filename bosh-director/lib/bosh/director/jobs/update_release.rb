@@ -88,6 +88,7 @@ module Bosh::Director
           logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', " +
                        "tar returned #{result.exit_status}, " +
                        "output: #{result.output}")
+          FileUtils.rm_rf(release_dir)
           raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
 

@@ -200,7 +200,7 @@ describe 'upload release', type: :integration do
           return_exit_code: true,
       })
 
-      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d. Done (00:00:00)")
+      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d.")
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started compiled release has been created > hello-go/50')
@@ -214,7 +214,7 @@ describe 'upload release', type: :integration do
            return_exit_code: true,
        })
 
-      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d. Done (00:00:00)")
+      expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d")
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-centos-7-go_agent/3001')

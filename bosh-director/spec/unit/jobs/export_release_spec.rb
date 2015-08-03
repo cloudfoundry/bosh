@@ -35,17 +35,29 @@ module Bosh::Director
                 "workers" => 1,
             },
             "networks" => [{
-                               "name" => "dummy-network",
-                           }]
+                 "name" => "dummy-network",
+             }]
         }
         cloud_config_model.save
 
+        targeted_deployment_manifest = <<-EOF
+---
+name: hello-go
+director_uuid: d82978d9-c717-43e0-8f45-cc197f514cab
+packages: {}
+releases:
+ - name: release-name
+   version: 0+dev.3
+        EOF
+
         allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
         allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
+        allow(targeted_deployment).to receive(:manifest).and_return(targeted_deployment_manifest)
 
         allow(job).to receive(:with_deployment_lock).and_yield
         allow(job).to receive(:with_release_lock).and_yield
         allow(job).to receive(:with_stemcell_lock).and_yield
+        allow(job).to receive(:deployment_manifest_has_release?).and_return(true)
       }
 
       it 'raises an error when the requested release does not exist' do
@@ -53,6 +65,16 @@ module Bosh::Director
         expect {
           job.perform
         }.to raise_error(Bosh::Director::ReleaseNotFound)
+      end
+
+      it 'raises an error when exporting a release version not matching the manifest release version' do
+        create_stemcell
+        release = Bosh::Director::Models::Release.create(name: 'release_name')
+        release.add_version(:version => 'release_version')
+        allow(job).to receive(:deployment_manifest_has_release?).and_call_original
+        expect {
+          job.perform
+        }.to raise_error(Bosh::Director::ReleaseNotMatchingManifest)
       end
 
       context 'when the requested release exists but release version does not exist' do
@@ -137,16 +159,17 @@ module Bosh::Director
                   operating_system: 'stemcell_os',
                   cid: 'cloud-id-b',
               )
+              allow(package_compile_step).to receive(:perform)
             }
 
             it 'succeeds' do
               expect {
-                job.validate_and_prepare
+                job.perform
               }.to_not raise_error
             end
 
             it 'chooses the first stemcell alhpabetically by name' do
-              job.validate_and_prepare
+              job.perform
               expect(log_string).to match /Will compile with stemcell: my-stemcell-with-a-name/
             end
           end

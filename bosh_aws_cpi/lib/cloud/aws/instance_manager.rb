@@ -5,6 +5,62 @@ module Bosh::AwsCloud
   class InstanceManager
     include Helpers
 
+    InstanceStorageMap = {
+        # previous generation
+        'm1.small' => 160,
+        'm1.medium' => 410,
+        'm1.large' => 420,
+        'm1.xlarge' => 420,
+
+        'c1.medium' => 350,
+        'c1.xlarge' => 420,
+
+        'cc2.8xlarge' => 840,
+
+        'cg1.4xlarge' => 840,
+
+        'm2.xlarge' => 420,
+        'm2.2xlarge' => 850,
+        'm2.4xlarge' => 840,
+
+        'cr1.8xlarge' => 120,
+
+        'hi1.4xlarge' => 1024,
+
+        'hs1.8xlarge' => 2000,
+
+        # current generation
+        'm3.medium' => 4,
+        'm3.large' => 32,
+        'm3.xlarge' => 40,
+        'm3.2xlarge' => 80,
+
+        'c3.large' => 16,
+        'c3.xlarge' => 40,
+        'c3.2xlarge' => 80,
+        'c3.4xlarge' => 160,
+        'c3.8xlarge' => 320,
+
+        'r3.large' => 32,
+        'r3.xlarge' => 80,
+        'r3.2xlarge' => 160,
+        'r3.4xlarge' => 320,
+        'r3.8xlarge' => 320,
+
+        'g2.2xlarge' => 60,
+        'g2.8xlarge' => 120,
+
+        'i2.xlarge' => 800,
+        'i2.2xlarge' => 800,
+        'i2.4xlarge' => 800,
+        'i2.8xlarge' => 800,
+
+        'd2.xlarge' => 2000,
+        'd2.2xlarge' => 2000,
+        'd2.4xlarge' => 2000,
+        'd2.8xlarge' => 2000
+    }
+
     def initialize(region, registry, elb, az_selector, logger)
       @region = region
       @registry = registry
@@ -53,6 +109,7 @@ module Bosh::AwsCloud
       instance_params[:instance_type] = resource_pool["instance_type"]
 
       ephemeral_disk_options = resource_pool.fetch("ephemeral_disk", {})
+      ephemeral_disk_options["instance_type"] = resource_pool["instance_type"]
       instance_params[:block_device_mappings] = block_device_mapping(ephemeral_disk_options)
 
       set_user_data_parameter(instance_params, networks_spec)
@@ -94,22 +151,25 @@ module Bosh::AwsCloud
       ephemeral_volume_size_in_mb = ephemeral_disk_options.fetch('size', 0)
       ephemeral_volume_size_in_gb = (ephemeral_volume_size_in_mb / 1024.0).ceil
       ephemeral_volume_type = ephemeral_disk_options.fetch('type', 'standard')
+      instance_type = ephemeral_disk_options.fetch('instance_type', '')
 
       if ephemeral_volume_size_in_mb > 0
-        [
-          {
-            device_name: '/dev/sdb',
-            ebs: {
-              volume_size: ephemeral_volume_size_in_gb,
-              volume_type: ephemeral_volume_type,
-              delete_on_termination: true,
-            },
-          },
-        ]
+        instance_storage_size_gb = InstanceManager::InstanceStorageMap[instance_type]
+
+        if instance_storage_size_gb != nil && instance_storage_size_gb >= ephemeral_volume_size_in_gb
+          # Use instance storage as it is enough for the ephemeral disk
+          @logger.debug('Use instance storage to create the virtual machine')
+          block_device_mapping_param = default_ephemeral_disk_mapping
+        else
+          @logger.debug('Use EBS storage to create the virtual machine')
+          block_device_mapping_param = ebs_ephemeral_disk_mapping ephemeral_volume_size_in_gb, ephemeral_volume_type
+        end
       else
         # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
-        default_ephemeral_disk_mapping
+        block_device_mapping_param = default_ephemeral_disk_mapping
       end
+
+      block_device_mapping_param
     end
 
     def set_key_name_parameter(instance_params, resource_pool_key_name, default_aws_key_name)
