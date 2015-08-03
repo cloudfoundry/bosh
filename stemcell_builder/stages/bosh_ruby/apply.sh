@@ -24,10 +24,8 @@ cd src
 tar zxvf $libyaml_archive
 cd $libyaml_basename
 
-cp ../src/config/config.{guess,sub} ./config
-
 if [ `uname -m` == 'ppc64le' ]; then
-  cp ../src/config/config.{guess,sub} ./config
+  cp ../config/config.{guess,sub} ./config
 fi
 
 ./configure --prefix=/usr
@@ -56,7 +54,7 @@ cd $ruby_basename
 sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
 
 if [ `uname -m` == 'ppc64le' ]; then
-  cp ../src/config/config.{guess,sub} ./tool
+  cp ../config/config.{guess,sub} ./tool
 fi
 
 echo Building Ruby $ruby_basename...
