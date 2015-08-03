@@ -24,14 +24,14 @@ $UDPServerAddress 127.0.0.1
 $UDPServerRun 514
 
 
-template(name="CfLogTemplate" type="list") {
+template(name="BoshLogTemplate" type="list") {
 constant(value="<")
 property(name="pri")
 constant(value=">")
 property(name="timestamp" dateFormat="rfc3339")
 constant(value=" __CURRENT_IP__ ")
 property(name="programname")
-constant(value=" [job=<%= name %> index=<%= spec.index.to_i %>] ")
+constant(value=" [job=<%= spec.job.name %> index=<%= spec.index %>] ")
 property(name="msg")
 }
 
@@ -40,21 +40,16 @@ property(name="msg")
 # Keep filtered programname in sync with syslog_event_forwarder.rb
     <% if transport == "relp" %>
         $ModLoad omrelp
-        if $programname == 'bosh.hm' then :omrelp:<%= address %>:<%= port %>;CfLogTemplate
+        if $programname == 'bosh.hm' then :omrelp:<%= address %>:<%= port %>;BoshLogTemplate
     <% elsif transport == "udp" %>
-        if $programname == 'bosh.hm' then @<%= address %>:<%= port %>;CfLogTemplate
+        if $programname == 'bosh.hm' then @<%= address %>:<%= port %>;BoshLogTemplate
     <% elsif transport == "tcp" %>
-        if $programname == 'bosh.hm' then @@<%= address %>:<%= port %>;CfLogTemplate
+        if $programname == 'bosh.hm' then @@<%= address %>:<%= port %>;BoshLogTemplate
     <% else %>
         #only RELP, UDP, and TCP are supported
     <% end %>
 
 <% end  %>
-
-# Log vcap messages locally, too
-#$template VcapComponentLogFile, "/var/log/%programname:6:$%/%programname:6:$%.log"
-#$template VcapComponentLogFormat, "%timegenerated% %syslogseverity-text% -- %msg%\n"
-#:programname, startswith, "vcap." -?VcapComponentLogFile;VcapComponentLogFormat
 
 # Prevent them from reaching anywhere else
 :programname, startswith, "vcap." ~
