@@ -24,21 +24,21 @@ ln -s /etc/sv/monit /etc/service/monit
 # Alerts for monit config
 cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 
-agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
-
-cd $agent_dir
-bin/build
-mv out/bosh-agent $chroot/var/vcap/bosh/bin/
-if [ `uname -m` == "ppc64le" ]; then
-   # assume that gccgo is installed under /usr/local/gccgp
-   cp -rvH /usr/local/gccgo $chroot/var/vcap/bosh/
+if [ "`uname -m`" == "ppc64le" ]; then
+  build_script=build-linux-ppc64le
+else
+  build_script=build
 fi
 
+agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
+cd $agent_dir
+bin/$build_script
+mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 
 cd $assets_dir/go/src/github.com/cloudfoundry/bosh-davcli
-bin/build
+bin/$build_script
 mv out/dav-cli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
