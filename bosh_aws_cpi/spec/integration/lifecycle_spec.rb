@@ -97,6 +97,7 @@ describe Bosh::AwsCloud::Cloud do
         vm_lifecycle do |instance_id|
           volume_id = cpi.create_disk(2048, {}, instance_id)
           expect(volume_id).not_to be_nil
+          expect(cpi.has_disk?(volume_id)).to be(true)
 
           cpi.attach_disk(instance_id, volume_id)
 
@@ -139,6 +140,7 @@ describe Bosh::AwsCloud::Cloud do
         vm_lifecycle do |instance_id|
           volume_id = cpi.create_disk(2048, {}, instance_id)
           expect(volume_id).not_to be_nil
+          expect(cpi.has_disk?(volume_id)).to be(true)
 
           cpi.attach_disk(instance_id, volume_id)
           expect(cpi.get_disks(instance_id)).to include(volume_id)
@@ -155,6 +157,8 @@ describe Bosh::AwsCloud::Cloud do
       vm_lifecycle do |instance_id|
         volume_id = cpi.create_disk(2048, {'encrypted' => true}, instance_id)
         expect(volume_id).not_to be_nil
+        expect(cpi.has_disk?(volume_id)).to be(true)
+
         encrypted_volume = cpi.ec2.volumes[volume_id]
         expect(encrypted_volume.encrypted?).to be(true)
       end
@@ -187,6 +191,7 @@ describe Bosh::AwsCloud::Cloud do
       it 'should wait for 10 mins to attach disk/delete disk ignoring VolumeInUse error' do
         begin
           disk_id = cpi.create_disk(2048, {})
+          expect(cpi.has_disk?(disk_id)).to be(true)
 
           stemcell_id = cpi.create_stemcell('/not/a/real/path', {'ami' => {'us-east-1' => ami}})
           vm_id = cpi.create_vm(
@@ -224,6 +229,15 @@ describe Bosh::AwsCloud::Cloud do
           cpi.delete_stemcell(stemcell_id) if stemcell_id
           cpi.delete_vm(vm_id) if vm_id
         end
+      end
+    end
+
+    it 'will not raise error when detaching a non-existing disk' do
+      # Detaching a non-existing disk from vm should NOT raise error
+      vm_lifecycle do |instance_id|
+        expect {
+          cpi.detach_disk(instance_id, 'non-existing-volume-uuid')
+        }.to_not raise_error
       end
     end
   end

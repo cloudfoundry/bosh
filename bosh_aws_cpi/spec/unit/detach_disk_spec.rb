@@ -10,7 +10,7 @@ describe Bosh::AwsCloud::Cloud do
 
   it "detaches EC2 volume from an instance" do
     instance = double("instance", :id => "i-test")
-    volume = double("volume", :id => "v-foobar")
+    volume = double("volume", :id => "v-foobar", :exists? => true)
     attachment = double("attachment", :device => "/dev/sdf")
 
     cloud = mock_cloud do |ec2|
@@ -60,4 +60,42 @@ describe Bosh::AwsCloud::Cloud do
     cloud.detach_disk("i-test", "v-foobar")
   end
 
+  it "bypasses the detaching process when volume is missing" do
+    instance = double("instance", :id => "i-test")
+    volume = double("volume", :id => "non-exist-volume-id", :exists? => false)
+
+    cloud = mock_cloud do |ec2|
+      allow(ec2.instances).to receive(:[]).with("i-test").and_return(instance)
+      allow(ec2.volumes).to receive(:[]).with("non-exist-volume-id").and_return(volume)
+    end
+
+    old_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "non-exist-volume-id" => "/dev/sdf",
+          "exist-volume-id" => "/dev/sdg"
+        }
+      }
+    }
+
+    new_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "exist-volume-id" => "/dev/sdg"
+        }
+      }
+    }
+
+    expect(@registry).to receive(:read_settings).
+      with("i-test").
+      and_return(old_settings)
+    
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
+
+    expect {
+      cloud.detach_disk("i-test", "non-exist-volume-id")
+    }.to_not raise_error
+  end
 end
