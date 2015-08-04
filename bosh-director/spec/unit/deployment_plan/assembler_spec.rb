@@ -201,7 +201,10 @@ module Bosh::Director
     end
 
     describe '#bind_instance' do
-      let(:instance_model) { Models::Instance.make(:job => 'foo', :index => 3) }
+      let(:instance_model) do
+        deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
+        Models::Instance.make(:job => 'foo', :index => 3, deployment: deployment_model)
+      end
       before { allow(instance_model).to receive(:vm).and_return(vm_model)}
       let(:vm_model) { Bosh::Director::Models::Vm.make }
 

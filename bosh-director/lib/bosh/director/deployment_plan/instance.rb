@@ -127,6 +127,14 @@ module Bosh::Director
         @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
+      def update_availability_zone
+        if @availability_zone.nil?
+          @model.update(availability_zone: nil)
+        else
+          @model.update(availability_zone: @availability_zone.name)
+        end
+      end
+
       def agent_client
         @agent_client ||= AgentClient.with_vm(@model.vm)
       end

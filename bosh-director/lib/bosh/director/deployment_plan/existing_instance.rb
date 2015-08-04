@@ -4,12 +4,28 @@ module Bosh::Director
       attr_reader :model, :vm
 
       def self.create_from_model(instance_model, logger)
-        new(instance_model, logger)
+        deployment_model = instance_model.deployment
+        cloud_config_model = deployment_model.cloud_config
+
+        deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
+        manifest_hash = Psych.load(deployment_model.manifest)
+        _, cloud_manifest = deployment_manifest_migrator.migrate(manifest_hash, cloud_config_model)
+
+        # FIXME: we just want to figure out AZs, we don't care about subnets being able to reserve IPs
+        ip_provider_factory = NullIpProviderFactory.new
+        global_network_resolver = NullGlobalNetworkResolver.new
+
+        cloud_manifest_parser = CloudManifestParser.new(logger)
+        cloud_planner = cloud_manifest_parser.parse(cloud_manifest, ip_provider_factory, global_network_resolver)
+
+        availability_zone = cloud_planner.availability_zone(instance_model.availability_zone)
+        new(instance_model, availability_zone, logger)
       end
 
-      def initialize(instance_model, logger)
+      def initialize(instance_model, availability_zone, logger)
         @model = instance_model
         @logger = logger
+        @availability_zone = availability_zone
 
         @vm = Vm.new
         @vm.model = @model.vm
@@ -18,6 +34,8 @@ module Bosh::Director
         @env = @model.vm.env
         @network_reservations = {}
       end
+
+      attr_reader :availability_zone
 
       def job_name
         @model.job
@@ -29,10 +47,6 @@ module Bosh::Director
 
       def deployment_model
         @model.deployment
-      end
-
-      def availability_zone
-        nil # @model.availabillity_zone when we start persisting it
       end
 
       def bind_state(deployment, state)
@@ -47,6 +61,14 @@ module Bosh::Director
       def update_trusted_certs
         agent_client.update_settings(Config.trusted_certs)
         @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+      end
+
+      def update_availability_zone
+        if @availability_zone.nil?
+          @model.update(availability_zone: nil)
+        else
+          @model.update(availability_zone: @availability_zone.name)
+        end
       end
 
       def apply_vm_state

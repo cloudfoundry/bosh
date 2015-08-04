@@ -1,4 +1,10 @@
 module Bosh::Director::DeploymentPlan
+  class NullIpProviderFactory
+    def create(*args)
+      nil
+    end
+  end
+
   class IpProviderFactory
     def initialize(logger, options)
       @global_networking = options.fetch(:global_networking, false)

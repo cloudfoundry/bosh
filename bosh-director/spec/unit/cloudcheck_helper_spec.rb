@@ -14,7 +14,10 @@ module Bosh::Director
         action { recreate_vm(@vm) }
       end
     end
-    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007') }
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
+    let(:vm) do
+      Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
+    end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, vm.id, {}) }
     let(:fake_cloud) { instance_double('Bosh::Cloud') }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
@@ -54,7 +57,7 @@ module Bosh::Director
     end
 
     describe '#recreate_vm' do
-      let(:instance) { Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id) }
+      let(:instance) { Models::Instance.make(deployment: deployment_model, job: 'mysql_node', index: 0, vm_id: vm.id) }
       before { vm.instance = instance }
 
       describe 'error handling' do

@@ -22,8 +22,9 @@ module Bosh::Director
       @agent = double('agent')
       allow(Config).to receive(:cloud).and_return(@cloud)
 
-      @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007')
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id)
+      deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
+      @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
+      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id, deployment: deployment_model)
     end
 
     let :handler do

@@ -55,6 +55,7 @@ module Bosh::Director
         agent_client = AgentClient.with_vm(vm_model)
         agent_client.wait_until_ready
         instance.update_trusted_certs
+        instance.update_availability_zone
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
         @vm_deleter.delete_for_instance(instance)

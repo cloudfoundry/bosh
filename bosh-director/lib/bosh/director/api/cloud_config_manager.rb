@@ -22,23 +22,11 @@ module Bosh
 
         def validate_manifest!(cloud_config)
           # FIXME: we really just need to validate the manifest, we don't care about the subnets being able to reserve IPs here
-          ip_provider_factory = NullIpProviderFactory.new
-          global_network_resolver = NullGlobalNetworkResolver.new
+          ip_provider_factory = Bosh::Director::DeploymentPlan::NullIpProviderFactory.new
+          global_network_resolver = Bosh::Director::DeploymentPlan::NullGlobalNetworkResolver.new
 
           parser = Bosh::Director::DeploymentPlan::CloudManifestParser.new(Config.logger)
           _ = parser.parse(cloud_config.manifest, ip_provider_factory, global_network_resolver) # valid if this doesn't blow up
-        end
-
-        class NullIpProviderFactory
-          def create(*args)
-            nil
-          end
-        end
-
-        class NullGlobalNetworkResolver
-          def reserved_legacy_ranges(something)
-            []
-          end
         end
       end
     end

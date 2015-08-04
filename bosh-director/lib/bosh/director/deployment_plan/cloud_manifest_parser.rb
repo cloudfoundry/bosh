@@ -39,7 +39,6 @@ module Bosh::Director
         end
 
         parsed_availability_zones
-
       end
 
       def parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver, availability_zones)

@@ -1,5 +1,11 @@
 module Bosh::Director
   module DeploymentPlan
+    class NullGlobalNetworkResolver
+      def reserved_legacy_ranges(something)
+        []
+      end
+    end
+
     class GlobalNetworkResolver
       include Bosh::Director::ValidationHelper
       include IpUtil
