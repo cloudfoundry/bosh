@@ -1,0 +1,6 @@
+name: id_job
+
+templates:
+  config.yml.erb: config.yml
+
+properties: {}

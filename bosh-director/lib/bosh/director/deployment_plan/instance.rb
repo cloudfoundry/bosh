@@ -456,6 +456,7 @@ module Bosh::Director
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
+          'id' => uuid,
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
@@ -539,6 +540,7 @@ module Bosh::Director
         Models::Instance.find_or_create(conditions) do |model|
           model.state = 'started'
           model.compilation = @job.compilation?
+          model.uuid = SecureRandom.uuid()
         end
       end
 

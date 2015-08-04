@@ -16,6 +16,9 @@ module Bosh
       # @return [Integer] Template instance index
       attr_reader :index
 
+      # @return [Integer] Template instance id
+      attr_reader :id
+
       # @return [Hash] Template properties
       attr_reader :properties
 
@@ -40,6 +43,7 @@ module Bosh
         end
 
         @index = spec['index']
+        @id = spec['id']
         @spec = openstruct(spec)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)

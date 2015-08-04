@@ -16,10 +16,6 @@ module Bosh::Director::Models
       validates_includes ["started", "stopped", "detached"], :state
     end
 
-    def before_create
-      self.uuid = SecureRandom.uuid()
-    end
-
     def persistent_disk
       # Currently we support only 1 persistent disk.
       self.persistent_disks.find { |disk| disk.active }
