@@ -16,13 +16,13 @@ module Bosh::Director
         resource_pools = parse_resource_pools(cloud_manifest)
         disk_pools = parse_disk_pools(cloud_manifest)
 
-         CloudPlanner.new({
-            availability_zones: azs,
-            networks: networks,
-            compilation: compilation_config,
-            resource_pools: resource_pools,
-            disk_pools: disk_pools,
-          })
+        CloudPlanner.new({
+          availability_zones: azs,
+          networks: networks,
+          compilation: compilation_config,
+          resource_pools: resource_pools,
+          disk_pools: disk_pools,
+        })
       end
 
       private

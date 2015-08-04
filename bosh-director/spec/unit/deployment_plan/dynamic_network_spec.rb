@@ -49,7 +49,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should reserve an existing IP" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = '0.0.0.1'
       @network.reserve(reservation)
       expect(reservation.reserved?).to eq(true)
@@ -57,7 +57,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should not let you reserve a static IP" do
-      reservation = BD::NetworkReservation.new_static(instance, '0.0.0.1')
+      reservation = BD::NetworkReservation.new_static(instance, @network, '0.0.0.1')
 
       expect {
         @network.reserve(reservation)
@@ -76,14 +76,14 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should release the IP from the subnet" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = 4294967295
 
       @network.release(reservation)
     end
 
     it "should fail when the IP doesn't match the magic dynamic IP" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = 1
 
       expect {
@@ -103,7 +103,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should provide dynamic network settings" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = 4294967295
       expect(@network.network_settings(reservation, [])).to eq({
           "type" => "dynamic",
@@ -113,7 +113,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should set the defaults" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = 4294967295
       expect(@network.network_settings(reservation)).to eq({
           "type" => "dynamic",
@@ -123,7 +123,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it "should fail when the IP doesn't match the magic dynamic IP" do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
       reservation.ip = 1
       expect {
         @network.network_settings(reservation)

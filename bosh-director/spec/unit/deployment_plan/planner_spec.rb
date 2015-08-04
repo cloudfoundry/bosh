@@ -63,12 +63,12 @@ module Bosh::Director
 
       its(:model) { deployment_model }
 
-      describe 'vms' do
+      describe 'vm_models' do
         it 'returns a list of VMs in deployment' do
           vm_model1 = Models::Vm.make(deployment: deployment_model)
           vm_model2 = Models::Vm.make(deployment: deployment_model)
 
-          expect(planner.vms).to eq([vm_model1, vm_model2])
+          expect(planner.vm_models).to eq([vm_model1, vm_model2])
         end
       end
 

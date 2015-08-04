@@ -12,7 +12,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   def create_reservation(ip)
-    BD::NetworkReservation.new_static(instance, NetAddr::CIDR.create(ip))
+    BD::NetworkReservation.new_static(instance, @network, NetAddr::CIDR.create(ip))
   end
 
   describe :initialize do

@@ -87,10 +87,10 @@ module Bosh::Director
       end
 
       def delete
-        @network_reservations.each do |network, reservation|
-          network.release(reservation) if reservation.reserved?
-          @network_reservations.delete(network)
+        @network_reservations.each do |reservation|
+          reservation.release if reservation.reserved?
         end
+        @network_reservations = []
 
         @model.destroy
       end

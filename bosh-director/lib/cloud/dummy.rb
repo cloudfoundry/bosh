@@ -30,6 +30,7 @@ module Bosh
         ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
+        @inputs_recorder = InputsRecorder.new(@base_dir, @logger)
 
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -64,6 +65,15 @@ module Bosh
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
       # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
+
+        record_inputs(__method__, {
+          agent_id: agent_id,
+          stemcell_id: stemcell_id,
+          resource_pool: resource_pool,
+          networks: networks,
+          disk_cids: disk_cids,
+          env: env
+        })
 
         validate_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
@@ -225,6 +235,10 @@ module Bosh
         @vm_repo.load(vm_id).cloud_properties
       end
 
+      def read_inputs(method)
+        @inputs_recorder.read(method)
+      end
+
       private
 
       def spawn_agent_process(agent_id)
@@ -316,6 +330,26 @@ module Bosh
 
       def snapshot_file(snapshot_id)
         File.join(@base_dir, 'snapshots', snapshot_id)
+      end
+
+      def validate_inputs(schema, the_method, *args)
+        begin
+          schema.validate(parameter_names_to_values(the_method, *args))
+        rescue Membrane::SchemaValidationError => err
+          raise ArgumentError, "Invalid arguments sent to #{the_method}: #{err.message}"
+        end
+      end
+
+      def record_inputs(method, args)
+        @inputs_recorder.record(method, args)
+      end
+
+      def parameter_names_to_values(the_method, *the_method_args)
+        hash = {}
+        method(the_method).parameters.each_with_index do |param, index|
+          hash[param[1]] = the_method_args[index]
+        end
+        hash
       end
 
       # Example file system layout for arranging commands information.
@@ -410,20 +444,44 @@ module Bosh
         end
       end
 
-      def validate_inputs(schema, the_method, *args)
-        begin
-          schema.validate(parameter_names_to_values(the_method, *args))
-        rescue Membrane::SchemaValidationError => err
-          raise ArgumentError, "Invalid arguments sent to #{the_method}: #{err.message}"
+      class InputsRecorder
+        def initialize(base_dir, logger)
+          @cpi_inputs_dir = File.join(base_dir, 'cpi_inputs')
+          @logger = logger
         end
-      end
 
-      def parameter_names_to_values(the_method, *the_method_args)
-        hash = {}
-        method(the_method).parameters.each_with_index do |param, index|
-          hash[param[1]] = the_method_args[index]
+        def record(method, args)
+          FileUtils.mkdir_p(cpi_method_path(method))
+
+          method_file_path = next_cpi_method_filename(method)
+          @logger.info("Saving input for #{method} in #{method_file_path}")
+
+          File.open(method_file_path, 'w') { |f| f.write(JSON.dump(args)) }
         end
-        hash
+
+        def read(method)
+          result = []
+          @logger.info("Reading input for #{method}")
+
+          Dir.entries(cpi_method_path(method)).each do |file_name|
+            next if file_name == '.' || file_name == '..'
+
+            full_path = File.join(cpi_method_path(method), file_name)
+            @logger.info("Contents: #{File.read(full_path)}")
+            result << OpenStruct.new(JSON.parse(File.read(full_path)))
+          end
+
+          result
+        end
+
+        def cpi_method_path(method)
+          File.join(@cpi_inputs_dir, method.to_s)
+        end
+
+        def next_cpi_method_filename(method)
+          file_name = Dir.entries(cpi_method_path(method)).map(&:to_i).max + 1
+          File.join(cpi_method_path(method), file_name.to_s)
+        end
       end
 
       class VM < Struct.new(:id, :agent_id, :cloud_properties)

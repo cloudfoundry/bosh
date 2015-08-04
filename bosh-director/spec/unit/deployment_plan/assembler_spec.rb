@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::Assembler do
     subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, cloud, blobstore, logger, event_log) }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple') }
     let(:stemcell_manager) { nil }
     let(:event_log) { Config.event_log }
 
@@ -24,16 +24,89 @@ module Bosh::Director
       assembler.bind_releases
     end
 
-    it 'should bind existing VMs' do
-      vm_model1 = Models::Vm.make
-      vm_model2 = Models::Vm.make
+    describe 'bind_existing_deployment' do
+      let(:instance_model) { Models::Instance.make }
 
-      allow(deployment_plan).to receive(:vms).and_return([vm_model1, vm_model2])
+      before do
+        allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
+        allow(deployment_plan).to receive(:vm_models).and_return([])
+        instance_model.vm.deployment = instance_model.deployment
 
-      expect(assembler).to receive(:bind_existing_vm).with(vm_model1, an_instance_of(Mutex))
-      expect(assembler).to receive(:bind_existing_vm).with(vm_model2, an_instance_of(Mutex))
+        agent_client = instance_double(AgentClient)
+        allow(AgentClient).to receive(:with_vm).with(instance_model.vm).and_return(agent_client)
+        allow(agent_client).to receive(:get_state).and_return(state)
 
-      assembler.bind_existing_deployment
+        allow(deployment_plan).to receive(:job).with(instance_model.job).and_return(job)
+        allow(job).to receive(:instance).with(instance_model.index).and_return(instance)
+
+        allow(instance).to receive(:bind_existing_instance).with(instance_model)
+        allow(instance).to receive(:bind_current_state).with(state)
+      end
+
+      let(:job) { instance_double(DeploymentPlan::Job) }
+      let(:instance) { instance_double(DeploymentPlan::Instance) }
+      let(:state) do
+        {
+          'deployment' => 'simple',
+          'job' => { 'name' => instance_model.job },
+          'index' => instance_model.index
+        }
+      end
+
+      context 'when rename is in progress' do
+        before { allow(deployment_plan).to receive(:rename_in_progress?).and_return(true) }
+
+        it 'updates instance' do
+          allow(deployment_plan).to receive(:job_rename).and_return({
+            'old_name' => instance_model.job,
+            'new_name' => 'new-name'
+          })
+          allow(deployment_plan).to receive(:job).with('new-name').and_return(job)
+          assembler.bind_existing_deployment
+        end
+      end
+
+      context 'when rename is not in progress' do
+        before { allow(deployment_plan).to receive(:rename_in_progress?).and_return(false) }
+
+        context 'when instance does not have a vm' do
+          before { instance_model.vm = nil }
+
+          it 'binds existing instance' do
+            expect(instance).to receive(:bind_existing_instance).with(instance_model)
+            assembler.bind_existing_deployment
+          end
+        end
+
+        context 'when instance has vm' do
+          it 'binds existing instance with the state from vm' do
+            instance = instance_double(DeploymentPlan::Instance)
+            job = instance_double(DeploymentPlan::Job)
+            allow(deployment_plan).to receive(:job).with(instance_model.job).and_return(job)
+            allow(job).to receive(:instance).with(instance_model.index).and_return(instance)
+
+            expect(instance).to receive(:bind_existing_instance).with(instance_model)
+
+            expect(instance).to receive(:bind_current_state).with(state)
+            assembler.bind_existing_deployment
+          end
+        end
+
+        context 'when there are vms without instances' do
+          let(:vm_model) { Models::Vm.make }
+          before { vm_model.instance = nil }
+
+          before do
+            allow(deployment_plan).to receive(:instance_models).and_return([])
+            allow(deployment_plan).to receive(:vm_models).and_return([vm_model])
+          end
+
+          it 'marks vm for deletion' do
+            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(vm_model)
+            assembler.bind_existing_deployment
+          end
+        end
+      end
     end
 
     it 'should bind stemcells' do
@@ -105,154 +178,6 @@ module Bosh::Director
         end
 
         assembler.bind_unallocated_vms
-      end
-    end
-
-    describe '#bind_existing_vm' do
-      before do
-        @lock = Mutex.new
-        @vm_model = Models::Vm.make(:agent_id => 'foo')
-      end
-
-      it 'should bind an instance if present' do
-        instance = Models::Instance.make(:vm => @vm_model)
-        state = { 'state' => 'foo' }
-
-        expect(assembler).to receive(:get_state).with(@vm_model).
-          and_return(state)
-        expect(assembler).to receive(:bind_instance).
-          with(instance, state)
-        assembler.bind_existing_vm(@vm_model, @lock)
-      end
-
-      context "when there is no instance" do
-        context "but the VMs resource pool still exists" do
-          let(:cloud_config) { Models::CloudConfig.make }
-          let(:deployment_plan) { DeploymentPlan::Planner.new(planner_attributes, deployment_model.manifest, cloud_config, deployment_model) }
-          let(:planner_attributes) { {name: manifest_hash['name'], properties: manifest_hash['properties']} }
-          let(:deployment_model) { Models::Deployment.make(manifest: Psych.dump(manifest_hash)) }
-          let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-          let(:network_fake) { DeploymentPlan::Network.new({'name' => resource_pool_manifest['network']}, logger) }
-          let(:network_bar) { DeploymentPlan::Network.new({'name' => 'bar'}, logger) }
-          let(:network_baz) { DeploymentPlan::Network.new({'name' => 'baz'}, logger) }
-          let(:resource_pool) { DeploymentPlan::ResourcePool.new(resource_pool_manifest, logger) }
-          let(:resource_pool_manifest) do
-            {
-              'name' => 'baz',
-              'size' => 1,
-              'cloud_properties' => {},
-              'stemcell' => {
-                'name' => 'fake-stemcell',
-                'version' => 'fake-stemcell-version',
-              },
-              'network' => 'fake-network',
-            }
-          end
-          let(:reservations) do
-            {
-              'fake-network' => NetworkReservation.new(type: NetworkReservation::STATIC),
-              'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
-              'baz' => NetworkReservation.new(type: NetworkReservation::STATIC),
-            }
-          end
-
-          before do
-            cloud_plan = DeploymentPlan::CloudPlanner.new(
-              networks: [network_fake, network_bar, network_baz],
-              disk_pools: [],
-              availability_zones: [],
-              resource_pools: [resource_pool],
-              compilation: nil,
-            )
-            deployment_plan.cloud_planner = cloud_plan
-
-            # release is not implemented in the base Network object
-            allow(network_fake).to receive(:release)
-            allow(network_bar).to receive(:release)
-            allow(network_baz).to receive(:release)
-
-
-            state = {'resource_pool' => {'name' => 'baz'}}
-
-            expect(assembler).to receive(:get_state).with(@vm_model).
-                and_return(state)
-          end
-
-          it 'should delete the VM, releasing network reservations' do
-            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(@vm_model)
-            assembler.bind_existing_vm(@vm_model, @lock)
-          end
-        end
-
-        context "and the VMs resource pool no longer exists" do
-          it 'should delete the vm' do
-            state = {'resource_pool' => {'name' => 'baz'}}
-
-            allow(deployment_plan).to receive(:resource_pool).with('baz').
-                and_return(nil)
-
-            expect(assembler).to receive(:get_state).with(@vm_model).
-                and_return(state)
-            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(@vm_model)
-            assembler.bind_existing_vm(@vm_model, @lock)
-          end
-        end
-      end
-    end
-
-    describe '#bind_instance' do
-      let(:instance_model) do
-        deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
-        Models::Instance.make(:job => 'foo', :index => 3, deployment: deployment_model)
-      end
-      before { allow(instance_model).to receive(:vm).and_return(vm_model)}
-      let(:vm_model) { Bosh::Director::Models::Vm.make }
-
-      it 'should associate the instance to the instance spec' do
-        state = { 'state' => 'baz' }
-
-        instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
-        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-        job = instance_double('Bosh::Director::DeploymentPlan::Job')
-        allow(job).to receive(:instance).with(3).and_return(instance)
-        allow(job).to receive(:resource_pool).and_return(resource_pool)
-        allow(deployment_plan).to receive(:job).with('foo').and_return(job)
-        allow(deployment_plan).to receive(:job_rename).and_return({})
-        allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
-
-        expect(instance).to receive(:bind_existing_instance).with(instance_model, state)
-
-        assembler.bind_instance(instance_model, state)
-      end
-
-      it 'should update the instance name if it is being renamed' do
-        state = { 'state' => 'baz' }
-
-        instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
-        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-        job = instance_double('Bosh::Director::DeploymentPlan::Job')
-        allow(job).to receive(:instance).with(3).and_return(instance)
-        allow(job).to receive(:resource_pool).and_return(resource_pool)
-        allow(deployment_plan).to receive(:job).with('bar').and_return(job)
-        allow(deployment_plan).to receive(:job_rename).
-          and_return({ 'old_name' => 'foo', 'new_name' => 'bar' })
-        allow(deployment_plan).to receive(:rename_in_progress?).and_return(true)
-
-        expect(instance).to receive(:bind_existing_instance).with(instance_model, state)
-
-        assembler.bind_instance(instance_model, state)
-      end
-
-      it "should mark the instance for deletion when it's no longer valid" do
-        state = { 'state' => 'baz' }
-        allow(deployment_plan).to receive(:job).with('foo').and_return(nil)
-        expect(deployment_plan).to receive(:mark_instance_for_deletion) do |instance|
-          expect(instance.model).to eq(instance_model)
-        end
-        allow(deployment_plan).to receive(:job_rename).and_return({})
-        allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
-
-        assembler.bind_instance(instance_model, state)
       end
     end
 
@@ -494,7 +419,6 @@ module Bosh::Director
         assembler.bind_instance_networks
       end
     end
-
 
     describe '#bind_dns' do
       it 'uses DnsBinder to create dns records for deployment' do

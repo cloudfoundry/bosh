@@ -21,27 +21,31 @@ module Bosh::Director
 
     attr_reader :instance
 
-    def self.new_dynamic(instance)
-      new(instance, nil, NetworkReservation::DYNAMIC)
+    attr_reader :network
+
+    def self.new_dynamic(instance, network)
+      new(instance, network, nil, NetworkReservation::DYNAMIC)
     end
 
-    def self.new_static(instance, ip)
-      new(instance, ip, NetworkReservation::STATIC)
+    def self.new_static(instance, network, ip)
+      new(instance, network, ip, NetworkReservation::STATIC)
     end
 
     # network reservation for existing instance
     # type is ignored in validation and will be set from network
-    def self.new_unresolved(instance, ip)
-      new(instance, ip, nil)
+    def self.new_unresolved(instance, network, ip)
+      new(instance, network, ip, nil)
     end
 
     ##
     # Creates a new network reservation
     # @param [DeploymentPlan::Instance] instance
+    # @param [DeploymentPlan::Network] network reservation network
     # @param [Integer, String, NetAddr::CIDR] ip reservation ip
     # @param [Symbol] type of reservation
-    def initialize(instance, ip, type)
+    def initialize(instance, network, ip, type)
       @instance = instance
+      @network = network
       @ip = ip
       @type = type
       @reserved = false
@@ -87,11 +91,19 @@ module Bosh::Director
     end
 
     def reserve
-      @reserved = true
+      @network.reserve(self)
+    end
+
+    def release
+      @network.release(self)
     end
 
     def reserve_with_ip(ip)
       @ip = ip
+      mark_as_reserved
+    end
+
+    def mark_as_reserved
       @reserved = true
     end
 
@@ -103,7 +115,7 @@ module Bosh::Director
         if @type == other.type
           if dynamic? || (static? && @ip == other.ip)
             @ip = other.ip
-            @reserved = true
+            mark_as_reserved
           end
         end
       end

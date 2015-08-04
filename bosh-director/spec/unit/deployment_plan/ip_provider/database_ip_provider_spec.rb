@@ -18,6 +18,7 @@ module Bosh::Director::DeploymentPlan
     let(:instance) do
       instance_double(Instance, model: Bosh::Director::Models::Instance.make, to_s: 'fake-job/0')
     end
+    let(:network) { instance_double(ManualNetwork) }
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -29,7 +30,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def create_reservation(ip)
-      BD::NetworkReservation.new_static(instance, cidr_ip(ip))
+      BD::NetworkReservation.new_static(instance, network, cidr_ip(ip))
     end
 
     describe 'allocate_dynamic_ip' do
@@ -235,10 +236,10 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises an error' do
-            expect(ip_provider.reserve_ip(BD::NetworkReservation.new_static(another_instance, '192.168.0.2'))).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(BD::NetworkReservation.new_static(another_instance, network, '192.168.0.2'))).to eq(:dynamic)
 
             expect {
-              ip_provider.reserve_ip(BD::NetworkReservation.new_static(instance, '192.168.0.2'))
+              ip_provider.reserve_ip(BD::NetworkReservation.new_static(instance, network, '192.168.0.2'))
             }.to raise_error Bosh::Director::NetworkReservationAlreadyInUse,
               "Failed to reserve ip '192.168.0.2' for instance 'fake-job/0': " +
               "already reserved by instance 'another-job/5' from deployment 'fake-deployment'"

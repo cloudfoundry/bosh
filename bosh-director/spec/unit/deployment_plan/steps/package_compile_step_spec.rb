@@ -11,7 +11,7 @@ module Bosh::Director
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
-    let(:plan) {instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: config, model: deployment, name: 'mycloud')}
+    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: config, model: deployment, name: 'mycloud') }
     let(:instance_reuser) { InstanceReuser.new }
     let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, plan, logger) }
     let(:thread_pool) do
@@ -41,11 +41,11 @@ module Bosh::Director
 
       @n_workers = 3
       allow(config).to receive_messages(
-                   network_name: 'default',
-                   env: {},
-                   cloud_properties: {},
-                   workers: @n_workers,
-                   reuse_compilation_vms: false)
+          network_name: 'default',
+          env: {},
+          cloud_properties: {},
+          workers: @n_workers,
+          reuse_compilation_vms: false)
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
       @all_packages = []
@@ -67,11 +67,11 @@ module Bosh::Director
       CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       Models::CompiledPackage.make(package: package,
-                                   dependency_key: package_dependency_key,
-                                   stemcell: stemcell,
-                                   build: 1,
-                                   sha1: sha1,
-                                   blobstore_id: blobstore_id)
+        dependency_key: package_dependency_key,
+        stemcell: stemcell,
+        build: 1,
+        sha1: sha1,
+        blobstore_id: blobstore_id)
     end
 
     def prepare_samples
@@ -100,15 +100,15 @@ module Bosh::Director
       @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_router], name: 'router')
 
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
-                               name: 'dea',
-                               release: @release,
-                               templates: [@t_dea, @t_warden],
-                               resource_pool: rp_large)
+        name: 'dea',
+        release: @release,
+        templates: [@t_dea, @t_warden],
+        resource_pool: rp_large)
       @j_router = instance_double('Bosh::Director::DeploymentPlan::Job',
-                                  name: 'router',
-                                  release: @release,
-                                  templates: [@t_nginx, @t_router, @t_warden],
-                                  resource_pool: rp_small)
+        name: 'router',
+        release: @release,
+        templates: [@t_nginx, @t_router, @t_warden],
+        resource_pool: rp_small)
 
       @package_set_a = [@p_dea, @p_nginx, @p_syslog, @p_warden, @p_common, @p_ruby]
 
@@ -158,7 +158,7 @@ module Bosh::Director
         instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm)
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
-        expect(instance).to receive(:add_network_reservation).with(@network, instance_of(Bosh::Director::NetworkReservation))
+        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::NetworkReservation))
         expect(instance).to receive(:delete)
 
         instance
@@ -179,7 +179,7 @@ module Bosh::Director
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
         allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
-        expect(vm_metadata_updater).to receive(:update).with(anything, { compiling: 'common'})
+        expect(vm_metadata_updater).to receive(:update).with(anything, {compiling: 'common'})
         expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
         instances.each do |instance|
@@ -198,10 +198,10 @@ module Bosh::Director
             expect(args[4]).to be_a(Hash)
 
             {
-                'result' => {
-                    'sha1' => "compiled #{package.id}",
-                    'blobstore_id' => "blob #{package.id}"
-                }
+              'result' => {
+                'sha1' => "compiled #{package.id}",
+                'blobstore_id' => "blob #{package.id}"
+              }
             }
           end
         end
@@ -262,8 +262,8 @@ module Bosh::Director
         resource_pool = double('resource_pool', stemcell: stemcell)
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', resource_pool: resource_pool)
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
-                               fingerprint: 'deadbeef')
-        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [ package_model ], name: 'fake_template')
+          fingerprint: 'deadbeef')
+        template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
         planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
@@ -356,7 +356,7 @@ module Bosh::Director
         allow(config).to receive_messages(reuse_compilation_vms: true)
         allow(config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve) { |reservation| reservation.reserve }
+        expect(@network).to receive(:reserve) { |reservation| reservation.mark_as_reserved }
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -390,13 +390,13 @@ module Bosh::Director
       before do # prepare compilation
         prepare_samples
 
-        release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  model: release_version_model, name: 'release')
+        release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, name: 'release')
         stemcell = make_stemcell
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
-        package  = make_package('common')
+        package = make_package('common')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
-        job      = instance_double(
+        job = instance_double(
           'Bosh::Director::DeploymentPlan::Job',
           name: 'job-with-one-package',
           release: release,
@@ -408,7 +408,7 @@ module Bosh::Director
       end
 
       before do # create vm
-        allow(@network).to receive(:reserve) { |reservation| reservation.reserve }
+        allow(@network).to receive(:reserve) { |reservation| reservation.mark_as_reserved }
         allow(@network).to receive(:network_settings)
         allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end

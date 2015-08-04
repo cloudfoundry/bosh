@@ -54,7 +54,7 @@ module Bosh::Director
             reservation.validate_type(type)
 
             reservation.type = type
-            reservation.reserve
+            reservation.mark_as_reserved
           end
 
           return

@@ -94,9 +94,15 @@ module Bosh::Director
         canonical(@name)
       end
 
-      # Returns a list of VMs in the deployment (according to DB)
+      # Returns a list of Instances in the deployment (according to DB)
+      # @return [Array<Models::Instance>]
+      def instance_models
+        @model.instances
+      end
+
+      # Returns a list of Instances in the deployment (according to DB)
       # @return [Array<Models::Vm>]
-      def vms
+      def vm_models
         @model.vms
       end
 

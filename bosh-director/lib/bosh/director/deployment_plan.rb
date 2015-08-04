@@ -40,5 +40,5 @@ require 'bosh/director/deployment_plan/links/links_resolver'
 require 'bosh/director/deployment_plan/links/link_lookup'
 require 'bosh/director/deployment_plan/links/template_link'
 require 'bosh/director/deployment_plan/existing_instance'
-require 'bosh/director/deployment_plan/state_network_reservations'
+require 'bosh/director/deployment_plan/instance_network_reservations'
 

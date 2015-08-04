@@ -30,79 +30,29 @@ module Bosh::Director
     def bind_existing_deployment
       lock = Mutex.new
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        @deployment_plan.vms.each do |vm_model|
+        @deployment_plan.instance_models.each do |instance_model|
           pool.process do
-            with_thread_name("bind_existing_deployment(#{vm_model.agent_id})") do
-              bind_existing_vm(vm_model, lock)
+            with_thread_name("bind_existing_deployment(#{instance_model.job}/#{instance_model.index})") do
+              bind_existing_instance(instance_model, lock)
             end
           end
         end
       end
+
+      mark_unknown_vms_for_deletion
     end
 
-    # Queries agent for VM state and updates deployment plan accordingly
-    # @param [Models::Vm] vm_model VM database model
-    # @param [Mutex] lock Lock to hold on to while updating deployment plan
-    def bind_existing_vm(vm_model, lock)
-      state = get_state(vm_model)
-      lock.synchronize do
-        @logger.debug('Processing VM network reservations')
-
-        instance = vm_model.instance
-        if instance
-          bind_instance(instance, state)
-        else
-          # VM without an instance should not exist any more. But we still
-          # delete those VMs for backwards compatibility in case if it was ever
-          # created incorrectly.
-          # It also means that it was created before global networking
-          # and should not have any network reservations in DB,
-          # so we don't worry about releasing its IPs.
-          @logger.debug('Marking VM for deletion')
-          @deployment_plan.mark_vm_for_deletion(vm_model)
-        end
-        @logger.debug('Finished processing VM network reservations')
+    def mark_unknown_vms_for_deletion
+      @deployment_plan.vm_models.select { |vm| vm.instance.nil? }.each do |vm_model|
+        # VM without an instance should not exist any more. But we still
+        # delete those VMs for backwards compatibility in case if it was ever
+        # created incorrectly.
+        # It also means that it was created before global networking
+        # and should not have any network reservations in DB,
+        # so we don't worry about releasing its IPs.
+        @logger.debug('Marking VM for deletion')
+        @deployment_plan.mark_vm_for_deletion(vm_model)
       end
-    end
-
-    # @param [Models::Instance] instance_model Instance model
-    # @param [Hash] state Instance state according to agent
-    def bind_instance(instance_model, state)
-      @logger.debug('Binding instance VM')
-
-      # Update instance, if we are renaming a job.
-      if @deployment_plan.rename_in_progress?
-        old_name = @deployment_plan.job_rename['old_name']
-        new_name = @deployment_plan.job_rename['new_name']
-
-        if instance_model.job == old_name
-          @logger.info("Renaming `#{old_name}' to `#{new_name}'")
-          instance_model.update(:job => new_name)
-        end
-      end
-
-      instance_name = "#{instance_model.job}/#{instance_model.index}"
-
-      job = @deployment_plan.job(instance_model.job)
-      unless job
-        @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
-        instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
-        instance.bind_state(@deployment_plan, state)
-        @deployment_plan.mark_instance_for_deletion(instance)
-        return
-      end
-
-      instance = job.instance(instance_model.index)
-      unless instance
-        @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
-        instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
-        instance.bind_state(@deployment_plan, state)
-        @deployment_plan.mark_instance_for_deletion(instance)
-        return
-      end
-
-      @logger.debug("Found existing job instance `#{instance_name}'")
-      instance.bind_existing_instance(instance_model, state)
     end
 
     def get_state(vm_model)
@@ -269,6 +219,68 @@ module Bosh::Director
     def bind_dns
       binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
       binder.bind_deployment
+    end
+
+    private
+
+    # Queries agent for VM state and updates deployment plan accordingly
+    # @param [Models::Instance] instance_model Instance database model
+    # @param [Mutex] lock Lock to hold on to while updating deployment plan
+    def bind_existing_instance(instance_model, lock)
+      if instance_model.vm
+        # getting current state to obtain IP of dynamic networks
+        state = get_state(instance_model.vm)
+      end
+
+      lock.synchronize do
+        update_instance_if_rename(instance_model)
+        instance = find_deployment_instance_for_model(instance_model)
+
+        if instance.nil?
+          instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
+          @deployment_plan.mark_instance_for_deletion(instance)
+          return
+        end
+
+        instance.bind_existing_instance(instance_model)
+
+        if instance_model.vm
+          instance.bind_current_state(state)
+        end
+      end
+    end
+
+    def update_instance_if_rename(instance_model)
+      if @deployment_plan.rename_in_progress?
+        old_name = @deployment_plan.job_rename['old_name']
+        new_name = @deployment_plan.job_rename['new_name']
+
+        if instance_model.job == old_name
+          @logger.info("Renaming `#{old_name}' to `#{new_name}'")
+          instance_model.update(:job => new_name)
+        end
+      end
+    end
+
+    # @param [Models::Instance] instance_model Instance model
+    def find_deployment_instance_for_model(instance_model)
+      @logger.debug('Binding instance VM')
+      instance_name = "#{instance_model.job}/#{instance_model.index}"
+
+      job = @deployment_plan.job(instance_model.job)
+      unless job
+        @logger.debug("Job `#{instance_model.job}' not found")
+        return nil
+      end
+
+      instance = job.instance(instance_model.index)
+      unless instance
+        @logger.debug("Job instance `#{instance_name}' not found")
+        return nil
+      end
+
+      @logger.debug("Found existing job instance `#{instance_name}'")
+      instance
     end
   end
 end

@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     let(:static_ips) { ['192.168.1.5'] }
 
     it 'should reserve an IP within the range' do
-      reservation = BD::NetworkReservation.new_static(instance, '192.168.1.5')
+      reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.1.5')
 
       manual_network.reserve(reservation)
 
@@ -65,7 +65,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should allocated dynamic IP' do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
       manual_network.reserve(reservation)
 
@@ -74,7 +74,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should not let you reserve an IP in the reserved range' do
-      reservation = BD::NetworkReservation.new_static(instance, '192.168.1.3')
+      reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.1.3')
       expect {
         manual_network.reserve(reservation)
       }.to raise_error BD::NetworkReservationAlreadyInUse
@@ -85,7 +85,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       let(:static_ips) { ['192.168.1.10'] }
 
       it 'should not let you reserve an IP in the wrong pool' do
-        reservation = BD::NetworkReservation.new_static(instance, '192.168.1.11')
+        reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.1.11')
 
         expect {
           manual_network.reserve(reservation)
@@ -98,12 +98,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       let(:static_ips) { [] }
 
       before do
-        reservation = BD::NetworkReservation.new_dynamic(instance)
+        reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
         manual_network.reserve(reservation)
       end
 
       it "should raise an error when it's out of capacity" do
-        reservation = BD::NetworkReservation.new_dynamic(instance)
+        reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
         expect {
           manual_network.reserve(reservation)
@@ -116,13 +116,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     let(:network_range) { '192.168.1.0/30' }
 
     it 'should release the IP from the subnet' do
-      ip_reservation = BD::NetworkReservation.new_dynamic(instance)
+      ip_reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
       manual_network.reserve(ip_reservation)
       expect(ip_reservation.reserved?).to eq(true)
       expect(ip_reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2').to_i)
 
-      dynamic_reservation = BD::NetworkReservation.new_dynamic(instance)
+      dynamic_reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
       expect {
         manual_network.reserve(dynamic_reservation)
@@ -135,7 +135,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
       expect {
         manual_network.release(reservation)
@@ -145,7 +145,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :network_settings do
     it 'should provide the network settings from the subnet' do
-      reservation = BD::NetworkReservation.new_static(instance, '192.168.1.2')
+      reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation, [])).to eq({
             'ip' => '192.168.1.2',
@@ -158,7 +158,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::NetworkReservation.new_static(instance, '192.168.1.2')
+      reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation)).to eq({
             'ip' => '192.168.1.2',
@@ -171,7 +171,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::NetworkReservation.new_dynamic(instance)
+      reservation = BD::NetworkReservation.new_dynamic(instance, manual_network)
 
       expect {
         manual_network.network_settings(reservation)

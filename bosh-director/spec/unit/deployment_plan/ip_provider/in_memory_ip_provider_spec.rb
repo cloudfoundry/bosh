@@ -12,13 +12,14 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:instance) { instance_double(Instance, model: Bosh::Director::Models::Instance.make) }
+    let(:network) { instance_double(Network) }
 
     def cidr_ip(ip)
       NetAddr::CIDR.create(ip).to_i
     end
 
     def create_reservation(ip)
-      BD::NetworkReservation.new_static(instance, cidr_ip(ip))
+      BD::NetworkReservation.new_static(instance, network, cidr_ip(ip))
     end
 
     describe :reserve_ip do

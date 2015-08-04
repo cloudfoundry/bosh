@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
 
     # @param [NetAddr::CIDR] ip
     def reserve_with_instance_validation(instance, ip)
-      # try to save IP first before validating it's deployment to prevent race conditions
+      # try to save IP first before validating it's instance to prevent race conditions
       save_ip(instance, ip)
     rescue IPAlreadyReserved
       ip_address = Bosh::Director::Models::IpAddress.first(
