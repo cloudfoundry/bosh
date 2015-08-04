@@ -39,6 +39,7 @@ describe 'director.yml.erb.erb' do
           'max_tasks' => 500,
           'max_threads' => 32,
           'enable_snapshots' => true,
+          'ignore_missing_gateway' => false,
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',
@@ -634,6 +635,28 @@ describe 'director.yml.erb.erb' do
             end
           end
         end
+      end
+    end
+  end
+
+  describe 'ignore_missing_gateway property' do
+    before do
+      deployment_manifest_fragment['properties']['director']['cpi_job'] = 'test-cpi'
+    end
+
+    context 'when false' do
+      it 'renders false' do
+        expect(parsed_yaml['ignore_missing_gateway']).to be(false)
+      end
+    end
+
+    context 'when true' do
+      before do
+        deployment_manifest_fragment['properties']['director']['ignore_missing_gateway'] = true
+      end
+
+      it 'renders true' do
+        expect(parsed_yaml['ignore_missing_gateway']).to be(true)
       end
     end
   end

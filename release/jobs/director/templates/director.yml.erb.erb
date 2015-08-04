@@ -131,6 +131,7 @@ else
 end
 %>
 
+ignore_missing_gateway: <%= JSON.dump(p('director.ignore_missing_gateway')) %>
 user_management: <%= JSON.dump(user_management) %>
 trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
