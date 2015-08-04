@@ -280,6 +280,10 @@ module Bosh::Director
         @link_paths[template_name][link_name] = link_path
       end
 
+      def compilation?
+        false
+      end
+
       private
 
       # @param [Hash] collection All properties collection

@@ -120,7 +120,9 @@ module Bosh::Director
       end
 
       def spec
-        {}
+        {
+          'name' => @name
+        }
       end
 
       def package_spec
@@ -137,6 +139,10 @@ module Bosh::Director
 
       def persistent_disk_pool
         nil
+      end
+
+      def compilation?
+        true
       end
 
       def starts_on_deploy?

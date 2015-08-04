@@ -60,6 +60,11 @@ module Bosh::Dev::Sandbox
     end
 
     def stop
+      stop_workers_when_finished
+      @process.stop
+    end
+
+    def hard_stop
       stop_workers
       @process.stop
     end
@@ -79,7 +84,7 @@ module Bosh::Dev::Sandbox
       sleep 0.5 until resque_is_ready?
     end
 
-    def stop_workers
+    def stop_workers_when_finished
       @logger.debug('Waiting for Resque queue to drain...')
       sleep 0.1 until resque_is_done?
       @logger.debug('Resque queue drained')
@@ -87,6 +92,10 @@ module Bosh::Dev::Sandbox
       Redis.new(host: 'localhost', port: @redis_port).flushdb
 
       # wait for resque workers in parallel for fastness
+      stop_workers
+    end
+
+    def stop_workers
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
     end
 

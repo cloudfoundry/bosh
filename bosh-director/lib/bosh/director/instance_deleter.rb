@@ -80,12 +80,17 @@ module Bosh::Director
       @logger.info("Delete unneeded instance: #{vm_model.cid}")
 
       event_log_stage.advance_and_track(vm_model.cid) do
-        drain(vm_model)
+        drain(vm_model) unless instance.model.compilation
+
         vm_deleter.delete_for_instance(instance, skip_disks: true)
-        delete_snapshots(instance.model)
-        delete_persistent_disks(instance.model.persistent_disks)
-        delete_dns(instance.job_name, instance.index)
-        RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean_all
+
+        unless instance.model.compilation
+          delete_snapshots(instance.model)
+          delete_persistent_disks(instance.model.persistent_disks)
+          delete_dns(instance.job_name, instance.index)
+          RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean_all
+        end
+
         instance.delete
       end
     end
