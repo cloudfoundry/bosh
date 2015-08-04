@@ -262,6 +262,13 @@ module Bosh::Dev::Sandbox
       File.join(ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
+    def with_health_monitor_running
+      health_monitor_process.start
+      yield
+    ensure
+      health_monitor_process.stop
+    end
+
     private
 
     def external_cpi_config

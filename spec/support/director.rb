@@ -85,6 +85,17 @@ module Bosh::Spec
       return output, !failed
     end
 
+    def kill_vm_and_wait_for_resurrection(vm)
+      vm.kill_agent
+      resurrected_vm = wait_for_vm(vm.job_name_index, 300)
+
+      if vm.cid == resurrected_vm.cid
+        raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
+      end
+
+      resurrected_vm
+    end
+
     private
 
     def vms_details(deployment_name, options = {})

@@ -50,7 +50,7 @@ describe 'availability zones', type: :integration do
     end
 
     it 'resurrects VMs with the correct AZs cloud_properties' do
-      with_health_monitor_running do
+      current_sandbox.with_health_monitor_running do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
@@ -63,26 +63,10 @@ describe 'availability zones', type: :integration do
         }
         expect(current_sandbox.cpi.read_cloud_properties(original_vm.cid)).to eq(expected_cloud_properties)
 
-        resurrected_vm = kill_and_wait_for_resurrection(original_vm)
+        resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
         expect(current_sandbox.cpi.read_cloud_properties(resurrected_vm.cid)).to eq(expected_cloud_properties)
       end
-    end
-
-    def with_health_monitor_running
-      current_sandbox.health_monitor_process.start
-      yield
-    ensure
-      current_sandbox.health_monitor_process.stop
-    end
-
-
-    def kill_and_wait_for_resurrection(vm)
-      vm.kill_agent
-      resurrected_vm = director.wait_for_vm(vm.job_name_index, 300)
-      expect(resurrected_vm.cid).to_not eq(vm.cid)
-
-      resurrected_vm
     end
   end
 end

@@ -59,9 +59,7 @@ describe 'Changing cloud config', type: :integration do
 
       upload_a_different_cloud_config
 
-      original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar/0', 300)
-      expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+      resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
       expect(original_vm.ips).to eq(resurrected_vm.ips)
     end
