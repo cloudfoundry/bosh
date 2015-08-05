@@ -11,15 +11,23 @@ mkdir -p $chroot/$bosh_dir/src
 # Libyaml
 mkdir -p $chroot/usr/lib64
 
+config_folder=$dir/assets/config
+
 libyaml_basename=yaml-0.1.6
 libyaml_archive=$libyaml_basename.tar.gz
 
 cp -r $dir/assets/$libyaml_archive $chroot/$bosh_dir/src
+cp -r $config_folder $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src
 tar zxvf $libyaml_archive
 cd $libyaml_basename
+
+if [ `uname -m` == 'ppc64le' ]; then
+  cp ../config/config.{guess,sub} ./config
+fi
+
 ./configure --prefix=/usr
 make -j4 && make install
 
@@ -37,12 +45,18 @@ ruby_basename=ruby-1.9.3-p545
 ruby_archive=$ruby_basename.tar.gz
 
 cp -r $dir/assets/$ruby_archive $chroot/$bosh_dir/src
+cp -r $config_folder $chroot/$bosh_dir/src    # maybe we don't need it here
 
 run_in_bosh_chroot $chroot "
 cd src
 tar zxf $ruby_archive
 cd $ruby_basename
 sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
+
+if [ `uname -m` == 'ppc64le' ]; then
+  cp ../config/config.{guess,sub} ./tool
+fi
+
 echo Building Ruby $ruby_basename...
 ./configure --prefix=$bosh_dir --disable-install-doc > /dev/null
 make -j4 > /dev/null && make install > /dev/null
