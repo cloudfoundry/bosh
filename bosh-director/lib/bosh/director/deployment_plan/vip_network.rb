@@ -40,9 +40,7 @@ module Bosh::Director
 
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
 
-        reservation.validate_type(NetworkReservation::STATIC)
-        reservation.type = NetworkReservation::STATIC
-        reservation.mark_as_reserved
+        reservation.resolve(type: NetworkReservation::STATIC)
 
         @reserved_ips.add(reservation.ip)
       end

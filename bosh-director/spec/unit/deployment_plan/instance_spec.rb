@@ -771,7 +771,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when network reservation is already reserved' do
-        before { network_reservation.mark_as_reserved }
+        before { network_reservation.resolve({}) }
 
         it 'does not reserve network reservation again' do
           expect(network).to_not receive(:reserve)

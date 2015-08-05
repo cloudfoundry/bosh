@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     ##
@@ -48,14 +46,14 @@ module Bosh::Director
         if reservation.ip
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
-          find_subnet(reservation.ip) do |subnet|
-            type = subnet.reserve_ip(reservation)
-
-            reservation.validate_type(type)
-
-            reservation.type = type
-            reservation.mark_as_reserved
+          subnet = find_subnet(reservation.ip)
+          unless subnet
+            raise NetworkReservationInvalidIp,
+              "Provided IP '#{cidr_ip}' does not belong to any subnet in network '#{@name}'"
           end
+
+          type = subnet.reserve_ip(reservation)
+          reservation.resolve(type: type)
 
           return
         end
@@ -71,8 +69,7 @@ module Bosh::Director
           ip = subnet.allocate_dynamic_ip(reservation.instance)
           if ip
             @logger.debug("Reserving IP '#{format_ip(ip)}' for manual network '#{@name}'")
-            reservation.reserve_with_ip(ip)
-
+            reservation.resolve(ip: ip)
             return
           end
         end
@@ -93,9 +90,9 @@ module Bosh::Director
         end
 
         @logger.error("Releasing IP '#{format_ip(reservation.ip)}' for manual network #{@name}")
-        find_subnet(reservation.ip) do |subnet|
-          subnet.release_ip(reservation.ip)
-        end
+        subnet = find_subnet(reservation.ip)
+        
+        subnet.release_ip(reservation.ip) if subnet
       end
 
       ##
@@ -110,22 +107,24 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        config = nil
-        find_subnet(reservation.ip) do |subnet|
-          ip = ip_to_netaddr(reservation.ip)
-          config = {
-              "ip" => ip.ip,
-              "netmask" => subnet.netmask,
-              "cloud_properties" => subnet.cloud_properties
-          }
-
-          if default_properties
-            config["default"] = default_properties.sort
-          end
-
-          config["dns"] = subnet.dns if subnet.dns
-          config["gateway"] = subnet.gateway.ip if subnet.gateway
+        subnet = find_subnet(reservation.ip)
+        unless subnet
+          raise NetworkReservationInvalidIp, "Provided IP '#{cidr_ip}' does not belong to any subnet"
         end
+
+        ip = ip_to_netaddr(reservation.ip)
+        config = {
+          "ip" => ip.ip,
+          "netmask" => subnet.netmask,
+          "cloud_properties" => subnet.cloud_properties
+        }
+
+        if default_properties
+          config["default"] = default_properties.sort
+        end
+
+        config["dns"] = subnet.dns if subnet.dns
+        config["gateway"] = subnet.gateway.ip if subnet.gateway
         config
       end
 
@@ -133,12 +132,7 @@ module Bosh::Director
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet(ip)
-        @subnets.each do |subnet|
-          if subnet.range.contains?(ip)
-            yield subnet
-            break
-          end
-        end
+        @subnets.find { |subnet|  subnet.range.contains?(ip) }
       end
 
 

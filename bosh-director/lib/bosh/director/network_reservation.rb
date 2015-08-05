@@ -72,17 +72,6 @@ module Bosh::Director
       !!@reserved
     end
 
-    def validate_type(type)
-      return unless resolved?
-
-      if @type != type
-        ip_desc = @ip.nil? ? 'IP' : "IP '#{formatted_ip}'"
-
-        raise NetworkReservationWrongType,
-          "Failed to assign #{@type} #{ip_desc} to '#{@instance}': does not belong to #{format_type(type)} pool"
-      end
-    end
-
     # If type is not set, reservation was created from existing
     # instance state. This reservation is considered valid
     # until it is resolved
@@ -98,12 +87,14 @@ module Bosh::Director
       @network.release(self)
     end
 
-    def reserve_with_ip(ip)
-      @ip = ip
-      mark_as_reserved
-    end
+    def resolve(options)
+      if options[:type]
+        validate_type(options[:type])
+        @type = options[:type]
+      end
 
-    def mark_as_reserved
+      @ip = options[:ip] if options[:ip]
+
       @reserved = true
     end
 
@@ -115,7 +106,7 @@ module Bosh::Director
         if @type == other.type
           if dynamic? || (static? && @ip == other.ip)
             @ip = other.ip
-            mark_as_reserved
+            @reserved = true
           end
         end
       end
@@ -126,6 +117,17 @@ module Bosh::Director
     end
 
     private
+
+    def validate_type(type)
+      return unless resolved?
+
+      if @type != type
+        ip_desc = @ip.nil? ? 'IP' : "IP '#{formatted_ip}'"
+
+        raise NetworkReservationWrongType,
+          "Failed to assign #{@type} #{ip_desc} to '#{@instance}': does not belong to #{format_type(type)} pool"
+      end
+    end
 
     def formatted_ip
       @ip.nil? ? nil : ip_to_netaddr(@ip).ip

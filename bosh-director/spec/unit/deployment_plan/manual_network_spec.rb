@@ -110,6 +110,16 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         }.to raise_error BD::NetworkReservationNotEnoughCapacity
       end
     end
+
+    context 'when reserving IP that is outside of subnet range' do
+      it 'raises an error' do
+        reservation = BD::NetworkReservation.new_static(instance, manual_network, '192.168.2.5')
+        expect {
+          manual_network.reserve(reservation)
+        }.to raise_error BD::NetworkReservationInvalidIp,
+          "Provided IP '192.168.2.5' does not belong to any subnet in network 'a'"
+      end
+    end
   end
 
   describe :release do

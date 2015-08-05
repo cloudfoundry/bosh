@@ -16,7 +16,7 @@ module Bosh::Director
       it "should take the dynamic reservation if it's valid" do
         reservation = NetworkReservation.new_dynamic(instance, network)
         other = NetworkReservation.new_dynamic(instance, network)
-        other.mark_as_reserved
+        other.resolve({})
         reservation.take(other)
         expect(reservation.reserved?).to eq(true)
       end
@@ -24,7 +24,7 @@ module Bosh::Director
       it "should take the static reservation if it's valid" do
         reservation = NetworkReservation.new_static(instance, network, '0.0.0.1')
         other = NetworkReservation.new_static(instance, network, '0.0.0.1')
-        other.mark_as_reserved
+        other.resolve({})
         reservation.take(other)
         expect(reservation.reserved?).to eq(true)
         expect(reservation.ip).to eq(1)
@@ -33,7 +33,7 @@ module Bosh::Director
       it 'should not take the reservation if the type differs' do
         reservation = NetworkReservation.new_static(instance, network, '0.0.0.1')
         other = NetworkReservation.new_dynamic(instance, network)
-        other.mark_as_reserved
+        other.resolve({})
         reservation.take(other)
         expect(reservation.reserved?).to eq(false)
       end
@@ -41,13 +41,13 @@ module Bosh::Director
       it 'should not take the static reservation if the IP differs' do
         reservation = NetworkReservation.new_static(instance, network, '0.0.0.1')
         other = NetworkReservation.new_static(instance, network, '0.0.0.2')
-        other.mark_as_reserved
+        other.resolve({})
         reservation.take(other)
         expect(reservation.reserved?).to eq(false)
         expect(reservation.ip).to eq(1)
       end
 
-      it "should not take the reservation if it wasn't fulfilled" do
+      it 'should not take the reservation if it is not resolved' do
         reservation = NetworkReservation.new_dynamic(instance, network)
         other = NetworkReservation.new_static(instance, network, '0.0.0.1')
         reservation.take(other)

@@ -359,7 +359,7 @@ module Bosh::Director
         allow(config).to receive_messages(reuse_compilation_vms: true)
         allow(config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve) { |reservation| reservation.mark_as_reserved }
+        expect(@network).to receive(:reserve) { |reservation| reservation.resolve({}) }
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -411,7 +411,7 @@ module Bosh::Director
       end
 
       before do # create vm
-        allow(@network).to receive(:reserve) { |reservation| reservation.mark_as_reserved }
+        allow(@network).to receive(:reserve) { |reservation| reservation.resolve({}) }
         allow(@network).to receive(:network_settings)
         allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
