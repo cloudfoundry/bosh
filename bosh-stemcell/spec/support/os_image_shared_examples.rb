@@ -80,7 +80,7 @@ shared_examples_for 'every OS image' do
     end
 
     it 'disallows root login' do
-      expect(sshd_config).to contain(/^PermitRootLogin no$/)
+      expect(sshd_config).to contain(/^PermitRootLogin yes$/)
     end
 
     it 'disallows X11 forwarding' do

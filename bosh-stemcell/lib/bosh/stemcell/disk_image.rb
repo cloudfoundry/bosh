@@ -50,7 +50,12 @@ module Bosh::Stemcell
 
     def map_image
       @device = shell.run("sudo losetup --show --find #{image_file_path}", output_command: verbose)
-      shell.run("sudo kpartx -av #{device}", output_command: verbose)
+      if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+        # power8 guest images have a p1: PReP partition and p2: file system, we need loopp2 here
+        shell.run("sudo kpartx -av #{device} | grep \"^add\" | grep \"p2 \"", output_command: verbose)
+      else
+        shell.run("sudo kpartx -av #{device}", output_command: verbose)
+      end
     end
 
     def unmap_image

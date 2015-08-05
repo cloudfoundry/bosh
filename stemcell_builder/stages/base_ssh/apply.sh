@@ -11,7 +11,7 @@ sed "/^ *UseDNS/d" -i $chroot/etc/ssh/sshd_config
 echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 
 sed "/^ *PermitRootLogin/d" -i $chroot/etc/ssh/sshd_config
-echo 'PermitRootLogin no' >> $chroot/etc/ssh/sshd_config
+echo 'PermitRootLogin yes' >> $chroot/etc/ssh/sshd_config
 
 sed "/^ *X11Forwarding/d" -i $chroot/etc/ssh/sshd_config
 sed "/^ *X11DisplayOffset/d" -i $chroot/etc/ssh/sshd_config
