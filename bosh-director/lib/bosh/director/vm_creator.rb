@@ -45,6 +45,8 @@ module Bosh::Director
 
       begin
         instance.bind_to_vm_model(vm_model)
+        VmMetadataUpdater.build.update(vm_model, {})
+
         agent_client = AgentClient.with_vm(vm_model)
         agent_client.wait_until_ready
         instance.update_trusted_certs
@@ -111,7 +113,6 @@ module Bosh::Director
       vm = Models::Vm.new(options)
 
       vm.save
-      VmMetadataUpdater.build.update(vm, {})
       vm
     rescue => e
       logger.error("error creating vm: #{e.message}")

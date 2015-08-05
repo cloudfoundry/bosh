@@ -10,34 +10,36 @@ describe Bosh::Director::VmCreator do
       Bosh::Director::AgentClient,
       wait_until_ready: nil,
       update_settings: nil,
+      apply: nil,
+      get_state: nil
     )
   end
   let(:network_settings) { {'network_a' => {'ip' => '1.2.3.4'}} }
-  let(:deployment) { Bosh::Director::Models::Deployment.make }
+  let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
     instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name')
   end
   let(:availability_zone) do
     instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
   end
-  let(:resource_pool) { instance_double(Bosh::Director::DeploymentPlan::ResourcePool) }
+  let(:resource_pool) { instance_double(Bosh::Director::DeploymentPlan::ResourcePool, env: {}, spec: {}, cloud_properties: {'ram' => '2gb'}) }
   let(:instance) do
-    allow(resource_pool).to receive(:env).and_return({})
-    instance_double(
-      Bosh::Director::DeploymentPlan::Instance,
-      deployment_model: deployment,
-      cloud_properties: {'ram' => '2gb'},
-      resource_pool: resource_pool,
-      network_settings: network_settings,
-      model: Bosh::Director::Models::Instance.make(vm: nil),
-      vm: Bosh::Director::DeploymentPlan::Vm.new,
-      bind_to_vm_model: nil,
-      apply_vm_state: nil,
-      update_trusted_certs: nil,
-      update_availability_zone!: nil,
-      update_cloud_properties!: nil,
+    instance = Bosh::Director::DeploymentPlan::Instance.new(
+      job,
+      5,
+      'started',
+      deployment_plan,
+      nil,
+      logger
     )
+    instance.bind_existing_instance(instance_model)
+    allow(instance).to receive(:network_settings).and_return(network_settings)
+    allow(instance).to receive(:spec).and_return({})
+    instance
   end
+
+  let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'fake-job', resource_pool: resource_pool) }
+  let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }
 
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
@@ -67,16 +69,21 @@ describe Bosh::Director::VmCreator do
   end
 
   it 'sets vm metadata' do
-    vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater')
-    expect(Bosh::Director::VmMetadataUpdater).to receive(:build).and_return(vm_metadata_updater)
-    expect(vm_metadata_updater).to receive(:update) do |vm, metadata|
-      expect(vm.cid).to eq('new-vm-cid')
-      expect(metadata).to eq({})
-    end
-
     expect(cloud).to receive(:create_vm).with(
         kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
       ).and_return('new-vm-cid')
+
+    allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
+
+    expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
+      expect(vm_cid).to eq('new-vm-cid')
+      expect(metadata).to eq({
+        deployment: 'deployment_name',
+        job: 'fake-job',
+        index: '5',
+        director: 'fake-director-name'
+      })
+    end
 
     subject.create_for_instance(instance, ['fake-disk-cid'])
   end

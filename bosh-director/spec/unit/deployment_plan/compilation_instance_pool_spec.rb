@@ -42,6 +42,7 @@ module Bosh::Director
       allow(network).to receive(:network_settings).with(instance_of(NetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
+      allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
       allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
       allow(AgentClient).to receive(:with_vm).with(another_vm_model).and_return(another_agent_client)
       allow(agent_client).to receive(:wait_until_ready)
