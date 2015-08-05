@@ -25,10 +25,10 @@ module Bosh::Cli::Command
           t.headings = 'Job', 'Fingerprint', 'Blobstore ID', 'SHA1'
           release['jobs'].each do |job|
             row = [
-                job['name'],
-                job['fingerprint'],
-                job['blobstore_id'],
-                job['sha1']]
+                job['name'].make_yellow,
+                job['fingerprint'].make_yellow,
+                job['blobstore_id'].make_yellow,
+                job['sha1'].make_yellow]
             t << row
           end
         end
@@ -39,20 +39,20 @@ module Bosh::Cli::Command
           t.headings = 'Package', 'Fingerprint', 'Compiled For', 'Blobstore ID', 'SHA1'
           release['packages'].each do |package|
             src_pkg_row = [
-                package['name'],
-                package['fingerprint'],
-                package['blobstore_id'].nil? ? '(no source)' : '(source)',
-                package['blobstore_id'],
-                package['sha1']]
+                package['name'].make_yellow,
+                package['fingerprint'].make_yellow,
+                package['blobstore_id'].nil? ? '(no source)'.make_red : '(source)'.make_yellow,
+                package['blobstore_id'].nil? ? "" : package['blobstore_id'].make_yellow,
+                package['sha1'].nil? ? "" : package['sha1'].make_yellow]
             t << src_pkg_row
 
             package['compiled_packages'].each do |compiled|
               comp_pkg_row = [
                   '',
                   '',
-                  compiled['stemcell'],
-                  compiled['blobstore_id'],
-                  compiled['sha1']]
+                  compiled['stemcell'].make_green,
+                  compiled['blobstore_id'].make_green,
+                  compiled['sha1'].make_green]
               t << comp_pkg_row
             end
           end
