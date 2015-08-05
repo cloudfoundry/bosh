@@ -49,10 +49,6 @@ module Bosh::Director
         @model.deployment
       end
 
-      def bind_state(deployment, state)
-        @network_reservations = StateNetworkReservations.new(deployment).create_from_state(self, state)
-      end
-
       def resource_pool
         resource_pool_spec = @apply_spec.fetch('resource_pool', {})
         ExistingResourcePool.new(resource_pool_spec, @env)
