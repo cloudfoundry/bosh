@@ -1,0 +1,6 @@
+---
+final_name: test_release
+blobstore:
+  provider: local
+  options:
+    blobstore_path: ./local-blobstore

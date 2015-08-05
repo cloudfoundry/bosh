@@ -1,0 +1,8 @@
+---
+name: job_using_pkg_5
+templates: {}
+packages:
+  - pkg_5_depends_on_4_and_1
+configuration:
+  file1.conf: config/file1.conf
+  file2.conf: config/file2.conf

@@ -87,6 +87,7 @@ module Bosh::Director
   StemcellInUse = err(50004)
 
   PackageInvalidArchive = err(60000)
+  PackageMissingSourceCode = err(60001)
 
   # Models
   DeploymentNotFound = err(70000, NOT_FOUND)
@@ -223,6 +224,7 @@ module Bosh::Director
   DnsInvalidCanonicalName = err(420001)
 
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
+  PackageCompilationNotFound = err(430003)
 
   BadManifest = err(440001)
 

@@ -1,0 +1,7 @@
+---
+name: pkg_5_depends_on_4_and_1
+dependencies:
+  - pkg_1
+  - pkg_4_depends_on_3
+files:
+  - pkg_5/**

@@ -1,7 +1,7 @@
 set -e -x
 
 echo "Extracting pcre..."
-tar xzvf nginx/pcre-8.34.tar.gz
+tar xzvf nginx/pcre-8.37.tar.gz
 
 echo "Extracting headers-more module..."
 tar xzvf nginx/headers-more-v0.25.tgz
@@ -18,7 +18,7 @@ pushd nginx-1.4.5
   ./configure \
     --with-debug \
     --prefix=${BOSH_INSTALL_TARGET} \
-    --with-pcre=../pcre-8.34 \
+    --with-pcre=../pcre-8.37 \
     --add-module=../headers-more-nginx-module-0.25 \
     --with-http_ssl_module \
     --with-http_dav_module \

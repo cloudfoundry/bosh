@@ -1,0 +1,6 @@
+---
+name: pkg_3_depends_on_2
+dependencies:
+  - pkg_2
+files:
+  - pkg_3/**

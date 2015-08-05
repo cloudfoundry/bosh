@@ -40,7 +40,7 @@ end
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
   gem 'bosh-stemcell', path: 'bosh-stemcell'
-  gem 'serverspec'
+  gem 'serverspec', '0.15.4'
 
   gem 'rspec', '~> 3.0.0'
   gem 'rspec-its'
@@ -61,7 +61,7 @@ group :development, :test do
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way
   # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`
-  gem 'specinfra', require: nil
+  gem 'specinfra', '1.15.0', require: nil
 
   # for director
   gem 'machinist', '~>1.0'

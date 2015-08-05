@@ -67,10 +67,10 @@ nginx/nginx-upload-module-2.2.tar.gz:
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
   sha: 74ccd116525a155db76f92a1cd484d9516a70398
   size: 28505
-nginx/pcre-8.34.tar.gz:
-  object_id: ea6a3dd5-8620-4bed-bd6c-17a7eda02cf5
-  sha: d46e537337ee70df19084001a4b6815b3d69fe6c
-  size: 1933734
+nginx/pcre-8.37.tar.gz:
+  object_id: 7c107c29-c63b-4e95-8a13-698a835ae8b5
+  sha: 4a24a20c61347d8da4edc86d5475aaf70ac146bb
+  size: 2041593
 ruby/bundler-1.6.3.gem:
   object_id: 2cbdd2bc-bc00-4b4b-b617-2433cea68a02
   sha: c8a000f75b6a6f60d9fb727f8076ec9171e14c20
