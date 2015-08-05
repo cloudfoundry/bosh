@@ -164,6 +164,33 @@ describe Bosh::AwsCloud::InstanceManager do
         # Trigger spot instance request
         create_instance
       end
+
+      it 'should raise an exception when spot creation fails' do
+        expect(instance_manager).to receive(:create_aws_spot_instance).and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+
+        expect {
+          create_instance
+        }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      end
+
+      context 'when spot_ondemand_fallback is configured' do
+        let(:resource_pool) do
+          {
+            'spot_bid_price' => 0.15,
+            'spot_ondemand_fallback' => true,
+            'instance_type' => 'm1.small',
+            'key_name' => 'bar',
+          }
+        end
+
+        it 'should create an on demand instance when spot creation fails AND we have enabled spot_ondemand_fallback' do
+          expect(instance_manager).to receive(:create_aws_spot_instance).and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+
+          expect(aws_instances).to receive(:create).and_return(aws_instance)
+
+          create_instance
+        end
+      end
     end
 
     it 'should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised' do

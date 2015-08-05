@@ -72,7 +72,7 @@ describe Bosh::AwsCloud::SpotManager do
       }
     }).and_return(spot_instance_requests)
 
-    spot_manager.create(instance_params, spot_bid_price)
+    expect(spot_manager.create(instance_params, spot_bid_price)).to be(instance)
   end
 
   context 'when instance does not have security groups' do
@@ -83,11 +83,11 @@ describe Bosh::AwsCloud::SpotManager do
         expect(request_params[:launch_specification][:network_interfaces][0]).to_not include(:groups)
       end.and_return(spot_instance_requests)
 
-      spot_manager.create(instance_params, spot_bid_price)
+      expect(spot_manager.create(instance_params, spot_bid_price)).to be(instance)
     end
   end
 
-  it 'should wait total_spot_instance_request_wait_time() seconds for a SPOT instance to be started, and then fail (but allow retries)' do
+  it 'should fail to return an instance when starting a spot instance times out' do
     spot_instance_requests = {
       spot_instance_request_set: [
         { spot_instance_request_id: 'sir-12345c' }
@@ -96,20 +96,16 @@ describe Bosh::AwsCloud::SpotManager do
     }
 
     expect(aws_client).to receive(:describe_spot_instance_requests).
-      exactly(10).times.with({ spot_instance_request_ids: ['sir-12345c'] }).
+      exactly(Bosh::AwsCloud::SpotManager::RETRY_COUNT).times.with({ spot_instance_request_ids: ['sir-12345c'] }).
       and_return({ spot_instance_request_set: [{ state: 'open' }] })
 
     # When erroring, should cancel any pending spot requests
     expect(aws_client).to receive(:cancel_spot_instance_requests)
 
-    expect(Bosh::Common).to receive(:retryable).
-      with(sleep: 0.01, tries: 10, on: [AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound]).
-      and_call_original
-
     expect {
       spot_manager.create(instance_params, spot_bid_price)
-    }.to raise_error(Bosh::Clouds::VMCreationFailed){ |error|
-      expect(error.ok_to_retry).to eq true
+    }.to raise_error(Bosh::Clouds::VMCreationFailed) { |error|
+      expect(error.ok_to_retry).to eq false
     }
   end
 
@@ -130,8 +126,9 @@ describe Bosh::AwsCloud::SpotManager do
     }.to_not raise_error
   end
 
-  it 'should fail VM creation (no retries) when spot bid price is below market price' do
+  it 'should immediately fail to return an instance when spot bid price is too low' do
     expect(aws_client).to receive(:describe_spot_instance_requests).
+      exactly(1).times.
       with({ spot_instance_request_ids: ['sir-12345c'] }).
       and_return(
       {
@@ -241,7 +238,7 @@ describe Bosh::AwsCloud::SpotManager do
         }
       }).and_return(spot_instance_requests)
 
-      spot_manager.create(instance_params, spot_bid_price)
+      expect(spot_manager.create(instance_params, spot_bid_price)).to be(instance)
     end
   end
 end

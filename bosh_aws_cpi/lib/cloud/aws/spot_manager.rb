@@ -12,6 +12,7 @@ module Bosh::AwsCloud
     end
 
     def create(instance_params, spot_bid_price)
+      @instance_params = instance_params
       spot_request_spec = create_spot_request_spec(instance_params, spot_bid_price)
       @logger.debug("Requesting spot instance with: #{spot_request_spec.inspect}")
 
@@ -22,12 +23,12 @@ module Bosh::AwsCloud
         raise Bosh::Clouds::VMCreationFailed.new(false), e.inspect
       end
 
-      request_spot_instance
+      wait_for_spot_instance
     end
 
     private
 
-    def request_spot_instance
+    def wait_for_spot_instance
       instance = nil
 
       # Query the spot request state until it becomes "active".
@@ -43,20 +44,17 @@ module Bosh::AwsCloud
             fail_spot_creation("VM spot instance creation failed: #{status.inspect}")
           when 'open'
             if status[:status] != nil && status[:status][:code] == 'price-too-low'
-              fail_spot_creation("Cannot create VM spot instance because bid price is too low: #{status.inspect}")
+              fail_spot_creation("Cannot create VM spot instance because bid price is too low: #{status.inspect}. Reverting to creating ondemand instance")
             end
           when 'active'
             @logger.info("Spot request instances fulfilled: #{status.inspect}")
             instance = @region.instances[status[:instance_id]]
-            true
         end
       end
 
       instance
     rescue Bosh::Common::RetryCountExceeded
-      @logger.warn("Timed out waiting for spot request #{@spot_instance_requests.inspect} to be fulfilled")
-      cancel_pending_spot_requests
-      raise Bosh::Clouds::VMCreationFailed.new(true)
+      fail_spot_creation("Timed out waiting for spot request #{@spot_instance_requests.inspect} to be fulfilled. Reverting to creating ondemand instance")
     end
 
     def create_spot_request_spec(instance_params, spot_price)
@@ -103,7 +101,7 @@ module Bosh::AwsCloud
     end
 
     def fail_spot_creation(message)
-      @logger.error(message)
+      @logger.warn(message)
       cancel_pending_spot_requests
       raise Bosh::Clouds::VMCreationFailed.new(false), message
     end
