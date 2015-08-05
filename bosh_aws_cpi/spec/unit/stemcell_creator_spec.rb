@@ -23,7 +23,8 @@ describe Bosh::AwsCloud::StemcellCreator do
   context "real" do
     let(:volume) { double("volume") }
     let(:snapshot) { double("snapshot", :id => "snap-xxxxxxxx") }
-    let(:image) { double("image") }
+    let(:image_id) { "ami-a1b2c3d4" }
+    let(:image) { double("image", :id => image_id) }
     let(:ebs_volume) { double("ebs_volume") }
 
     it "should create a real stemcell" do
@@ -31,7 +32,10 @@ describe Bosh::AwsCloud::StemcellCreator do
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(snapshot: snapshot, state: :completed)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_image).with(image: image, state: :available)
       allow(SecureRandom).to receive(:uuid).and_return("fake-uuid")
-      allow(region).to receive_message_chain(:images, :create).and_return(image)
+      allow(region).to receive(:images).and_return({
+        image_id => image,
+      })
+      allow(region).to receive_message_chain(:client, :register_image).and_return(double("object", :image_id => image_id))
 
       expect(creator).to receive(:copy_root_image)
       expect(volume).to receive(:create_snapshot).and_return(snapshot)
