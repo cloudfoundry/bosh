@@ -283,7 +283,9 @@ module Bosh::Director
       let(:initial_state) {
         {
           'deployment' => 'mycloud',
-          'job' => {},
+          'job' => {
+            'name' => 'compilation-deadbeef'
+          },
           'index' => 0,
           'networks' => {'default' => 'network settings'},
           'resource_pool' => {},
@@ -295,6 +297,7 @@ module Bosh::Director
           'persistent_disk' => 0
         }
       }
+      before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       it 'reuses compilation VMs' do
         prepare_samples

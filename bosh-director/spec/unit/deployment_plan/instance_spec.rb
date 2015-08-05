@@ -30,6 +30,7 @@ module Bosh::Director::DeploymentPlan
         deployment: plan,
         name: 'fake-job',
         persistent_disk_pool: disk_pool,
+        compilation?: false
       )
     end
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
@@ -52,6 +53,7 @@ module Bosh::Director::DeploymentPlan
           canonical_name: 'job',
           starts_on_deploy?: true,
           resource_pool: resource_pool,
+          compilation?: false
         })
       end
       let(:instance_model) { Bosh::Director::Models::Instance.make }
@@ -277,12 +279,11 @@ module Bosh::Director::DeploymentPlan
 
     describe '#bind_unallocated_vm' do
       let(:index) { 2 }
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea') }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', compilation?: false) }
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
       let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
-      let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
       let(:vm) { Vm.new }
 
       before do
@@ -475,7 +476,15 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#sync_state_with_db' do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', resource_pool: resource_pool) }
+      let(:job) do
+        instance_double(
+          'Bosh::Director::DeploymentPlan::Job',
+          deployment: plan,
+          name: 'dea',
+          resource_pool: resource_pool,
+          compilation?: false
+        )
+      end
       let(:index) { 3 }
 
       context 'when desired state is stopped' do
