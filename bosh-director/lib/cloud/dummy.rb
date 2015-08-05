@@ -69,7 +69,7 @@ module Bosh
         record_inputs(__method__, {
           agent_id: agent_id,
           stemcell_id: stemcell_id,
-          resource_pool: resource_pool,
+          cloud_properties: cloud_properties,
           networks: networks,
           disk_cids: disk_cids,
           env: env
