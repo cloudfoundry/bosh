@@ -137,6 +137,10 @@ module Bosh
           get_json("/releases/#{name}")
         end
 
+        def inspect_release(name, version)
+          get_json("/releases/#{name}?version=#{version}")
+        end
+
         def match_packages(manifest_yaml)
           url          = '/packages/matches'
           status, body = post(url, 'text/yaml', manifest_yaml)
