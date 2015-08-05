@@ -24,7 +24,7 @@ module Bosh::Director
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
       @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id, deployment: deployment_model)
+      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
     end
 
     let :handler do

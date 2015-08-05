@@ -26,15 +26,16 @@ describe Bosh::Director::VmCreator do
     instance_double(
       Bosh::Director::DeploymentPlan::Instance,
       deployment_model: deployment,
+      cloud_properties: {'ram' => '2gb'},
       resource_pool: resource_pool,
-      availability_zone: nil,
       network_settings: network_settings,
       model: Bosh::Director::Models::Instance.make(vm: nil),
       vm: Bosh::Director::DeploymentPlan::Vm.new,
       bind_to_vm_model: nil,
       apply_vm_state: nil,
       update_trusted_certs: nil,
-      update_availability_zone: nil,
+      update_availability_zone!: nil,
+      update_cloud_properties!: nil,
     )
   end
 
@@ -45,7 +46,6 @@ describe Bosh::Director::VmCreator do
 
     stemcell = Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id')
     allow(resource_pool).to receive(:stemcell).and_return(stemcell)
-    allow(resource_pool).to receive(:cloud_properties).and_return({'ram' => '2gb'})
   end
 
   it 'should create a vm' do
@@ -53,55 +53,17 @@ describe Bosh::Director::VmCreator do
       kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
     ).and_return('new-vm-cid')
 
-    allow(instance).to receive(:availability_zone) { nil }
-
     expect(instance).to receive(:bind_to_vm_model)
     expect(agent_client).to receive(:wait_until_ready)
     expect(instance).to receive(:apply_vm_state)
     expect(instance).to receive(:update_trusted_certs)
-    expect(instance).to receive(:update_availability_zone)
+    expect(instance).to receive(:update_availability_zone!)
+    expect(instance).to receive(:update_cloud_properties!)
 
     subject.create_for_instance(instance, ['fake-disk-cid'])
 
     expect(Bosh::Director::Models::Vm.all.size).to eq(1)
     expect(Bosh::Director::Models::Vm.first.cid).to eq('new-vm-cid')
-  end
-
-  describe 'cloud_properties the vm is created with' do
-    context 'when the instance has an availability zone' do
-      it 'merges the resource pool cloud properties into the availability zone cloud properties' do
-        allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
-
-        allow(instance).to receive(:availability_zone) { availability_zone }
-        allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one' })
-        allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-
-        subject.create_for_instance(instance, ['fake-disk-cid'])
-
-        expect(cloud).to have_received(:create_vm).with(
-            anything, anything,
-            {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
-            anything, anything, anything
-          )
-      end
-    end
-
-    context 'when the instance does not have an availability zone' do
-      it 'uses just the resource pool cloud properties' do
-        allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
-
-        allow(instance).to receive(:availability_zone) { nil }
-        allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
-
-        subject.create_for_instance(instance, ['fake-disk-cid'])
-
-        expect(cloud).to have_received(:create_vm).with(
-            anything, anything,
-            {'foo' => 'rp-foo', 'resources' => 'the-good-stuff'},
-            anything, anything, anything
-          )
-      end
-    end
   end
 
   it 'sets vm metadata' do
@@ -111,8 +73,6 @@ describe Bosh::Director::VmCreator do
       expect(vm.cid).to eq('new-vm-cid')
       expect(metadata).to eq({})
     end
-
-    allow(instance).to receive(:availability_zone) { nil }
 
     expect(cloud).to receive(:create_vm).with(
         kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
@@ -129,8 +89,6 @@ describe Bosh::Director::VmCreator do
                                              { 'credentials' =>
                                                { 'crypt_key' => kind_of(String),
                                                  'sign_key' => kind_of(String)}}})
-
-    allow(instance).to receive(:availability_zone) { nil }
 
     subject.create_for_instance(instance, ['fake-disk-cid'])
 
@@ -153,8 +111,6 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
     expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
-    allow(instance).to receive(:availability_zone) { nil }
-
     subject.create_for_instance(instance, ['fake-disk-cid'])
 
     expect(Bosh::Director::Models::Vm.first.cid).to eq('fake-vm-cid')
@@ -162,8 +118,6 @@ describe Bosh::Director::VmCreator do
 
   it 'should not retry creating a VM if it is told it is not a retryable error' do
     expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
-
-    allow(instance).to receive(:availability_zone) { nil }
 
     expect {
       subject.create_for_instance(instance, ['fake-disk-cid'])
@@ -174,8 +128,6 @@ describe Bosh::Director::VmCreator do
     Bosh::Director::Config.max_vm_create_tries = 3
 
     expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
-
-    allow(instance).to receive(:availability_zone) { nil }
 
     expect {
       subject.create_for_instance(instance, ['fake-disk-cid'])
@@ -189,8 +141,6 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm) do |*args|
       env_id = args[5].object_id
     end
-
-    allow(instance).to receive(:availability_zone) { nil }
 
     subject.create_for_instance(instance, ['fake-disk-cid'])
 

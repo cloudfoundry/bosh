@@ -30,8 +30,6 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      attr_reader :availability_zone
-
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
@@ -134,12 +132,16 @@ module Bosh::Director
         @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
-      def update_availability_zone
+      def update_availability_zone!
         if @availability_zone.nil?
           @model.update(availability_zone: nil)
         else
           @model.update(availability_zone: @availability_zone.name)
         end
+      end
+
+      def update_cloud_properties!
+        @model.update(cloud_properties: JSON.dump(cloud_properties))
       end
 
       def agent_client
@@ -474,6 +476,21 @@ module Bosh::Director
         # so later it knows what it needs to become
         vm.bound_instance = self
         @vm = vm
+      end
+
+
+      def cloud_properties
+        if @availability_zone.nil?
+          resource_pool.cloud_properties
+        else
+          @availability_zone.cloud_properties.merge(resource_pool.cloud_properties)
+        end
+      end
+
+      def availability_zone_name
+        return nil if @availability_zone.nil?
+
+        @availability_zone.name
       end
 
       private

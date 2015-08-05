@@ -34,17 +34,10 @@ module Bosh::Director
     def create_for_instance(instance, disks)
       @logger.info('Creating VM')
 
-      availability_zone = instance.availability_zone
-      if availability_zone.nil?
-        vm_cloud_properties = instance.resource_pool.cloud_properties
-      else
-        vm_cloud_properties = instance.availability_zone.cloud_properties.merge(instance.resource_pool.cloud_properties)
-      end
-
       vm_model = create(
         instance.deployment_model,
         instance.resource_pool.stemcell,
-        vm_cloud_properties,
+        instance.cloud_properties,
         instance.network_settings,
         disks,
         instance.resource_pool.env,
@@ -55,7 +48,8 @@ module Bosh::Director
         agent_client = AgentClient.with_vm(vm_model)
         agent_client.wait_until_ready
         instance.update_trusted_certs
-        instance.update_availability_zone
+        instance.update_availability_zone!
+        instance.update_cloud_properties!
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
         @vm_deleter.delete_for_instance(instance)

@@ -847,5 +847,50 @@ module Bosh::Director::DeploymentPlan
         expect(Bosh::Director::Models::IpAddress.all).to eq([ip1])
       end
     end
+
+    describe '#cloud_properties' do
+      context 'when the instance has an availability zone' do
+        it 'merges the resource pool cloud properties into the availability zone cloud properties' do
+          availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+          allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
+          allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+
+          instance = Instance.new(job, index, state, plan, availability_zone, logger)
+
+          expect(instance.cloud_properties).to eq(
+              {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
+            )
+        end
+      end
+
+      context 'when the instance does not have an availability zone' do
+        it 'uses just the resource pool cloud properties' do
+          allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+
+          instance = Instance.new(job, index, state, plan, nil, logger)
+
+          expect(instance.cloud_properties).to eq(
+              {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
+            )
+        end
+      end
+    end
+
+    describe '#update_cloud_properties' do
+      it 'saves the cloud properties' do
+        availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+        allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
+        allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+
+        instance = Instance.new(job, index, state, plan, availability_zone, logger)
+        instance.bind_existing_instance(instance_model)
+
+        instance.update_cloud_properties!
+
+        expect(instance_model.cloud_properties_hash).to eq(
+            {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
+          )
+      end
+    end
   end
 end

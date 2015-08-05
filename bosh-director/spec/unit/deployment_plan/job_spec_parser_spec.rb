@@ -647,7 +647,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
           job = parser.parse(job_spec)
 
-          expect(job.instances.map(&:availability_zone).map(&:name)).to eq([
+          expect(job.instances.map(&:availability_zone_name)).to eq([
                 'zone1', 'zone2', 'zone3',
                 'zone1', 'zone2', 'zone3',
                 'zone1', 'zone2', 'zone3',
@@ -662,7 +662,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
           job = parser.parse(job_spec)
 
-          expect(job.instances.map(&:availability_zone)).to eq([nil, nil, nil])
+          expect(job.instances.map(&:availability_zone_name)).to eq([nil, nil, nil])
         end
       end
     end

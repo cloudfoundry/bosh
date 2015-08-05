@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -47,7 +45,7 @@ module Bosh::Director
 
       it 'recreates a VM' do
         vm.update(:apply_spec => spec, env: { 'key1' => 'value1' })
-        Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id, deployment: deployment_model)
+        Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')

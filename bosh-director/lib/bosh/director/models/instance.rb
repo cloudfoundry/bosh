@@ -37,6 +37,16 @@ module Bosh::Director::Models
         stale_archives
       end
     end
+
+    def cloud_properties_hash
+      return nil if cloud_properties.nil?
+
+      JSON.parse(cloud_properties)
+    end
+
+    def cloud_properties_hash=(hash)
+      self.cloud_properties = JSON.dump(hash)
+    end
   end
 
   Instance.plugin :association_dependencies
