@@ -138,7 +138,12 @@ module Bosh
         end
 
         def inspect_release(name, version)
-          get_json("/releases/#{name}?version=#{version}")
+          url = "/releases/#{name}"
+
+          extras = []
+          extras << ['version', version]
+
+          get_json(add_query_string(url, extras))
         end
 
         def match_packages(manifest_yaml)
