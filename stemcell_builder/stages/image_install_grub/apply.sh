@@ -79,7 +79,7 @@ GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 crashkernel=auto selinux=0 
 EOF
 
   # assemble config file that is read by grub2 at boot time
-  run_in_chroot ${image_mount_point} "grub2-mkconfig -o /boot/grub2/grub.cfg"
+  run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
 
   rm ${image_mount_point}/device.map
 
