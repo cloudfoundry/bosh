@@ -112,16 +112,16 @@ module Bosh::Director::DeploymentPlan
         network_name: @network_name,
       )
 
-      if ip_address
-        reserved_instance = ip_address.instance
-        if reserved_instance == instance.model
-          return ip_address
-        else
-          raise Bosh::Director::NetworkReservationAlreadyInUse,
-            "Failed to reserve ip '#{ip}' for instance '#{instance}': " +
+      retry unless ip_address
+
+      reserved_instance = ip_address.instance
+      if reserved_instance == instance.model
+        return ip_address
+      else
+        raise Bosh::Director::NetworkReservationAlreadyInUse,
+          "Failed to reserve ip '#{ip}' for instance '#{instance}': " +
             "already reserved by instance '#{reserved_instance.job}/#{reserved_instance.index}' " +
             "from deployment '#{reserved_instance.deployment.name}'"
-        end
       end
     end
 
@@ -133,8 +133,12 @@ module Bosh::Director::DeploymentPlan
         instance: instance.model,
         task_id: Bosh::Director::Config.current_job.task_id
       ).save
-    rescue Sequel::ValidationFailed
-      raise IPAlreadyReserved
+    rescue Sequel::ValidationFailed => e
+      if e.message.include?('unique')
+        raise IPAlreadyReserved
+      else
+        raise e
+      end
     end
   end
 end

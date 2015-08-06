@@ -291,6 +291,24 @@ module Bosh::Director::DeploymentPlan
               "already reserved by instance 'another-job/5' from deployment 'fake-deployment'"
           end
         end
+
+        context 'when IP is released by another deployment' do
+          it 'retries to reserve it' do
+            allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do
+              allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save).and_call_original
+
+              raise Sequel::ValidationFailed.new('address and network_name unique')
+            end
+
+            ip_provider.reserve_ip(reservation)
+
+            saved_address = Bosh::Director::Models::IpAddress.order(:address).last
+            expect(saved_address.address).to eq(cidr_ip('192.168.0.2'))
+            expect(saved_address.network_name).to eq('fake-network')
+            expect(saved_address.task_id).to eq('fake-task-id')
+            expect(saved_address.created_at).to_not be_nil
+          end
+        end
       end
 
       context 'when reserving ip from restricted_ips list' do
