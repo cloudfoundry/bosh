@@ -17,8 +17,7 @@ module Bosh::Director
     end
 
     def prepare
-      @job.bind_unallocated_vms
-      @job.bind_instance_networks
+      @job.bind_instances
     end
 
     def create_missing_vms

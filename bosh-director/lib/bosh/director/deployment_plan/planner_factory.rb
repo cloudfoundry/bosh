@@ -120,7 +120,13 @@ module Bosh
           end
 
           track_and_log('Binding existing deployment') do
-            assembler.bind_existing_deployment
+            assembler.bind_job_renames
+
+            instance_planner = InstancePlanner.new(@logger)
+            planner.instance_plans = instance_planner.create_instance_plans(planner.existing_instances, planner.desired_instances)
+            assembler.bind_instance_plans
+
+            assembler.mark_unknown_vms_for_deletion
           end
 
           track_and_log('Binding stemcells') do

@@ -50,6 +50,8 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
+      attr_accessor :instance_plans
+
       attr_writer :cloud_planner
 
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
@@ -101,7 +103,15 @@ module Bosh::Director
         @model.instances
       end
 
-      # Returns a list of Instances in the deployment (according to DB)
+      def existing_instances
+        instance_models
+      end
+
+      def desired_instances
+        @jobs.flat_map(&:instances)
+      end
+
+      # Returns a list of Vms in the deployment (according to DB)
       # @return [Array<Models::Vm>]
       def vm_models
         @model.vms

@@ -32,7 +32,7 @@ describe Bosh::Director::VmCreator do
       nil,
       logger
     )
-    instance.bind_existing_instance(instance_model)
+    instance.bind_existing_instance_model(instance_model)
     allow(instance).to receive(:network_settings).and_return(network_settings)
     allow(instance).to receive(:spec).and_return({})
     instance

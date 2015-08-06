@@ -128,7 +128,7 @@ module Bosh::Director::DeploymentPlan
           net_settings_with_type = network_settings.merge('type' => 'dynamic')
           expect(instance.network_settings).to eql(network_name => net_settings_with_type)
 
-          instance.bind_existing_instance(instance_model)
+          instance.bind_existing_instance_model(instance_model)
           instance.bind_current_state(current_state)
           expect(instance.network_settings).to eql({network_name => net_settings_with_type.merge(network_info)})
         end
@@ -161,7 +161,7 @@ module Bosh::Director::DeploymentPlan
           net_settings = {network_name => network_settings.merge(network_info)}
           expect(instance.network_settings).to eql(net_settings)
 
-          instance.bind_existing_instance(instance_model)
+          instance.bind_existing_instance_model(instance_model)
           instance.bind_current_state(current_state)
           expect(instance.network_settings).to eql(net_settings)
         end
@@ -302,7 +302,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#bind_current_state' do
       before do
-        instance.bind_existing_instance(Bosh::Director::Models::Instance.make)
+        instance.bind_existing_instance_model(Bosh::Director::Models::Instance.make)
       end
 
       it 'updates instance current state' do
@@ -341,15 +341,15 @@ module Bosh::Director::DeploymentPlan
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
       it 'raises an error if instance already has a model' do
-        instance.bind_existing_instance(instance_model)
+        instance.bind_existing_instance_model(instance_model)
 
         expect {
-          instance.bind_existing_instance(instance_model)
+          instance.bind_existing_instance_model(instance_model)
         }.to raise_error(Bosh::Director::DirectorError, /model is already bound/)
       end
 
       it 'sets the instance model' do
-        instance.bind_existing_instance(instance_model)
+        instance.bind_existing_instance_model(instance_model)
         expect(instance.model).to eq(instance_model)
         expect(instance.vm).to_not be_nil
         expect(instance.vm.model).to be(instance_model.vm)
@@ -565,7 +565,7 @@ module Bosh::Director::DeploymentPlan
       context 'when an instance exists (with the same job name & instance index)' do
         before do
           instance_model = Bosh::Director::Models::Instance.make
-          instance.bind_existing_instance(instance_model)
+          instance.bind_existing_instance_model(instance_model)
           instance.bind_current_state(instance_state)
         end
 
@@ -629,7 +629,7 @@ module Bosh::Director::DeploymentPlan
         instance_model = Bosh::Director::Models::Instance.make
 
         # set up in-memory domain model state
-        instance.bind_existing_instance(instance_model)
+        instance.bind_existing_instance_model(instance_model)
         instance.bind_current_state({'resource_pool' => resource_pool_spec})
 
         # set DB to match real instance/vm
@@ -654,7 +654,7 @@ module Bosh::Director::DeploymentPlan
           )
         end
 
-        before { instance.bind_existing_instance(instance_model) }
+        before { instance.bind_existing_instance_model(instance_model) }
 
         context 'when disk_size is still 0' do
           it 'returns false' do
@@ -825,7 +825,7 @@ module Bosh::Director::DeploymentPlan
         allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
         instance = Instance.new(job, index, state, plan, availability_zone, logger)
-        instance.bind_existing_instance(instance_model)
+        instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!
 

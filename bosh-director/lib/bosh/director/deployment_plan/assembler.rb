@@ -25,21 +25,37 @@ module Bosh::Director
       end
     end
 
-    # Binds information about existing deployment to a plan
-    # @return [void]
-    def bind_existing_deployment
-      lock = Mutex.new
-      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        @deployment_plan.instance_models.each do |instance_model|
-          pool.process do
-            with_thread_name("bind_existing_deployment(#{instance_model.job}/#{instance_model.index})") do
-              bind_existing_instance(instance_model, lock)
-            end
-          end
+    def bind_instance_plans
+      # TODO: someday care about threading
+      # ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+      #   @deployment_plan.instance_models.each do |instance_model|
+      #     pool.process do
+      #       with_thread_name("bind_existing_deployment(#{instance_model.job}/#{instance_model.index})") do
+      #       end
+      #     end
+      #   end
+      # end
+      new_instance_plans, existing_instance_plans = @deployment_plan.instance_plans.partition(&:new?)
+
+      new_instance_plans.each do |instance_plan|
+        instance_plan.instance.bind_new_instance_model
+      end
+
+      existing_instance_plans.
+        reject(&:obsolete?).     # no need to bind obsolete instances or update their state
+        each do |instance_plan|  # they were created from the existing instance already and they're going to be deleted
+        instance_plan.instance.bind_existing_instance_model(instance_plan.existing_instance)
+
+        if instance_plan.instance.model.vm
+          # getting current state to obtain IP of dynamic networks
+          state = get_state(instance_plan.instance.model.vm)
+          instance_plan.instance.bind_current_state(state)
         end
       end
 
-      mark_unknown_vms_for_deletion
+      @deployment_plan.instance_plans.select(&:obsolete?).each do |instance_plan|
+        @deployment_plan.mark_instance_for_deletion(instance_plan.instance)
+      end
     end
 
     def mark_unknown_vms_for_deletion
@@ -221,34 +237,13 @@ module Bosh::Director
       binder.bind_deployment
     end
 
-    private
-
-    # Queries agent for VM state and updates deployment plan accordingly
-    # @param [Models::Instance] instance_model Instance database model
-    # @param [Mutex] lock Lock to hold on to while updating deployment plan
-    def bind_existing_instance(instance_model, lock)
-      if instance_model.vm
-        # getting current state to obtain IP of dynamic networks
-        state = get_state(instance_model.vm)
-      end
-
-      lock.synchronize do
+    def bind_job_renames
+      @deployment_plan.instance_models.each do |instance_model|
         update_instance_if_rename(instance_model)
-        instance = find_deployment_instance_for_model(instance_model)
-
-        if instance.nil?
-          instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
-          @deployment_plan.mark_instance_for_deletion(instance)
-          return
-        end
-
-        instance.bind_existing_instance(instance_model)
-
-        if instance_model.vm
-          instance.bind_current_state(state)
-        end
       end
     end
+
+    private
 
     def update_instance_if_rename(instance_model)
       if @deployment_plan.rename_in_progress?
@@ -260,27 +255,6 @@ module Bosh::Director
           instance_model.update(:job => new_name)
         end
       end
-    end
-
-    # @param [Models::Instance] instance_model Instance model
-    def find_deployment_instance_for_model(instance_model)
-      @logger.debug('Binding instance VM')
-      instance_name = "#{instance_model.job}/#{instance_model.index}"
-
-      job = @deployment_plan.job(instance_model.job)
-      unless job
-        @logger.debug("Job `#{instance_model.job}' not found")
-        return nil
-      end
-
-      instance = job.instance(instance_model.index)
-      unless instance
-        @logger.debug("Job instance `#{instance_name}' not found")
-        return nil
-      end
-
-      @logger.debug("Found existing job instance `#{instance_name}'")
-      instance
     end
   end
 end

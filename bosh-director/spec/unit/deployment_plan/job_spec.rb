@@ -368,11 +368,36 @@ describe Bosh::Director::DeploymentPlan::Job do
       job.instances[1] = instance1
 
       [instance0, instance1].each do |instance|
-        expect(instance).to receive(:bind_unallocated_vm).with(no_args).ordered
+        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
         expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
       end
 
       job.bind_unallocated_vms
+    end
+  end
+
+  describe '#bind_instances' do
+    subject(:job) { described_class.new(deployment, logger) }
+
+    it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
+      instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
+      job.instances[0] = instance0
+
+      instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
+      job.instances[1] = instance1
+
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:ensure_model_bound).with(no_args).ordered
+      end
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
+        expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
+      end
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:reserve_networks).with(no_args).ordered
+      end
+
+      job.bind_instances
     end
   end
 

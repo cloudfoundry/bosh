@@ -77,8 +77,27 @@ module Bosh::Director
       # Instance model is created if it's not found in DB. New VM is
       # allocated if instance DB record doesn't reference one.
       # @return [void]
+      # TODO: This should just be responsible to allocating the VMs and not creating instance_models
       def bind_unallocated_vm
+        ensure_model_bound
+        ensure_vm_allocated
+      end
+
+      def ensure_model_bound
         @model ||= find_or_create_model
+      end
+
+      def bind_new_instance_model
+        @model = Models::Instance.create({
+            deployment_id: deployment.model.id,
+            job: job.name,
+            index: index,
+            state: 'started',
+            compilation: job.compilation?,
+          })
+      end
+
+      def ensure_vm_allocated
         if @model.vm.nil?
           allocate_vm
         end
@@ -98,9 +117,8 @@ module Bosh::Director
         @deployment.model
       end
 
-      ##
       # Updates this domain object to reflect an existing instance running on an existing vm
-      def bind_existing_instance(instance_model)
+      def bind_existing_instance_model(instance_model)
         check_model_not_bound
         @model = instance_model
         allocate_vm

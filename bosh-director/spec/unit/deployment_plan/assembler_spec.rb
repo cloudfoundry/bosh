@@ -24,33 +24,12 @@ module Bosh::Director
       assembler.bind_releases
     end
 
-    describe 'bind_existing_deployment' do
-      let(:instance_model) { Models::Instance.make }
+    describe 'bind_job_renames' do
+      let(:instance_model) { Models::Instance.make(job: 'old-name') }
+      let(:job) { instance_double(DeploymentPlan::Job) }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
-        allow(deployment_plan).to receive(:vm_models).and_return([])
-        instance_model.vm.deployment = instance_model.deployment
-
-        agent_client = instance_double(AgentClient)
-        allow(AgentClient).to receive(:with_vm).with(instance_model.vm).and_return(agent_client)
-        allow(agent_client).to receive(:get_state).and_return(state)
-
-        allow(deployment_plan).to receive(:job).with(instance_model.job).and_return(job)
-        allow(job).to receive(:instance).with(instance_model.index).and_return(instance)
-
-        allow(instance).to receive(:bind_existing_instance).with(instance_model)
-        allow(instance).to receive(:bind_current_state).with(state)
-      end
-
-      let(:job) { instance_double(DeploymentPlan::Job) }
-      let(:instance) { instance_double(DeploymentPlan::Instance) }
-      let(:state) do
-        {
-          'deployment' => 'simple',
-          'job' => { 'name' => instance_model.job },
-          'index' => instance_model.index
-        }
       end
 
       context 'when rename is in progress' do
@@ -58,54 +37,101 @@ module Bosh::Director
 
         it 'updates instance' do
           allow(deployment_plan).to receive(:job_rename).and_return({
-            'old_name' => instance_model.job,
-            'new_name' => 'new-name'
-          })
-          allow(deployment_plan).to receive(:job).with('new-name').and_return(job)
-          assembler.bind_existing_deployment
+                'old_name' => instance_model.job,
+                'new_name' => 'new-name'
+              })
+
+          expect {
+            assembler.bind_job_renames
+          }.to change {
+              instance_model.job
+            }.from('old-name').to('new-name')
         end
       end
 
       context 'when rename is not in progress' do
         before { allow(deployment_plan).to receive(:rename_in_progress?).and_return(false) }
 
-        context 'when instance does not have a vm' do
-          before { instance_model.vm = nil }
-
-          it 'binds existing instance' do
-            expect(instance).to receive(:bind_existing_instance).with(instance_model)
-            assembler.bind_existing_deployment
-          end
+        it 'does not update instances' do
+          expect {
+            assembler.bind_job_renames
+          }.to_not change {
+              instance_model.job
+            }
         end
+      end
+    end
 
-        context 'when instance has vm' do
-          it 'binds existing instance with the state from vm' do
-            instance = instance_double(DeploymentPlan::Instance)
-            job = instance_double(DeploymentPlan::Job)
-            allow(deployment_plan).to receive(:job).with(instance_model.job).and_return(job)
-            allow(job).to receive(:instance).with(instance_model.index).and_return(instance)
+    describe 'bind_instance_plans' do
+      let(:new_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+      let(:existing_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: existing_instance_model) }
+      let(:obsolete_instance) { instance_double(Bosh::Director::DeploymentPlan::ExistingInstance, model: obsolete_instance_model) }
 
-            expect(instance).to receive(:bind_existing_instance).with(instance_model)
+      let(:existing_instance_model) { Bosh::Director::Models::Instance.make }
+      let(:obsolete_instance_model) { Bosh::Director::Models::Instance.make }
 
-            expect(instance).to receive(:bind_current_state).with(state)
-            assembler.bind_existing_deployment
-          end
+      let(:existing_instance_state) do
+        {
+          'deployment' => 'simple',
+          'job' => { 'name' => existing_instance_model.job },
+          'index' => existing_instance_model.index
+        }
+      end
+
+      let(:obsolete_instance_state) do
+        {
+          'deployment' => 'simple',
+          'job' => { 'name' => obsolete_instance_model.job },
+          'index' => obsolete_instance_model.index
+        }
+      end
+
+
+      let(:new_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: new_instance, existing_instance: nil) }
+      let(:existing_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: existing_instance, existing_instance: existing_instance_model) }
+      let(:obsolete_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: obsolete_instance, existing_instance: obsolete_instance_model, obsolete: true) }
+
+      before do
+        allow(new_instance).to receive(:bind_new_instance_model)
+        allow(existing_instance).to receive(:bind_existing_instance_model)
+        allow(existing_instance).to receive(:bind_current_state)
+        allow(deployment_plan).to receive(:mark_instance_for_deletion)
+
+        existing_agent_client = instance_double(AgentClient)
+        obsolete_agent_client = instance_double(AgentClient)
+        allow(AgentClient).to receive(:with_vm).with(existing_instance_model.vm).and_return(existing_agent_client)
+        allow(AgentClient).to receive(:with_vm).with(obsolete_instance_model.vm).and_return(obsolete_agent_client)
+        allow(existing_agent_client).to receive(:get_state).and_return(existing_instance_state)
+        allow(obsolete_agent_client).to receive(:get_state).and_return(obsolete_instance_state)
+
+
+        allow(deployment_plan).to receive(:instance_plans) { [new_plan, existing_plan, obsolete_plan] }
+      end
+
+      it 'binds new models for new plans' do
+        assembler.bind_instance_plans
+
+        expect(new_instance).to have_received(:bind_new_instance_model)
+      end
+
+      it 'binds existing models for existing plans and obsolete plans' do
+        assembler.bind_instance_plans
+
+        expect(existing_instance).to have_received(:bind_existing_instance_model).with(existing_instance_model)
+      end
+
+      describe 'binding the current vm state' do
+        it 'binds current state for existing plans and obsolete plans' do
+          assembler.bind_instance_plans
+
+          expect(existing_instance).to have_received(:bind_current_state).with(existing_instance_state)
         end
+      end
 
-        context 'when there are vms without instances' do
-          let(:vm_model) { Models::Vm.make }
-          before { vm_model.instance = nil }
+      it 'marks obsolete plans for deletion' do
+        assembler.bind_instance_plans
 
-          before do
-            allow(deployment_plan).to receive(:instance_models).and_return([])
-            allow(deployment_plan).to receive(:vm_models).and_return([vm_model])
-          end
-
-          it 'marks vm for deletion' do
-            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(vm_model)
-            assembler.bind_existing_deployment
-          end
-        end
+        expect(deployment_plan).to have_received(:mark_instance_for_deletion).with(obsolete_instance)
       end
     end
 

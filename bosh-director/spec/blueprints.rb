@@ -88,7 +88,7 @@ module Bosh::Director::Models
     deployment  { Deployment.make }
     job         { Sham.job }
     index       { Sham.index }
-    vm          { Vm.make }
+    vm          { Vm.make(deployment: object.deployment) }
     state       { "started" }
   end
 
