@@ -45,6 +45,10 @@ describe Bosh::OpenStackCloud::Cloud do
         },
         'config_drive' => config_drive,
         'ignore_server_availability_zone' => @ignore_server_az,
+        'connection_options' => {
+          'read_timeout' => 120,
+          'idempotent' => true,
+        },
       },
       'registry' => {
         'endpoint' => 'fake',
