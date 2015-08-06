@@ -23,25 +23,23 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       }, logger)
     end
 
-    it "should reserve existing reservations as static" do
-      reservation = BD::NetworkReservation.new_static(instance, @network, "0.0.0.1")
-      @network.reserve(reservation)
-      expect(reservation.type).to eq(BD::NetworkReservation::STATIC)
-      expect(reservation.reserved?).to eq(true)
+    it "should reserve static reservations" do
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
+      expect {
+        @network.reserve(reservation)
+      }.to_not raise_error
     end
 
     it "should fail to reserve dynamic IPs" do
-      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
-      reservation.ip = "0.0.0.1"
+      reservation = BD::DynamicNetworkReservation.new(instance, @network)
       expect {
         @network.reserve(reservation)
       }.to raise_error BD::NetworkReservationWrongType
     end
 
     it "should not let you reserve a used IP" do
-      reservation = BD::NetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
       @network.reserve(reservation)
-      expect(reservation.reserved?).to eq(true)
       expect {
         @network.reserve(reservation)
       }.to raise_error BD::NetworkReservationAlreadyInUse
@@ -59,13 +57,13 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it "should release the IP from the used pool" do
-      reservation = BD::NetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
       @network.reserve(reservation)
       @network.release(reservation)
     end
 
     it "should fail when there is no IP" do
-      reservation = BD::NetworkReservation.new_dynamic(instance, @network)
+      reservation = BD::DynamicNetworkReservation.new(instance, @network)
 
       expect {
         @network.release(reservation)
@@ -84,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it "should provide the VIP network settings" do
-      reservation = BD::NetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
 
       expect(@network.network_settings(reservation, [])).to eq({
           "type" => "vip",
@@ -96,7 +94,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it "should fail if there are any defaults" do
-      reservation = BD::NetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
 
       expect {
         @network.network_settings(reservation)

@@ -243,6 +243,26 @@ describe 'global networking', type: :integration do
       expect(output).to include("Failed to reserve ip '192.168.1.10' for instance 'first-job/0': already reserved by instance 'first-job/0' from deployment 'my-deploy'")
     end
 
+    def deploy_with_static_ip(deployment_name, ip, range)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, range: range) # 1 for compilation
+      cloud_config_hash['networks'].first['subnets'].first['static'] << ip
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: deployment_name, instances: 1)
+      deploy_with_ips(first_manifest_hash, [ip])
+    end
+
+    it 'releases IP when subnet range is changed to no longer include it' do
+      deploy_with_static_ip('my-deploy', '192.168.1.2', '192.168.1.0/24')
+      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+
+      deploy_with_static_ip('my-deploy', '192.168.2.2', '192.168.2.0/24')
+      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
+
+      deploy_with_static_ip('other-deploy', '192.168.1.2', '192.168.1.0/24')
+      expect(director.vms('other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+    end
+
     context 'using legacy network configuration (no cloud config)' do
       it 'only recreates VMs that change when the list of static IPs changes' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
@@ -426,6 +446,25 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
       new_ips = director.vms('my-deploy').map(&:ips).flatten
       expect(new_ips).to match_array(['192.168.1.2', '192.168.1.3'])
+    end
+
+    def deploy_with_range(deployment_name, range)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, range: range) # 1 for compilation
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: deployment_name, instances: 1)
+      deploy_simple_manifest(manifest_hash: first_manifest_hash)
+    end
+
+    it 'releases IP when subnet range is changed to no longer include it' do
+      deploy_with_range('my-deploy', '192.168.1.0/24')
+      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+
+      deploy_with_range('my-deploy', '192.168.2.0/24')
+      expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.2.2'])
+
+      deploy_with_range('other-deploy', '192.168.1.0/24')
+      expect(director.vms('other-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
     context 'when using two networks' do

@@ -44,11 +44,11 @@ module Bosh::Director::DeploymentPlan
       reserve_with_instance_validation(reservation.instance, cidr_ip)
 
       if @static_ips.include?(cidr_ip.to_i)
+        reservation.should_be(Bosh::Director::StaticNetworkReservation)
         @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
-        :static
       else
+        reservation.should_be(Bosh::Director::DynamicNetworkReservation)
         @logger.debug("Reserved dynamic ip '#{cidr_ip}' for #{@network_desc}")
-        :dynamic
       end
     end
 
@@ -77,13 +77,14 @@ module Bosh::Director::DeploymentPlan
 
     def try_to_allocate_dynamic_ip(instance)
       addrs = Set.new(network_addresses)
-      addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
+      first_range_address = @range.first(Objectify: true).to_i - 1
+      addrs << first_range_address
 
       addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
       addrs.merge(@static_ips.to_a) unless @static_ips.empty?
 
-      # find address that doesn't have subsequent address
-      addr = addrs.to_a.sort.find { |a| !addrs.include?(a+1) }
+      # find first address that doesn't have subsequent address
+      addr = addrs.to_a.reject {|a| a < first_range_address }.sort.find { |a| !addrs.include?(a+1) }
       ip_address = NetAddr::CIDRv4.new(addr+1)
 
       unless @range == ip_address || @range.contains?(ip_address)

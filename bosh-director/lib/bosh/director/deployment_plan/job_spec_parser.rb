@@ -280,11 +280,10 @@ module Bosh::Director
           @job.instances.each_with_index do |instance, index|
             static_ips = network.static_ips
 
-            # TODO: NetworkReservation should be 2 classes, not a class with a type field
             if static_ips
-              reservation = NetworkReservation.new_static(instance, network.deployment_network, static_ips[index])
+              reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
             else
-              reservation = NetworkReservation.new_dynamic(instance, network.deployment_network)
+              reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
             end
             instance.add_network_reservation(reservation)
           end

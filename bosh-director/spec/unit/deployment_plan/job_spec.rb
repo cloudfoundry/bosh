@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:deployment) { Bosh::Director::Models::Deployment.make }
   let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment, name: 'fake-deployment') }
   let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
-  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
   let(:foo_properties) do
     {

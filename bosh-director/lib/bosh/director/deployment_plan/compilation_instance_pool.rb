@@ -75,7 +75,7 @@ module Bosh::Director
         instance.bind_unallocated_vm
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-        reservation = NetworkReservation.new_dynamic(instance, compilation_network)
+        reservation = DynamicNetworkReservation.new(instance, compilation_network)
         instance.add_network_reservation(reservation)
         instance.reserve_networks
 

@@ -46,31 +46,26 @@ module Bosh::Director
         if reservation.ip
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
+
           subnet = find_subnet(reservation.ip)
-          unless subnet
-            raise NetworkReservationInvalidIp,
-              "Provided IP '#{cidr_ip}' does not belong to any subnet in network '#{@name}'"
+          if subnet
+            subnet.reserve_ip(reservation)
+            return
           end
 
-          type = subnet.reserve_ip(reservation)
-          reservation.resolve(type: type)
-
-          return
+          raise NetworkReservationIpOutsideSubnet,
+            "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{@name}'"
         end
 
-        unless reservation.dynamic?
-          @logger.error("Failed to reserve IP for manual network '#{@name}': IP was not provided for static reservation")
-          raise NetworkReservationInvalidType,
-            "New reservations without IPs must be dynamic"
-        end
-
-        @logger.debug("Reserving dynamic ip for manual network '#{@name}'")
-        @subnets.each do |subnet|
-          ip = subnet.allocate_dynamic_ip(reservation.instance)
-          if ip
-            @logger.debug("Reserving IP '#{format_ip(ip)}' for manual network '#{@name}'")
-            reservation.resolve(ip: ip)
-            return
+        if reservation.is_a?(DynamicNetworkReservation)
+          @logger.debug("Allocating dynamic ip for manual network '#{@name}'")
+          @subnets.each do |subnet|
+            ip = subnet.allocate_dynamic_ip(reservation.instance)
+            if ip
+              @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
+              reservation.resolve_ip(ip)
+              return
+            end
           end
         end
 
@@ -107,12 +102,12 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
+        ip = ip_to_netaddr(reservation.ip)
         subnet = find_subnet(reservation.ip)
         unless subnet
-          raise NetworkReservationInvalidIp, "Provided IP '#{cidr_ip}' does not belong to any subnet"
+          raise NetworkReservationInvalidIp, "Provided IP '#{ip}' does not belong to any subnet"
         end
 
-        ip = ip_to_netaddr(reservation.ip)
         config = {
           "ip" => ip.ip,
           "netmask" => subnet.netmask,

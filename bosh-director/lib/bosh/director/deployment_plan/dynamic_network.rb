@@ -5,8 +5,6 @@ module Bosh::Director
     class DynamicNetwork < Network
       include DnsHelper
 
-      DYNAMIC_IP = NetAddr::CIDR.create("255.255.255.255").to_i
-
       # @!attribute [rw] cloud_properties
       #   @return [Hash] Network cloud properties
       attr_accessor :cloud_properties
@@ -40,7 +38,7 @@ module Bosh::Director
       def reserve(reservation)
         @logger.debug("Reserving IP for dynamic network '#{@name}'")
 
-        reservation.resolve(type: NetworkReservation::DYNAMIC, ip: DYNAMIC_IP)
+        reservation.should_be(DynamicNetworkReservation)
       end
 
       ##
@@ -49,7 +47,8 @@ module Bosh::Director
       # @return [void]
       def release(reservation)
         @logger.debug("Releasing IP for dynamic network '#{@name}'")
-        validate_ip(reservation)
+
+        reservation.should_be(DynamicNetworkReservation)
       end
 
       ##
@@ -59,7 +58,7 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
-        validate_ip(reservation)
+        reservation.should_be(DynamicNetworkReservation)
 
         config = {
           "type" => "dynamic",
@@ -80,16 +79,6 @@ module Bosh::Director
 
       def validate_has_job!(az_names, job_name)
         # nothing to validate
-      end
-
-      private
-
-      def validate_ip(reservation)
-        unless reservation.ip == DYNAMIC_IP
-          raise NetworkReservationInvalidIp,
-                "Invalid IP: `%s', did not match magic DYNAMIC IP" % [
-                  reservation.ip]
-        end
       end
     end
   end

@@ -158,7 +158,7 @@ module Bosh::Director
         instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm)
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
-        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::NetworkReservation))
+        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))
         expect(instance).to receive(:delete)
 
         instance
@@ -359,7 +359,7 @@ module Bosh::Director
         allow(config).to receive_messages(reuse_compilation_vms: true)
         allow(config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve) { |reservation| reservation.resolve({}) }
+        expect(@network).to receive(:reserve)
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -411,7 +411,7 @@ module Bosh::Director
       end
 
       before do # create vm
-        allow(@network).to receive(:reserve) { |reservation| reservation.resolve({}) }
+        allow(@network).to receive(:reserve)
         allow(@network).to receive(:network_settings)
         allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
@@ -554,7 +554,7 @@ module Bosh::Director
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
           allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
-          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::NetworkReservation))
+          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DynamicNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
           expect(vm_deleter).to receive(:delete_for_instance).ordered

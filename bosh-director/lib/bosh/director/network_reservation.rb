@@ -1,148 +1,110 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
-  ##
-  # Network resolution, either existing or one to be fulfilled by {Network}
   class NetworkReservation
     include IpUtil
 
-    STATIC = :static
-    DYNAMIC = :dynamic
+    attr_reader :ip, :instance, :network
 
-    USED = :used
-    CAPACITY = :capacity
-    WRONG_TYPE = :wrong_type
-
-    # @return [Integer, nil] ip
-    attr_accessor :ip
-
-    # @return [Symbol, nil] type
-    attr_accessor :type
-
-    attr_reader :instance
-
-    attr_reader :network
-
-    def self.new_dynamic(instance, network)
-      new(instance, network, nil, NetworkReservation::DYNAMIC)
-    end
-
-    def self.new_static(instance, network, ip)
-      new(instance, network, ip, NetworkReservation::STATIC)
-    end
-
-    # network reservation for existing instance
-    # type is ignored in validation and will be set from network
-    def self.new_unresolved(instance, network, ip)
-      new(instance, network, ip, nil)
-    end
-
-    ##
-    # Creates a new network reservation
-    # @param [DeploymentPlan::Instance] instance
-    # @param [DeploymentPlan::Network] network reservation network
-    # @param [Integer, String, NetAddr::CIDR] ip reservation ip
-    # @param [Symbol] type of reservation
-    def initialize(instance, network, ip, type)
+    def initialize(instance, network)
       @instance = instance
       @network = network
-      @ip = ip
-      @type = type
+      @ip = nil
       @reserved = false
-      @error = nil
-
-      @ip = ip_to_i(@ip) if @ip
     end
 
-    ##
-    # @return [Boolean] returns true if this is a static reservation
-    def static?
-      @type == STATIC
-    end
-
-    ##
-    # @return [Boolean] returns true if this is a dynamic reservation
-    def dynamic?
-      @type == DYNAMIC
-    end
-
-    ##
-    # @return [Boolean] returns true if this reservation was fulfilled
     def reserved?
-      !!@reserved
-    end
-
-    # If type is not set, reservation was created from existing
-    # instance state. This reservation is considered valid
-    # until it is resolved
-    def resolved?
-      !@type.nil?
+      @reserved
     end
 
     def reserve
       @network.reserve(self)
+      @reserved = true
     end
 
     def release
       @network.release(self)
     end
 
-    def resolve(options)
-      if options[:type]
-        validate_type(options[:type])
-        @type = options[:type]
-      end
-
-      @ip = options[:ip] if options[:ip]
-
-      @reserved = true
-    end
-
-    ##
-    # Tries to take the provided reservation if it meets the requirements
-    # @return [void]
-    def take(other)
-      if other.reserved?
-        if @type == other.type
-          if dynamic? || (static? && @ip == other.ip)
-            @ip = other.ip
-            @reserved = true
-          end
-        end
-      end
-    end
-
-    def to_s
-      "{type=#{@type}, ip=#{formatted_ip.inspect}}"
-    end
-
     private
-
-    def validate_type(type)
-      return unless resolved?
-
-      if @type != type
-        ip_desc = @ip.nil? ? 'IP' : "IP '#{formatted_ip}'"
-
-        raise NetworkReservationWrongType,
-          "Failed to assign #{@type} #{ip_desc} to '#{@instance}': does not belong to #{format_type(type)} pool"
-      end
-    end
 
     def formatted_ip
       @ip.nil? ? nil : ip_to_netaddr(@ip).ip
     end
+  end
 
-    def format_type(type)
-      case type
-        when NetworkReservation::STATIC
-          'static'
-        when NetworkReservation::DYNAMIC
-          'dynamic'
-        else
-          type
-      end
+  class StaticNetworkReservation < NetworkReservation
+    def initialize(instance, network, ip)
+      super(instance, network)
+      @ip = ip_to_i(ip)
     end
 
+    # @param [ExistingNetworkReservation] reservation
+    def bind_existing(reservation)
+      return unless reservation.instance_of?(ExistingNetworkReservation)
+      return unless reservation.reserved?
+
+      return if @ip != reservation.ip
+
+      @reserved = true
+    end
+
+    def to_s
+      "{type=static, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+    end
+
+    def should_be(type_class)
+      if type_class != StaticNetworkReservation
+        raise NetworkReservationWrongType,
+          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to static pool"
+      end
+    end
+  end
+
+  class DynamicNetworkReservation < NetworkReservation
+    # @param [ExistingNetworkReservation] reservation
+    def bind_existing(reservation)
+      return unless reservation.instance_of?(ExistingNetworkReservation)
+      return unless reservation.reserved?
+
+      @ip = reservation.ip
+      @reserved = true
+    end
+
+    def resolve_ip(ip)
+      @ip = ip_to_i(ip)
+    end
+
+    def to_s
+      "{type=dynamic, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+    end
+
+    def should_be(type_class)
+      if type_class != DynamicNetworkReservation
+        raise NetworkReservationWrongType,
+          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to dynamic pool"
+      end
+    end
+  end
+
+  class ExistingNetworkReservation < NetworkReservation
+    def initialize(instance, network, ip)
+      super(instance, network)
+      @ip = ip_to_i(ip) if ip
+    end
+
+    def reserve
+      super
+    rescue NetworkReservationIpOutsideSubnet
+      # allow to change subnet for existing reservation
+      # until it is bound to either static or dynamic
+      @reserved = false
+    end
+
+    def should_be(_)
+      true
+    end
+
+    def to_s
+      "{ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+    end
   end
 end

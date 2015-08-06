@@ -13,13 +13,13 @@ module Bosh::Director
           network = deployment.network(network_name)
           if network
             logger.debug("Reserving ip '#{format_ip(network_config['ip'])}' for existing instance '#{instance}' for network '#{network.name}'")
-            reservation = NetworkReservation.new_unresolved(instance, network, network_config['ip'])
+            reservation = ExistingNetworkReservation.new(instance, network, network_config['ip'])
             reservation.reserve
-            reservations << reservation if reservation.reserved?
+            reservations << reservation
           end
         end
 
-        new(reservations)
+        new(reservations, logger)
       end
 
       def self.create_from_db(instance, deployment, logger)
@@ -33,17 +33,18 @@ module Bosh::Director
           network = deployment.network(ip_address.network_name)
           if network
             logger.debug("Reserving ip '#{format_ip(ip_address.address)}' for existing instance '#{instance} for network '#{network.name}'")
-            reservation = NetworkReservation.new_unresolved(instance, network, ip_address.address)
+            reservation = ExistingNetworkReservation.new(instance, network, ip_address.address)
             reservation.reserve
-            reservations << reservation if reservation.reserved?
+            reservations << reservation
           end
         end
 
-        new(reservations)
+        new(reservations, logger)
       end
 
-      def initialize(reservations)
+      def initialize(reservations, logger)
         @reservations = reservations
+        @logger = logger
       end
 
       def find_for_network(network)
@@ -51,12 +52,13 @@ module Bosh::Director
       end
 
       def add(reservation)
+        @logger.debug("Adding reservation '#{reservation}' for '#{reservation.instance}' for network '#{reservation.network.name}'")
         old_reservation = find_for_network(reservation.network)
 
         if old_reservation
           raise NetworkReservationAlreadyExists,
-            "`#{self}' already has reservation " +
-              "for network `#{reservation.network.name}', IP #{old_reservation.ip}"
+            "'#{reservation.instance}' already has reservation " +
+              "for network '#{reservation.network.name}', IP #{old_reservation.ip}"
         end
 
         @reservations << reservation

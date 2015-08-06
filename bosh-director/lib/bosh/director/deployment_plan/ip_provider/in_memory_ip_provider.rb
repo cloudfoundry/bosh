@@ -46,13 +46,13 @@ module Bosh::Director
       def reserve_ip(reservation)
         ip = CIDRIP.new(reservation.ip)
         if @available_static_ips.delete?(ip.to_i)
+          reservation.should_be(StaticNetworkReservation)
           @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")
-          :static
         elsif @available_dynamic_ips.delete?(ip.to_i)
+          reservation.should_be(DynamicNetworkReservation)
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
-          :dynamic
         else
-          if reservation.resolved?
+          unless reservation.is_a?(ExistingNetworkReservation)
             # if reservation is not resolved it is created from existing instance
             # DatabaseIpProvider can verify if IP belongs to the same instance
             # InMemoryIpProvider has no knowledge which instance is requesting IP

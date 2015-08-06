@@ -38,8 +38,8 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false)
-      allow(network).to receive(:reserve) { |reservation| reservation.resolve({}) }
-      allow(network).to receive(:network_settings).with(instance_of(NetworkReservation), ['dns', 'gateway']).and_return('network settings')
+      allow(network).to receive(:reserve)
+      allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
@@ -62,7 +62,7 @@ module Bosh::Director
 
     shared_examples_for 'a compilation vm pool' do
       it 'reserves a network for a new vm' do
-        expect(network).to receive(:reserve).with(instance_of(NetworkReservation))
+        expect(network).to receive(:reserve).with(instance_of(DynamicNetworkReservation))
         action
       end
 
@@ -121,7 +121,7 @@ module Bosh::Director
         end
 
         it 'releases the network reservation' do
-          expect(network).to receive(:release).with(instance_of(NetworkReservation))
+          expect(network).to receive(:release).with(instance_of(DynamicNetworkReservation))
           expect { action_that_raises }.to raise_error(create_instance_error)
         end
       end

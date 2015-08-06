@@ -46,7 +46,7 @@ module Bosh::Director
         @vm = nil
         @current_state = {}
 
-        @network_reservations = InstanceNetworkReservations.new([])
+        @network_reservations = InstanceNetworkReservations.new([], logger)
         @state = state
 
         # Expanding virtual states
@@ -544,12 +544,15 @@ module Bosh::Director
       # Take any existing valid network reservations
       # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
-      def take_network_reservations(reservations)
-        reservations.each do |provided_reservation|
-          reservation = @network_reservations.find_for_network(provided_reservation.network)
+      def take_network_reservations(existing_reservations)
+        existing_reservations.each do |existing_reservation|
+          @logger.debug("Trying to take reservation #{existing_reservation}")
+
+          reservation = @network_reservations.find_for_network(existing_reservation.network)
           if reservation
-            @logger.debug("Copying job instance `#{self}' network reservation #{provided_reservation}")
-            reservation.take(provided_reservation)
+            @logger.debug("Copying job instance `#{self}' network reservation #{existing_reservation}")
+            reservation.bind_existing(existing_reservation)
+            @logger.debug("After copying #{reservation}")
           end
         end
       end

@@ -27,6 +27,8 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [Boolean] true if the reservation was fulfilled
       def reserve(reservation)
+        reservation.should_be(StaticNetworkReservation)
+
         if reservation.ip.nil?
           @logger.error("Failed to reserve IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
@@ -39,8 +41,6 @@ module Bosh::Director
         end
 
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
-
-        reservation.resolve(type: NetworkReservation::STATIC)
 
         @reserved_ips.add(reservation.ip)
       end

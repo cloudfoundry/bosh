@@ -141,6 +141,7 @@ module Bosh::Director
   NetworkReservationWrongType = err(130009)
   NetworkReservationError = err(130010)
   NetworkReservationNotEnoughCapacity = err(130011)
+  NetworkReservationIpOutsideSubnet = err(130012)
 
   # Manifest parsing: job section
   JobMissingRelease = err(140001)
