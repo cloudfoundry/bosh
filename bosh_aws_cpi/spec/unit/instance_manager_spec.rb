@@ -38,7 +38,12 @@ describe Bosh::AwsCloud::InstanceManager do
         security_groups: ['baz'],
         private_ip_address: '1.2.3.4',
         availability_zone: 'us-east-1a',
-        block_device_mappings: { '/dev/sdb' => 'ephemeral0' }
+        block_device_mappings: [
+          {
+            :device_name => '/dev/sdb',
+            :virtual_name => 'ephemeral0',
+          },
+        ]
       }
     end
 
@@ -132,7 +137,13 @@ describe Bosh::AwsCloud::InstanceManager do
               :groups=>['sg-baz-1234'],
               :device_index=>0,
               :private_ip_address=>'1.2.3.4'
-            }]
+            }],
+            :block_device_mappings => [
+              {
+                :device_name => '/dev/sdb',
+                :virtual_name => 'ephemeral0',
+              },
+            ],
           })
 
           # return
@@ -302,7 +313,7 @@ describe Bosh::AwsCloud::InstanceManager do
               create_instance
 
               expect(aws_instances).to have_received(:create) do |instance_params|
-                expect(instance_params[:block_device_mappings]).to eq({ '/dev/sdb' => 'ephemeral0' })
+                expect(instance_params[:block_device_mappings]).to eq([{:device_name=>"/dev/sdb", :virtual_name=>"ephemeral0"}])
               end
             end
           end
@@ -340,7 +351,14 @@ describe Bosh::AwsCloud::InstanceManager do
             create_instance
 
             expect(aws_instances).to have_received(:create) do |instance_params|
-              expect(instance_params[:block_device_mappings]).to eq({ '/dev/sdb' => 'ephemeral0' })
+              expect(instance_params[:block_device_mappings]).to eq(
+                [
+                  {
+                    :device_name => '/dev/sdb',
+                    :virtual_name => 'ephemeral0',
+                  },
+                ]
+              )
             end
           end
         end
