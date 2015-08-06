@@ -46,7 +46,12 @@ module Bosh::Director
         @vm = nil
         @current_state = {}
 
-        @network_reservations = InstanceNetworkReservations.new([], logger)
+        # reservations generated from deployment manifest
+        @network_reservations = InstanceNetworkReservations.new(self, logger)
+
+        # reservation generated from current state/DB
+        @original_network_reservations = InstanceNetworkReservations.new(self, logger)
+
         @state = state
 
         # Expanding virtual states
@@ -101,15 +106,15 @@ module Bosh::Director
         allocate_vm
         @vm.model = instance_model.vm
 
-        reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
-        take_network_reservations(reservations)
+        @original_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
+        take_old_reservations
       end
 
       # This is for backwards compatibility when we did not store
       # network reservations in DB and constructed them from instance state
       def bind_current_state(state)
-        reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
-        take_network_reservations(reservations)
+        @original_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
+        take_old_reservations
 
         @current_state = state
         @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
@@ -178,12 +183,10 @@ module Bosh::Director
         @network_reservations.add(reservation)
       end
 
-      def with_network_update
-        ips_before_update = network_to_ip(@current_state['networks'])
-        yield
-        ips_after_update = network_to_ip(network_settings)
-        ips_to_release = ips_before_update.to_set - ips_after_update.to_set
-        release_ips(ips_to_release)
+      def release_original_network_reservations
+        @original_network_reservations.each do |reservation|
+          reservation.release
+        end
       end
 
       ##
@@ -514,16 +517,6 @@ module Bosh::Director
         end
       end
 
-      # @param <[String, String]> ips_set set of [network_name, ip]
-      def release_ips(ips_set)
-        ips_set.each do |network_name, ip|
-          Bosh::Director::Models::IpAddress.where(
-            address: NetAddr::CIDR.create(ip).to_i,
-            network_name: network_name
-          ).delete
-        end
-      end
-
       # @param [Hash] network_settings map of network name to settings
       # @return [Hash] map of network name to IP address
       def network_to_ip(network_settings)
@@ -544,15 +537,15 @@ module Bosh::Director
       # Take any existing valid network reservations
       # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
-      def take_network_reservations(existing_reservations)
-        existing_reservations.each do |existing_reservation|
-          @logger.debug("Trying to take reservation #{existing_reservation}")
-
+      def take_old_reservations
+        @original_network_reservations.each do |existing_reservation|
           reservation = @network_reservations.find_for_network(existing_reservation.network)
           if reservation
-            @logger.debug("Copying job instance `#{self}' network reservation #{existing_reservation}")
             reservation.bind_existing(existing_reservation)
-            @logger.debug("After copying #{reservation}")
+            if reservation.reserved?
+              @logger.debug("Found matching existing reservation #{existing_reservation} for `#{self}'")
+              @original_network_reservations.delete(existing_reservation)
+            end
           end
         end
       end

@@ -2,53 +2,50 @@ module Bosh::Director
   module DeploymentPlan
     class InstanceNetworkReservations
       include Enumerable
-      extend IpUtil
+      include IpUtil
 
       def self.create_from_state(instance, state, deployment, logger)
-        logger = TaggedLogger.new(logger, 'network-configuration')
-        logger.debug("Creating instance network reservations from agent state for instance '#{instance}'")
+        reservations = new(instance, logger)
+        reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance}'")
 
-        reservations = []
         state.fetch('networks', []).each do |network_name, network_config|
-          network = deployment.network(network_name)
-          if network
-            logger.debug("Reserving ip '#{format_ip(network_config['ip'])}' for existing instance '#{instance}' for network '#{network.name}'")
-            reservation = ExistingNetworkReservation.new(instance, network, network_config['ip'])
-            reservation.reserve
-            reservations << reservation
-          end
+          reservations.add_from_network(deployment, network_config['ip'], network_name)
         end
 
-        new(reservations, logger)
+        reservations
       end
 
       def self.create_from_db(instance, deployment, logger)
-        logger = TaggedLogger.new(logger, 'network-configuration')
-        logger.debug("Creating instance network reservations from database for instance '#{instance}'")
+        reservations = new(instance, logger)
+        reservations.logger.debug("Creating instance network reservations from database for instance '#{instance}'")
 
         ip_addresses = instance.model.ip_addresses.clone
 
-        reservations = []
         ip_addresses.each do |ip_address|
-          network = deployment.network(ip_address.network_name)
-          if network
-            logger.debug("Reserving ip '#{format_ip(ip_address.address)}' for existing instance '#{instance} for network '#{network.name}'")
-            reservation = ExistingNetworkReservation.new(instance, network, ip_address.address)
-            reservation.reserve
-            reservations << reservation
-          end
+          reservations.add_from_network(deployment, ip_address.address, ip_address.network_name)
         end
 
-        new(reservations, logger)
+        reservations
       end
 
-      def initialize(reservations, logger)
-        @reservations = reservations
-        @logger = logger
+      def initialize(instance, logger)
+        @instance = instance
+        @reservations = []
+        @logger = TaggedLogger.new(logger, 'network-configuration')
       end
+
+      attr_reader :logger
 
       def find_for_network(network)
         @reservations.find { |r| r.network == network }
+      end
+
+      def add_from_network(deployment, ip, network_name)
+        network = deployment.network(network_name) || deployment.default_network
+        @logger.debug("Reserving ip '#{format_ip(ip)}' for existing instance '#{@instance}' for network '#{network.name}'")
+        reservation = ExistingNetworkReservation.new(@instance, network, ip)
+        reservation.reserve
+        add(reservation)
       end
 
       def add(reservation)
@@ -70,6 +67,10 @@ module Bosh::Director
 
       def each(&block)
         @reservations.each(&block)
+      end
+
+      def delete(reservation)
+        @reservations.delete(reservation)
       end
     end
   end

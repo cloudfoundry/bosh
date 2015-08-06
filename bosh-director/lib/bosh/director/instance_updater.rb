@@ -56,12 +56,11 @@ module Bosh::Director
         return
       end
 
-      @instance.with_network_update do
-        unless try_to_update_in_place
-          @logger.debug('Failed to update in place. Recreating VM')
-          recreate_vm(nil)
-        end
+      unless try_to_update_in_place
+        @logger.debug('Failed to update in place. Recreating VM')
+        recreate_vm(nil)
       end
+      @instance.release_original_network_reservations
 
       update_dns
       update_persistent_disk
@@ -289,18 +288,6 @@ module Bosh::Director
       end
 
       delete_mounted_disk(old_disk) if old_disk
-    end
-
-    def update_networks
-      @instance.with_network_update do
-        network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
-        success = network_updater.update
-        if !success
-          @logger.info('Creating VM with new network configurations')
-          recreate_vm(nil)
-          @agent = AgentClient.with_vm(@instance.vm.model)
-        end
-      end
     end
 
     def update_settings

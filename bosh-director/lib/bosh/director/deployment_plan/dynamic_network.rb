@@ -38,7 +38,7 @@ module Bosh::Director
       def reserve(reservation)
         @logger.debug("Reserving IP for dynamic network '#{@name}'")
 
-        reservation.should_be(DynamicNetworkReservation)
+        reservation.validate_type(DynamicNetworkReservation)
       end
 
       ##
@@ -48,7 +48,7 @@ module Bosh::Director
       def release(reservation)
         @logger.debug("Releasing IP for dynamic network '#{@name}'")
 
-        reservation.should_be(DynamicNetworkReservation)
+        reservation.validate_type(DynamicNetworkReservation)
       end
 
       ##
@@ -58,7 +58,7 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
-        reservation.should_be(DynamicNetworkReservation)
+        reservation.validate_type(DynamicNetworkReservation)
 
         config = {
           "type" => "dynamic",

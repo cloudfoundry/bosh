@@ -190,6 +190,7 @@ module Bosh::Director
             }
             cloud_planner = CloudPlanner.new({
                 networks: [Network.new({'name' => 'default'}, logger)],
+                default_network: Network.new({'name' => 'default'}, logger),
                 disk_pools: [],
                 availability_zones: [],
                 resource_pools: [ResourcePool.new(stemcell_spec, logger)],

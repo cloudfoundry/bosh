@@ -93,6 +93,7 @@ module Bosh::Director
         resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
         planner.cloud_planner = DeploymentPlan::CloudPlanner.new({
             networks: planner.networks,
+            default_network: planner.default_network,
             disk_pools: planner.disk_pools,
             availability_zones: planner.availability_zones,
             resource_pools: [resource_pool],

@@ -184,11 +184,11 @@ module Bosh::Director::DeploymentPlan
           }.to_not raise_error
         end
 
-        it 'should fail if the IP is restricted' do
-          message = "Can't release IP `192.168.0.0' back to `fake-network' network: " +
+        it 'should fail if the IP is not in range' do
+          message = "Can't release IP `192.168.1.5' back to `fake-network' network: " +
             "it's neither in dynamic nor in static pool"
           expect {
-            ip_provider.release_ip(cidr_ip('192.168.0.0'))
+            ip_provider.release_ip(cidr_ip('192.168.1.5'))
           }.to raise_error(Bosh::Director::NetworkReservationIpNotOwned,
               message)
         end

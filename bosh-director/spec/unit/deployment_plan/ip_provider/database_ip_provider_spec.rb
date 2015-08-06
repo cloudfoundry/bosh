@@ -301,7 +301,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'returns nil' do
-          expect(ip_provider.reserve_ip(create_reservation('192.168.0.2'))).to be_nil
+          expect {
+            ip_provider.reserve_ip(create_reservation('192.168.0.2'))
+          }.to raise_error Bosh::Director::NetworkReservationIpReserved,
+            "Failed to reserve ip '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
         end
       end
     end

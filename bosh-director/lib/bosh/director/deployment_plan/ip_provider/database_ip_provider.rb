@@ -37,17 +37,18 @@ module Bosh::Director::DeploymentPlan
     def reserve_ip(reservation)
       cidr_ip = CIDRIP.new(reservation.ip)
       if @restricted_ips.include?(cidr_ip.to_i)
-        @logger.error("Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range")
-        return nil
+        message = "Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range"
+        @logger.error(message)
+        raise Bosh::Director::NetworkReservationIpReserved, message
       end
 
       reserve_with_instance_validation(reservation.instance, cidr_ip)
 
       if @static_ips.include?(cidr_ip.to_i)
-        reservation.should_be(Bosh::Director::StaticNetworkReservation)
+        reservation.validate_type(Bosh::Director::StaticNetworkReservation)
         @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
       else
-        reservation.should_be(Bosh::Director::DynamicNetworkReservation)
+        reservation.validate_type(Bosh::Director::DynamicNetworkReservation)
         @logger.debug("Reserved dynamic ip '#{cidr_ip}' for #{@network_desc}")
       end
     end

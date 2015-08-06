@@ -20,7 +20,7 @@ module Bosh::Director
         super(network_spec, logger)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
-        subnet_specs = safe_property(network_spec, "subnets", :class => Array)
+        subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
 
         @subnets = []
         subnet_specs.each do |subnet_spec|
@@ -32,6 +32,8 @@ module Bosh::Director
           end
           @subnets << new_subnet
         end
+
+        @default_subnet = NetworkSubnet.new(self, {'range' => '0.0.0.0/0', 'gateway' => '0.0.0.1'}, [], ip_provider_factory)
 
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
@@ -86,8 +88,12 @@ module Bosh::Director
 
         @logger.error("Releasing IP '#{format_ip(reservation.ip)}' for manual network #{@name}")
         subnet = find_subnet(reservation.ip)
-        
-        subnet.release_ip(reservation.ip) if subnet
+
+        if subnet
+          subnet.release_ip(reservation.ip)
+        else
+          @default_subnet.release_ip(reservation.ip)
+        end
       end
 
       ##
@@ -127,7 +133,7 @@ module Bosh::Director
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet(ip)
-        @subnets.find { |subnet|  subnet.range.contains?(ip) }
+        @subnets.find { |subnet| subnet.range.contains?(ip) }
       end
 
 

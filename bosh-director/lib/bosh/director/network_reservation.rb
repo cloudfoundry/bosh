@@ -51,7 +51,7 @@ module Bosh::Director
       "{type=static, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
     end
 
-    def should_be(type_class)
+    def validate_type(type_class)
       if type_class != StaticNetworkReservation
         raise NetworkReservationWrongType,
           "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to static pool"
@@ -77,7 +77,7 @@ module Bosh::Director
       "{type=dynamic, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
     end
 
-    def should_be(type_class)
+    def validate_type(type_class)
       if type_class != DynamicNetworkReservation
         raise NetworkReservationWrongType,
           "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to dynamic pool"
@@ -93,13 +93,13 @@ module Bosh::Director
 
     def reserve
       super
-    rescue NetworkReservationIpOutsideSubnet
-      # allow to change subnet for existing reservation
-      # until it is bound to either static or dynamic
+    rescue NetworkReservationIpOutsideSubnet, NetworkReservationIpReserved
+      # existing reservation now is outside of subnet range,
+      # allow to change it until it is bound to either static or dynamic
       @reserved = false
     end
 
-    def should_be(_)
+    def validate_type(_)
       true
     end
 

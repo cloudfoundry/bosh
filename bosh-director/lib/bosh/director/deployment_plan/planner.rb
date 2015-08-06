@@ -82,6 +82,7 @@ module Bosh::Director
       def_delegators :@cloud_planner,
         :networks,
         :network,
+        :default_network,
         :availability_zone,
         :availability_zones,
         :resource_pools,
@@ -220,8 +221,11 @@ module Bosh::Director
     class CloudPlanner
       attr_accessor :compilation
 
+      attr_reader :default_network
+
       def initialize(options)
         @networks = index_by_name(options.fetch(:networks))
+        @default_network = options.fetch(:default_network)
         @resource_pools = index_by_name(options.fetch(:resource_pools))
         @disk_pools = index_by_name(options.fetch(:disk_pools))
         @availability_zones = index_by_name(options.fetch(:availability_zones))
