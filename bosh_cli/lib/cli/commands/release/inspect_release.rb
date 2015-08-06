@@ -11,6 +11,10 @@ module Bosh::Cli::Command
         release = Bosh::Cli::NameVersionPair.parse(release)
 
         response = director.inspect_release(release.name, release.version)
+        if !reasonable_response?(response)
+          raise Bosh::Cli::DirectorError,
+                'Response from director does not include expected information. Is your director version 1.3034.0 or newer?'
+        end
 
         templates_table = build_jobs_table(response)
         say(templates_table.render)
@@ -59,6 +63,11 @@ module Bosh::Cli::Command
         end
       end
 
+      # older directors return an incorrect response for the request we make (they ignore the version parameter).
+      # this method checks for that condition so we can give a helpful error message.
+      def reasonable_response?(response)
+        !response.has_key?('versions')
+      end
     end
   end
 end
