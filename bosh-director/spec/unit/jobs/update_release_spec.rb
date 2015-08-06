@@ -253,13 +253,14 @@ module Bosh::Director
             end
 
             context 'when there are no job and package changes' do
-              it 'raises an error' do
+              it 'still can pass and set a next release version' do
+                # it just generate the next release version without creating/registering package
                 expect {
                   job.perform
-                }.to raise_error(
-                  Bosh::Director::DirectorError,
-                  /Rebase is attempted without any job or package changes/
-                )
+                }.to_not raise_error
+
+                rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
+                expect(rv).to_not be_nil
               end
             end
           end
@@ -689,7 +690,7 @@ module Bosh::Director
         expect(rv.templates.map { |t| t.version }).to match_array(%w(0.2-dev 33 666))
       end
 
-      it 'performs no rebase if same release is being rebased twice' do
+      it 'performs the rebase if same release is being rebased twice' do
         Config.configure(Psych.load(spec_asset('test-director-config.yml')))
         @job.perform
 
@@ -699,7 +700,10 @@ module Bosh::Director
 
         expect {
           @job.perform
-        }.to raise_error(/Rebase is attempted without any job or package change/)
+        }.to_not raise_error
+
+        rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.2').first
+        expect(rv).to_not be_nil
       end
     end
 
