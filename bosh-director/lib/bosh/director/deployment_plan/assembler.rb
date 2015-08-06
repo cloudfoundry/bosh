@@ -26,15 +26,6 @@ module Bosh::Director
     end
 
     def bind_instance_plans
-      # TODO: someday care about threading
-      # ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-      #   @deployment_plan.instance_models.each do |instance_model|
-      #     pool.process do
-      #       with_thread_name("bind_existing_deployment(#{instance_model.job}/#{instance_model.index})") do
-      #       end
-      #     end
-      #   end
-      # end
       new_instance_plans, existing_instance_plans = @deployment_plan.instance_plans.partition(&:new?)
 
       new_instance_plans.each do |instance_plan|
@@ -42,14 +33,27 @@ module Bosh::Director
       end
 
       existing_instance_plans.
-        reject(&:obsolete?).     # no need to bind obsolete instances or update their state
-        each do |instance_plan|  # they were created from the existing instance already and they're going to be deleted
+        reject(&:obsolete?).     # no need to bind obsolete instances. they were created from the existing instance already
+        each do |instance_plan|
         instance_plan.instance.bind_existing_instance_model(instance_plan.existing_instance)
+      end
 
-        if instance_plan.instance.model.vm
-          # getting current state to obtain IP of dynamic networks
-          state = get_state(instance_plan.instance.model.vm)
-          instance_plan.instance.bind_current_state(state)
+      lock = Mutex.new # lock because bind_current_state isn't thread safe
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+        existing_instance_plans.
+          reject(&:obsolete?).     # no need to update state of obsolete instances. they're going to be deleted
+          each do |instance_plan|
+          if instance_plan.instance.model.vm
+            pool.process do
+              with_thread_name("binding agent state for (#{instance_plan.instance.model.job}/#{instance_plan.instance.model.index})") do
+                # getting current state to obtain IP of dynamic networks
+                state = get_state(instance_plan.instance.model.vm)
+                lock.synchronize do
+                  instance_plan.instance.bind_current_state(state)
+                end
+              end
+            end
+          end
         end
       end
 
