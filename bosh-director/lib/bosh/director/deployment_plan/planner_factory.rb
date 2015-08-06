@@ -46,17 +46,18 @@ module Bosh
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
           name = deployment_manifest['name']
 
-          deployment_model = nil
+          deployment_plan = nil
           @event_log.track('Binding deployment') do
             @logger.info('Binding deployment')
             deployment_model = @deployment_repo.find_or_create_by_name(name)
+            attrs = {
+              name: name,
+              properties: deployment_manifest.fetch('properties', {}),
+            }
+            deployment_plan = assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
           end
 
-          attrs = {
-            name: name,
-            properties: deployment_manifest.fetch('properties', {}),
-          }
-          assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+          deployment_plan
         end
 
         private

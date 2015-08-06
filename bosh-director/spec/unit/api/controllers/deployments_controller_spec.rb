@@ -451,14 +451,6 @@ module Bosh::Director
             end
             let(:cloud_config) { Models::CloudConfig.make }
 
-            before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-            let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil, begin_stage: nil) }
-
-            before {
-              allow(Config).to receive(:logger).with(no_args).and_return(logger)
-              allow(event_log).to receive(:begin_stage)
-            }
-
             context 'authenticated access' do
               before { authorize 'admin', 'admin' }
 
