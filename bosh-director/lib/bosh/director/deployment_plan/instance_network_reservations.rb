@@ -43,7 +43,7 @@ module Bosh::Director
       def add_from_network(deployment, ip, network_name)
         network = deployment.network(network_name) || deployment.default_network
         @logger.debug("Reserving ip '#{format_ip(ip)}' for existing instance '#{@instance}' for network '#{network.name}'")
-        reservation = ExistingNetworkReservation.new(@instance, network, ip)
+        reservation = UnboundNetworkReservation.new(@instance, network, ip)
         reservation.reserve
         add(reservation)
       end

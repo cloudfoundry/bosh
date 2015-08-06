@@ -37,7 +37,7 @@ module Bosh::Director
           @reserved_dynamic_ips.add(ip.to_i)
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
 
-        elsif reservation.is_a?(ExistingNetworkReservation)
+        elsif reservation.is_a?(UnboundNetworkReservation)
           # for existing reservations DatabaseIpProvider can verify if IP belongs to the same instance
           # InMemoryIpProvider has no knowledge which instance is requesting IP
           # so we allow this reservation to happen unless it is restricted now

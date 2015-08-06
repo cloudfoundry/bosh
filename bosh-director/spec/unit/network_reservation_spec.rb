@@ -10,14 +10,14 @@ module Bosh::Director
 
       describe :bind_existing do
         it "should bind to the static reservation if it's valid" do
-          other = ExistingNetworkReservation.new(instance, network, '0.0.0.1')
+          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
           expect(reservation.ip).to eq(1)
         end
 
-        it 'should not take the reservation if it is not existing' do
+        it 'should not take the reservation if it is not unbound' do
           other = DynamicNetworkReservation.new(instance, network)
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
@@ -25,7 +25,7 @@ module Bosh::Director
         end
 
         it 'should not take the existing reservation if the IP differs' do
-          other = ExistingNetworkReservation.new(instance, network, '0.0.0.2')
+          other = UnboundNetworkReservation.new(instance, network, '0.0.0.2')
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
@@ -33,7 +33,7 @@ module Bosh::Director
         end
 
         it 'should not take the reservation if it is not reserved' do
-          other = ExistingNetworkReservation.new(instance, network, '0.0.0.1')
+          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
           expect(reservation.ip).to eq(1)
@@ -46,14 +46,14 @@ module Bosh::Director
 
       describe :bind_existing do
         it "should bind to the dynamic reservation if it's valid" do
-          other = ExistingNetworkReservation.new(instance, network, '0.0.0.1')
+          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
           expect(reservation.ip).to eq(1)
         end
 
-        it 'should not take the reservation if it is not existing' do
+        it 'should not take the reservation if it is not unbound' do
           other = StaticNetworkReservation.new(instance, network, '0.0.0.1')
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
@@ -61,7 +61,7 @@ module Bosh::Director
         end
 
         it 'should not take the reservation if it is not reserved' do
-          other = ExistingNetworkReservation.new(instance, network, '0.0.0.1')
+          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
           expect(reservation.ip).to eq(nil)
@@ -69,8 +69,8 @@ module Bosh::Director
       end
     end
 
-    describe ExistingNetworkReservation do
-      let(:reservation) { ExistingNetworkReservation.new(instance, network, '0.0.0.1') }
+    describe UnboundNetworkReservation do
+      let(:reservation) { UnboundNetworkReservation.new(instance, network, '0.0.0.1') }
       describe :reserve do
         it 'reserves on a network' do
           expect(network).to receive(:reserve).with(reservation)
