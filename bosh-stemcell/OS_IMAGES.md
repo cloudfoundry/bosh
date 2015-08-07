@@ -8,6 +8,7 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 * `UNdcxBFcKRVwhrWu2YQZeJkyiPTItQni`
+  - disable single-user mode boot in grub2
   - disable bluetooth module and service
   
 * `RVb_.SznfEzXu3kZuE6BNKSOUtYXlDTR`
@@ -230,6 +231,7 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
 * `4xnMlmLRXupZrn59kVEtCCtb2Zfxia54`
+  - disable single-user mode boot in grub2
   - disable bluetooth module and service
 
 * `IL5wqv5zstAX9up9pidNw1c.FMx6JDcN`
