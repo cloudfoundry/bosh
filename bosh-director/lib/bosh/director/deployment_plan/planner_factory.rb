@@ -134,6 +134,9 @@ module Bosh
 
             all_the_instance_plans = desired_jobs.flat_map(&:instance_plans)
             assembler.bind_current_instance_states(all_the_instance_plans)
+            desired_jobs.each do |desired_job|
+              reserve_ips_for_job(desired_job) # will change job.instances
+            end
 
             instance_plans_obsolete_within_a_job = desired_jobs.flat_map(&:instance_plans).select(&:obsolete?)
             instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, planner.existing_instances)
@@ -200,6 +203,28 @@ module Bosh
           @event_log.track(message) do
             @logger.info(message)
             yield
+          end
+        end
+
+        def reserve_ips_for_job(job)
+          # FIXME: this stuff should be cleaned up, the ordering dependency here isn't obvious,
+          # compilation IPs don't get released correctly on failure if we call take_old_reservations too early
+          job.networks.each do |network|
+            job.instances.each_with_index do |instance, index|
+              # TODO: care about instance.availabililty_zone
+              static_ips = network.static_ips
+
+              if static_ips
+                reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
+              else
+                reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
+              end
+              instance.add_network_reservation(reservation)
+            end
+          end
+
+          job.instances.each do |instance|
+            instance.take_old_reservations
           end
         end
       end

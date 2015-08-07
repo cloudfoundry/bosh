@@ -40,11 +40,13 @@ module Bosh::Director
         parse_resource_pool
         parse_update_config
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
+        @job.networks = networks
+        assign_default_networks(networks)
+
         availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
 
         parse_instances(availability_zones, networks) # will populate job.instances
-        assign_job_resources_for(networks) # will change job.instances and set job.default_network
 
         @job
       end
@@ -270,32 +272,6 @@ module Bosh::Director
         end
       end
 
-      def assign_job_resources_for(networks)
-        reserve_ips_for_job(networks)
-        assign_default_networks(networks)
-      end
-
-      def reserve_ips_for_job(networks)
-        networks.each do |network|
-          @job.instances.each_with_index do |instance, index|
-            static_ips = network.static_ips
-
-            if static_ips
-              reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
-            else
-              reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
-            end
-            instance.add_network_reservation(reservation)
-          end
-        end
-      end
-
-      def assign_default_networks(networks)
-        Network::VALID_DEFAULTS.each do |property|
-          @job.default_network[property] = networks.find {|network| network.default_for?(property) }
-        end
-      end
-
       def validate_templates
         template_property = safe_property(@job_spec, 'template', optional: true)
         templates_property = safe_property(@job_spec, 'templates', optional: true)
@@ -308,6 +284,12 @@ module Bosh::Director
         if [template_property, templates_property].compact.empty?
           raise ValidationMissingField,
                 "Job `#{@job.name}' does not specify template or templates keys, one is required"
+        end
+      end
+
+      def assign_default_networks(networks)
+        Network::VALID_DEFAULTS.each do |property|
+          @job.default_network[property] = networks.find {|network| network.default_for?(property) }
         end
       end
     end

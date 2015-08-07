@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
-    let(:instance_model) { Bosh::Director::Models::Instance.make }
+    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment) }
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     describe '#network_settings' do
@@ -302,7 +302,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#bind_current_state' do
       before do
-        instance.bind_existing_instance_model(Bosh::Director::Models::Instance.make)
+        instance.bind_existing_instance_model(instance_model)
       end
 
       it 'updates instance current state' do
@@ -314,8 +314,21 @@ module Bosh::Director::DeploymentPlan
         expect(instance.disk_currently_attached?).to eq(true)
       end
 
-      context 'when state has networks' do
-        it 'reserves the networks' do
+      context 'when using global networking' do
+        before { allow(plan).to receive(:using_global_networking?) { true } }
+        it 'reserves the networks based on the saved reservations' do
+          Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create('127.0.0.5'), network_name: 'fake-network', instance: instance_model)
+          instance_model.reload
+          expect(net).to receive(:reserve) do |network_reservation|
+            expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
+          end
+          instance.bind_current_state(state)
+        end
+      end
+
+      context 'when not using global networking' do
+        before { allow(plan).to receive(:using_global_networking?) { false } }
+        it 'reserves the networks based on the agent state' do
           state = {'networks' => {'fake-network' => {'ip' => '127.0.0.5'}}}
           expect(net).to receive(:reserve) do |network_reservation|
             expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')

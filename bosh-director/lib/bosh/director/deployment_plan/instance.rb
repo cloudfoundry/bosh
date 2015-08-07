@@ -123,19 +123,22 @@ module Bosh::Director
         @model = instance_model
         allocate_vm
         @vm.model = instance_model.vm
-
-        @original_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
-        take_old_reservations
       end
 
-      # This is for backwards compatibility when we did not store
-      # network reservations in DB and constructed them from instance state
       def bind_current_state(state)
-        @original_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
-        take_old_reservations
-
+        bind_existing_reservations(state)
         @current_state = state
         @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
+      end
+
+      def bind_existing_reservations(state)
+        if deployment.using_global_networking?
+          @original_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
+        else
+          # This is for backwards compatibility when we did not store
+          # network reservations in DB and constructed them from instance state
+          @original_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
+        end
       end
 
       def apply_vm_state
@@ -514,6 +517,23 @@ module Bosh::Director
         @availability_zone.name
       end
 
+      ##
+      # Take any existing valid network reservations
+      # @param [Hash<String, NetworkReservation>] reservations
+      # @return [void]
+      def take_old_reservations
+        @original_network_reservations.each do |existing_reservation|
+          reservation = @network_reservations.find_for_network(existing_reservation.network)
+          if reservation
+            reservation.bind_existing(existing_reservation)
+            if reservation.reserved?
+              @logger.debug("Found matching existing reservation #{existing_reservation} for `#{self}'")
+              @original_network_reservations.delete(existing_reservation)
+            end
+          end
+        end
+      end
+
       private
 
       # Looks up instance model in DB
@@ -549,23 +569,6 @@ module Bosh::Director
 
       def check_model_not_bound
         raise DirectorError, "Instance `#{self}' model is already bound" if @model
-      end
-
-      ##
-      # Take any existing valid network reservations
-      # @param [Hash<String, NetworkReservation>] reservations
-      # @return [void]
-      def take_old_reservations
-        @original_network_reservations.each do |existing_reservation|
-          reservation = @network_reservations.find_for_network(existing_reservation.network)
-          if reservation
-            reservation.bind_existing(existing_reservation)
-            if reservation.reserved?
-              @logger.debug("Found matching existing reservation #{existing_reservation} for `#{self}'")
-              @original_network_reservations.delete(existing_reservation)
-            end
-          end
-        end
       end
     end
   end

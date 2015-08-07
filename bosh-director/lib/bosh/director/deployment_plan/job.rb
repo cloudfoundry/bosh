@@ -71,6 +71,8 @@ module Bosh::Director
 
       attr_accessor :all_properties
 
+      attr_accessor :networks
+
       attr_reader :link_paths
 
       # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
