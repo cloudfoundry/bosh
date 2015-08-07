@@ -18,8 +18,8 @@ run_in_chroot $chroot "
 groupadd --system admin
 useradd -m --comment 'BOSH System User' vcap
 chmod 755 ~vcap
-echo \"vcap:${bosh_users_password}\" | chpasswd
-echo \"root:${bosh_users_password}\" | chpasswd
+echo "vcap:${bosh_users_password}" | chpasswd
+echo "root:${bosh_users_password}" | chpasswd
 usermod -G ${vcap_user_groups} vcap
 usermod -s /bin/bash vcap
 "
@@ -31,7 +31,7 @@ cp $assets_dir/sudoers $chroot/etc/sudoers
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc
 
-if [ "${stemcell_operating_system}" == "centos" ]; then
+if [ "${stemcell_operating_system}" == "centos" ] || [ "${stemcell_operating_system}" == "photon" ] ; then
   cat > $chroot/root/.profile <<EOS
 if [ "\$BASH" ]; then
   if [ -f ~/.bashrc ]; then

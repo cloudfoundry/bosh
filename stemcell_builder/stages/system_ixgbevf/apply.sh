@@ -28,6 +28,9 @@ then
 elif [ -f ${chroot}/etc/redhat-release ] # Centos or RHEL
 then
   run_in_chroot $chroot "dracut --force --kver ${kernelver}"
+elif [ -f ${chroot}/etc/photon-release ] # Photon
+then
+  run_in_chroot $chroot "dracut --force --kver ${kernelver}"
 else
   echo "Unknown OS, exiting"
   exit 2
