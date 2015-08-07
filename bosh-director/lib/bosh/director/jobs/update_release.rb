@@ -32,14 +32,10 @@ module Bosh::Director
         @release_version_model = nil
 
         @rebase = !!options['rebase']
-        @skip_if_exists = !!options['skip_if_exists']
 
         @manifest = nil
         @name = nil
         @version = nil
-
-        @packages_unchanged = false
-        @jobs_unchanged = false
       end
 
       # Extracts release tarball, verifies release manifest and saves release in DB
@@ -81,9 +77,7 @@ module Bosh::Director
 
         result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{@release_path} 2>&1", :on_error => :return)
         if result.failed?
-          logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', " +
-                       "tar returned #{result.exit_status}, " +
-                       "output: #{result.output}")
+          logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
           FileUtils.rm_rf(release_dir)
           raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
@@ -95,19 +89,13 @@ module Bosh::Director
       # @return [void]
       def verify_manifest(release_dir)
         manifest_file = File.join(release_dir, "release.MF")
-        unless File.file?(manifest_file)
-          raise ReleaseManifestNotFound, "Release manifest not found"
-        end
+        raise ReleaseManifestNotFound, "Release manifest not found" unless File.file?(manifest_file)
 
         @manifest = Psych.load_file(manifest_file)
 
         #handle compiled_release case
         @compiled_release = !!@manifest["compiled_packages"]
-        if @compiled_release
-          @packages_folder = "compiled_packages"
-        else
-          @packages_folder = "packages"
-        end
+        @packages_folder = @compiled_release ? "compiled_packages" : "packages"
 
         normalize_manifest
 
@@ -126,6 +114,15 @@ module Bosh::Director
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
       end
 
+      def compiled_release
+        raise "Don't know what kind of release we have until verify_release is called" unless @manifest
+        @compiled_release
+      end
+
+      def source_release
+        !compiled_release
+      end
+
       # Processes uploaded release, creates jobs and packages in DB if needed
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
@@ -136,29 +133,14 @@ module Bosh::Director
           @version = next_release_version
         end
 
-        version_attrs = {
-          :release => @release_model,
-          :version => @version.to_s
-        }
+        version_attrs = { :release => @release_model, :version => @version.to_s }
         version_attrs[:uncommitted_changes] = @uncommitted_changes if @uncommitted_changes
         version_attrs[:commit_hash] = @commit_hash if @commit_hash
 
-        @release_version_model = Models::ReleaseVersion.new(version_attrs)
-        unless @release_version_model.valid?
-          if @release_version_model.errors[:version] == [:format]
-            raise ReleaseVersionInvalid,
-              "Release version invalid `#{@name}/#{@version}'"
-          elsif @skip_if_exists
-            event_log.begin_stage("Release already exists", 1)
-            event_log.track("#{@name}/#{@version}") {}
-            return
-          else
-            raise ReleaseAlreadyExists,
-              "Release `#{@name}/#{@version}' already exists"
-          end
-        end
-
-        @release_version_model.save
+        @release_is_new = false
+        @release_version_model = Models::ReleaseVersion.find_or_create(version_attrs) {
+          @release_is_new = true
+        }
 
         single_step_stage("Resolving package dependencies") do
           resolve_package_dependencies(@manifest[@packages_folder])
@@ -166,7 +148,7 @@ module Bosh::Director
 
         @packages = {}
         process_packages(release_dir)
-        process_jobs(release_dir)
+        process_jobs(release_dir) if @release_is_new
 
         event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
         event_log.track("#{@name}/#{@version}") {}
@@ -215,12 +197,16 @@ module Bosh::Director
 
         new_packages = []
         existing_packages = []
+        registered_packages = []
 
         @manifest[@packages_folder].each do |package_meta|
           # Checking whether we might have the same bits somewhere
-          packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
 
+          packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
           if packages.empty?
+            unless @release_is_new
+              raise ReleaseInvalidPackage, "package #{package_meta['name']}/#{package_meta['version']} not part of previous upload of release #{@name}/#{@version}"
+            end
             new_packages << package_meta
             next
           end
@@ -240,7 +226,11 @@ module Bosh::Director
               existing_package.save
             end
 
-            existing_packages << [existing_package, package_meta]
+            if existing_package.release_versions.include? @release_version_model
+              registered_packages << [existing_package, package_meta]
+            else
+              existing_packages << [existing_package, package_meta]
+            end
           else
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
@@ -252,17 +242,55 @@ module Bosh::Director
           end
         end
 
-        package_stemcell_hashes1 = create_packages(new_packages, release_dir)
-        package_stemcell_hashes2 = use_existing_packages(existing_packages)
-        consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2)
+        did_something = false
 
-        create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+        package_stemcell_hashes1, created_package = create_packages(new_packages, release_dir)
+        did_something |= created_package
+
+        package_stemcell_hashes2, modified_package = use_existing_packages(existing_packages, release_dir)
+        did_something |= modified_package
+
+        if @compiled_release
+          compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
+            stemcells_used_by_package(pkg_meta).map do |stemcell|
+              {
+                  package: pkg,
+                  stemcell: stemcell
+              }
+            end
+          end
+          consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
+          did_something |= create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+        else
+          did_something |= backfill_source_for_packages(registered_packages, release_dir)
+        end
+        did_something
+      end
+
+      # @return [boolean] true if sources were added to at least one package; false if the call had no effect.
+      def backfill_source_for_packages(packages, release_dir)
+        return false if packages.empty?
+
+        had_effect = false
+        single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
+          packages.each do |package, package_meta|
+            package_desc = "#{package.name}/#{package.version}"
+            logger.info("Adding source for package `#{package_desc}'")
+            had_effect |= save_package_source_blob(package, package_meta, release_dir)
+            package.save
+          end
+        end
+
+        had_effect
       end
 
       # Points release DB model to existing packages described by given metadata
-      # @param [Array<Array>] packages Existing packages metadata
-      def use_existing_packages(packages)
-        return if packages.empty?
+      # @param [Array<Array>] packages Existing packages metadata.
+      # @return [Array<Hash>] package & stemcell matching pairs that were registered. empty if no packages were changed.
+      def use_existing_packages(packages, release_dir)
+        if packages.empty?
+          return [], false
+        end
 
         package_stemcell_hashes = []
 
@@ -272,63 +300,69 @@ module Bosh::Director
             logger.info("Using existing package `#{package_desc}'")
             register_package(package)
 
-            if @compiled_release
+            if compiled_release
               stemcells = stemcells_used_by_package(package_meta)
               stemcells.each do |stemcell|
-                hash = { "package" => package, "stemcell" => stemcell}
+                hash = { package: package, stemcell: stemcell}
                 package_stemcell_hashes << hash
               end
+            end
+
+            if source_release && package.blobstore_id.nil?
+              save_package_source_blob(package, package_meta, release_dir)
+              package.save
             end
           end
         end
 
-        package_stemcell_hashes
+        return package_stemcell_hashes, true
       end
 
       # Creates packages using provided metadata
       # @param [Array<Hash>] packages Packages metadata
       # @param [String] release_dir local path to the unpacked release
-      # @return [Array<Hash>] package & stemcell
+      # @return [Array<Hash>, boolean] array of compiled package & stemcell matching pairs that were registered, and a
+      # flag indicating if any changes were made to the database.
       def create_packages(package_metas, release_dir)
         if package_metas.empty?
-          @packages_unchanged = true
-          return
+          return [], false
         end
 
         package_stemcell_hashes = []
+
         event_log.begin_stage("Creating new packages", package_metas.size)
 
-        package = package_metas.each do |package_meta|
+        package_metas.each do |package_meta|
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
+          package = nil
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
             package = create_package(package_meta, release_dir)
             register_package(package)
-            package
           end
 
           if @compiled_release
             stemcells = stemcells_used_by_package(package_meta)
             stemcells.each do |stemcell|
-              hash = { "package" => package, "stemcell" => stemcell}
+              hash = { package: package, stemcell: stemcell}
               package_stemcell_hashes << hash
             end
           end
         end
 
-        package_stemcell_hashes
+        return package_stemcell_hashes, true
       end
 
+      # @return [boolean] true if at least one job was created; false if the call had no effect.
       def create_compiled_packages(all_compiled_packages, release_dir)
-        if all_compiled_packages.nil?
-          return
-        end
+        return false if all_compiled_packages.nil?
 
         event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
 
+        had_effect = false
         all_compiled_packages.each do |compiled_package_spec|
-          package = compiled_package_spec['package']
-          stemcell = compiled_package_spec['stemcell']
+          package = compiled_package_spec[:package]
+          stemcell = compiled_package_spec[:stemcell]
 
           existing_compiled_package = Models::CompiledPackage.where(
               :package_id => package.id,
@@ -338,9 +372,11 @@ module Bosh::Director
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
             event_log.track(package_desc) do
               create_compiled_package(package, stemcell, release_dir)
+              had_effect = true
             end
           end
         end
+        had_effect
       end
 
       def stemcells_used_by_package(package_meta)
@@ -392,7 +428,7 @@ module Bosh::Director
         package_attrs = {
             :release => @release_model,
             :name => name,
-            :sha1 => @compiled_release ? nil : package_meta['sha1'],
+            :sha1 => nil,
             :blobstore_id => nil,
             :fingerprint => package_meta['fingerprint'],
             :version => version
@@ -401,24 +437,34 @@ module Bosh::Director
         package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta['dependencies']
 
-        unless @compiled_release
-          existing_blob = package_meta['blobstore_id']
-          desc = "package '#{name}/#{version}'"
-
-          if existing_blob
-            logger.info("Creating #{desc} from existing blob #{existing_blob}")
-            package.blobstore_id = BlobUtil.copy_blob(existing_blob)
-
-          else
-            logger.info("Creating #{desc} from provided bits")
-
-            package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
-            validate_tgz(package_tgz, desc)
-            package.blobstore_id = BlobUtil.create_blob(package_tgz)
-          end
-        end
+        save_package_source_blob(package, package_meta, release_dir) unless @compiled_release
 
         package.save
+      end
+
+      # @return [boolean] true if a new blob was created; false otherwise
+      def save_package_source_blob(package, package_meta, release_dir)
+        return false unless package.blobstore_id.nil?
+
+        name, version = package_meta['name'], package_meta['version']
+        existing_blob = package_meta['blobstore_id']
+        desc = "package '#{name}/#{version}'"
+
+        package.sha1 = package_meta['sha1']
+
+        if existing_blob
+          logger.info("Creating #{desc} from existing blob #{existing_blob}")
+          package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+
+        elsif package
+          logger.info("Creating #{desc} from provided bits")
+
+          package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
+          validate_tgz(package_tgz, desc)
+          package.blobstore_id = BlobUtil.create_blob(package_tgz)
+        end
+
+        true
       end
 
       def validate_tgz(tgz, desc)
@@ -465,15 +511,15 @@ module Bosh::Director
           end
         end
 
-        create_jobs(new_jobs, release_dir)
-        use_existing_jobs(existing_jobs)
+        did_something = create_jobs(new_jobs, release_dir)
+        did_something |= use_existing_jobs(existing_jobs)
+
+        did_something
       end
 
+      # @return [boolean] true if at least one job was created; false if the call had no effect.
       def create_jobs(jobs, release_dir)
-        if jobs.empty?
-          @jobs_unchanged = true
-          return
-        end
+        return false if jobs.empty?
 
         event_log.begin_stage("Creating new jobs", jobs.size)
         jobs.each do |job_meta|
@@ -484,6 +530,8 @@ module Bosh::Director
             register_template(template)
           end
         end
+
+        true
       end
 
       def create_job(job_meta, release_dir)
@@ -492,9 +540,9 @@ module Bosh::Director
       end
 
       # @param [Array<Array>] jobs Existing jobs metadata
-      # @return [void]
+      # @return [boolean] true if at least one job was tied to the release version; false if the call had no effect.
       def use_existing_jobs(jobs)
-        return if jobs.empty?
+        return false if jobs.empty?
 
         single_step_stage("Processing #{jobs.size} existing job#{"s" if jobs.size > 1}") do
           jobs.each do |template, _|
@@ -503,6 +551,8 @@ module Bosh::Director
             register_template(template)
           end
         end
+
+        true
       end
 
       # Marks job template model as being used by release version

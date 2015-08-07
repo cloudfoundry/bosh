@@ -105,16 +105,6 @@ describe 'upload release', type: :integration do
     expect(out).to match /Release is invalid, please fix, verify and upload again/
   end
 
-  it 'fails to upload a release that is already uploaded' do
-    release_filename = spec_asset('valid_release.tgz')
-
-    target_and_login
-    bosh_runner.run("upload release #{release_filename}")
-    out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
-
-    expect(out).to match 'This release version has already been uploaded'
-  end
-
   # ~32s
   it 'marks releases that have uncommitted changes' do
     commit_hash = ''
@@ -156,25 +146,15 @@ describe 'upload release', type: :integration do
     before { target_and_login }
 
     context 'when the release is local' do
-      let(:local_release_path) { spec_asset('valid_release.tgz') }
+      let(:local_release_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
       before { bosh_runner.run("upload release #{local_release_path}") }
 
-      context 'when using the --skip-if-exists flag' do
-        it 'tells the user and does not exit as a failure' do
-          output = bosh_runner.run("upload release #{local_release_path} --skip-if-exists")
-          expect(output).to include("Release `appcloud/0.1' already exists. Skipping upload.")
-        end
-      end
-
-      context 'when NOT using the --skip-if-exists flag' do
-        it 'tells the user and does exit as a failure' do
-          output, exit_code = bosh_runner.run("upload release #{local_release_path}", {
-            failure_expected: true,
-            return_exit_code: true,
-          })
-          expect(output).to include('This release version has already been uploaded')
-          expect(exit_code).to eq(1)
-        end
+      it 'includes no package blobs in the repacked release and uploads it to the director' do
+        output = bosh_runner.run("upload release #{local_release_path}")
+        expect(output).to_not match(/^pkg_.*UPLOAD$/)
+        expect(output).to match(/^pkg_.*SKIP$/)
+        expect(output).to include("Director task")
+        expect(output).to include("Started processing 5 existing packages")
       end
     end
 
@@ -185,31 +165,57 @@ describe 'upload release', type: :integration do
       before { file_server.start }
       after { file_server.stop }
 
-      let(:release_url) { file_server.http_url("valid_release.tgz") }
+      let(:release_url) { file_server.http_url("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
 
       before { bosh_runner.run("upload release #{release_url}") }
 
-      context 'when using the --skip-if-exists flag' do
-        it 'tells the user and does not exit as a failure' do
-          output = bosh_runner.run("upload release #{release_url} --skip-if-exists")
-          expect(output).to include("release already exists > appcloud/0.1")
-        end
+      it 'tells the user and does not exit as a failure' do
+        output = bosh_runner.run("upload release #{release_url}")
+
+        expect(output).to_not include("Started creating new packages")
+        expect(output).to_not include("Started creating new jobs")
+        expect(output).to include("Started processing 5 existing packages")
+        expect(output).to include("Release uploaded")
       end
 
-      context 'when NOT using the --skip-if-exists flag' do
-        it 'tells the user and does exit as a failure' do
-          output, exit_code = bosh_runner.run("upload release #{release_url}", {
-            failure_expected: true,
-            return_exit_code: true,
-          })
-          expect(output).to include("Release `appcloud/0.1' already exists")
-          expect(exit_code).to eq(1)
-        end
+      it 'does not affect the blobstore ids of the source package blobs' do
+        inspect1 = bosh_runner.run('inspect release test_release/1')
+        bosh_runner.run("upload release #{release_url}")
+        inspect2 = bosh_runner.run('inspect release test_release/1')
+
+        expect(inspect1).to eq(inspect2)
       end
     end
   end
 
-  describe 'upload compiled release' do
+  describe 'uploading a release with the same packages as some other release' do
+    before { target_and_login }
+
+    it 'omits identical packages from the repacked tarball and creates new copies of the blobstore entries under the new release' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
+
+      expect(output).to_not match(/^pkg_.*UPLOAD$/)
+      expect(output).to match(/^pkg_.*SKIP$/)
+
+      test_release_desc = bosh_runner.run("inspect release test_release/1")
+      shared_release_desc = bosh_runner.run("inspect release release_with_shared_blobs/1")
+
+      expect(test_release_desc).to_not eq(shared_release_desc)
+      expect(scrub_blobstore_ids(test_release_desc)).to eq(scrub_blobstore_ids(shared_release_desc))
+    end
+
+    it 'raises an error if the upload release version already exists but there are packages with different fingerprints' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-pkg2-updated.tgz')}")
+      }.to raise_error(RuntimeError, /Error 30012: package pkg_2\/e7f5b11c43476d74b2d12129b93cba584943e8d3 not part of previous upload of release test_release\/1/)
+
+    end
+  end
+
+  describe 'uploading compiled releases' do
     before { target_and_login }
 
     it 'should raise an error if no stemcell matched the criteria' do
@@ -220,43 +226,36 @@ describe 'upload release', type: :integration do
 
     it 'should populate compiled packages for one stemcell' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}", {
-          return_exit_code: true,
-      })
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
 
       expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d.")
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
-      expect(output).to include('Started compiled release has been created > hello-go/50')
+      expect(output).to include("Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08.")
       expect(output).to include("Compiled Release uploaded")
     end
 
     it 'should populate compiled packages for two matching stemcells' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}", {
-           return_exit_code: true,
-       })
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
 
       expect(output).to include("Started creating new packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d")
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
-      expect(output).to include('Started compiled release has been created > hello-go/50')
+      expect(output).to include('Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08.')
       expect(output).to include("Compiled Release uploaded")
     end
 
     it 'upload a compiled release tarball' do
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}", {
-         return_exit_code: true,
-       })
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Started creating new packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393')
+      expect(output).to include('Started creating new compiled packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393 for ubuntu-stemcell/1.')
       expect(output).to include('Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08')
-      expect(output).to include('Started compiled release has been created > hello-go/50')
       expect(output).to include('Compiled Release uploaded')
-      expect(exit_code).to eq(0)
     end
 
     it 'show actions in the event log' do
@@ -272,14 +271,73 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
-      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}", {
-        return_exit_code: true,
-      })
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Started processing 1 existing package > Processing 1 existing package')
       expect(output).to include('Started processing 1 existing job > Processing 1 existing job')
-      expect(output).to include('Started compiled release has been created > hello-go/51')
       expect(output).to include('Compiled Release uploaded')
-      expect(exit_code).to eq(0)
     end
+
+    it 'backfills the source code for an already exisiting compiled release' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      expect(output).to include('Compiled Release uploaded')
+
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      expect(output).to include('Release uploaded')
+
+      output = bosh_runner.run('inspect release test_release/1')
+      expect(output).to_not include('no source')
+    end
+
+    it 'allows uploading a compiled release after its source release has been uploaded' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      expect(output).to include('Compiled Release uploaded')
+
+      output = scrub_blobstore_ids(bosh_runner.run('inspect release test_release/1'))
+      expect(output).to include(<<-EOF)
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+| Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+| job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |
+| job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |
+| job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |
+| job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |
+| job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |
+| job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+
++--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
+| Package                  | Fingerprint                              | Compiled For                            | Blobstore ID                         | SHA1                                     |
++--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
+| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (source)                                | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 93fade7dd8950d8a1dd2bf5ec751e478af3150e9 |
+|                          |                                          | bosh-aws-xen-centos-7-go_agent/3001     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 735987b52907d970106f38413825773eec7cc577 |
+|                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 735987b52907d970106f38413825773eec7cc577 |
+| pkg_2                    | f5c1c303c2308404983cf1e7566ddc0a22a22154 | (source)                                | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | b2751daee5ef20b3e4f3ebc3452943c28f584500 |
+|                          |                                          | bosh-aws-xen-centos-7-go_agent/3001     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 5b21895211d8592c129334e3d11bd148033f7b82 |
+|                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 5b21895211d8592c129334e3d11bd148033f7b82 |
+| pkg_3_depends_on_2       | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (source)                                | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 62fff2291aac72f5bd703dba0c5d85d0e23532e0 |
+|                          |                                          | bosh-aws-xen-centos-7-go_agent/3001     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f5cc94a01d2365bbeea00a4765120a29cdfb3bd7 |
+|                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f5cc94a01d2365bbeea00a4765120a29cdfb3bd7 |
+| pkg_4_depends_on_3       | 9207b8a277403477e50cfae52009b31c840c49d4 | (source)                                | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 603f212d572b0307e4c51807c5e03c47944bb9c3 |
+|                          |                                          | bosh-aws-xen-centos-7-go_agent/3001     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f21275861158ad864951faf76da0dce9c1b5f215 |
+|                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f21275861158ad864951faf76da0dce9c1b5f215 |
+| pkg_5_depends_on_4_and_1 | 3cacf579322370734855c20557321dadeee3a7a4 | (source)                                | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ad733ca76ab4747747d8f9f1ddcfa568519a2e00 |
+|                          |                                          | bosh-aws-xen-centos-7-go_agent/3001     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 002deec46961440df01c620be491e5b12246c5df |
+|                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 002deec46961440df01c620be491e5b12246c5df |
++--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
+      EOF
+    end
+
+    it 'allows uploading two source releases with different version numbers but identical contents' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
+      expect(output).to include("Release uploaded")
+    end
+
+
   end
 end

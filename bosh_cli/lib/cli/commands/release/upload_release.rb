@@ -8,7 +8,7 @@ module Bosh::Cli::Command
         'Rebases this release onto the latest version',
         'known by director (discards local job/package',
         'versions in favor of versions assigned by director)'
-      option '--skip-if-exists', 'skips upload if release already exists'
+      option '--skip-if-exists', 'no-op; retained for backward compatibility'
       def upload(release_file = nil)
         auth_required
         show_current_state
@@ -16,7 +16,6 @@ module Bosh::Cli::Command
         upload_options = {
           :rebase => options[:rebase],
           :repack => true,
-          :skip_if_exists => options[:skip_if_exists],
         }
 
         #only check release_dir if not compiled release tarball
@@ -43,7 +42,7 @@ module Bosh::Cli::Command
             err("Release file doesn't exist")
           end
 
-          file_type = `file --mime-type -b '#{release_file}'`
+          file_type = `file --mime-type -b '#{release_file}'` # duplicate? Already done on line 23
 
           if file_type =~ /text\/(plain|yaml)/
             upload_manifest(release_file, upload_options)
@@ -100,22 +99,7 @@ module Bosh::Cli::Command
           tarball_path = tarball.convert_to_old_format
         end
 
-        remote_release = get_remote_release(tarball.release_name) rescue nil
-        if remote_release && !rebase
-          version = if new_director?
-                      Bosh::Common::Version::ReleaseVersion.parse(tarball.version)
-                    else
-                      tarball.version
-                    end
-          if remote_release['versions'].include?(version.to_s)
-            if upload_options[:skip_if_exists]
-              say("Release `#{tarball.release_name}/#{version}' already exists. Skipping upload.")
-              return
-            else
-              err('This release version has already been uploaded')
-            end
-          end
-        end
+        Bosh::Common::Version::ReleaseVersion.parse(tarball.version) if new_director?
 
         begin
           if repack
@@ -161,7 +145,6 @@ module Bosh::Cli::Command
         status, task_id = director.upload_remote_release(
           release_location,
           rebase: upload_options[:rebase],
-          skip_if_exists: upload_options[:skip_if_exists],
         )
         task_report(status, task_id, report)
       end

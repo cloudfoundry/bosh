@@ -137,6 +137,10 @@ module IntegrationExampleGroup
     Regexp.compile(Regexp.escape(string))
   end
 
+  def scrub_blobstore_ids(bosh_output)
+    bosh_output.gsub /[0-9a-f]{8}-[0-9a-f-]{27}/, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  end
+
   def extract_agent_messages(nats_messages, agent_id)
     nats_messages.select { |val|
       # messages for the agent we care about

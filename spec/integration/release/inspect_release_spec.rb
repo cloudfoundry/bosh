@@ -1,9 +1,5 @@
 require 'spec_helper'
 
-def scrub_blobstore_ids(bosh_output)
-  bosh_output.gsub /[0-9a-f]{8}-[0-9a-f-]{27}/, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-end
-
 describe 'inspect release', type: :integration do
   with_reset_sandbox_before_each
 

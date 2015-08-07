@@ -7,7 +7,6 @@ module Bosh::Director
         payload = json_decode(request.body)
         options = {
           rebase:         params['rebase'] == 'true',
-          skip_if_exists: params['skip_if_exists'] == 'true',
         }
         task = @release_manager.create_release_from_url(current_user, payload['location'], options)
         redirect "/tasks/#{task.id}"
@@ -129,7 +128,7 @@ module Bosh::Director
               'blobstore_id' => package.blobstore_id,
               'sha1' => package.sha1,
               'fingerprint' => package.fingerprint.to_s,
-              'compiled_packages' => package.compiled_packages.sort_by { |cp| cp.stemcell }.map do |compiled|
+              'compiled_packages' => package.compiled_packages.sort_by { |cp| [cp.stemcell.name, cp.stemcell.version] }.map do |compiled|
                 {
                     'stemcell' => "#{compiled.stemcell.name}/#{compiled.stemcell.version}",
                     'sha1' => compiled.sha1,

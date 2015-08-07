@@ -178,34 +178,11 @@ module Bosh::Cli::Command::Release
                 {'jobs' => nil, 'packages' => nil, 'versions' => ['0+dev.1']}) }
               let(:tarball_path) { spec_asset('valid_release.tgz') }
 
-              context 'when --skip-if-exists flag is given' do
-                before { command.add_option(:skip_if_exists, true) }
-
-                it 'does not upload release' do
-                  expect(director).to_not receive(:upload_release)
-                  command.upload(tarball_path)
-                end
-
-                it 'returns successfully' do
-                  expect {
-                    command.upload(tarball_path)
-                  }.to_not raise_error
-                end
+              it 'does upload release' do
+                expect(director).to receive(:upload_release)
+                command.upload(tarball_path)
               end
-
-              context 'when --skip-if-exists flag is not given' do
-                it 'does not upload release' do
-                  expect(director).to_not receive(:upload_release)
-                  command.upload(tarball_path) rescue nil
-                end
-
-                it 'raises an error' do
-                  expect {
-                    command.upload(tarball_path)
-                  }.to raise_error(Bosh::Cli::CliError, /already been uploaded/)
-                end
-              end
-            end
+           end
 
             context 'when the director is an old version' do
               let(:director_version) { '1.2579.0 (release:4fef83a2 bosh:4fef83a2)' }
@@ -214,32 +191,9 @@ module Bosh::Cli::Command::Release
                 {'jobs' => nil, 'packages' => nil, 'versions' => ['0.1-dev']}) }
               let(:tarball_path) { spec_asset('valid_release.tgz') }
 
-              context 'when --skip-if-exists flag is given' do
-                before { command.add_option(:skip_if_exists, true) }
-
-                it 'does not upload release' do
-                  expect(director).to_not receive(:upload_release)
-                  command.upload(tarball_path)
-                end
-
-                it 'returns successfully' do
-                  expect {
-                    command.upload(tarball_path)
-                  }.to_not raise_error
-                end
-              end
-
-              context 'when --skip-if-exists flag is not given' do
-                it 'does not upload release' do
-                  expect(director).to_not receive(:upload_release)
-                  command.upload(tarball_path) rescue nil
-                end
-
-                it 'raises an error' do
-                  expect {
-                    command.upload(tarball_path)
-                  }.to raise_error(Bosh::Cli::CliError, /already been uploaded/)
-                end
+              it 'does upload release' do
+                expect(director).to receive(:upload_release)
+                command.upload(tarball_path)
               end
             end
           end
@@ -249,11 +203,11 @@ module Bosh::Cli::Command::Release
           context 'without options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => nil, :skip_if_exists => nil))
+                .with(release_location, hash_including(:rebase => nil))
                 .and_call_original
               expect(director).to receive(:upload_remote_release).with(
                 release_location,
-                hash_including(:rebase => nil, :skip_if_exists => nil),
+                hash_including(:rebase => nil),
               )
 
               command.upload(release_location)
@@ -263,15 +217,14 @@ module Bosh::Cli::Command::Release
           context 'with options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => true, :skip_if_exists => true))
+                .with(release_location, hash_including(:rebase => true))
                 .and_call_original
               expect(director).to receive(:upload_remote_release).with(
                 release_location,
-                hash_including(:rebase => true, :skip_if_exists => true),
+                hash_including(:rebase => true),
               )
 
               command.add_option(:rebase, true)
-              command.add_option(:skip_if_exists, true)
               command.upload(release_location)
             end
           end

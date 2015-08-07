@@ -204,7 +204,7 @@ describe 'deploy', type: :integration do
           set_deployment({manifest_hash: deployment_manifest })
         }
 
-        xit 'compiles only the package with the different version and those that depend on it' do
+        it 'compiles only the package with the different version and those that depend on it' do
           out = deploy({})
           expect(out).to include("Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f")
           expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
