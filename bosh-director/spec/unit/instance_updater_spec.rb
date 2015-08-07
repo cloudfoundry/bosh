@@ -423,11 +423,12 @@ module Bosh::Director
 
     describe '#stop' do
       let(:state) { 'fake-target-state' }
+      before { allow(deployment_plan).to receive(:skip_drain_for_job?).with('test-job').and_return(false) }
 
       it 'stop an instance' do
         stopper = instance_double('Bosh::Director::InstanceUpdater::Stopper')
         expect(InstanceUpdater::Stopper).to receive(:new).
-          with(instance, agent_client, 'fake-target-state', Config, Config.logger).
+          with(instance, agent_client, 'fake-target-state', false, Config, Config.logger).
           and_return(stopper)
 
         expect(stopper).to receive(:stop).with(no_args)

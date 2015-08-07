@@ -45,6 +45,9 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
+      # @return [Boolean] Indicates whether VMs should be drained
+      attr_reader :skip_drain
+
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -67,6 +70,7 @@ module Bosh::Director
           :class => Hash, :default => {})
 
         @recreate = !!options['recreate']
+        @skip_drain = SkipDrain.new(options['skip_drain'])
       end
 
       def_delegators :@cloud_planner, :add_network, :networks, :network,
@@ -82,6 +86,10 @@ module Bosh::Director
       # @return [Array<Models::Vm>]
       def vms
         @model.vms
+      end
+
+      def skip_drain_for_job?(name)
+        @skip_drain.nil? ? false : @skip_drain.for_job(name)
       end
 
       # Adds a release by name

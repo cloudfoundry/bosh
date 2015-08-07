@@ -143,7 +143,8 @@ module Bosh::Director
     end
 
     def stop
-      stopper = Stopper.new(@instance, agent, @target_state, Config, @logger)
+      skip_drain = @deployment_plan.skip_drain_for_job?(@job.name)
+      stopper = Stopper.new(@instance, agent, @target_state, skip_drain, Config, @logger)
       stopper.stop
     end
 

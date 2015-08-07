@@ -225,13 +225,15 @@ module Bosh
           options = options.dup
 
           recreate               = options.delete(:recreate)
+          skip_drain             = options.delete(:skip_drain)
           options[:content_type] = 'text/yaml'
           options[:payload]      = manifest_yaml
 
           url = '/deployments'
 
           extras = []
-          extras << ['recreate', 'true'] if recreate
+          extras << ['recreate', 'true']   if recreate
+          extras << ['skip_drain', skip_drain] if skip_drain
 
           request_and_track(:post, add_query_string(url, extras), options)
         end
@@ -287,9 +289,12 @@ module Bosh
           job_name, index, new_state, options = {})
           options = options.dup
 
+          skip_drain = !!options.delete(:skip_drain)
+
           url = "/deployments/#{deployment_name}/jobs/#{job_name}"
           url += "/#{index}" if index
           url += "?state=#{new_state}"
+          url += "&skip_drain=true" if skip_drain
 
           options[:payload]      = manifest_yaml
           options[:content_type] = 'text/yaml'

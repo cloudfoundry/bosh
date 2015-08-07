@@ -79,8 +79,9 @@ module Bosh::Cli::Command
     # bosh deploy
     usage "deploy"
     desc "Deploy according to the currently selected deployment manifest"
-    option "--recreate", "recreate all VMs in deployment"
-    option "--redact-diff", "redact manifest value changes in deployment"
+    option "--recreate", "Recreate all VMs in deployment"
+    option "--redact-diff", "Redact manifest value changes in deployment"
+    option "--skip-drain [job1,job2]", String, "Skip drain script for either specific or all jobs"
     def perform
       auth_required
       recreate = !!options[:recreate]
@@ -101,7 +102,16 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, task_id = director.deploy(manifest.yaml, :recreate => recreate)
+      deploy_options = { recreate: recreate }
+
+      if options.has_key?(:skip_drain)
+        # when key is present but no jobs specified OptionParser
+        # adds a key with nil value, in that case we want to
+        # skip drain for all jobs
+        deploy_options[:skip_drain] = options[:skip_drain].nil? ? '*' : options[:skip_drain]
+      end
+
+      status, task_id = director.deploy(manifest.yaml, deploy_options)
 
       task_report(status, task_id, "Deployed `#{manifest.name.make_green}' to `#{target_name.make_green}'")
     end

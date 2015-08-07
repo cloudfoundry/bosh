@@ -62,7 +62,7 @@ module Bosh::Cli
         vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
 
         expect(director).to have_received(:change_job_state).
-            with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
+            with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state', {})
       end
 
       context 'when run forcefully' do
@@ -78,7 +78,7 @@ module Bosh::Cli
 
           expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
           expect(director).to have_received(:change_job_state).
-              with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
+              with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state', {})
         end
       end
     end

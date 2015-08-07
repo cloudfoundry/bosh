@@ -59,4 +59,67 @@ describe 'drain', type: :integration do
       expect(drain_times[2] - drain_times[1]).to be >= 2
     end
   end
+
+  context 'when skip-drain flag is provided' do
+    with_reset_sandbox_before_each
+
+    let(:manifest_with_drain) do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'][0]['instances'] = 1
+      manifest_hash['properties'] = { 'test_property' => 'drained' }
+      manifest_hash
+    end
+
+    before do
+      deploy_from_scratch(manifest_hash: manifest_with_drain)
+    end
+
+    def drain_file
+      director.vm('foobar/0').file_path('drain-test.log')
+    end
+
+    it 'does not run drain script for recreate' do
+      drain_path_before_recreate = drain_file
+      bosh_runner.run('recreate foobar 0 --skip-drain')
+      expect(File).not_to exist(drain_path_before_recreate)
+    end
+
+    it 'does not run drain script for stop' do
+      bosh_runner.run('stop foobar 0 --skip-drain')
+      expect(File).not_to exist(drain_file)
+    end
+
+    it 'does not run drain script for restart' do
+      bosh_runner.run('restart foobar 0 --skip-drain')
+      expect(File).not_to exist(drain_file)
+    end
+
+    context 'with multiple jobs' do
+      let(:manifest_with_drain) do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'][0]['instances'] = 1
+        manifest_hash['properties'] = { 'test_property' => 'drained' }
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job(name: 'second', instances: 1)
+        manifest_hash
+      end
+
+      it 'skips drain for specified jobs' do
+        foobar_drain_file = director.vm('foobar/0').file_path('drain-test.log')
+        second_drain_file = director.vm('second/0').file_path('drain-test.log')
+
+        deploy_simple_manifest(manifest_hash: manifest_with_drain, recreate: true, skip_drain: ['second'])
+        expect(File).not_to exist(second_drain_file)
+        expect(File.read(foobar_drain_file)).to include('drained')
+      end
+
+      it 'runs drain for all jobs' do
+        foobar_drain_file = director.vm('foobar/0').file_path('drain-test.log')
+        second_drain_file = director.vm('second/0').file_path('drain-test.log')
+
+        deploy_simple_manifest(manifest_hash: manifest_with_drain, recreate: true, skip_drain: true)
+        expect(File).not_to exist(foobar_drain_file)
+        expect(File).not_to exist(second_drain_file)
+      end
+    end
+  end
 end
