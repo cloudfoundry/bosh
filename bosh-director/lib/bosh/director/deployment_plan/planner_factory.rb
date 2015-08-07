@@ -34,30 +34,49 @@ module Bosh
           @logger = logger
         end
 
-        def planner(manifest_hash, cloud_config, plan_options)
-          planner = planner_without_vm_binding(manifest_hash, cloud_config, plan_options)
-          bind_vms(planner)
-        end
-
         def planner_without_vm_binding(manifest_hash, cloud_config, options)
-          @event_log.begin_stage('Preparing deployment', 9)
-          @logger.info('Preparing deployment')
-
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
           name = deployment_manifest['name']
 
-          deployment_plan = nil
-          @event_log.track('Binding deployment') do
+          deployment_model = @deployment_repo.find_or_create_by_name(name)
+          attrs = {
+            name: name,
+            properties: deployment_manifest.fetch('properties', {}),
+          }
+          assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+        end
+
+        def planner(manifest_hash, cloud_config, options)
+          @event_log.begin_stage('Preparing deployment', 9)
+          @logger.info('Preparing deployment')
+
+          director_job = nil
+          cloud = nil
+          planner = nil
+
+          track_and_log('Binding deployment') do
             @logger.info('Binding deployment')
-            deployment_model = @deployment_repo.find_or_create_by_name(name)
-            attrs = {
-              name: name,
-              properties: deployment_manifest.fetch('properties', {}),
-            }
-            deployment_plan = assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+            planner = planner_without_vm_binding(manifest_hash, cloud_config, options)
+            cloud = Config.cloud
           end
 
-          deployment_plan
+          vm_deleter = VmDeleter.new(cloud, @logger)
+          vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
+
+          prepare(planner, cloud)
+          validate_packages(planner)
+
+          compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
+          package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
+            planner,
+            compilation_instance_pool,
+            @logger,
+            @event_log,
+            director_job
+          )
+          package_compile_step.perform
+
+          planner
         end
 
         private
@@ -82,29 +101,6 @@ module Bosh
 
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory, global_network_resolver)
           DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
-        end
-
-        def bind_vms(planner)
-          @logger.info('Created deployment plan')
-          director_job = nil
-          cloud = Config.cloud
-          vm_deleter = VmDeleter.new(cloud, @logger)
-          vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
-
-          prepare(planner, cloud)
-          validate_packages(planner)
-
-          compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
-          package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-            planner,
-            compilation_instance_pool,
-            @logger,
-            @event_log,
-            director_job
-          )
-          package_compile_step.perform
-
-          planner
         end
 
         def prepare(planner, cloud)
