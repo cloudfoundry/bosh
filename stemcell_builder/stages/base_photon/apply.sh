@@ -10,7 +10,7 @@ mkdir -p $chroot/var/lib/rpm
 rpm --root $chroot --initdb
 
 release_package_url="$(find /mnt/photon/ -name 'photon-release*.rpm' -print)"
-if [ mountpoint -q /mnt/photon ] && [ -n $release_package_url ]
+if mountpoint -q /mnt/photon && [ -n $release_package_url ] ;
 then
    echo "Photon ISO is mounted."
 else
