@@ -18,6 +18,9 @@ describe Bosh::OpenStackCloud::Cloud do
     @config_drive      = get_config(:config_drive, 'BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
     @ignore_server_az  = get_config(:ignore_server_az, 'BOSH_OPENSTACK_IGNORE_SERVER_AZ', 'false')
     @instance_type     = get_config(:instance_type, 'BOSH_OPENSTACK_INSTANCE_TYPE', 'm1.small')
+    @connect_timeout   = get_config(:instance_type, 'BOSH_OPENSTACK_CONNECT_TIMEOUT', '120')
+    @read_timeout      = get_config(:instance_type, 'BOSH_OPENSTACK_READ_TIMEOUT', '120')
+    @write_timeout     = get_config(:instance_type, 'BOSH_OPENSTACK_WRITE_TIMEOUT', '120')
 
     # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
     @region             = get_config(:region, 'BOSH_OPENSTACK_REGION', nil)
@@ -46,8 +49,9 @@ describe Bosh::OpenStackCloud::Cloud do
         'config_drive' => config_drive,
         'ignore_server_availability_zone' => @ignore_server_az,
         'connection_options' => {
-          'read_timeout' => 120,
-          'idempotent' => true,
+          'connect_timeout' => @connect_timeout,
+          'read_timeout' => @read_timeout,
+          'write_timeout' => @write_timeout,
         },
       },
       'registry' => {
