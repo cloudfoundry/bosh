@@ -1,5 +1,5 @@
 ---
-final_name: test_release
+final_name: release_with_shared_blobs
 blobstore:
   provider: local
   options:
