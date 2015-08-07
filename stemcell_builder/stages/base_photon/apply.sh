@@ -9,19 +9,13 @@ source $base_dir/etc/settings.bash
 mkdir -p $chroot/var/lib/rpm
 rpm --root $chroot --initdb
 
-case "${stemcell_operating_system_version}" in
-  "1")
-    release_package_url="/mnt/photon/RPMS/noarch/photon-release-1.1-1.noarch.rpm"
-    ;;
-  *)
-    echo "Unknown Photon version: ${stemcell_operating_system_version}"
-    exit 1
-    ;;
-esac
-
-if [ ! -f $release_package_url ]; then
-  echo "Please mount the Photon install DVD at /mnt/photon"
-  exit 1
+release_package_url="$(find /mnt/photon/ -name 'photon-release*.rpm' -print)"
+if [ mountpoint -q /mnt/photon ] && [ -n $release_package_url ]
+then
+   echo "Photon ISO is mounted."
+else
+   echo "Photon ISO is not mounted. Please mount the Photon ISO at /mnt/photon"
+   exit 1
 fi
 
 unshare -m $SHELL <<INSTALL_YUM
