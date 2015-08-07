@@ -62,79 +62,6 @@ module Bosh::Director
       end
     end
 
-    describe 'bind_instance_plans' do
-      let(:new_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
-      let(:existing_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: existing_instance_model) }
-      let(:obsolete_instance) { instance_double(Bosh::Director::DeploymentPlan::ExistingInstance, model: obsolete_instance_model) }
-
-      let(:existing_instance_model) { Bosh::Director::Models::Instance.make }
-      let(:obsolete_instance_model) { Bosh::Director::Models::Instance.make }
-
-      let(:existing_instance_state) do
-        {
-          'deployment' => 'simple',
-          'job' => { 'name' => existing_instance_model.job },
-          'index' => existing_instance_model.index
-        }
-      end
-
-      let(:obsolete_instance_state) do
-        {
-          'deployment' => 'simple',
-          'job' => { 'name' => obsolete_instance_model.job },
-          'index' => obsolete_instance_model.index
-        }
-      end
-
-
-      let(:new_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: new_instance, existing_instance: nil) }
-      let(:existing_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: existing_instance, existing_instance: existing_instance_model) }
-      let(:obsolete_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(instance: obsolete_instance, existing_instance: obsolete_instance_model, obsolete: true) }
-
-      before do
-        allow(new_instance).to receive(:bind_new_instance_model)
-        allow(existing_instance).to receive(:bind_existing_instance_model)
-        allow(existing_instance).to receive(:bind_current_state)
-        allow(deployment_plan).to receive(:mark_instance_for_deletion)
-
-        existing_agent_client = instance_double(AgentClient)
-        obsolete_agent_client = instance_double(AgentClient)
-        allow(AgentClient).to receive(:with_vm).with(existing_instance_model.vm).and_return(existing_agent_client)
-        allow(AgentClient).to receive(:with_vm).with(obsolete_instance_model.vm).and_return(obsolete_agent_client)
-        allow(existing_agent_client).to receive(:get_state).and_return(existing_instance_state)
-        allow(obsolete_agent_client).to receive(:get_state).and_return(obsolete_instance_state)
-
-
-        allow(deployment_plan).to receive(:instance_plans) { [new_plan, existing_plan, obsolete_plan] }
-      end
-
-      it 'binds new models for new plans' do
-        assembler.bind_instance_plans
-
-        expect(new_instance).to have_received(:bind_new_instance_model)
-      end
-
-      it 'binds existing models for existing plans and obsolete plans' do
-        assembler.bind_instance_plans
-
-        expect(existing_instance).to have_received(:bind_existing_instance_model).with(existing_instance_model)
-      end
-
-      describe 'binding the current vm state' do
-        it 'binds current state for existing plans and obsolete plans' do
-          assembler.bind_instance_plans
-
-          expect(existing_instance).to have_received(:bind_current_state).with(existing_instance_state)
-        end
-      end
-
-      it 'marks obsolete plans for deletion' do
-        assembler.bind_instance_plans
-
-        expect(deployment_plan).to have_received(:mark_instance_for_deletion).with(obsolete_instance)
-      end
-    end
-
     it 'should bind stemcells' do
       sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
       sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
@@ -431,6 +358,47 @@ module Bosh::Director
     end
 
     describe '#migrate_legacy_state'
+
+    describe '#bind_current_instance_state' do
+
+      describe 'binding the current vm state' do
+        let(:new_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+        let(:existing_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: existing_instance_model) }
+        let(:obsolete_instance) { instance_double(Bosh::Director::DeploymentPlan::ExistingInstance, model: obsolete_instance_model) }
+
+        let(:existing_instance_model) { Bosh::Director::Models::Instance.make }
+        let(:obsolete_instance_model) { Bosh::Director::Models::Instance.make }
+
+        let(:existing_instance_state) do
+          {
+            'deployment' => 'simple',
+            'job' => { 'name' => existing_instance_model.job },
+            'index' => existing_instance_model.index
+          }
+        end
+
+        let(:new_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(desired_instance: new_instance, existing_instance: nil, instance: nil) }
+        let(:existing_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(desired_instance: existing_instance, existing_instance: existing_instance_model, instance: existing_instance) }
+        let(:obsolete_plan) { Bosh::Director::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: obsolete_instance_model, instance: nil) }
+        let(:instance_plans) {[new_plan, existing_plan, obsolete_plan]}
+
+        before do
+          allow(existing_instance).to receive(:bind_current_state)
+
+          existing_agent_client = instance_double(AgentClient)
+          allow(AgentClient).to receive(:with_vm).with(existing_instance_model.vm).and_return(existing_agent_client)
+          allow(existing_agent_client).to receive(:get_state).and_return(existing_instance_state)
+
+          allow(deployment_plan).to receive(:instance_plans) { [new_plan, existing_plan, obsolete_plan] }
+        end
+
+        it 'binds current state for existing plans and obsolete plans' do
+          assembler.bind_current_instance_states(instance_plans)
+
+          expect(existing_instance).to have_received(:bind_current_state).with(existing_instance_state)
+        end
+      end
+    end
 
     describe '#bind_instance_networks' do
       it 'binds unallocated VMs for each job' do

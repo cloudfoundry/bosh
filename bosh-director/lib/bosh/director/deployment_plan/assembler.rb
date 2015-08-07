@@ -25,40 +25,25 @@ module Bosh::Director
       end
     end
 
-    def bind_instance_plans
-      new_instance_plans, existing_instance_plans = @deployment_plan.instance_plans.partition(&:new?)
-
-      new_instance_plans.each do |instance_plan|
-        instance_plan.instance.bind_new_instance_model
-      end
-
-      existing_instance_plans.
-        reject(&:obsolete?).     # no need to bind obsolete instances. they were created from the existing instance already
-        each do |instance_plan|
-        instance_plan.instance.bind_existing_instance_model(instance_plan.existing_instance)
-      end
-
+    def bind_current_instance_states(instance_plans)
       lock = Mutex.new # lock because bind_current_state isn't thread safe
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        existing_instance_plans.
-          reject(&:obsolete?).     # no need to update state of obsolete instances. they're going to be deleted
+        instance_plans.
+          reject(&:obsolete?). # no need to update state of obsolete instances. they're going to be deleted
+          reject(&:new?).      # new instances won't have state yet
           each do |instance_plan|
-          if instance_plan.instance.model.vm
-            pool.process do
-              with_thread_name("binding agent state for (#{instance_plan.instance.model.job}/#{instance_plan.instance.model.index})") do
-                # getting current state to obtain IP of dynamic networks
-                state = get_state(instance_plan.instance.model.vm)
-                lock.synchronize do
-                  instance_plan.instance.bind_current_state(state)
+            if instance_plan.existing_instance.vm
+              pool.process do
+                with_thread_name("binding agent state for (#{instance_plan.instance.model.job}/#{instance_plan.instance.model.index})") do
+                  # getting current state to obtain IP of dynamic networks
+                  state = get_state(instance_plan.existing_instance.vm)
+                  lock.synchronize do
+                    instance_plan.instance.bind_current_state(state)
+                  end
                 end
               end
             end
-          end
         end
-      end
-
-      @deployment_plan.instance_plans.select(&:obsolete?).each do |instance_plan|
-        @deployment_plan.mark_instance_for_deletion(instance_plan.instance)
       end
     end
 

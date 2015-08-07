@@ -123,8 +123,22 @@ module Bosh
             assembler.bind_job_renames
 
             instance_planner = InstancePlanner.new(@logger)
-            planner.instance_plans = instance_planner.create_instance_plans(planner.existing_instances, planner.desired_instances)
-            assembler.bind_instance_plans
+            desired_jobs = planner.jobs
+
+            desired_jobs.each do |desired_job|
+              desired_instances = desired_job.desired_instances
+              existing_instances = desired_job.existing_instances
+              instance_plans_for_desired_instances = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
+              desired_job.instance_plans = instance_plans_for_desired_instances
+            end
+
+            all_the_instance_plans = desired_jobs.flat_map(&:instance_plans)
+            assembler.bind_current_instance_states(all_the_instance_plans)
+
+            instance_plans_obsolete_within_a_job = desired_jobs.flat_map(&:instance_plans).select(&:obsolete?)
+            instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, planner.existing_instances)
+            obsolete_instance_plans = instance_plans_for_obsolete_jobs + instance_plans_obsolete_within_a_job
+            obsolete_instance_plans.map(&:instance).each { |instance| planner.mark_instance_for_deletion(instance) }
 
             assembler.mark_unknown_vms_for_deletion
           end

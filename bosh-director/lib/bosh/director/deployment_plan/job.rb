@@ -125,6 +125,29 @@ module Bosh::Director
         job_spec["templates"] = [template]
       end
 
+      def desired_instances
+        instances
+      end
+
+      def existing_instances
+        deployment.instance_models.select { |model| model.job == name }
+      end
+
+      attr_accessor :instance_plans
+
+      # FIXME: do this rename
+      def instances
+        if @instance_plans.nil? # horrible hack until we rename instance to desired_instances
+          @instances
+        else
+          instance_plans.reject(&:obsolete?).map(&:instance)
+        end
+      end
+
+      def unneeded_instances
+        instance_plans.select(&:obsolete?).map(&:instance)
+      end
+
       # Returns job spec as a Hash. To be used by all instances of the job to
       # populate agent state.
       # @return [Hash] Hash representation

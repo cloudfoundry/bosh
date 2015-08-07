@@ -4,14 +4,14 @@ module Bosh
       class InstancePlan
         def initialize(attrs)
           @existing_instance = attrs.fetch(:existing_instance)
+          @desired_instance = attrs.fetch(:desired_instance)
           @instance = attrs.fetch(:instance)
-          @obsolete = attrs.fetch(:obsolete, false)
         end
 
-        attr_reader :instance, :existing_instance
+        attr_reader :desired_instance, :existing_instance, :instance
 
         def obsolete?
-          @obsolete
+          desired_instance.nil?
         end
 
         def new?

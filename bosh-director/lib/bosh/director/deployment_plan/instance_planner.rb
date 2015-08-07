@@ -6,27 +6,8 @@ module Bosh
           @logger = logger
         end
 
-        def create_instance_plans(existing_instances, desired_instances)
-          plans_for_desired_instances = desired_instances.group_by(&:job).flat_map do |job, desired_instances_for_job|
-            instance_plans = plan_job_instances(job, desired_instances_for_job, existing_instances)
-            instance_plans
-          end
-
-          used_existing_instances = Set.new(plans_for_desired_instances.reject(&:new?).map(&:existing_instance))
-          obsolete_existing_instance = Set.new(existing_instances).difference(used_existing_instances)
-
-          plans_for_obsolete_instances = obsolete_existing_instance.map do |instance_model|
-            instance = ExistingInstance.create_from_model(instance_model, @logger)
-            InstancePlan.new(instance: instance, obsolete: true, existing_instance: instance_model)
-          end
-
-          plans_for_desired_instances + plans_for_obsolete_instances
-        end
-
-        private
-
         def plan_job_instances(job, desired_instances, existing_instances)
-          desired_instances.map do |desired_instance|
+          desired_instance_plans = desired_instances.map do |desired_instance|
             # TODO: look at job AZs eventually
             existing_instance = existing_instances.find do |existing_instance|
               existing_instance.job == desired_instance.job.name &&
@@ -34,10 +15,30 @@ module Bosh
             end
 
             if existing_instance
-              InstancePlan.new(instance: desired_instance, existing_instance: existing_instance)
+              desired_instance.bind_existing_instance_model(existing_instance)
+              InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: desired_instance)
             else
-              InstancePlan.new(instance: desired_instance, existing_instance: nil)
+              desired_instance.bind_new_instance_model
+              InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: desired_instance)
             end
+          end
+
+          obsolete_existing_instances = (existing_instances - desired_instance_plans.map(&:existing_instance))
+          obsolete_instance_plans = obsolete_existing_instances.map do |existing_instance|
+            instance = ExistingInstance.create_from_model(existing_instance, @logger)
+            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
+          end
+
+          desired_instance_plans + obsolete_instance_plans
+        end
+
+        def plan_obsolete_jobs(desired_jobs, existing_instances)
+          desired_job_names = Set.new(desired_jobs.map(&:name))
+          existing_instances.reject do |existing_instance_model|
+            desired_job_names.include?(existing_instance_model.job)
+          end.map do |existing_instance|
+            instance = ExistingInstance.create_from_model(existing_instance, @logger)
+            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
         end
       end

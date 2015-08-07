@@ -107,10 +107,6 @@ module Bosh::Director
         instance_models
       end
 
-      def desired_instances
-        @jobs.flat_map(&:instances)
-      end
-
       # Returns a list of Vms in the deployment (according to DB)
       # @return [Array<Models::Vm>]
       def vm_models
