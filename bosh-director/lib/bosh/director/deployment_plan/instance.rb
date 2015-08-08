@@ -30,6 +30,24 @@ module Bosh::Director
 
       attr_reader :deployment
 
+      def self.fetch_existing(desired_instance, existing_instance, index, az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, az, logger)
+        instance.bind_existing_instance_model(existing_instance)
+        instance
+      end
+
+      def self.create(desired_instance, index, az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, az, logger)
+        instance.bind_new_instance_model
+        instance
+      end
+
+      def self.fetch_obsolete(existing_instance, logger)
+        ExistingInstance.create_from_model(existing_instance, logger)
+      end
+
+
+
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance

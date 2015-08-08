@@ -360,12 +360,14 @@ describe Bosh::Director::DeploymentPlan::Job do
   describe '#bind_unallocated_vms' do
     subject(:job) { described_class.new(deployment, logger) }
 
-    it 'allocates a VM to all instances if they are not already bound to a VM' do
+    it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[0] = instance0
-
       instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[1] = instance1
+      instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
+      instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
+      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
+
+      job.instance_plans = [instance_plan0, instance_plan1, obsolete_plan]
 
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
@@ -381,10 +383,12 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
       instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[0] = instance0
-
       instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[1] = instance1
+      instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
+      instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
+      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
+
+      job.instance_plans = [instance_plan0, instance_plan1, obsolete_plan]
 
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_model_bound).with(no_args).ordered

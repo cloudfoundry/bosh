@@ -96,6 +96,7 @@ module Bosh::Director
         @properties = nil # Actual job properties
 
         @instances = []
+        @desired_instances = []
         @unneeded_instances = []
         @instance_states = {}
         @default_network = {}
@@ -127,23 +128,14 @@ module Bosh::Director
         job_spec["templates"] = [template]
       end
 
-      def desired_instances
-        instances
-      end
-
       def existing_instances
         deployment.instance_models.select { |model| model.job == name }
       end
 
-      attr_accessor :instance_plans
+      attr_accessor :instance_plans, :desired_instances
 
-      # FIXME: do this rename
-      def instances
-        if @instance_plans.nil? # horrible hack until we rename instance to desired_instances
-          @instances
-        else
-          instance_plans.reject(&:obsolete?).map(&:instance)
-        end
+      def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
+        instance_plans.reject(&:obsolete?).map(&:instance)
       end
 
       def unneeded_instances

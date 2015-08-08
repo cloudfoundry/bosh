@@ -46,7 +46,8 @@ module Bosh::Director
         availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
 
-        parse_instances(availability_zones, networks) # will populate job.instances
+        desired_instances = parse_desired_instances(availability_zones, networks)
+        @job.desired_instances = desired_instances
 
         @job
       end
@@ -226,7 +227,7 @@ module Bosh::Director
         @job.update = UpdateConfig.new(update_spec, @deployment.update)
       end
 
-      def parse_instances(availability_zones, networks)
+      def parse_desired_instances(availability_zones, networks)
         @job.state = safe_property(@job_spec, "state", class: String, optional: true)
         job_size = safe_property(@job_spec, "instances", class: Integer)
         instance_states = safe_property(@job_spec, "instance_states", class: Hash, default: {})
@@ -265,10 +266,9 @@ module Bosh::Director
             "Invalid state `#{@job.state}' for `#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
         end
 
-        job_size.times do |index|
+        job_size.times.map do |index|
           instance_state = @job.instance_state(index)
-          availability_zone = AvailabilityZonePicker.new.pick_from(availability_zones, index)
-          @job.instances[index] = Instance.new(@job, index, instance_state, @deployment, availability_zone, @logger)
+          DesiredInstance.new(@job, instance_state, @deployment)
         end
       end
 

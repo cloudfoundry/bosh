@@ -2,30 +2,33 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlanner
-        def initialize(logger)
+        def initialize(logger, instance_factory)
           @logger = logger
+          @instance_repo = instance_factory
         end
 
         def plan_job_instances(job, desired_instances, existing_instances)
-          desired_instance_plans = desired_instances.map do |desired_instance|
-            # TODO: look at job AZs eventually
-            existing_instance = existing_instances.find do |existing_instance|
-              existing_instance.job == desired_instance.job.name &&
-                existing_instance.index == desired_instance.index
+          unbound_existing_instances = Set.new(existing_instances)
+          desired_instance_plans = desired_instances.each_with_index.map do |desired_instance, index|
+            existing_instance = find_matching_instance(job, unbound_existing_instances, desired_instance)
+            unless existing_instance.nil?
+              unbound_existing_instances.delete(existing_instance)
             end
 
+            availability_zone = AvailabilityZonePicker.new.pick_from(job.availability_zones, index)
+
             if existing_instance
-              desired_instance.bind_existing_instance_model(existing_instance)
-              InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: desired_instance)
+              instance = @instance_repo.fetch_existing(desired_instance, existing_instance, index, availability_zone, @logger)
+              InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: instance)
             else
-              desired_instance.bind_new_instance_model
-              InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: desired_instance)
+              instance = @instance_repo.create(desired_instance, index, availability_zone, @logger)
+              InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
             end
           end
 
-          obsolete_existing_instances = (existing_instances - desired_instance_plans.map(&:existing_instance))
+          obsolete_existing_instances = unbound_existing_instances.to_a
           obsolete_instance_plans = obsolete_existing_instances.map do |existing_instance|
-            instance = ExistingInstance.create_from_model(existing_instance, @logger)
+            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
 
@@ -37,9 +40,15 @@ module Bosh
           existing_instances.reject do |existing_instance_model|
             desired_job_names.include?(existing_instance_model.job)
           end.map do |existing_instance|
-            instance = ExistingInstance.create_from_model(existing_instance, @logger)
+            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
+        end
+
+        private
+
+        def find_matching_instance(job, existing_instances, desired_instance)
+          existing_instances.sort_by(&:index).first
         end
       end
     end

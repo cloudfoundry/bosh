@@ -639,31 +639,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     describe 'update key'
 
     describe 'instances key' do
-      context 'with availability zones' do
-        it 'distributes the instances evenly' do
-          set_up_azs!(['zone1', 'zone2', 'zone3'], job_spec, deployment_plan)
-          allow(network).to receive(:validate_has_job!)
-          job_spec['instances'] = 11
+      it 'parses out desired instances' do
+        job = parser.parse(job_spec)
 
-          job = parser.parse(job_spec)
-
-          expect(job.instances.map(&:availability_zone_name)).to eq([
-                'zone1', 'zone2', 'zone3',
-                'zone1', 'zone2', 'zone3',
-                'zone1', 'zone2', 'zone3',
-                'zone1', 'zone2',
-              ])
-        end
-
-      end
-      context 'without availability zones' do
-        it 'puts the instances in no availability zone' do
-          job_spec['instances'] = 3
-
-          job = parser.parse(job_spec)
-
-          expect(job.instances.map(&:availability_zone_name)).to eq([nil, nil, nil])
-        end
+        expect(job.desired_instances).to eq([
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment_plan),
+            ])
       end
     end
 
