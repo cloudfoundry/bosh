@@ -1,9 +1,50 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-# Copyright (c) 2012 Piston Cloud Computing, Inc.
-
 require "spec_helper"
 
 describe Bosh::OpenStackCloud::Cloud do
+  describe 'connecting to the OpenStack Volume Service' do
+    it 'connects when creating a volume' do
+      unique_name = SecureRandom.uuid
+      disk_params = {
+        :display_name => "volume-#{unique_name}",
+        :display_description => "",
+        :size => 2
+      }
+      volume = double("volume", :id => "v-foobar")
+  
+      cloud = mock_cloud do |openstack|
+        allow(openstack.volumes).to receive(:create).
+          with(disk_params).and_return(volume)
+      end
+  
+      allow(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      allow(cloud).to receive(:wait_resource).with(volume, :available)
+
+      expect(Fog::Volume).to receive(:new)
+      expect(cloud.create_disk(2048, {})).to eq("v-foobar")
+    end
+
+    it "connects when creating an OpenStack boot volume" do
+      unique_name = SecureRandom.uuid
+      stemcell_id = SecureRandom.uuid
+      disk_params = {
+        :display_name => "volume-#{unique_name}",
+        :size => 2,
+        :imageRef => stemcell_id
+      }
+      boot_volume = double("volume", :id => "v-foobar")
+
+      cloud = mock_cloud do |openstack|
+        allow(openstack.volumes).to receive(:create).
+          with(disk_params).and_return(boot_volume)
+      end
+
+      allow(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      allow(cloud).to receive(:wait_resource).with(boot_volume, :available)
+
+      expect(Fog::Volume).to receive(:new)
+      expect(cloud.create_boot_disk(2048, stemcell_id)).to eq("v-foobar")
+    end
+  end
 
   it "creates an OpenStack volume" do
     unique_name = SecureRandom.uuid
@@ -15,12 +56,12 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      expect(openstack.volumes).to receive(:create).
+      allow(openstack.volumes).to receive(:create).
         with(disk_params).and_return(volume)
     end
 
-    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
-    expect(cloud).to receive(:wait_resource).with(volume, :available)
+    allow(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    allow(cloud).to receive(:wait_resource).with(volume, :available)
 
     expect(cloud.create_disk(2048, {})).to eq("v-foobar")
   end
