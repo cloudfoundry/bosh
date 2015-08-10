@@ -106,7 +106,7 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 There are a few extra steps you need to do before building a Photon OS image:
 
 1. Start up or re-provision the stemcell building machine (run `vagrant up` or `vagrant provision` from this directory)
-2. Download the [Photon Latest ISO](https://vmware.bintray.com/photon/iso/) image and use `scp` to copy it to the stemcell building machine. Please download Photon ISO of version TP2-dev or TP2. Note: Photon TP2 is not yet released. Please use TP2-dev ISO to build stemcell.
+2. Download the [latest Photon ISO image](https://vmware.bintray.com/photon/iso/) and use `scp` to copy it to the stemcell building machine. The version must be TP2-dev or newer.
 3. On the stemcell building machine, mount the Photon ISO at `/mnt/photon`:
 
         # mkdir -p /mnt/photon
