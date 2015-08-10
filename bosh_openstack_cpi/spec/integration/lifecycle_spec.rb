@@ -49,9 +49,9 @@ describe Bosh::OpenStackCloud::Cloud do
         'config_drive' => config_drive,
         'ignore_server_availability_zone' => @ignore_server_az,
         'connection_options' => {
-          'connect_timeout' => @connect_timeout.to_i,
-          'read_timeout' => @read_timeout.to_i,
-          'write_timeout' => @write_timeout.to_i,
+          'connect_timeout' => @connect_timeout,
+          'read_timeout' => @read_timeout,
+          'write_timeout' => @write_timeout,
         }
       },
       'registry' => {
