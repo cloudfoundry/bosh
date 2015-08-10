@@ -23,7 +23,8 @@ describe Bosh::AwsCloud::StemcellCreator do
   context "real" do
     let(:volume) { double("volume") }
     let(:snapshot) { double("snapshot", :id => "snap-xxxxxxxx") }
-    let(:image) { double("image") }
+    let(:image_id) { "ami-a1b2c3d4" }
+    let(:image) { double("image", :id => image_id) }
     let(:ebs_volume) { double("ebs_volume") }
 
     it "should create a real stemcell" do
@@ -31,7 +32,10 @@ describe Bosh::AwsCloud::StemcellCreator do
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(snapshot: snapshot, state: :completed)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_image).with(image: image, state: :available)
       allow(SecureRandom).to receive(:uuid).and_return("fake-uuid")
-      allow(region).to receive_message_chain(:images, :create).and_return(image)
+      allow(region).to receive(:images).and_return({
+        image_id => image,
+      })
+      allow(region).to receive_message_chain(:client, :register_image).and_return(double("object", :image_id => image_id))
 
       expect(creator).to receive(:copy_root_image)
       expect(volume).to receive(:create_snapshot).and_return(snapshot)
@@ -75,10 +79,18 @@ describe Bosh::AwsCloud::StemcellCreator do
         expect(params[:description]).to eq("stemcell-name 0.7.0")
         expect(params[:kernel_id]).to eq("aki-xxxxxxxx")
         expect(params[:root_device_name]).to eq("/dev/sda1")
-        expect(params[:block_device_mappings]).to eq({
-          "/dev/sda"=>{:snapshot_id=>"id"},
-          "/dev/sdb"=>"ephemeral0"
-        })
+        expect(params[:block_device_mappings]).to eq([
+          {
+            :device_name => "/dev/sda",
+            :ebs => {
+              :snapshot_id => "id",
+            },
+          },
+          {
+            :device_name => "/dev/sdb",
+            :virtual_name => "ephemeral0",
+          },
+        ])
       end
     end
 
@@ -93,10 +105,18 @@ describe Bosh::AwsCloud::StemcellCreator do
         expect(params).not_to have_key(:kernel_id)
         expect(params[:root_device_name]).to eq("/dev/xvda")
         expect(params[:sriov_net_support]).to eq("simple")
-        expect(params[:block_device_mappings]).to eq({
-          "/dev/xvda"=>{:snapshot_id=>"id"},
-          "/dev/sdb"=>"ephemeral0"
-        })
+        expect(params[:block_device_mappings]).to eq([
+          {
+            :device_name => "/dev/xvda",
+            :ebs => {
+              :snapshot_id => "id",
+            },
+          },
+          {
+            :device_name => "/dev/sdb",
+            :virtual_name => "ephemeral0",
+          },
+        ])
         expect(params[:virtualization_type]).to eq("hvm")
       end
     end

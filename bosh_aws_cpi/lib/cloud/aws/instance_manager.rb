@@ -74,7 +74,7 @@ module Bosh::AwsCloud
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
 
-      aws_instance = create_aws_instance(instance_params, resource_pool["spot_bid_price"])
+      aws_instance = create_aws_instance(instance_params, resource_pool)
 
       instance = Instance.new(aws_instance, @registry, @elb, @logger)
 
@@ -126,22 +126,31 @@ module Bosh::AwsCloud
       instance_params
     end
 
-    def create_aws_instance(instance_params, spot_bid_price)
-      if spot_bid_price
-        @logger.info("Launching spot instance...")
-        spot_manager = Bosh::AwsCloud::SpotManager.new(@region)
-        spot_manager.create(instance_params, spot_bid_price)
-      else
-        # Retry the create instance operation a couple of times if we are told that the IP
-        # address is in use - it can happen when the director recreates a VM and AWS
-        # is too slow to update its state when we have released the IP address and want to
-        # realocate it again.
-        errors = [AWS::EC2::Errors::InvalidIPAddress::InUse, AWS::EC2::Errors::RequestLimitExceeded]
-        Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 20, on: errors) do |tries, error|
-          @logger.info("Launching on demand instance...")
-          @logger.warn("IP address was in use: #{error}") if tries > 0
-          @region.instances.create(instance_params)
+    def create_aws_spot_instance(instance_params, spot_bid_price)
+      @logger.info("Launching spot instance...")
+      spot_manager = Bosh::AwsCloud::SpotManager.new(@region)
+
+      spot_manager.create(instance_params, spot_bid_price)
+    end
+
+    def create_aws_instance(instance_params, resource_pool)
+      if resource_pool["spot_bid_price"]
+        begin
+          return create_aws_spot_instance instance_params, resource_pool["spot_bid_price"]
+        rescue Bosh::Clouds::VMCreationFailed => e
+          raise unless resource_pool["spot_ondemand_fallback"]
         end
+      end
+
+      # Retry the create instance operation a couple of times if we are told that the IP
+      # address is in use - it can happen when the director recreates a VM and AWS
+      # is too slow to update its state when we have released the IP address and want to
+      # realocate it again.
+      errors = [AWS::EC2::Errors::InvalidIPAddress::InUse, AWS::EC2::Errors::RequestLimitExceeded]
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 20, on: errors) do |tries, error|
+        @logger.info("Launching on demand instance...")
+        @logger.warn("IP address was in use: #{error}") if tries > 0
+        @region.instances.create(instance_params)
       end
     end
 
