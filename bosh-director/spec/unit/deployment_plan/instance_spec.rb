@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
@@ -300,11 +301,12 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'creates a new uuid for each instance' do
-        first_instance = Instance.new(job, index, state, plan, logger)
+        allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
+        first_instance = Instance.new(job, index, state, plan, availability_zone, logger)
         first_instance.bind_unallocated_vm
         first_uuid = first_instance.uuid
         index = 1
-        second_instance = Instance.new(job, index, state, plan, logger)
+        second_instance = Instance.new(job, index, state, plan, availability_zone, logger)
         second_instance.bind_unallocated_vm
         second_uuid = second_instance.uuid
         expect(first_uuid).to_not be_nil
@@ -429,6 +431,7 @@ module Bosh::Director::DeploymentPlan
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'id' => 'uuid-1',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
@@ -460,6 +463,7 @@ module Bosh::Director::DeploymentPlan
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'id' => 'uuid-1',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},

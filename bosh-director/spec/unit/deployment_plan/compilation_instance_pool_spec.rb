@@ -79,13 +79,14 @@ module Bosh::Director
       end
 
       it 'applies vm state' do
-        allow(SecureRandom).to receive(:uuid).and_return('deadbeef')
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
         expected_apply_spec = {
           'deployment' => 'mycloud',
           'job' =>{
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
+          'id' => 'uuid-1',
           'networks' => {
             'network name' => 'network settings'
           },

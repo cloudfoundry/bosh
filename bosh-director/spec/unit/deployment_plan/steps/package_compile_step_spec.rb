@@ -287,6 +287,7 @@ module Bosh::Director
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
+          'id' => 'deadbeef',
           'networks' => {'default' => 'network settings'},
           'resource_pool' => {},
           'packages' => {},

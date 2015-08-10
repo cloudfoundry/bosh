@@ -540,7 +540,7 @@ module Bosh::Director
         Models::Instance.find_or_create(conditions) do |model|
           model.state = 'started'
           model.compilation = @job.compilation?
-          model.uuid = SecureRandom.uuid()
+          model.uuid = SecureRandom.uuid
         end
       end
 
