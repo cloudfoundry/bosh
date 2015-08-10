@@ -19,8 +19,8 @@ describe 'global networking', type: :integration do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
       deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
 
-      compilation_vm_ips = current_sandbox.cpi.read_inputs('create_vm').map do |input|
-        input.networks['a']['ip']
+      compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+        invocation.inputs['networks']['a']['ip']
       end
 
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
@@ -37,8 +37,8 @@ describe 'global networking', type: :integration do
       failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'fails_with_too_much_output')
       deploy_simple_manifest(manifest_hash: failing_compilation_manifest, failure_expected: true)
 
-      compilation_vm_ips = current_sandbox.cpi.read_inputs('create_vm').map do |input|
-        input.networks['a']['ip']
+      compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+        invocation.inputs['networks']['a']['ip']
       end
 
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
@@ -56,8 +56,8 @@ describe 'global networking', type: :integration do
 
       director.wait_for_first_available_vm
 
-      compilation_vm_ips = current_sandbox.cpi.read_inputs('create_vm').map do |input|
-        input.networks['a']['ip']
+      compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+        invocation.inputs['networks']['a']['ip']
       end
 
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
