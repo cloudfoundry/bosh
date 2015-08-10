@@ -226,6 +226,10 @@ module Bosh::Spec
         job_hash['networks'].first['static_ips'] = opts[:static_ips]
       end
 
+      if opts[:persistent_disk_pool]
+        job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
+      end
+
       job_hash
     end
 
