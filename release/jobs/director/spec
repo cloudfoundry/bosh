@@ -410,6 +410,9 @@ properties:
   openstack.ignore_server_availability_zone:
     description: When creating disks do not use the servers AZ, default to openstack default
     default: false
+  openstack.use_openstack_volume_service:
+    description: Option to disable cpi volume endpoint check (by default true so it won't affect cpi initialization)
+    default: true
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

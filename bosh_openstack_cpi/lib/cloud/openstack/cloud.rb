@@ -47,6 +47,7 @@ module Bosh::OpenStackCloud
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
       @use_dhcp = @openstack_properties.fetch('use_dhcp', true)
+      @use_openstack_volume_service = @openstack_properties.fetch('use_openstack_volume_service', true)
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -118,14 +119,16 @@ module Bosh::OpenStackCloud
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
-
-      begin
-        Bosh::Common.retryable(connect_retry_options) do |tries, error|
-          @logger.error("Failed #{tries} times, last failure due to: #{error.inspect}") unless error.nil?
-          @volume = Fog::Volume.new(volume_params)
+      
+      if @use_openstack_volume_service
+        begin
+          Bosh::Common.retryable(connect_retry_options) do |tries, error|
+            @logger.error("Failed #{tries} times, last failure due to: #{error.inspect}") unless error.nil?
+            @volume = Fog::Volume.new(volume_params)
+          end
+        rescue Bosh::Common::RetryCountExceeded, Excon::Errors::ClientError, Excon::Errors::ServerError
+          cloud_error('Unable to connect to the OpenStack Volume API. Check task debug log for details.')
         end
-      rescue Bosh::Common::RetryCountExceeded, Excon::Errors::ClientError, Excon::Errors::ServerError
-        cloud_error('Unable to connect to the OpenStack Volume API. Check task debug log for details.')
       end
 
       @metadata_lock = Mutex.new
