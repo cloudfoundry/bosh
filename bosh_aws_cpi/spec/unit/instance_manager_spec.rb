@@ -787,6 +787,26 @@ describe Bosh::AwsCloud::InstanceManager do
           end
         end
       end
+
+      describe 'placement_group' do
+        context 'when resource pool has placement group' do
+          let(:resource_pool) do
+            {
+              'placement_group' => 'foo',
+            }
+          end
+
+          it 'should set the placement group' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:placement_group]).to eq('foo')
+            end
+          end
+        end
+      end
     end
 
   end
