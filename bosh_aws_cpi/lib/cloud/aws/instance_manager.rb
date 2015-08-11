@@ -112,6 +112,7 @@ module Bosh::AwsCloud
       ephemeral_disk_options["instance_type"] = resource_pool["instance_type"]
       instance_params[:block_device_mappings] = block_device_mapping(ephemeral_disk_options)
       instance_params[:placement_group] = resource_pool["placement_group"] if resource_pool["placement_group"]
+      instance_params[:dedicated_tenancy] = true if resource_pool["tenancy"] == "dedicated"
 
       set_user_data_parameter(instance_params, networks_spec)
       set_key_name_parameter(instance_params, resource_pool["key_name"], options["aws"]["default_key_name"])
