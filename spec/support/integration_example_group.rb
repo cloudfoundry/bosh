@@ -84,8 +84,8 @@ module IntegrationExampleGroup
 
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
-    @deployment_manifest = yaml_file('simple', manifest_hash)
-    bosh_runner.run("deployment #{@deployment_manifest.path}", options)
+    deployment_manifest = yaml_file('simple', manifest_hash)
+    bosh_runner.run("deployment #{deployment_manifest.path}", options)
   end
 
   def deploy(options)
@@ -131,10 +131,9 @@ module IntegrationExampleGroup
   end
 
   def yaml_file(name, object)
-    Tempfile.new(name).tap do |f|
-      f.write(Psych.dump(object))
-      f.close
-    end
+    FileUtils.mkdir_p(ClientSandbox.manifests_dir)
+    file_path = File.join(ClientSandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
+    File.open(file_path, 'w') { |f| f.write(Psych.dump(object)); f }
   end
 
   def spec_asset(name)
