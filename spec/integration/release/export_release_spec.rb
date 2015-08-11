@@ -229,6 +229,36 @@ describe 'export release', type: :integration do
         expect(files).to include("compiled_packages","release.MF","jobs")
       end
     end
-  end
 
+    it 'logs the packages and jobs names and versions while copying them' do
+      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+
+      expect(out).to include('Started copying packages')
+      expect(out).to include('Started copying packages > stuff/0.1.17. Done')
+      expect(out).to include('Started copying packages > mutator/2.99.7. Done')
+      expect(out).to include('Done copying packages')
+
+      expect(out).to include('Started copying jobs')
+      expect(out).to include('Started copying jobs > cacher/1. Done')
+      expect(out).to include('Started copying jobs > cleaner/2. Done')
+      expect(out).to include('Started copying jobs > sweeper/24. Done')
+      expect(out).to include('Done copying jobs')
+    end
+
+    it 'logs the full release.MF in the director debug log' do
+      export_release_output = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      task_number =  export_release_output[/Task \d+ done/][/\d+/]
+
+      debug_task_output = bosh_runner.run("task #{task_number} --debug")
+
+      expect(debug_task_output).to include('release.MF contents of appcloud/0.1 compiled release tarball:')
+      expect(debug_task_output).to include('name: appcloud')
+      expect(debug_task_output).to include('version: \'0.1\'')
+      expect(debug_task_output).to include('- name: stuff')
+      expect(debug_task_output).to include('- name: mutator')
+      expect(debug_task_output).to include('- name: cacher')
+      expect(debug_task_output).to include('- name: cleaner')
+      expect(debug_task_output).to include('- name: sweeper')
+    end
+  end
 end
