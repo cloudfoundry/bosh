@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 describe 'drain', type: :integration do
-  describe 'static drain' do
-    with_reset_sandbox_before_all
+  with_reset_sandbox_before_each
 
-    before(:all) do
+  describe 'static drain' do
+    before do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['resource_pools'].first['size'] = 1
 
@@ -33,9 +33,7 @@ describe 'drain', type: :integration do
   end
 
   describe 'dynamic drain' do
-    with_reset_sandbox_before_all
-
-    before(:all) do
+    before do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['resource_pools'].first['size'] = 1
 
@@ -61,8 +59,6 @@ describe 'drain', type: :integration do
   end
 
   context 'when skip-drain flag is provided' do
-    with_reset_sandbox_before_each
-
     let(:manifest_with_drain) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['jobs'][0]['instances'] = 1
