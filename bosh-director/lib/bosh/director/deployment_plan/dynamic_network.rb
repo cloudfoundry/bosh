@@ -38,7 +38,7 @@ module Bosh::Director
       def reserve(reservation)
         @logger.debug("Reserving IP for dynamic network '#{@name}'")
 
-        reservation.validate_type(DynamicNetworkReservation)
+        reservation.mark_reserved_as(DynamicNetworkReservation)
       end
 
       ##

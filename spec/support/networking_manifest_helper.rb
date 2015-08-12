@@ -5,10 +5,10 @@ module Bosh::Spec
       manifest['name'] = opts.fetch(:name, 'simple')
 
       if opts[:template]
-        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(templates: [{'name' => opts[:template]}])]
+        opts.merge!(templates: [{'name' => opts[:template]}])
       end
+      manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(opts)]
 
-      manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
       manifest
     end
 

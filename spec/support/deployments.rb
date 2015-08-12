@@ -84,31 +84,31 @@ module Bosh::Spec
 
     def self.manifest_with_jobs
       {
-          'name' => 'minimal',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'minimal',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-                             'name'    => 'appcloud',
-                             'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-                         }],
+        'releases' => [{
+            'name' => 'appcloud',
+            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+          }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          },
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 1,
+          'update_watch_time' => 20
+        },
 
-          'jobs' => [{
-                         'name'          => 'cacher',
-                         'templates'      => [{
-                                                  'name'    => 'cacher',
-                                                  'release' => 'appcloud'
-                                              }],
-                         'resource_pool' => 'a',
-                         'instances'     => 3,
-                         'networks'      => [{ 'name' => 'a' }],
-                     }]
+        'jobs' => [{
+            'name' => 'cacher',
+            'templates' => [{
+                'name' => 'cacher',
+                'release' => 'appcloud'
+              }],
+            'resource_pool' => 'a',
+            'instances' => 3,
+            'networks' => [{'name' => 'a'}],
+          }]
       }
     end
 

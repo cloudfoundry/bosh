@@ -1,20 +1,33 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe NetworkReservation do
+  describe 'NetworkReservation' do
     let(:instance) { instance_double(DeploymentPlan::Instance) }
-    let(:network) { instance_double(DeploymentPlan::Network) }
+    let(:deployment_plan) { instance_double(DeploymentPlan::Planner, using_global_networking?: true, name: 'fake-deployment') }
+    let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
+    let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
+    let(:network_spec) do
+      Bosh::Spec::Deployments.network
+    end
+    let(:network) do
+      DeploymentPlan::ManualNetwork.new(
+        network_spec,
+        global_network_resolver,
+        ip_provider_factory,
+        logger
+      )
+    end
 
-    describe StaticNetworkReservation do
-      let(:reservation) { StaticNetworkReservation.new(instance, network, '0.0.0.1') }
+    describe 'StaticNetworkReservation' do
+      let(:reservation) { StaticNetworkReservation.new(instance, network, '192.168.1.10') }
 
       describe :bind_existing do
         it "should bind to the static reservation if it's valid" do
-          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
-          allow(other).to receive(:reserved?).and_return(true)
+          other = UnboundNetworkReservation.new(instance, network, '192.168.1.10')
+          other.reserve
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
-          expect(reservation.ip).to eq(1)
+          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.10'))
         end
 
         it 'should not take the reservation if it is not unbound' do
@@ -29,14 +42,22 @@ module Bosh::Director
           allow(other).to receive(:reserved?).and_return(true)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
-          expect(reservation.ip).to eq(1)
+          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.10'))
         end
 
         it 'should not take the reservation if it is not reserved' do
-          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
+          other = UnboundNetworkReservation.new(instance, network, '192.168.1.10')
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
-          expect(reservation.ip).to eq(1)
+          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.10'))
+        end
+
+        it 'should not take the reservation if it is not in static range' do
+          reservation = StaticNetworkReservation.new(instance, network, '192.168.1.2')
+          other = UnboundNetworkReservation.new(instance, network, '192.168.1.2')
+          other.reserve
+          reservation.bind_existing(other)
+          expect(reservation.reserved?).to eq(false)
         end
       end
     end
@@ -46,11 +67,11 @@ module Bosh::Director
 
       describe :bind_existing do
         it "should bind to the dynamic reservation if it's valid" do
-          other = UnboundNetworkReservation.new(instance, network, '0.0.0.1')
-          allow(other).to receive(:reserved?).and_return(true)
+          other = UnboundNetworkReservation.new(instance, network, '192.168.1.2')
+          other.reserve
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
-          expect(reservation.ip).to eq(1)
+          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2'))
         end
 
         it 'should not take the reservation if it is not unbound' do
@@ -75,7 +96,6 @@ module Bosh::Director
         it 'reserves on a network' do
           expect(network).to receive(:reserve).with(reservation)
           reservation.reserve
-          expect(reservation.reserved?).to eq(true)
         end
 
         context 'when IP is outside of subnet range' do

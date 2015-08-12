@@ -138,24 +138,24 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
       expect {
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.5'))
-      }.to raise_error BD::NetworkReservationAlreadyInUse,
-          "Failed to reserve ip '192.168.0.5' " +
-            "for network 'net_a' (192.168.0.0/24): already reserved"
+      }.to raise_error BD::NetworkReservationIpReserved,
+          "Failed to reserve IP '192.168.0.5' " +
+            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
 
       expect {
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.10'))
-      }.to raise_error BD::NetworkReservationAlreadyInUse,
-          "Failed to reserve ip '192.168.0.10' " +
-            "for network 'net_a' (192.168.0.0/24): already reserved"
+      }.to raise_error BD::NetworkReservationIpReserved,
+          "Failed to reserve IP '192.168.0.10' " +
+            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
 
       subnet.reserve_ip(create_dynamic_reservation('192.168.0.11'))
       subnet.reserve_ip(create_dynamic_reservation('192.168.0.253'))
 
       expect {
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.254'))
-      }.to raise_error BD::NetworkReservationAlreadyInUse,
-          "Failed to reserve ip '192.168.0.254' " +
-            "for network 'net_a' (192.168.0.0/24): already reserved"
+      }.to raise_error BD::NetworkReservationIpReserved,
+          "Failed to reserve IP '192.168.0.254' " +
+            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
     end
 
     context 'when there are reserved ranges' do
@@ -169,7 +169,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
         expect {
           subnet.reserve_ip(create_dynamic_reservation('192.168.0.1'))
-        }.to raise_error BD::NetworkReservationAlreadyInUse
+        }.to raise_error BD::NetworkReservationIpReserved
       end
 
       it 'should allocate dynamic IPs outside of those ranges' do
@@ -223,7 +223,7 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
 
       expect {
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.254'))
-      }.to raise_error BD::NetworkReservationAlreadyInUse
+      }.to raise_error BD::NetworkReservationIpReserved
     end
 
     it 'should fail when the static IP is not valid' do

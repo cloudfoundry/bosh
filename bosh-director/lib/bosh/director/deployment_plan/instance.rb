@@ -413,6 +413,7 @@ module Bosh::Director
       end
 
       def delete
+        @logger.debug("Deleting instance '#{self}'")
         @network_reservations.each do |reservation|
           reservation.release if reservation.reserved?
         end

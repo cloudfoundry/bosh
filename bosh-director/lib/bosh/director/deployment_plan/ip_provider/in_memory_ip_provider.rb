@@ -29,24 +29,20 @@ module Bosh::Director
       def reserve_ip(reservation)
         ip = CIDRIP.new(reservation.ip)
         if @available_static_ips.delete?(ip.to_i)
-          reservation.validate_type(StaticNetworkReservation)
+          reservation.mark_reserved_as(StaticNetworkReservation)
           @logger.debug("Reserved static ip '#{ip}' for #{@network_desc}")
 
         elsif available_for_dynamic?(ip)
-          reservation.validate_type(DynamicNetworkReservation)
+          reservation.mark_reserved_as(DynamicNetworkReservation)
           @reserved_dynamic_ips.add(ip.to_i)
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
 
-        elsif reservation.is_a?(UnboundNetworkReservation)
-          # for existing reservations DatabaseIpProvider can verify if IP belongs to the same instance
-          # InMemoryIpProvider has no knowledge which instance is requesting IP
-          # so we allow this reservation to happen unless it is restricted now
-          if @restricted_ips.include?(ip.to_i)
-            @logger.debug("IP '#{ip}' is in reserved range now")
-            raise NetworkReservationIpReserved, "IP '#{ip}' is in reserved range now"
-          end
+        elsif @restricted_ips.include?(ip.to_i)
+          message = "Failed to reserve IP '#{ip}' for #{@network_desc}: belongs to reserved range"
+          @logger.error(message)
+          raise NetworkReservationIpReserved, message
         else
-          message = "Failed to reserve ip '#{ip}' for #{@network_desc}: already reserved"
+          message = "Failed to reserve IP '#{ip}' for #{@network_desc}: already reserved"
           @logger.error(message)
           raise NetworkReservationAlreadyInUse, message
         end

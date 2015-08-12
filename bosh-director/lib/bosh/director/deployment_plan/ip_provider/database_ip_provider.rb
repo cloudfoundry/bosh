@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
     def reserve_ip(reservation)
       cidr_ip = CIDRIP.new(reservation.ip)
       if @restricted_ips.include?(cidr_ip.to_i)
-        message = "Failed to reserve ip '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range"
+        message = "Failed to reserve IP '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range"
         @logger.error(message)
         raise Bosh::Director::NetworkReservationIpReserved, message
       end
@@ -45,10 +45,10 @@ module Bosh::Director::DeploymentPlan
       reserve_with_instance_validation(reservation.instance, cidr_ip)
 
       if @static_ips.include?(cidr_ip.to_i)
-        reservation.validate_type(Bosh::Director::StaticNetworkReservation)
+        reservation.mark_reserved_as(Bosh::Director::StaticNetworkReservation)
         @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
       else
-        reservation.validate_type(Bosh::Director::DynamicNetworkReservation)
+        reservation.mark_reserved_as(Bosh::Director::DynamicNetworkReservation)
         @logger.debug("Reserved dynamic ip '#{cidr_ip}' for #{@network_desc}")
       end
     end
@@ -119,7 +119,7 @@ module Bosh::Director::DeploymentPlan
         return ip_address
       else
         raise Bosh::Director::NetworkReservationAlreadyInUse,
-          "Failed to reserve ip '#{ip}' for instance '#{instance}': " +
+          "Failed to reserve IP '#{ip}' for instance '#{instance}': " +
             "already reserved by instance '#{reserved_instance.job}/#{reserved_instance.index}' " +
             "from deployment '#{reserved_instance.deployment.name}'"
       end

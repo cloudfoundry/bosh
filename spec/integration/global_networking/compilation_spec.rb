@@ -26,7 +26,7 @@ describe 'global networking', type: :integration do
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
 
       current_sandbox.cpi.commands.allow_create_vm_to_succeed
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, static_ips: ['192.168.1.2', '192.168.1.3'])
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(director.vms.map(&:ips)).to contain_exactly('192.168.1.2', '192.168.1.3')
     end
