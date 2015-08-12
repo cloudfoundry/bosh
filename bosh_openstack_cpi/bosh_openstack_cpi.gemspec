@@ -8,7 +8,7 @@ version = Bosh::OpenStackCloud::VERSION
 
 Gem::Specification.new do |s|
   s.name        = 'bosh_openstack_cpi'
-  s.version     = '1.3033.1'
+  s.version     = version
   s.platform    = Gem::Platform::RUBY
   s.summary     = 'BOSH OpenStack CPI'
   s.description = "BOSH OpenStack CPI\n#{`git rev-parse HEAD`[0, 6]}"
