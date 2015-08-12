@@ -103,7 +103,11 @@ module Bosh::Cli::Command
 
         begin
           if repack
-            package_matches = match_remote_packages(tarball.manifest)
+            if tarball.compiled_release?
+              package_matches = match_remote_compiled_packages(tarball.manifest)
+            else
+              package_matches = match_remote_packages(tarball.manifest)
+            end
 
             say('Checking if can repack release for faster upload...')
             repacked_path = tarball.repack(package_matches)
@@ -182,6 +186,18 @@ module Bosh::Cli::Command
           "package matches.\nThis will result in uploading all packages " +
           "and jobs to your director.\nIt is recommended to update your " +
           'director or downgrade your CLI to 0.19.6'
+
+        say(msg.make_yellow)
+        exit(1) unless confirmed?
+      end
+
+      def match_remote_compiled_packages(manifest_yaml)
+        director.match_compiled_packages(manifest_yaml)
+      rescue Bosh::Cli::DirectorError
+        msg = "You are using CLI >= 0.20 with director that doesn't support " +
+            "package matches.\nThis will result in uploading all packages " +
+            "and jobs to your director.\nIt is recommended to update your " +
+            'director or downgrade your CLI to 0.19.6'
 
         say(msg.make_yellow)
         exit(1) unless confirmed?

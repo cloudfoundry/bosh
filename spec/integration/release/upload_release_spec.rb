@@ -258,6 +258,24 @@ describe 'upload release', type: :integration do
       expect(output).to include('Compiled Release uploaded')
     end
 
+    it 'should not do any expensive operations for 2nd upload of a compiled release tarball' do
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to match(/^hello-go.*UPLOAD$/)
+      expect(output).to match(/Uploading the whole release/)
+      expect(output).to match(/Started creating new packages/)
+      expect(output).to match(/Started creating new compiled packages/)
+      expect(output).to match(/Started creating new jobs/)
+
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to match(/^hello-go.*SKIP$/)
+      expect(output).to match(/Release repacked/)
+      expect(output).to_not match(/Uploading the whole release/)
+      expect(output).to_not match(/Started creating new packages/)
+      expect(output).to_not match(/Started creating new compiled packages/)
+      expect(output).to_not match(/Started creating new jobs/)
+    end
+
     it 'show actions in the event log' do
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")

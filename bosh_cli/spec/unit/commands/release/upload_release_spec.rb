@@ -158,6 +158,7 @@ module Bosh::Cli::Command::Release
 
             it 'should not check if file is in release directory' do
               allow(director).to receive(:upload_release)
+              allow(director).to receive(:match_compiled_packages)
               expect(command).to_not receive(:check_if_release_dir)
               command.upload(tarball_path)
             end
