@@ -15,12 +15,12 @@
       'port' =>  p('registry.db.port'),
       'database' =>  p('registry.db.database'),
       'connection_options' => p('registry.db.connection_options'),
-    },
-    'cloud' => {}
+    }
   }
 
-  cloud_params = params['cloud']
   if_p('aws.access_key_id', 'aws.secret_access_key', 'aws.region') do |access_key_id, secret_access_key, region| 
+    params['cloud'] = {}
+    cloud_params = params['cloud']
     cloud_params['plugin'] = 'aws'
     cloud_params['aws'] = {
       'access_key_id' =>  access_key_id,
@@ -48,6 +48,8 @@
   end
 
   if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant|
+    params['cloud'] = {}
+    cloud_params = params['cloud']
     cloud_params['plugin'] = 'openstack'
     cloud_params['openstack'] = {
       'auth_url' =>  auth_url,
@@ -65,8 +67,6 @@
       cloud_params['openstack']['connection_options'] = connection_options
     end
   end
-
-  raise 'Could not find cloud plugin' if params['cloud']['plugin'].nil?
 
   JSON.dump(params)
 %>
