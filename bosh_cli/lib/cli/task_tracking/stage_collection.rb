@@ -30,7 +30,7 @@ module Bosh::Cli::TaskTracking
     end
 
     def update_with_event(event)
-      new_task = Task.new(self, event['task'], event['progress'], @callbacks)
+      new_task = Task.new(self, event['task'], event['index'], event['progress'], @callbacks)
       unless found_task = @tasks.find { |s| s == new_task }
         found_task = new_task
         @tasks << new_task
@@ -112,14 +112,15 @@ module Bosh::Cli::TaskTracking
   end
 
   class Task
-    attr_reader :stage, :name, :state, :progress, :error
+    attr_reader :stage, :name, :index, :state, :progress, :error
 
     extend Forwardable
     def_delegators :@total_duration, :duration, :started_at, :finished_at
 
-    def initialize(stage, name, progress, callbacks)
+    def initialize(stage, name, index, progress, callbacks)
       @stage = stage
       @name = name
+      @index = index
       @progress = progress
       @callbacks = callbacks
       @total_duration = TotalDuration.new
@@ -138,7 +139,7 @@ module Bosh::Cli::TaskTracking
 
     def ==(other)
       return false unless other.is_a?(Task)
-      [stage, name] == [other.stage, other.name]
+      [stage, index, name] == [other.stage, other.index, other.name]
     end
 
     def done?
