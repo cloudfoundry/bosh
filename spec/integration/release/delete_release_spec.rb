@@ -26,6 +26,7 @@ describe 'delete release', type: :integration do
 
     out = bosh_runner.run("delete release hello-go 50")
     expect(out).to match regexp("Started deleting packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393. Done")
+    expect(out).to match regexp("Started deleting jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08. Done")
     expect(out).to match regexp('Deleted `hello-go/50')
   end
 

@@ -63,7 +63,7 @@ module Bosh::Director
           package.remove_release_version(release_version)
         end
 
-        event_log.begin_stage("Deleting templates", templates_to_delete.count)
+        event_log.begin_stage("Deleting jobs", templates_to_delete.count)
         templates_to_delete.each do |template|
           track_and_log("#{template.name}/#{template.version}") do
             logger.info("Template #{template.name}/#{template.version} " +
@@ -74,7 +74,7 @@ module Bosh::Director
         end
 
         templates_to_keep.each do |template|
-          logger.info("Keeping template " +
+          logger.info("Keeping job " +
                       "#{template.name}/#{template.version} as it is used " +
                       "by other release versions")
           template.remove_release_version(release_version)
@@ -100,7 +100,7 @@ module Bosh::Director
           end
         end
 
-        event_log.begin_stage("Deleting templates", release.templates.count)
+        event_log.begin_stage("Deleting jobs", release.templates.count)
         release.templates.each do |template|
           track_and_log("#{template.name}/#{template.version}") do
             delete_template(template)
@@ -145,7 +145,7 @@ module Bosh::Director
       end
 
       def delete_template(template)
-        logger.info("Deleting template: #{template.name}/#{template.version}")
+        logger.info("Deleting job: #{template.name}/#{template.version}")
 
         if delete_blobstore_id(template.blobstore_id)
           template.remove_all_release_versions
