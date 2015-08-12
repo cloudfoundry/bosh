@@ -22,6 +22,30 @@ describe 'export release', type: :integration do
     end
   end
 
+  context 'with no source packages and no compiled packages against the targeted stemcell' do
+    before {
+      target_and_login
+
+      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+    }
+
+    it 'should raise an error' do
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+
+      set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
+      deploy({})
+
+      expect(
+         out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
+      ).to match(/Error 60001: Can't export `test_release\/1': it is not compiled for `ubuntu-stemcell\/1' and no source package is available/)
+    end
+  end
+
   context 'when there are two versions of the same release uploaded' do
     before {
       target_and_login

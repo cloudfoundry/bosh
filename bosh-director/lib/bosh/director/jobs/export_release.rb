@@ -50,6 +50,7 @@ module Bosh::Director
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
 
               planner = create_planner
+              DeploymentPlan::PlannerFactory.validate_packages(planner, {:context => 'export'})
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                   planner,
                   Config.cloud, # CPI

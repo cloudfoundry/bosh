@@ -51,6 +51,7 @@ releases:
         EOF
 
         allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
+        allow(DeploymentPlan::PlannerFactory).to receive(:validate_packages)
         allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
         allow(targeted_deployment).to receive(:manifest).and_return(targeted_deployment_manifest)
 
