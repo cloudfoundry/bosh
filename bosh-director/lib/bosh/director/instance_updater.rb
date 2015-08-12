@@ -60,7 +60,6 @@ module Bosh::Director
         @logger.debug('Failed to update in place. Recreating VM')
         recreate_vm(nil)
       end
-      @instance.release_original_network_reservations
 
       update_dns
       update_persistent_disk
@@ -93,10 +92,13 @@ module Bosh::Director
 
       network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
       success = network_updater.update
+
       unless success
         @logger.info('Failed to update networks on live vm, recreating with new network configurations')
         return false
       end
+
+      @instance.release_original_network_reservations
 
       update_settings
 
