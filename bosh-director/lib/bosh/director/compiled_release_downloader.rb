@@ -17,7 +17,7 @@ module Bosh::Director
       FileUtils.mkpath(path)
 
       compiled_packages = @compiled_packages_group.compiled_packages
-      event_log.begin_stage("copying packages", compiled_packages.size)
+      event_log.begin_stage("copying packages", compiled_packages.count)
 
       compiled_packages.each do |compiled_package|
         desc = "#{compiled_package.package.name}/#{compiled_package.package.version}"
@@ -32,7 +32,7 @@ module Bosh::Director
       path = File.join(@download_dir, 'jobs')
       FileUtils.mkpath(path)
 
-      event_log.begin_stage("copying jobs", @templates.size)
+      event_log.begin_stage("copying jobs", @templates.count)
       @templates.each do |template|
         desc = "#{template.name}/#{template.version}"
         event_log.track(desc) do
