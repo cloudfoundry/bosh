@@ -23,6 +23,13 @@ describe Bosh::Registry do
         Bosh::Registry.configure(config)
       }.to raise_error(Bosh::Registry::ConfigError, /Database configuration is missing/)
 
+      config = valid_config
+      config.delete("cloud")
+
+      expect {
+        Bosh::Registry.configure(config)
+      }.to_not raise_error
+
       config = valid_config.merge("cloud" => nil)
 
       expect {
@@ -108,6 +115,32 @@ describe Bosh::Registry do
 
       im = Bosh::Registry.instance_manager
       expect(im).to be_kind_of(Bosh::Registry::InstanceManager::Openstack)
+    end
+
+    it "reads provided configuration file and sets singletons for Azure" do
+      allow(Fog::Compute).to receive(:new)
+
+      config = valid_config
+      config.delete("cloud")
+      Bosh::Registry.configure(config)
+
+      logger = Bosh::Registry.logger
+
+      expect(logger).to be_kind_of(Logger)
+      expect(logger.level).to eq(Logger::DEBUG)
+
+      expect(Bosh::Registry.http_port).to eq(25777)
+      expect(Bosh::Registry.http_user).to eq("admin")
+      expect(Bosh::Registry.http_password).to eq("admin")
+
+      db = Bosh::Registry.db
+      expect(db).to be_kind_of(Sequel::SQLite::Database)
+      expect(db.opts[:database]).to eq("/:memory:")
+      expect(db.opts[:max_connections]).to eq(433)
+      expect(db.opts[:pool_timeout]).to eq(227)
+
+      im = Bosh::Registry.instance_manager
+      expect(im).to be_kind_of(Bosh::Registry::InstanceManager)
     end
 
   end
