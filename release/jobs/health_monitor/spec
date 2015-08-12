@@ -2,8 +2,9 @@
 name: health_monitor
 
 templates:
-  health_monitor_ctl.erb: bin/health_monitor_ctl
+  health_monitor_ctl:     bin/health_monitor_ctl
   health_monitor.yml.erb: config/health_monitor.yml
+  properties.sh.erb: bin/properties.sh
   uaa.pem.erb: config/uaa.pem
   syslog_event_forwarder.conf.erb: config/syslog_event_forwarder.conf
 

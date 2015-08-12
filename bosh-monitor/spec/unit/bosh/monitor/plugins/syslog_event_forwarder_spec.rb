@@ -1,7 +1,11 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::SyslogEventForwarder do
-  subject(:plugin) { described_class.new.tap(&:run) }
+  subject(:plugin) do
+    subj = described_class.new
+    subj.run
+    subj
+  end
 
   it 'initializes the syslogger with bosh.hm as programname' do
     expect(plugin.sys_logger).not_to be_nil
@@ -23,4 +27,6 @@ describe Bhm::Plugins::SyslogEventForwarder do
 
     plugin.process(heartbeat)
   end
+
 end
+
