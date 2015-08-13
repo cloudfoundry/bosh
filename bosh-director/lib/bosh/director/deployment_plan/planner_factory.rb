@@ -56,32 +56,6 @@ module Bosh
           assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
         end
 
-        def self.validate_packages(planner, options)
-          release_manager = Bosh::Director::Api::ReleaseManager.new
-          planner.jobs.each { |job|
-            job.templates.each{ |template|
-              release_model = release_manager.find_by_name(template.release.name)
-              template.package_models.each{ |package|
-
-                release_version_model = release_manager.find_version(release_model, template.release.version)
-                packages_list = release_version_model.transitive_dependencies(package)
-                packages_list << package
-
-                packages_list.each { |needed_package|
-                  if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
-                    compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
-                    if compiled_packages_list.nil?
-                      msg = "Can't #{options[:context]} `#{release_version_model.release.name}/#{release_version_model.version}': it is not " +
-                          "compiled for `#{job.resource_pool.stemcell.model.desc}' and no source package is available"
-                      raise PackageMissingSourceCode, msg
-                    end
-                  end
-                }
-              }
-            }
-          }
-        end
-
         private
 
         def deployment_name(manifest_hash)
@@ -121,7 +95,7 @@ module Bosh
 
           run_prepare_step(assembler)
 
-          self.class.validate_packages(planner, {:context => 'deploy'})
+          validate_packages(planner)
 
           DeploymentPlan::Steps::PackageCompileStep.new(
             planner,
@@ -136,6 +110,32 @@ module Bosh
           end
 
           planner
+        end
+
+        def validate_packages(planner)
+          release_manager = Bosh::Director::Api::ReleaseManager.new
+          planner.jobs.each { |job|
+            job.templates.each{ |template|
+              release_model = release_manager.find_by_name(template.release.name)
+              template.package_models.each{ |package|
+
+                release_version_model = release_manager.find_version(release_model, template.release.version)
+                packages_list = release_version_model.transitive_dependencies(package)
+                packages_list << package
+
+                packages_list.each { |needed_package|
+                  if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+                    compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
+                    if compiled_packages_list.nil?
+                      msg = "Can't deploy `#{release_version_model.release.name}/#{release_version_model.version}': it is not " +
+                          "compiled for `#{job.resource_pool.stemcell.model.desc}' and no source package is available"
+                      raise PackageMissingSourceCode, msg
+                    end
+                  end
+                }
+              }
+            }
+          }
         end
 
         def run_prepare_step(assembler)

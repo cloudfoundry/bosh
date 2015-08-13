@@ -43,6 +43,8 @@ module Bosh::Director
           raise ReleaseNotMatchingManifest, "Release #{@release_name}/#{@release_version} not found in deployment #{@deployment_name} manifest"
         end
 
+        validate_release_packages
+
         lock_timeout = 15 * 60 # 15 minutes
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
@@ -50,7 +52,6 @@ module Bosh::Director
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
 
               planner = create_planner
-              DeploymentPlan::PlannerFactory.validate_packages(planner, {:context => 'export'})
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                   planner,
                   Config.cloud, # CPI
@@ -68,6 +69,8 @@ module Bosh::Director
         end
         "Exported release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}"
       end
+
+      private
 
       def deployment_manifest_has_release?
         @deployment_manifest["releases"].each do |release|
@@ -152,6 +155,24 @@ module Bosh::Director
         fake_job.release.bind_model
         fake_job.templates.each { |template| template.bind_models }
         fake_job
+      end
+
+      def validate_release_packages
+        @release_version_model.packages.each do |package|
+          packages_list = @release_version_model.transitive_dependencies(package)
+          packages_list << package
+
+          packages_list.each { |needed_package|
+            if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+              compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => @stemcell.id]
+              if compiled_packages_list.nil?
+                msg = "Can't export `#{@release_name}/#{@release_version}': it is not " +
+                    "compiled for `#{@stemcell.desc}' and no source package is available"
+                raise PackageMissingSourceCode, msg
+              end
+            end
+          }
+        end
       end
 
     end
