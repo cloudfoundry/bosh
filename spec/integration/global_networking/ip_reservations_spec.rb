@@ -379,11 +379,17 @@ describe 'global networking', type: :integration do
       expect(output).to include("Failed to reserve IP for 'foobar/1' for manual network 'a': no more available")
     end
 
-    it 'reuses IPs when one job is deleted and another created within a single deployment' do
-      pending("https://www.pivotaltracker.com/story/show/98057020")
+    it 'does not resuse IP if one job is deleted and another created within a single deployment' do
+      # Until https://www.pivotaltracker.com/story/show/98057020 we cannot reuse the same IP
+      # within single deployment
+
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
-      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'first-job', instances: 1)]
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(
+        name: 'first-job',
+        instances: 1,
+        templates: [{'name' => 'foobar_without_packages'}]
+      )]
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -391,8 +397,8 @@ describe 'global networking', type: :integration do
       expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['first-job/0'])
 
       manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
-      deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['second-job/0'])
+      output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+      expect(output).to include('no more available')
     end
 
     it 'keeps IPs of a job when that job fails to deploy its VMs' do
@@ -565,20 +571,6 @@ describe 'global networking', type: :integration do
 
         expect(new_cids).to_not match_array(original_cids)
         expect(new_ips).to match_array(original_ips)
-      end
-
-      it 'reuses IPs when one job is deleted and another created within a single deployment' do
-        skip 'https://www.pivotaltracker.com/story/show/98057020'
-
-        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', available_ips: 1)
-        manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'first-job', instances: 1)]
-
-        deploy_simple_manifest(manifest_hash: manifest_hash)
-        expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['first-job/0'])
-
-        manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
-        deploy_simple_manifest(manifest_hash: manifest_hash)
-        expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['second-job/0'])
       end
 
       it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
