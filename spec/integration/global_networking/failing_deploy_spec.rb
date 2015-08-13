@@ -70,4 +70,25 @@ describe 'failing deploy', type: :integration do
     deploy_simple_manifest(manifest_hash: second_manifest_hash)
     expect(director.vms('second').map(&:ips)).to eq(['192.168.1.10'])
   end
+
+  it 'releases IP when subsequent deploy does not need failing instance' do
+    current_sandbox.cpi.commands.make_create_vm_always_fail
+
+    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
+    deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+
+    failing_deploy_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+      invocation.inputs['networks']['a']['ip']
+    end
+
+    expect(failing_deploy_vm_ips).to eq(['192.168.1.2'])
+
+    current_sandbox.cpi.commands.allow_create_vm_to_succeed
+
+    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+    # IPs are not released within single deployment
+    # see https://www.pivotaltracker.com/story/show/98057020
+    expect(director.vms.map(&:ips)).to eq(['192.168.1.3'])
+  end
 end

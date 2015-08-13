@@ -12,10 +12,15 @@ module Bosh::Director
         @logger = logger
 
         @vm = Vm.new
-        @vm.model = @model.vm
 
-        @apply_spec = @model.vm.apply_spec
-        @env = @model.vm.env
+        if @model.vm
+          @vm.model = @model.vm
+          @apply_spec = @model.vm.apply_spec
+          @env = @model.vm.env
+        else
+          @apply_spec = {}
+          @env = {}
+        end
       end
 
       def job_name
@@ -24,6 +29,10 @@ module Bosh::Director
 
       def index
         @model.index
+      end
+
+      def name
+        "#{job_name}/#{index}"
       end
 
       def deployment_model

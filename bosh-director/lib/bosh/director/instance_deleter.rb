@@ -77,10 +77,10 @@ module Bosh::Director
 
     def delete_instance(instance, event_log_stage)
       vm_model = instance.model.vm
-      @logger.info("Delete unneeded instance: #{vm_model.cid}")
+      @logger.info("Delete unneeded instance '#{instance.name}'")
 
-      event_log_stage.advance_and_track(vm_model.cid) do
-        drain(vm_model) unless instance.model.compilation
+      event_log_stage.advance_and_track(instance.name) do
+        drain(vm_model) unless instance.model.compilation || vm_model.nil?
 
         vm_deleter.delete_for_instance(instance, skip_disks: true)
 

@@ -4,11 +4,12 @@ module Bosh::Director
   describe InstanceDeleter do
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:domain) { Models::Dns::Domain.make }
 
     before do
       @cloud = instance_double('Bosh::Cloud')
       allow(Config).to receive(:cloud).and_return(@cloud)
-      @deployment_plan = double('deployment_plan')
+      @deployment_plan = instance_double(DeploymentPlan::Planner, canonical_name: 'dep', dns_domain: domain)
       @deleter = InstanceDeleter.new(@deployment_plan)
     end
 
@@ -37,6 +38,8 @@ module Bosh::Director
           vm: vm,
           job_name: 'fake-job-name',
           index: 5,
+          name: 'fake-job-name/5',
+          release_original_network_reservations: nil
         )
       end
 
@@ -78,15 +81,12 @@ module Bosh::Director
         expect(@deleter).to receive(:delete_snapshots).with(instance.model)
         expect(@deleter).to receive(:delete_persistent_disks).with(persistent_disks)
         allow(Config).to receive(:dns_domain_name).and_return('bosh')
-        expect(@deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.foo.bosh', 0)
-        expect(@deployment_plan).to receive(:canonical_name).and_return('foo')
-        domain = double('domain', id:  0)
-        expect(@deployment_plan).to receive(:dns_domain).and_return(domain)
+        expect(@deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
         expect(@cloud).to receive(:delete_vm).with(vm.model.cid)
         expect(instance).to receive(:delete)
         expect(instance).to receive(:release_original_network_reservations)
 
-        expect(event_log_stage).to receive(:advance_and_track).with(vm.model.cid)
+        expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
         allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance.model, blobstore).and_return(job_templates_cleaner)
@@ -95,6 +95,15 @@ module Bosh::Director
         @deleter.delete_instances([instance], event_log_stage)
 
         expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
+      end
+
+      context 'when instance does not have vm' do
+        it 'skips drain' do
+          instance.model.vm = instance.vm.model = nil
+          expect(@deleter).to_not receive(:drain)
+          expect(instance).to receive(:delete)
+          @deleter.delete_instances([instance], event_log_stage)
+        end
       end
     end
 
@@ -171,9 +180,6 @@ module Bosh::Director
 
     describe :delete_dns do
       it 'should generate a correct SQL query string' do
-        domain = Models::Dns::Domain.make
-        allow(@deployment_plan).to receive(:canonical_name).and_return('dep')
-        allow(@deployment_plan).to receive(:dns_domain).and_return(domain)
         pattern = '0.foo.%.dep.bosh'
         allow(Config).to receive(:dns_domain_name).and_return('bosh')
         expect(@deleter).to receive(:delete_dns_records).with(pattern, domain.id)
