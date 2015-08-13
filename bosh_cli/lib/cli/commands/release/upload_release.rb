@@ -188,7 +188,6 @@ module Bosh::Cli::Command
           'director or downgrade your CLI to 0.19.6'
 
         say(msg.make_yellow)
-        exit(1) unless confirmed?
       end
 
       def match_remote_compiled_packages(manifest_yaml)
@@ -200,7 +199,6 @@ module Bosh::Cli::Command
             'director or downgrade your CLI to 0.19.6'
 
         say(msg.make_yellow)
-        exit(1) unless confirmed?
       end
 
       def should_convert_to_old_format?(version)
