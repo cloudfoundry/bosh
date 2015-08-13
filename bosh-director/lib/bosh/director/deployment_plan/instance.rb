@@ -45,6 +45,7 @@ module Bosh::Director
         @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
+        @bootstrap = @index.zero?
         @name = "#{@job.name}/#{@index}"
 
         @configuration_hash = nil
@@ -459,6 +460,7 @@ module Bosh::Director
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
+          'bootstrap' => @bootstrap,
           'id' => uuid,
           'availability_zone' => availability_zone,
           'networks' => network_settings,

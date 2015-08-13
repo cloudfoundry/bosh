@@ -432,6 +432,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
+            'bootstrap' => true,
             'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
@@ -465,6 +466,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
+            'bootstrap' => true,
             'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
@@ -713,8 +715,9 @@ module Bosh::Director::DeploymentPlan
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
-
+      let(:index) { 0 }
       before do
+
         network.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
@@ -747,7 +750,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
         expect(spec['availability_zone']).to eq('foo-az')
-
+        expect(spec['bootstrap']).to eq(true)
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do

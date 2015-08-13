@@ -296,7 +296,8 @@ module Bosh::Director
           'properties' => {},
           'dns_domain_name' => nil,
           'links' => {},
-          'persistent_disk' => 0
+          'persistent_disk' => 0,
+          'bootstrap' => true
         }
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
