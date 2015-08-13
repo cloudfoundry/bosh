@@ -227,6 +227,18 @@ module Bosh::AwsCloud
     end
 
     ##
+    # Check whether an OpenStack volume exists or not
+    #
+    # @param [String] disk_id OpenStack volume UUID
+    # @return [bool] whether the specific disk is there or not
+    def has_disk?(disk_id)
+      with_thread_name("has_disk?(#{disk_id})") do
+        @logger.info("Check the presence of disk with id `#{disk_id}'...")
+        @ec2.volumes[disk_id].exists?
+      end
+    end
+
+    ##
     # Delete EBS volume
     # @param [String] disk_id EBS volume id
     # @raise [Bosh::Clouds::CloudError] if disk is not in available state
@@ -304,13 +316,17 @@ module Bosh::AwsCloud
         instance = @ec2.instances[instance_id]
         volume = @ec2.volumes[disk_id]
 
+        if volume.exists?
+          detach_ebs_volume(instance, volume)
+        else
+          @logger.info("Disk `#{disk_id}' not found while trying to detach it from vm `#{instance_id}'...")
+        end
+
         update_agent_settings(instance) do |settings|
           settings["disks"] ||= {}
           settings["disks"]["persistent"] ||= {}
           settings["disks"]["persistent"].delete(disk_id)
         end
-
-        detach_ebs_volume(instance, volume)
 
         logger.info("Detached `#{disk_id}' from `#{instance_id}'")
       end
