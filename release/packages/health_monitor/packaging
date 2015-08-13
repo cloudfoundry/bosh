@@ -1,6 +1,6 @@
 set -e
 
-cd bosh/bosh-monitor
+pushd bosh/bosh-monitor
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 
@@ -19,3 +19,7 @@ EOF
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}
+
+popd
+
+cp $PWD/syslog_event_forwarder/setup_syslog_event_forwarder.sh ${BOSH_INSTALL_TARGET}/bin/setup_syslog_event_forwarder.sh

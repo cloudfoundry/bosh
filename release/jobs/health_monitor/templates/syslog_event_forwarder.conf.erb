@@ -1,0 +1,56 @@
+<% if p('hm.syslog_event_forwarder_enabled') %>
+#This is taken from https://github.com/cloudfoundry/loggregator/blob/d648809112be62df9663ac82a7bd39babc47fa28/bosh/jobs/metron_agent/templates/syslog_forwarder.conf.erb
+
+
+$ModLoad imuxsock                       # local message reception (rsyslog uses a datagram socket)
+$MaxMessageSize 4k                      # default is 2k
+$WorkDirectory /var/vcap/sys/rsyslog/buffered # where messages should be buffered on disk
+
+# Forward vcap messages to the aggregator
+#
+$ActionResumeRetryCount -1              # Try until the server becomes available
+$ActionQueueType LinkedList             # Allocate on-demand
+$ActionQueueFileName agg_backlog        # Spill to disk if queue is full
+$ActionQueueMaxDiskSpace 32m            # Max size for disk queue
+$ActionQueueLowWaterMark 2000           # Num messages. Assuming avg size of 512B, this is 1MiB.
+$ActionQueueHighWaterMark 8000          # Num messages. Assuming avg size of 512B, this is 4MiB. (If this is reached, messages will spill to disk until the low watermark is reached).
+$ActionQueueTimeoutEnqueue 0            # Discard messages if the queue + disk is full
+$ActionQueueSaveOnShutdown on           # Save in-memory data to disk if rsyslog shuts down
+
+# Listen for logs over UDP
+#
+$ModLoad imudp
+$UDPServerAddress 127.0.0.1
+$UDPServerRun 514
+
+
+template(name="BoshLogTemplate" type="list") {
+constant(value="<")
+property(name="pri")
+constant(value=">")
+property(name="timestamp" dateFormat="rfc3339")
+constant(value=" __CURRENT_IP__ ")
+property(name="programname")
+constant(value=" [job=<%= spec.job.name %> index=<%= spec.index %>] ")
+property(name="msg")
+}
+
+<% if_p("hm.syslog_event_forwarder.address", "hm.syslog_event_forwarder.port", "hm.syslog_event_forwarder.transport") do |address, port, transport| %>
+
+# Keep filtered programname in sync with syslog_event_forwarder.rb
+    <% if transport == "relp" %>
+        $ModLoad omrelp
+        if $programname == 'bosh.hm' then :omrelp:<%= address %>:<%= port %>;BoshLogTemplate
+    <% elsif transport == "udp" %>
+        if $programname == 'bosh.hm' then @<%= address %>:<%= port %>;BoshLogTemplate
+    <% elsif transport == "tcp" %>
+        if $programname == 'bosh.hm' then @@<%= address %>:<%= port %>;BoshLogTemplate
+    <% else %>
+        #only RELP, UDP, and TCP are supported
+    <% end %>
+
+<% end  %>
+
+# Prevent them from reaching anywhere else
+:programname, startswith, "vcap." ~
+<% end %>
