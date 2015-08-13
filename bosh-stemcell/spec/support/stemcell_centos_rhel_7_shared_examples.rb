@@ -13,6 +13,8 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
       it { should contain 'selinux=0' }
       it { should contain 'plymouth.enable=0' }
       it { should_not contain 'xen_blkfront.sda_is_xvda=1'}
+      # single-user mode boot should be disabled (stig: V-38586)
+      it { should_not contain 'single' }
     end
 
     # GRUB 0.97 configuration (used only on Amazon PV hosts) must have same kernel params as GRUB 2

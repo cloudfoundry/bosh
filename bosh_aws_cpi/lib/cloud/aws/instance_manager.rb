@@ -153,19 +153,15 @@ module Bosh::AwsCloud
       ephemeral_volume_type = ephemeral_disk_options.fetch('type', 'standard')
       instance_type = ephemeral_disk_options.fetch('instance_type', '')
 
-      if ephemeral_volume_size_in_mb > 0
-        instance_storage_size_gb = InstanceManager::InstanceStorageMap[instance_type]
+      instance_storage_size_gb = InstanceManager::InstanceStorageMap[instance_type]
 
-        if instance_storage_size_gb != nil && instance_storage_size_gb >= ephemeral_volume_size_in_gb
-          # Use instance storage as it is enough for the ephemeral disk
-          @logger.debug('Use instance storage to create the virtual machine')
-          block_device_mapping_param = default_ephemeral_disk_mapping
-        else
-          @logger.debug('Use EBS storage to create the virtual machine')
-          block_device_mapping_param = ebs_ephemeral_disk_mapping ephemeral_volume_size_in_gb, ephemeral_volume_type
-        end
+      if instance_storage_size_gb.nil? || instance_storage_size_gb < ephemeral_volume_size_in_gb
+        @logger.debug('Use EBS storage to create the virtual machine')
+
+        ephemeral_volume_size_in_gb = 10 if ephemeral_volume_size_in_gb == 0
+        block_device_mapping_param = ebs_ephemeral_disk_mapping ephemeral_volume_size_in_gb, ephemeral_volume_type
       else
-        # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
+        @logger.debug('Use instance storage to create the virtual machine')
         block_device_mapping_param = default_ephemeral_disk_mapping
       end
 

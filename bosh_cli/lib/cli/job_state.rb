@@ -24,9 +24,10 @@ module Bosh::Cli
         recreate: '%s has been recreated'
     }
 
-    def initialize(command, vm_state)
+    def initialize(command, vm_state, options)
       @command = command
       @vm_state = vm_state
+      @options = options
     end
 
     def change(state, job, index)
@@ -48,7 +49,7 @@ module Bosh::Cli
     end
 
     def perform_vm_state_change(job, index, new_state, operation_desc)
-      vm_state.change(job, index, new_state, operation_desc)
+      vm_state.change(job, index, new_state, operation_desc, @options)
     end
   end
 end

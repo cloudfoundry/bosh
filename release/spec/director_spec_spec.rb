@@ -9,4 +9,7 @@ describe 'director job spec' do
     expect(spec_yaml['properties']['director.trusted_certs']['default']).to eq('')
   end
 
+  it 'defaults director.ignore_missing_gateway to false' do
+    expect(spec_yaml['properties']['director.ignore_missing_gateway']['default']).to eq(false)
+  end
 end

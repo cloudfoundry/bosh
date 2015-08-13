@@ -11,15 +11,14 @@ $ cd bosh
 $ bundle exec rake spec:system:existing_micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>,<disk_format>]
 ```
 
-* <infrastructure> - the type of infrastructure director is running on. (e.g. `aws`, `openstack`, `vsphere`, `vcloud`, `warden`)
-* <hypervisor> - the stemcell hypervisor (`hvm` or `xen`)
-* <os_name> - the name of OS used in stemcell (`ubuntu` or `centos`)
-* <os_version> - the version of OS (e.g. `trusty`)
-* <network_type> - the type of network being tested (`manual` or `dynamic`).
-* <agent_type> - the agent type that is running on stemcell (e.g. `go`). There used to be `ruby` agent, which is no longer supported by BOSH, so this argument probably will go away soon from rake task.
-* <light_stemcell_flag> - the boolean flag that indicates if stemcell type is light (for `aws` stemcells).
-* <disk_format> - the disk format that stemcell is using (e.g. raw, qcow2, ovf, files)
- 
+* **infrastructure** - the type of infrastructure director is running on. (e.g. `aws`, `openstack`, `vsphere`, `vcloud`, `warden`)
+* **hypervisor** - the stemcell hypervisor (`hvm` or `xen`)
+* **os_name** - the name of OS used in stemcell (`ubuntu` or `centos`)
+* **os_version** - the version of OS (e.g. `trusty`)
+* **network_type** - the type of network being tested (`manual` or `dynamic`).
+* **agent_type** - the agent type that is running on stemcell (e.g. `go`). There used to be `ruby` agent, which is no longer supported by BOSH, so this argument probably will go away soon from rake task.
+* **light_stemcell_flag** - the boolean flag that indicates if stemcell type is light (for `aws` stemcells).
+* **disk_format** - the disk format that stemcell is using (e.g. raw, qcow2, ovf, files)
 
 There are some infrastructure specific BATs and BATs that depend on network type.
 
@@ -36,7 +35,7 @@ See previos section for arguments meaning.
 
 ## Specifying the stemcell that is being tested
 
-`CANDIDATE_BUILD_NUMBER` environment variable determines which stemcell is being tested in rake tasks. 
+`CANDIDATE_BUILD_NUMBER` environment variable determines which stemcell is being tested in rake tasks.
 
 If it is set then rake tasks will download the public stemcell of the given number of type based on arguments specified in rake tasks (e.g. light aws ubuntu trusty stemcell).
 
@@ -56,4 +55,3 @@ export BAT_NETWORKING=<networking type, manual/dynamic>
 export BAT_VCAP_PASSWORD=<password for vcap user>
 export BAT_STEMCELL=<Path to stemcell ex: $PWD/stemcell/stemcell.tgz>
 ```
-

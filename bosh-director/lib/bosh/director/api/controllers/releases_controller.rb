@@ -60,6 +60,11 @@ module Bosh::Director
 
       get '/:name', scope: :read do
         name = params[:name].to_s.strip
+
+        if params['version']
+          return inspect_release(name, params['version'])
+        end
+
         release = @release_manager.find_by_name(name)
 
         result = { }
@@ -100,6 +105,44 @@ module Bosh::Director
         task = @release_manager.delete_release(current_user, release, options)
         redirect "/tasks/#{task.id}"
       end
+
+      private
+
+      def inspect_release(name, version)
+        release = @release_manager.find_by_name(name)
+        release_version = @release_manager.find_version(release, version)
+
+        result = { }
+
+        result['jobs'] = release_version.templates.sort_by { |t| t.name }.map do |template|
+          {
+              'name' => template.name,
+              'blobstore_id' => template.blobstore_id,
+              'sha1' => template.sha1,
+              'fingerprint' => template.fingerprint.to_s,
+          }
+        end
+
+        result['packages'] = release_version.packages.sort_by { |p| p.name }.map do |package|
+          {
+              'name' => package.name,
+              'blobstore_id' => package.blobstore_id,
+              'sha1' => package.sha1,
+              'fingerprint' => package.fingerprint.to_s,
+              'compiled_packages' => package.compiled_packages.sort_by { |cp| cp.stemcell }.map do |compiled|
+                {
+                    'stemcell' => "#{compiled.stemcell.name}/#{compiled.stemcell.version}",
+                    'sha1' => compiled.sha1,
+                    'blobstore_id' => compiled.blobstore_id,
+                }
+              end
+          }
+        end
+
+        content_type(:json)
+        json_encode(result)
+      end
+
     end
   end
 end

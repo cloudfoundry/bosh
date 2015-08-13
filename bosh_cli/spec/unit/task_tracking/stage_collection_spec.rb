@@ -82,7 +82,7 @@ module Bosh::Cli::TaskTracking
     describe '#update_with_event' do
       context 'when task name does not match any existing tasks in the stage' do
         before { stage.update_with_event('task' => 'fake-task1') }
-        event = { 'task' => 'fake-task2', 'progress' => 'fake-progress' }
+        event = { 'task' => 'fake-task2', 'index' => 2, 'progress' => 'fake-progress' }
 
         it 'adds a new task' do
           expect {
@@ -92,7 +92,7 @@ module Bosh::Cli::TaskTracking
 
         it 'sends the event to the new task' do
           new_task = instance_double('Bosh::Cli::TaskTracking::Task', name: 'fake-task2')
-          allow(Task).to receive(:new).with(stage, 'fake-task2', 'fake-progress', callbacks).and_return(new_task)
+          allow(Task).to receive(:new).with(stage, 'fake-task2', 2, 'fake-progress', callbacks).and_return(new_task)
 
           expect(new_task).to receive(:update_with_event).with(event)
           stage.update_with_event(event)
@@ -330,14 +330,14 @@ module Bosh::Cli::TaskTracking
       context 'when all tasks is not finished' do
 
         it 'sums the durations of all tasks' do
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'time' => 100)
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'time' => 39560)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'index' => 1, 'time' => 100)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'index' => 1, 'time' => 39560)
 
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'time' => 200)
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'time' => 39660)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'index' => 2, 'time' => 200)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'index' => 2, 'time' => 39660)
 
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'time' => 300)
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'finished', 'time' => 39760)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'index' => 3, 'time' => 300)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'finished', 'index' => 3, 'time' => 39760)
 
           expect(stage.duration).to eq(39660)
         end
@@ -345,13 +345,13 @@ module Bosh::Cli::TaskTracking
 
       context 'when one of the tasks is not finished' do
         it 'returns nil' do
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'time' => 100)
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'time' => 39560)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'started', 'index' => 1, 'time' => 100)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task1', 'state' => 'finished', 'index' => 2, 'time' => 39560)
 
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'time' => 200)
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'time' => 39660)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'started', 'index' => 2, 'time' => 200)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task2', 'state' => 'finished', 'index' => 3, 'time' => 39660)
 
-          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'time' => 300)
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task3', 'state' => 'started', 'index' => 3, 'time' => 300)
 
           expect(stage.duration).to be(nil)
         end
@@ -361,7 +361,7 @@ module Bosh::Cli::TaskTracking
   end
 
   describe Task do
-    subject(:task) { described_class.new(stage, 'fake-task', 0, callbacks) }
+    subject(:task) { described_class.new(stage, 'fake-task', 0, 0, callbacks) }
     let(:stage) { Stage.new('fake-stage', ['fake-tag'], 0, {}) }
     let(:callbacks) { {} }
 
@@ -410,7 +410,6 @@ module Bosh::Cli::TaskTracking
         task.update_with_event('state' => 'finished', 'time' => 100)
         expect(task.duration).to be(nil)
       end
-
 
       context 'when the task is started' do
         it 'calls task_start callback' do
@@ -525,6 +524,41 @@ module Bosh::Cli::TaskTracking
         it 'is true' do
           expect(task).not_to be_finished
         end
+      end
+    end
+
+    describe 'equality' do
+      it 'is not equal when type is not a task' do
+        expect(task).to_not eq('not a task')
+      end
+
+      it 'is equal if stage, name, and index match' do
+        task = Task.new(stage, 'task-name', 0, 0, {})
+        same_task = Task.new(stage, 'task-name', 0, 0, {})
+
+        expect(task).to eq(same_task)
+      end
+
+      it 'is not equal if stages differ' do
+        other_stage = Stage.new('other-stage', ['fake-tag'], 0, {})
+        task = Task.new(stage, 'task-name', 0, 0, {})
+        other_task = Task.new(other_stage, 'task-name', 0, 0, {})
+
+        expect(task).to_not eq(other_task)
+      end
+
+      it 'is not equal if name differs' do
+        task = Task.new(stage, 'task-name-1', 0, 0, {})
+        same_task = Task.new(stage, 'task-name-2', 0, 0, {})
+
+        expect(task).to_not eq(same_task)
+      end
+
+      it 'is not equal if index differs' do
+        task = Task.new(stage, 'task-name', 0, 0, {})
+        same_task = Task.new(stage, 'task-name', 1, 0, {})
+
+        expect(task).to_not eq(same_task)
       end
     end
   end

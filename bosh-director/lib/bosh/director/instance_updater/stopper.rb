@@ -1,14 +1,27 @@
 module Bosh::Director
   class InstanceUpdater::Stopper
-    def initialize(instance, agent_client, target_state, config, logger)
+    def initialize(instance, agent_client, target_state, skip_drain, config, logger)
       @instance = instance
       @agent_client = agent_client
       @target_state = target_state
+      @skip_drain = skip_drain
       @config = config
       @logger = logger
     end
 
     def stop
+      if @skip_drain
+        @logger.info("Skipping drain for '#{@instance}'")
+      else
+        perform_drain
+      end
+
+      @agent_client.stop
+    end
+
+    private
+
+    def perform_drain
       drain_type = shutting_down? ? 'shutdown' : 'update'
 
       # Apply spec might change after shutdown drain (unlike update drain)
@@ -21,11 +34,7 @@ module Bosh::Director
       else
         wait_for_dynamic_drain(drain_time)
       end
-
-      @agent_client.stop
     end
-
-    private
 
     def shutting_down?
       @instance.resource_pool_changed? ||

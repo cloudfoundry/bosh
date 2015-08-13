@@ -51,13 +51,13 @@ module Bosh::Cli::TaskTracking
 
       context 'when it is called after task start' do
         before { presenter.start_task(last_task) }
-        let(:last_task) { Task.new(last_stage, 'fake-last-task', 0, {}) }
+        let(:last_task) { Task.new(last_stage, 'fake-last-task', 1, 0, {}) }
         it_prints_full_stage_start_message
       end
 
       context 'when it is called after task end' do
         before { presenter.end_task(last_task, 'fake-prefix', nil) }
-        let(:last_task) { Task.new(last_stage, 'fake-last-task', 0, {}) }
+        let(:last_task) { Task.new(last_stage, 'fake-last-task', 1, 0, {}) }
         it_prints_full_stage_start_message
       end
 
@@ -131,13 +131,13 @@ module Bosh::Cli::TaskTracking
 
       context 'when it is called after task start' do
         before { presenter.start_task(last_task) }
-        let(:last_task) { Task.new(last_stage, 'fake-last-task', 0, {}) }
+        let(:last_task) { Task.new(last_stage, 'fake-last-task', 1, 0, {}) }
         it_prints_full_stage_end_message
       end
 
       context 'when it is called after task end' do
         before { presenter.end_task(last_task, 'fake-prefix', nil) }
-        let(:last_task) { Task.new(last_stage, 'fake-last-task', 0, {}) }
+        let(:last_task) { Task.new(last_stage, 'fake-last-task', 1, 0, {}) }
         it_prints_full_stage_end_message
       end
 
@@ -153,7 +153,7 @@ module Bosh::Cli::TaskTracking
     end
 
     describe '#start_task' do
-      let(:curr_task) { Task.new(curr_stage, 'fake-curr-task', 0, {}) }
+      let(:curr_task) { Task.new(curr_stage, 'fake-curr-task', 1, 0, {}) }
 
       let(:curr_stage) { Stage.new('fake-curr-stage', %w(fake-tag1), 1, {}) }
       let(:last_stage) { Stage.new('fake-last-stage', %w(fake-tag2), 1, {}) }
@@ -242,7 +242,7 @@ module Bosh::Cli::TaskTracking
     end
 
     describe '#end_task' do
-      let(:curr_task) { Task.new(curr_stage, 'fake-curr-task', 0, {}) }
+      let(:curr_task) { Task.new(curr_stage, 'fake-curr-task', 1, 0, {}) }
 
       let(:curr_stage) { Stage.new('fake-curr-stage', %w(fake-tag1), 1, {}) }
       let(:last_stage) { Stage.new('fake-last-stage', %w(fake-tag2), 1, {}) }

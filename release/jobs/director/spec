@@ -229,6 +229,9 @@ properties:
   #
   director.backup_destination:
     description: Configuration of the blobstore used by director for backups (dav|simple|s3)
+  director.ignore_missing_gateway:
+    description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
+    default: false
 
   # Compiled Package Cache
   compiled_package_cache.provider:

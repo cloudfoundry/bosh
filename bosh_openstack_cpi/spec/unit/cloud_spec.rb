@@ -19,18 +19,6 @@ describe Bosh::OpenStackCloud::Cloud do
         :connection_options => merged_connection_options,
       }
     }
-    let(:volume_parms) {
-      {
-        :provider => 'OpenStack',
-        :openstack_auth_url => 'http://127.0.0.1:5000/v2.0/tokens',
-        :openstack_username => 'admin',
-        :openstack_api_key => 'nova',
-        :openstack_tenant => 'admin',
-        :openstack_region => 'RegionOne',
-        :openstack_endpoint_type => nil,
-        :connection_options => merged_connection_options,
-      }
-    }
     let(:connection_options) { nil }
     let(:merged_connection_options) { default_connection_options }
 
@@ -39,9 +27,6 @@ describe Bosh::OpenStackCloud::Cloud do
 
     let(:image) { instance_double('Fog::Image') }
     before { allow(Fog::Image).to receive(:new).and_return(image) }
-
-    let(:volume) { instance_double('Fog::Volume') }
-    before { allow(Fog::Volume).to receive(:new).and_return(volume) }
 
     describe 'validation' do
       let(:options) do
@@ -139,7 +124,6 @@ describe Bosh::OpenStackCloud::Cloud do
 
       expect(cloud.openstack).to eql(compute)
       expect(cloud.glance).to eql(image)
-      expect(cloud.volume).to eql(volume)
     end
 
     it 'retries connecting if a GatewayTimeout error is returned by any OpenStack API endpoint' do
@@ -209,16 +193,6 @@ describe Bosh::OpenStackCloud::Cloud do
         'Unable to connect to the OpenStack Image Service API. Check task debug log for details.')
     end
 
-    it 'raises a CloudError exception if cannot connect to the OpenStack Volume Service API 5 times' do
-      allow(Fog::Compute).to receive(:new).and_return(instance_double(Fog::Compute))
-      allow(Fog::Image).to receive(:new).and_return(instance_double(Fog::Image))
-      allow(Fog::Volume).to receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
-      expect {
-        Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
-      }.to raise_error(Bosh::Clouds::CloudError,
-        'Unable to connect to the OpenStack Volume API. Check task debug log for details.')
-    end
-
     context 'with connection options' do
       let(:connection_options) { {'ssl_verify_peer' => false} }
       let(:merged_connection_options) {
@@ -229,12 +203,10 @@ describe Bosh::OpenStackCloud::Cloud do
         cloud_options['properties']['openstack']['connection_options'] = connection_options
         allow(Fog::Compute).to receive(:new).and_return(compute)
         allow(Fog::Image).to receive(:new).and_return(image)
-        allow(Fog::Volume).to receive(:new).and_return(volume)
         Bosh::OpenStackCloud::Cloud.new(cloud_options['properties'])
 
         expect(Fog::Compute).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
         expect(Fog::Image).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
-        expect(Fog::Volume).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
       end
     end
   end

@@ -253,6 +253,12 @@ describe Bosh::Cli::Client::Director do
       @director.list_releases
     end
 
+    it 'inspects releases, correctly encoding +' do
+      expect(@director).to receive(:get).with('/releases/my_release?version=123%2Bdev.5', 'application/json').
+        and_return([200, JSON.generate([]), {}])
+      @director.inspect_release('my_release', '123+dev.5')
+    end
+
     it 'lists deployments' do
       expect(@director).to receive(:get).with('/deployments', 'application/json').
         and_return([200, JSON.generate([]), {}])

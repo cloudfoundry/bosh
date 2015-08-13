@@ -3,7 +3,7 @@ require 'bosh/director/instance_updater/stopper'
 
 module Bosh::Director
   describe InstanceUpdater::Stopper do
-    subject(:preparer) { described_class.new(instance, agent_client, target_state, config, logger) }
+    subject(:stopper) { described_class.new(instance, agent_client, target_state, skip_drain, config, logger) }
 
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
@@ -17,8 +17,20 @@ module Bosh::Director
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
+    let(:skip_drain) { false }
 
     describe '#stop' do
+      context 'when skip_drain is set to true' do
+        let(:skip_drain) { true }
+
+        it 'does not drain' do
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to receive(:stop).with(no_args).ordered
+          stopper.stop
+        end
+      end
+
       context 'when shutting down' do
         before { allow(subject).to receive_messages(shutting_down?: true) }
 
