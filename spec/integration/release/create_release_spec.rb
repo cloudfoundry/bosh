@@ -21,6 +21,7 @@ describe 'create release', type: :integration do
           './jobs/foobar_without_packages.tgz',
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/transitive_deps.tgz',
+          './jobs/id_job.tgz',
           './packages/a.tgz',
           './packages/b.tgz',
           './packages/bar.tgz',
@@ -71,6 +72,7 @@ describe 'create release', type: :integration do
           'foobar_without_packages' => ['./templates/foobar_ctl', './monit', './job.MF'],
           'job_with_blocking_compilation' => ['./monit', './job.MF'],
           'transitive_deps' => ['./monit', './job.MF'],
+          'id_job' => ['./monit', './templates/config.yml.erb', './job.MF']
         }
 
         job_files.each do |job_name, files|
@@ -102,7 +104,8 @@ describe 'create release', type: :integration do
               job_desc('foobar'),
               job_desc('foobar_without_packages'),
               job_desc('job_with_blocking_compilation'),
-              job_desc('transitive_deps')
+              job_desc('transitive_deps'),
+              job_desc('id_job')
             ),
             'license' => license_desc,
 

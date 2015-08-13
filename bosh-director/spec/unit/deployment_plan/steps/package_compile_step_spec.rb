@@ -287,6 +287,8 @@ module Bosh::Director
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
+          'id' => 'deadbeef',
+          'availability_zone' => nil,
           'networks' => {'default' => 'network settings'},
           'resource_pool' => {},
           'packages' => {},
@@ -359,7 +361,7 @@ module Bosh::Director
         allow(config).to receive_messages(reuse_compilation_vms: true)
         allow(config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve)
+        expect(@network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')

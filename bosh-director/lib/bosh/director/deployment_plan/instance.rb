@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module Bosh::Director
   module DeploymentPlan
     # Represents a single job instance.
@@ -9,6 +11,10 @@ module Bosh::Director
 
       # @return [Integer] Instance index
       attr_reader :index
+
+      attr_reader :uuid
+
+      attr_reader :availability_zone
 
       # @return [Models::Instance] Instance model
       attr_reader :model
@@ -111,10 +117,12 @@ module Bosh::Director
             index: index,
             state: 'started',
             compilation: job.compilation?,
+            uuid: SecureRandom.uuid,
           })
       end
 
       def ensure_vm_allocated
+        @uuid = @model.uuid
         if @model.vm.nil?
           allocate_vm
         end
@@ -136,6 +144,7 @@ module Bosh::Director
 
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance_model(instance_model)
+        @uuid = instance_model.uuid
         check_model_not_bound
         @model = instance_model
         allocate_vm
@@ -420,6 +429,7 @@ module Bosh::Director
       end
 
       def delete
+        @logger.debug("Deleting instance '#{self}'")
         @network_reservations.each do |reservation|
           reservation.release if reservation.reserved?
         end
@@ -463,6 +473,8 @@ module Bosh::Director
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
+          'id' => uuid,
+          'availability_zone' => availability_zone,
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
@@ -567,6 +579,7 @@ module Bosh::Director
         Models::Instance.find_or_create(conditions) do |model|
           model.state = 'started'
           model.compilation = @job.compilation?
+          model.uuid = SecureRandom.uuid
         end
       end
 

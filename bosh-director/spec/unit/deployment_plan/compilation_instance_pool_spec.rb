@@ -38,7 +38,7 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false)
-      allow(network).to receive(:reserve)
+      allow(network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
       allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
@@ -79,13 +79,15 @@ module Bosh::Director
       end
 
       it 'applies vm state' do
-        allow(SecureRandom).to receive(:uuid).and_return('deadbeef')
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
         expected_apply_spec = {
           'deployment' => 'mycloud',
           'job' =>{
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
+          'id' => 'uuid-1',
+          'availability_zone' => nil,
           'networks' => {
             'network name' => 'network settings'
           },

@@ -66,6 +66,7 @@ module Bosh::Director
             if ip
               @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
               reservation.resolve_ip(ip)
+              reservation.mark_reserved_as(DynamicNetworkReservation)
               return
             end
           end

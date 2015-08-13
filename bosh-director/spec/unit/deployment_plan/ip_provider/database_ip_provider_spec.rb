@@ -287,7 +287,7 @@ module Bosh::Director::DeploymentPlan
             expect {
               ip_provider.reserve_ip(BD::StaticNetworkReservation.new(instance, network, '192.168.0.2'))
             }.to raise_error Bosh::Director::NetworkReservationAlreadyInUse,
-              "Failed to reserve ip '192.168.0.2' for instance 'fake-job/0': " +
+              "Failed to reserve IP '192.168.0.2' for instance 'fake-job/0': " +
               "already reserved by instance 'another-job/5' from deployment 'fake-deployment'"
           end
         end
@@ -322,7 +322,7 @@ module Bosh::Director::DeploymentPlan
           expect {
             ip_provider.reserve_ip(create_reservation('192.168.0.2'))
           }.to raise_error Bosh::Director::NetworkReservationIpReserved,
-            "Failed to reserve ip '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+            "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
         end
       end
     end

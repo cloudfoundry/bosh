@@ -4,11 +4,12 @@ module Bosh::Spec
       manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.simple_manifest)
       manifest['name'] = opts.fetch(:name, 'simple')
 
-      if opts[:template]
-        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(templates: [{'name' => opts[:template]}])]
-      end
+      job_opts = {}
+      job_opts[:templates] = [{'name' => opts[:template]}] if opts[:template]
+      job_opts[:instances] = opts[:instances] if opts[:instances]
+      job_opts[:static_ips] =opts[:static_ips] if opts[:static_ips]
+      manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(job_opts)]
 
-      manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
       manifest
     end
 

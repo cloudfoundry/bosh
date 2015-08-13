@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
@@ -36,7 +37,7 @@ module Bosh::Director::DeploymentPlan
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-    let(:availability_zone) { nil }
+    let(:availability_zone) { 'foo-az' }
     let(:vm) { Vm.new }
     before do
       allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -50,13 +51,13 @@ module Bosh::Director::DeploymentPlan
     describe '#network_settings' do
       let(:job) do
         instance_double('Bosh::Director::DeploymentPlan::Job', {
-          deployment: plan,
-          name: 'fake-job',
-          canonical_name: 'job',
-          starts_on_deploy?: true,
-          resource_pool: resource_pool,
-          compilation?: false
-        })
+            deployment: plan,
+            name: 'fake-job',
+            canonical_name: 'job',
+            starts_on_deploy?: true,
+            resource_pool: resource_pool,
+            compilation?: false
+          })
       end
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
@@ -305,6 +306,20 @@ module Bosh::Director::DeploymentPlan
         expect(instance.vm).not_to be_nil
         expect(instance.vm.bound_instance).to eq(instance)
       end
+
+      it 'creates a new uuid for each instance' do
+        allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
+        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        first_instance.bind_unallocated_vm
+        first_uuid = first_instance.uuid
+        index = 1
+        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        second_instance.bind_unallocated_vm
+        second_uuid = second_instance.uuid
+        expect(first_uuid).to_not be_nil
+        expect(second_uuid).to_not be_nil
+        expect(first_uuid).to_not eq(second_uuid)
+      end
     end
 
     describe '#bind_existing_instance' do
@@ -398,6 +413,8 @@ module Bosh::Director::DeploymentPlan
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'id' => 'uuid-1',
+            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
@@ -429,6 +446,8 @@ module Bosh::Director::DeploymentPlan
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'id' => 'uuid-1',
+            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
@@ -671,6 +690,7 @@ module Bosh::Director::DeploymentPlan
           persistent_disk_pool: disk_pool,
           starts_on_deploy?: true,
           link_spec: 'fake-link',
+          compilation?: false,
           properties: properties)
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
@@ -682,9 +702,10 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
 
-      it 'returns instance spec' do
+      it 'returns a valid instance spec' do
         network_name = network_spec['name']
         instance.add_network_reservation(reservation)
+        instance.bind_unallocated_vm
         spec = instance.spec
         expect(spec['deployment']).to eq('fake-deployment')
         expect(spec['job']).to eq(job_spec)
@@ -706,6 +727,9 @@ module Bosh::Director::DeploymentPlan
         expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
         expect(spec['links']).to eq('fake-link')
+        expect(spec['id']).to eq('uuid-1')
+        expect(spec['availability_zone']).to eq('foo-az')
+
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do

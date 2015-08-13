@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module Bosh::Director::Models
   class Instance < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :deployment

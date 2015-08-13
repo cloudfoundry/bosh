@@ -56,6 +56,10 @@ module Bosh::Director
         end
       end
 
+      def release_original_network_reservations
+        # nothing to release
+      end
+
       def update_cloud_properties!
         # since we loaded them from the DB there's no need to save them back
       end

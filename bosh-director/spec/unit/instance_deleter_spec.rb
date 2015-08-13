@@ -68,7 +68,7 @@ module Bosh::Director
         @deleter.delete_instances(instances_to_delete, event_log_stage, max_threads: 2)
       end
 
-      it 'drains, deletes snapshots, persistent disk' do
+      it 'drains, deletes snapshots, persistent disk, releases old reservations' do
         disk = Models::PersistentDisk.make(disk_cid: 'fake-disk-cid-1')
         Models::Snapshot.make(persistent_disk: disk)
         persistent_disks = [Models::PersistentDisk.make(disk_cid: 'instance-disk-cid'), disk]
@@ -84,6 +84,7 @@ module Bosh::Director
         expect(@deployment_plan).to receive(:dns_domain).and_return(domain)
         expect(@cloud).to receive(:delete_vm).with(vm.model.cid)
         expect(instance).to receive(:delete)
+        expect(instance).to receive(:release_original_network_reservations)
 
         expect(event_log_stage).to receive(:advance_and_track).with(vm.model.cid)
 

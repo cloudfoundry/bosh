@@ -41,7 +41,7 @@ module Bosh::Director::DeploymentPlan
       it 'should fail to reserve restricted IPs' do
         expect {
           ip_provider.reserve_ip(create_reservation('192.168.0.11'))
-        }.to raise_error BD::NetworkReservationAlreadyInUse
+        }.to raise_error BD::NetworkReservationIpReserved
       end
 
       it 'should fail to reserve the IP if it was already reserved' do

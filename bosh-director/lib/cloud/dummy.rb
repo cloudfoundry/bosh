@@ -39,7 +39,8 @@ module Bosh
 
       CREATE_STEMCELL_SCHEMA = Membrane::SchemaParser.parse { {image_path: String, cloud_properties: Hash} }
       def create_stemcell(image_path, cloud_properties)
-        validate_inputs(CREATE_STEMCELL_SCHEMA, __method__, image_path, cloud_properties)
+        validate_and_record_inputs(CREATE_STEMCELL_SCHEMA, __method__, image_path, cloud_properties)
+
         stemcell_id = Digest::SHA1.hexdigest(File.read(image_path))
         File.write(stemcell_file(stemcell_id), image_path)
         stemcell_id
@@ -47,7 +48,7 @@ module Bosh
 
       DELETE_STEMCELL_SCHEMA = Membrane::SchemaParser.parse { {stemcell_id: String} }
       def delete_stemcell(stemcell_id)
-        validate_inputs(DELETE_STEMCELL_SCHEMA, __method__, stemcell_id)
+        validate_and_record_inputs(DELETE_STEMCELL_SCHEMA, __method__, stemcell_id)
         FileUtils.rm(stemcell_file(stemcell_id))
       end
 
@@ -65,17 +66,7 @@ module Bosh
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
       # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
-
-        record_inputs(__method__, {
-          agent_id: agent_id,
-          stemcell_id: stemcell_id,
-          cloud_properties: cloud_properties,
-          networks: networks,
-          disk_cids: disk_cids,
-          env: env
-        })
-
-        validate_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
+        validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
         cmd = commands.next_create_vm_cmd
 
@@ -104,39 +95,41 @@ module Bosh
         vm.id
       end
 
-      DELETE_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String} }
-      def delete_vm(vm_id)
-        validate_inputs(DELETE_VM_SCHEMA, __method__, vm_id)
+      DELETE_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
+      def delete_vm(vm_cid)
+        validate_and_record_inputs(DELETE_VM_SCHEMA, __method__, vm_cid)
         commands.wait_for_unpause_delete_vms
-        agent_pid = vm_id.to_i
+        agent_pid = vm_cid.to_i
         Process.kill('KILL', agent_pid)
       # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
       # rubocop:enable HandleExceptions
       ensure
-        FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_id))
+        FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_cid))
       end
 
-      def reboot_vm(vm_id)
+      REBOOT_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
+      def reboot_vm(vm_cid)
+        validate_and_record_inputs(__method__, vm_cid)
         raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
-      HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String} }
-      def has_vm?(vm_id)
-        validate_inputs(HAS_VM_SCHEMA, __method__, vm_id)
-        @vm_repo.exists?(vm_id)
+      HAS_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
+      def has_vm?(vm_cid)
+        validate_and_record_inputs(HAS_VM_SCHEMA, __method__, vm_cid)
+        @vm_repo.exists?(vm_cid)
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
       def has_disk?(disk_id)
-        validate_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
+        validate_and_record_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
         File.exists?(disk_file(disk_id))
       end
 
-      CONFIGURE_NETWORKS_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String, networks: Hash}}
-      def configure_networks(vm_id, networks)
-        validate_inputs(CONFIGURE_NETWORKS_SCHEMA, __method__, vm_id, networks)
-        cmd = commands.next_configure_networks_cmd(vm_id)
+      CONFIGURE_NETWORKS_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, networks: Hash}}
+      def configure_networks(vm_cid, networks)
+        validate_and_record_inputs(CONFIGURE_NETWORKS_SCHEMA, __method__, vm_cid, networks)
+        cmd = commands.next_configure_networks_cmd(vm_cid)
 
         # The only configure_networks test so far only tests the negative case.
         # If a positive case is added, the agent will need to be re-started.
@@ -146,25 +139,25 @@ module Bosh
         end
       end
 
-      ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String, disk_id: String} }
-      def attach_disk(vm_id, disk_id)
-        validate_inputs(ATTACH_DISK_SCHEMA, __method__, vm_id, disk_id)
-        file = attachment_file(vm_id, disk_id)
+      ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
+      def attach_disk(vm_cid, disk_id)
+        validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+        file = attachment_file(vm_cid, disk_id)
         FileUtils.mkdir_p(File.dirname(file))
         FileUtils.touch(file)
 
-        agent_id = agent_id_for_vm_id(vm_id)
+        agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
         settings['disks']['persistent'][disk_id] = 'attached'
         write_agent_settings(agent_id, settings)
       end
 
-      DETACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_id: String, disk_id: String} }
-      def detach_disk(vm_id, disk_id)
-        validate_inputs(DETACH_DISK_SCHEMA, __method__, vm_id, disk_id)
-        FileUtils.rm(attachment_file(vm_id, disk_id))
+      DETACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
+      def detach_disk(vm_cid, disk_id)
+        validate_and_record_inputs(DETACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+        FileUtils.rm(attachment_file(vm_cid, disk_id))
 
-        agent_id = agent_id_for_vm_id(vm_id)
+        agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
         settings['disks']['persistent'].delete(disk_id)
         write_agent_settings(agent_id, settings)
@@ -172,7 +165,7 @@ module Bosh
 
       CREATE_DISK_SCHEMA = Membrane::SchemaParser.parse { {size: Integer, cloud_properties: Hash, vm_locality: String} }
       def create_disk(size, cloud_properties, vm_locality)
-        validate_inputs(CREATE_DISK_SCHEMA, __method__, size, cloud_properties, vm_locality)
+        validate_and_record_inputs(CREATE_DISK_SCHEMA, __method__, size, cloud_properties, vm_locality)
         disk_id = SecureRandom.hex
         file = disk_file(disk_id)
         FileUtils.mkdir_p(File.dirname(file))
@@ -182,13 +175,13 @@ module Bosh
 
       DELTE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
       def delete_disk(disk_id)
-        validate_inputs(DELTE_DISK_SCHEMA, __method__, disk_id)
+        validate_and_record_inputs(DELTE_DISK_SCHEMA, __method__, disk_id)
         FileUtils.rm(disk_file(disk_id))
       end
 
       SNAPSHOT_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, metadata: Hash} }
       def snapshot_disk(disk_id, metadata)
-        validate_inputs(SNAPSHOT_DISK_SCHEMA, __method__, disk_id, metadata)
+        validate_and_record_inputs(SNAPSHOT_DISK_SCHEMA, __method__, disk_id, metadata)
         snapshot_id = SecureRandom.hex
         file = snapshot_file(snapshot_id)
         FileUtils.mkdir_p(File.dirname(file))
@@ -198,8 +191,13 @@ module Bosh
 
       DELETE_SNAPSHOT_SCHEMA = Membrane::SchemaParser.parse { {snapshot_id: String} }
       def delete_snapshot(snapshot_id)
-        validate_inputs(DELETE_SNAPSHOT_SCHEMA, __method__, snapshot_id)
+        validate_and_record_inputs(DELETE_SNAPSHOT_SCHEMA, __method__, snapshot_id)
         FileUtils.rm(snapshot_file(snapshot_id))
+      end
+
+      SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
+      def set_vm_metadata(vm_cid, metadata)
+        validate_and_record_inputs(SET_VM_METADATA_SCHEMA, __method__, vm_cid, metadata)
       end
 
       # Additional Dummy test helpers
@@ -229,13 +227,15 @@ module Bosh
         "#{@base_dir}/agent.#{agent_id}.log"
       end
 
-      def set_vm_metadata(vm, metadata); end
-
-      def read_cloud_properties(vm_id)
-        @vm_repo.load(vm_id).cloud_properties
+      def read_cloud_properties(vm_cid)
+        @vm_repo.load(vm_cid).cloud_properties
       end
 
-      def read_inputs(method)
+      def invocations
+        @inputs_recorder.read_all
+      end
+
+      def invocations_for_method(method)
         @inputs_recorder.read(method)
       end
 
@@ -263,8 +263,8 @@ module Bosh
         agent_pid
       end
 
-      def agent_id_for_vm_id(vm_id)
-        @vm_repo.load(vm_id).agent_id
+      def agent_id_for_vm_id(vm_cid)
+        @vm_repo.load(vm_cid).agent_id
       end
 
       def agent_settings_file(agent_id)
@@ -324,20 +324,22 @@ module Bosh
         File.join(@base_dir, 'disks', disk_id)
       end
 
-      def attachment_file(vm_id, disk_id)
-        File.join(@base_dir, 'attachments', vm_id, disk_id)
+      def attachment_file(vm_cid, disk_id)
+        File.join(@base_dir, 'attachments', vm_cid, disk_id)
       end
 
       def snapshot_file(snapshot_id)
         File.join(@base_dir, 'snapshots', snapshot_id)
       end
 
-      def validate_inputs(schema, the_method, *args)
+      def validate_and_record_inputs(schema, the_method, *args)
+        parameter_names_to_values = parameter_names_to_values(the_method, *args)
         begin
-          schema.validate(parameter_names_to_values(the_method, *args))
+          schema.validate(parameter_names_to_values)
         rescue Membrane::SchemaValidationError => err
           raise ArgumentError, "Invalid arguments sent to #{the_method}: #{err.message}"
         end
+        record_inputs(the_method, parameter_names_to_values)
       end
 
       def record_inputs(method, args)
@@ -355,7 +357,7 @@ module Bosh
       # Example file system layout for arranging commands information.
       # Currently uses file system as transport but could be switch to use NATS.
       #   base_dir/cpi/create_vm/next -> {"something": true}
-      #   base_dir/cpi/configure_networks/<vm_id> -> (presence)
+      #   base_dir/cpi/configure_networks/<vm_cid> -> (presence)
       class CommandTransport
         def initialize(base_dir, logger)
           @cpi_commands = File.join(base_dir, 'cpi_commands')
@@ -391,16 +393,16 @@ module Bosh
           sleep(0.1) while File.exists?(path)
         end
 
-        def make_configure_networks_not_supported(vm_id)
-          @logger.info("Making configure_networks for #{vm_id} raise NotSupported")
-          path = File.join(@cpi_commands, 'configure_networks', vm_id)
+        def make_configure_networks_not_supported(vm_cid)
+          @logger.info("Making configure_networks for #{vm_cid} raise NotSupported")
+          path = File.join(@cpi_commands, 'configure_networks', vm_cid)
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, 'marker')
         end
 
-        def next_configure_networks_cmd(vm_id)
-          @logger.info("Reading configure_networks configuration for #{vm_id}")
-          vm_path = File.join(@cpi_commands, 'configure_networks', vm_id)
+        def next_configure_networks_cmd(vm_cid)
+          @logger.info("Reading configure_networks configuration for #{vm_cid}")
+          vm_path = File.join(@cpi_commands, 'configure_networks', vm_cid)
           vm_supported = File.exists?(vm_path)
           FileUtils.rm_rf(vm_path)
           ConfigureNetworksCommand.new(vm_supported)
@@ -451,36 +453,31 @@ module Bosh
         end
 
         def record(method, args)
-          FileUtils.mkdir_p(cpi_method_path(method))
-
-          method_file_path = next_cpi_method_filename(method)
-          @logger.info("Saving input for #{method} in #{method_file_path}")
-
-          File.open(method_file_path, 'w') { |f| f.write(JSON.dump(args)) }
+          FileUtils.mkdir_p(@cpi_inputs_dir)
+          data = {method_name: method, inputs: args}
+          @logger.info("Saving input for #{method} #{data} #{ordered_file_path}")
+          File.open(ordered_file_path, 'a') { |f| f.puts(JSON.dump(data)) }
         end
 
-        def read(method)
-          result = []
-          @logger.info("Reading input for #{method}")
-
-          Dir.entries(cpi_method_path(method)).each do |file_name|
-            next if file_name == '.' || file_name == '..'
-
-            full_path = File.join(cpi_method_path(method), file_name)
-            @logger.info("Contents: #{File.read(full_path)}")
-            result << OpenStruct.new(JSON.parse(File.read(full_path)))
+        def read(method_name)
+          @logger.info("Reading input for #{method_name}")
+          read_all.select do |invocation|
+            invocation.method_name == method_name
           end
+        end
 
+        def read_all
+          @logger.info("Reading all inputs: #{File.read(ordered_file_path)}")
+          result = []
+          File.read(ordered_file_path).split("\n").each do |request|
+            data = JSON.parse(request)
+            result << CpiInvocation.new(data['method_name'], data['inputs'])
+          end
           result
         end
 
-        def cpi_method_path(method)
-          File.join(@cpi_inputs_dir, method.to_s)
-        end
-
-        def next_cpi_method_filename(method)
-          file_name = Dir.entries(cpi_method_path(method)).map(&:to_i).max + 1
-          File.join(cpi_method_path(method), file_name.to_s)
+        def ordered_file_path
+          File.join(@cpi_inputs_dir, 'all_requests')
         end
       end
 
@@ -512,10 +509,12 @@ module Bosh
 
         private
 
-        def vm_file(vm_id)
-          File.join(@running_vms_dir, vm_id)
+        def vm_file(vm_cid)
+          File.join(@running_vms_dir, vm_cid)
         end
       end
+
+      class CpiInvocation < Struct.new(:method_name, :inputs); end
     end
   end
 end
