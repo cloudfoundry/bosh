@@ -42,7 +42,11 @@ module Bosh::Director::DeploymentPlan
         raise Bosh::Director::NetworkReservationIpReserved, message
       end
 
-      reserve_with_instance_validation(reservation.instance, cidr_ip)
+      reserve_with_instance_validation(
+        reservation.instance,
+        cidr_ip,
+        reservation.is_a?(Bosh::Director::StaticNetworkReservation)
+      )
 
       if @static_ips.include?(cidr_ip.to_i)
         reservation.mark_reserved_as(Bosh::Director::StaticNetworkReservation)
@@ -92,7 +96,7 @@ module Bosh::Director::DeploymentPlan
         raise OutsideRangeError
       end
 
-      save_ip(instance, ip_address)
+      save_ip(instance, ip_address, false)
 
       ip_address
     end
@@ -103,9 +107,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     # @param [NetAddr::CIDR] ip
-    def reserve_with_instance_validation(instance, ip)
+    def reserve_with_instance_validation(instance, ip, is_static)
       # try to save IP first before validating it's instance to prevent race conditions
-      save_ip(instance, ip)
+      save_ip(instance, ip, is_static)
     rescue IPAlreadyReserved
       ip_address = Bosh::Director::Models::IpAddress.first(
         address: ip.to_i,
@@ -126,12 +130,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     # @param [NetAddr::CIDR] ip
-    def save_ip(instance, ip)
+    def save_ip(instance, ip, is_static)
       Bosh::Director::Models::IpAddress.new(
         address: ip.to_i,
         network_name: @network_name,
         instance: instance.model,
-        task_id: Bosh::Director::Config.current_job.task_id
+        task_id: Bosh::Director::Config.current_job.task_id,
+        static: is_static
       ).save
     rescue Sequel::ValidationFailed => e
       if e.message.include?('unique')

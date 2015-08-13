@@ -7,7 +7,8 @@ module Bosh::Director::Models
       described_class.make(
         instance: instance,
         network_name: 'foonetwork',
-        address: NetAddr::CIDR.create('10.10.0.1').to_i
+        address: NetAddr::CIDR.create('10.10.0.1').to_i,
+        static: true
       )
     end
     let(:instance) {Instance.make(job: 'foojob', index: 1, deployment: deployment)}
@@ -17,7 +18,7 @@ module Bosh::Director::Models
       it 'should display debugging information (job, index, network name and ip address)' do
         results = subject.info
 
-        expect(results).to eq('foodeployment.foojob/1 - foonetwork - 10.10.0.1')
+        expect(results).to eq('foodeployment.foojob/1 - foonetwork - 10.10.0.1 (static)')
       end
     end
 
