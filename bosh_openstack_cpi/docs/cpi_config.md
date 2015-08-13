@@ -46,10 +46,11 @@ name: my-bosh
 
 properties:
   openstack:
-    auth_url: http://0.0.0.0:5000/v2.0
+    auth_url: http://0.0.0.0:5000/v3.0
     username: openstack-user
     api_key: openstack-password
     tenant: dev
+    domain: domain1
     region: west-coast
     endpoint_type: publicURL
     state_timeout: 300
@@ -76,6 +77,7 @@ properties:
 * `username` - OpenStack user name
 * `api_key` - OpenStack API key
 * `tenant` - OpenStack tenant name
+* `domain` - (optional) OpenStack domain (defaults to 'Default')
 * `region` - (optional) OpenStack region
 * `endpoint_type` - (optional) OpenStack endpoint type (defaults to 'publicURL')
 * `state_timeout` - (optional) Timeout (in seconds) for OpenStack resources desired state (defaults to 300)

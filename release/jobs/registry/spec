@@ -73,6 +73,8 @@ properties:
     description: OpenStack API key
   openstack.tenant:
     description: OpenStack tenant name
+  openstack.domain:
+    description: OpenStack domain (optional)
   openstack.region:
     description: OpenStack region (optional)
   openstack.endpoint_type:
