@@ -29,6 +29,7 @@ describe Bosh::Director::VmCreator do
       5,
       'started',
       deployment_plan,
+      {},
       nil,
       logger
     )

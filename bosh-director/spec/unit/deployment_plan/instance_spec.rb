@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-    subject(:instance) { Instance.new(job, index, state, plan, availability_zone, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
 
@@ -44,6 +44,8 @@ module Bosh::Director::DeploymentPlan
 
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment) }
     let(:vm_model) { Bosh::Director::Models::Vm.make }
+
+    let(:current_state) { {'current'=>'state'} }
 
     describe '#network_settings' do
       let(:job) do
@@ -125,12 +127,18 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
-          net_settings_with_type = network_settings.merge('type' => 'dynamic')
-          expect(instance.network_settings).to eql(network_name => net_settings_with_type)
-
-          instance.bind_existing_instance_model(instance_model)
-          instance.bind_current_state(current_state)
-          expect(instance.network_settings).to eql({network_name => net_settings_with_type.merge(network_info)})
+          expect(instance.network_settings).to eql({
+                'net_a' => {
+                  'type' => 'dynamic',
+                  'cloud_properties' => {
+                    'foo' => 'bar'
+                  },
+                  'dns' =>['1.2.3.4'],
+                  'dns_record_name' => '0.job.net-a.mycloud.test_domain',
+                  'ip' => '10.0.0.6',
+                  'netmask' => '255.255.255.0',
+                  'gateway' => '10.0.0.1'}
+              })
         end
       end
 
@@ -162,7 +170,6 @@ module Bosh::Director::DeploymentPlan
           expect(instance.network_settings).to eql(net_settings)
 
           instance.bind_existing_instance_model(instance_model)
-          instance.bind_current_state(current_state)
           expect(instance.network_settings).to eql(net_settings)
         end
       end
@@ -541,11 +548,10 @@ module Bosh::Director::DeploymentPlan
         before do
           instance_model = Bosh::Director::Models::Instance.make
           instance.bind_existing_instance_model(instance_model)
-          instance.bind_current_state(instance_state)
         end
 
         context 'that fully matches the job spec' do
-          let(:instance_state) { {'job' => job.spec} }
+          let(:current_state) { {'job' => job.spec} }
 
           it 'returns false' do
             expect(instance.job_changed?).to eq(false)
@@ -553,7 +559,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'that does not match the job spec' do
-          let(:instance_state) { {'job' => job.spec.merge('version' => 'old-version')} }
+          let(:current_state) { {'job' => job.spec.merge('version' => 'old-version')} }
 
           it 'returns true' do
             expect(instance.job_changed?).to eq(true)
@@ -600,12 +606,13 @@ module Bosh::Director::DeploymentPlan
         allow(plan).to receive(:recreate).and_return(false)
       end
 
+      let(:current_state) { {'resource_pool' => resource_pool_spec} }
+
       it 'detects resource pool change when instance VM env changes' do
         instance_model = Bosh::Director::Models::Instance.make
 
         # set up in-memory domain model state
         instance.bind_existing_instance_model(instance_model)
-        instance.bind_current_state({'resource_pool' => resource_pool_spec})
 
         # set DB to match real instance/vm
         instance_model.vm.update(:env => {'key' => 'value'})
@@ -772,7 +779,7 @@ module Bosh::Director::DeploymentPlan
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
           allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, availability_zone, logger)
+          instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
 
           expect(instance.cloud_properties).to eq(
               {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -784,7 +791,7 @@ module Bosh::Director::DeploymentPlan
         it 'uses just the resource pool cloud properties' do
           allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, nil, logger)
+          instance = Instance.new(job, index, state, plan, current_state, nil, logger)
 
           expect(instance.cloud_properties).to eq(
               {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -799,7 +806,7 @@ module Bosh::Director::DeploymentPlan
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
         allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-        instance = Instance.new(job, index, state, plan, availability_zone, logger)
+        instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!

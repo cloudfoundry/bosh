@@ -26,7 +26,7 @@ module Bosh::Director
     end
 
     def current_states_by_instance(existing_instances)
-      lock = Mutex.new # lock because bind_current_state isn't thread safe
+      lock = Mutex.new
       current_states_by_existing_instance = {}
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         existing_instances.each do |existing_instance|

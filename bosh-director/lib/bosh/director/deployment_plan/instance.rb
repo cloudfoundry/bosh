@@ -31,15 +31,14 @@ module Bosh::Director
       attr_reader :deployment
 
       def self.fetch_existing(desired_instance, existing_instance, existing_instance_state, index, az, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, az, logger)
         instance.bind_existing_instance_model(existing_instance)
-        instance.bind_current_state(existing_instance_state) unless existing_instance_state.nil? #TODO: just instatiate w existing_instance_state
         instance.bind_existing_reservations(existing_instance_state)
         instance
       end
 
       def self.create(desired_instance, index, az, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, nil, az, logger)
         instance.bind_new_instance_model
         instance
       end
@@ -51,7 +50,7 @@ module Bosh::Director
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, state, deployment, availability_zone, logger)
+      def initialize(job, index, state, deployment, instance_state, availability_zone, logger)
         @job = job
         @index = index
         @availability_zone = availability_zone
@@ -62,7 +61,7 @@ module Bosh::Director
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
-        @current_state = {}
+        @current_state = instance_state || {}
 
         # reservations generated from deployment manifest
         @network_reservations = InstanceNetworkReservations.new(self, logger)
@@ -141,12 +140,6 @@ module Bosh::Director
         @model = instance_model
         allocate_vm
         @vm.model = instance_model.vm
-      end
-
-      def bind_current_state(state)
-        @logger.debug("Binding current state '#{state}' to #{self}")
-        @current_state = state
-        @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
       end
 
       def bind_existing_reservations(state)
