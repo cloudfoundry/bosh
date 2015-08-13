@@ -300,44 +300,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#bind_current_state' do
-      before do
-        instance.bind_existing_instance_model(instance_model)
-      end
-
-      it 'updates instance current state' do
-        state = {'persistent_disk' => 100}
-        expect(instance.disk_currently_attached?).to eq(false)
-
-        instance.bind_current_state(state)
-
-        expect(instance.disk_currently_attached?).to eq(true)
-      end
-
-      context 'when using global networking' do
-        before { allow(plan).to receive(:using_global_networking?) { true } }
-        it 'reserves the networks based on the saved reservations' do
-          Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create('127.0.0.5'), network_name: 'fake-network', instance: instance_model)
-          instance_model.reload
-          expect(net).to receive(:reserve) do |network_reservation|
-            expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
-          end
-          instance.bind_current_state(state)
-        end
-      end
-
-      context 'when not using global networking' do
-        before { allow(plan).to receive(:using_global_networking?) { false } }
-        it 'reserves the networks based on the agent state' do
-          state = {'networks' => {'fake-network' => {'ip' => '127.0.0.5'}}}
-          expect(net).to receive(:reserve) do |network_reservation|
-            expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
-          end
-          instance.bind_current_state(state)
-        end
-      end
-    end
-
     describe '#bind_existing_instance' do
       let(:job) { Job.new(plan, logger) }
 

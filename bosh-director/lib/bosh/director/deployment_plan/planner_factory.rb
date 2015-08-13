@@ -126,15 +126,16 @@ module Bosh
             instance_planner = InstancePlanner.new(@logger, instance_repo)
             desired_jobs = planner.jobs
 
+            #FIXME: this data structure is kind of a bummer
+            states_by_existing_instance = assembler.current_states_by_instance(desired_jobs.flat_map(&:existing_instances))
+
             desired_jobs.each do |desired_job|
               desired_instances = desired_job.desired_instances
               existing_instances = desired_job.existing_instances
-              instance_plans_for_desired_instances = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
+              instance_plans_for_desired_instances = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances, states_by_existing_instance)
               desired_job.instance_plans = instance_plans_for_desired_instances
             end
 
-            all_the_instance_plans = desired_jobs.flat_map(&:instance_plans)
-            assembler.bind_current_instance_states(all_the_instance_plans)
             desired_jobs.each do |desired_job|
               reserve_ips_for_job(desired_job) # will change job.instances
             end

@@ -25,26 +25,25 @@ module Bosh::Director
       end
     end
 
-    def bind_current_instance_states(instance_plans)
+    def current_states_by_instance(existing_instances)
       lock = Mutex.new # lock because bind_current_state isn't thread safe
+      current_states_by_existing_instance = {}
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        instance_plans.
-          reject(&:obsolete?). # no need to update state of obsolete instances. they're going to be deleted
-          reject(&:new?).      # new instances won't have state yet
-          each do |instance_plan|
-            if instance_plan.existing_instance.vm
-              pool.process do
-                with_thread_name("binding agent state for (#{instance_plan.instance.model.job}/#{instance_plan.instance.model.index})") do
-                  # getting current state to obtain IP of dynamic networks
-                  state = get_state(instance_plan.existing_instance.vm)
-                  lock.synchronize do
-                    instance_plan.instance.bind_current_state(state)
-                  end
+        existing_instances.each do |existing_instance|
+          if existing_instance.vm
+            pool.process do
+              with_thread_name("binding agent state for (#{existing_instance.job}/#{existing_instance.index})") do
+                # getting current state to obtain IP of dynamic networks
+                state = get_state(existing_instance.vm)
+                lock.synchronize do
+                  current_states_by_existing_instance.merge!(existing_instance => state)
                 end
               end
             end
+          end
         end
       end
+      current_states_by_existing_instance
     end
 
     def mark_unknown_vms_for_deletion

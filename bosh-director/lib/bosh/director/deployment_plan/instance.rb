@@ -30,9 +30,11 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      def self.fetch_existing(desired_instance, existing_instance, index, az, logger)
+      def self.fetch_existing(desired_instance, existing_instance, existing_instance_state, index, az, logger)
         instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, az, logger)
         instance.bind_existing_instance_model(existing_instance)
+        instance.bind_current_state(existing_instance_state) unless existing_instance_state.nil? #TODO: just instatiate w existing_instance_state
+        instance.bind_existing_reservations(existing_instance_state)
         instance
       end
 
@@ -45,8 +47,6 @@ module Bosh::Director
       def self.fetch_obsolete(existing_instance, logger)
         ExistingInstance.create_from_model(existing_instance, logger)
       end
-
-
 
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
@@ -68,7 +68,7 @@ module Bosh::Director
         @network_reservations = InstanceNetworkReservations.new(self, logger)
 
         # reservation generated from current state/DB
-        @original_network_reservations = InstanceNetworkReservations.new(self, logger)
+        @original_network_reservations = InstanceNetworkReservations.new(self, logger) # TODO: don't do this
 
         @state = state
 
@@ -144,7 +144,7 @@ module Bosh::Director
       end
 
       def bind_current_state(state)
-        bind_existing_reservations(state)
+        @logger.debug("Binding current state '#{state}' to #{self}")
         @current_state = state
         @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
       end
@@ -540,14 +540,18 @@ module Bosh::Director
       # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
       def take_old_reservations
+        @logger.debug("taking old reservations. existing reservations: #{@original_network_reservations.to_a.join(',')}")
         @original_network_reservations.each do |existing_reservation|
           reservation = @network_reservations.find_for_network(existing_reservation.network)
           if reservation
+            @logger.debug("existing reservation #{existing_reservation} is still needed by #{reservation}")
             reservation.bind_existing(existing_reservation)
             if reservation.reserved?
               @logger.debug("Found matching existing reservation #{existing_reservation} for `#{self}'")
               @original_network_reservations.delete(existing_reservation)
             end
+          else
+            @logger.debug("unneeded reservation #{existing_reservation}")
           end
         end
       end

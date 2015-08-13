@@ -7,7 +7,7 @@ module Bosh
           @instance_repo = instance_factory
         end
 
-        def plan_job_instances(job, desired_instances, existing_instances)
+        def plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
           unbound_existing_instances = Set.new(existing_instances)
           desired_instance_plans = desired_instances.each_with_index.map do |desired_instance, index|
             existing_instance = find_matching_instance(job, unbound_existing_instances, desired_instance)
@@ -18,9 +18,12 @@ module Bosh
             availability_zone = AvailabilityZonePicker.new.pick_from(job.availability_zones, index)
 
             if existing_instance
-              instance = @instance_repo.fetch_existing(desired_instance, existing_instance, index, availability_zone, @logger)
+              @logger.debug("Found existing instance #{existing_instance}")
+              existing_instance_state = states_by_existing_instance[existing_instance]
+              instance = @instance_repo.fetch_existing(desired_instance, existing_instance, existing_instance_state, index, availability_zone, @logger)
               InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: instance)
             else
+              @logger.debug("Creating a new instance for desired instance #{job.name}")
               instance = @instance_repo.create(desired_instance, index, availability_zone, @logger)
               InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
             end
@@ -28,6 +31,7 @@ module Bosh
 
           obsolete_existing_instances = unbound_existing_instances.to_a
           obsolete_instance_plans = obsolete_existing_instances.map do |existing_instance|
+            @logger.debug("Obsolete existing instance #{existing_instance}")
             instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
