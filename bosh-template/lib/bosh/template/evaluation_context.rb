@@ -28,6 +28,9 @@ module Bosh
       # @return [Hash] Template spec
       attr_reader :spec
 
+      # @return [String] Template AZ
+      attr_reader :availability_zone
+
       # @param [Hash] spec Template spec
       def initialize(spec)
         unless spec.is_a?(Hash)
@@ -44,6 +47,7 @@ module Bosh
 
         @index = spec['index']
         @id = spec['id']
+        @availability_zone = spec['availability_zone']
         @spec = openstruct(spec)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)

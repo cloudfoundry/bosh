@@ -288,6 +288,7 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'deadbeef',
+          'availability_zone' => nil,
           'networks' => {'default' => 'network settings'},
           'resource_pool' => {},
           'packages' => {},

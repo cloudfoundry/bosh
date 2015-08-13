@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-    let(:availability_zone) { nil }
+    let(:availability_zone) { 'foo-az' }
     let(:vm) { Vm.new }
     before do
       allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -49,13 +49,13 @@ module Bosh::Director::DeploymentPlan
     describe '#network_settings' do
       let(:job) do
         instance_double('Bosh::Director::DeploymentPlan::Job', {
-          deployment: plan,
-          name: 'fake-job',
-          canonical_name: 'job',
-          starts_on_deploy?: true,
-          resource_pool: resource_pool,
-          compilation?: false
-        })
+            deployment: plan,
+            name: 'fake-job',
+            canonical_name: 'job',
+            starts_on_deploy?: true,
+            resource_pool: resource_pool,
+            compilation?: false
+          })
       end
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
@@ -432,6 +432,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
+            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
@@ -464,6 +465,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
+            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
@@ -706,6 +708,7 @@ module Bosh::Director::DeploymentPlan
           persistent_disk_pool: disk_pool,
           starts_on_deploy?: true,
           link_spec: 'fake-link',
+          compilation?: false,
           properties: properties)
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
@@ -717,9 +720,10 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
 
-      it 'returns instance spec' do
+      it 'returns a valid instance spec' do
         network_name = network_spec['name']
         instance.add_network_reservation(reservation)
+        instance.bind_unallocated_vm
         spec = instance.spec
         expect(spec['deployment']).to eq('fake-deployment')
         expect(spec['job']).to eq(job_spec)
@@ -741,6 +745,9 @@ module Bosh::Director::DeploymentPlan
         expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
         expect(spec['links']).to eq('fake-link')
+        expect(spec['id']).to eq('uuid-1')
+        expect(spec['availability_zone']).to eq('foo-az')
+
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do
