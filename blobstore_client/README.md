@@ -112,6 +112,8 @@ These are the options for the Blobstore client when `swift_provider` is `opensta
   OpenStack API key
 * `openstack_tenant` (required)
   OpenStack tenant name
+* `openstack_domain` (optional)
+  OpenStack domain
 * `openstack_region` (optional)
   OpenStack region
 

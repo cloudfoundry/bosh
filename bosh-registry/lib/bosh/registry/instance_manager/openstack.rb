@@ -23,6 +23,7 @@ module Bosh::Registry
           :openstack_username => @openstack_properties['username'],
           :openstack_api_key => @openstack_properties['api_key'],
           :openstack_tenant => @openstack_properties['tenant'],
+          :openstack_domain_name => @openstack_properties['domain'],
           :openstack_region => @openstack_properties['region'],
           :openstack_endpoint_type => @openstack_properties['endpoint_type'],
           :connection_options => @openstack_properties['connection_options']

@@ -62,6 +62,7 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
@@ -94,6 +95,7 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
@@ -666,6 +668,7 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
@@ -969,6 +972,7 @@ module Bosh::OpenStackCloud
             'username' => String,
             'api_key' => String,
             'tenant' => String,
+            optional('domain') => String,
             optional('region') => String,
             optional('endpoint_type') => String,
             optional('state_timeout') => Numeric,

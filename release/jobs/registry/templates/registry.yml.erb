@@ -55,6 +55,9 @@
       'api_key' =>  api_key,
       'tenant' =>  tenant,
     }
+    if_p('openstack.domain') do |domain|
+      cloud_params['openstack']['domain'] = domain
+    end
     if_p('openstack.region') do |region|
       cloud_params['openstack']['region'] = region
     end
