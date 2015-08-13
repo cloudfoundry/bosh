@@ -28,6 +28,8 @@ module Bosh
             'fake-link-2' => {'c' => 'd'}
           },
           'index' => 0,
+          'id' => 'deadbeef',
+          'availability_zone' => 'foo-az'
         }
 
         @context = make(@spec)
@@ -43,6 +45,14 @@ module Bosh
 
       it 'supports looking up template index' do
         expect(eval_template('<%= spec.index %>', @context)).to eq('0')
+      end
+
+      it 'exposes an instance id' do
+        expect(eval_template('<%= id %>', @context)).to eq(@context.id)
+      end
+
+      it 'exposes an availability zone' do
+        expect(eval_template('<%= availability_zone %>', @context)).to eq(@context.availability_zone)
       end
 
       it 'evaluates links' do

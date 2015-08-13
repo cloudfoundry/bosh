@@ -87,6 +87,7 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'uuid-1',
+          'availability_zone' => nil,
           'networks' => {
             'network name' => 'network settings'
           },
