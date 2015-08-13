@@ -473,6 +473,20 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Check whether an OpenStack volume exists or not
+    #
+    # @param [String] disk_id OpenStack volume UUID
+    # @return [bool] whether the specific disk is there or not
+    def has_disk?(disk_id)
+      with_thread_name("has_disk?(#{disk_id})") do
+        @logger.info("Check the presence of disk with id `#{disk_id}'...")
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
+
+        !volume.nil?
+      end
+    end
+
+    ##
     # Deletes an OpenStack volume
     #
     # @param [String] disk_id OpenStack volume UUID
@@ -532,9 +546,11 @@ module Bosh::OpenStackCloud
         cloud_error("Server `#{server_id}' not found") unless server
 
         volume = with_openstack { @openstack.volumes.get(disk_id) }
-        cloud_error("Volume `#{disk_id}' not found") unless volume
-
-        detach_volume(server, volume)
+        if volume.nil?
+          @logger.info("Disk `#{disk_id}' not found while trying to detach it from vm `#{server_id}'...")
+        else
+          detach_volume(server, volume)
+        end
 
         update_agent_settings(server) do |settings|
           settings['disks'] ||= {}

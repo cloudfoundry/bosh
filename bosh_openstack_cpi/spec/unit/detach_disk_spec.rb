@@ -86,4 +86,38 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.detach_disk("i-test", "v-barfoo")
   end
 
+  it "bypasses the detaching process when volume is missing" do
+    server = double("server", :id => "i-test", :name => "i-test")
+
+    cloud = mock_cloud do |openstack|
+      allow(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      allow(openstack.volumes).to receive(:get).with("non-exist-volume-id").and_return(nil)
+    end
+
+    old_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "non-exist-volume-id" => "/dev/vdc",
+          "exist-volume-id" => "/dev/vdd"
+        }
+      }
+    }
+
+    new_settings = {
+      "foo" => "bar",
+      "disks" => {
+        "persistent" => {
+          "exist-volume-id" => "/dev/vdd"
+        }
+      }
+    }
+
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
+
+    expect {
+      cloud.detach_disk("i-test", "non-exist-volume-id")
+    }.to_not raise_error
+  end
 end
