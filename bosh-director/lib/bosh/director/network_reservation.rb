@@ -46,8 +46,12 @@ module Bosh::Director
       @reserved = true
     end
 
+    def desc
+      "static reservation with IP '#{formatted_ip}'"
+    end
+
     def to_s
-      "{type=static, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+      "{type=static, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
 
     def mark_reserved_as(type)
@@ -77,8 +81,12 @@ module Bosh::Director
       @ip = ip_to_i(ip)
     end
 
+    def desc
+      "dynamic reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}'"}"
+    end
+
     def to_s
-      "{type=dynamic, ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+      "{type=dynamic, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
 
     def mark_reserved_as(type)
@@ -121,7 +129,7 @@ module Bosh::Director
     end
 
     def to_s
-      "{ip=#{formatted_ip.inspect}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
+      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
     end
   end
 end

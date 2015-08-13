@@ -41,13 +41,13 @@ module Bosh::Director
       end
 
       def add(reservation)
-        @logger.debug("Adding reservation '#{reservation}' for '#{reservation.instance}' for network '#{reservation.network.name}'")
+        @logger.debug("Adding reservation '#{reservation}' for '#{reservation.instance}'")
         old_reservation = find_for_network(reservation.network)
 
         if old_reservation
           raise NetworkReservationAlreadyExists,
-            "'#{reservation.instance}' already has reservation " +
-              "for network '#{reservation.network.name}', IP #{old_reservation.ip}"
+            "Failed to add #{reservation.desc} for instance '#{reservation.instance}' on network '#{reservation.network.name}', " +
+              "instance already has #{old_reservation.desc} on the same network"
         end
 
         @reservations << reservation
