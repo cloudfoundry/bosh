@@ -40,7 +40,7 @@ module Bosh::Director
           :template_hashes= => nil,
           :rendered_templates_archive= => nil,
           :model => instance_model,
-          :spec => {},
+          :template_spec => {},
         })
       end
 
@@ -172,7 +172,7 @@ module Bosh::Director
 
       it 'renders all templates for all instances of a job' do
         perform
-        expect(job_instance_renderer).to have_received(:render).with(instance.spec)
+        expect(job_instance_renderer).to have_received(:render).with(instance.template_spec)
       end
 
       it 'updates each instance with configuration and templates hashses' do

@@ -21,7 +21,7 @@ module Bosh::Director
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          before { allow(instance).to receive_messages(spec: 'fake-spec') }
+          before { allow(instance).to receive_messages(apply_spec: 'fake-spec') }
 
           it 'sends prepare message to the instance' do
             expect(agent_client).to receive(:prepare).with('fake-spec')

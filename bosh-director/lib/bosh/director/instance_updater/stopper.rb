@@ -27,7 +27,7 @@ module Bosh::Director
       # Apply spec might change after shutdown drain (unlike update drain)
       # because instance's VM could be reconfigured.
       # Drain script can still capture intent from non-final apply spec.
-      drain_time = @agent_client.drain(drain_type, @instance.spec)
+      drain_time = @agent_client.drain(drain_type, @instance.apply_spec)
 
       if drain_time > 0
         sleep(drain_time)

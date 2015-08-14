@@ -7,7 +7,7 @@ module Bosh::Director
 
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
-        spec: 'fake-spec',
+        apply_spec: 'fake-spec',
         resource_pool_changed?: false,
         persistent_disk_changed?: false,
         networks_changed?: false,
