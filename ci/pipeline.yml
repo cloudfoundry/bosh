@@ -170,7 +170,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
+      branch: hotfix/101297474
 
   - name: bosh-candidate
     type: git
