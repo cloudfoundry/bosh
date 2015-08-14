@@ -22,7 +22,7 @@ module Bosh::Director
         ip_addresses = instance.model.ip_addresses.clone
 
         ip_addresses.each do |ip_address|
-          reservations.add_unbound(deployment, ip_address.address, ip_address.network_name)
+          reservations.add_unbound(deployment, ip_address.network_name, ip_address.address, ip_address.type)
         end
 
         reservations
@@ -41,7 +41,7 @@ module Bosh::Director
       end
 
       def add(reservation)
-        @logger.debug("Adding reservation '#{reservation}' for '#{reservation.instance}'")
+        @logger.debug("Requesting #{reservation.desc} for '#{reservation.instance}' on network '#{reservation.network.name}' based on deployment manifest")
         old_reservation = find_for_network(reservation.network)
 
         if old_reservation
@@ -65,9 +65,9 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_unbound(deployment, ip, network_name)
+      def add_unbound(deployment, network_name, ip, ip_type)
         network = deployment.network(network_name) || deployment.default_network
-        @logger.debug("Reserving ip '#{format_ip(ip)}' for existing instance '#{@instance}' for network '#{network.name}'")
+        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{@instance}' on network '#{network.name}'")
         reservation = UnboundNetworkReservation.new(@instance, network, ip)
         reservation.reserve
         @reservations << reservation
