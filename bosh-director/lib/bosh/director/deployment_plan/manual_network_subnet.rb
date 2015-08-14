@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class NetworkSubnet
+    class ManualNetworkSubnet
       include DnsHelper
       include ValidationHelper
       include IpUtil

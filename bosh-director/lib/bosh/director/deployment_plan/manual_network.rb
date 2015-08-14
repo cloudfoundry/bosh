@@ -24,7 +24,7 @@ module Bosh::Director
 
         @subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)
+          new_subnet = ManualNetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
@@ -33,7 +33,7 @@ module Bosh::Director
           @subnets << new_subnet
         end
 
-        @default_subnet = NetworkSubnet.new(self, {'range' => '0.0.0.0/0', 'gateway' => '0.0.0.1'}, [], ip_provider_factory)
+        @default_subnet = ManualNetworkSubnet.new(self, {'range' => '0.0.0.0/0', 'gateway' => '0.0.0.1'}, [], ip_provider_factory)
 
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
