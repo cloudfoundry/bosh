@@ -87,18 +87,14 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'uuid-1',
-          'availability_zone' => nil,
           'networks' => {
             'network name' => 'network settings'
           },
           'resource_pool' => {},
           'packages' => {},
           'configuration_hash' => nil,
-          'properties' => {},
           'dns_domain_name' => nil,
-          'links' => {},
           'persistent_disk' => 0,
-          'bootstrap' => true
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 

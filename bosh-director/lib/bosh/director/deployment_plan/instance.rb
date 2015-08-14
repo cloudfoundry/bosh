@@ -460,16 +460,12 @@ module Bosh::Director
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
-          'bootstrap' => @bootstrap,
           'id' => uuid,
-          'availability_zone' => availability_zone,
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
           'configuration_hash' => configuration_hash,
-          'properties' => job.properties,
           'dns_domain_name' => dns_domain_name,
-          'links' => job.link_spec,
         }
 
         if job.persistent_disk_pool
@@ -503,7 +499,6 @@ module Bosh::Director
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
-          'configuration_hash' => configuration_hash,
           'properties' => job.properties,
           'dns_domain_name' => dns_domain_name,
           'links' => job.link_spec,
@@ -520,10 +515,6 @@ module Bosh::Director
 
         if template_hashes
           spec['template_hashes'] = template_hashes
-        end
-
-        if rendered_templates_archive
-          spec['rendered_templates_archive'] = rendered_templates_archive.spec
         end
 
         spec

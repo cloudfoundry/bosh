@@ -432,15 +432,11 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'bootstrap' => true,
-            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
-            'properties' => nil,
             'dns_domain_name' => 'test_domain',
-            'links' => {},
             'persistent_disk' => 0
           }
 
@@ -466,15 +462,11 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'bootstrap' => true,
-            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
-            'properties' => nil,
             'dns_domain_name' => 'test_domain',
-            'links' => {},
             'persistent_disk' => 100,
             'persistent_disk_pool' =>{
               'name' => /[a-z0-9-]+/, # UUID
@@ -723,7 +715,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
 
-      it 'returns a valid instance spec' do
+      it 'returns a valid instance template_spec' do
         network_name = network_spec['name']
         instance.add_network_reservation(reservation)
         instance.bind_unallocated_vm
@@ -751,20 +743,6 @@ module Bosh::Director::DeploymentPlan
         expect(spec['id']).to eq('uuid-1')
         expect(spec['availability_zone']).to eq('foo-az')
         expect(spec['bootstrap']).to eq(true)
-      end
-
-      it 'includes rendered_templates_archive key after rendered templates were archived' do
-        instance.rendered_templates_archive =
-          Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
-
-        expect(instance.template_spec['rendered_templates_archive']).to eq(
-            'blobstore_id' => 'fake-blobstore-id',
-            'sha1' => 'fake-sha1',
-          )
-      end
-
-      it 'does not include rendered_templates_archive key before rendered templates were archived' do
-        expect(instance.template_spec).to_not have_key('rendered_templates_archive')
       end
 
       it 'does not require persistent_disk_pool' do
@@ -814,7 +792,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
 
-      it 'returns a valid instance spec' do
+      it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
         instance.add_network_reservation(reservation)
         instance.bind_unallocated_vm
@@ -836,12 +814,8 @@ module Bosh::Director::DeploymentPlan
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
-        expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
-        expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
-        expect(spec['availability_zone']).to eq('foo-az')
-        expect(spec['bootstrap']).to eq(true)
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do
