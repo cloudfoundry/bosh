@@ -469,10 +469,7 @@ module Bosh::Director
         }
 
         if job.persistent_disk_pool
-          # supply both for reverse compatibility with old agent
           spec['persistent_disk'] = job.persistent_disk_pool.disk_size
-          # old agents will ignore this pool
-          spec['persistent_disk_pool'] = job.persistent_disk_pool.spec
         else
           spec['persistent_disk'] = 0
         end

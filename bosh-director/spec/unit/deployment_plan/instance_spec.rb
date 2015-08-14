@@ -468,11 +468,6 @@ module Bosh::Director::DeploymentPlan
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test_domain',
             'persistent_disk' => 100,
-            'persistent_disk_pool' =>{
-              'name' => /[a-z0-9-]+/, # UUID
-              'disk_size' =>100,
-              'cloud_properties' =>{}
-            }
           }
 
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
@@ -786,7 +781,6 @@ module Bosh::Director::DeploymentPlan
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
       let(:index) { 0 }
       before do
-
         network.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
@@ -812,7 +806,6 @@ module Bosh::Director::DeploymentPlan
         expect(spec['resource_pool']).to eq(resource_pool_spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
         expect(spec['dns_domain_name']).to eq(domain_name)
         expect(spec['id']).to eq('uuid-1')
