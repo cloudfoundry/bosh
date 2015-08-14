@@ -4,7 +4,7 @@ require "spec_helper"
 
 describe Bosh::Cli::ReleaseTarball do
   let(:release_tarball) { Bosh::Cli::ReleaseTarball.new(tarball_path) }
-  let(:tarball_path) { spec_asset('valid_release.tgz') }
+  let(:tarball_path) { spec_asset('test_release.tgz') }
 
   describe "verifying a release" do
     it "verifies and reports a valid release" do
@@ -12,7 +12,7 @@ describe Bosh::Cli::ReleaseTarball do
     end
 
     it "verifies repacked release if appropriate option is set" do
-      package_matches = ["86bd8b15562cde007f030a303fa64779af5fa4e7"]
+      package_matches = ["93fade7dd8950d8a1dd2bf5ec751e478af3150e9"]
       repacked_tarball_path = release_tarball.repack(package_matches)
 
       expect(release_tarball.skipped).to eq(1)
@@ -25,9 +25,9 @@ describe Bosh::Cli::ReleaseTarball do
   end
 
   describe 'release file path contains spaces' do
-    let(:tarball_path) { spec_asset('valid_release  _dev_version.tgz') }
+    let(:tarball_path) { spec_asset('test_release  _dev_version.tgz') }
     let(:unpack_dir) { Dir.mktmpdir }
-    before { FileUtils.copy spec_asset('valid_release.tgz'), tarball_path }
+    before { FileUtils.copy spec_asset('test_release.tgz'), tarball_path }
     after { FileUtils.rm_rf(unpack_dir); FileUtils.rm_rf(tarball_path) }
 
     it 'correctly unpacks' do
@@ -37,7 +37,7 @@ describe Bosh::Cli::ReleaseTarball do
   end
 
   describe 'convert_to_old_format' do
-    let(:tarball_path) { spec_asset('valid_release_dev_version.tgz') }
+    let(:tarball_path) { spec_asset('test_release-dev_version.tgz') }
     let(:unpack_dir) { Dir.mktmpdir }
     after { FileUtils.rm_rf(unpack_dir) }
 

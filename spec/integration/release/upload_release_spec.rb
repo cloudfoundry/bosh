@@ -6,7 +6,7 @@ describe 'upload release', type: :integration do
 
   # ~31s
   it 'can upload a release' do
-    release_filename = spec_asset('valid_release.tgz')
+    release_filename = spec_asset('test_release.tgz')
 
     target_and_login
     out = bosh_runner.run("upload release #{release_filename}")
@@ -15,7 +15,7 @@ describe 'upload release', type: :integration do
 
     out = bosh_runner.run('releases')
     expect(out).to match /releases total: 1/i
-    expect(out).to match /appcloud.+0\.1/
+    expect(out).to match /test_release.+1/
   end
 
   it 'can upload a release without any package changes when using --rebase option' do

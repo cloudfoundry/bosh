@@ -10,7 +10,7 @@ module Bosh::Cli::Command::Release
         get_status: { 'version' => '1.2580.0' }
       )
     end
-    let(:release_archive) { spec_asset('valid_release.tgz') }
+    let(:release_archive) { spec_asset('test_release.tgz') }
     let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
     let(:release_location) { 'http://release_location' }
 
@@ -145,11 +145,17 @@ module Bosh::Cli::Command::Release
           end
 
           context 'when release does not exist' do
-            let(:tarball_path) { spec_asset('valid_release.tgz') }
+            let(:tarball_path) { spec_asset('test_release.tgz') }
+            let(:valid_release_tarball_path) { spec_asset('valid_release.tgz') }
 
             it 'uploads release and returns successfully' do
               expect(director).to receive(:upload_release).with(tarball_path, hash_including(:rebase => nil))
               command.upload(tarball_path)
+            end
+
+            it 'uploads a release tarball wihout fingerprints and returns successfully' do
+              expect(director).to receive(:upload_release).with(valid_release_tarball_path, hash_including(:rebase => nil))
+              command.upload(valid_release_tarball_path)
             end
           end
 
@@ -177,7 +183,7 @@ module Bosh::Cli::Command::Release
               let(:director_version) { '1.2580.0 (release:4fef83a2 bosh:4fef83a2)' }
               before { allow(director).to receive(:get_release).and_return(
                 {'jobs' => nil, 'packages' => nil, 'versions' => ['0+dev.1']}) }
-              let(:tarball_path) { spec_asset('valid_release.tgz') }
+              let(:tarball_path) { spec_asset('test_release.tgz') }
 
               it 'does upload release' do
                 expect(director).to receive(:upload_release)
@@ -190,7 +196,7 @@ module Bosh::Cli::Command::Release
 
               before { allow(director).to receive(:get_release).and_return(
                 {'jobs' => nil, 'packages' => nil, 'versions' => ['0.1-dev']}) }
-              let(:tarball_path) { spec_asset('valid_release.tgz') }
+              let(:tarball_path) { spec_asset('test_release.tgz') }
 
               it 'does upload release' do
                 expect(director).to receive(:upload_release)

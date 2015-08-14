@@ -36,7 +36,7 @@ module Bosh::Cli::Command::Release
               allow(command).to receive(:file_checksum).and_return("ae58f89c93073e0c455028a1c8216b3fc55fe672")
               allow(director).to receive(:uuid).and_return('123456-789abcdef')
               allow(director).to receive(:get_task_result_log).and_return('{"blobstore_id":"5619c1c7-da61-470c-b791-51cac0bf9935","sha1":"ae58f89c93073e0c455028a1c8216b3fc55fe672"}')
-              allow(director).to receive(:download_resource).and_return(spec_asset('valid_release_dev_version.tgz'))
+              allow(director).to receive(:download_resource).and_return(spec_asset('test_release-dev_version.tgz'))
             end
 
             context 'when export release command args are not following required format (string with slash in the middle)' do
@@ -73,7 +73,7 @@ module Bosh::Cli::Command::Release
                 before {
                   allow(client).to receive(:export).and_return([:done, some_task_id])
                   allow(director).to receive(:get_task_result_log).and_return('{"blobstore_id":"5619c1c7-da61-470c-b791-51cac0bf9935","sha1":"ae58f89c93073e0c455028a1c8216b3fc55fe672"}')
-                  allow(director).to receive(:download_resource).and_return(spec_asset('valid_release_dev_version.tgz'))
+                  allow(director).to receive(:download_resource).and_return(spec_asset('test_release-dev_version.tgz'))
                 }
 
                 after {

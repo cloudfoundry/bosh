@@ -29,7 +29,7 @@ describe 'cli: deployment process', type: :integration do
   describe 'bosh deploy' do
     context 'given two deployments from one release' do
       it 'is successful' do
-        release_filename = spec_asset('valid_release.tgz')
+        release_filename = spec_asset('test_release.tgz')
         minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
         deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
@@ -48,13 +48,13 @@ describe 'cli: deployment process', type: :integration do
 
         expect(bosh_runner.run('deploy')).to match /Deployed `minimal2' to `Test Director'/
         expect_output('deployments', <<-OUT)
-          +----------+--------------+-------------------+--------------+
-          | Name     | Release(s)   | Stemcell(s)       | Cloud Config |
-          +----------+--------------+-------------------+--------------+
-          | minimal  | appcloud/0.1 | ubuntu-stemcell/1 | latest       |
-          +----------+--------------+-------------------+--------------+
-          | minimal2 | appcloud/0.1 | ubuntu-stemcell/1 | latest       |
-          +----------+--------------+-------------------+--------------+
+          +----------+----------------+-------------------+--------------+
+          | Name     | Release(s)     | Stemcell(s)       | Cloud Config |
+          +----------+----------------+-------------------+--------------+
+          | minimal  | test_release/1 | ubuntu-stemcell/1 | latest       |
+          +----------+----------------+-------------------+--------------+
+          | minimal2 | test_release/1 | ubuntu-stemcell/1 | latest       |
+          +----------+----------------+-------------------+--------------+
           Deployments total: 2
         OUT
       end
@@ -63,7 +63,7 @@ describe 'cli: deployment process', type: :integration do
 
   describe 'bosh deployments' do
     it 'lists deployment details' do
-      release_filename = spec_asset('valid_release.tgz')
+      release_filename = spec_asset('test_release.tgz')
       deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
@@ -78,21 +78,20 @@ describe 'cli: deployment process', type: :integration do
 
       deployments_output = bosh_runner.run('deployments')
       expect(deployments_output).to include(<<-OUT)
-
-+---------+--------------+-------------------+--------------+
-| Name    | Release(s)   | Stemcell(s)       | Cloud Config |
-+---------+--------------+-------------------+--------------+
-| minimal | appcloud/0.1 | ubuntu-stemcell/1 | latest       |
-+---------+--------------+-------------------+--------------+
++---------+----------------+-------------------+--------------+
+| Name    | Release(s)     | Stemcell(s)       | Cloud Config |
++---------+----------------+-------------------+--------------+
+| minimal | test_release/1 | ubuntu-stemcell/1 | latest       |
++---------+----------------+-------------------+--------------+
 
 Deployments total: 1
-        OUT
+OUT
     end
   end
 
   describe 'bosh delete deployment' do
     it 'deletes an existing deployment' do
-      release_filename = spec_asset('valid_release.tgz')
+      release_filename = spec_asset('test_release.tgz')
       deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
