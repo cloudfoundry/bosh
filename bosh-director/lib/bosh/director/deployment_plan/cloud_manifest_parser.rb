@@ -56,7 +56,7 @@ module Bosh::Director
             when 'manual'
               ManualNetwork.new(network_spec, global_network_resolver, ip_provider_factory, @logger)
             when 'dynamic'
-              DynamicNetwork.new(network_spec, @logger)
+              DynamicNetwork.parse(network_spec, @logger)
             when 'vip'
               VipNetwork.new(network_spec, @logger)
             else

@@ -112,11 +112,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          DynamicNetwork.new({
-            'name' => network_name,
-            'cloud_properties' => cloud_properties,
-            'dns' => dns
-          }, logger)
+          DynamicNetwork.new(network_name, network_name, cloud_properties, dns, logger)
         end
 
         let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
@@ -682,7 +678,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-      let(:network) { DynamicNetwork.new(network_spec, logger) }
+      let(:network) { DynamicNetwork.parse(network_spec, logger) }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
@@ -759,7 +755,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-      let(:network) { DynamicNetwork.new(network_spec, logger) }
+      let(:network) { DynamicNetwork.parse(network_spec, logger) }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',

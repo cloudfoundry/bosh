@@ -4,29 +4,27 @@ module Bosh::Director
   module DeploymentPlan
     class DynamicNetwork < Network
       include DnsHelper
+      extend DnsHelper
+      extend ValidationHelper
 
-      # @!attribute [rw] cloud_properties
-      #   @return [Hash] Network cloud properties
-      attr_accessor :cloud_properties
-
-      # @!attribute [rw] dns
-      #   @return [Array] an array of DNS servers
-      attr_accessor :dns
-
-      ##
-      # Creates a new network.
-      #
-      # @param [Hash] network_spec parsed deployment manifest network section
-      # @param [Logger] logger
-      def initialize(network_spec, logger)
-        super
-        @cloud_properties =
-          safe_property(network_spec, "cloud_properties", class: Hash, default: {})
-
-        @dns = dns_servers(network_spec["name"], network_spec)
-
-        @logger = TaggedLogger.new(@logger, 'network-configuration')
+      def self.parse(network_spec, logger)
+        name = safe_property(network_spec, "name", :class => String)
+        canonical_name = canonical(name)
+        cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
+        dns = dns_servers(network_spec["name"], network_spec)
+        logger = TaggedLogger.new(logger, 'network-configuration')
+        new(name, canonical_name, cloud_properties, dns, logger)
       end
+
+      def initialize(name, canonical_name, cloud_properties, dns, logger)
+        @name = name
+        @canonical_name = canonical_name
+        @cloud_properties = cloud_properties
+        @dns = dns
+        @logger = logger
+      end
+
+      attr_accessor :cloud_properties, :dns
 
       ##
       # Reserves a network resource.
