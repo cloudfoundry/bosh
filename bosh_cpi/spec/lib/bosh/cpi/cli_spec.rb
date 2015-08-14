@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cpi::Cli do
   describe '#run' do
-    subject { described_class.new(cpi, logs_io, result_io) }
+    subject { described_class.new(lambda { cpi }, logs_io, result_io) }
     let(:cpi) { instance_double('Bosh::Cloud') }
     let(:logs_io) { StringIO.new }
     let(:result_io) { StringIO.new }
