@@ -47,7 +47,7 @@ module Bosh::Cli::Command
           err("Checksum mismatch for downloaded blob `#{tarball_file_path}'")
         end
 
-        task_report(status, task_id, "Exported Release `#{release.name.make_green}/#{release.version.make_green}` for `#{stemcell_os.make_green}/#{stemcell.version.make_green}`")
+        task_report(status, task_id, "Exported release `#{release.name.make_green}/#{release.version.make_green}` for `#{stemcell_os.make_green}/#{stemcell.version.make_green}`")
       end
 
       # Returns file SHA1 checksum

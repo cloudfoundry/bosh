@@ -113,6 +113,7 @@ module Bosh
         end
 
         def validate_packages(planner)
+          faults = {}
           release_manager = Bosh::Director::Api::ReleaseManager.new
           planner.jobs.each { |job|
             job.templates.each{ |template|
@@ -123,19 +124,32 @@ module Bosh
                 packages_list = release_version_model.transitive_dependencies(package)
                 packages_list << package
 
+                release_desc = "#{release_version_model.release.name}/#{release_version_model.version}"
+
                 packages_list.each { |needed_package|
                   if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
                     compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
                     if compiled_packages_list.nil?
-                      msg = "Can't deploy `#{release_version_model.release.name}/#{release_version_model.version}': it is not " +
-                          "compiled for `#{job.resource_pool.stemcell.model.desc}' and no source package is available"
-                      raise PackageMissingSourceCode, msg
+                      (faults[release_desc] ||= []) << {:package => needed_package, :stemcell => job.resource_pool.stemcell.model}
                     end
                   end
                 }
               }
             }
           }
+          handle_faults(faults) unless faults.empty?
+        end
+
+        def handle_faults(faults)
+          msg = "\n"
+          faults.each { |release_desc, packages_and_stemcells_list|
+            msg += "\nCan't deploy release `#{release_desc}'. It references packages (see below) without source code and are not compiled against intended stemcells:\n"
+            sorted_packages_and_stemcells = packages_and_stemcells_list.sort_by { |p| p[:package].name }
+            sorted_packages_and_stemcells.each { |item|
+              msg += " - `#{item[:package].name}/#{item[:package].version}' against `#{item[:stemcell].desc}'\n"
+            }
+          }
+          raise PackageMissingSourceCode, msg
         end
 
         def run_prepare_step(assembler)

@@ -40,9 +40,15 @@ describe 'export release', type: :integration do
       set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
       deploy({})
 
-      expect(
-         out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
-      ).to match(/Error 60001: Can't export `test_release\/1': it is not compiled for `ubuntu-stemcell\/1' and no source package is available/)
+      out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
+      expect(out).to include(<<-EOF)
+Error 60001: Can't export release `test_release/1'. It references packages without source code and are not compiled against `ubuntu-stemcell/1':
+ - pkg_1/16b4c8ef1574b3f98303307caad40227c208371f
+ - pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154
+ - pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c
+ - pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4
+ - pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4
+      EOF
     end
   end
 
@@ -194,7 +200,7 @@ describe 'export release', type: :integration do
       bosh_runner.run("upload release #{spec_asset('valid_release_0.2_with_same_package_versions.tgz')}")
       expect {
         bosh_runner.run("export release appcloud/0.2 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30011: Release appcloud\/0.2 not found in deployment minimal manifest/)
+      }.to raise_error(RuntimeError, /Error 30011: Release version `appcloud\/0.2' not found in deployment `minimal' manifest/)
     end
 
     it 'puts a tarball in the blobstore' do
