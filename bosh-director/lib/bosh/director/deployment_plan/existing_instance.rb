@@ -31,7 +31,7 @@ module Bosh::Director
         @model.index
       end
 
-      def name
+      def to_s
         "#{job_name}/#{index}"
       end
 

@@ -32,7 +32,7 @@ describe Bosh::Director::DeploymentPlan::ExistingInstance do
       instance_model.vm = nil
 
       instance = described_class.create_from_model(instance_model, logger)
-      expect(instance.name).to eq('fake-job/5')
+      expect(instance.to_s).to eq('fake-job/5')
     end
   end
 end

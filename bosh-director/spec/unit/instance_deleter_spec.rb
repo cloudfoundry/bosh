@@ -38,7 +38,7 @@ module Bosh::Director
           vm: vm,
           job_name: 'fake-job-name',
           index: 5,
-          name: 'fake-job-name/5',
+          to_s: 'fake-job-name/5',
           release_original_network_reservations: nil
         )
       end
