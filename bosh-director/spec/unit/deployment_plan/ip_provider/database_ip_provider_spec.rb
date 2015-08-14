@@ -172,7 +172,7 @@ module Bosh::Director::DeploymentPlan
       context 'when reserving IP fails' do
         let(:range) { NetAddr::CIDR.create('192.168.0.0/30') }
 
-        def fail_saving_ips(ips)
+        def fail_saving_ips(ips, fail_error)
           original_saves = {}
           ips.each do |ip|
             ip_address = Bosh::Director::Models::IpAddress.new(
@@ -189,39 +189,63 @@ module Bosh::Director::DeploymentPlan
             if ips.include?(model.address)
               original_save = original_saves[model.address]
               original_save.call
-              raise Sequel::ValidationFailed.new('address and network are not unique')
+              raise fail_error
             end
             model
           end
         end
 
-        context 'when allocating some IPs fails' do
-          before do
-            fail_saving_ips([
-                cidr_ip('192.168.0.0'),
-                cidr_ip('192.168.0.1'),
-                cidr_ip('192.168.0.2'),
-              ])
+        shared_examples :retries_on_race_condition do
+          context 'when allocating some IPs fails' do
+            before do
+              fail_saving_ips([
+                  cidr_ip('192.168.0.0'),
+                  cidr_ip('192.168.0.1'),
+                  cidr_ip('192.168.0.2'),
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until it succeeds' do
+              expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.3'))
+            end
           end
 
-          it 'retries until it succeeds' do
-            expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.3'))
+          context 'when allocating any IP fails' do
+            before do
+              fail_saving_ips([
+                  cidr_ip('192.168.0.0'),
+                  cidr_ip('192.168.0.1'),
+                  cidr_ip('192.168.0.2'),
+                  cidr_ip('192.168.0.3'),
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until there are no more IPs available' do
+              expect(ip_provider.allocate_dynamic_ip(instance)).to be_nil
+            end
           end
         end
 
-        context 'when allocating any IP fails' do
-          before do
-            fail_saving_ips([
-                cidr_ip('192.168.0.0'),
-                cidr_ip('192.168.0.1'),
-                cidr_ip('192.168.0.2'),
-                cidr_ip('192.168.0.3'),
-              ])
-          end
+        context 'when sequel validation errors' do
+          let(:fail_error) { Sequel::ValidationFailed.new('address and network are not unique') }
 
-          it 'retries until there are no more IPs available' do
-            expect(ip_provider.allocate_dynamic_ip(instance)).to be_nil
-          end
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when postgres unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('duplicate key value violates unique constraint') }
+
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when mysql unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('Duplicate entry') }
+
+          it_behaves_like :retries_on_race_condition
         end
       end
     end
