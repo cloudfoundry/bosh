@@ -137,4 +137,4 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: hotfix/101297474
+      branch: hotfix-101297474
