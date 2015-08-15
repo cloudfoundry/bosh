@@ -137,7 +137,6 @@ module Bosh::Director
         @subnets.find { |subnet| subnet.range.contains?(ip) }
       end
 
-
       def availability_zones
         @subnets.map(&:availability_zone).compact.uniq
       end

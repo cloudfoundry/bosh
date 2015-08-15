@@ -8,23 +8,42 @@ module Bosh::Director
       extend ValidationHelper
 
       def self.parse(network_spec, logger)
+        if network_spec.has_key?('subnets')
+          if network_spec.has_key?('dns')
+            raise NetworkInvalidProperty, "top-level 'dns' invalid when specifying subnets"
+          end
+
+          if network_spec.has_key?('cloud_properties')
+            raise NetworkInvalidProperty, "top-level 'cloud_properties' invalid when specifying subnets"
+          end
+
+          subnets = network_spec['subnets'].map do |subnet_properties|
+            dns = dns_servers(subnet_properties["name"], subnet_properties)
+            cloud_properties =
+              safe_property(subnet_properties, "cloud_properties", class: Hash, default: {})
+            DynamicNetworkSubnet.new(dns, cloud_properties)
+          end
+        else
+          cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
+          dns = dns_servers(network_spec["name"], network_spec)
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties)]
+        end
+
         name = safe_property(network_spec, "name", :class => String)
         canonical_name = canonical(name)
-        cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
-        dns = dns_servers(network_spec["name"], network_spec)
         logger = TaggedLogger.new(logger, 'network-configuration')
-        new(name, canonical_name, cloud_properties, dns, logger)
+
+        new(name, canonical_name, subnets, logger)
       end
 
-      def initialize(name, canonical_name, cloud_properties, dns, logger)
+      def initialize(name, canonical_name, subnets, logger)
         @name = name
         @canonical_name = canonical_name
-        @cloud_properties = cloud_properties
-        @dns = dns
+        @subnets = subnets
         @logger = logger
       end
 
-      attr_accessor :cloud_properties, :dns
+      attr_reader :subnets
 
       ##
       # Reserves a network resource.
@@ -58,11 +77,13 @@ module Bosh::Director
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
         reservation.validate_type(DynamicNetworkReservation)
 
+        subnet = subnets.first # TODO: care about AZ someday
+
         config = {
           "type" => "dynamic",
-          "cloud_properties" => @cloud_properties
+          "cloud_properties" => subnet.cloud_properties
         }
-        config["dns"] = @dns if @dns
+        config["dns"] = subnet.dns if subnet.dns
 
         if default_properties
           config["default"] = default_properties.sort
