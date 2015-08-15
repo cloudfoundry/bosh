@@ -9,6 +9,8 @@ groups:
       - integration-1.9-postgres
       - integration-2.1-mysql
       - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
 
   - name: 1.9
     jobs:
@@ -16,6 +18,8 @@ groups:
       - unit-1.9
       - integration-1.9-mysql
       - integration-1.9-postgres
+      - publish-coverage
+      - promote-candidate
 
   - name: 2.1
     jobs:
@@ -23,6 +27,8 @@ groups:
       - unit-2.1
       - integration-2.1-mysql
       - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
 
   - name: mysql
     jobs:
@@ -31,6 +37,8 @@ groups:
       - unit-2.1
       - integration-1.9-mysql
       - integration-2.1-mysql
+      - publish-coverage
+      - promote-candidate
 
   - name: postgres
     jobs:
@@ -39,6 +47,8 @@ groups:
       - unit-2.1
       - integration-1.9-postgres
       - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
 
 jobs:
   - name: start-job
@@ -127,6 +137,29 @@ jobs:
             DB:           postgresql
             RUBY_VERSION: 2.1.6
 
+  - name: publish-coverage
+    public: true
+    serial: true
+    plan:
+      - trigger: true
+        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        get: bosh-src
+      - task: publish
+        file: bosh-src/ci/tasks/publish-coverage.yml
+        config:
+          params:
+            CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
+
+  - name: promote-candidate
+    public: true
+    serial: true
+    plan:
+      - trigger: true
+        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        get: bosh-src
+
+      - {put: bosh-candidate, params: {repository: bosh-src}}
+
 resources:
   - name: interval-trigger
     type: time
@@ -137,4 +170,11 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: hotfix-101297474
+      branch: develop
+
+  - name: bosh-candidate
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: candidate
+      private_key: {{github_deployment_key__bosh}}
