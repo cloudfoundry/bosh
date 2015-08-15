@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'yaml'
+require 'tempfile'
 
 describe "the vsphere_cpi executable" do
   it 'will not evaluate anything that causes an exception and will return the proper message to stdout' do
@@ -53,11 +54,9 @@ describe "the vsphere_cpi executable" do
 
     expect(result['result']).to be_nil
 
-    expect(result['error']).to eq({
-      'type' => 'Unknown',
-      'message' => 'Connection refused - connect(2) for "0.0.0.0" port 5000 (https://0.0.0.0:5000)',
-      'ok_to_retry' => false
-    })
+    expect(result['error']['type']).to eq('Unknown')
+    expect(result['error']['message']).to include('Connection refused - connect(2)')
+    expect(result['error']['ok_to_retry']).to eq(false)
 
     expect(result['log']).to include('backtrace')
   end

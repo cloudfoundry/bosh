@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'tempfile'
 
 describe "the openstack_cpi executable" do
   it 'will not evaluate anything that causes an exception and will return the proper message to stdout' do

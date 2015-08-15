@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'json'
+require 'tempfile'
 
 describe "the aws_cpi executable" do
   it 'will not evaluate anything that causes an exception and will return the proper message to stdout' do
