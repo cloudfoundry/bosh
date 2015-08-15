@@ -31,9 +31,7 @@ describe "the aws_cpi executable" do
     command_file.write({'method'=>'ping', 'arguments'=>[], 'context'=>{'director_uuid' => 'abc123'}}.to_json)
     command_file.close
 
-    stderr_file = Tempfile.new('stderr')
-
-    stdoutput = `bin/aws_cpi #{config_file.path} < #{command_file.path} 2> #{stderr_file.path}`
+    stdoutput = `bin/aws_cpi #{config_file.path} < #{command_file.path} 2> /dev/null`
     status = $?.exitstatus
 
     expect(status).to eq(0)
@@ -50,8 +48,6 @@ describe "the aws_cpi executable" do
     })
 
     expect(result['log']).to include('backtrace')
-
-    expect(stderr_file.readlines).to be_empty
   end
 
   it 'will return an appropriate error message when passed an invalid config file' do
@@ -63,9 +59,7 @@ describe "the aws_cpi executable" do
     command_file.write({'method'=>'ping', 'arguments'=>[], 'context'=>{'director_uuid' => 'abc123'}}.to_json)
     command_file.close
 
-    stderr_file = Tempfile.new('stderr')
-
-    stdoutput = `bin/aws_cpi #{config_file.path} < #{command_file.path} 2> #{stderr_file.path}`
+    stdoutput = `bin/aws_cpi #{config_file.path} < #{command_file.path} 2> /dev/null`
     status = $?.exitstatus
 
     expect(status).to eq(0)
@@ -82,7 +76,5 @@ describe "the aws_cpi executable" do
     })
 
     expect(result['log']).to include('backtrace')
-
-    expect(stderr_file.readlines).to be_empty
   end
 end
