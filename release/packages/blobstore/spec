@@ -1,6 +1,0 @@
----
-name: blobstore
-dependencies:
-- ruby
-files:
-- bosh/simple_blobstore_server/*.gem
