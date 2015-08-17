@@ -37,10 +37,6 @@ describe 'registry.yml.erb' do
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 
-  it 'raises an error when no cloud provider is configured' do
-    expect { parsed_yaml }.to raise_error('Could not find cloud plugin')
-  end
-
   shared_examples :database_options do
     it 'renders database properties' do
       expect(parsed_yaml['db']).to eq({
