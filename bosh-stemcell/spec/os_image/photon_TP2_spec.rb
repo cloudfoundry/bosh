@@ -3,7 +3,6 @@ require 'spec_helper'
 describe 'Photon 1 OS image', os_image: true do
   it_behaves_like 'every OS image'
   it_behaves_like 'a systemd-based OS image'
-  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   context 'installed by base_rhel' do
         describe file('/etc/photon-release') do

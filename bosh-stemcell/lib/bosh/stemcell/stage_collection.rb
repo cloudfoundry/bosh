@@ -265,7 +265,6 @@ module Bosh::Stemcell
     def photon_os_stages
       [
         :base_photon,
-        :system_ixgbevf,
         bosh_steps,
         :base_ssh,
         :rsyslog_config,
