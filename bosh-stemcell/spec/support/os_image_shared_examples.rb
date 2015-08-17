@@ -162,4 +162,19 @@ shared_examples_for 'every OS image' do
       it { should_not be_installed }
     end
   end
+
+  context '/etc/passwd file' do
+    describe file('/etc/passwd') do
+      # should be owned by root user (stig: V-38450)
+      it { should be_owned_by('root') }
+      # should be group-owned by root group (stig: V-38451)
+      it { should be_grouped_into('root') }
+    end
+
+    context 'should not contain password hash (stig: V-38499)' do
+      describe command('grep -v "^#" /etc/passwd | awk -F: \'($2 != "x") {print}\'') do
+        its (:stdout) { should eq('') }
+      end
+    end
+  end
 end
