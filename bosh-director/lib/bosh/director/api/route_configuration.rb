@@ -12,10 +12,6 @@ module Bosh
           controllers = {}
           controllers['/backups'] = Bosh::Director::Api::Controllers::BackupsController.new(@config)
           controllers['/cloud_configs'] = Bosh::Director::Api::Controllers::CloudConfigsController.new(@config)
-          controllers['/compiled_package_groups'] = Bosh::Director::Api::Controllers::CompiledPackagesController.new(
-            @config,
-            Bosh::Director::Api::CompiledPackageGroupManager.new
-          )
           controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(@config)
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new(@config)
           controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(@config)

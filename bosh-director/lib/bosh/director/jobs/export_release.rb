@@ -2,6 +2,7 @@ require 'securerandom'
 require 'common/version/release_version'
 require 'bosh/director/compiled_release_downloader'
 require 'bosh/director/compiled_release_manifest'
+require 'bosh/director/compiled_package_group'
 
 module Bosh::Director
   module Jobs
