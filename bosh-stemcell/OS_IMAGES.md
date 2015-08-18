@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `1B_yfR3ukFZiCHqopmybOTo13Afq_Nci`
+  - update kernel and openssh-server for USN-2718-1 & USN-2710-2
+
 * `EYBafGzUZcQNZ.kwk825bNc.4RUmGGaV`
   - update openssh-server for USN-2710-1
 
