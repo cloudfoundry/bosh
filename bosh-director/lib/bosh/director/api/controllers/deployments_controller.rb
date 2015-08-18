@@ -48,7 +48,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}
+      # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true
       put '/:deployment/jobs/:job/:index', :consumes => :yaml do
         begin
           index = Integer(params[:index])
@@ -61,9 +61,10 @@ module Bosh::Director
             params[:job] => {
               'instance_states' => {
                 index => params['state']
-              }
+              },
             }
-          }
+          },
+          'skip_drain' => params[:job]
         }
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
@@ -269,6 +270,7 @@ module Bosh::Director
       post '/', :consumes => :yaml do
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
+        options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
 
         task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
@@ -312,7 +314,6 @@ module Bosh::Director
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
         planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
       end
-
 
       def convert_job_instance_hash(hash)
         hash.reduce([]) do |jobs, kv|

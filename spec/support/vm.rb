@@ -28,8 +28,12 @@ module Bosh::Spec
       read_file(File.join('jobs', template_name, template_path))
     end
 
-    def read_file(file_path)
-      File.read(File.join(@agent_base_dir, file_path))
+    def read_file(file_name)
+      File.read(file_path(file_name))
+    end
+
+    def file_path(file_name)
+      File.join(@agent_base_dir, file_name)
     end
 
     def write_job_log(file_path, file_contents)

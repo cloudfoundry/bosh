@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+require_relative '../bin/optionally_run_with_bundler'
+OptionallyRunWithBundler.run(ENV)
+
 require 'benchmark'
 require_cli_time = Benchmark.realtime { require "cli" }
 

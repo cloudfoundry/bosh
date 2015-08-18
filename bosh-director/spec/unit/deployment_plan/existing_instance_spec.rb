@@ -25,4 +25,14 @@ describe Bosh::Director::DeploymentPlan::ExistingInstance do
       expect(Bosh::Director::Models::IpAddress.all.size).to eq(0)
     end
   end
+
+  context 'when instance does not have VM' do
+    it 'can be created' do
+      instance_model = Bosh::Director::Models::Instance.make(job: 'fake-job', index: 5)
+      instance_model.vm = nil
+
+      instance = described_class.create_from_model(instance_model, logger)
+      expect(instance.to_s).to eq('fake-job/5')
+    end
+  end
 end

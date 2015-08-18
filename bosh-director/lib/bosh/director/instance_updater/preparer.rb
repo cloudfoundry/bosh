@@ -10,7 +10,7 @@ module Bosh::Director
       # If resource pool has changed or instance will be detached
       # there is no point in preparing current VM for future since it will be destroyed.
       if !@instance.resource_pool_changed? && @instance.state != 'detached'
-        @agent_client.prepare(@instance.spec)
+        @agent_client.prepare(@instance.apply_spec)
       end
     rescue RpcRemoteException => e
       if e.message =~ /unknown message/

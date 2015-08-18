@@ -51,7 +51,15 @@ module Bosh::Director
     end
 
     def write(dest_path)
-      File.open(dest_path, 'w') { |f| f.write(YAML.dump(generate_manifest)) }
+      manifest = generate_manifest
+      manifest_yaml = YAML.dump(manifest)
+      logger.debug("release.MF contents of #{manifest['name']}/#{manifest['version']} compiled release tarball:\n " + manifest_yaml)
+      File.open(dest_path, 'w') { |f| f.write(manifest_yaml) }
     end
+
+    def logger
+      @logger ||= Config.logger
+    end
+
   end
 end

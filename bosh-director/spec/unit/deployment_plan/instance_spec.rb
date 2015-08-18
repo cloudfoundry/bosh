@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-    let(:availability_zone) { 'foo-az' }
+    let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
     let(:vm) { Vm.new }
     before do
       allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -114,11 +114,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          DynamicNetwork.new({
-            'name' => network_name,
-            'cloud_properties' => cloud_properties,
-            'dns' => dns
-          }, logger)
+          DynamicNetwork.new(network_name, network_name, cloud_properties, dns, logger)
         end
 
         let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
@@ -414,14 +410,11 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
-            'properties' => nil,
             'dns_domain_name' => 'test_domain',
-            'links' => {},
             'persistent_disk' => 0
           }
 
@@ -447,20 +440,12 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'availability_zone' => 'foo-az',
             'networks' => {'fake-network' => 'fake-network-settings'},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
-            'properties' => nil,
             'dns_domain_name' => 'test_domain',
-            'links' => {},
             'persistent_disk' => 100,
-            'persistent_disk_pool' =>{
-              'name' => /[a-z0-9-]+/, # UUID
-              'disk_size' =>100,
-              'cloud_properties' =>{}
-            }
           }
 
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
@@ -665,7 +650,7 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#spec' do
+    describe '#template_spec' do
       let(:job_spec) { {name: 'job', release: 'release', templates: []} }
       let(:release_spec) { {name: 'release', version: '1.1-dev'} }
       let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
@@ -675,7 +660,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-      let(:network) { DynamicNetwork.new(network_spec, logger) }
+      let(:network) { DynamicNetwork.parse(network_spec, logger) }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
@@ -695,18 +680,95 @@ module Bosh::Director::DeploymentPlan
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
+      let(:index) { 0 }
+      before do
 
+        network.reserve(reservation)
+        allow(plan).to receive(:network).and_return(network)
+        allow(job).to receive(:instance_state).with(index).and_return('started')
+      end
+
+      it 'returns a valid instance template_spec' do
+        network_name = network_spec['name']
+        instance.add_network_reservation(reservation)
+        instance.bind_unallocated_vm
+        spec = instance.template_spec
+        expect(spec['deployment']).to eq('fake-deployment')
+        expect(spec['job']).to eq(job_spec)
+        expect(spec['index']).to eq(index)
+        expect(spec['networks']).to include(network_name)
+
+        expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
+        expect(spec['networks'][network_name]).to include(
+            'type' => 'dynamic',
+            'cloud_properties' => network_spec['cloud_properties'],
+            'dns_record_name' => expect_dns_name
+          )
+
+        expect(spec['resource_pool']).to eq(resource_pool_spec)
+        expect(spec['packages']).to eq(packages)
+        expect(spec['persistent_disk']).to eq(0)
+        expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
+        expect(spec['configuration_hash']).to be_nil
+        expect(spec['properties']).to eq(properties)
+        expect(spec['dns_domain_name']).to eq(domain_name)
+        expect(spec['links']).to eq('fake-link')
+        expect(spec['id']).to eq('uuid-1')
+        expect(spec['availability_zone']).to eq('foo-az')
+        expect(spec['bootstrap']).to eq(true)
+      end
+
+      it 'does not require persistent_disk_pool' do
+        allow(job).to receive(:persistent_disk_pool).and_return(nil)
+
+        spec = instance.template_spec
+        expect(spec['persistent_disk']).to eq(0)
+        expect(spec['persistent_disk_pool']).to eq(nil)
+      end
+    end
+
+    describe '#apply_spec' do
+      let(:job_spec) { {name: 'job', release: 'release', templates: []} }
+      let(:release_spec) { {name: 'release', version: '1.1-dev'} }
+      let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
+      let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
+      let(:properties) { {'key' => 'value'} }
+      let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
+      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
+      let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
+      let(:network) { DynamicNetwork.parse(network_spec, logger) }
+      let(:job) {
+        job = instance_double('Bosh::Director::DeploymentPlan::Job',
+          name: 'fake-job',
+          deployment: plan,
+          spec: job_spec,
+          canonical_name: 'job',
+          instances: ['instance0'],
+          release: release,
+          default_network: {},
+          resource_pool: resource_pool,
+          package_spec: packages,
+          persistent_disk_pool: disk_pool,
+          starts_on_deploy?: true,
+          link_spec: 'fake-link',
+          compilation?: false,
+          properties: properties)
+      }
+      let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
+      let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
+      let(:index) { 0 }
       before do
         network.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
 
-      it 'returns a valid instance spec' do
+      it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
         instance.add_network_reservation(reservation)
         instance.bind_unallocated_vm
-        spec = instance.spec
+        spec = instance.apply_spec
         expect(spec['deployment']).to eq('fake-deployment')
         expect(spec['job']).to eq(job_spec)
         expect(spec['index']).to eq(index)
@@ -722,34 +784,29 @@ module Bosh::Director::DeploymentPlan
         expect(spec['resource_pool']).to eq(resource_pool_spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
-        expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
-        expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
-        expect(spec['availability_zone']).to eq('foo-az')
-
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do
         instance.rendered_templates_archive =
           Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
 
-        expect(instance.spec['rendered_templates_archive']).to eq(
+        expect(instance.apply_spec['rendered_templates_archive']).to eq(
           'blobstore_id' => 'fake-blobstore-id',
           'sha1' => 'fake-sha1',
         )
       end
 
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
-        expect(instance.spec).to_not have_key('rendered_templates_archive')
+        expect(instance.apply_spec).to_not have_key('rendered_templates_archive')
       end
 
       it 'does not require persistent_disk_pool' do
         allow(job).to receive(:persistent_disk_pool).and_return(nil)
 
-        spec = instance.spec
+        spec = instance.apply_spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
       end

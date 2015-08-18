@@ -53,6 +53,8 @@ module Bosh::Director
 
               planner = create_planner
               compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
+
+              DeploymentPlan::PlannerFactory.validate_packages(planner, {:context => 'export'})
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                 planner,
                 compilation_instance_pool,

@@ -17,7 +17,7 @@ module Bosh::Director
     end
 
     def render_job_instance(instance)
-      rendered_job_instance = @instance_renderer.render(instance.spec)
+      rendered_job_instance = @instance_renderer.render(instance.template_spec)
 
       configuration_hash = rendered_job_instance.configuration_hash
 

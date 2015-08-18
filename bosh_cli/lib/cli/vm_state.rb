@@ -6,7 +6,7 @@ module Bosh::Cli
       @force = force
     end
 
-    def change(job, index, new_state, operation_desc)
+    def change(job, index, new_state, operation_desc, options = {})
       command.say("You are about to #{operation_desc.make_green}")
 
       check_if_manifest_changed(@manifest.hash)
@@ -17,7 +17,14 @@ module Bosh::Cli
 
       command.nl
       command.say("Performing `#{operation_desc}'...")
-      command.director.change_job_state(@manifest.name, @manifest.yaml, job, index, new_state)
+      command.director.change_job_state(
+        @manifest.name,
+        @manifest.yaml,
+        job,
+        index,
+        new_state,
+        options
+      )
     end
 
     private

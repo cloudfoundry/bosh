@@ -153,7 +153,8 @@ module Bosh::Director
     end
 
     def stop
-      stopper = Stopper.new(@instance, @agent, @target_state, Config, @logger)
+      skip_drain = @deployment_plan.skip_drain_for_job?(@job.name)
+      stopper = Stopper.new(@instance, @agent, @target_state, skip_drain, Config, @logger)
       stopper.stop
     end
 
@@ -243,7 +244,7 @@ module Bosh::Director
 
       #TODO: we only render the templates again because dynamic networking may have
       #      asssigned an ip address, so the state we got back from the @agent may
-      #      have mutated the instance.spec.  Ideally, we clean up the @agent interaction
+      #      result in a different instance.template_spec.  Ideally, we clean up the @agent interaction
       #      so that we only have to do this once.
       @job_renderer.render_job_instance(@instance)
     end

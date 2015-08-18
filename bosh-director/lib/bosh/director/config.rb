@@ -36,7 +36,11 @@ module Bosh::Director
         :nats_uri,
       )
 
-      attr_reader :db_config, :redis_logger_level
+      attr_reader(
+        :db_config,
+        :redis_logger_level,
+        :ignore_missing_gateway
+      )
 
       def clear
         self.instance_variables.each do |ivar|
@@ -141,6 +145,7 @@ module Bosh::Director
         @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
 
         @trusted_certs = config['trusted_certs'] || ''
+        @ignore_missing_gateway = config['ignore_missing_gateway']
 
         Bosh::Clouds::Config.configure(self)
 

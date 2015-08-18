@@ -14,8 +14,6 @@ module Bosh::Director
 
       attr_reader :uuid
 
-      attr_reader :availability_zone
-
       # @return [Models::Instance] Instance model
       attr_reader :model
 
@@ -62,6 +60,7 @@ module Bosh::Director
         @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
+        @bootstrap = @index.zero?
         @name = "#{@job.name}/#{@index}"
 
         @configuration_hash = nil
@@ -164,7 +163,7 @@ module Bosh::Director
       def apply_vm_state
         @logger.info('Applying VM state')
 
-        state = spec
+        state = apply_spec
         @model.vm.update(:apply_spec => state)
         agent_client.apply(state)
 
@@ -468,17 +467,47 @@ module Bosh::Director
       # Instance spec that's passed to the VM during the BOSH Agent apply call.
       # It's what's used for comparing the expected vs the actual state.
       # @return [Hash<String, Object>] instance spec
-      def spec
+      def apply_spec
         spec = {
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
           'id' => uuid,
-          'availability_zone' => availability_zone,
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
           'configuration_hash' => configuration_hash,
+          'dns_domain_name' => dns_domain_name,
+        }
+
+        if job.persistent_disk_pool
+          spec['persistent_disk'] = job.persistent_disk_pool.disk_size
+        else
+          spec['persistent_disk'] = 0
+        end
+
+        if template_hashes
+          spec['template_hashes'] = template_hashes
+        end
+
+        if rendered_templates_archive
+          spec['rendered_templates_archive'] = rendered_templates_archive.spec
+        end
+
+        spec
+      end
+
+      def template_spec
+        spec = {
+          'deployment' => @deployment.name,
+          'job' => job.spec,
+          'index' => index,
+          'bootstrap' => @bootstrap,
+          'id' => uuid,
+          'availability_zone' => availability_zone_name,
+          'networks' => network_settings,
+          'resource_pool' => job.resource_pool.spec,
+          'packages' => job.package_spec,
           'properties' => job.properties,
           'dns_domain_name' => dns_domain_name,
           'links' => job.link_spec,
@@ -495,10 +524,6 @@ module Bosh::Director
 
         if template_hashes
           spec['template_hashes'] = template_hashes
-        end
-
-        if rendered_templates_archive
-          spec['rendered_templates_archive'] = rendered_templates_archive.spec
         end
 
         spec

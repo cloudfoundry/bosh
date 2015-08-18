@@ -95,6 +95,7 @@ module Bosh::Director::Models
   IpAddress.blueprint do
     address { NetAddr::CIDR.create(Sham.ip) }
     instance  { Instance.make }
+    static { false }
     network_name { Sham.name }
     task_id { Sham.name }
     created_at { Time.now }

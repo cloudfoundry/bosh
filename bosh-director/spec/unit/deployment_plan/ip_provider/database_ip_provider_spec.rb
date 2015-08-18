@@ -34,13 +34,19 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'allocate_dynamic_ip' do
-      context 'when there are no IPs for that network' do
+      context 'when there are no IPs reserved for that network' do
         it 'returns the first in the range' do
           ip_address = ip_provider.allocate_dynamic_ip(instance)
 
           expected_ip_address = cidr_ip('192.168.0.0')
           expect(ip_address).to eq(expected_ip_address)
         end
+      end
+
+      it 'reserves IP as dynamic' do
+        ip_provider.allocate_dynamic_ip(instance)
+        saved_address = Bosh::Director::Models::IpAddress.first
+        expect(saved_address.static).to eq(false)
       end
 
       context 'when reserving more than one ip' do
@@ -166,7 +172,7 @@ module Bosh::Director::DeploymentPlan
       context 'when reserving IP fails' do
         let(:range) { NetAddr::CIDR.create('192.168.0.0/30') }
 
-        def fail_saving_ips(ips)
+        def fail_saving_ips(ips, fail_error)
           original_saves = {}
           ips.each do |ip|
             ip_address = Bosh::Director::Models::IpAddress.new(
@@ -183,39 +189,63 @@ module Bosh::Director::DeploymentPlan
             if ips.include?(model.address)
               original_save = original_saves[model.address]
               original_save.call
-              raise Sequel::ValidationFailed.new('address and network are not unique')
+              raise fail_error
             end
             model
           end
         end
 
-        context 'when allocating some IPs fails' do
-          before do
-            fail_saving_ips([
-                cidr_ip('192.168.0.0'),
-                cidr_ip('192.168.0.1'),
-                cidr_ip('192.168.0.2'),
-              ])
+        shared_examples :retries_on_race_condition do
+          context 'when allocating some IPs fails' do
+            before do
+              fail_saving_ips([
+                  cidr_ip('192.168.0.0'),
+                  cidr_ip('192.168.0.1'),
+                  cidr_ip('192.168.0.2'),
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until it succeeds' do
+              expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.3'))
+            end
           end
 
-          it 'retries until it succeeds' do
-            expect(ip_provider.allocate_dynamic_ip(instance)).to eq(cidr_ip('192.168.0.3'))
+          context 'when allocating any IP fails' do
+            before do
+              fail_saving_ips([
+                  cidr_ip('192.168.0.0'),
+                  cidr_ip('192.168.0.1'),
+                  cidr_ip('192.168.0.2'),
+                  cidr_ip('192.168.0.3'),
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until there are no more IPs available' do
+              expect(ip_provider.allocate_dynamic_ip(instance)).to be_nil
+            end
           end
         end
 
-        context 'when allocating any IP fails' do
-          before do
-            fail_saving_ips([
-                cidr_ip('192.168.0.0'),
-                cidr_ip('192.168.0.1'),
-                cidr_ip('192.168.0.2'),
-                cidr_ip('192.168.0.3'),
-              ])
-          end
+        context 'when sequel validation errors' do
+          let(:fail_error) { Sequel::ValidationFailed.new('address and network are not unique') }
 
-          it 'retries until there are no more IPs available' do
-            expect(ip_provider.allocate_dynamic_ip(instance)).to be_nil
-          end
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when postgres unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('duplicate key value violates unique constraint') }
+
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when mysql unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('Duplicate entry') }
+
+          it_behaves_like :retries_on_race_condition
         end
       end
     end
@@ -240,24 +270,49 @@ module Bosh::Director::DeploymentPlan
         expect(saved_address.created_at).to_not be_nil
       end
 
-      context 'when reserving dynamic IP and ip belongs to static pool' do
+      context 'when reserving dynamic IP' do
         let(:reservation) { BD::DynamicNetworkReservation.new(instance, network) }
-        before { reservation.resolve_ip('192.168.0.2') }
 
-        it 'raises an error' do
-          expect {
+        context 'when IP belongs to dynamic pool' do
+          before { reservation.resolve_ip('192.168.0.5') }
+
+          it 'saves IP as dynamic' do
             ip_provider.reserve_ip(reservation)
-          }.to raise_error BD::NetworkReservationWrongType
+            saved_address = Bosh::Director::Models::IpAddress.first
+            expect(saved_address.static).to eq(false)
+          end
+        end
+
+        context 'when IP belongs to static pool' do
+          before { reservation.resolve_ip('192.168.0.2') }
+
+          it 'raises an error' do
+            expect {
+              ip_provider.reserve_ip(reservation)
+            }.to raise_error BD::NetworkReservationWrongType
+          end
         end
       end
 
-      context 'when reserving static ip and ip belongs to dynamic pool' do
-        let(:reservation) { BD::StaticNetworkReservation.new(instance, network, '192.168.0.5') }
+      context 'when reserving static ip' do
+        context 'when IP belongs to static pool' do
+          let(:reservation) { BD::StaticNetworkReservation.new(instance, network, '192.168.0.2') }
 
-        it 'raises an error' do
-          expect {
+          it 'saves IP as static' do
             ip_provider.reserve_ip(reservation)
-          }.to raise_error BD::NetworkReservationWrongType
+            saved_address = Bosh::Director::Models::IpAddress.first
+            expect(saved_address.static).to eq(true)
+          end
+        end
+
+        context 'ip belongs to dynamic pool' do
+          let(:reservation) { BD::StaticNetworkReservation.new(instance, network, '192.168.0.5') }
+
+          it 'raises an error' do
+            expect {
+              ip_provider.reserve_ip(reservation)
+            }.to raise_error BD::NetworkReservationWrongType
+          end
         end
       end
 

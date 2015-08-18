@@ -11,12 +11,14 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       add_output(make_event('fake-s1-stage', 'fake-t1-task', 1, 1, 'started', ['fake-e1-tag1'], 0, nil, 100))
       add_output(make_event('fake-s1-stage', 'fake-t1-task', 1, 1, 'finished', ['fake-e1-tag1'], 0, nil, 1000))
 
-      add_output(make_event('fake-s2-stage', 'fake-t1-task', 1, 3, 'started', [], 0, nil, 100))
-      add_output(make_event('fake-s2-stage', 'fake-t2-task', 2, 3, 'started', [], 0, nil, 100))
-      add_output(make_event('fake-s2-stage', 'fake-t2-task', 2, 3, 'finished', [], 0, nil, 100))
-      add_output(make_event('fake-s2-stage', 'fake-t3-task', 3, 3, 'started', [], 0, nil, 100))
-      add_output(make_event('fake-s2-stage', 'fake-t1-task', 1, 3, 'finished', [], 0, nil, 1000))
-      add_output(make_event('fake-s2-stage', 'fake-t3-task', 3, 3, 'failed', [], 0,
+      add_output(make_event('fake-s2-stage', 'fake-t1-task', 1, 4, 'started', [], 0, nil, 100))
+      add_output(make_event('fake-s2-stage', 'fake-t2-task', 2, 4, 'started', [], 0, nil, 100))
+      add_output(make_event('fake-s2-stage', 'fake-t2-task', 2, 4, 'finished', [], 0, nil, 130))
+      add_output(make_event('fake-s2-stage', 'fake-t3-task', 3, 4, 'started', [], 0, nil, 160))
+      add_output(make_event('fake-s2-stage', 'fake-t2-task', 4, 4, 'started', [], 0, nil, 190))
+      add_output(make_event('fake-s2-stage', 'fake-t2-task', 4, 4, 'finished', [], 0, nil, 220))
+      add_output(make_event('fake-s2-stage', 'fake-t1-task', 1, 4, 'finished', [], 0, nil, 1000))
+      add_output(make_event('fake-s2-stage', 'fake-t3-task', 3, 4, 'failed', [], 0,
         {'error' => 'fake-error-description'}, 1400))
 
       add_output(make_event('fake-s3-stage', 'fake-t1-task', 1, 2, 'started', [], 0, nil, 100))
@@ -33,10 +35,11 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
 
   Started fake-s2-stage
   Started fake-s2-stage > fake-t1-task
-  Started fake-s2-stage > fake-t2-task. Done (00:00:00)
+  Started fake-s2-stage > fake-t2-task. Done (00:00:30)
   Started fake-s2-stage > fake-t3-task
+  Started fake-s2-stage > fake-t2-task. Done (00:00:30)
      Done fake-s2-stage > fake-t1-task (00:15:00)
-   Failed fake-s2-stage > fake-t3-task: fake-error-description (00:21:40)
+   Failed fake-s2-stage > fake-t3-task: fake-error-description (00:20:40)
    Failed fake-s2-stage (00:21:40)
 
   Started fake-s3-stage

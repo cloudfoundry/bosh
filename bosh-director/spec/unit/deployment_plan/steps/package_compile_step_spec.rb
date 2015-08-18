@@ -288,15 +288,12 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'deadbeef',
-          'availability_zone' => nil,
           'networks' => {'default' => 'network settings'},
           'resource_pool' => {},
           'packages' => {},
           'configuration_hash' => nil,
-          'properties' => {},
           'dns_domain_name' => nil,
-          'links' => {},
-          'persistent_disk' => 0
+          'persistent_disk' => 0,
         }
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
