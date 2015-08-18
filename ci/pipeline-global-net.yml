@@ -8,6 +8,7 @@ groups:
     - integration-1.9-postgres
     - integration-2.1-mysql
     - integration-2.1-postgres
+    - load-tests
 
 jobs:
   - name: unit-1.9
@@ -98,9 +99,29 @@ jobs:
           DB: postgresql
           RUBY_VERSION: 2.1.6
 
+  - name: load-tests
+    public: true
+    serial: true
+    plan:
+    - get: bosh-src
+      passed:
+      - integration-2.1-postgres
+      - integration-2.1-mysql
+      - integration-1.9-postgres
+      - integration-1.9-mysql
+    - get: bosh-load-tests
+    - task: test
+      privileged: true
+      file: bosh-load-tests/ci/tasks/test.yml
+
 resources:
   - name: bosh-src
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: global-net
+  - name: bosh-load-tests
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests
+      branch: master
