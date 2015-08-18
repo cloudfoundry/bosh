@@ -68,5 +68,15 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(resurrected_vm.cid)).to eq(expected_cloud_properties)
       end
     end
+
+    it 'exposes an availability zone for within the template spec for the instance' do
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config_hash)
+
+      foobar_vm = director.vm('foobar/0')
+      template = foobar_vm.read_job_template('foobar', 'bin/foobar_ctl')
+
+      expect(template).to include('availability_zone=my-az')
+    end
+
   end
 end

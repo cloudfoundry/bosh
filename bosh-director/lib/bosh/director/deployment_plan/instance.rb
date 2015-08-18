@@ -14,8 +14,6 @@ module Bosh::Director
 
       attr_reader :uuid
 
-      attr_reader :availability_zone
-
       # @return [Models::Instance] Instance model
       attr_reader :model
 
@@ -492,7 +490,7 @@ module Bosh::Director
           'index' => index,
           'bootstrap' => @bootstrap,
           'id' => uuid,
-          'availability_zone' => availability_zone,
+          'availability_zone' => availability_zone_name,
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
