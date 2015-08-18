@@ -108,7 +108,7 @@ module Bosh::Stemcell
 
     def finish_stemcell_stages
       [
-        :bosh_dpkg_list
+        :bosh_package_list
       ]
     end
 
