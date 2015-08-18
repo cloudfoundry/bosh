@@ -2,7 +2,7 @@
 
 module Bosh::Director
   module DeploymentPlan
-    class DynamicNetwork < Network
+    class DynamicNetwork
       include DnsHelper
       extend DnsHelper
       extend ValidationHelper
@@ -43,7 +43,7 @@ module Bosh::Director
         @logger = logger
       end
 
-      attr_reader :subnets
+      attr_reader :name, :canonical_name, :subnets
 
       ##
       # Reserves a network resource.
@@ -74,7 +74,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = Network::VALID_DEFAULTS)
         reservation.validate_type(DynamicNetworkReservation)
 
         subnet = subnets.first # TODO: care about AZ someday
