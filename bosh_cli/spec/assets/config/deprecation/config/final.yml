@@ -1,5 +1,5 @@
 ---
 blobstore:
-  provider: atmos
+  provider: simple
   options:
     uid: bosh

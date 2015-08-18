@@ -1,4 +1,5 @@
 ---
 blobstore:
-  atmos:
-    secret: bar
+  simple:
+    user: foo
+    password: bar

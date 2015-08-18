@@ -25,7 +25,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'fog',             '~>1.31.0'
   s.add_dependency 'httpclient',      '=2.4.0'
   s.add_dependency 'multi_json',      '~> 1.1'
-  s.add_dependency 'ruby-atmos-pure', '~> 1.0.5'
   s.add_dependency 'bosh_common',     "~>#{version}"
 
   s.add_development_dependency 'rspec', '~> 3.0'
