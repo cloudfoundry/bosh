@@ -1,8 +1,11 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(cloud,logger)
+    def initialize(cloud, logger, options={})
       @cloud = cloud
       @logger = logger
+
+      force = options.fetch(:force, false)
+      @error_ignorer = ErrorIgnorer.new(force, @logger)
     end
 
     def delete_for_instance(instance, options={})
@@ -18,7 +21,7 @@ module Bosh::Director
 
     def delete_vm(vm_model)
       @logger.info('Deleting VM')
-      @cloud.delete_vm(vm_model.cid)
+      @error_ignorer.with_force_check { @cloud.delete_vm(vm_model.cid) }
       vm_model.destroy
     end
 

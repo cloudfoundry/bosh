@@ -82,6 +82,7 @@ require 'bosh/director/nats_rpc'
 require 'bosh/director/network_reservation'
 require 'bosh/director/problem_scanner/scanner'
 require 'bosh/director/problem_resolver'
+require 'bosh/director/error_ignorer'
 require 'bosh/director/sequel'
 require 'common/thread_pool'
 
