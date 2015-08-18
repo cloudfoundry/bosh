@@ -32,7 +32,10 @@ describe 'cli: deployment process', type: :integration do
         release_filename = spec_asset('test_release.tgz')
         minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
         deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config['resource_pools'][0].delete('size')
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
 
         target_and_login
         bosh_runner.run("deployment #{deployment_manifest.path}")

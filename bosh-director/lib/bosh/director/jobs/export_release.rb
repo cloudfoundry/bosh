@@ -52,7 +52,7 @@ module Bosh::Director
           with_release_lock(@release_name, :timeout => lock_timeout) do
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
 
-              planner = create_planner
+              planner = create_planner(stemcell_manager)
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                   planner,
                   Config.cloud, # CPI
@@ -82,7 +82,7 @@ module Bosh::Director
         false
       end
 
-      def create_planner
+      def create_planner(stemcell_manager)
         cloud_config_model = @targeted_deployment.cloud_config
 
         planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
@@ -105,6 +105,24 @@ module Bosh::Director
 
         fake_job = create_fake_job(planner, fake_resource_pool_manifest, network_name)
         planner.add_job(fake_job)
+
+        assembler = DeploymentPlan::Assembler.new(
+            planner,
+            stemcell_manager,
+            Config.cloud,
+            nil, # blobstore not used for this assembler purposes
+            @logger,
+            @event_log
+        )
+        @logger.info('Created deployment plan')
+
+        track_and_log('Binding existing deployment') do
+          assembler.bind_existing_deployment
+        end
+
+        track_and_log('Binding resource pools') do
+          assembler.bind_resource_pools
+        end
 
         planner
       end
@@ -177,7 +195,7 @@ module Bosh::Director
         unless faults.empty?
           sorted_faults = faults.to_a.sort_by { |p| p.name }
           msg = "Can't export release `#{@release_name}/#{@release_version}'. It references packages without" +
-              " source code and are not compiled against `#{@stemcell.desc}':\n"
+              " source code that are not compiled against `#{@stemcell.desc}':\n"
           sorted_faults.each do |non_compiled_package|
             msg += " - #{non_compiled_package.name}/#{non_compiled_package.version}\n"
           end

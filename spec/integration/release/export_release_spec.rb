@@ -42,7 +42,7 @@ describe 'export release', type: :integration do
 
       out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
       expect(out).to include(<<-EOF)
-Error 60001: Can't export release `test_release/1'. It references packages without source code and are not compiled against `ubuntu-stemcell/1':
+Error 60001: Can't export release `test_release/1'. It references packages without source code that are not compiled against `ubuntu-stemcell/1':
  - pkg_1/16b4c8ef1574b3f98303307caad40227c208371f
  - pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154
  - pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c
@@ -289,6 +289,26 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
       expect(debug_task_output).to include('- name: job_using_pkg_1')
       expect(debug_task_output).to include('- name: job_using_pkg_1_and_2')
       expect(debug_task_output).to include('- name: job_using_pkg_2')
+    end
+
+  end
+  context 'when there is an existing deployment with running VMs' do
+    before {
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      upload_cloud_config(:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config)
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
+      deploy({})
+    }
+
+    it 'allocates non-conflicting IPs for compilation VMs' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output =  bosh_runner.run("export release test_release/1 centos-7/3001")
+      expect(output).to include('Done compiling packages')
+      expect(output).to include('Done copying packages')
+      expect(output).to include('Done copying jobs')
+      expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
     end
   end
 end

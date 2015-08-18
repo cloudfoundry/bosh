@@ -49,9 +49,20 @@ module Bosh
       # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
 
+        ips = []
         cmd = commands.next_create_vm_cmd
 
-        write_agent_default_network(agent_id, cmd.ip_address) if cmd.ip_address
+        if cmd.ip_address
+          # special case used by dynamic IP assignment tests: CPI always chooses its own IP
+          write_agent_default_network(agent_id, cmd.ip_address)
+          ips << { 'network' => 'cloud', 'ip' => cmd.ip_address }
+        else
+          networks.each do |network_name, network|
+            ips << { 'network' => network_name, 'ip' => network['ip'] }
+          end
+        end
+
+        allocate_ips(ips)
 
         write_agent_settings(agent_id, {
           agent_id: agent_id,
@@ -67,7 +78,7 @@ module Bosh
         agent_pid = spawn_agent_process(agent_id)
 
         FileUtils.mkdir_p(@running_vms_dir)
-        File.write(vm_file(agent_pid), agent_id)
+        File.write(vm_file(agent_pid), JSON.dump("agent_id" => agent_id, "ips" => ips))
 
         agent_pid.to_s
       end
@@ -79,6 +90,7 @@ module Bosh
       rescue Errno::ESRCH
       # rubocop:enable HandleExceptions
       ensure
+        free_ips(ips_for_vm_id(vm_name)) if has_vm?(vm_name)
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))
       end
 
@@ -202,8 +214,32 @@ module Bosh
         agent_pid
       end
 
+      def allocate_ips(ips)
+        ips.each do |ip|
+          begin
+            network_dir = File.join(@base_dir, 'dummy_cpi_networks', ip['network'])
+            FileUtils.makedirs(network_dir)
+            open(File.join(network_dir, ip['ip']), File::WRONLY|File::CREAT|File::EXCL).close
+          rescue Errno::EEXIST
+            # at this point we should actually free all the IPs we successfully allocated before the collision,
+            # but in practice the tests only feed in one IP per VM so that cleanup code would never be exercised
+            raise "IP Address #{ip['ip']} in network '#{ip['network']}' is already in use"
+          end
+        end
+      end
+
+      def free_ips(ips)
+        ips.each do |ip|
+          FileUtils.rm_rf(File.join(@base_dir, 'dummy_cpi_networks', ip['network'], ip['ip']))
+        end
+      end
+
+      def ips_for_vm_id(vm_id)
+        JSON.parse(File.read(vm_file(vm_id)))['ips']
+      end
+
       def agent_id_for_vm_id(vm_id)
-        File.read(vm_file(vm_id))
+        JSON.parse(File.read(vm_file(vm_id)))['agent_id']
       end
 
       def agent_settings_file(agent_id)
