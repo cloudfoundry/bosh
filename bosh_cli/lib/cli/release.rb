@@ -71,7 +71,6 @@ module Bosh::Cli
       return true if provider == 'local'
 
       has_legacy_secret? ||
-        has_blobstore_secrets?(bs, "atmos", "secret") ||
         has_blobstore_secrets?(bs, "simple", "user", "password") ||
         has_blobstore_secrets?(bs, "dav", "user", "password") ||
         has_blobstore_secrets?(bs, "swift", "rackspace") ||
@@ -93,8 +92,6 @@ module Bosh::Cli
     #   s3:
     #     secret_access_key: ...
     #     access_key_id: ...
-    #   atmos:
-    #     secret: ...
 
     # Picks blobstore client to use with current release.
     #
@@ -114,8 +111,6 @@ module Bosh::Cli
 
       provider = blobstore_config["provider"]
       options  = blobstore_config["options"] || {}
-
-      deprecate_blobstore_secret if has_legacy_secret?
 
       options = merge_private_data(provider, options)
 
@@ -156,19 +151,6 @@ module Bosh::Cli
       options.merge(bs[provider] ? bs[provider] : {})
     end
 
-    # stores blobstore_secret as blobstore.atmos.secret
-    def deprecate_blobstore_secret
-      say("WARNING:".make_red + " use of blobstore_secret is deprecated")
-
-      @private_config["blobstore"] ||= {}
-      bs = @private_config["blobstore"]
-
-      bs["atmos"] ||= {}
-      atmos = bs["atmos"]
-
-      atmos["secret"] = @private_config["blobstore_secret"]
-    end
-
     # Upgrade path for legacy clients that kept release metadata
     # in config/dev.yml and config/final.yml
     #
@@ -200,30 +182,6 @@ module Bosh::Cli
         say("Migrated dev config file format".make_green)
       end
 
-      if @final_config.has_key?("blobstore_options") &&
-          @final_config["blobstore_options"] != "deprecated"
-        say("Found legacy config file `#{@final_config_file}'".make_yellow)
-
-        unless @final_config["blobstore_options"]["provider"] == "atmos" &&
-            @final_config["blobstore_options"].has_key?("atmos_options")
-          err("Please update your release to the version " +
-                  "that uses Atmos blobstore")
-        end
-
-        new_final_config = {
-          "final_name" => @final_config["name"],
-          "blobstore" => {
-            "provider" => "atmos",
-            "options" => @final_config["blobstore_options"]["atmos_options"]
-          },
-          "blobstore_options" => "deprecated"
-        }
-
-        @final_config = new_final_config
-
-        File.open(@final_config_file, "w") { |f| Psych.dump(@final_config, f) }
-        say("Migrated final config file format".make_green)
-      end
     end
 
     def load_config(file)

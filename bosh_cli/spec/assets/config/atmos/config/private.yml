@@ -1,4 +1,0 @@
----
-blobstore:
-  atmos:
-    secret: bar

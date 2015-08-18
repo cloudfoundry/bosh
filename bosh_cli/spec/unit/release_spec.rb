@@ -149,18 +149,6 @@ describe Bosh::Cli::Release do
   end
 
   describe "merging final.yml with private.yml" do
-    it "should print a warning when it contains blobstore_secret" do
-      r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
-      opts = {
-        :uid => "bosh",
-        :secret => "bar"
-      }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("atmos", opts)
-      expect(r).to receive(:say)
-
-      r.blobstore
-    end
-
     it "should detect blobstore secrets for deprecated options" do
       r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
       expect(r.has_blobstore_secret?).to eq(true)
@@ -179,21 +167,6 @@ describe Bosh::Cli::Release do
 
     it "should detect blobstore secrets for s3 options" do
       r = Bosh::Cli::Release.new(spec_asset("config/s3"))
-      expect(r.has_blobstore_secret?).to eq(true)
-    end
-
-    it "should merge atmos secrets into options" do
-      r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
-      opts = {
-        :uid => "bosh",
-        :secret => "bar"
-      }
-      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("atmos", opts)
-      r.blobstore
-    end
-
-    it "should detect blobstore secrets for atmos options" do
-      r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
       expect(r.has_blobstore_secret?).to eq(true)
     end
 
