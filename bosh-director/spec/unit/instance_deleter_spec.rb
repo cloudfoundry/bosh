@@ -43,6 +43,22 @@ module Bosh::Director
         )
       end
 
+      let(:stopper) do
+        agent_client = instance_double(AgentClient)
+        allow(AgentClient).to receive(:with_vm).with(instance.vm.model).and_return(agent_client)
+        stopper = instance_double(InstanceUpdater::Stopper)
+        allow(@deployment_plan).to receive(:skip_drain_for_job?).with('fake-job-name').and_return(false)
+        allow(InstanceUpdater::Stopper).to receive(:new).with(
+          instance,
+          agent_client,
+          'stopped',
+          false,
+          Config,
+          logger
+        ).and_return(stopper)
+        stopper
+      end
+
       it 'should delete the instances with the config max threads option' do
         allow(Config).to receive(:max_threads).and_return(5)
         pool = double('pool')
@@ -77,7 +93,7 @@ module Bosh::Director
         persistent_disks = [Models::PersistentDisk.make(disk_cid: 'instance-disk-cid'), disk]
         persistent_disks.each { |disk| instance.model.persistent_disks << disk }
 
-        expect(@deleter).to receive(:drain).with(vm.model)
+        expect(stopper).to receive(:stop)
         expect(@deleter).to receive(:delete_snapshots).with(instance.model)
         expect(@deleter).to receive(:delete_persistent_disks).with(persistent_disks)
         allow(Config).to receive(:dns_domain_name).and_return('bosh')
@@ -104,56 +120,6 @@ module Bosh::Director
           expect(instance).to receive(:delete)
           @deleter.delete_instances([instance], event_log_stage)
         end
-      end
-    end
-
-    describe :drain do
-      let(:vm) { Models::Vm.make }
-      let(:agent) { double('agent') }
-      before do
-        allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent)
-      end
-
-      it 'should drain the VM' do
-        expect(agent).to receive(:drain).with('shutdown').and_return(2)
-        expect(agent).to receive(:stop)
-        expect(@deleter).to receive(:sleep).with(2)
-
-        @deleter.drain(vm)
-      end
-
-      it 'should dynamically drain the VM' do
-        allow(Config).to receive(:job_cancelled?).and_return(nil)
-
-        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
-        expect(agent).to receive(:drain).with('status').and_return(-3, 1)
-
-        expect(@deleter).to receive(:sleep).with(2)
-        expect(@deleter).to receive(:sleep).with(3)
-        expect(@deleter).to receive(:sleep).with(1)
-
-        expect(agent).to receive(:stop)
-        @deleter.drain(vm)
-      end
-
-      it 'should dynamically drain the VM when drain script returns 0 eventually' do
-        allow(Config).to receive(:job_cancelled?).and_return(nil)
-
-        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
-        expect(agent).to receive(:drain).with('status').and_return(-3, 0)
-
-        expect(@deleter).to receive(:sleep).with(2)
-        expect(@deleter).to receive(:sleep).with(3)
-        expect(@deleter).to receive(:sleep).with(0)
-
-        expect(agent).to receive(:stop)
-        @deleter.drain(vm)
-      end
-
-      it 'should stop vm-drain if task is cancelled' do
-        allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled.new(1))
-        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
-        expect { @deleter.drain(vm) }.to raise_error(TaskCancelled)
       end
     end
 

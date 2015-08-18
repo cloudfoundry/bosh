@@ -19,26 +19,15 @@ module Bosh::Director
       end
     end
 
-    def drain(vm)
-      agent = AgentClient.with_vm(vm)
+    def stop(instance)
+      vm_model = instance.model.vm
 
-      drain_time = agent.drain("shutdown")
-      while drain_time < 0
-        drain_time = drain_time.abs
-        begin
-          Config.job_cancelled?
-          @logger.info("Drain - check back in #{drain_time} seconds")
-          sleep(drain_time)
-          drain_time = agent.drain("status")
-        rescue => e
-          @logger.warn("Failed to check drain-status: #{e.inspect}")
-          raise if e.kind_of?(Bosh::Director::TaskCancelled)
-          break
-        end
-      end
+      return if instance.model.compilation || vm_model.nil?
+      agent = AgentClient.with_vm(vm_model)
 
-      sleep(drain_time)
-      agent.stop
+      skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
+      stopper = InstanceUpdater::Stopper.new(instance, agent, 'stopped', skip_drain, Config, @logger)
+      stopper.stop
     end
 
     def delete_snapshots(instance)
@@ -76,11 +65,10 @@ module Bosh::Director
     private
 
     def delete_instance(instance, event_log_stage)
-      vm_model = instance.model.vm
       @logger.info("Delete unneeded instance '#{instance}'")
 
       event_log_stage.advance_and_track(instance.to_s) do
-        drain(vm_model) unless instance.model.compilation || vm_model.nil?
+        stop(instance)
 
         vm_deleter.delete_for_instance(instance, skip_disks: true)
 

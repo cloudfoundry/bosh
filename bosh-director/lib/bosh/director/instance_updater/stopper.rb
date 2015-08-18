@@ -37,11 +37,11 @@ module Bosh::Director
     end
 
     def shutting_down?
-      @instance.resource_pool_changed? ||
+      @target_state == 'stopped' ||
+        @target_state == 'detached' ||
+        @instance.resource_pool_changed? ||
         @instance.persistent_disk_changed? ||
-        @instance.networks_changed? ||
-        @target_state == 'stopped' ||
-        @target_state == 'detached'
+        @instance.networks_changed?
     end
 
     def wait_for_dynamic_drain(initial_drain_time)
