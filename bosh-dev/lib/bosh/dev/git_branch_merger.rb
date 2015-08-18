@@ -52,7 +52,7 @@ module Bosh::Dev
       raise "Failed fetching branch master: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
       _, _, status = exec_cmd("git log #{candidate_sha} | grep #{latest_sha.strip}")
-      status.failure?
+      !status.success?
     end
   end
 end
