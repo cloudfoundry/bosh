@@ -190,4 +190,15 @@ shared_examples_for 'every OS image' do
       end
     end
   end
+
+  context '/etc/gshadow file' do
+    describe file('/etc/gshadow') do
+      # should be owned by root user (stig: V-38443)
+      it { should be_owned_by('root') }
+      # should be owned by root group (stig: V-38448)
+      it { should be_grouped_into('root') }
+      # should have mode 0 (stig: V-38449)
+      it { should be_mode('0') }
+    end
+  end
 end
