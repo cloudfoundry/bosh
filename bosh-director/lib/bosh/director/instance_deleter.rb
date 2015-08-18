@@ -20,13 +20,8 @@ module Bosh::Director
     end
 
     def stop(instance)
-      vm_model = instance.model.vm
-
-      return if instance.model.compilation || vm_model.nil?
-      agent = AgentClient.with_vm(vm_model)
-
       skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
-      stopper = InstanceUpdater::Stopper.new(instance, agent, 'stopped', skip_drain, Config, @logger)
+      stopper = Stopper.new(instance, 'stopped', skip_drain, Config, @logger)
       stopper.stop
     end
 

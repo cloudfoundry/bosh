@@ -44,13 +44,10 @@ module Bosh::Director
       end
 
       let(:stopper) do
-        agent_client = instance_double(AgentClient)
-        allow(AgentClient).to receive(:with_vm).with(instance.vm.model).and_return(agent_client)
-        stopper = instance_double(InstanceUpdater::Stopper)
+        stopper = instance_double(Stopper)
         allow(@deployment_plan).to receive(:skip_drain_for_job?).with('fake-job-name').and_return(false)
-        allow(InstanceUpdater::Stopper).to receive(:new).with(
+        allow(Stopper).to receive(:new).with(
           instance,
-          agent_client,
           'stopped',
           false,
           Config,
@@ -111,15 +108,6 @@ module Bosh::Director
         @deleter.delete_instances([instance], event_log_stage)
 
         expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
-      end
-
-      context 'when instance does not have vm' do
-        it 'skips drain' do
-          instance.model.vm = instance.vm.model = nil
-          expect(@deleter).to_not receive(:drain)
-          expect(instance).to receive(:delete)
-          @deleter.delete_instances([instance], event_log_stage)
-        end
       end
     end
 
