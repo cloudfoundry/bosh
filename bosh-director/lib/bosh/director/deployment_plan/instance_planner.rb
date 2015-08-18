@@ -5,39 +5,29 @@ module Bosh
         def initialize(logger, instance_factory)
           @logger = logger
           @instance_repo = instance_factory
+          @availability_zone_picker = AvailabilityZonePicker.new
         end
 
         def plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
-          unbound_existing_instances = Set.new(existing_instances)
-          desired_instance_plans = desired_instances.each_with_index.map do |desired_instance, index|
-            existing_instance = find_matching_instance(job, unbound_existing_instances, desired_instance)
-            unless existing_instance.nil?
-              unbound_existing_instances.delete(existing_instance)
-            end
+          availability_zones = job.availability_zones
 
-            availability_zone = AvailabilityZonePicker.new.pick_from(job.availability_zones, index)
+          results = @availability_zone_picker.place_and_match_instances(availability_zones, desired_instances, existing_instances)
 
-            if existing_instance
-              @logger.debug("Found existing instance #{existing_instance}")
-              existing_instance_state = states_by_existing_instance[existing_instance]
-              instance = @instance_repo.fetch_existing(desired_instance, existing_instance, existing_instance_state, index, availability_zone, @logger)
-              InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: instance)
-            else
-              @logger.debug("Creating a new instance for desired instance #{job.name}")
-              instance = @instance_repo.create(desired_instance, index, availability_zone, @logger)
-              InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
-            end
+          candidate_indexes = array_of_candidate_indexes(results)
+
+          zoned_desired_instances = results[:desired]
+          new_desired_instances = zoned_desired_instances.select do |desired_instance|
+            desired_instance.instance.nil?
           end
+          existing_desired_instances = zoned_desired_instances - new_desired_instances
 
-          obsolete_existing_instances = unbound_existing_instances.to_a
-          obsolete_instance_plans = obsolete_existing_instances.map do |existing_instance|
-            @logger.debug("Obsolete existing instance #{existing_instance}")
-            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
-            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
-          end
+          desired_existing_instance_plans = desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance, candidate_indexes)
+          desired_new_instance_plans = desired_new_instance_plans(job, new_desired_instances, candidate_indexes)
+          obsolete_instance_plans = obsolete_instance_plans(results[:obsolete])
 
-          desired_instance_plans + obsolete_instance_plans
+          desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
         end
+
 
         def plan_obsolete_jobs(desired_jobs, existing_instances)
           desired_job_names = Set.new(desired_jobs.map(&:name))
@@ -51,9 +41,38 @@ module Bosh
 
         private
 
-        def find_matching_instance(job, existing_instances, desired_instance)
-          existing_instances.sort_by(&:index).first
+        def array_of_candidate_indexes(results)
+          (0..results[:desired].count).to_a
         end
+
+        def obsolete_instance_plans(obsolete_desired_instances)
+          obsolete_desired_instances.map do |existing_instance|
+            @logger.debug("Obsolete existing instance #{existing_instance}")
+            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
+            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
+          end
+        end
+
+        def desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance, candidate_indexes)
+          existing_desired_instances.map do |desired_instance|
+            existing_instance = desired_instance.instance
+            @logger.debug("Found existing instance #{existing_instance}")
+            candidate_indexes.delete(existing_instance.index)
+            existing_instance_state = states_by_existing_instance[existing_instance]
+            instance = @instance_repo.fetch_existing(desired_instance, existing_instance_state, existing_instance.index, @logger)
+            InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: instance)
+          end
+        end
+
+        def desired_new_instance_plans(job, new_desired_instances, candidate_indexes)
+          new_desired_instances.map do |desired_instance|
+            @logger.debug("Creating a new instance for desired instance #{job.name}")
+            index = candidate_indexes.shift
+            instance = @instance_repo.create(desired_instance, index, @logger)
+            InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
+          end
+        end
+
       end
     end
   end

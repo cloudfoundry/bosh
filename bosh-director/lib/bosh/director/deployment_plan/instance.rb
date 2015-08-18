@@ -36,15 +36,15 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      def self.fetch_existing(desired_instance, existing_instance, existing_instance_state, index, az, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, az, logger)
-        instance.bind_existing_instance_model(existing_instance)
+      def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
+        instance.bind_existing_instance_model(desired_instance.instance)
         instance.bind_existing_reservations(existing_instance_state)
         instance
       end
 
-      def self.create(desired_instance, index, az, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, nil, az, logger)
+      def self.create(desired_instance, index, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, nil, desired_instance.az, logger)
         instance.bind_new_instance_model
         instance
       end
