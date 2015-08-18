@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class DynamicNetwork
@@ -8,9 +6,17 @@ module Bosh::Director
       extend ValidationHelper
 
       def self.parse(network_spec, logger)
+        name = safe_property(network_spec, 'name', :class => String)
+        canonical_name = canonical(name)
+        logger = TaggedLogger.new(logger, 'network-configuration')
+
         if network_spec.has_key?('subnets')
           if network_spec.has_key?('dns')
             raise NetworkInvalidProperty, "top-level 'dns' invalid when specifying subnets"
+          end
+
+          if network_spec.has_key?('availability_zone')
+            raise NetworkInvalidProperty, "top-level 'availability_zone' invalid when specifying subnets"
           end
 
           if network_spec.has_key?('cloud_properties')
@@ -18,20 +24,21 @@ module Bosh::Director
           end
 
           subnets = network_spec['subnets'].map do |subnet_properties|
-            dns = dns_servers(subnet_properties["name"], subnet_properties)
+            dns = dns_servers(subnet_properties['name'], subnet_properties)
             cloud_properties =
-              safe_property(subnet_properties, "cloud_properties", class: Hash, default: {})
-            DynamicNetworkSubnet.new(dns, cloud_properties)
+              safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
+            availability_zone = safe_property(subnet_properties, 'availability_zone', class: String, optional: true)
+            availability_zone_name = AvailabilityZoneName.new(availability_zone, name)
+            DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone_name)
           end
         else
-          cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
-          dns = dns_servers(network_spec["name"], network_spec)
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties)]
+          cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
+          availability_zone = safe_property(network_spec, 'availability_zone', class: String, optional: true)
+          availability_zone_name = AvailabilityZoneName.new(availability_zone, name)
+          dns = dns_servers(network_spec['name'], network_spec)
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone_name)]
         end
 
-        name = safe_property(network_spec, "name", :class => String)
-        canonical_name = canonical(name)
-        logger = TaggedLogger.new(logger, 'network-configuration')
 
         new(name, canonical_name, subnets, logger)
       end
@@ -93,7 +100,7 @@ module Bosh::Director
       end
 
       def validate_subnet_azs_contained_in!(availability_zones)
-        # nothing to validate
+        @subnets.each { |subnet| subnet.validate!(availability_zones) }
       end
 
       def validate_has_job!(az_names, job_name)

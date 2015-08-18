@@ -112,7 +112,8 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties)]
+          availability_zone_name = AvailabilityZoneName.new('az-name', 'network-name')
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone_name)]
           DynamicNetwork.new(network_name, network_name, subnets, logger)
         end
 

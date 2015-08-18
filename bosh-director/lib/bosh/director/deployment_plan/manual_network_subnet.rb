@@ -135,23 +135,25 @@ module Bosh::Director
         raise NetworkInvalidGateway,
               "Invalid gateway for network `#{@network.name}': #{reason}"
       end
+    end
 
-      class AvailabilityZoneName < Struct.new(:name, :network_name)
-        def assert_present!(availability_zones)
-          unless availability_zones.any? { |az| az.name == name }
-            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{network_name}' refers to an unknown availability zone '#{name}'"
-          end
+    class AvailabilityZoneName < Struct.new(:name, :network_name)
+      def assert_present!(availability_zones)
+        return if availability_zones.empty?
+
+        unless availability_zones.any? { |az| az.name == name }
+          raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{network_name}' refers to an unknown availability zone '#{name}'"
         end
       end
+    end
 
-      class UnspecifiedAvailabilityZoneName
-        def name
-          nil
-        end
+    class UnspecifiedAvailabilityZoneName
+      def name
+        nil
+      end
 
-        def assert_present!(availability_zones)
-          # don't care, wasn't specified
-        end
+      def assert_present!(availability_zones)
+        # don't care, wasn't specified
       end
     end
   end
