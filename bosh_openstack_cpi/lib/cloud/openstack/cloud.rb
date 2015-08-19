@@ -68,7 +68,7 @@ module Bosh::OpenStackCloud
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
       }
 
-      connect_retry_errors = [Excon::Errors::GatewayTimeout]
+      connect_retry_errors = [Excon::Errors::GatewayTimeout, Excon::Errors::SocketError]
 
       @connect_retry_options = {
         sleep: CONNECT_RETRY_DELAY,
@@ -232,9 +232,17 @@ module Bosh::OpenStackCloud
         nics = network_configurator.nics
         @logger.debug("Using NICs: `#{nics.join(', ')}'")
 
-        image = with_openstack { @openstack.images.find { |i| i.id == stemcell_id } }
-        cloud_error("Image `#{stemcell_id}' not found") if image.nil?
-        @logger.debug("Using image: `#{stemcell_id}'")
+        image = nil
+        begin
+          Bosh::Common.retryable(@connect_retry_options) do |tries, error|
+            @logger.error("Unable to connect to OpenStack API to find image: `#{stemcell_id} due to: #{error.inspect}") unless error.nil?
+            image = with_openstack { @openstack.images.find { |i| i.id == stemcell_id } }
+            cloud_error("Image `#{stemcell_id}' not found") if image.nil?
+            @logger.debug("Using image: `#{stemcell_id}'")
+          end
+        rescue Bosh::Common::RetryCountExceeded, Excon::Errors::SocketError => e
+          cloud_error("Unable to connect to OpenStack API to find image: `#{stemcell_id}'")
+        end
 
         flavor = with_openstack { @openstack.flavors.find { |f| f.name == resource_pool['instance_type'] } }
         cloud_error("Flavor `#{resource_pool['instance_type']}' not found") if flavor.nil?
