@@ -190,4 +190,10 @@ shared_examples_for 'every OS image' do
       end
     end
   end
+
+  context 'find world-writable files (stig: V-38643)' do
+    describe command('find \/ -xdev -type f -perm -002') do
+      its (:stdout) { should eq('') }
+    end
+  end
 end
