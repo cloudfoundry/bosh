@@ -42,17 +42,16 @@ module Bosh::Director
         )
       end
 
-      let(:stopper) do
-        stopper = instance_double(Stopper)
+      let(:stopper) { instance_double(Stopper) }
+      before do
         allow(deployment_plan).to receive(:skip_drain_for_job?).with('fake-job-name').and_return(false)
         allow(Stopper).to receive(:new).with(
-          instance,
-          'stopped',
-          false,
-          Config,
-          logger
-        ).and_return(stopper)
-        stopper
+            instance,
+            'stopped',
+            false,
+            Config,
+            logger
+          ).and_return(stopper)
       end
 
       let(:job_templates_cleaner) do
@@ -141,7 +140,7 @@ module Bosh::Director
 
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
@@ -166,7 +165,7 @@ module Bosh::Director
 
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
@@ -191,7 +190,7 @@ module Bosh::Director
 
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
@@ -216,7 +215,7 @@ module Bosh::Director
 
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
@@ -239,7 +238,7 @@ module Bosh::Director
 
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
@@ -255,17 +254,36 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
             expect(cloud).to receive(:delete_disk).exactly(2).times
-            expect(deleter).to receive(:delete_dns_records).and_raise('failed')
+            expect(deleter).to receive(:delete_dns_records)
             expect(instance).to receive(:release_original_network_reservations)
             expect(instance).to receive(:delete)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-            deleter.delete_instances([instance], event_log_stage, force: true)
+            deleter.delete_instances([instance], event_log_stage)
 
             expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
           end
+        end
+      end
+
+      context 'when keep_snapshots_in_cloud is passed in' do
+        let(:deleter) { InstanceDeleter.new(deployment_plan, keep_snapshots_in_the_cloud: true) }
+
+        it 'deletes snapshots from DB keeping snapshots in cloud' do
+          expect(stopper).to receive(:stop)
+          expect(cloud).to receive(:delete_vm).with(vm.model.cid)
+          expect(cloud).to receive(:delete_disk).exactly(2).times
+          expect(deleter).to receive(:delete_dns_records)
+          expect(instance).to receive(:release_original_network_reservations)
+          expect(instance).to receive(:delete)
+
+          expect(cloud).to_not receive(:delete_snapshot)
+
+          expect {
+            deleter.delete_instances([instance], event_log_stage)
+          }.to change { Bosh::Director::Models::Snapshot.count }.from(1).to(0)
         end
       end
     end
@@ -310,7 +328,7 @@ module Bosh::Director
       context 'with one disk' do
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2]
-          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
+          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots, keep_snapshots_in_the_cloud: false)
           deleter.delete_snapshots(instance)
         end
       end
@@ -322,7 +340,7 @@ module Bosh::Director
 
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2, snapshot3]
-          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
+          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots, keep_snapshots_in_the_cloud: false)
           deleter.delete_snapshots(instance)
         end
       end

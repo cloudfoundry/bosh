@@ -10,6 +10,7 @@ module Bosh::Director
       @blobstore = App.instance.blobstores.blobstore
 
       @force = options.fetch(:force, false)
+      @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
     def delete_instances(instances, event_log_stage, options = {})
@@ -23,7 +24,7 @@ module Bosh::Director
 
     def delete_snapshots(instance)
       snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
-      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
+      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
     end
 
     def delete_persistent_disks(persistent_disks)

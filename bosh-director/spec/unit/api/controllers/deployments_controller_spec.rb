@@ -433,7 +433,6 @@ module Bosh::Director
             end
 
             let!(:deployment_model) do
-
               manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
               manifest_hash['jobs'] << {
                 'name' => 'another-errand',

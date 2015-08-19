@@ -2,11 +2,17 @@ require 'spec_helper'
 
 module Support
   module FakeLocks
+    class FakeLock
+      def lock
+        yield if block_given?
+      end
+
+      def release
+      end
+    end
+
     def fake_locks
-      lock = instance_double('Bosh::Director::Lock')
-      allow(Bosh::Director::Lock).to receive(:new).and_return(lock)
-      allow(lock).to receive(:release)
-      allow(lock).to receive(:lock)
+      allow(Bosh::Director::Lock).to receive(:new).and_return(FakeLock.new)
     end
   end
 end
