@@ -3,10 +3,14 @@ module Bosh
     module DeploymentPlan
       class AvailabilityZonePicker
         def place_and_match_instances(azs, desired_instances, existing_instances)
+          existing_instances = existing_instances.sort_by { |instance| instance.index}
           az_to_existing_instances  = az_name_to_existing_instances(existing_instances)
+
+          azs = azs_sorted_by_existing_instance_count_descending(azs, az_to_existing_instances)
+
           desired = []
-          desired_instances.each_with_index do |desired_instance, index|
-            az = choose_az_for(index, azs)
+          desired_instances.each_with_index do |desired_instance, i|
+            az = choose_az_for(i, azs)
             desired_instance.az = az
             desired_instance.instance = existing_instance_for_az(az, az_to_existing_instances)
             desired << desired_instance
@@ -20,8 +24,13 @@ module Bosh
 
         private
 
-        def choose_az_for(index, azs)
-          (azs.nil? || azs.empty?) ? nil : azs[index % azs.count]
+        def choose_az_for(i, azs)
+          (azs.nil? || azs.empty?) ? nil : azs[i % azs.count]
+        end
+
+        def azs_sorted_by_existing_instance_count_descending(azs, az_names_to_existing_instances)
+          return nil if azs.nil?
+          azs.sort_by { |az| - az_names_to_existing_instances.fetch(az.name, []).size }
         end
 
         def az_name_to_existing_instances(existing_instances)

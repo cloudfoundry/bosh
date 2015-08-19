@@ -13,8 +13,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
   describe "placing and matching" do
     it 'a job in no zones with 3 instances, we expect' do
       unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
-      existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil)
-      existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil)
+      existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0)
+      existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 1)
       unmatched_existing_instanaces = [existing_0, existing_1]
 
       azs = []
@@ -29,10 +29,10 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
 
     it "a job in 2 zones with 3 instances, we expect" do
       unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
-      unmatched_existing_instanaces = []
+      unmatched_existing_instances = []
 
       azs = [az1, az2]
-      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
 
       expect(results[:desired]).to match_array([
             Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, nil),
@@ -41,24 +41,40 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       expect(results[:obsolete]).to eq([])
     end
 
+    describe 'scaling down' do
+      it 'prefers lower indexed existing instances' do
+        unmatched_desired_instances = [desired_instance]
+        existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0)
+        existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 1)
+        unmatched_existing_instanaces = [existing_1, existing_0]
+
+        azs = []
+        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+
+        expect(results[:desired]).to eq([Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0)])
+
+        expect(results[:obsolete]).to eq([existing_1])
+      end
+    end
+
     describe "when a job is deployed in 2 zones with 3 existing instances, and re-deployed into one zone" do
       it "should match the 2 existing instances from the desired zone to 2 of the desired instances" do
         unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
 
-        existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1")
-        existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1")
-        existing_zone2_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2")
-        unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_0]
+        existing_zone1_2 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 2)
+        existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 0)
+        existing_zone2_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2", index: 1)
+        unmatched_existing_instances = [existing_zone1_0, existing_zone1_2, existing_zone2_1]
 
         azs = [az1]
         results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired]).to match_array([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
-              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_2),
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, nil)])
 
-        expect(results[:obsolete]).to match_array([existing_zone2_0])
+        expect(results[:obsolete]).to match_array([existing_zone2_1])
       end
     end
 
@@ -72,13 +88,13 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           desired_instance,
         ]
 
-        existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1")
-        existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1")
-        existing_zone1_2 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1")
-        existing_zone2_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2")
-        existing_zone2_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2")
+        existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 0)
+        existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 1)
+        existing_zone1_2 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 2)
+        existing_zone2_3 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2", index: 3)
+        existing_zone2_4 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2", index: 4)
 
-        unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone1_2, existing_zone2_0, existing_zone2_1]
+        unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone1_2, existing_zone2_3, existing_zone2_4]
 
         azs = [az1, az2, az3]
         results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
@@ -86,11 +102,39 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         expect(results[:desired]).to match_array([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1),
-              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_0),
-              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_1),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_3),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_4),
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az3, nil)])
 
         expect(results[:obsolete]).to match_array([existing_zone1_2])
+      end
+    end
+
+    describe "when a job is deployed in 2 zones with 3 existing instances, and re-deployed into 3 zones with 4 instances" do
+      it "should know to use the zone with 2 existing instances as the zone with the extra instance" do
+        unmatched_desired_instances = [
+          desired_instance,
+          desired_instance,
+          desired_instance,
+          desired_instance,
+        ]
+
+        existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "1", index: 0)
+        existing_zone2_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2", index: 1)
+        existing_zone2_2 = instance_double(Bosh::Director::Models::Instance, availability_zone: "2", index: 2)
+
+        unmatched_existing_instances = [existing_zone1_0, existing_zone2_0, existing_zone2_2]
+
+        azs = [az1, az2, az3]
+        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+
+        expect(results[:desired]).to match_array([
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_0),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_2),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az3, nil)
+          ])
+        expect(results[:obsolete]).to match_array([])
       end
     end
   end

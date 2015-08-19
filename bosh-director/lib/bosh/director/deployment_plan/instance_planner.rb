@@ -28,7 +28,6 @@ module Bosh
           desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
         end
 
-
         def plan_obsolete_jobs(desired_jobs, existing_instances)
           desired_job_names = Set.new(desired_jobs.map(&:name))
           existing_instances.reject do |existing_instance_model|

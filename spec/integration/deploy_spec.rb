@@ -71,7 +71,6 @@ describe 'deploy', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
 
-    cloud_config_hash['resource_pools'].first['size'] = 3
     manifest_hash['jobs'].first['instances'] = 3
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
