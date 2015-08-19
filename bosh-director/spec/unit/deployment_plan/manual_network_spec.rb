@@ -20,6 +20,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   subject(:manual_network) do
      BD::DeploymentPlan::ManualNetwork.new(
        network_spec,
+       [
+         BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+         BD::DeploymentPlan::AvailabilityZone.new('zone_2', {})
+       ],
        global_network_resolver,
        ip_provider_factory,
        logger

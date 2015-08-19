@@ -5,7 +5,7 @@ module Bosh::Director
       extend DnsHelper
       extend ValidationHelper
 
-      def self.parse(network_spec, logger)
+      def self.parse(network_spec, availability_zones, logger)
         name = safe_property(network_spec, 'name', :class => String)
         canonical_name = canonical(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
@@ -28,17 +28,20 @@ module Bosh::Director
             cloud_properties =
               safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
             availability_zone = safe_property(subnet_properties, 'availability_zone', class: String, optional: true)
-            availability_zone_name = AvailabilityZoneName.new(availability_zone, name)
-            DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone_name)
+            unless availability_zone.nil? || availability_zones.any? { |az| az.name == availability_zone }
+              raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{name}' refers to an unknown availability zone '#{availability_zone}'"
+            end
+            DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
           availability_zone = safe_property(network_spec, 'availability_zone', class: String, optional: true)
-          availability_zone_name = AvailabilityZoneName.new(availability_zone, name)
+          unless availability_zone.nil? || availability_zones.any? { |az| az.name == availability_zone }
+            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{name}' refers to an unknown availability zone '#{availability_zone}'"
+          end
           dns = dns_servers(network_spec['name'], network_spec)
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone_name)]
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone)]
         end
-
 
         new(name, canonical_name, subnets, logger)
       end
@@ -97,10 +100,6 @@ module Bosh::Director
         end
 
         config
-      end
-
-      def validate_subnet_azs_contained_in!(availability_zones)
-        @subnets.each { |subnet| subnet.validate!(availability_zones) }
       end
 
       def validate_has_job!(az_names, job_name)
