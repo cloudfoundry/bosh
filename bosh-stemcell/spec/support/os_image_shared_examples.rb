@@ -184,10 +184,8 @@ shared_examples_for 'every OS image' do
       it { should be_owned_by('root') }
       # should be owned by root group (stig: V-38459)
       it { should be_grouped_into('root') }
-      it "should have mode 0644 or less permissive (stig: V-38461)" do
-        mode = File.stat('/etc/group').mode.to_s(8)[-4..-1].to_i(8)
-        expect(mode & '0644'.to_i(8)).to equal(mode)
-      end
+      # should have mode 0644 (stig: V-38461)
+      it { should be_mode('644') }
     end
   end
 
