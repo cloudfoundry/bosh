@@ -10,10 +10,12 @@ An instance from one deployment may later reserve an IP address released from an
 
 ## IP address lifecycle
 
+```
   IP   persistent_disk
   ^    ^
   |    |
 Instance --> VM
+```
 
 The instance is the owner of a given IP address. As long as the instance exists, it's IP address will be reserved by that instance and cannot be used by other instances, from any deployment. An instance may lose it's VM, but the IP address should still be reserved by the instance. When the VM for the instance is recreated, it should receive the instance's IP address.
 
