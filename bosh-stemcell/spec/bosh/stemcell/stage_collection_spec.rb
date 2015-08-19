@@ -29,7 +29,6 @@ module Bosh::Stemcell
               :base_ubuntu_build_essential,
               :base_ubuntu_packages,
               :base_ssh,
-              :bosh_dpkg_list,
               :bosh_sysstat,
               :system_kernel,
               :system_kernel_modules,
@@ -145,7 +144,7 @@ module Bosh::Stemcell
             :image_create,
             :image_install_grub,
             :image_aws_update_grub,
-            :bosh_dpkg_list
+            :bosh_package_list
           ]
         }
 
@@ -193,7 +192,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
+                :bosh_package_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('qcow2')).to eq(
@@ -221,7 +220,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
+                :bosh_package_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('qcow2')).to eq(
@@ -252,7 +251,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
+                :bosh_package_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -275,7 +274,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
+                :bosh_package_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -302,7 +301,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list,
+                :bosh_package_list,
             ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -325,7 +324,7 @@ module Bosh::Stemcell
                 :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list,
+                :bosh_package_list,
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
