@@ -2,18 +2,20 @@ require 'spec_helper'
 
 describe 'create bosh release', type: :integration do
   it 'creates a bosh dev release successfully' do
-    bosh_source_path = ENV['PWD']
-    test_dir = Dir.mktmpdir("bosh-release-test")
-    bosh_folder_name = bosh_source_path.split('/').last
-    err = nil
-    Bundler.with_clean_env do
-      create_dev_release = "bundle exec rake release:create_dev_release --trace"
-      _, _, err = Open3.capture3("pushd #{test_dir} && git clone #{bosh_source_path} && cd #{bosh_folder_name} && #{create_dev_release}")
+    bosh_source_path = File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', '..')
+    Dir.mktmpdir('bosh-release-test') do |test_dir|
+      cloned_bosh_dir = File.join(test_dir, 'cloned-bosh')
+
+      _, _, exit_status = Open3.capture3("git clone --depth 1 #{bosh_source_path} #{cloned_bosh_dir}")
+      expect(exit_status).to be_success
+
+      Bundler.with_clean_env do
+        create_dev_release_cmd = 'bundle exec rake release:create_dev_release --trace'
+        stdout, _, exit_status = Open3.capture3(create_dev_release_cmd, chdir: cloned_bosh_dir)
+        expect(exit_status).to be_success
+
+        expect(stdout).to include('Release name: bosh')
+      end
     end
-
-    release_folder = Dir.new("#{test_dir}/#{bosh_folder_name}/release/dev_releases/bosh")
-
-    expect(release_folder.entries.any? {|file| file.match(/.*dev.*.yml/)}).to eq(true)
-    expect(err.success?).to eq(true)
   end
 end
