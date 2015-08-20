@@ -87,7 +87,7 @@ describe 'cli: cloudcheck', type: :integration do
     resolution_selections = "#{option}\n"*num_errors + "yes"
     output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
     if $?.exitstatus != 0
-      puts output
+      fail("Cloud check failed, output: #{output}")
     end
     output
   end
@@ -95,7 +95,7 @@ describe 'cli: cloudcheck', type: :integration do
   def bosh_run_cck_with_auto
     output = `bosh -c #{ClientSandbox.bosh_config} cloudcheck --auto`
     if $?.exitstatus != 0
-      puts output
+      fail("Cloud check failed, output: #{output}")
     end
     output
   end
