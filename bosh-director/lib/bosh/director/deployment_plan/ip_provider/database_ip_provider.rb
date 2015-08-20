@@ -120,6 +120,8 @@ module Bosh::Director::DeploymentPlan
 
       reserved_instance = ip_address.instance
       if reserved_instance == instance.model
+        ip_address.update(static: is_static) if ip_address.static != is_static
+
         return ip_address
       else
         raise Bosh::Director::NetworkReservationAlreadyInUse,

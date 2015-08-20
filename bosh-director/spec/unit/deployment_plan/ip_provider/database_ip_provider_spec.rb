@@ -317,10 +317,46 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when attempting to reserve a reserved ip' do
-        context 'when IP is reserved by the same deployment' do
+        context 'when IP is reserved by the same instance' do
           it 'succeeds' do
             expect { ip_provider.reserve_ip(reservation) }.to_not raise_error
             expect { ip_provider.reserve_ip(reservation) }.to_not raise_error
+          end
+
+          context 'when IP reservation type was changed' do
+            def dynamic_reservation_bound_to_existing_with_ip(ip)
+              dynamic_reservation = BD::DynamicNetworkReservation.new(instance, network)
+              existing_reservation = BD::UnboundNetworkReservation.new(instance, network, cidr_ip(ip))
+              existing_reservation.mark_reserved_as(BD::DynamicNetworkReservation)
+              dynamic_reservation.bind_existing(existing_reservation)
+
+              dynamic_reservation
+            end
+
+            it 'updates IP type' do
+              static_reservation = BD::StaticNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+
+              ip_provider.reserve_ip(static_reservation)
+
+              expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+              original_address = Bosh::Director::Models::IpAddress.first
+              expect(original_address.static).to eq(true)
+
+              ip_provider_without_static_range = DatabaseIpProvider.new(
+                range,
+                'fake-network',
+                restricted_ips,
+                Set.new,
+                logger
+              )
+              dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.0.2')
+              ip_provider_without_static_range.reserve_ip(dynamic_reservation)
+
+              expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+              new_address = Bosh::Director::Models::IpAddress.first
+              expect(new_address.static).to eq(false)
+              expect(new_address.address).to eq(original_address.address)
+            end
           end
         end
 
