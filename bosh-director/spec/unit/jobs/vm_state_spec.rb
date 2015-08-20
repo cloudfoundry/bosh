@@ -172,6 +172,96 @@ module Bosh::Director
 
         job.perform
       end
+
+      it 'should return disk cid info when active disks found' do
+        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        instance = Models::Instance.create(
+          deployment: @deployment,
+          job: 'dea',
+          index: '0',
+          state: 'started',
+          vm: vm,
+        )
+
+        Models::PersistentDisk.create(
+          instance: instance,
+          active: true,
+          disk_cid: 'fake-disk-cid',
+        )
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'disk_cid' => 'fake-disk-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+        )
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['disk_cid']).to eq('fake-disk-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']).to be_nil
+        end
+
+        job.perform
+
+      end
+
+      it 'should return disk cid info when no active disks found' do
+        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        instance = Models::Instance.create(
+          deployment: @deployment,
+          job: 'dea',
+          index: '0',
+          state: 'started',
+          vm: vm,
+        )
+
+        Models::PersistentDisk.create(
+          instance: instance,
+          active: false,
+          disk_cid: 'fake-disk-cid',
+        )
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'disk_cid' => 'fake-disk-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+        )
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['disk_cid']).to be_nil
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']).to be_nil
+        end
+
+        job.perform
+
+      end
     end
 
     describe '#process_vm' do

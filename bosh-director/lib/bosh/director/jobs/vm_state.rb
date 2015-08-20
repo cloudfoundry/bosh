@@ -73,6 +73,7 @@ module Bosh::Director
 
         {
           :vm_cid => vm.cid,
+          :disk_cid => vm.instance ? vm.instance.persistent_disk_cid : nil,
           :ips => ips,
           :dns => dns_records.flatten,
           :agent_id => vm.agent_id,
