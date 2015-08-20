@@ -12,6 +12,7 @@ module Bosh::Director
     let(:network) do
       DeploymentPlan::ManualNetwork.new(
         network_spec,
+        [],
         global_network_resolver,
         ip_provider_factory,
         logger

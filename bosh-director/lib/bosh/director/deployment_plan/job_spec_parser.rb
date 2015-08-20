@@ -39,11 +39,12 @@ module Bosh::Director
         parse_properties
         parse_resource_pool
         parse_update_config
+
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
         @job.networks = networks
         assign_default_networks(networks)
 
-        availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        availability_zones = JobAvailabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
 
         desired_instances = parse_desired_instances(availability_zones, networks)
@@ -123,8 +124,6 @@ module Bosh::Director
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)
             release_name = safe_property(template_spec, 'release', class: String, optional: true)
-
-            release = nil
 
             if release_name
               release = @deployment.release(release_name)

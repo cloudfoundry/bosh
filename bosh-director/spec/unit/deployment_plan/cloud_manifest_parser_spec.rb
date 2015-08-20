@@ -186,7 +186,56 @@ module Bosh::Director
             end
           end
 
-          context 'when network type is dynamic'
+          context 'when network type is dynamic' do
+            context 'when an availability zone is specified for a subnet' do
+              it 'validates that a zone with that name is present' do
+                valid_manifest = cloud_manifest.merge({
+                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'networks' => [
+                      {
+                        'name' => 'a', #for compilation
+                        'subnets' => []
+                      },
+                      {
+                        'name' => 'fake-network',
+                        'type' => 'dynamic',
+                        'subnets' => [
+                          {
+                            'dns' => ['192.168.1.1', '192.168.1.2'],
+                            'cloud_properties' => {},
+                            'availability_zone' => 'fake-zone'
+                          }
+                        ]
+                      }]
+                  })
+                expect {
+                  subject.parse(valid_manifest, ip_provider_factory, global_network_resolver)
+                }.to_not raise_error
+              end
+
+              it 'errors if no zone with that name is present' do
+                invalid_manifest = cloud_manifest.merge({
+                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'networks' => [{
+                        'name' => 'fake-network',
+                        'type' => 'dynamic',
+                        'subnets' => [
+                          {
+                            'dns' => ['192.168.1.1', '192.168.1.2'],
+                            'cloud_properties' => {},
+                            'availability_zone' => 'nonexistent-zone'
+                          }
+                        ]
+                      }]
+                  })
+
+                expect {
+                  subject.parse(invalid_manifest, ip_provider_factory, global_network_resolver)
+                }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
+              end
+            end
+          end
+
           context 'when network type is vip'
           context 'when network type is unknown'
 

@@ -2,9 +2,9 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
   subject(:zone_picker) {  Bosh::Director::DeploymentPlan::AvailabilityZonePicker.new }
-  let(:az1) { Bosh::Director::DeploymentPlan::AvailabilityZone.new({'name' => '1'}) }
-  let(:az2) { Bosh::Director::DeploymentPlan::AvailabilityZone.new({'name' => '2'}) }
-  let(:az3) { Bosh::Director::DeploymentPlan::AvailabilityZone.new({'name' => '3'}) }
+  let(:az1) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('1', {}) }
+  let(:az2) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('2', {}) }
+  let(:az3) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('3', {}) }
 
   def desired_instance
     Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, nil)

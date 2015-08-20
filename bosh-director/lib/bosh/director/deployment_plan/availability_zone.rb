@@ -1,23 +1,23 @@
-
 module Bosh::Director
   module DeploymentPlan
     class AvailabilityZone
-      include ValidationHelper
+      extend ValidationHelper
 
-      attr_reader :name
+      def self.parse(availability_zone_spec)
+        name = safe_property(availability_zone_spec, "name", class: String)
 
-      attr_reader :cloud_properties
-
-      # @param [DeploymentPlan] deployment_plan Deployment plan
-      # @param [Hash] spec Raw availability zone spec from the deployment manifest
-      # @param [Logger] logger Director logger
-      def initialize(availability_zone_spec)
-
-        @name = safe_property(availability_zone_spec, "name", class: String)
-
-        @cloud_properties =
+        cloud_properties =
           safe_property(availability_zone_spec, "cloud_properties", class: Hash, default: {})
+
+        new(name, cloud_properties)
       end
+
+      def initialize(name, cloud_properties)
+        @name = name
+        @cloud_properties = cloud_properties
+      end
+
+      attr_reader :name, :cloud_properties
     end
   end
 end

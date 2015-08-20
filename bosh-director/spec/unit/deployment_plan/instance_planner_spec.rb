@@ -6,16 +6,16 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
   let(:instance_repo) { class_double(Bosh::Director::DeploymentPlan::Instance) }
   let(:deployment) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
   let(:az) do
-    Bosh::Director::DeploymentPlan::AvailabilityZone.new({
-        'name' => 'foo-az',
+    Bosh::Director::DeploymentPlan::AvailabilityZone.new(
+        'foo-az',
         'cloud_properties' => {}
-      })
+      )
   end
   let(:undesired_az) do
-    Bosh::Director::DeploymentPlan::AvailabilityZone.new({
-      'name' => 'old-az',
+    Bosh::Director::DeploymentPlan::AvailabilityZone.new(
+      'old-az',
       'cloud_properties' => {}
-    })
+    )
   end
   let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'foo-job', availability_zones: [az]) }
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment) }

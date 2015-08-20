@@ -32,7 +32,7 @@ module Bosh::Director
       def parse_availability_zones(cloud_manifest)
         availability_zones = safe_property(cloud_manifest, 'availability_zones', :class => Array, :optional => true, :default => [])
         parsed_availability_zones = availability_zones.map do |availability_zone|
-          AvailabilityZone.new(availability_zone)
+          AvailabilityZone.parse(availability_zone)
         end
 
         duplicates = detect_duplicates(parsed_availability_zones) { |az| az.name }
@@ -54,19 +54,15 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ManualNetwork.new(network_spec, global_network_resolver, ip_provider_factory, @logger)
+              ManualNetwork.new(network_spec, availability_zones, global_network_resolver, ip_provider_factory, @logger)
             when 'dynamic'
-              DynamicNetwork.parse(network_spec, @logger)
+              DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'
               VipNetwork.new(network_spec, @logger)
             else
               raise DeploymentInvalidNetworkType,
                 "Invalid network type `#{type}'"
           end
-        end
-
-        parsed_networks.each do |network|
-          network.validate_subnet_azs_contained_in!(availability_zones)
         end
 
         duplicates = detect_duplicates(parsed_networks) { |network| network.canonical_name }
@@ -79,7 +75,13 @@ module Bosh::Director
 
       def default_network(ip_provider_factory, global_network_resolver)
         # name does not matter, default network is used separately
-        ManualNetwork.new({'subnets' => [], 'name' => 'default'}, global_network_resolver, ip_provider_factory, @logger)
+        ManualNetwork.new(
+          {'subnets' => [], 'name' => 'default'},
+          [],
+          global_network_resolver,
+          ip_provider_factory,
+          @logger
+        )
       end
 
       def parse_compilation(cloud_manifest, networks)

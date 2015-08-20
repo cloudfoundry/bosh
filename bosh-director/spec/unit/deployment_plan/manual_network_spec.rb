@@ -20,6 +20,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   subject(:manual_network) do
      BD::DeploymentPlan::ManualNetwork.new(
        network_spec,
+       [
+         BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+         BD::DeploymentPlan::AvailabilityZone.new('zone_2', {})
+       ],
        global_network_resolver,
        ip_provider_factory,
        logger
@@ -30,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     it 'should parse subnets' do
       expect(manual_network.subnets.size).to eq(1)
       subnet = manual_network.subnets.first
-      expect(subnet).to be_an_instance_of BD::DeploymentPlan::NetworkSubnet
+      expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
       expect(subnet.network).to eq(manual_network)
       expect(subnet.range).to eq(NetAddr::CIDR.create('192.168.1.0/24'))
     end
