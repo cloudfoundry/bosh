@@ -3,6 +3,17 @@ require 'spec_helper'
 describe 'global networking', type: :integration do
   with_reset_sandbox_before_each
 
+  def deploy_with_ip(manifest, ip, options={})
+    deploy_with_ips(manifest, [ip], options)
+  end
+
+  def deploy_with_ips(manifest, ips, options={})
+    manifest['jobs'].first['networks'].first['static_ips'] = ips
+    manifest['jobs'].first['instances'] = ips.size
+    options.merge!(manifest_hash: manifest)
+    deploy_simple_manifest(options)
+  end
+
   context 'when allocating static IPs' do
     before do
       target_and_login
@@ -32,18 +43,6 @@ describe 'global networking', type: :integration do
       manifest_hash['name'] = 'second_deployment'
       manifest_hash
     end
-
-    def deploy_with_ip(manifest, ip, options={})
-      deploy_with_ips(manifest, [ip], options)
-    end
-
-    def deploy_with_ips(manifest, ips, options={})
-      manifest['jobs'].first['networks'].first['static_ips'] = ips
-      manifest['jobs'].first['instances'] = ips.size
-      options.merge!(manifest_hash: manifest)
-      deploy_simple_manifest(options)
-    end
-
 
     it 'deployments with shared manual network get next available IP from range' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -633,6 +632,27 @@ describe 'global networking', type: :integration do
         new_ips = director.vms('my-deploy').map(&:ips).flatten
         expect(new_ips).to eq(['192.168.1.3'])
       end
+    end
+
+    it 'keeps IP when reservation is changed to static' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      simple_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+      first_deploy_vms = director.vms
+      expect(first_deploy_vms.size).to eq(1)
+      expect(first_deploy_vms.first.ips).to eq('192.168.1.2')
+
+      cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.2']
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_with_ip(simple_manifest, '192.168.1.2')
+      second_deploy_vms = director.vms
+      expect(second_deploy_vms.size).to eq(1)
+
+      expect(second_deploy_vms.first.ips).to eq(first_deploy_vms.first.ips)
+      expect(second_deploy_vms.first.cid).to eq(first_deploy_vms.first.cid)
     end
   end
 end
