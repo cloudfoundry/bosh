@@ -75,17 +75,9 @@ describe 'deploy', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
 
-    # scale down
-    cloud_config_hash['resource_pools'].first['size'] = 2
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
-
     manifest_hash['jobs'].first['instances'] = 2
     deploy_simple_manifest(manifest_hash: manifest_hash)
     expect_running_vms(%w(foobar/0 foobar/1))
-
-    # scale up, above original size
-    cloud_config_hash['resource_pools'].first['size'] = 4
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
     manifest_hash['jobs'].first['instances'] = 4
     deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -117,18 +109,6 @@ describe 'deploy', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_hash)
     expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
   end
-
-  it 'ignores the now deprecated resource_pools.size property' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first['size'] = 2
-
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['instances'] = 1
-
-    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0)) # no unknown/unknown
-  end
-
 
   it 'outputs properly formatted deploy information' do
     # We need to keep this test since the output is not tested and

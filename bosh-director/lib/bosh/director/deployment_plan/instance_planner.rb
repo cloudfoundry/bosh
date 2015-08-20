@@ -13,7 +13,8 @@ module Bosh
 
           results = @availability_zone_picker.place_and_match_instances(availability_zones, desired_instances, existing_instances)
 
-          candidate_indexes = array_of_candidate_indexes(results)
+          count = results[:desired].count + results[:obsolete].count
+          candidate_indexes = (0..count).to_a
 
           zoned_desired_instances = results[:desired]
           new_desired_instances = zoned_desired_instances.select do |desired_instance|
@@ -21,9 +22,21 @@ module Bosh
           end
           existing_desired_instances = zoned_desired_instances - new_desired_instances
 
+          new_desired_instances.each do |desired_instance|
+            @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_desired_instance(desired_instance)}")
+          end
+
+          existing_desired_instances.each do |desired_instance|
+            @logger.info("Existing desired instance: #{desired_instance.job.name}/#{desired_instance.instance.index} in az: #{az_name_for_desired_instance(desired_instance)}")
+          end
+
+          results[:obsolete].each do |instance|
+            @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
+          end
+
           desired_existing_instance_plans = desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance, candidate_indexes)
+          obsolete_instance_plans = obsolete_instance_plans(results[:obsolete], candidate_indexes)
           desired_new_instance_plans = desired_new_instance_plans(job, new_desired_instances, candidate_indexes)
-          obsolete_instance_plans = obsolete_instance_plans(results[:obsolete])
 
           desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
         end
@@ -40,14 +53,15 @@ module Bosh
 
         private
 
-        def array_of_candidate_indexes(results)
-          (0..results[:desired].count).to_a
+        def az_name_for_desired_instance(desired_instance)
+          desired_instance.az.name unless desired_instance.az.nil?
         end
 
-        def obsolete_instance_plans(obsolete_desired_instances)
+        def obsolete_instance_plans(obsolete_desired_instances, candidate_indexes)
           obsolete_desired_instances.map do |existing_instance|
             @logger.debug("Obsolete existing instance #{existing_instance}")
             instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
+            candidate_indexes.delete(existing_instance.index)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
         end
