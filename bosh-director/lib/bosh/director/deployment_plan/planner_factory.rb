@@ -34,6 +34,14 @@ module Bosh
           @logger = logger
         end
 
+        def create_from_model(deployment_model)
+          manifest_hash = Psych.load(deployment_model.manifest)
+          cloud_config_model = deployment_model.cloud_config
+          planner = planner_without_vm_binding(manifest_hash, cloud_config_model, {})
+          prepare(planner, Config.cloud)
+          planner
+        end
+
         def planner(manifest_hash, cloud_config, options)
           @event_log.begin_stage('Preparing deployment', 9)
           @logger.info('Preparing deployment')
@@ -48,10 +56,10 @@ module Bosh
             cloud = Config.cloud
           end
 
+          prepare(planner, cloud)
+
           vm_deleter = VmDeleter.new(cloud, @logger)
           vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
-
-          prepare(planner, cloud)
           self.class.validate_packages(planner, {:context => 'deploy'})
 
           compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)

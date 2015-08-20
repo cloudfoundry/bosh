@@ -1,9 +1,9 @@
 require 'spec_helper'
-require 'bosh/director/instance_updater/stopper'
+require 'bosh/director/stopper'
 
 module Bosh::Director
-  describe InstanceUpdater::Stopper do
-    subject(:stopper) { described_class.new(instance, agent_client, target_state, skip_drain, config, logger) }
+  describe Stopper do
+    subject(:stopper) { described_class.new(instance, target_state, skip_drain, config, logger) }
 
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
@@ -11,10 +11,13 @@ module Bosh::Director
         resource_pool_changed?: false,
         persistent_disk_changed?: false,
         networks_changed?: false,
+        model: instance_model
       })
     end
+    let(:instance_model) { Models::Instance.make }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    before { allow(AgentClient).to receive(:with_vm).with(instance.model.vm).and_return(agent_client) }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
@@ -27,6 +30,28 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
+          stopper.stop
+        end
+      end
+
+      context 'when it is compilation instance' do
+        before { instance_model.compilation = true }
+
+        it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to_not receive(:stop)
+          stopper.stop
+        end
+      end
+
+      context 'when it instance does not have vm' do
+        before { instance_model.vm = nil }
+
+        it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to_not receive(:stop)
           stopper.stop
         end
       end

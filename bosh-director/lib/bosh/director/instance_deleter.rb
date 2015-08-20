@@ -3,11 +3,14 @@ module Bosh::Director
   class InstanceDeleter
     include DnsHelper
 
-    def initialize(deployment_plan)
+    def initialize(deployment_plan, options={})
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
+
+      @force = options.fetch(:force, false)
+      @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
     def delete_instances(instances, event_log_stage, options = {})
@@ -19,31 +22,9 @@ module Bosh::Director
       end
     end
 
-    def drain(vm)
-      agent = AgentClient.with_vm(vm)
-
-      drain_time = agent.drain("shutdown")
-      while drain_time < 0
-        drain_time = drain_time.abs
-        begin
-          Config.job_cancelled?
-          @logger.info("Drain - check back in #{drain_time} seconds")
-          sleep(drain_time)
-          drain_time = agent.drain("status")
-        rescue => e
-          @logger.warn("Failed to check drain-status: #{e.inspect}")
-          raise if e.kind_of?(Bosh::Director::TaskCancelled)
-          break
-        end
-      end
-
-      sleep(drain_time)
-      agent.stop
-    end
-
     def delete_snapshots(instance)
       snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
-      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
+      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
     end
 
     def delete_persistent_disks(persistent_disks)
@@ -76,27 +57,49 @@ module Bosh::Director
     private
 
     def delete_instance(instance, event_log_stage)
-      vm_model = instance.model.vm
-      @logger.info("Delete unneeded instance '#{instance}'")
+      @logger.info("Deleting instance '#{instance}'")
 
       event_log_stage.advance_and_track(instance.to_s) do
-        drain(vm_model) unless instance.model.compilation || vm_model.nil?
+        error_ignorer.with_force_check do
+          stop(instance)
+        end
 
         vm_deleter.delete_for_instance(instance, skip_disks: true)
 
         unless instance.model.compilation
-          delete_snapshots(instance.model)
-          delete_persistent_disks(instance.model.persistent_disks)
-          delete_dns(instance.job_name, instance.index)
-          RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean_all
+          error_ignorer.with_force_check do
+            delete_snapshots(instance.model)
+          end
+
+          error_ignorer.with_force_check do
+            delete_persistent_disks(instance.model.persistent_disks)
+          end
+
+          error_ignorer.with_force_check do
+            delete_dns(instance.job_name, instance.index)
+          end
+
+          error_ignorer.with_force_check do
+            RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean_all
+          end
         end
 
         instance.delete
       end
     end
 
+    def stop(instance)
+      skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
+      stopper = Stopper.new(instance, 'stopped', skip_drain, Config, @logger)
+      stopper.stop
+    end
+
+    def error_ignorer
+      @error_ignorer ||= ErrorIgnorer.new(@force, @logger)
+    end
+
     def vm_deleter
-      @vm_deleter ||= VmDeleter.new(@cloud, @logger)
+      @vm_deleter ||= VmDeleter.new(@cloud, @logger, {force: @force})
     end
   end
 end

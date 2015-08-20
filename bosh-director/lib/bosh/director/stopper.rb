@@ -1,8 +1,7 @@
 module Bosh::Director
-  class InstanceUpdater::Stopper
-    def initialize(instance, agent_client, target_state, skip_drain, config, logger)
+  class Stopper
+    def initialize(instance, target_state, skip_drain, config, logger)
       @instance = instance
-      @agent_client = agent_client
       @target_state = target_state
       @skip_drain = skip_drain
       @config = config
@@ -10,16 +9,22 @@ module Bosh::Director
     end
 
     def stop
+      return if @instance.model.compilation || @instance.model.vm.nil?
+
       if @skip_drain
         @logger.info("Skipping drain for '#{@instance}'")
       else
         perform_drain
       end
 
-      @agent_client.stop
+      agent_client.stop
     end
 
     private
+
+    def agent_client
+      @agent_client ||= AgentClient.with_vm(@instance.model.vm)
+    end
 
     def perform_drain
       drain_type = shutting_down? ? 'shutdown' : 'update'
@@ -27,7 +32,7 @@ module Bosh::Director
       # Apply spec might change after shutdown drain (unlike update drain)
       # because instance's VM could be reconfigured.
       # Drain script can still capture intent from non-final apply spec.
-      drain_time = @agent_client.drain(drain_type, @instance.apply_spec)
+      drain_time = agent_client.drain(drain_type, @instance.apply_spec)
 
       if drain_time > 0
         sleep(drain_time)
@@ -37,11 +42,11 @@ module Bosh::Director
     end
 
     def shutting_down?
-      @instance.resource_pool_changed? ||
+      @target_state == 'stopped' ||
+        @target_state == 'detached' ||
+        @instance.resource_pool_changed? ||
         @instance.persistent_disk_changed? ||
-        @instance.networks_changed? ||
-        @target_state == 'stopped' ||
-        @target_state == 'detached'
+        @instance.networks_changed?
     end
 
     def wait_for_dynamic_drain(initial_drain_time)
@@ -65,7 +70,7 @@ module Bosh::Director
         # realistically speaking, all agents have already been updated
         # to support drain status mechanism and swallowing real errors
         # would be bad here, as it could mask potential problems.
-        drain_time = @agent_client.drain('status')
+        drain_time = agent_client.drain('status')
       end
     end
   end

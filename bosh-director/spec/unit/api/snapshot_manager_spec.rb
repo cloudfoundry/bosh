@@ -125,6 +125,16 @@ module Bosh::Director
             described_class.delete_snapshots(@disk.snapshots)
           }.to change { Models::Snapshot.count }.by -2
         end
+
+        context 'when keep_snapshots_in_cloud option is passed' do
+          it 'keeps snapshots in the IaaS' do
+            expect(Config.cloud).to_not receive(:delete_snapshot)
+
+            expect {
+              described_class.delete_snapshots(@disk.snapshots, keep_snapshots_in_the_cloud: true)
+            }.to change { Models::Snapshot.count }.by -2
+          end
+        end
       end
 
       describe '#take_snapshot' do

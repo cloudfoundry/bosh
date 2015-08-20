@@ -146,6 +146,12 @@ module Bosh::Director::Models
     manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
+  DeploymentProperty.blueprint do
+    deployment { Deployment.make }
+    name { Sham.name }
+    value { "value" }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }

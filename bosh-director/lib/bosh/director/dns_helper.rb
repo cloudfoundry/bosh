@@ -220,4 +220,17 @@ module Bosh::Director
       "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
     end
   end
+
+  class DnsManager
+    include DnsHelper
+
+    def initialize(logger)
+      @logger = logger
+    end
+
+    def delete_dns_for_deployment(name)
+      record_pattern = ['%', canonical(name), dns_domain_name].join('.')
+      delete_dns_records(record_pattern)
+    end
+  end
 end
