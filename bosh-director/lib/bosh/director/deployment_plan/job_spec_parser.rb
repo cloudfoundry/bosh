@@ -40,7 +40,7 @@ module Bosh::Director
         parse_resource_pool
         parse_update_config
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
-        availability_zones = JobAvilabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        availability_zones = JobAvailabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
 
         parse_instances(availability_zones, networks) # will populate job.instances
