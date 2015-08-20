@@ -67,17 +67,6 @@ These are the options for the Blobstore client when provider is `s3`:
 * `secret_access_key` (optional, if not present, the blobstore client operates in read only mode)
   S3 Secret Access Key
 
-### Atmos
-
-These are the options for the Blobstore client when provider is `atmos`:
-
-* `url` (required)
-  Atmos URL
-* `uid` (required)
-  Atmos UID
-* `secret` (required)
-  Atmos password
-
 ### OpenStack Swift provider
 
 These are the options for the Blobstore client when provider is `swift`:
@@ -112,6 +101,8 @@ These are the options for the Blobstore client when `swift_provider` is `opensta
   OpenStack API key
 * `openstack_tenant` (required)
   OpenStack tenant name
+* `openstack_domain` (optional)
+  OpenStack domain
 * `openstack_region` (optional)
   OpenStack region
 

@@ -20,6 +20,52 @@ module Bosh::Director
         context 'authenticated access' do
           before { authorize 'admin', 'admin' }
 
+          context 'when database has packages missing their source blobs' do
+
+            before do
+              params.merge!('packages' => [
+                  { 'fingerprint' => 'fake-pkg1-fingerprint' },
+                  { 'fingerprint' => 'fake-pkg2-fingerprint' },
+                  { 'fingerprint' => 'fake-pkg3-fingerprint' },
+              ])
+
+              release = Models::Release.make(name: 'fake-release-name')
+
+              Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg1',
+                  version: 'fake-pkg1-version',
+                  blobstore_id: 'fake-pkg1-blobstoreid',
+                  sha1: 'fake-pkg1-sha',
+                  fingerprint: 'fake-pkg1-fingerprint',
+              )
+
+              Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg2',
+                  version: 'fake-pkg2-version',
+                  blobstore_id: nil,
+                  sha1: nil,
+                  fingerprint: 'fake-pkg2-fingerprint',
+              )
+
+              Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg3',
+                  version: 'fake-pkg3-version',
+                  blobstore_id: 'fake-pkg3-blobstoreid',
+                  sha1: 'fake-pkg3-sha',
+                  fingerprint: 'fake-pkg3-fingerprint',
+              )
+            end
+
+            it 'returns matching fingerprints only for packages that have source blobs' do
+              perform
+              expect(last_response.status).to eq(200)
+              expect(JSON.load(last_response.body)).to eq(%w(fake-pkg1-fingerprint fake-pkg3-fingerprint))
+            end
+          end
+
           context 'when manifest is a hash and packages is an array' do
             context 'when manifest contains fingerprints' do
               before do

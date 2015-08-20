@@ -157,6 +157,17 @@ module Bosh
           end
         end
 
+        def match_compiled_packages(manifest_yaml)
+          url          = '/packages/matches_compiled'
+          status, body = post(url, 'text/yaml', manifest_yaml)
+
+          if status == 200
+            JSON.parse(body)
+          else
+            err(parse_error_message(status, body))
+          end
+        end
+
         def get_deployment(name)
           _, body = get_json_with_status("/deployments/#{name}")
           body

@@ -47,12 +47,12 @@ module Bosh::Dev
       branches.include?(branch_name)
     end
 
-    def verify_sha_contains_latest_master(candidate_sha)
+    def sha_does_not_include_latest_master?(candidate_sha)
       latest_sha, stderr, status = exec_cmd('git rev-parse origin/master')
       raise "Failed fetching branch master: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
       _, _, status = exec_cmd("git log #{candidate_sha} | grep #{latest_sha.strip}")
-      status.success?
+      !status.success?
     end
   end
 end

@@ -11,9 +11,10 @@ namespace :ci do
     require 'bosh/dev/git_branch_merger'
     merger = Bosh::Dev::GitBranchMerger.build
     candidate_sha = args.to_hash.fetch(:candidate_sha)
-    unless merger.verify_sha_contains_latest_master(candidate_sha)
+
+    if merger.sha_does_not_include_latest_master?(candidate_sha)
       fail "Candidate #{candidate_sha} does not contain latest master"
-    end
+    end unless ENV['SKIP_SHA_VERIFICATION']
   end
 
   desc 'Publish CI pipeline gems to S3'

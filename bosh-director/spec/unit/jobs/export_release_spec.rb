@@ -147,6 +147,7 @@ releases:
 
           it 'succeeds' do
             expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).with(planner, instance_of(DeploymentPlan::CompilationInstancePool), Config.logger, Config.event_log, job)
+            expect(job).to receive(:validate_release_packages)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform

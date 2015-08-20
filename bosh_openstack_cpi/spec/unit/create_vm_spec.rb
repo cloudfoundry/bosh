@@ -2,6 +2,8 @@
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
 
 require "spec_helper"
+require 'excon/errors'
+require 'excon'
 
 describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
@@ -495,6 +497,32 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
           {"test_env" => "value"}
         )
       }.to raise_error(Bosh::Clouds::VMCreationFailed)
+    end
+  end
+
+  context "when fail to connect to find image on OpenStack server" do
+    let(:cloud) do
+      mock_cloud do |openstack|
+        allow(openstack.servers).to receive(:create).and_return(server)
+        allow(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        allow(openstack.flavors).to receive(:find).and_return(flavor)
+        allow(openstack.key_pairs).to receive(:find).and_return(key_pair)
+      end
+    end
+    let(:error) do
+      Excon::Errors::SocketError.new(Excon::Errors::Error.new)
+    end
+
+    it "retries 5 times" do
+      expect(cloud.openstack.images).to receive(:find).ordered.exactly(5).times.and_raise(error)
+      expect{cloud.create_vm(
+        "agent-id",
+        "sc-id",
+        resource_pool_spec,
+        { "network_a" => dynamic_network_spec },
+        nil,
+        { "test_env" => "value" }
+      )}.to raise_error(Bosh::Clouds::CloudError)
     end
   end
 

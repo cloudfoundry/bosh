@@ -218,15 +218,6 @@ module Bosh::Director
         context 'release already exists' do
           before { Models::ReleaseVersion.make(release: release, version: '42+dev.6') }
 
-          it 'raises an error ReleaseAlreadyExists' do
-            expect {
-              job.perform
-            }.to raise_error(
-              ReleaseAlreadyExists,
-              %Q{Release `appcloud/42+dev.6' already exists}
-            )
-          end
-
           context 'when rebase is passed' do
             let(:job_options) { { 'rebase' => true } }
 
@@ -269,23 +260,9 @@ module Bosh::Director
             let(:job_options) { { 'skip_if_exists' => true } }
 
             it 'does not create a release' do
-              expect(job).not_to receive(:create_packages)
+              expect(job).not_to receive(:create_package)
               expect(job).not_to receive(:create_jobs)
               job.perform
-            end
-
-            describe 'event_log' do
-              it 'prints that release was not created' do
-                allow(Config.event_log).to receive(:begin_stage).and_call_original
-                expect(Config.event_log).to receive(:begin_stage).with('Release already exists', 1)
-                job.perform
-              end
-
-              it 'prints name and version' do
-                allow(Config.event_log).to receive(:track).and_call_original
-                expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
-                job.perform
-              end
             end
           end
         end
@@ -303,10 +280,7 @@ module Bosh::Director
           it 'raises an error ReleaseVersionInvalid' do
             expect {
               job.perform
-            }.to raise_error(
-              ReleaseVersionInvalid,
-              %Q{Release version invalid `appcloud/#{release_version}'}
-            )
+            }.to raise_error(Sequel::ValidationFailed)
           end
         end
 

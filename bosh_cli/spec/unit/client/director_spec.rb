@@ -679,7 +679,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'supports uploading with progress bar' do
-      file = spec_asset('valid_release.tgz')
+      file = spec_asset('test_release.tgz')
       f    = Bosh::Cli::FileWithProgressBar.open(file, 'r')
 
       allow(Bosh::Cli::FileWithProgressBar).to receive(:open).with(file, 'r').and_return(f)

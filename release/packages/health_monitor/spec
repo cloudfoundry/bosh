@@ -4,3 +4,4 @@ dependencies:
 - ruby
 files:
 - bosh/bosh-monitor/vendor/cache/*
+- syslog_event_forwarder/setup_syslog_event_forwarder.sh

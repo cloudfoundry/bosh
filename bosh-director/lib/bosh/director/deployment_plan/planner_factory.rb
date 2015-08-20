@@ -57,11 +57,10 @@ module Bosh
           end
 
           prepare(planner, cloud)
+          validate_packages(planner)
 
           vm_deleter = VmDeleter.new(cloud, @logger)
           vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
-          self.class.validate_packages(planner, {:context => 'deploy'})
-
           compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
           package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
             planner,
@@ -85,32 +84,6 @@ module Bosh
             properties: deployment_manifest.fetch('properties', {}),
           }
           assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
-        end
-
-        def self.validate_packages(planner, options)
-          release_manager = Bosh::Director::Api::ReleaseManager.new
-          planner.jobs.each { |job|
-            job.templates.each{ |template|
-              release_model = release_manager.find_by_name(template.release.name)
-              template.package_models.each{ |package|
-
-                release_version_model = release_manager.find_version(release_model, template.release.version)
-                packages_list = release_version_model.transitive_dependencies(package)
-                packages_list << package
-
-                packages_list.each { |needed_package|
-                  if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
-                    compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
-                    if compiled_packages_list.nil?
-                      msg = "Can't #{options[:context]} `#{release_version_model.release.name}/#{release_version_model.version}': it is not " +
-                          "compiled for `#{job.resource_pool.stemcell.model.desc}' and no source package is available"
-                      raise PackageMissingSourceCode, msg
-                    end
-                  end
-                }
-              }
-            }
-          }
         end
 
         private
@@ -208,6 +181,46 @@ module Bosh
           end
 
           assembler.bind_links
+        end
+
+        def validate_packages(planner)
+          faults = {}
+          release_manager = Bosh::Director::Api::ReleaseManager.new
+          planner.jobs.each { |job|
+            job.templates.each{ |template|
+              release_model = release_manager.find_by_name(template.release.name)
+              template.package_models.each{ |package|
+
+                release_version_model = release_manager.find_version(release_model, template.release.version)
+                packages_list = release_version_model.transitive_dependencies(package)
+                packages_list << package
+
+                release_desc = "#{release_version_model.release.name}/#{release_version_model.version}"
+
+                packages_list.each { |needed_package|
+                  if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+                    compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => job.resource_pool.stemcell.model.id]
+                    if compiled_packages_list.nil?
+                      (faults[release_desc] ||= []) << {:package => needed_package, :stemcell => job.resource_pool.stemcell.model}
+                    end
+                  end
+                }
+              }
+            }
+          }
+          handle_faults(faults) unless faults.empty?
+        end
+
+        def handle_faults(faults)
+          msg = "\n"
+          faults.each { |release_desc, packages_and_stemcells_list|
+            msg += "\nCan't deploy release `#{release_desc}'. It references packages (see below) without source code and are not compiled against intended stemcells:\n"
+            sorted_packages_and_stemcells = packages_and_stemcells_list.sort_by { |p| p[:package].name }
+            sorted_packages_and_stemcells.each { |item|
+              msg += " - `#{item[:package].name}/#{item[:package].version}' against `#{item[:stemcell].desc}'\n"
+            }
+          }
+          raise PackageMissingSourceCode, msg
         end
 
         def track_and_log(message)

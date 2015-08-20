@@ -25,9 +25,9 @@ module Bosh
 
         @logger = Logging::Logger.new('DummyCPI')
         @logger.add_appenders(Logging.appenders.io(
-          'DummyCPIIO',
-          options['log_buffer'] || STDOUT
-        ))
+            'DummyCPIIO',
+            options['log_buffer'] || STDOUT
+          ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
         @inputs_recorder = InputsRecorder.new(@base_dir, @logger)
@@ -64,31 +64,43 @@ module Bosh
       end
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
-      # rubocop:enable ParameterLists
+        # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
         validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
+        ips = []
         cmd = commands.next_create_vm_cmd
 
         if cmd.failed?
           raise Bosh::Clouds::CloudError.new("Creating vm failed")
         end
 
-        write_agent_default_network(agent_id, cmd.ip_address) if cmd.ip_address
+        networks.each do |network_name, network|
+          if network['type'] != 'dynamic'
+            ips << { 'network' => network_name, 'ip' => network.fetch('ip') }
+          else
+            if cmd.ip_address
+              ips << { 'network' => network_name, 'ip' => cmd.ip_address }
+              write_agent_default_network(agent_id, cmd.ip_address)
+            end
+          end
+        end
+
+        allocate_ips(ips)
 
         write_agent_settings(agent_id, {
-          agent_id: agent_id,
-          blobstore: @options['agent']['blobstore'],
-          ntp: [],
-          disks: { persistent: {} },
-          networks: networks,
-          vm: { name: "vm-#{agent_id}" },
-          cert: '',
-          mbus: @options['nats'],
-        })
+            agent_id: agent_id,
+            blobstore: @options['agent']['blobstore'],
+            ntp: [],
+            disks: { persistent: {} },
+            networks: networks,
+            vm: { name: "vm-#{agent_id}" },
+            cert: '',
+            mbus: @options['nats'],
+          })
 
         agent_pid = spawn_agent_process(agent_id)
-        vm = VM.new(agent_pid.to_s, agent_id, cloud_properties)
+        vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
         @vm_repo.save(vm)
 
@@ -101,10 +113,11 @@ module Bosh
         commands.wait_for_unpause_delete_vms
         agent_pid = vm_cid.to_i
         Process.kill('KILL', agent_pid)
-      # rubocop:disable HandleExceptions
+          # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
-      # rubocop:enable HandleExceptions
+        # rubocop:enable HandleExceptions
       ensure
+        free_ips(vm_cid)
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_cid))
       end
 
@@ -216,9 +229,9 @@ module Bosh
         vm_cids.each do |agent_pid|
           begin
             Process.kill('KILL', agent_pid.to_i)
-          # rubocop:disable HandleExceptions
+              # rubocop:disable HandleExceptions
           rescue Errno::ESRCH
-          # rubocop:enable HandleExceptions
+            # rubocop:enable HandleExceptions
           end
         end
       end
@@ -263,6 +276,28 @@ module Bosh
         agent_pid
       end
 
+      def allocate_ips(ips)
+        ips.each do |ip|
+          begin
+            network_dir = File.join(@base_dir, 'dummy_cpi_networks', ip['network'])
+            FileUtils.makedirs(network_dir)
+            open(File.join(network_dir, ip['ip']), File::WRONLY|File::CREAT|File::EXCL).close
+          rescue Errno::EEXIST
+            # at this point we should actually free all the IPs we successfully allocated before the collision,
+            # but in practice the tests only feed in one IP per VM so that cleanup code would never be exercised
+            raise "IP Address #{ip['ip']} in network '#{ip['network']}' is already in use"
+          end
+        end
+      end
+
+      def free_ips(vm_cid)
+        return unless @vm_repo.exists?(vm_cid)
+        vm = @vm_repo.load(vm_cid)
+        vm.ips.each do |ip|
+          FileUtils.rm_rf(File.join(@base_dir, 'dummy_cpi_networks', ip['network'], ip['ip']))
+        end
+      end
+
       def agent_id_for_vm_id(vm_cid)
         @vm_repo.load(vm_cid).agent_id
       end
@@ -297,9 +332,9 @@ module Bosh
           'Infrastructure' => {
             'Settings' => {
               'Sources' => [{
-                'Type' => 'File',
-                'SettingsPath' => agent_settings_file(agent_id)
-              }],
+                  'Type' => 'File',
+                  'SettingsPath' => agent_settings_file(agent_id)
+                }],
               'UseRegistry' => true
             }
           }
@@ -481,7 +516,7 @@ module Bosh
         end
       end
 
-      class VM < Struct.new(:id, :agent_id, :cloud_properties)
+      class VM < Struct.new(:id, :agent_id, :cloud_properties, :ips)
       end
 
       class VMRepo
@@ -492,7 +527,7 @@ module Bosh
 
         def load(id)
           attrs = JSON.parse(File.read(vm_file(id)))
-          VM.new(id, attrs.fetch('agent_id'), attrs.fetch('cloud_properties'))
+          VM.new(id, attrs.fetch('agent_id'), attrs.fetch('cloud_properties'), attrs.fetch('ips'))
         end
 
         def exists?(id)
@@ -502,8 +537,10 @@ module Bosh
         def save(vm)
           serialized_vm = JSON.dump({
               'agent_id' => vm.agent_id,
-              'cloud_properties' => vm.cloud_properties
+              'cloud_properties' => vm.cloud_properties,
+              'ips' => vm.ips,
             })
+
           File.write(vm_file(vm.id), serialized_vm)
         end
 

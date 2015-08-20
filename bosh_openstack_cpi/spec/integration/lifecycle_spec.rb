@@ -260,6 +260,31 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
+  context 'when detaching a non-existing disk' do
+    # Detaching a non-existing disk from vm should NOT raise error
+    let(:network_spec) do
+      {
+        'default' => {
+          'type' => 'dynamic',
+          'cloud_properties' => {
+            'net_id' => @net_id
+          }
+        }
+      }
+    end
+
+    it 'exercises the vm lifecycles' do
+      vm_id = create_vm(@stemcell_id, network_spec, [])
+
+      expect {
+        logger.info("Detaching disk vm_id=#{vm_id} disk_id=non-existing-disk")
+        cpi.detach_disk(vm_id, "non-existing-disk")
+      }.to_not raise_error
+
+      clean_up_vm(vm_id, network_spec)
+    end
+  end
+
   def vm_lifecycle(stemcell_id, network_spec, disk_locality, cloud_properties = {})
     vm_id = create_vm(stemcell_id, network_spec, disk_locality)
     disk_id = create_disk(vm_id, cloud_properties)
@@ -322,6 +347,9 @@ describe Bosh::OpenStackCloud::Cloud do
     logger.info("Creating disk for VM vm_id=#{vm_id}")
     disk_id = cpi.create_disk(2048, cloud_properties, vm_id)
     expect(disk_id).to be
+
+    logger.info("Checking existence of disk vm_id=#{vm_id} disk_id=#{disk_id}")
+    expect(cpi.has_disk?(disk_id)).to be(true)
 
     logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{disk_id}")
     cpi.attach_disk(vm_id, disk_id)

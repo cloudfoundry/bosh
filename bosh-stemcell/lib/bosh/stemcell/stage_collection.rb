@@ -108,7 +108,7 @@ module Bosh::Stemcell
 
     def finish_stemcell_stages
       [
-        :bosh_dpkg_list
+        :bosh_package_list
       ]
     end
 
@@ -248,7 +248,6 @@ module Bosh::Stemcell
         :base_ubuntu_build_essential,
         :base_ubuntu_packages,
         :base_ssh,
-        :bosh_dpkg_list,
         :bosh_sysstat,
         :system_kernel,
         :system_kernel_modules,

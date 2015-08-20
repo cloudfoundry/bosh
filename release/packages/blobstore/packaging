@@ -1,8 +1,0 @@
-set -e
-
-cd bosh/simple_blobstore_server
-
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
-gem_cmd="/var/vcap/packages/ruby/bin/gem install --local --no-ri --no-rdoc -w -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gem_home"
-
-$gem_cmd simple_blobstore_server

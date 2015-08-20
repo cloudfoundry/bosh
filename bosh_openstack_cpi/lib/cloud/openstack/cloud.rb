@@ -62,12 +62,13 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
       }
 
-      connect_retry_errors = [Excon::Errors::GatewayTimeout]
+      connect_retry_errors = [Excon::Errors::GatewayTimeout, Excon::Errors::SocketError]
 
       @connect_retry_options = {
         sleep: CONNECT_RETRY_DELAY,
@@ -94,6 +95,7 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
@@ -230,9 +232,17 @@ module Bosh::OpenStackCloud
         nics = network_configurator.nics
         @logger.debug("Using NICs: `#{nics.join(', ')}'")
 
-        image = with_openstack { @openstack.images.find { |i| i.id == stemcell_id } }
-        cloud_error("Image `#{stemcell_id}' not found") if image.nil?
-        @logger.debug("Using image: `#{stemcell_id}'")
+        image = nil
+        begin
+          Bosh::Common.retryable(@connect_retry_options) do |tries, error|
+            @logger.error("Unable to connect to OpenStack API to find image: `#{stemcell_id} due to: #{error.inspect}") unless error.nil?
+            image = with_openstack { @openstack.images.find { |i| i.id == stemcell_id } }
+            cloud_error("Image `#{stemcell_id}' not found") if image.nil?
+            @logger.debug("Using image: `#{stemcell_id}'")
+          end
+        rescue Bosh::Common::RetryCountExceeded, Excon::Errors::SocketError => e
+          cloud_error("Unable to connect to OpenStack API to find image: `#{stemcell_id}'")
+        end
 
         flavor = with_openstack { @openstack.flavors.find { |f| f.name == resource_pool['instance_type'] } }
         cloud_error("Flavor `#{resource_pool['instance_type']}' not found") if flavor.nil?
@@ -473,6 +483,20 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Check whether an OpenStack volume exists or not
+    #
+    # @param [String] disk_id OpenStack volume UUID
+    # @return [bool] whether the specific disk is there or not
+    def has_disk?(disk_id)
+      with_thread_name("has_disk?(#{disk_id})") do
+        @logger.info("Check the presence of disk with id `#{disk_id}'...")
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
+
+        !volume.nil?
+      end
+    end
+
+    ##
     # Deletes an OpenStack volume
     #
     # @param [String] disk_id OpenStack volume UUID
@@ -532,9 +556,11 @@ module Bosh::OpenStackCloud
         cloud_error("Server `#{server_id}' not found") unless server
 
         volume = with_openstack { @openstack.volumes.get(disk_id) }
-        cloud_error("Volume `#{disk_id}' not found") unless volume
-
-        detach_volume(server, volume)
+        if volume.nil?
+          @logger.info("Disk `#{disk_id}' not found while trying to detach it from vm `#{server_id}'...")
+        else
+          detach_volume(server, volume)
+        end
 
         update_agent_settings(server) do |settings|
           settings['disks'] ||= {}
@@ -650,6 +676,7 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties['username'],
         :openstack_api_key => @openstack_properties['api_key'],
         :openstack_tenant => @openstack_properties['tenant'],
+        :openstack_domain_name => @openstack_properties['domain'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(@extra_connection_options)
@@ -953,6 +980,7 @@ module Bosh::OpenStackCloud
             'username' => String,
             'api_key' => String,
             'tenant' => String,
+            optional('domain') => String,
             optional('region') => String,
             optional('endpoint_type') => String,
             optional('state_timeout') => Numeric,

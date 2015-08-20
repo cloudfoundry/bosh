@@ -69,8 +69,8 @@ module Bosh::Spec
         'director_uuid'  => 'deadbeef',
 
         'releases' => [{
-          'name'    => 'appcloud',
-          'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+          'name'    => 'test_release',
+          'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
         }],
 
         'update' => {
@@ -147,6 +147,41 @@ module Bosh::Spec
       )
     end
 
+    def self.test_deployment_manifest_referencing_multiple_releases
+      {
+          'name' => 'multiple_release_deployment',
+          'director_uuid'  => 'deadbeef',
+
+          'releases' => [{
+                             'name'    => 'test_release',
+                             'version' => '1'
+                         },{
+                             'name'    => 'test_release_a',
+                             'version' => '1'
+                         }],
+
+          'update' => {
+              'canaries'          => 2,
+              'canary_watch_time' => 4000,
+              'max_in_flight'     => 1,
+              'update_watch_time' => 20
+          },
+          'jobs' => [{
+                         'name'          => 'job_name',
+                         'templates'     => [{
+                                                 'name'    => 'job_using_pkg_1_and_2',
+                                                 'release' => 'test_release'
+                                             },{
+                                                 'name'    => 'job_using_pkg_5',
+                                                 'release' => 'test_release_a'
+                                             }],
+                         'resource_pool' => 'a',
+                         'instances'     => 1,
+                         'networks'      => [{ 'name' => 'a' }],
+                     }]
+      }
+    end
+
     def self.minimal_legacy_manifest
       simple_cloud_config.merge(
       {
@@ -154,8 +189,8 @@ module Bosh::Spec
           'director_uuid'  => 'deadbeef',
 
           'releases' => [{
-               'name'    => 'appcloud',
-               'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+               'name'    => 'test_release',
+               'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
            }],
 
           'update' => {
@@ -173,11 +208,11 @@ module Bosh::Spec
           'director_uuid'  => 'deadbeef',
 
           'releases' => [{
-               'name'    => 'appcloud',
-               'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+               'name'    => 'test_release',
+               'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
            },{
-               'name'    => 'appcloud_2',
-               'version' => '0.2' # It's our dummy valid release from spec/assets/valid_release_2.tgz
+               'name'    => 'test_release_2',
+               'version' => '2' # It's our dummy valid release from spec/assets/test_release_2.tgz
            }],
 
           'update' => {

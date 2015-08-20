@@ -21,6 +21,8 @@ Running all unit tests:
 bundle exec rake spec:unit # from the root of the project
 ```
 
+The CLI is backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3.  All code needs to run on Ruby 2.x.x.
+
 ### Integration Tests
 
 Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are in the `spec/integration` folder.

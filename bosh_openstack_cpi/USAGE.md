@@ -20,6 +20,8 @@ The registry options are passed to the Openstack CPI by the BOSH director based 
   OpenStack API key
 * `tenant` (required)
   OpenStack tenant name
+* `domain` (optional)
+  OpenStack domain name
 * `region` (optional)
   OpenStack region
 * `endpoint_type` (optional)

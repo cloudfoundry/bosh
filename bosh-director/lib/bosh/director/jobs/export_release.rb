@@ -2,6 +2,7 @@ require 'securerandom'
 require 'common/version/release_version'
 require 'bosh/director/compiled_release_downloader'
 require 'bosh/director/compiled_release_manifest'
+require 'bosh/director/compiled_package_group'
 
 module Bosh::Director
   module Jobs
@@ -40,8 +41,10 @@ module Bosh::Director
         @release_version_model = release_manager.find_version(release, @release_version)
 
         unless deployment_manifest_has_release?
-          raise ReleaseNotMatchingManifest, "Release #{@release_name}/#{@release_version} not found in deployment #{@deployment_name} manifest"
+          raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
         end
+
+        validate_release_packages
 
         lock_timeout = 15 * 60 # 15 minutes
 
@@ -54,7 +57,6 @@ module Bosh::Director
               planner = create_planner
               compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
 
-              DeploymentPlan::PlannerFactory.validate_packages(planner, {:context => 'export'})
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                 planner,
                 compilation_instance_pool,
@@ -66,12 +68,13 @@ module Bosh::Director
 
               tarball_state = create_tarball
               result_file.write(tarball_state.to_json + "\n")
-
             end
           end
         end
         "Exported release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}"
       end
+
+      private
 
       def deployment_manifest_has_release?
         @deployment_manifest["releases"].each do |release|
@@ -106,6 +109,8 @@ module Bosh::Director
         planner.add_job(
           create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
         )
+
+        @logger.info('Created deployment plan')
 
         planner
       end
@@ -166,6 +171,34 @@ module Bosh::Director
         fake_job.templates.each { |template| template.bind_models }
         fake_job
       end
+
+      def validate_release_packages
+        faults = Set.new
+        @release_version_model.packages.each do |package|
+          packages_list = @release_version_model.transitive_dependencies(package)
+          packages_list << package
+
+          packages_list.each { |needed_package|
+            if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+              compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => @stemcell.id]
+              if compiled_packages_list.nil?
+                faults << needed_package
+              end
+            end
+          }
+        end
+
+        unless faults.empty?
+          sorted_faults = faults.to_a.sort_by { |p| p.name }
+          msg = "Can't export release `#{@release_name}/#{@release_version}'. It references packages without" +
+              " source code that are not compiled against `#{@stemcell.desc}':\n"
+          sorted_faults.each do |non_compiled_package|
+            msg += " - #{non_compiled_package.name}/#{non_compiled_package.version}\n"
+          end
+          raise PackageMissingSourceCode, msg
+        end
+      end
+
     end
   end
 end

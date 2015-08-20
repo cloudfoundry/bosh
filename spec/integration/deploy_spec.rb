@@ -202,7 +202,7 @@ Deployed `simple' to `Test Director'
           set_deployment({manifest_hash: deployment_manifest })
         }
 
-        xit 'compiles only the package with the different version and those that depend on it' do
+        it 'compiles only the package with the different version and those that depend on it' do
           out = deploy({})
           expect(out).to include("Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f")
           expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
@@ -223,7 +223,43 @@ Deployed `simple' to `Test Director'
 
         it 'fails with an error message saying there is no way to compile for that stemcell' do
           out = deploy(failure_expected: true)
-          expect(out).to include("Can't deploy `test_release/1': it is not compiled for `ubuntu-stemcell/1' and no source package is available")
+          expect(out).to include("Error 60001:")
+          expect(out).to include(<<-EOF)
+Can't deploy release `test_release/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
+ - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
+ - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
+ - `pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c' against `ubuntu-stemcell/1'
+ - `pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4' against `ubuntu-stemcell/1'
+ - `pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4' against `ubuntu-stemcell/1'
+          EOF
+        end
+
+        context 'and multiple releases are referenced in the current deployment' do
+          before {
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')}")
+            set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_referencing_multiple_releases})
+          }
+
+          it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
+            out = deploy(failure_expected: true)
+
+            expect(out).to include("Error 60001:")
+
+            expect(out).to include(<<-EOF)
+Can't deploy release `test_release/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
+ - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
+ - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
+            EOF
+
+            expect(out).to include(<<-EOF)
+Can't deploy release `test_release_a/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
+ - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
+ - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
+ - `pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c' against `ubuntu-stemcell/1'
+ - `pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4' against `ubuntu-stemcell/1'
+ - `pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4' against `ubuntu-stemcell/1'
+            EOF
+          end
         end
       end
     end

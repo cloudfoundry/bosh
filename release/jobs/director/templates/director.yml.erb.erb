@@ -190,6 +190,9 @@ compiled_package_cache:
       openstack_username: <%= openstack_username %>
       openstack_api_key: <%= openstack_api_key %>
       openstack_tenant: <%= openstack_tenant %>
+      <% if_p('compiled_package_cache.options.openstack_domain_name') do |openstack_domain_name| %>
+      openstack_domain_name: <%= openstack_domain_name %>
+      <% end %>
       <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
       openstack_region: <%= openstack_region %>
       <% end %>
@@ -291,6 +294,9 @@ cloud:
       username: <%= JSON.dump(username) %>
       api_key: <%= JSON.dump(api_key) %>
       tenant: <%= JSON.dump(tenant) %>
+      <% if_p("openstack.domain") do |domain| %>
+      domain: <%= domain %>
+      <% end %>
       <% if_p("openstack.region") do |region| %>
       region: <%= region %>
       <% end %>

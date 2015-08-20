@@ -141,6 +141,12 @@ plugins:
       <% end %>
   <% end %>
 
+   <% if p("hm.syslog_event_forwarder_enabled", false) %>
+  - name: syslog_event_forwarder
+    events:
+      - alert
+  <% end %>
+
   <% if p("hm.consul_event_forwarder_enabled") %>
   - name: consul_event_forwarder
     events:

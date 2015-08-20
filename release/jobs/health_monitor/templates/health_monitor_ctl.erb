@@ -1,0 +1,59 @@
+#!/bin/bash
+
+RUN_DIR=/var/vcap/sys/run/health_monitor
+LOG_DIR=/var/vcap/sys/log/health_monitor
+PIDFILE=$RUN_DIR/health_monitor.pid
+RUNAS=vcap
+CONFIG_DIR=/var/vcap/jobs/health_monitor/config
+STORE_DIR=/var/vcap/store/health_monitor
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.1.0
+export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
+
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR
+
+    echo $$ > $PIDFILE
+
+    if [ -s $CONFIG_DIR/uaa.pem ]; then
+      cp $CONFIG_DIR/uaa.pem $STORE_DIR
+    fi
+
+<% if p('hm.syslog_event_forwarder_enabled', false) %>
+    /var/vcap/packages/health_monitor/bin/setup_syslog_event_forwarder.sh $CONFIG_DIR
+<% end %>
+    exec chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/health_monitor/bin/bosh-monitor \
+      -c /var/vcap/jobs/health_monitor/config/health_monitor.yml \
+      >>$LOG_DIR/health_monitor.stdout.log 2>>$LOG_DIR/health_monitor.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  kill)
+    PID=$(head -1 $PIDFILE)
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill -9 $PID
+    fi
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: health_monitor_ctl {start|stop|kill}" ;;
+esac
+exit 0

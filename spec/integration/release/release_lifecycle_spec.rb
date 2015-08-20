@@ -138,7 +138,7 @@ describe 'release lifecycle', type: :integration do
   end
 
   it 'verifies a sample valid release', no_reset: true do
-    release_filename = spec_asset('valid_release.tgz')
+    release_filename = spec_asset('test_release.tgz')
     out = bosh_runner.run("verify release #{release_filename}")
     expect(out).to match(regexp("`#{release_filename}' is a valid release"))
   end

@@ -7,17 +7,17 @@ describe 'export release', type: :integration do
     before{
       target_and_login
 
-      bosh_runner.run("upload release #{spec_asset('valid_release.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       set_deployment({manifest_hash: Bosh::Spec::Deployments.minimal_legacy_manifest})
       deploy({})
     }
 
     it 'compiles all packages of the release against the requested stemcell with classic manifest' do
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
       expect(out).to match /Started compiling packages/
-      expect(out).to match /Started compiling packages > mutator\/2.99.7. Done/
-      expect(out).to match /Started compiling packages > stuff\/0.1.17. Done/
+      expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+      expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
       expect(out).to match /Task ([0-9]+) done/
     end
   end
@@ -40,9 +40,15 @@ describe 'export release', type: :integration do
       set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
       deploy({})
 
-      expect(
-         out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
-      ).to match(/Error 60001: Can't export `test_release\/1': it is not compiled for `ubuntu-stemcell\/1' and no source package is available/)
+      out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
+      expect(out).to include(<<-EOF)
+Error 60001: Can't export release `test_release/1'. It references packages without source code that are not compiled against `ubuntu-stemcell/1':
+ - pkg_1/16b4c8ef1574b3f98303307caad40227c208371f
+ - pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154
+ - pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c
+ - pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4
+ - pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4
+      EOF
     end
   end
 
@@ -130,8 +136,8 @@ describe 'export release', type: :integration do
       target_and_login
       upload_cloud_config
 
-      bosh_runner.run("upload release #{spec_asset('valid_release.tgz')}")
-      bosh_runner.run("upload release #{spec_asset('valid_release_2.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('test_release_2.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')}")
       set_deployment({manifest_hash: Bosh::Spec::Deployments.multiple_release_manifest})
@@ -139,36 +145,36 @@ describe 'export release', type: :integration do
     }
 
     it 'compiles all packages of the release against the requested stemcell with cloud config' do
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
       expect(out).to match /Started compiling packages/
-      expect(out).to match /Started compiling packages > mutator\/2.99.7. Done/
-      expect(out).to match /Started compiling packages > stuff\/0.1.17. Done/
+      expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+      expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
       expect(out).to match /Task ([0-9]+) done/
     end
 
     it 'does not compile packages that were already compiled' do
-      bosh_runner.run("export release appcloud/0.1 toronto-os/1")
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      bosh_runner.run("export release test_release/1 toronto-os/1")
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
       expect(out).to_not match /Started compiling packages/
-      expect(out).to_not match /Started compiling packages > mutator\/2.99.7. Done/
-      expect(out).to_not match /Started compiling packages > stuff\/0.1.17. Done/
+      expect(out).to_not match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+      expect(out).to_not match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
       expect(out).to match /Task ([0-9]+) done/
     end
 
     it 'compiles any release that is in the targeted deployment' do
-      out = bosh_runner.run("export release appcloud_2/0.2 toronto-os/1")
+      out = bosh_runner.run("export release test_release_2/2 toronto-os/1")
       expect(out).to match /Started compiling packages/
-      expect(out).to match /Started compiling packages > mutator_2\/2.99.8. Done/
-      expect(out).to match /Started compiling packages > stuff_2\/0.1.18. Done/
+      expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+      expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
       expect(out).to match /Task ([0-9]+) done/
     end
 
     it 'compiles against a stemcell that is not in the resource pool of the targeted deployment' do
-      out = bosh_runner.run("export release appcloud/0.1 toronto-centos/2")
+      out = bosh_runner.run("export release test_release/1 toronto-centos/2")
 
       expect(out).to match /Started compiling packages/
-      expect(out).to match /Started compiling packages > mutator\/2.99.7. Done/
-      expect(out).to match /Started compiling packages > stuff\/0.1.17. Done/
+      expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+      expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
       expect(out).to match /Task ([0-9]+) done/
     end
 
@@ -180,21 +186,21 @@ describe 'export release', type: :integration do
 
     it 'returns an error when the release version does not exist' do
       expect {
-        bosh_runner.run("export release appcloud/1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30006: Release version `appcloud\/1' doesn't exist/)
+        bosh_runner.run("export release test_release/0.1 toronto-os/1")
+      }.to raise_error(RuntimeError, /Error 30006: Release version `test_release\/0.1' doesn't exist/)
     end
 
     it 'returns an error when the stemcell os and version does not exist' do
       expect {
-        bosh_runner.run("export release appcloud/0.1 nonexistos/1")
+        bosh_runner.run("export release test_release/1 nonexistos/1")
       }.to raise_error(RuntimeError, /Error 50003: Stemcell version `1' for OS `nonexistos' doesn't exist/)
     end
 
     it 'raises an error when exporting a release version not matching the manifest release version' do
-      bosh_runner.run("upload release #{spec_asset('valid_release_0.2_with_same_package_versions.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('valid_release.tgz')}")
       expect {
-        bosh_runner.run("export release appcloud/0.2 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30011: Release appcloud\/0.2 not found in deployment minimal manifest/)
+        bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      }.to raise_error(RuntimeError, /Error 30011: Release version `appcloud\/0.1' not found in deployment `minimal' manifest/)
     end
 
     it 'puts a tarball in the blobstore' do
@@ -209,7 +215,7 @@ describe 'export release', type: :integration do
         end
       end
 
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
       task_id = out[/\d+/].to_i
 
       result_file = File.open(current_sandbox.sandbox_path("boshdir/tasks/#{task_id}/result"), "r")
@@ -238,16 +244,16 @@ describe 'export release', type: :integration do
         end
       end
 
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
-      expect(out).to match /release-appcloud-0.1-on-toronto-os-stemce... downloading.../
-      expect(out).to match /release-appcloud-0.1-on-toronto-os-stemce... downloaded/
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
+      expect(out).to match /release-test_release-1-on-toronto-os-stem... downloading.../
+      expect(out).to match /release-test_release-1-on-toronto-os-stem... downloaded/
 
       dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, "client-sandbox", "bosh_work_dir")
       files = Dir.entries(dir)
-      expect(files).to include("release-appcloud-0.1-on-toronto-os-stemcell-1.tgz")
+      expect(files).to include("release-test_release-1-on-toronto-os-stemcell-1.tgz")
 
       Dir.mktmpdir do |temp_dir|
-        tarball_path = File.join(dir, "release-appcloud-0.1-on-toronto-os-stemcell-1.tgz")
+        tarball_path = File.join(dir, "release-test_release-1-on-toronto-os-stemcell-1.tgz")
         `tar xzf #{tarball_path} -C #{temp_dir}`
         files = Dir.entries(temp_dir)
         expect(files).to include("compiled_packages","release.MF","jobs")
@@ -255,34 +261,80 @@ describe 'export release', type: :integration do
     end
 
     it 'logs the packages and jobs names and versions while copying them' do
-      out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      out = bosh_runner.run("export release test_release/1 toronto-os/1")
 
       expect(out).to include('Started copying packages')
-      expect(out).to include('Started copying packages > stuff/0.1.17. Done')
-      expect(out).to include('Started copying packages > mutator/2.99.7. Done')
+      expect(out).to include('Started copying packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done')
+      expect(out).to include('Started copying packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f. Done')
       expect(out).to include('Done copying packages')
 
       expect(out).to include('Started copying jobs')
-      expect(out).to include('Started copying jobs > cacher/1. Done')
-      expect(out).to include('Started copying jobs > cleaner/2. Done')
-      expect(out).to include('Started copying jobs > sweeper/24. Done')
+      expect(out).to include('Started copying jobs > job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196. Done')
+      expect(out).to include('Started copying jobs > job_using_pkg_1_and_2/673c3689362f2adb37baed3d8d4344cf03ff7637. Done')
+      expect(out).to include('Started copying jobs > job_using_pkg_2/8e9e3b5aebc7f15d661280545e9d1c1c7d19de74. Done')
       expect(out).to include('Done copying jobs')
     end
 
     it 'logs the full release.MF in the director debug log' do
-      export_release_output = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
+      export_release_output = bosh_runner.run("export release test_release/1 toronto-os/1")
       task_number =  export_release_output[/Task \d+ done/][/\d+/]
 
       debug_task_output = bosh_runner.run("task #{task_number} --debug")
 
-      expect(debug_task_output).to include('release.MF contents of appcloud/0.1 compiled release tarball:')
-      expect(debug_task_output).to include('name: appcloud')
-      expect(debug_task_output).to include('version: \'0.1\'')
-      expect(debug_task_output).to include('- name: stuff')
-      expect(debug_task_output).to include('- name: mutator')
-      expect(debug_task_output).to include('- name: cacher')
-      expect(debug_task_output).to include('- name: cleaner')
-      expect(debug_task_output).to include('- name: sweeper')
+      expect(debug_task_output).to include('release.MF contents of test_release/1 compiled release tarball:')
+      expect(debug_task_output).to include('name: test_release')
+      expect(debug_task_output).to include('version: \'1\'')
+      expect(debug_task_output).to include('- name: pkg_1')
+      expect(debug_task_output).to include('- name: pkg_2')
+      expect(debug_task_output).to include('- name: job_using_pkg_1')
+      expect(debug_task_output).to include('- name: job_using_pkg_1_and_2')
+      expect(debug_task_output).to include('- name: job_using_pkg_2')
+    end
+  end
+
+  context 'when there is an existing deployment with running VMs' do
+    context 'with global networking' do
+      before do
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+        upload_cloud_config(:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config)
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
+        deploy({})
+      end
+
+      it 'allocates non-conflicting IPs for compilation VMs' do
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        output = bosh_runner.run("export release test_release/1 centos-7/3001")
+        expect(output).to include('Done compiling packages')
+        expect(output).to include('Done copying packages')
+        expect(output).to include('Done copying jobs')
+        expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
+      end
+    end
+
+    context 'before global networking' do
+      before do
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        legacy_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
+          Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+        )
+        set_deployment(manifest_hash: legacy_manifest)
+        deploy({})
+      end
+
+      it 'allocates non-conflicting IPs for compilation VMs' do
+        pending 'need to fix this again on global-net'
+
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        output = bosh_runner.run("export release test_release/1 centos-7/3001")
+        expect(output).to include('Done compiling packages')
+        expect(output).to include('Done copying packages')
+        expect(output).to include('Done copying jobs')
+        expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
+      end
     end
   end
 end
