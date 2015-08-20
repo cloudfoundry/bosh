@@ -8,17 +8,38 @@ module Bosh
 
           azs = azs_sorted_by_existing_instance_count_descending(azs, az_to_existing_instances)
 
-          desired = []
+          desired_new = []
+          desired_existing = []
           desired_instances.each_with_index do |desired_instance, i|
             az = choose_az_for(i, azs)
             desired_instance.az = az
-            desired_instance.instance = existing_instance_for_az(az, az_to_existing_instances)
-            desired << desired_instance
+            instance = existing_instance_for_az(az, az_to_existing_instances)
+            desired_instance.existing_instance = instance
+            if instance.nil?
+              desired_new << desired_instance
+            else
+              desired_existing << desired_instance
+            end
+          end
+
+          obsolete = az_to_existing_instances.values.flatten
+          count = desired_new.count + desired_existing.count + obsolete.count
+          candidate_indexes = (0..count).to_a
+
+          obsolete.each do |instance_model|
+            candidate_indexes.delete(instance_model.index)
+          end
+          desired_existing.each do |desired_instance|
+            candidate_indexes.delete(desired_instance.existing_instance.index)
+          end
+          desired_new.each do |desired_instance|
+            desired_instance.index = candidate_indexes.shift
           end
 
           {
-            desired: desired,
-            obsolete: az_to_existing_instances.values.flatten
+            desired_new: desired_new,
+            desired_existing: desired_existing,
+            obsolete: obsolete,
           }
         end
 

@@ -36,7 +36,7 @@ module Bosh::Director
 
       def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
         instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
-        instance.bind_existing_instance_model(desired_instance.instance)
+        instance.bind_existing_instance_model(desired_instance.existing_instance)
         instance.bind_existing_reservations(existing_instance_state)
         instance
       end
