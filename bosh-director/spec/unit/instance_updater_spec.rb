@@ -85,6 +85,18 @@ module Bosh::Director
     before do
       allow(AgentClient).to receive(:with_defaults).and_return(agent_client)
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
+
+      allow(agent_client).to receive(:run_scripts)
+      allow(instance). to receive(:spec).and_return(
+                              {
+                                  'deployment' => 'simple',
+                                  'job' => {
+                                      'name' => 'job_with_templates_having_pre_start_scripts',
+                                      'templates' => [{'name' => 'job_with_pre_start'}]
+                                  }
+                              }
+                          )
+
     end
 
     describe '#report_progress' do
@@ -391,6 +403,18 @@ module Bosh::Director
         expect(Config.logger).to receive(:warn).
           with('Agent start raised an exception: #<RuntimeError: error>, ignoring for compatibility')
         subject.start!
+      end
+    end
+
+    describe '#run_pre_start_scripts' do
+      it 'tells the agent to run_pre_start_scripts' do
+        expect(agent_client).to receive(:run_scripts)
+        subject.run_pre_start_scripts
+      end
+
+      it 'send an array of scripts to the agent to run' do
+        expect(agent_client).to receive(:run_scripts).with(["/var/vcap/jobs/job_with_pre_start/bin/pre-start"],{})
+        subject.run_pre_start_scripts
       end
     end
 

@@ -1,0 +1,5 @@
+check process job_2_with_pre_start_script
+  with pidfile /var/vcap/sys/run/job_2_with_pre_start_script.pid
+  start program "/var/vcap/jobs/job_2_with_pre_start_script/bin/job_2_with_pre_start_script_ctl start"
+  stop program "/var/vcap/jobs/job_2_with_pre_start_script/bin/job_2_with_pre_start_script_ctl stop"
+  group vcap

@@ -1,0 +1,12 @@
+---
+name: job_1_with_pre_start_script
+templates:
+  pre-start.erb: bin/pre-start
+  job_1_ctl: bin/job_1_ctl
+
+packages: []
+
+properties:
+  pre_start_message:
+    description: A message echoed by the pre-start script 2
+    default: Hello pre-start 2!

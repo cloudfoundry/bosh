@@ -19,6 +19,8 @@ describe 'create release', type: :integration do
           './jobs/fails_with_too_much_output.tgz',
           './jobs/foobar.tgz',
           './jobs/job_with_blocking_compilation.tgz',
+          './jobs/job_1_with_pre_start_script.tgz',
+          './jobs/job_2_with_pre_start_script.tgz',
           './jobs/transitive_deps.tgz',
           './packages/a.tgz',
           './packages/b.tgz',
@@ -99,6 +101,8 @@ describe 'create release', type: :integration do
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
               job_desc('job_with_blocking_compilation'),
+              job_desc('job_1_with_pre_start_script'),
+              job_desc('job_2_with_pre_start_script'),
               job_desc('transitive_deps')
             ),
             'license' => license_desc,

@@ -69,7 +69,10 @@ module Bosh::Director
         }
       end
 
-      steps << proc { start! if need_start? }
+      if need_start?
+        steps << proc { run_pre_start_scripts }
+        steps << proc { start! }
+      end
 
       steps << proc { wait_until_running }
 
@@ -113,6 +116,20 @@ module Bosh::Director
           break if current_state["job_state"] != "running"
         end
       end
+    end
+
+    def run_pre_start_scripts
+      event_log.begin_stage('running pre-start scripts', 1)
+
+      pre_start_scripts_list = []
+      @instance.spec['job']['templates'].each do |template|
+        pre_start_scripts_list << "/var/vcap/jobs/#{template['name']}/bin/pre-start"
+      end
+
+      event_log.track(@instance.spec['job']['name']) {
+        @agent.run_scripts(pre_start_scripts_list, {})
+      }
+
     end
 
     def start!
@@ -367,6 +384,10 @@ module Bosh::Director
     rescue
       delete_mounted_disk(new_disk)
       raise
+    end
+
+    def event_log
+      @event_log ||= Config.event_log
     end
   end
 end

@@ -67,6 +67,50 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'it supports running pre-start scripts' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      create_and_upload_test_release
+      upload_stemcell
+
+      set_deployment(manifest_hash: Bosh::Spec::Deployments.test_release_manifest.merge(
+                         {
+                            'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                                           name: 'job_with_templates_having_prestart_scripts',
+                                           templates: [
+                                               {'name' => 'job_1_with_pre_start_script'},
+                                               {'name' => 'job_2_with_pre_start_script'}
+                                           ],
+                                           instances: 1)]
+                         }))
+
+    end
+
+    it 'sends the agent the command to run the all the jobs pree-starts scripts' do
+      out = deploy({})
+      expect(out).to include('Started running pre-start scripts >')
+    end
+
+    it 'ignores the run_script message and log if message is not supported by the agent' do
+      deploy_output = deploy({})
+      task_number =  deploy_output[/Task \d+ done/][/\d+/]
+
+      debug_task_output = bosh_runner.run("task #{task_number} --debug")
+      expect(debug_task_output).to include("Ignoring run_scripts 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message run_scripts>")
+      expect(debug_task_output).to include("Received while trying to run : [\"/var/vcap/jobs/job_1_with_pre_start_script/bin/pre-start\", \"/var/vcap/jobs/job_2_with_pre_start_script/bin/pre-start\"]")
+    end
+
+    xit 'waits for the pre-start scripts to run before continuing' do
+
+    end
+
+    xit 'error out if run_script errors' do
+
+    end
+
+  end
+
   it 'supports scaling down and then scaling up' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
