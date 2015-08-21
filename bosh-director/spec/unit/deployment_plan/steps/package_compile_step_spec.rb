@@ -9,11 +9,13 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:release_version_model) { Models::ReleaseVersion.make }
-    let(:config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
+    let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
-    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: config, model: deployment, name: 'mycloud') }
+    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment, name: 'mycloud') }
     let(:instance_reuser) { InstanceReuser.new }
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, plan, logger) }
+    let(:compilation_instance_pool) do
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, plan, logger)
+    end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
       allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
@@ -40,7 +42,7 @@ module Bosh::Director
       allow(plan).to receive(:network).with('default').and_return(@network)
 
       @n_workers = 3
-      allow(config).to receive_messages(
+      allow(compilation_config).to receive_messages(
           network_name: 'default',
           env: {},
           cloud_properties: {},
@@ -123,8 +125,6 @@ module Bosh::Director
       it "doesn't perform any compilation" do
         prepare_samples
 
-        allow(plan).to receive(:jobs).and_return([@j_dea, @j_router])
-
         @package_set_a.each do |package|
           cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
           expect(@j_dea).to receive(:use_compiled_package).with(cp1)
@@ -135,8 +135,14 @@ module Bosh::Director
           expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool,
-          logger, Config.event_log, nil)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+          [@j_dea, @j_router],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+          Config.event_log,
+          nil
+        )
 
         compiler.perform
         # For @stemcell_a we need to compile:
@@ -169,9 +175,14 @@ module Bosh::Director
       it 'compiles all packages' do
         prepare_samples
 
-        allow(plan).to receive(:jobs).and_return([@j_dea, @j_router])
-
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+          [@j_dea, @j_router],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+          Config.event_log,
+          @director_job
+        )
 
         expect(vm_creator).to receive(:create_for_instance).exactly(11).times
         instances = make_instances(11)
@@ -265,12 +276,8 @@ module Bosh::Director
           fingerprint: 'deadbeef')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
-        planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
-        allow(planner).to receive(:network).with('network_name') { network }
-        allow(planner).to receive(:jobs).and_return([job])
-
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner, compilation_instance_pool, logger, event_log, director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, event_log, director_job)
 
         expect {
           compiler.perform
@@ -300,9 +307,7 @@ module Bosh::Director
 
       it 'reuses compilation VMs' do
         prepare_samples
-        allow(plan).to receive(:jobs).and_return([@j_dea])
-
-        allow(config).to receive_messages(reuse_compilation_vms: true)
+        allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
 
         instances = make_instances(1)
         expect(vm_creator).to receive(:create_for_instance).exactly(1).times
@@ -337,7 +342,14 @@ module Bosh::Director
 
         expect(@director_job).to receive(:task_checkpoint).once
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+          [@j_dea],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+          Config.event_log,
+          @director_job
+        )
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -353,10 +365,9 @@ module Bosh::Director
 
       it 'cleans up compilation vms if there is a failing compilation' do
         prepare_samples
-        allow(plan).to receive(:jobs).and_return([@j_dea])
 
-        allow(config).to receive_messages(reuse_compilation_vms: true)
-        allow(config).to receive_messages(workers: 1)
+        allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
+        allow(compilation_config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
         expect(@network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
 
@@ -379,7 +390,14 @@ module Bosh::Director
 
         expect(@network).to receive(:release)
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+          [@j_dea],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+          Config.event_log,
+          @director_job
+        )
         allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
@@ -391,22 +409,23 @@ module Bosh::Director
     describe 'tearing down compilation vms' do
       before do # prepare compilation
         prepare_samples
+      end
 
+      let(:job) do
         release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, name: 'release')
         stemcell = make_stemcell
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
         package = make_package('common')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
-        job = instance_double(
+
+        instance_double(
           'Bosh::Director::DeploymentPlan::Job',
           name: 'job-with-one-package',
           release: release,
           templates: [template],
           resource_pool: resource_pool,
         )
-
-        allow(plan).to receive_messages(jobs: [job])
       end
 
       before do # create vm
@@ -425,19 +444,19 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).once
           allow(@network).to receive(:release)
 
-          compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, @director_job)
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield
           expect { compiler.perform }.to raise_error(RpcTimeout)
         end
       end
 
       context 'reuse_compilation_vms is true' do
-        before { allow(config).to receive_messages(reuse_compilation_vms: true) }
+        before { allow(compilation_config).to receive_messages(reuse_compilation_vms: true) }
         it_tears_down_vm_exactly_once
       end
 
       context 'reuse_compilation_vms is false' do
-        before { allow(config).to receive_messages(reuse_compilation_vms: false) }
+        before { allow(compilation_config).to receive_messages(reuse_compilation_vms: false) }
         it_tears_down_vm_exactly_once
       end
     end
@@ -448,7 +467,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, nil)
+      compiler = DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, nil)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -462,7 +481,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, nil) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, nil) }
       let(:cache_key) { 'cache key' }
 
       before do
@@ -517,7 +536,7 @@ module Bosh::Director
 
     describe '#prepare_vm' do
       let(:network) { double('network', name: 'default', network_settings: nil) }
-      let(:compilation) do
+      let(:compilation_config) do
         config = double('compilation_config')
         allow(config).to receive_messages(network_name: 'default')
         allow(config).to receive_messages(cloud_properties: double('cloud_properties'))
@@ -527,7 +546,7 @@ module Bosh::Director
       end
       let(:plan) do
         double('Bosh::Director::DeploymentPlan',
-          compilation: compilation,
+          compilation: compilation_config,
           model: Models::Deployment.make,
           name: 'fake-deployment'
         )
@@ -540,13 +559,13 @@ module Bosh::Director
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
 
         before do
-          allow(compilation).to receive_messages(reuse_compilation_vms: true)
+          allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
           allow(vm_creator).to receive_messages(create: vm)
           allow(plan).to receive(:network).with('default').and_return(network)
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new(plan, compilation_instance_pool, logger, Config.event_log, @director_job)
+          compiler = described_class.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
 
           allow(vm_creator).to receive(:create_for_instance).and_raise(RpcTimeout)
 

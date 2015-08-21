@@ -121,11 +121,15 @@ releases:
           let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
           let(:stemcell) { Bosh::Director::Models::Stemcell.find(name: 'my-stemcell-with-a-name') }
           let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
+          let(:jobs) { [instance_double(DeploymentPlan::Job)] }
+          let(:compilation_config) { instance_double(DeploymentPlan::CompilationConfig) }
 
           before {
             create_stemcell
             allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
             allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
+            allow(planner).to receive(:compilation) { compilation_config }
+            allow(planner).to receive(:jobs) { jobs }
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
             allow(job).to receive(:create_planner).and_return(planner)
             allow(Config).to receive(:cloud)
@@ -146,7 +150,8 @@ releases:
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).with(planner, instance_of(DeploymentPlan::CompilationInstancePool), Config.logger, Config.event_log, job)
+            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new)
+              .with(jobs, compilation_config, instance_of(DeploymentPlan::CompilationInstancePool), Config.logger, Config.event_log, job)
             expect(job).to receive(:validate_release_packages)
             expect(package_compile_step).to receive(:perform).with no_args
 
@@ -249,6 +254,8 @@ releases:
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:cloud)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
+          allow(planner).to receive(:jobs) { ['fake-job'] }
+          allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
           allow(job).to receive(:create_planner).and_return(planner)

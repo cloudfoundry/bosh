@@ -63,7 +63,8 @@ module Bosh
           vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
           compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
           package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-            planner,
+            planner.jobs,
+            planner.compilation,
             compilation_instance_pool,
             @logger,
             @event_log,

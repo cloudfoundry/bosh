@@ -10,9 +10,7 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         # @param [DeploymentPlan] deployment_plan Deployment plan
-        def initialize(deployment_plan, compilation_instance_pool, logger, event_log, director_job)
-          @deployment_plan = deployment_plan
-
+        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
           @event_log = event_log
           @logger = logger
           @director_job = director_job
@@ -27,6 +25,8 @@ module Bosh::Director
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
+          @jobs_to_compile = jobs_to_compile
+          @compilation_config = compilation_config
         end
 
         def perform
@@ -114,7 +114,7 @@ module Bosh::Director
         #     compilation VMs created.
         # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
         def prepare_vm(stemcell)
-          if reuse_compilation_vms?
+          if @compilation_config.reuse_compilation_vms
             @compilation_instance_pool.with_reused_vm(stemcell, &Proc.new)
           else
             @compilation_instance_pool.with_single_use_vm(stemcell, &Proc.new)
@@ -123,15 +123,11 @@ module Bosh::Director
 
         private
 
-        def reuse_compilation_vms?
-          @deployment_plan.compilation.reuse_compilation_vms
-        end
-
         def prepare_tasks
           @event_log.begin_stage('Preparing package compilation', 1)
 
           @event_log.track('Finding packages to compile') do
-            @deployment_plan.jobs.each do |job|
+            @jobs_to_compile.each do |job|
               stemcell = job.resource_pool.stemcell
 
               template_descs = job.templates.map do |t|
@@ -155,10 +151,9 @@ module Bosh::Director
 
         def compile_packages
           @event_log.begin_stage('Compiling packages', compilation_count)
-          number_of_workers = @deployment_plan.compilation.workers
 
           begin
-            ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
+            ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
               loop do
                 # process as many tasks without waiting
                 loop do
@@ -176,11 +171,11 @@ module Bosh::Director
           ensure
             # Delete all of the VMs if we were reusing compilation VMs. This can't
             # happen until everything was done compiling.
-            if @deployment_plan.compilation.reuse_compilation_vms
+            if @compilation_config.reuse_compilation_vms
               # Using a new ThreadPool instead of reusing the previous one,
               # as if there's a failed compilation, the thread pool will stop
               # processing any new thread.
-              @compilation_instance_pool.tear_down_vms(number_of_workers)
+              @compilation_instance_pool.tear_down_vms(@compilation_config.workers)
             end
           end
         end
