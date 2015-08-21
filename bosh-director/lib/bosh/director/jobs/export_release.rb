@@ -46,6 +46,19 @@ module Bosh::Director
 
         validate_release_packages
 
+        planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, @logger)
+
+        manifest_hash = Psych.load(@targeted_deployment.manifest)
+        cloud_config_model = @targeted_deployment.cloud_config
+        planner = planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
+
+        network_name = planner.networks.first.name
+        resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
+        planner.add_resource_pool(resource_pool)
+        export_release_job = create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
+        planner.add_job(export_release_job)
+        planner_factory.prepare(planner, Config.cloud)
+
         lock_timeout = 15 * 60 # 15 minutes
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
@@ -54,7 +67,6 @@ module Bosh::Director
               vm_deleter = VmDeleter.new(Config.cloud, @logger)
               vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
 
-              planner = create_planner
               compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(
                 InstanceReuser.new,
                 vm_creator,
@@ -64,7 +76,7 @@ module Bosh::Director
               )
 
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-                planner.jobs,
+                [export_release_job],
                 planner.compilation,
                 compilation_instance_pool,
                 Config.logger,
@@ -90,36 +102,6 @@ module Bosh::Director
           end
         end
         false
-      end
-
-      def create_planner
-        cloud_config_model = @targeted_deployment.cloud_config
-
-        planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
-        planner = planner_factory.planner_without_vm_binding(
-          @deployment_manifest,
-          cloud_config_model,
-          {}
-        )
-        network_name = planner.networks.first.name
-        resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
-        planner.cloud_planner = DeploymentPlan::CloudPlanner.new({
-            networks: planner.networks,
-            default_network: planner.default_network,
-            disk_pools: planner.disk_pools,
-            availability_zones: planner.availability_zones,
-            resource_pools: [resource_pool],
-            compilation: planner.compilation,
-          })
-
-        planner.reset_jobs
-        planner.add_job(
-          create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
-        )
-
-        @logger.info('Created deployment plan')
-
-        planner
       end
 
       def create_tarball
@@ -156,7 +138,7 @@ module Bosh::Director
           "network" => network_name,
           "stemcell" => {"name" => @stemcell.name, "version" => @stemcell.version}
         }
-        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, Config.logger)
+        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, @logger)
       end
 
       def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)
@@ -171,12 +153,7 @@ module Bosh::Director
           "networks" => [ "name" => network_name ],
         }
 
-        fake_job = DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, Config.logger)
-        @release_version_model.packages.each { |package| fake_job.packages[package.name] = package }
-        fake_job.resource_pool.stemcell.bind_model(planner)
-        fake_job.release.bind_model
-        fake_job.templates.each { |template| template.bind_models }
-        fake_job
+        DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, @logger)
       end
 
       def validate_release_packages

@@ -326,8 +326,6 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
       end
 
       it 'allocates non-conflicting IPs for compilation VMs' do
-        pending 'need to fix this again on global-net'
-
         bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
         output = bosh_runner.run("export release test_release/1 centos-7/3001")
         expect(output).to include('Done compiling packages')

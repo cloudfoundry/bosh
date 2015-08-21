@@ -87,39 +87,12 @@ module Bosh
           assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
         end
 
-        private
-
-        def deployment_name(manifest_hash)
-          name = manifest_hash['name']
-          @canonicalizer.canonical(name)
-        end
-
-        def assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
-          plan_options = {
-            'recreate' => !!options['recreate'],
-            'skip_drain' => options['skip_drain'],
-            'job_states' => options['job_states'] || {},
-            'job_rename' => options['job_rename'] || {}
-          }
-          @logger.info('Creating deployment plan')
-          @logger.info("Deployment plan options: #{plan_options}")
-
-          deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, plan_options)
-          ip_provider_factory = IpProviderFactory.new(@logger, global_networking: deployment.using_global_networking?)
-          global_network_resolver = GlobalNetworkResolver.new(deployment)
-
-          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory, global_network_resolver)
-          DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
-        end
-
         def prepare(planner, cloud)
           stemcell_manager = Api::StemcellManager.new
-          blobstore = nil # not used for this assembler purposes
           assembler = DeploymentPlan::Assembler.new(
             planner,
             stemcell_manager,
             cloud,
-            blobstore,
             @logger,
             @event_log
           )
@@ -183,6 +156,32 @@ module Bosh
 
           assembler.bind_links
         end
+
+        private
+
+        def deployment_name(manifest_hash)
+          name = manifest_hash['name']
+          @canonicalizer.canonical(name)
+        end
+
+        def assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+          plan_options = {
+            'recreate' => !!options['recreate'],
+            'skip_drain' => options['skip_drain'],
+            'job_states' => options['job_states'] || {},
+            'job_rename' => options['job_rename'] || {}
+          }
+          @logger.info('Creating deployment plan')
+          @logger.info("Deployment plan options: #{plan_options}")
+
+          deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, plan_options)
+          ip_provider_factory = IpProviderFactory.new(@logger, global_networking: deployment.using_global_networking?)
+          global_network_resolver = GlobalNetworkResolver.new(deployment)
+
+          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory, global_network_resolver)
+          DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
+        end
+
 
         def validate_packages(planner)
           faults = {}

@@ -93,6 +93,7 @@ module Bosh::Director
         :availability_zones,
         :resource_pools,
         :resource_pool,
+        :add_resource_pool,
         :disk_pools,
         :disk_pool,
         :compilation
@@ -191,10 +192,6 @@ module Bosh::Director
         @jobs_name_index[name]
       end
 
-      def reset_jobs
-        @jobs = []
-      end
-
       def jobs_starting_on_deploy
         @jobs.select(&:starts_on_deploy?)
       end
@@ -264,6 +261,10 @@ module Bosh::Director
 
       def resource_pool(name)
         @resource_pools[name]
+      end
+
+      def add_resource_pool(resource_pool)
+        @resource_pools[resource_pool.name] = resource_pool
       end
 
       def networks

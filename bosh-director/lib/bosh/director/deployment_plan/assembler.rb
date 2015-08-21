@@ -5,13 +5,12 @@ module Bosh::Director
     include LockHelper
     include IpUtil
 
-    def initialize(deployment_plan, stemcell_manager, cloud, blobstore, logger, event_log)
+    def initialize(deployment_plan, stemcell_manager, cloud, logger, event_log)
       @deployment_plan = deployment_plan
       @cloud = cloud
       @logger = logger
       @event_log = event_log
       @stemcell_manager = stemcell_manager
-      @blobstore = blobstore
     end
 
     # Binds release DB record(s) to a plan

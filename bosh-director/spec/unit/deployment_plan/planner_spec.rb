@@ -138,7 +138,7 @@ module Bosh::Director
 
             planner.add_release(ReleaseVersion.new(deployment_model, {'name' => 'same', 'version' => '123'}))
             planner.add_release(ReleaseVersion.new(deployment_model, {'name' => 'new', 'version' => '123'}))
-            Assembler.new(planner, nil, cloud_config,  {}, Config.event_log, Config.logger).bind_releases
+            Assembler.new(planner, cloud_config,  {}, Config.event_log, Config.logger).bind_releases
           end
 
           it 'updates the release version on the deployment to be the ones from the provided manifest' do
@@ -197,7 +197,7 @@ module Bosh::Director
                 compilation: nil,
               })
             planner.cloud_planner = cloud_planner
-            Assembler.new(planner, nil, cloud_config,  {}, Config.event_log, Config.logger).bind_stemcells
+            Assembler.new(planner, cloud_config,  {}, Config.event_log, Config.logger).bind_stemcells
           end
 
           it 'it removes the given deployment from any stemcell it should not be associated with' do

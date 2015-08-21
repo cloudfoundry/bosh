@@ -2,12 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, cloud, blobstore, logger, event_log) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, cloud, logger, event_log) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple') }
     let(:stemcell_manager) { nil }
     let(:event_log) { Config.event_log }
-
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     let(:cloud) { instance_double('Bosh::Cloud') }
 

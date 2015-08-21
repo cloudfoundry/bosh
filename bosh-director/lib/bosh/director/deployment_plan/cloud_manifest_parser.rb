@@ -107,7 +107,6 @@ module Bosh::Director
           ResourcePool.new(rp_spec, @logger)
         end
 
-
         duplicates = detect_duplicates(parsed_resource_pools) { |rp| rp.name }
         unless duplicates.empty?
           raise DeploymentDuplicateResourcePoolName, "Duplicate resource pool name `#{duplicates.first.name}'"
