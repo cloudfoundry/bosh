@@ -233,15 +233,14 @@ module Bosh
         def reserve_ips_for_job(job)
           # FIXME: this stuff should be cleaned up, the ordering dependency here isn't obvious,
           # compilation IPs don't get released correctly on failure if we call take_old_reservations too early
-          job.networks.each do |network|
+          job.networks.each do |job_network|
             job.instances.each_with_index do |instance, index|
-              # TODO: care about instance.availabililty_zone
-              static_ips = network.static_ips
+              static_ips = job_network.static_ips
 
               if static_ips
-                reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
+                reservation = StaticNetworkReservation.new(instance, job_network.deployment_network, static_ips[index])
               else
-                reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
+                reservation = DynamicNetworkReservation.new(instance, job_network.deployment_network)
               end
               instance.add_network_reservation(reservation)
             end

@@ -66,8 +66,8 @@ module Bosh::Director
     describe DynamicNetworkReservation do
       let(:reservation) { DynamicNetworkReservation.new(instance, network) }
 
-      describe :bind_existing do
-        it "should bind to the dynamic reservation if it's valid" do
+      describe '#bind_existing' do
+        it 'should bind to the dynamic reservation if it is valid' do
           other = UnboundNetworkReservation.new(instance, network, '192.168.1.2')
           other.reserve
           reservation.bind_existing(other)

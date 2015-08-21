@@ -29,6 +29,8 @@ module Bosh::Director
       # @return [String] job state
       attr_reader :state
 
+      attr_reader :availability_zone
+
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
 

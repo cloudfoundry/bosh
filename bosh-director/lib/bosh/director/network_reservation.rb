@@ -67,6 +67,8 @@ module Bosh::Director
     end
   end
 
+  #TODO: Rename DynamicNetworkReservation to something more logical
+  # DynamicNetworkReservation is the network reservation for BOSH manual networks with dynamic ip reservation
   class DynamicNetworkReservation < NetworkReservation
     # @param [UnboundNetworkReservation] other
     def bind_existing(other)

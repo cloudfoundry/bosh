@@ -77,6 +77,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
         it 'reserves reservation' do
           manual_network.reserve(reservation)
+          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.6').to_i)
+          expect(reservation).to be_reserved
         end
       end
     end
@@ -84,23 +86,66 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     context 'when IP is not provided' do
       context 'for dynamic reservation' do
         let(:reservation) { BD::DynamicNetworkReservation.new(instance, manual_network) }
+        let(:network_spec) {
+          {
+            'name' => 'my-network',
+            'subnets' => [
+              {
+                'range' => '192.168.1.0/30',
+                'gateway' => '192.168.1.1',
+                'dns' => ['192.168.1.1', '192.168.1.2'],
+                'static' => [],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'availability_zone' => 'az-1',
+              },
+              {
+                'range' => '192.168.2.0/30',
+                'gateway' => '192.168.2.1',
+                'dns' => ['192.168.2.1', '192.168.2.2'],
+                'static' => [],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'availability_zone' => 'az-2',
+              }
+            ]
+          }
+        }
+        let(:deployment_plan) { instance_double(BD::DeploymentPlan::Planner) }
+        let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_legacy_ranges: []) }
+        subject(:manual_network) do
+          BD::DeploymentPlan::ManualNetwork.new(
+            network_spec,
+            [
+              BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
+              BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
+            ],
+            global_network_resolver,
+            ip_provider_factory,
+            logger
+          )
+        end
 
-        it 'allocates dynamic IP' do
+        it 'allocates a dynamic IP in the correct subnet when the instance has an AZ' do
+          allow(instance).to receive(:availability_zone).and_return(BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
           manual_network.reserve(reservation)
 
-          expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2').to_i)
+          expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.2.2/32')
+        end
+
+        it 'allocates a dynamic IP in any subnet for an instance without an AZ' do
+          allow(instance).to receive(:availability_zone).and_return(nil)
+          manual_network.reserve(reservation)
+
+          expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.1.2/32')
         end
 
         context 'when failing to allocate dynamic IP' do
-          let(:network_range) { '192.168.1.0/30' }
-          let(:static_ips) { [] }
-
-          before do
-            # reserve last ip
-            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
-          end
-
           it 'raises NetworkReservationNotEnoughCapacity' do
+            allow(instance).to receive(:availability_zone).and_return(nil)
+            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
+            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network)) # reserve last ip
+
             expect {
               manual_network.reserve(reservation)
             }.to raise_error BD::NetworkReservationNotEnoughCapacity
@@ -114,8 +159,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     let(:network_range) { '192.168.1.0/30' }
 
     it 'should release the IP from the subnet' do
-      ip_reservation = BD::DynamicNetworkReservation.new(instance, manual_network)
+      allow(instance).to receive(:availability_zone) { nil }
 
+      ip_reservation = BD::DynamicNetworkReservation.new(instance, manual_network)
       manual_network.reserve(ip_reservation)
       expect(ip_reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2').to_i)
 
