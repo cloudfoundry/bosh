@@ -20,8 +20,6 @@ module Bosh::Director
           @tasks_mutex = Mutex.new
           @counter_mutex = Mutex.new
 
-          @network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-
           @compilation_instance_pool = compilation_instance_pool
 
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
