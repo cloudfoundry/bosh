@@ -107,7 +107,17 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
                 'reserved' => [],
                 'cloud_properties' => {},
                 'availability_zone' => 'az-2',
+              },
+              {
+                'range' => '192.168.3.0/30',
+                'gateway' => '192.168.3.1',
+                'dns' => ['192.168.3.1', '192.168.3.2'],
+                'static' => [],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'availability_zone' => 'az-2',
               }
+
             ]
           }
         }
@@ -140,11 +150,19 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.1.2/32')
         end
 
-        context 'when failing to allocate dynamic IP' do
+        it 'allocates dynamic IPs across multiple subnets for a single AZ' do
+          allow(instance).to receive(:availability_zone).and_return(BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
+          manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
+
+          manual_network.reserve(reservation)
+          expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.3.2/32')
+        end
+
+        context 'when no subnet has enough capacity to allocate a dynamic IP' do
           it 'raises NetworkReservationNotEnoughCapacity' do
             allow(instance).to receive(:availability_zone).and_return(nil)
-            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
-            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network)) # reserve last ip
+            # Trying to reserve 1 more IP than the available
+            3.times {manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))}
 
             expect {
               manual_network.reserve(reservation)
