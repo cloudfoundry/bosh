@@ -44,10 +44,16 @@ module Bosh::Cli::Command
         s
       end
 
+      has_disk_cid = instances[0].has_key?('disk_cid')
+
       instances_table = table do |t|
         headings = ['Instance', 'State', 'Resource Pool', 'IPs']
         if options[:details]
-          headings += ['CID', 'Agent ID', 'Resurrection']
+          if has_disk_cid
+            headings += ['VM CID', 'Disk CID', 'Agent ID', 'Resurrection']
+          else
+            headings += ['VM CID', 'Agent ID', 'Resurrection']
+          end
         end
         if options[:dns]
           headings += ['DNS A records']
@@ -69,7 +75,11 @@ module Bosh::Cli::Command
           row = [job, instance['job_state'], instance['resource_pool'], ips]
 
           if options[:details]
-            row += [instance['vm_cid'], instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active']
+            if has_disk_cid
+              row += [instance['vm_cid'], instance['disk_cid'] || 'n/a', instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active']
+            else
+              row += [instance['vm_cid'], instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active']
+            end
           end
 
           if options[:dns]

@@ -89,7 +89,8 @@ describe Bosh::Cli::Command::Instances do
             'vitals' => 'vitals',
             'job_state' => 'awesome',
             'resource_pool' => 'rp1',
-            'vm_cid' => 'cid1',
+            'vm_cid' => 'vm-cid1',
+            'disk_cid' => 'disk-cid1',
             'agent_id' => 'agent1',
             'vitals' => {
                 'load' => [1, 2, 3],
@@ -137,13 +138,14 @@ describe Bosh::Cli::Command::Instances do
       context 'with details' do
         before { options[:details] = true }
 
-        it 'shows vm details' do
+        it 'shows vm details with active disk' do
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'Instance'
             expect(s.to_s).to include 'State'
             expect(s.to_s).to include 'Resource Pool'
             expect(s.to_s).to include 'IPs'
-            expect(s.to_s).to include 'CID'
+            expect(s.to_s).to include 'VM CID'
+            expect(s.to_s).to include 'Disk CID'
             expect(s.to_s).to include 'Agent ID'
             expect(s.to_s).to include 'Resurrection'
             expect(s.to_s).to include 'job1/0'
@@ -151,9 +153,28 @@ describe Bosh::Cli::Command::Instances do
             expect(s.to_s).to include 'rp1'
             expect(s.to_s).to include '| 192.168.0.1'
             expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include 'cid1'
+            expect(s.to_s).to include 'vm-cid1'
+            expect(s.to_s).to include 'disk-cid1'
             expect(s.to_s).to include 'agent1'
             expect(s.to_s).to include 'paused'
+          end
+          expect(command).to receive(:say).with('Instances total: 1')
+          perform
+        end
+
+        it 'shows vm details without active disk' do
+          vm_state['disk_cid'] = nil
+          expect(command).to receive(:say) do |s|
+            expect(s.to_s).to include 'n/a'
+          end
+          expect(command).to receive(:say).with('Instances total: 1')
+          perform
+        end
+
+        it 'does not show disk cid when response does not contain disk cid info' do
+          vm_state.delete('disk_cid')
+          expect(command).to receive(:say) do |s|
+            expect(s.to_s).to_not include 'Disk CID'
           end
           expect(command).to receive(:say).with('Instances total: 1')
           perform
