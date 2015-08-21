@@ -12,7 +12,7 @@ nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
-scsitools mg htop module-assistant debhelper runit parted \
+scsitools mg htop iftop iotop module-assistant debhelper runit parted \
 anacron software-properties-common"
 pkg_mgr install $debs
 
