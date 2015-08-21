@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `cuZZWFeuMEnT4u5ulNWf_QInSmZ1OoNH`
+  - changes for stig
+
 * `1B_yfR3ukFZiCHqopmybOTo13Afq_Nci`
   - update kernel and openssh-server for USN-2718-1 & USN-2710-2
 
@@ -186,6 +189,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
+
+* `p8M5lmQFEzXDA3MKeiDMsdLq6jVkJOQt`
+  - changes for stig
 
 * `gVPTz59wj9kHj1nBzzymxbhm1yvPe.Q.`
   - remove mesg from profile
