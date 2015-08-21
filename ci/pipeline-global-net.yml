@@ -4,7 +4,6 @@ groups:
     jobs:
     - unit-1.9
     - unit-2.1
-    - integration-1.9-mysql
     - integration-1.9-postgres
     - integration-2.1-mysql
     - integration-2.1-postgres
@@ -34,22 +33,6 @@ jobs:
         config:
           params:
             RUBY_VERSION: 2.1.6
-
-  - name: integration-1.9-mysql
-    public: true
-    serial: true
-    plan:
-    - get: bosh-src
-      passed:
-      - unit-1.9
-      trigger: true
-    - task: test
-      privileged: true
-      file: bosh-src/ci/tasks/test-integration.yml
-      config:
-        params:
-          DB: mysql
-          RUBY_VERSION: 1.9.3
 
   - name: integration-1.9-postgres
     public: true
@@ -108,7 +91,6 @@ jobs:
       - integration-2.1-postgres
       - integration-2.1-mysql
       - integration-1.9-postgres
-      - integration-1.9-mysql
     - get: bosh-load-tests
     - task: test
       privileged: true
