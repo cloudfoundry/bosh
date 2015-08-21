@@ -1,4 +1,4 @@
-shared_examples_for 'every OS image' do
+shared_examples_for 'a Linux kernel module configured OS image' do
   context 'prevent bluetooth module to be loaded (stig: V-38682)' do
     describe file('/etc/modprobe.d/blacklist.conf') do
       it { should be_file }
