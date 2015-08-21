@@ -33,7 +33,7 @@ properties:
     default: 0
 
   errand1.blocking_errand:
-    description: 'Number of seconds errand script is going to sleep'
+    description: 'Whether to block errand execution'
     default: false
 
   errand1.logs.stdout:
