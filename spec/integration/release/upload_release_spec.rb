@@ -213,6 +213,14 @@ describe 'upload release', type: :integration do
       }.to raise_error(RuntimeError, /Error 30012: package pkg_2\/e7f5b11c43476d74b2d12129b93cba584943e8d3 not part of previous upload of release test_release\/1/)
 
     end
+
+    it "allows sharing of packages across releases when the original packages does not have source" do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
+      expect(output).to include("Started creating new packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f. Done")
+      expect(output).to include("Started release has been created > release_with_shared_blobs/1. Done")
+    end
   end
 
   describe 'uploading compiled releases' do
@@ -355,7 +363,5 @@ describe 'upload release', type: :integration do
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
       expect(output).to include("Release uploaded")
     end
-
-
   end
 end
