@@ -82,6 +82,18 @@ module Bosh::Spec
       File.join(@agent_base_dir, 'packages', package_name)
     end
 
+    def unblock_errand(job_name)
+      job_dir_path = job_path(job_name)
+      @logger.debug("Unblocking package at #{job_dir_path}")
+
+      raise('Failed to get errand dir') unless File.exists?(job_dir_path)
+      FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
+    end
+
+    def job_path(job_name)
+      File.join(@agent_base_dir, 'jobs', job_name)
+    end
+
     def kill_agent
       @logger.info("Killing agent #{@cid}")
       Process.kill('INT', @cid.to_i)

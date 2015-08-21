@@ -9,7 +9,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       manifest_hash['properties'] = {
         'errand1' => {
-          'sleep_duration_in_seconds' => 60,
+          'blocking_errand' => true,
         },
       }
       manifest_hash
@@ -18,9 +18,18 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     it 'creates a deployment lock' do
       deploy_from_scratch(manifest_hash: manifest_hash)
 
-      bosh_runner.run('--no-track run errand fake-errand-name')
+      output = bosh_runner.run('--no-track run errand fake-errand-name')
+      task_id = Bosh::Spec::OutputParser.new(output).task_id('running')
+      director.wait_for_first_available_vm
+
       output = bosh_runner.run_until_succeeds('locks')
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
+
+      errand_vm = director.vms.find { |vm| vm.job_name_index == 'fake-errand-name/0' }
+      expect(errand_vm).to_not be_nil
+
+      errand_vm.unblock_errand('errand1')
+      bosh_runner.run("task #{task_id}")
     end
   end
 
