@@ -5,7 +5,6 @@ groups:
       - start-job
       - unit-1.9
       - unit-2.1
-      - integration-1.9-mysql
       - integration-1.9-postgres
       - integration-2.1-mysql
       - integration-2.1-postgres
@@ -16,7 +15,6 @@ groups:
     jobs:
       - start-job
       - unit-1.9
-      - integration-1.9-mysql
       - integration-1.9-postgres
       - publish-coverage
       - promote-candidate
@@ -35,7 +33,6 @@ groups:
       - start-job
       - unit-1.9
       - unit-2.1
-      - integration-1.9-mysql
       - integration-2.1-mysql
       - publish-coverage
       - promote-candidate
@@ -80,20 +77,6 @@ jobs:
         config:
           params:
             RUBY_VERSION: 2.1.6
-
-  - name: integration-1.9-mysql
-    public: true
-    serial: true
-    plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        config:
-          params:
-            DB:           mysql
-            RUBY_VERSION: 1.9.3
 
   - name: integration-1.9-postgres
     public: true
@@ -142,7 +125,7 @@ jobs:
     serial: true
     plan:
       - trigger: true
-        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
         get: bosh-src
       - task: publish
         file: bosh-src/ci/tasks/publish-coverage.yml
@@ -155,7 +138,7 @@ jobs:
     serial: true
     plan:
       - trigger: true
-        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
         get: bosh-src
 
       - {put: bosh-candidate, params: {repository: bosh-src}}
