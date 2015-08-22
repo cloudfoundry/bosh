@@ -326,7 +326,7 @@ module Bosh::Director::DeploymentPlan
           context 'when IP reservation type was changed' do
             def dynamic_reservation_bound_to_existing_with_ip(ip)
               dynamic_reservation = BD::DynamicNetworkReservation.new(instance, network)
-              existing_reservation = BD::UnboundNetworkReservation.new(instance, network, cidr_ip(ip))
+              existing_reservation = BD::ExistingNetworkReservation.new(instance, network, cidr_ip(ip))
               existing_reservation.mark_reserved_as(BD::DynamicNetworkReservation)
               dynamic_reservation.bind_existing(existing_reservation)
 
