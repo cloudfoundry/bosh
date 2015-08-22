@@ -86,7 +86,7 @@ describe Object do
   end
 
   it 'has a warn helper' do
-    should_receive(:warn).with("[WARNING] Could not find keypair".make_yellow)
+    expect(self).to receive(:warn).with("[WARNING] Could not find keypair".make_yellow)
 
     warning("Could not find keypair")
   end
