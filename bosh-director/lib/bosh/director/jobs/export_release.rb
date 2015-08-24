@@ -34,7 +34,6 @@ module Bosh::Director
 
         deployment_manager = Bosh::Director::Api::DeploymentManager.new
         @targeted_deployment = deployment_manager.find_by_name(@deployment_name)
-        @deployment_manifest = Psych.load(@targeted_deployment.manifest)
 
         release_manager = Bosh::Director::Api::ReleaseManager.new
         release = release_manager.find_by_name(@release_name)
@@ -44,13 +43,8 @@ module Bosh::Director
           raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
         end
 
-        validate_release_packages
-
         planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, @logger)
-
-        manifest_hash = Psych.load(@targeted_deployment.manifest)
-        cloud_config_model = @targeted_deployment.cloud_config
-        planner = planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {})
+        planner = planner_factory.create_from_model(@targeted_deployment)
 
         network_name = planner.networks.first.name
         resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
@@ -64,26 +58,8 @@ module Bosh::Director
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
-              vm_deleter = VmDeleter.new(Config.cloud, @logger)
-              vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
-
-              compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(
-                InstanceReuser.new,
-                vm_creator,
-                vm_deleter,
-                planner,
-                @logger
-              )
-
-              package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-                [export_release_job],
-                planner.compilation,
-                compilation_instance_pool,
-                Config.logger,
-                Config.event_log,
-                self
-              )
-              package_compile_step.perform
+              planner.validate_packages
+              planner.compile_packages
 
               tarball_state = create_tarball
               result_file.write(tarball_state.to_json + "\n")
@@ -96,8 +72,9 @@ module Bosh::Director
       private
 
       def deployment_manifest_has_release?
-        @deployment_manifest["releases"].each do |release|
-          if (release["name"] == @release_name) && (release["version"].to_s == @release_version.to_s)
+        deployment_manifest = Psych.load(@targeted_deployment.manifest)
+        deployment_manifest['releases'].each do |release|
+          if (release['name'] == @release_name) && (release['version'].to_s == @release_version.to_s)
             return true
           end
         end
@@ -134,32 +111,26 @@ module Bosh::Director
 
       def create_resource_pool_with_the_right_stemcell(network_name)
         fake_resource_pool_manifest = {
-          "name" => "just_for_compiling",
-          "network" => network_name,
-          "stemcell" => {"name" => @stemcell.name, "version" => @stemcell.version}
+          'name' => 'just_for_compiling',
+          'network' => network_name,
+          'stemcell' => {'name' => @stemcell.name, 'version' => @stemcell.version}
         }
         DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, @logger)
       end
 
       def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)
         fake_job_spec_for_compiling = {
-          "name" => "dummy-job-for-compilation",
-          "release" => @release_name,
-          "instances" => 1,
-          "resource_pool" => fake_resource_pool_name,
-          "templates" => @release_version_model.templates.map do |template|
-            { "name" => template.name, "release" => @release_name }
+          'name' => 'dummy-job-for-compilation',
+          'release' => @release_name,
+          'instances' => 1,
+          'resource_pool' => fake_resource_pool_name,
+          'templates' => @release_version_model.templates.map do |template|
+            { 'name' => template.name, 'release' => @release_name }
           end,
-          "networks" => [ "name" => network_name ],
+          'networks' => [ 'name' => network_name ],
         }
 
         DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, @logger)
-      end
-
-      def validate_release_packages
-        validator = DeploymentPlan::PackageValidator.new
-        validator.validate(@release_version_model, @stemcell)
-        validator.handle_faults
       end
     end
   end

@@ -51,14 +51,12 @@ module Bosh::Director
           job.perform
         }.to raise_error(Bosh::Director::ReleaseNotFound)
       end
-      # let(:snapshots) { [Models::Snapshot.make(snapshot_cid: 'snap0'), Models::Snapshot.make(snapshot_cid: 'snap1')] }
 
-      before {
-        allow(DeploymentPlan::PlannerFactory).to receive(:validate_packages)
+      before do
         allow(job).to receive(:with_deployment_lock).and_yield
         allow(job).to receive(:with_release_lock).and_yield
         allow(job).to receive(:with_stemcell_lock).and_yield
-      }
+      end
 
       context 'when the requested release exists but version does not match' do
         it 'raises an error' do
@@ -109,28 +107,16 @@ module Bosh::Director
 
         context 'and the requested stemcell is found' do
           let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-          let(:planner) do
-            instance_double(
-              Bosh::Director::DeploymentPlan::Planner,
-              networks: [instance_double(DeploymentPlan::Network, name: 'fake-network')],
-              default_network: nil,
-              disk_pools: [],
-              availability_zones: [],
-              compilation: nil,
-              :cloud_planner= => nil,
-            )
-          end
 
           before do
             create_stemcell
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
             allow(job).to receive(:create_tarball)
             allow(job).to receive(:result_file).and_return(Tempfile.new('result'))
+            allow(package_compile_step).to receive(:perform)
           end
 
           it 'locks the deployment, release, and selected stemcell' do
-            allow(package_compile_step).to receive(:perform)
-
             lock_timeout = {:timeout=>900} # 15 minutes. 15 * 60
             expect(job).to receive(:with_deployment_lock).with(deployment_manifest['name'], lock_timeout).and_yield
             expect(job).to receive(:with_release_lock).with(release_name, lock_timeout).and_yield
@@ -145,7 +131,6 @@ module Bosh::Director
               expect(job.first.release.name).to eq(release_name)
               expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
             end.and_return(package_compile_step)
-            expect(job).to receive(:validate_release_packages)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform
@@ -241,7 +226,6 @@ module Bosh::Director
           allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
-          allow(job).to receive(:create_planner).and_return(planner)
           allow(job).to receive(:result_file).and_return(result_file)
           allow(result_file).to receive(:write)
         }
