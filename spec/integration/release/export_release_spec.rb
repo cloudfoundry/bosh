@@ -42,12 +42,12 @@ describe 'export release', type: :integration do
 
       out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
       expect(out).to include(<<-EOF)
-Error 60001: Can't export release `test_release/1'. It references packages without source code that are not compiled against `ubuntu-stemcell/1':
- - pkg_1/16b4c8ef1574b3f98303307caad40227c208371f
- - pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154
- - pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c
- - pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4
- - pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4
+Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+ - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+ - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+ - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+ - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+ - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
       EOF
     end
   end

@@ -264,7 +264,7 @@ module Bosh::Director
 
       def validate_packages
         release_manager = Bosh::Director::Api::ReleaseManager.new
-        validator = DeploymentPlan::PackageValidator.new
+        validator = DeploymentPlan::PackageValidator.new(@logger)
         jobs.each do |job|
           job.templates.each do |template|
             release_model = release_manager.find_by_name(template.release.name)
