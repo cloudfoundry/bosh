@@ -83,6 +83,8 @@ module Bosh::Director
 
         @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
         @skip_drain = SkipDrain.new(options['skip_drain'])
+
+        @logger = Config.logger
       end
 
       def_delegators :@cloud_planner,
@@ -108,7 +110,7 @@ module Bosh::Director
           self,
           stemcell_manager,
           Config.cloud,
-          Config.logger,
+          @logger,
           Config.event_log
         )
 
@@ -127,6 +129,21 @@ module Bosh::Director
           end
         end
         validator.handle_faults
+      end
+
+      def compile_packages
+        vm_deleter = VmDeleter.new(Config.cloud, @logger)
+        vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
+        compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, self, @logger)
+        package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
+          jobs,
+          compilation,
+          compilation_instance_pool,
+          @logger,
+          Config.event_log,
+          nil
+        )
+        package_compile_step.perform
       end
 
       # Returns a list of Instances in the deployment (according to DB)

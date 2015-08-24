@@ -46,31 +46,20 @@ module Bosh
           @event_log.begin_stage('Preparing deployment', 9)
           @logger.info('Preparing deployment')
 
-          director_job = nil
-          cloud = nil
           planner = nil
 
           track_and_log('Binding deployment') do
             @logger.info('Binding deployment')
             planner = planner_without_vm_binding(manifest_hash, cloud_config, options)
-            cloud = Config.cloud
+
+            # AWS cpi initialization currently takes ~10sec
+            # it is wrapped in event step to give user visible feedback
+            initialize_cloud
           end
 
           planner.bind_models
           planner.validate_packages
-
-          vm_deleter = VmDeleter.new(cloud, @logger)
-          vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
-          compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
-          package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-            planner.jobs,
-            planner.compilation,
-            compilation_instance_pool,
-            @logger,
-            @event_log,
-            director_job
-          )
-          package_compile_step.perform
+          planner.compile_packages
 
           planner
         end
@@ -80,11 +69,8 @@ module Bosh
           name = deployment_manifest['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name)
-          attrs = {
-            name: name,
-            properties: deployment_manifest.fetch('properties', {}),
-          }
-          assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+
+          parse_from_manifest(deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
         end
 
         private
@@ -94,13 +80,19 @@ module Bosh
           @canonicalizer.canonical(name)
         end
 
-        def assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+        def parse_from_manifest(deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
+          attrs = {
+            name: deployment_manifest['name'],
+            properties: deployment_manifest.fetch('properties', {}),
+          }
+
           plan_options = {
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
             'job_rename' => options['job_rename'] || {}
           }
+
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
@@ -117,6 +109,10 @@ module Bosh
             @logger.info(message)
             yield
           end
+        end
+
+        def initialize_cloud
+          Config.cloud
         end
       end
     end
