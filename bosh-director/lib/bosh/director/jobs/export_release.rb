@@ -157,32 +157,10 @@ module Bosh::Director
       end
 
       def validate_release_packages
-        faults = Set.new
-        @release_version_model.packages.each do |package|
-          packages_list = @release_version_model.transitive_dependencies(package)
-          packages_list << package
-
-          packages_list.each { |needed_package|
-            if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
-              compiled_packages_list = Bosh::Director::Models::CompiledPackage[:package_id => needed_package.id, :stemcell_id => @stemcell.id]
-              if compiled_packages_list.nil?
-                faults << needed_package
-              end
-            end
-          }
-        end
-
-        unless faults.empty?
-          sorted_faults = faults.to_a.sort_by { |p| p.name }
-          msg = "Can't export release `#{@release_name}/#{@release_version}'. It references packages without" +
-              " source code that are not compiled against `#{@stemcell.desc}':\n"
-          sorted_faults.each do |non_compiled_package|
-            msg += " - #{non_compiled_package.name}/#{non_compiled_package.version}\n"
-          end
-          raise PackageMissingSourceCode, msg
-        end
+        validator = DeploymentPlan::PackageValidator.new
+        validator.validate(@release_version_model, @stemcell)
+        validator.handle_faults
       end
-
     end
   end
 end

@@ -115,6 +115,20 @@ module Bosh::Director
         assembler.bind_models
       end
 
+      def validate_packages
+        release_manager = Bosh::Director::Api::ReleaseManager.new
+        validator = DeploymentPlan::PackageValidator.new
+        jobs.each do |job|
+          job.templates.each do |template|
+            release_model = release_manager.find_by_name(template.release.name)
+            release_version_model = release_manager.find_version(release_model, template.release.version)
+
+            validator.validate(release_version_model, job.resource_pool.stemcell.model)
+          end
+        end
+        validator.handle_faults
+      end
+
       # Returns a list of Instances in the deployment (according to DB)
       # @return [Array<Models::Instance>]
       def instance_models
