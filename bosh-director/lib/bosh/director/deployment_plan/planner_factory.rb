@@ -38,7 +38,7 @@ module Bosh
           manifest_hash = Psych.load(deployment_model.manifest)
           cloud_config_model = deployment_model.cloud_config
           planner = planner_without_vm_binding(manifest_hash, cloud_config_model, {})
-          prepare(planner, Config.cloud)
+          planner.bind_models
           planner
         end
 
@@ -56,7 +56,7 @@ module Bosh
             cloud = Config.cloud
           end
 
-          prepare(planner, cloud)
+          planner.bind_models
           validate_packages(planner)
 
           vm_deleter = VmDeleter.new(cloud, @logger)
@@ -85,76 +85,6 @@ module Bosh
             properties: deployment_manifest.fetch('properties', {}),
           }
           assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
-        end
-
-        def prepare(planner, cloud)
-          stemcell_manager = Api::StemcellManager.new
-          assembler = DeploymentPlan::Assembler.new(
-            planner,
-            stemcell_manager,
-            cloud,
-            @logger,
-            @event_log
-          )
-
-          track_and_log('Binding releases') do
-            assembler.bind_releases
-          end
-
-          track_and_log('Binding existing deployment') do
-            assembler.bind_job_renames
-
-            instance_repo = Bosh::Director::DeploymentPlan::Instance
-            instance_planner = InstancePlanner.new(@logger, instance_repo)
-            desired_jobs = planner.jobs
-
-            #FIXME: this data structure is kind of a bummer
-            states_by_existing_instance = assembler.current_states_by_instance(desired_jobs.flat_map(&:existing_instances))
-
-            desired_jobs.each do |desired_job|
-              desired_instances = desired_job.desired_instances
-              existing_instances = desired_job.existing_instances
-              instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances, states_by_existing_instance)
-              desired_job.instance_plans = instance_plans
-            end
-
-            desired_jobs.each do |desired_job|
-              reserve_ips_for_job(desired_job) # will change job.instances
-            end
-
-            instance_plans_obsolete_within_a_job = desired_jobs.flat_map(&:instance_plans).select(&:obsolete?)
-            instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, planner.existing_instances)
-            obsolete_instance_plans = instance_plans_for_obsolete_jobs + instance_plans_obsolete_within_a_job
-            obsolete_instance_plans.map(&:instance).each { |instance| planner.mark_instance_for_deletion(instance) }
-
-            assembler.mark_unknown_vms_for_deletion
-          end
-
-          track_and_log('Binding stemcells') do
-            assembler.bind_stemcells
-          end
-
-          track_and_log('Binding templates') do
-            assembler.bind_templates
-          end
-
-          track_and_log('Binding properties') do
-            assembler.bind_properties
-          end
-
-          track_and_log('Binding unallocated VMs') do
-            assembler.bind_unallocated_vms
-          end
-
-          track_and_log('Binding networks') do
-            assembler.bind_instance_networks
-          end
-
-          track_and_log('Binding DNS') do
-            assembler.bind_dns
-          end
-
-          assembler.bind_links
         end
 
         private
@@ -227,28 +157,6 @@ module Bosh
           @event_log.track(message) do
             @logger.info(message)
             yield
-          end
-        end
-
-        def reserve_ips_for_job(job)
-          # FIXME: this stuff should be cleaned up, the ordering dependency here isn't obvious,
-          # compilation IPs don't get released correctly on failure if we call take_old_reservations too early
-          job.networks.each do |network|
-            job.instances.each_with_index do |instance, index|
-              # TODO: care about instance.availabililty_zone
-              static_ips = network.static_ips
-
-              if static_ips
-                reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
-              else
-                reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
-              end
-              instance.add_network_reservation(reservation)
-            end
-          end
-
-          job.instances.each do |instance|
-            instance.take_old_reservations
           end
         end
       end

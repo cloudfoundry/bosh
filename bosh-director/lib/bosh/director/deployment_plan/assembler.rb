@@ -13,6 +13,69 @@ module Bosh::Director
       @stemcell_manager = stemcell_manager
     end
 
+    def bind_models
+      track_and_log('Binding releases') do
+        bind_releases
+      end
+
+      track_and_log('Binding existing deployment') do
+        bind_job_renames
+
+        instance_repo = Bosh::Director::DeploymentPlan::Instance
+        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo)
+        desired_jobs = @deployment_plan.jobs
+
+        #FIXME: this data structure is kind of a bummer
+        states_by_existing_instance = current_states_by_instance(desired_jobs.flat_map(&:existing_instances))
+
+        desired_jobs.each do |desired_job|
+          desired_instances = desired_job.desired_instances
+          existing_instances = desired_job.existing_instances
+          instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances, states_by_existing_instance)
+          desired_job.instance_plans = instance_plans
+        end
+
+        desired_jobs.each do |desired_job|
+          desired_job.reserve_ips
+        end
+
+        instance_plans_obsolete_within_a_job = desired_jobs.flat_map(&:instance_plans).select(&:obsolete?)
+        instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
+        obsolete_instance_plans = instance_plans_for_obsolete_jobs + instance_plans_obsolete_within_a_job
+        obsolete_instance_plans.map(&:instance).each { |instance| @deployment_plan.mark_instance_for_deletion(instance) }
+
+        mark_unknown_vms_for_deletion
+      end
+
+      track_and_log('Binding stemcells') do
+        bind_stemcells
+      end
+
+      track_and_log('Binding templates') do
+        bind_templates
+      end
+
+      track_and_log('Binding properties') do
+        bind_properties
+      end
+
+      track_and_log('Binding unallocated VMs') do
+        bind_unallocated_vms
+      end
+
+      track_and_log('Binding networks') do
+        bind_instance_networks
+      end
+
+      track_and_log('Binding DNS') do
+        bind_dns
+      end
+
+      bind_links
+    end
+
+    private
+
     # Binds release DB record(s) to a plan
     # @return [void]
     def bind_releases
@@ -33,7 +96,7 @@ module Bosh::Director
             pool.process do
               with_thread_name("binding agent state for (#{existing_instance.job}/#{existing_instance.index})") do
                 # getting current state to obtain IP of dynamic networks
-                state = get_state(existing_instance.vm)
+                state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance.vm)
                 lock.synchronize do
                   current_states_by_existing_instance.merge!(existing_instance => state)
                 end
@@ -55,108 +118,6 @@ module Bosh::Director
         # so we don't worry about releasing its IPs.
         @logger.debug('Marking VM for deletion')
         @deployment_plan.mark_vm_for_deletion(vm_model)
-      end
-    end
-
-    def get_state(vm_model)
-      @logger.debug("Requesting current VM state for: #{vm_model.agent_id}")
-      agent = AgentClient.with_vm(vm_model)
-      state = agent.get_state
-
-      @logger.debug("Received VM state: #{state.pretty_inspect}")
-      verify_state(vm_model, state)
-      @logger.debug('Verified VM state')
-
-      migrate_legacy_state(vm_model, state)
-      state.delete('release')
-      if state.include?('job')
-        state['job'].delete('release')
-      end
-      state
-    end
-
-    def verify_state(vm_model, state)
-      instance = vm_model.instance
-
-      if instance && instance.deployment_id != vm_model.deployment_id
-        # Both VM and instance should reference same deployment
-        raise VmInstanceOutOfSync,
-              "VM `#{vm_model.cid}' and instance " +
-              "`#{instance.job}/#{instance.index}' " +
-              "don't belong to the same deployment"
-      end
-
-      unless state.kind_of?(Hash)
-        @logger.error("Invalid state for `#{vm_model.cid}': #{state.pretty_inspect}")
-        raise AgentInvalidStateFormat,
-              "VM `#{vm_model.cid}' returns invalid state: " +
-              "expected Hash, got #{state.class}"
-      end
-
-      actual_deployment_name = state['deployment']
-      expected_deployment_name = @deployment_plan.name
-
-      if actual_deployment_name != expected_deployment_name
-        raise AgentWrongDeployment,
-              "VM `#{vm_model.cid}' is out of sync: " +
-                'expected to be a part of deployment ' +
-              "`#{expected_deployment_name}' " +
-                'but is actually a part of deployment ' +
-              "`#{actual_deployment_name}'"
-      end
-
-      actual_job = state['job'].is_a?(Hash) ? state['job']['name'] : nil
-      actual_index = state['index']
-
-      if instance.nil? && !actual_job.nil?
-        raise AgentUnexpectedJob,
-              "VM `#{vm_model.cid}' is out of sync: " +
-              "it reports itself as `#{actual_job}/#{actual_index}' but " +
-                'there is no instance reference in DB'
-      end
-
-      if instance &&
-        (instance.job != actual_job || instance.index != actual_index)
-        # Check if we are resuming a previously unfinished rename
-        if actual_job == @deployment_plan.job_rename['old_name'] &&
-           instance.job == @deployment_plan.job_rename['new_name'] &&
-           instance.index == actual_index
-
-          # Rename already happened in the DB but then something happened
-          # and agent has never been updated.
-          unless @deployment_plan.job_rename['force']
-            raise AgentRenameInProgress,
-                  "Found a job `#{actual_job}' that seems to be " +
-                  "in the middle of a rename to `#{instance.job}'. " +
-                  "Run 'rename' again with '--force' to proceed."
-          end
-        else
-          raise AgentJobMismatch,
-                "VM `#{vm_model.cid}' is out of sync: " +
-                "it reports itself as `#{actual_job}/#{actual_index}' but " +
-                "according to DB it is `#{instance.job}/#{instance.index}'"
-        end
-      end
-    end
-
-    def migrate_legacy_state(vm_model, state)
-      # Persisting apply spec for VMs that were introduced before we started
-      # persisting it on apply itself (this is for cloudcheck purposes only)
-      if vm_model.apply_spec.nil?
-        # The assumption is that apply_spec <=> VM state
-        vm_model.update(:apply_spec => state)
-      end
-
-      instance = vm_model.instance
-      if instance
-        disk_size = state['persistent_disk'].to_i
-        persistent_disk = instance.persistent_disk
-
-        # This is to support legacy deployments where we did not have
-        # the disk_size specified.
-        if disk_size != 0 && persistent_disk && persistent_disk.size == 0
-          persistent_disk.update(:size => disk_size)
-        end
       end
     end
 
@@ -230,8 +191,6 @@ module Bosh::Director
       end
     end
 
-    private
-
     def update_instance_if_rename(instance_model)
       if @deployment_plan.rename_in_progress?
         old_name = @deployment_plan.job_rename['old_name']
@@ -241,6 +200,13 @@ module Bosh::Director
           @logger.info("Renaming `#{old_name}' to `#{new_name}'")
           instance_model.update(:job => new_name)
         end
+      end
+    end
+
+    def track_and_log(message)
+      @event_log.track(message) do
+        @logger.info(message)
+        yield
       end
     end
   end

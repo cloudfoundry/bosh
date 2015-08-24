@@ -102,6 +102,19 @@ module Bosh::Director
         canonical(@name)
       end
 
+      def bind_models
+        stemcell_manager = Api::StemcellManager.new
+        assembler = DeploymentPlan::Assembler.new(
+          self,
+          stemcell_manager,
+          Config.cloud,
+          Config.logger,
+          Config.event_log
+        )
+
+        assembler.bind_models
+      end
+
       # Returns a list of Instances in the deployment (according to DB)
       # @return [Array<Models::Instance>]
       def instance_models

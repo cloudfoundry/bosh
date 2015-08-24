@@ -307,6 +307,26 @@ module Bosh::Director
         false
       end
 
+      def reserve_ips
+        networks.each do |network|
+          instances.each_with_index do |instance, index|
+            # TODO: care about instance.availabililty_zone
+            static_ips = network.static_ips
+
+            if static_ips
+              reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
+            else
+              reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
+            end
+            instance.add_network_reservation(reservation)
+          end
+        end
+
+        instances.each do |instance|
+          instance.take_old_reservations
+        end
+      end
+
       private
 
       # @param [Hash] collection All properties collection

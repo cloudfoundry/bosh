@@ -57,7 +57,7 @@ module Bosh::Director
         planner.add_resource_pool(resource_pool)
         export_release_job = create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
         planner.add_job(export_release_job)
-        planner_factory.prepare(planner, Config.cloud)
+        planner.bind_models
 
         lock_timeout = 15 * 60 # 15 minutes
 
