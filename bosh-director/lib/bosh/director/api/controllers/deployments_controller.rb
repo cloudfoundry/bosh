@@ -293,7 +293,7 @@ module Bosh::Director
       end
 
       get '/:deployment_name/errands', scope: :read do
-        deployment_plan = load_deployment_plan_without_binding
+        deployment_plan = load_deployment_plan
 
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)
 
@@ -306,13 +306,11 @@ module Bosh::Director
 
       private
 
-      def load_deployment_plan_without_binding
+      def load_deployment_plan
         deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
-        manifest_hash = Psych.load(deployment_model.manifest)
-        cloud_config_model = deployment_model.cloud_config
 
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
-        planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
+        planner_factory.create_from_model(deployment_model)
       end
 
       def convert_job_instance_hash(hash)

@@ -26,6 +26,7 @@ module Bosh::Director
 
           planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
           deployment_plan = planner_factory.create_from_model(deployment_model)
+          deployment_plan.bind_models
 
           deleter_options = {
             force: @force,

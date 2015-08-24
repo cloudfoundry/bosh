@@ -50,7 +50,7 @@ module Bosh::Director
 
         manifest_hash = Psych.load(@targeted_deployment.manifest)
         cloud_config_model = @targeted_deployment.cloud_config
-        planner = planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
+        planner = planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {})
 
         network_name = planner.networks.first.name
         resource_pool = create_resource_pool_with_the_right_stemcell(network_name)

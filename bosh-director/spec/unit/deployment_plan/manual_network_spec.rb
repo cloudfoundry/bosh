@@ -12,7 +12,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:static_ips) { [] }
   let(:network_spec) { manifest['networks'].first }
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
-  let(:deployment_plan) { planner_factory.planner_without_vm_binding(manifest, nil, {}) }
+  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
   let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }

@@ -37,9 +37,7 @@ module Bosh
         def create_from_model(deployment_model)
           manifest_hash = Psych.load(deployment_model.manifest)
           cloud_config_model = deployment_model.cloud_config
-          planner = planner_without_vm_binding(manifest_hash, cloud_config_model, {})
-          planner.bind_models
-          planner
+          create_from_manifest(manifest_hash, cloud_config_model, {})
         end
 
         def planner(manifest_hash, cloud_config, options)
@@ -50,7 +48,7 @@ module Bosh
 
           track_and_log('Binding deployment') do
             @logger.info('Binding deployment')
-            planner = planner_without_vm_binding(manifest_hash, cloud_config, options)
+            planner = create_from_manifest(manifest_hash, cloud_config, options)
 
             # AWS cpi initialization currently takes ~10sec
             # it is wrapped in event step to give user visible feedback
@@ -64,25 +62,14 @@ module Bosh
           planner
         end
 
-        def planner_without_vm_binding(manifest_hash, cloud_config, options)
+        def create_from_manifest(manifest_hash, cloud_config, options)
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
           name = deployment_manifest['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name)
 
-          parse_from_manifest(deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
-        end
-
-        private
-
-        def deployment_name(manifest_hash)
-          name = manifest_hash['name']
-          @canonicalizer.canonical(name)
-        end
-
-        def parse_from_manifest(deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
           attrs = {
-            name: deployment_manifest['name'],
+            name: name,
             properties: deployment_manifest.fetch('properties', {}),
           }
 
@@ -102,6 +89,13 @@ module Bosh
 
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory, global_network_resolver)
           DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
+        end
+
+        private
+
+        def deployment_name(manifest_hash)
+          name = manifest_hash['name']
+          @canonicalizer.canonical(name)
         end
 
         def track_and_log(message)
