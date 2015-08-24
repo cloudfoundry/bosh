@@ -19,26 +19,26 @@ module Bosh::Director
 
       @job_renderer.render_job_instances
 
-      instances = []
-      @job.instances.each do |instance|
-        if instance.changed?
-          @logger.debug("Need to update instance '#{instance}', changes: #{instance.changes.inspect}")
-          instances << instance
-        end
+      instance_plans = @job.instance_plans.reject(&:obsolete?).select do |instance_plan|
+        instance_plan.instance.changed?
       end
 
-      if instances.empty?
+      if instance_plans.empty?
         @logger.info("No instances to update for `#{@job.name}'")
         return
       end
 
-      @logger.info("Found #{instances.size} instances to update")
-      event_log_stage = @event_log.begin_stage("Updating job", instances.size, [ @job.name ])
+      instance_plans.each do |instance_plan|
+        @logger.debug("Need to update instance '#{instance_plan.instance}', changes: #{instance_plan.instance.changes.inspect}")
+      end
+
+      @logger.info("Found #{instance_plans.size} instances to update")
+      event_log_stage = @event_log.begin_stage("Updating job", instance_plans.size, [ @job.name ])
 
       ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-        num_canaries = [ @job.update.canaries, instances.size ].min
+        num_canaries = [ @job.update.canaries, instance_plans.size ].min
         @logger.info("Starting canary update num_canaries=#{num_canaries}")
-        update_canaries(pool, instances, num_canaries, event_log_stage)
+        update_canaries(pool, instance_plans, num_canaries, event_log_stage)
 
         @logger.info('Waiting for canaries to update')
         pool.wait
@@ -46,7 +46,7 @@ module Bosh::Director
         @logger.info("Finished canary update")
 
         @logger.info("Continuing the rest of the update")
-        update_instances(pool, instances, event_log_stage)
+        update_instances(pool, instance_plans, event_log_stage)
       end
 
       @logger.info("Finished the rest of the update")
@@ -65,19 +65,20 @@ module Bosh::Director
       @logger.info("Deleted no longer needed instances")
     end
 
-    def update_canaries(pool, instances, num_canaries, event_log_stage)
+    def update_canaries(pool, instance_plans, num_canaries, event_log_stage)
       num_canaries.times do
-        instance = instances.shift
-        pool.process { update_canary_instance(instance, event_log_stage) }
+        instance_plan = instance_plans.shift
+        pool.process { update_canary_instance(instance_plan, event_log_stage) }
       end
     end
 
-    def update_canary_instance(instance, event_log_stage)
+    def update_canary_instance(instance_plan, event_log_stage)
+      instance = instance_plan.instance
       desc = "#{@job.name}/#{instance.index}"
       event_log_stage.advance_and_track("#{desc} (canary)") do
         with_thread_name("canary_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, @job_renderer).update(:canary => true)
+            InstanceUpdater.new(instance_plan, @job_renderer).update(:canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -86,18 +87,18 @@ module Bosh::Director
       end
     end
 
-    def update_instances(pool, instances, event_log_stage)
-      instances.each do |instance|
-        pool.process { update_instance(instance, event_log_stage) }
+    def update_instances(pool, instance_plans, event_log_stage)
+      instance_plans.each do |instance_plan|
+        pool.process { update_instance(instance_plan, event_log_stage) }
       end
     end
 
-    def update_instance(instance, event_log_stage)
-      desc = "#{@job.name}/#{instance.index}"
+    def update_instance(instance_plan, event_log_stage)
+      desc = "#{@job.name}/#{instance_plan.instance.index}"
       event_log_stage.advance_and_track(desc) do
         with_thread_name("instance_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, @job_renderer).update
+            InstanceUpdater.new(instance_plan, @job_renderer).update
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

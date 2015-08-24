@@ -9,9 +9,9 @@ module Bosh::Director
 
     attr_reader :current_state
 
-    # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, job_renderer)
-      @instance = instance
+    def initialize(instance_plan, job_renderer)
+      @instance_plan = instance_plan
+      @instance = instance_plan.instance
       @job_renderer = job_renderer
 
       @cloud = Config.cloud
@@ -21,7 +21,7 @@ module Bosh::Director
       @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
       @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
 
-      @job = instance.job
+      @job = @instance.job
       @target_state = @instance.state
 
       @deployment_plan = @job.deployment

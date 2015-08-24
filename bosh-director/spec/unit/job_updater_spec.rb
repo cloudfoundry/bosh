@@ -24,8 +24,8 @@ describe Bosh::Director::JobUpdater do
   end
 
   describe 'update' do
-    let(:instances) { [] }
-    before { allow(job).to receive(:instances).and_return(instances) }
+    let(:instance_plans) { [] }
+    before { allow(job).to receive(:instance_plans).and_return(instance_plans) }
     before { allow(job_renderer).to receive(:render_job_instances) }
     before { allow(links_resolver).to receive(:resolve) }
 
@@ -35,7 +35,11 @@ describe Bosh::Director::JobUpdater do
     before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
     context 'when job is up to date' do
-      let(:instances) { [instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false, changes: [])] }
+      let(:instance_plans) do
+        instance = instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false, changes: [])
+        instance_plan = BD::DeploymentPlan::InstancePlan.new(instance: instance, desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance), existing_instance: nil)
+        [instance_plan]
+      end
 
       it 'should render job instances' do
         expect(job_renderer).to receive(:render_job_instances)
@@ -57,8 +61,26 @@ describe Bosh::Director::JobUpdater do
       let(:unchanged_instance) do
         instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, changed?: false, changes: [])
       end
+      let(:canary_plan) do
+        BD::DeploymentPlan::InstancePlan.new(
+          instance: canary,
+          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          existing_instance: nil)
+      end
+      let(:changed_instance_plan) do
+        BD::DeploymentPlan::InstancePlan.new(
+          instance: changed_instance,
+          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          existing_instance: BD::Models::Instance.make)
+      end
+      let(:unchanged_instance_plan) do
+        BD::DeploymentPlan::InstancePlan.new(
+          instance: unchanged_instance,
+          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          existing_instance: BD::Models::Instance.make)
+      end
 
-      let(:instances) { [canary, changed_instance, unchanged_instance] }
+      let(:instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
       let(:canary_updater) { instance_double('Bosh::Director::InstanceUpdater') }
       let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
@@ -66,13 +88,13 @@ describe Bosh::Director::JobUpdater do
 
       before do
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(canary, job_renderer).and_return(canary_updater)
+          with(canary_plan, job_renderer).and_return(canary_updater)
 
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(changed_instance, job_renderer).and_return(changed_updater)
+          with(changed_instance_plan, job_renderer).and_return(changed_updater)
 
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(unchanged_instance, job_renderer).and_return(unchanged_updater)
+          with(unchanged_instance_plan, job_renderer).and_return(unchanged_updater)
       end
 
       it 'should update changed job instances with canaries' do
