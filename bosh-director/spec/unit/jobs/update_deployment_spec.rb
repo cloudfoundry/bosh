@@ -56,7 +56,6 @@ module Bosh::Director::Jobs
 
         it 'binds models, validates packages, compiles packages' do
           expect(planner).to receive(:bind_models)
-          expect(planner).to receive(:validate_packages)
           expect(planner).to receive(:compile_packages)
 
           job.perform

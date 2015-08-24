@@ -32,7 +32,6 @@ module Bosh::Director
         deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
 
         deployment.bind_models
-        deployment.validate_packages
         deployment.compile_packages
 
         job = deployment.job(@errand_name)

@@ -117,21 +117,9 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      def validate_packages
-        release_manager = Bosh::Director::Api::ReleaseManager.new
-        validator = DeploymentPlan::PackageValidator.new
-        jobs.each do |job|
-          job.templates.each do |template|
-            release_model = release_manager.find_by_name(template.release.name)
-            release_version_model = release_manager.find_version(release_model, template.release.version)
-
-            validator.validate(release_version_model, job.resource_pool.stemcell.model)
-          end
-        end
-        validator.handle_faults
-      end
-
       def compile_packages
+        validate_packages
+
         vm_deleter = VmDeleter.new(Config.cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, self, @logger)
@@ -270,6 +258,22 @@ module Bosh::Director
 
       def using_global_networking?
         !@cloud_config.nil?
+      end
+
+      private
+
+      def validate_packages
+        release_manager = Bosh::Director::Api::ReleaseManager.new
+        validator = DeploymentPlan::PackageValidator.new
+        jobs.each do |job|
+          job.templates.each do |template|
+            release_model = release_manager.find_by_name(template.release.name)
+            release_version_model = release_manager.find_version(release_model, template.release.version)
+
+            validator.validate(release_version_model, job.resource_pool.stemcell.model)
+          end
+        end
+        validator.handle_faults
       end
     end
 

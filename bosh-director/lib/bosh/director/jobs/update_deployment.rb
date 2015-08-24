@@ -31,7 +31,6 @@ module Bosh::Director
           deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
 
           deployment_plan.bind_models
-          deployment_plan.validate_packages
           deployment_plan.compile_packages
 
           update_step(deployment_plan).perform

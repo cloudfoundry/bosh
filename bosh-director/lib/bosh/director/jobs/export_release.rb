@@ -58,7 +58,6 @@ module Bosh::Director
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
-              planner.validate_packages
               planner.compile_packages
 
               tarball_state = create_tarball
