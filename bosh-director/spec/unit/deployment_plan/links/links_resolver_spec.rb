@@ -5,7 +5,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
-    planner_factory.planner(deployment_manifest, nil, {})
+    planner = planner_factory.create_from_manifest(deployment_manifest, nil, {})
+    planner.bind_models
+    planner
   end
 
   let(:deployment_manifest) do
@@ -163,7 +165,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4'])
 
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
-          deployment_plan = planner_factory.planner(other_deployment_manifest, nil, {})
+          deployment_plan = planner_factory.create_from_manifest(other_deployment_manifest, nil, {})
+          deployment_plan.bind_models
 
           links_resolver = described_class.new(deployment_plan, logger)
           mysql_job = deployment_plan.job('mysql')

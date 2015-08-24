@@ -37,7 +37,7 @@ module Bosh::Director::Jobs
         let(:planner_factory) do
           instance_double(
             'Bosh::Director::DeploymentPlan::PlannerFactory',
-            planner: planner,
+            create_from_manifest: planner,
           )
         end
         let(:planner) do
@@ -47,9 +47,19 @@ module Bosh::Director::Jobs
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
-          expect(planner_factory).to receive(:planner).and_return(planner).ordered
           expect(update_step).to receive(:perform).ordered
           expect(notifier).to receive(:send_end_event).ordered
+          allow(planner).to receive(:bind_models)
+          allow(planner).to receive(:validate_packages)
+          allow(planner).to receive(:compile_packages)
+        end
+
+        it 'binds models, validates packages, compiles packages' do
+          expect(planner).to receive(:bind_models)
+          expect(planner).to receive(:validate_packages)
+          expect(planner).to receive(:compile_packages)
+
+          job.perform
         end
 
         context 'when a cloud_config is passed in' do

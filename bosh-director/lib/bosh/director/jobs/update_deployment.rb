@@ -28,7 +28,11 @@ module Bosh::Director
 
           cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
           planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-          deployment_plan = planner_factory.planner(deployment_manifest_hash, cloud_config_model, @options)
+          deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+
+          deployment_plan.bind_models
+          deployment_plan.validate_packages
+          deployment_plan.compile_packages
 
           update_step(deployment_plan).perform
           @notifier.send_end_event

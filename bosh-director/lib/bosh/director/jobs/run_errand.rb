@@ -29,7 +29,11 @@ module Bosh::Director
         cloud_config_model = deployment_model.cloud_config
 
         planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-        deployment = planner_factory.planner(deployment_manifest_hash, cloud_config_model, {})
+        deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+
+        deployment.bind_models
+        deployment.validate_packages
+        deployment.compile_packages
 
         job = deployment.job(@errand_name)
         if job.nil?

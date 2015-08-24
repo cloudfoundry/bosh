@@ -40,29 +40,23 @@ module Bosh
           create_from_manifest(manifest_hash, cloud_config_model, {})
         end
 
-        def planner(manifest_hash, cloud_config, options)
+        def create_from_manifest(manifest_hash, cloud_config, options)
           @event_log.begin_stage('Preparing deployment', 9)
           @logger.info('Preparing deployment')
 
           planner = nil
 
-          track_and_log('Binding deployment') do
+          @event_log.track('Binding deployment') do
             @logger.info('Binding deployment')
-            planner = create_from_manifest(manifest_hash, cloud_config, options)
-
-            # AWS cpi initialization currently takes ~10sec
-            # it is wrapped in event step to give user visible feedback
-            initialize_cloud
+            planner = parse_from_manifest(manifest_hash, cloud_config, options)
           end
-
-          planner.bind_models
-          planner.validate_packages
-          planner.compile_packages
 
           planner
         end
 
-        def create_from_manifest(manifest_hash, cloud_config, options)
+        private
+
+        def parse_from_manifest(manifest_hash, cloud_config, options)
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
           name = deployment_manifest['name']
 
@@ -91,22 +85,9 @@ module Bosh
           DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
         end
 
-        private
-
         def deployment_name(manifest_hash)
           name = manifest_hash['name']
           @canonicalizer.canonical(name)
-        end
-
-        def track_and_log(message)
-          @event_log.track(message) do
-            @logger.info(message)
-            yield
-          end
-        end
-
-        def initialize_cloud
-          Config.cloud
         end
       end
     end

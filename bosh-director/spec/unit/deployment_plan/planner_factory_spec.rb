@@ -35,9 +35,9 @@ module Bosh
           fake_locks
         end
 
-        describe '#planner' do
+        describe '#create_from_manifest' do
           let(:planner) do
-            subject.planner(manifest_hash, cloud_config_model, plan_options)
+            subject.create_from_manifest(manifest_hash, cloud_config_model, plan_options)
           end
 
           it 'returns a planner' do

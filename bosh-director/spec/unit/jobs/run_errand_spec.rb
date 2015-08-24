@@ -44,10 +44,17 @@ module Bosh::Director
         let(:planner_factory) do
           instance_double(
             'Bosh::Director::DeploymentPlan::PlannerFactory',
-            planner: planner,
+            create_from_manifest: planner,
           )
         end
-        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+        let(:planner) do
+          instance_double(
+            'Bosh::Director::DeploymentPlan::Planner',
+            bind_models: nil,
+            validate_packages: nil,
+            compile_packages: nil,
+          )
+        end
 
         let(:cloud_config) { Models::CloudConfig.make }
 
@@ -113,6 +120,14 @@ module Bosh::Director
                 allow(runner).to receive(:run).
                   with(no_args).
                   and_return('fake-result-short-description')
+              end
+
+              it 'binds models, validates packages, compiles packages' do
+                expect(planner).to receive(:bind_models)
+                expect(planner).to receive(:validate_packages)
+                expect(planner).to receive(:compile_packages)
+
+                subject.perform
               end
 
               it 'runs an errand with deployment lock and returns short result description' do

@@ -66,7 +66,9 @@ module Bosh::Director::DeploymentPlan
 
           let(:deployment_plan) do
             planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
-            planner_factory.planner(deployment_manifest, cloud_config, {})
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config, {})
+            deployment_plan.bind_models
+            deployment_plan
           end
           let(:deployment_parser) { DeploymentSpecParser.new(event_log, logger) }
           let(:deployment_manifest) do
