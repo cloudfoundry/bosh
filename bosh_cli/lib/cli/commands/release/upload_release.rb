@@ -9,6 +9,8 @@ module Bosh::Cli::Command
         'known by director (discards local job/package',
         'versions in favor of versions assigned by director)'
       option '--skip-if-exists', 'no-op; retained for backward compatibility'
+      option '--dir RELEASE_DIRECTORY', 'path to release directory'
+
       def upload(release_file = nil)
         auth_required
         show_current_state
@@ -62,7 +64,7 @@ module Bosh::Cli::Command
         blobstore = release.blobstore
         tmpdir = Dir.mktmpdir
 
-        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, cache_dir, blobstore, package_matches)
+        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, cache_dir, blobstore, package_matches, release.dir)
         need_repack = true
 
         unless compiler.exists?

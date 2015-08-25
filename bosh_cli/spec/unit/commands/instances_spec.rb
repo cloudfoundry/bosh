@@ -7,7 +7,7 @@ describe Bosh::Cli::Command::Instances do
   before do
     allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil)
     allow(command).to receive(:show_current_state)
-    command.options[:config] = Tempfile.new('bosh-cli-instances-spec')
+    command.options[:config] = Tempfile.new('bosh-cli-instances-spec').path
   end
   let(:director) { double(Bosh::Cli::Client::Director) }
 

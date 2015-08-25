@@ -15,9 +15,7 @@ module Bosh::Cli
     # @param [Array] package_matches List of package checksums that director
     #   can match
     # @param [String] release_source Release directory
-    def initialize(manifest_file, artifacts_dir, blobstore,
-                   package_matches = [], release_source = nil)
-
+    def initialize(manifest_file, artifacts_dir, blobstore, package_matches, release_source)
       @blobstore = blobstore
       @release_source = release_source || Dir.pwd
       @manifest_path = File.expand_path(manifest_file, @release_source)
