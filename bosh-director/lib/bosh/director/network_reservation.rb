@@ -36,9 +36,9 @@ module Bosh::Director
       @ip = ip_to_i(ip)
     end
 
-    # @param [UnboundNetworkReservation] other
+    # @param [ExistingNetworkReservation] other
     def bind_existing(other)
-      return unless other.instance_of?(UnboundNetworkReservation)
+      return unless other.instance_of?(ExistingNetworkReservation)
       return unless other.reserved_as?(StaticNetworkReservation)
 
       return if @ip != other.ip
@@ -67,10 +67,12 @@ module Bosh::Director
     end
   end
 
+  #TODO: Rename DynamicNetworkReservation to something more logical
+  # DynamicNetworkReservation is the network reservation for BOSH manual networks with dynamic ip reservation
   class DynamicNetworkReservation < NetworkReservation
-    # @param [UnboundNetworkReservation] other
+    # @param [ExistingNetworkReservation] other
     def bind_existing(other)
-      return unless other.instance_of?(UnboundNetworkReservation)
+      return unless other.instance_of?(ExistingNetworkReservation)
       return unless other.reserved_as?(DynamicNetworkReservation)
 
       @ip = other.ip
@@ -102,7 +104,7 @@ module Bosh::Director
     end
   end
 
-  class UnboundNetworkReservation < NetworkReservation
+  class ExistingNetworkReservation < NetworkReservation
     def initialize(instance, network, ip)
       super(instance, network)
       @ip = ip_to_i(ip) if ip

@@ -56,6 +56,7 @@ def make_heartbeat(attrs = {})
       :timestamp => Time.now.to_i,
       :deployment => "oleg-cloud",
       :agent_id => "deadbeef",
+      :node_id => "node_id_abc",
       :job => "mysql_node",
       :index => 0,
       :job_state => "running",

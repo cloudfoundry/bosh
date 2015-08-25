@@ -55,7 +55,7 @@ module Bosh::Director
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
 
-          subnet = find_subnet(reservation.ip)
+          subnet = find_subnet_containing(reservation.ip)
           if subnet
             subnet.reserve_ip(reservation)
             return
@@ -67,7 +67,9 @@ module Bosh::Director
 
         if reservation.is_a?(DynamicNetworkReservation)
           @logger.debug("Allocating dynamic ip for manual network '#{@name}'")
-          @subnets.each do |subnet|
+
+          filter_subnet_by_instance_az(reservation.instance).each do |subnet|
+            @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
             ip = subnet.allocate_dynamic_ip(reservation.instance)
             if ip
               @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
@@ -94,7 +96,7 @@ module Bosh::Director
         end
 
         @logger.error("Releasing IP '#{format_ip(reservation.ip)}' for manual network #{@name}")
-        subnet = find_subnet(reservation.ip)
+        subnet = find_subnet_containing(reservation.ip) #FIXME: we shouldn't need a subnet to release an ip
 
         if subnet
           subnet.release_ip(reservation.ip)
@@ -116,7 +118,7 @@ module Bosh::Director
         end
 
         ip = ip_to_netaddr(reservation.ip)
-        subnet = find_subnet(reservation.ip)
+        subnet = find_subnet_containing(reservation.ip)
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip}' does not belong to any subnet"
         end
@@ -139,7 +141,7 @@ module Bosh::Director
       ##
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
-      def find_subnet(ip)
+      def find_subnet_containing(ip)
         @subnets.find { |subnet| subnet.range.contains?(ip) }
       end
 
@@ -152,6 +154,19 @@ module Bosh::Director
         unless unreferenced_zones.empty?
           raise Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
             "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
+        end
+      end
+
+      private
+
+      def filter_subnet_by_instance_az(instance)
+        instance_az = instance.availability_zone
+        if instance_az.nil?
+          @subnets
+        else
+          @subnets.select do |subnet|
+            subnet.availability_zone == instance_az.name
+          end
         end
       end
     end

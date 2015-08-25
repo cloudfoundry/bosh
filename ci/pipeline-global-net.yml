@@ -39,13 +39,12 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-1.9
       trigger: true
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: postgresql
           RUBY_VERSION: 1.9.3
@@ -56,13 +55,12 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-2.1
       trigger: true
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: mysql
           RUBY_VERSION: 2.1.6
@@ -73,13 +71,12 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-2.1
       trigger: true
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: postgresql
           RUBY_VERSION: 2.1.6
@@ -91,6 +88,8 @@ jobs:
     plan:
     - get: bosh-src
       passed:
+      - unit-1.9
+      - unit-2.1
       - integration-2.1-postgres
       - integration-2.1-mysql
       - integration-1.9-postgres

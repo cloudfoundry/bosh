@@ -183,10 +183,11 @@ module Bosh::Director::DeploymentPlan
                   'range' => subnet_range,
                   'gateway' => gateway,
                   'dns' => dns,
-                  'cloud_properties' => cloud_properties
+                  'cloud_properties' => cloud_properties,
+                  'availability_zone' => instance.availability_zone.name,
                 }]
             },
-            [],
+            [instance.availability_zone],
             network_resolver,
             Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger, {}),
             logger

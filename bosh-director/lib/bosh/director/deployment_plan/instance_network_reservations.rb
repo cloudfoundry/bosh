@@ -9,7 +9,7 @@ module Bosh::Director
         reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance}'")
 
         state.fetch('networks', []).each do |network_name, network_config|
-          reservations.add_unbound(deployment, network_name,  network_config['ip'], '')
+          reservations.add_existing(deployment, network_name,  network_config['ip'], '')
         end
 
         reservations
@@ -22,7 +22,7 @@ module Bosh::Director
         ip_addresses = instance.model.ip_addresses.clone
 
         ip_addresses.each do |ip_address|
-          reservations.add_unbound(deployment, ip_address.network_name, ip_address.address, ip_address.type)
+          reservations.add_existing(deployment, ip_address.network_name, ip_address.address, ip_address.type)
         end
 
         reservations
@@ -65,10 +65,10 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_unbound(deployment, network_name, ip, ip_type)
+      def add_existing(deployment, network_name, ip, ip_type)
         network = deployment.network(network_name) || deployment.default_network
         @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{@instance}' on network '#{network.name}'")
-        reservation = UnboundNetworkReservation.new(@instance, network, ip)
+        reservation = ExistingNetworkReservation.new(@instance, network, ip)
         reservation.reserve
         @reservations << reservation
       end

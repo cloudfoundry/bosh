@@ -84,11 +84,6 @@ module Bosh
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory, global_network_resolver)
           DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
         end
-
-        def deployment_name(manifest_hash)
-          name = manifest_hash['name']
-          @canonicalizer.canonical(name)
-        end
       end
     end
   end

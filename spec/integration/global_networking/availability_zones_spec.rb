@@ -78,5 +78,50 @@ describe 'availability zones', type: :integration do
       expect(template).to include('availability_zone=my-az')
     end
 
+    it 'places the job instance in the correct subnet based on the availability zone' do
+      current_sandbox.with_health_monitor_running do
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az','my-az2']
+
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az'
+          },
+          {
+            'name' => 'my-az2'
+          }
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          },
+          {
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az2'
+          }
+        ]
+
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(director.vms.count).to eq(2)
+        first_vm = director.vms[0]
+        second_vm = director.vms[1]
+
+        expect(first_vm.ips).to eq('192.168.1.2')
+        expect(second_vm.ips).to eq('192.168.2.2')
+      end
+    end
   end
 end
