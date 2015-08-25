@@ -39,8 +39,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-1.9
       trigger: true
     - task: test
       privileged: true
@@ -57,8 +55,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-2.1
       trigger: true
     - task: test
       privileged: true
@@ -75,8 +71,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      passed:
-      - unit-2.1
       trigger: true
     - task: test
       privileged: true
