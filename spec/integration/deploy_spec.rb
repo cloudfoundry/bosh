@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/dev/table_parser'
 
 describe 'deploy', type: :integration do
   with_reset_sandbox_before_each
@@ -74,31 +75,30 @@ describe 'deploy', type: :integration do
       create_and_upload_test_release
       upload_stemcell
 
-      set_deployment(manifest_hash: Bosh::Spec::Deployments.test_release_manifest.merge(
-                         {
-                            'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
-                                           name: 'job_with_templates_having_prestart_scripts',
-                                           templates: [
-                                               {'name' => 'job_1_with_pre_start_script'},
-                                               {'name' => 'job_2_with_pre_start_script'}
-                                           ],
-                                           instances: 1)]
-                         }))
-
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'job_with_templates_having_prestart_scripts',
+                             templates: [
+                                 {'name' => 'job_1_with_pre_start_script'},
+                                 {'name' => 'job_2_with_pre_start_script'}
+                             ],
+                             instances: 1)]
+          })
+      set_deployment(manifest_hash: manifest)
     end
 
-    it 'sends the agent the command to run the all the jobs pree-starts scripts' do
-      out = deploy({})
-      expect(out).to include('Started running pre-start scripts >')
-    end
+    it 'runs the pre-start scripts on the agent vm' do
+      deploy({})
 
-    it 'ignores the run_script message and log if message is not supported by the agent' do
-      deploy_output = deploy({})
-      task_number =  deploy_output[/Task \d+ done/][/\d+/]
+      vms_output = bosh_runner.run("vms --details")
+      vm_details = Bosh::Dev::TableParser.new(vms_output).to_a
+      pre_start_vm_details = vm_details.select{ |vm| vm[:job_index] == 'job_with_templates_having_prestart_scripts/0' }[0]
+      agent_id = pre_start_vm_details[:agent_id]
 
-      debug_task_output = bosh_runner.run("task #{task_number} --debug")
-      expect(debug_task_output).to include("Ignoring run_scripts 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message run_scripts>")
-      expect(debug_task_output).to include("Received while trying to run : [\"/var/vcap/jobs/job_1_with_pre_start_script/bin/pre-start\", \"/var/vcap/jobs/job_2_with_pre_start_script/bin/pre-start\"]")
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+      expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
+      expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
     end
 
     xit 'waits for the pre-start scripts to run before continuing' do

@@ -5,8 +5,4 @@ templates:
   job_2_ctl: bin/job_2_ctl
 
 packages: []
-
-properties:
-  pre_start_message:
-    description: A message echoed by the pre-start script 2
-    default: Hello pre-start 2!
+properties: {}

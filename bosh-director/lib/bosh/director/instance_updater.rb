@@ -123,7 +123,7 @@ module Bosh::Director
 
       pre_start_scripts_list = []
       @instance.spec['job']['templates'].each do |template|
-        pre_start_scripts_list << "/var/vcap/jobs/#{template['name']}/bin/pre-start"
+        pre_start_scripts_list << "jobs/#{template['name']}/bin/pre-start"
       end
 
       event_log.track(@instance.spec['job']['name']) {
