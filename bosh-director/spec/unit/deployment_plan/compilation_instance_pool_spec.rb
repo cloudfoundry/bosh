@@ -146,6 +146,21 @@ module Bosh::Director
         end
       end
 
+      context 'when availability_zone is specified' do
+
+        let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger, availability_zone) }
+        let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
+        it 'spins up vm in the availability_zone' do
+          allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
+
+          vm_instance = nil
+          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+            vm_instance = instance
+          end
+          expect(vm_instance.availability_zone_name).to eq('foo-az')
+        end
+      end
+
       context 'when vm raises an Rpc timeout error' do
         it 'removes the vm from the reuser' do
           expect(instance_reuser).to receive(:remove_instance)

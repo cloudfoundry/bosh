@@ -283,11 +283,11 @@ module Bosh::Director
       attr_reader :default_network
 
       def initialize(options)
-        @networks = index_by_name(options.fetch(:networks))
+        @networks = self.class.index_by_name(options.fetch(:networks))
         @default_network = options.fetch(:default_network)
-        @resource_pools = index_by_name(options.fetch(:resource_pools))
-        @disk_pools = index_by_name(options.fetch(:disk_pools))
-        @availability_zones = index_by_name(options.fetch(:availability_zones))
+        @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
+        @disk_pools = self.class.index_by_name(options.fetch(:disk_pools))
+        @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
       end
 
@@ -335,9 +335,7 @@ module Bosh::Director
         @disk_pools[name]
       end
 
-      private
-
-      def index_by_name(collection)
+      def self.index_by_name(collection)
         collection.inject({}) do |index, item|
           index.merge(item.name => item)
         end

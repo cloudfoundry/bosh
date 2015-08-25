@@ -129,6 +129,7 @@ module Bosh::Director
   PropertyNotFound = err(110003, NOT_FOUND)
 
   CompilationConfigUnknownNetwork = err(120001)
+  CompilationConfigInvalidAvailabilityZone = err(120002)
 
   # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)

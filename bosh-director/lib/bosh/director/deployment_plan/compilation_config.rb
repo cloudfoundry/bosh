@@ -21,22 +21,28 @@ module Bosh::Director
 
       attr_reader :network_name
 
+      attr_reader :availability_zone
+
       # Creates compilation configuration spec from the deployment manifest.
       # @param [DeploymentPlan] deployment
       # @param [Hash] compilation_config parsed compilation config YAML section
-      def initialize(compilation_config)
-        @workers = safe_property(compilation_config, "workers", class: Integer, min: 1)
+      def initialize(compilation_config, azs_list = {})
+        @workers = safe_property(compilation_config, 'workers', class: Integer, min: 1)
 
-        @network_name = safe_property(compilation_config, "network", class: String)
+        @network_name = safe_property(compilation_config, 'network', class: String)
 
         @reuse_compilation_vms = safe_property(compilation_config,
-          "reuse_compilation_vms",
+          'reuse_compilation_vms',
           class: :boolean,
           optional: true)
 
         @cloud_properties = safe_property(
-          compilation_config, "cloud_properties", class: Hash, default: {})
-        @env = safe_property(compilation_config, "env", class: Hash, optional: true, default: {})
+          compilation_config, 'cloud_properties', class: Hash, default: {})
+        @env = safe_property(compilation_config, 'env', class: Hash, optional: true, default: {})
+
+        @az_name = safe_property(compilation_config, 'availability_zone', class: String, optional: true)
+        @availability_zone = azs_list[@az_name]
+        raise Bosh::Director::CompilationConfigInvalidAvailabilityZone if @az_name && !@az_name.empty? && @availability_zone.nil?
       end
     end
   end
