@@ -50,7 +50,7 @@ module Bosh::Director
       end
 
       def self.fetch_obsolete(existing_instance, logger)
-        ExistingInstance.create_from_model(existing_instance, logger)
+        InstanceFromDatabase.create_from_model(existing_instance, logger)
       end
 
       # Creates a new instance specification based on the job and index.

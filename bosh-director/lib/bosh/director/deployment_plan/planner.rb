@@ -187,7 +187,7 @@ module Bosh::Director
       end
 
       # Adds instance to deletion queue
-      # @param [Bosh::Director::DeploymentPlan::ExistingInstance]
+      # @param [Bosh::Director::DeploymentPlan::InstanceFromDatabase]
       def mark_instance_for_deletion(instance)
         if @jobs_name_index.has_key?(instance.job_name)
           @jobs_name_index[instance.job_name].unneeded_instances << instance

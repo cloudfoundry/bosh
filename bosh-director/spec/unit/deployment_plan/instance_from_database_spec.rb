@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Director::DeploymentPlan::ExistingInstance do
+describe Bosh::Director::DeploymentPlan::InstanceFromDatabase do
   let(:logger) { instance_double(Logger, debug: nil) }
   let(:instance_model) do
     deployment_manifest = Bosh::Spec::Deployments.legacy_manifest
@@ -10,7 +10,7 @@ describe Bosh::Director::DeploymentPlan::ExistingInstance do
   end
 
   let(:existing_instance) do
-    Bosh::Director::DeploymentPlan::ExistingInstance.create_from_model(instance_model, logger)
+    Bosh::Director::DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, logger)
   end
 
   describe '#delete' do

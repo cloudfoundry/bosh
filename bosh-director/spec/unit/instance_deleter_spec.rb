@@ -32,7 +32,7 @@ module Bosh::Director
 
       let(:instance) do
         instance_double(
-          DeploymentPlan::ExistingInstance,
+          DeploymentPlan::InstanceFromDatabase,
           model: Models::Instance.make(vm: vm.model),
           vm: vm,
           job_name: 'fake-job-name',

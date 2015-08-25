@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class ExistingInstance
+    class InstanceFromDatabase
       attr_reader :model, :vm, :apply_spec
 
       def self.create_from_model(instance_model, logger)
