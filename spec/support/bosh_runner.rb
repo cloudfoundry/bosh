@@ -7,6 +7,21 @@ module Bosh::Spec
       @nats_log_path = nats_log_path
       @saved_logs_path = saved_logs_path
       @logger = logger
+
+      logger.info("---------------> writing bosh.sh to #{bosh_work_dir.inspect}")
+
+      script = File.join(bosh_work_dir, 'bosh.sh')
+      File.open(script, 'w') do |file|
+        file.write('
+          #!/usr/bin/env bash
+
+          echo "RUNNING WITH 1.9.3-p551 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          rbenv local 1.9.3-p551
+          bundle exec bosh "$@"
+        ')
+      end
+
+      FileUtils.chmod(0744, script)
     end
 
     def run(cmd, options = {})
@@ -15,7 +30,7 @@ module Bosh::Spec
 
     def run_interactively(cmd, env = {})
       Dir.chdir(@bosh_work_dir) do
-        BlueShell::Runner.run env, "bosh -c #{@bosh_config} #{cmd}" do |runner|
+        BlueShell::Runner.run env, "bosh.sh -c #{@bosh_config} #{cmd}" do |runner|
           yield runner
         end
       end
@@ -30,7 +45,7 @@ module Bosh::Spec
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
       @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
-      command   = "bosh #{interactive_mode} -c #{@bosh_config} #{cmd}"
+      command   = "bosh.sh #{interactive_mode} -c #{@bosh_config} #{cmd}"
       output    = nil
       env = options.fetch(:env, {})
       exit_code = 0
