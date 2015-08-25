@@ -6,9 +6,9 @@ module Bosh
         def self.create_from_deployment_plan_instance(instance)
           #FIXME: This is the worst
           desired_instance = DeploymentPlan::DesiredInstance.new(
-            nil,# TODO: do we need a real job?
-            {}, # TODO: do we need real state here?
-            nil,# TODO: do we need a real deployment?
+            nil, #TODO: do we need a real job?
+            {},  #TODO: do we need real state here?
+            nil, #TODO: do we need a real deployment?
           )
 
           #TODO: network_plans
