@@ -154,8 +154,8 @@ module Bosh::Cli::Command::Release
                 context 'when --dir option is passed in' do
                   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
                   let(:latest_release_filename) do
-                    file_path = Tempfile.new('upload-release-spec').path
-                    File.write(file_path, '{}')
+                    file_path = Tempfile.new('upload-release-spec')
+                    File.write(file_path.path, '{}')
                     file_path
                   end
 
@@ -163,10 +163,10 @@ module Bosh::Cli::Command::Release
                     release_source.add_dir('jobs')
                     release_source.add_dir('packages')
                     release_source.add_dir('src')
-                    allow(release).to receive(:latest_release_filename).and_return(latest_release_filename)
+                    allow(release).to receive(:latest_release_filename).and_return(latest_release_filename.path)
                     command_in_not_release_directory.options[:dir] = release_source.path
                   end
-                  after { FileUtils.rm_rf(latest_release_filename) }
+                  after { latest_release_filename.delete }
 
                   it 'uploads release' do
                     expect(command_in_not_release_directory).to receive(:upload_manifest)
