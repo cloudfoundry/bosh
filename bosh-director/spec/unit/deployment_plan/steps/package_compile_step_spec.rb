@@ -230,7 +230,7 @@ module Bosh::Director
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
         expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
-        expect(vm_deleter).to receive(:delete_for_instance).exactly(11).times
+        expect(vm_deleter).to receive(:delete_for_instance_plan).exactly(11).times
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -340,7 +340,7 @@ module Bosh::Director
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
-        expect(vm_deleter).to receive(:delete_for_instance).exactly(1).times
+        expect(vm_deleter).to receive(:delete_for_instance_plan).exactly(1).times
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -577,7 +577,7 @@ module Bosh::Director
           allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DynamicNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
-          expect(vm_deleter).to receive(:delete_for_instance).ordered
+          expect(vm_deleter).to receive(:delete_for_instance_plan).ordered
           allow(network).to receive(:release)
 
           expect {

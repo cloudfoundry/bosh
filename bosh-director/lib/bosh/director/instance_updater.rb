@@ -52,7 +52,7 @@ module Bosh::Director
       take_snapshot
 
       if @target_state == 'detached'
-        @vm_deleter.delete_for_instance(@instance)
+        @vm_deleter.delete_for_instance_plan(@instance_plan)
         return
       end
 
@@ -236,7 +236,7 @@ module Bosh::Director
     end
 
     def recreate_vm(new_disk_cid)
-      @vm_deleter.delete_for_instance(@instance)
+      @vm_deleter.delete_for_instance_plan(@instance_plan)
       disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
       @vm_creator.create_for_instance_plan(@instance_plan, disks)
 

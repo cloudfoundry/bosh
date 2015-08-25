@@ -125,10 +125,10 @@ module Bosh::Director
         it 'recreates the VM' do
           fake_job_context
 
-          expect(vm_deleter).to receive(:delete_for_instance) do |instance, options|
-            expect(instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
-            expect(instance.resource_pool.env).to eq({'key1' => 'value1'})
+          expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan, options|
+            expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
+            expect(instance_plan.instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
+            expect(instance_plan.instance.resource_pool.env).to eq({'key1' => 'value1'})
 
             expect(options).to eq({skip_disks: true})
           end

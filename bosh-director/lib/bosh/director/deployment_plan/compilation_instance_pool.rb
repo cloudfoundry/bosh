@@ -56,7 +56,8 @@ module Bosh::Director
       private
 
       def tear_down_vm(instance)
-        @vm_deleter.delete_for_instance(instance)
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+        @vm_deleter.delete_for_instance_plan(instance_plan)
         instance.delete
       end
 

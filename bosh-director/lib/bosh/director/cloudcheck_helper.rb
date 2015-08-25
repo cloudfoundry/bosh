@@ -85,9 +85,10 @@ module Bosh::Director
       validate_env(vm.env)
 
       instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
+      instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
 
       begin
-        vm_deleter.delete_for_instance(instance, skip_disks: true)
+        vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
@@ -97,8 +98,6 @@ module Bosh::Director
 
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
-
-      instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
 
       vm_creator.create_for_instance_plan(
         instance_plan,

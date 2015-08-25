@@ -64,7 +64,8 @@ module Bosh::Director
           stop(instance)
         end
 
-        vm_deleter.delete_for_instance(instance, skip_disks: true)
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+        vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
 
         unless instance.model.compilation
           error_ignorer.with_force_check do

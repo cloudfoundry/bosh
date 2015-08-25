@@ -57,7 +57,7 @@ module Bosh::Director
         instance.update_cloud_properties!
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
-        @vm_deleter.delete_for_instance(instance)
+        @vm_deleter.delete_for_instance_plan(instance_plan)
         raise e
       end
 

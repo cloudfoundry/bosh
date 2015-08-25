@@ -8,7 +8,9 @@ module Bosh::Director
       @error_ignorer = ErrorIgnorer.new(force, @logger)
     end
 
-    def delete_for_instance(instance, options={})
+    def delete_for_instance_plan(instance_plan, options={})
+      instance = instance_plan.instance
+
       detach_disks_for(instance) unless options.fetch(:skip_disks, false)
 
       if instance.vm.model
