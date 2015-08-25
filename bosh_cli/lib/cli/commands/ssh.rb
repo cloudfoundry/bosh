@@ -205,7 +205,7 @@ module Bosh::Cli
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
-        setup_ssh(deployment_name, job, index, nil) do |sessions, user, gateway|
+        setup_ssh(deployment_name, job, index, options[:default_password]) do |sessions, user, gateway|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")

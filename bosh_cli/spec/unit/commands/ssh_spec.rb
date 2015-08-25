@@ -30,7 +30,8 @@ describe Bosh::Cli::Command::Ssh do
     allow(Process).to receive(:waitpid)
 
     allow(command).to receive(:random_ssh_username).and_return('testable_user')
-
+    allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
+    command.add_option(:default_password, 'password')
   end
 
   context 'shell' do
@@ -145,7 +146,7 @@ describe Bosh::Cli::Command::Ssh do
         allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         allow(director).to receive(:cleanup_ssh)
         expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', 'encrypted_password').
           and_return([:done, 1234])
 
         command.shell('dea/0', 'ls -l')
@@ -153,10 +154,6 @@ describe Bosh::Cli::Command::Ssh do
     end
 
     describe 'session' do
-      before do
-        command.add_option(:default_password, 'password')
-      end
-
       it 'should try to setup interactive shell when a job index is given' do
         expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
         command.shell('dea', '0')
@@ -329,7 +326,7 @@ describe Bosh::Cli::Command::Ssh do
       allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
       allow(director).to receive(:cleanup_ssh)
       expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', 'encrypted_password').
           and_return([:done, 1234])
 
       command.add_option(:upload, false)
