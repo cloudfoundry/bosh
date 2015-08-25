@@ -65,7 +65,7 @@ module Bosh::Director
         end
       end
 
-      def release_original_network_reservations
+      def release_obsolete_network_reservations
         # nothing to release
       end
 

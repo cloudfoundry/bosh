@@ -50,8 +50,6 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
-      attr_accessor :instance_plans
-
       attr_writer :cloud_planner
 
       # @return [Boolean] Indicates whether VMs should be drained
@@ -182,9 +180,9 @@ module Bosh::Director
         @unneeded_vms << vm
       end
 
-      def instances_with_missing_vms
+      def instance_plans_with_missing_vms
         jobs_starting_on_deploy.collect_concat do |job|
-          job.instances_with_missing_vms
+          job.instance_plans_with_missing_vms
         end
       end
 

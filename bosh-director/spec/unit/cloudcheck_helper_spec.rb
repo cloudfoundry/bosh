@@ -133,10 +133,10 @@ module Bosh::Director
             expect(options).to eq({skip_disks: true})
           end
 
-          expect(vm_creator).to receive(:create_for_instance) do |instance|
-            expect(instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
-            expect(instance.resource_pool.env).to eq({'key1' => 'value1'})
+          expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
+            expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
+            expect(instance_plan.instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
+            expect(instance_plan.instance.resource_pool.env).to eq({'key1' => 'value1'})
 
             vm
           end

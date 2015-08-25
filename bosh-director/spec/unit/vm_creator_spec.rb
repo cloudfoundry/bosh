@@ -38,6 +38,7 @@ describe Bosh::Director::VmCreator do
     allow(instance).to receive(:apply_spec).and_return({})
     instance
   end
+  let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance) }
 
   let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'fake-job', resource_pool: resource_pool) }
   let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }
@@ -63,7 +64,7 @@ describe Bosh::Director::VmCreator do
     expect(instance).to receive(:update_availability_zone!)
     expect(instance).to receive(:update_cloud_properties!)
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
 
     expect(Bosh::Director::Models::Vm.all.size).to eq(1)
     expect(Bosh::Director::Models::Vm.first.cid).to eq('new-vm-cid')
@@ -86,7 +87,7 @@ describe Bosh::Director::VmCreator do
       })
     end
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end
 
   it 'should create credentials when encryption is enabled' do
@@ -98,7 +99,7 @@ describe Bosh::Director::VmCreator do
                                                { 'crypt_key' => kind_of(String),
                                                  'sign_key' => kind_of(String)}}})
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
 
     expect(Bosh::Director::Models::Vm.all.size).to eq(1)
     vm = Bosh::Director::Models::Vm.first
@@ -119,7 +120,7 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
     expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
 
     expect(Bosh::Director::Models::Vm.first.cid).to eq('fake-vm-cid')
   end
@@ -128,7 +129,7 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
     expect {
-      subject.create_for_instance(instance, ['fake-disk-cid'])
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
@@ -138,7 +139,7 @@ describe Bosh::Director::VmCreator do
     expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
     expect {
-      subject.create_for_instance(instance, ['fake-disk-cid'])
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
@@ -150,12 +151,12 @@ describe Bosh::Director::VmCreator do
       env_id = args[5].object_id
     end
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
 
     expect(cloud).to receive(:create_vm) do |*args|
       expect(args[5].object_id).not_to eq(env_id)
     end
 
-    subject.create_for_instance(instance, ['fake-disk-cid'])
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end
 end

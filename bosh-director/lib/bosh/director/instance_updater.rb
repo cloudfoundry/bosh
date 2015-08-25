@@ -98,7 +98,7 @@ module Bosh::Director
         return false
       end
 
-      @instance.release_original_network_reservations
+      @instance.release_obsolete_network_reservations
 
       update_settings
 
@@ -238,7 +238,7 @@ module Bosh::Director
     def recreate_vm(new_disk_cid)
       @vm_deleter.delete_for_instance(@instance)
       disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
-      @vm_creator.create_for_instance(@instance, disks)
+      @vm_creator.create_for_instance_plan(@instance_plan, disks)
 
       @agent = AgentClient.with_vm(@instance.vm.model)
 

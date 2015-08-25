@@ -282,8 +282,9 @@ module Bosh::Director
         @persistent_disk_pool = disk_pool
       end
 
-      def instances_with_missing_vms
-        instances.select { |instance| !instance.vm_created? }
+      #FIXME: there has to be a better way to do this
+      def instance_plans_with_missing_vms
+        instance_plans.reject { |instance_plan| instance_plan.obsolete? || instance_plan.instance.vm_created? }
       end
 
       def add_resolved_link(link_name, link_spec)

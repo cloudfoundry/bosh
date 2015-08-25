@@ -79,7 +79,8 @@ module Bosh::Director
         instance.add_network_reservation(reservation)
         instance.reserve_networks
 
-        @vm_creator.create_for_instance(instance, [])
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+        @vm_creator.create_for_instance_plan(instance_plan, [])
       end
     end
 

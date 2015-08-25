@@ -16,7 +16,7 @@ module Bosh::Director
         instance.vm.clean
       end
 
-      instance.release_original_network_reservations
+      instance.release_obsolete_network_reservations
     end
 
     def delete_vm(vm_model)

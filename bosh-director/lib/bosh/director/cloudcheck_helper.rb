@@ -98,8 +98,10 @@ module Bosh::Director
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
-      vm_creator.create_for_instance(
-        instance,
+      instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+
+      vm_creator.create_for_instance_plan(
+        instance_plan,
         Array(instance_model.persistent_disk_cid)
       )
 

@@ -162,8 +162,8 @@ module Bosh::Director
 
     def make_instances(num)
       (0..num-1).map do
-        vm = instance_double('Bosh::Director::DeploymentPlan::Instance', model: Models::Vm.make)
-        instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm)
+        vm = instance_double('Bosh::Director::DeploymentPlan::Vm', model: Models::Vm.make)
+        instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm, model: Models::Instance.make)
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
         expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))
@@ -186,7 +186,7 @@ module Bosh::Director
           @director_job
         )
 
-        expect(vm_creator).to receive(:create_for_instance).exactly(11).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
         instances = make_instances(11)
         expect(Bosh::Director::DeploymentPlan::Instance).to receive(:new).exactly(11).times.and_return(*instances)
 
@@ -312,7 +312,7 @@ module Bosh::Director
         allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
 
         instances = make_instances(1)
-        expect(vm_creator).to receive(:create_for_instance).exactly(1).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times
         expect(Bosh::Director::DeploymentPlan::Instance).to receive(:new).exactly(1).times.and_return(*instances)
 
         instances.each do |instance|
@@ -321,7 +321,7 @@ module Bosh::Director
           expect(agent_client).to receive(:compile_package).at_most(6).times do |*args|
             name = args[2]
             dot = args[3].rindex('.')
-            version, build = args[3][0..dot-1], args[3][dot+1..-1]
+            version, _ = args[3][0..dot-1], args[3][dot+1..-1]
 
             package = Models::Package.find(name: name, version: version)
             expect(args[0]).to eq(package.blobstore_id)
@@ -569,7 +569,7 @@ module Bosh::Director
         it 'should clean up the compilation vm if it failed' do
           compiler = described_class.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
 
-          allow(vm_creator).to receive(:create_for_instance).and_raise(RpcTimeout)
+          allow(vm_creator).to receive(:create_for_instance_plan).and_raise(RpcTimeout)
 
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)

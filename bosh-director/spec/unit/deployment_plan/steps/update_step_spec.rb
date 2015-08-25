@@ -12,7 +12,7 @@ module Bosh::Director
         update_stemcell_references!: nil,
         persist_updates!: nil,
         jobs_starting_on_deploy: [],
-        instances_with_missing_vms: []
+        instance_plans_with_missing_vms: []
       )
     end
     let(:cloud) { instance_double('Bosh::Cloud', delete_vm: nil) }

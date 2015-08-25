@@ -225,7 +225,7 @@ module Bosh::Director
         @network_reservations.add(reservation)
       end
 
-      def release_original_network_reservations
+      def release_obsolete_network_reservations
         @original_network_reservations.each do |reservation|
           reservation.release
         end
