@@ -4,14 +4,14 @@ module Bosh::Clouds
       if cloud_config.has_key?('provider')
         ExternalCpiProvider.create(cloud_config['provider']['path'], director_uuid)
       else
-        PluginCloudProvider.create(cloud_config['plugin'], cloud_config['properties'])
+        InternalCpiProvider.create(cloud_config['plugin'], cloud_config['properties'])
       end
     end
   end
 
   private
 
-  class PluginCloudProvider
+  class InternalCpiProvider
     def self.create(plugin, options)
       begin
         require "cloud/#{plugin}"
@@ -20,6 +20,7 @@ module Bosh::Clouds
       end
 
       Bosh::Clouds.const_get(plugin.capitalize).new(options)
+      # InternalCpi.new(Bosh::Clouds.const_get(plugin.capitalize).new(options))
     end
   end
 

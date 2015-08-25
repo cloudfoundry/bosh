@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'cloud/spec'
+require 'cloud/internal'
 
 describe Bosh::Clouds::Provider do
   let(:director_uuid) { 'fake-director-uuid' }
@@ -22,7 +22,7 @@ describe Bosh::Clouds::Provider do
   end
 
   context 'when external cpi is not enabled' do
-    let(:plugin_name) { 'spec' }
+    let(:plugin_name) { 'internal' }
     let(:config) do
       {
         'plugin' => plugin_name,
@@ -32,7 +32,7 @@ describe Bosh::Clouds::Provider do
 
     it 'creates a plugin cpi provider instance' do
       provider = instance_double('Bosh::Clouds::ExternalCpi')
-      expect(Bosh::Clouds::Spec).to receive(:new).with({}).and_return(provider)
+      expect(Bosh::Clouds::Internal).to receive(:new).with({}).and_return(provider)
       expect(Bosh::Clouds::Provider.create(config, director_uuid)).to equal(provider)
     end
 
