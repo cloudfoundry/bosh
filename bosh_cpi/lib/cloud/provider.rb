@@ -19,8 +19,7 @@ module Bosh::Clouds
         raise CloudError, "Could not load Cloud Provider Plugin: #{plugin}, with error #{error.inspect}"
       end
 
-      Bosh::Clouds.const_get(plugin.capitalize).new(options)
-      # InternalCpi.new(Bosh::Clouds.const_get(plugin.capitalize).new(options))
+      InternalCpi.new(Bosh::Clouds.const_get(plugin.capitalize).new(options))
     end
   end
 

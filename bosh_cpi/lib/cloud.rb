@@ -8,6 +8,7 @@ require "cloud/config"
 require "cloud/errors"
 require "cloud/provider"
 require "cloud/external_cpi"
+require "cloud/internal_cpi"
 
 module Bosh
 
