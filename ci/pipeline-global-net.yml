@@ -46,6 +46,7 @@ jobs:
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: postgresql
           RUBY_VERSION: 1.9.3
@@ -63,6 +64,7 @@ jobs:
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: mysql
           RUBY_VERSION: 2.1.6
@@ -80,6 +82,7 @@ jobs:
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
       config:
+        tags: ["bosh-integration"]
         params:
           DB: postgresql
           RUBY_VERSION: 2.1.6
