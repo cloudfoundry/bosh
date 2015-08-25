@@ -72,7 +72,7 @@ module Bosh::Director
               networks: [Network.new({'name' => 'default'}, logger)],
               default_network: Network.new({'name' => 'default'}, logger),
               disk_pools: [],
-              availability_zones: [],
+              availability_zones_list: [],
               resource_pools: [ResourcePool.new(stemcell_spec, logger)],
               compilation: nil,
             })

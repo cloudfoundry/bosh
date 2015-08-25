@@ -47,7 +47,9 @@ module Bosh::Director
           env: {},
           cloud_properties: {},
           workers: @n_workers,
-          reuse_compilation_vms: false)
+          reuse_compilation_vms: false,
+          availability_zone: nil
+        )
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
       @all_packages = []

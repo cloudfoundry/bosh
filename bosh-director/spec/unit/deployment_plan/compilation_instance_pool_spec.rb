@@ -10,7 +10,7 @@ module Bosh::Director
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
-    let(:deployment_plan) {instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment_model, name: 'mycloud')}
+    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment_model, name: 'mycloud') }
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network name') }
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
@@ -37,7 +37,9 @@ module Bosh::Director
           env: compilation_env,
           cloud_properties: cloud_properties,
           workers: n_workers,
-          reuse_compilation_vms: false)
+          reuse_compilation_vms: false,
+          availability_zone: nil
+        )
       allow(network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
       allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
@@ -68,13 +70,13 @@ module Bosh::Director
 
       it 'defers to the vm creator to create a vm' do
         expect(vm_creator).to receive(:create).with(
-          deployment_model,
-          stemcell,
-          cloud_properties,
-          network_settings,
-          [],
-          compilation_env
-        ).and_return(vm_model)
+            deployment_model,
+            stemcell,
+            cloud_properties,
+            network_settings,
+            [],
+            compilation_env
+          ).and_return(vm_model)
         action
       end
 
@@ -82,7 +84,7 @@ module Bosh::Director
         allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
         expected_apply_spec = {
           'deployment' => 'mycloud',
-          'job' =>{
+          'job' => {
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
@@ -147,8 +149,20 @@ module Bosh::Director
       end
 
       context 'when availability_zone is specified' do
+        before do
+          allow(compilation_config).to receive_messages(
+              network_name: 'network name',
+              env: compilation_env,
+              cloud_properties: cloud_properties,
+              workers: n_workers,
+              reuse_compilation_vms: false,
+              availability_zone: availability_zone
+            )
+        end
 
-        let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger, availability_zone) }
+        let(:compilation_instance_pool) do
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger)
+        end
         let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
         it 'spins up vm in the availability_zone' do
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
