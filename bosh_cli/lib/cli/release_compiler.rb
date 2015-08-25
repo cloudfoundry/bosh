@@ -6,8 +6,8 @@ module Bosh::Cli
 
     attr_writer :tarball_path
 
-    def self.compile(manifest_file, artifacts_dir, blobstore)
-      new(manifest_file, artifacts_dir, blobstore).compile
+    def self.compile(manifest_file, artifacts_dir, blobstore, package_matches, release_source)
+      new(manifest_file, artifacts_dir, blobstore, package_matches, release_source).compile
     end
 
     # @param [String] manifest_file Release manifest path
