@@ -97,6 +97,8 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests/ci/tasks/test.yml
+      config:
+        tags: ["bosh-integration"]
 
 resources:
   - name: bosh-src
