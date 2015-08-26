@@ -76,27 +76,35 @@ module Bosh::Dev::Sandbox
 
     def start_workers
       @worker_processes.each(&:start)
-      start_time = Time.now
+      attempt = 0
+      delay = 0.5
       timeout = 60 * 5
+      max_attempts = timeout/delay
+
       until resque_is_ready?
-        if (Time.now - start_time) > timeout
+        if attempt > max_attempts
            raise "Resque failed to start workers in #{timeout} seconds"
         end
 
-        sleep 0.5
+        attempt += 1
+        sleep delay
       end
     end
 
     def stop_workers
       @logger.debug('Waiting for Resque queue to drain...')
-      start_time = Time.now
+      attempt = 0
+      delay = 0.1
       timeout = 60
+      max_attempts = timeout/delay
+
       until resque_is_done?
-        if (Time.now - start_time) > timeout
+        if attempt > max_attempts
           raise "Resque queue failed to drain in #{timeout} seconds"
         end
 
-        sleep 0.1
+        attempt += 1
+        sleep delay
       end
       @logger.debug('Resque queue drained')
 
