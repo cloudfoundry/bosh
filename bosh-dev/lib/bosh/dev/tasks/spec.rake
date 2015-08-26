@@ -18,7 +18,7 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx)'
     task :install_dependencies do
-      unless ENV['SKIP_DEPS'] = 'true'
+      unless ENV['SKIP_DEPS'] == 'true'
         unless ENV['SKIP_NGINX'] == 'true'
           nginx = Bosh::Dev::Sandbox::Nginx.new
           retries = 3
