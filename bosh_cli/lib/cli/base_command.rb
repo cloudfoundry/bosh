@@ -46,7 +46,7 @@ module Bosh::Cli
       def release
         return @release if @release
         check_if_release_dir
-        @release = Bosh::Cli::Release.new(release_directory, options[:final])
+        @release = Bosh::Cli::Release.new(work_dir, options[:final])
       end
 
       def progress_renderer
@@ -214,16 +214,10 @@ module Bosh::Cli
           'Use the --force option to skip this check.')
     end
 
-    def release_directory
-      return File.expand_path(options[:dir]) if options[:dir]
-
-      @work_dir
-    end
-
     def in_release_dir?
-      File.directory?(File.join(release_directory, 'packages')) &&
-        File.directory?(File.join(release_directory, 'jobs')) &&
-        File.directory?(File.join(release_directory, 'src'))
+      File.directory?('packages') &&
+        File.directory?('jobs') &&
+        File.directory?('src')
     end
 
     def dirty_state?

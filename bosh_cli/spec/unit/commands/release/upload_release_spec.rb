@@ -17,7 +17,7 @@ module Bosh::Cli::Command::Release
     let(:compiler) { instance_double('Bosh::Cli::ReleaseCompiler') }
     before { class_double('Bosh::Cli::ReleaseCompiler', new: compiler).as_stubbed_const }
 
-    let(:release) { instance_double('Bosh::Cli::Release', blobstore: nil, dir: 'fake-release-dir') }
+    let(:release) { instance_double('Bosh::Cli::Release', blobstore: nil) }
     before { allow(command).to receive(:release).and_return(release) }
 
     before do
@@ -114,69 +114,10 @@ module Bosh::Cli::Command::Release
 
             it 'should upload a release archive' do
               expect(command).to receive(:upload_tarball)
-                                   .with(release_archive, hash_including(:rebase => nil))
-                                   .and_call_original
+                .with(release_archive, hash_including(:rebase => nil))
+                .and_call_original
               expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
               command.upload(release_archive)
-            end
-
-            context 'when release is not passed in' do
-              context 'when not in release directory' do
-                let(:tmp_dir) { Dir.mktmpdir('upload-release-spec') }
-                before do
-                  @original_directory = Dir.pwd
-                  Dir.chdir(tmp_dir)
-                end
-
-                after do
-                  Dir.chdir(@original_directory)
-                  FileUtils.rm_rf(tmp_dir)
-                end
-
-                let(:command_in_not_release_directory) do
-                  command = described_class.new
-                  allow(command).to receive(:release).and_return(release)
-                  allow(command).to receive(:director).and_return(director)
-                  allow(command).to receive(:show_current_state)
-                  allow(command).to receive(:logged_in?).and_return(true)
-                  command.options[:target] = 'http://bosh-target.example.com'
-                  command
-                end
-
-                context 'when --dir option is not passed in' do
-                  it 'raises an error' do
-                    expect {
-                      command_in_not_release_directory.upload
-                    }.to raise_error Bosh::Cli::CliError, /Sorry, your current directory doesn't look like release directory/
-                  end
-                end
-
-                context 'when --dir option is passed in' do
-                  let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
-                  let(:latest_release_filename) do
-                    file_path = Tempfile.new('upload-release-spec')
-                    File.write(file_path.path, '{}')
-                    file_path
-                  end
-
-                  before do
-                    release_source.add_dir('jobs')
-                    release_source.add_dir('packages')
-                    release_source.add_dir('src')
-                    allow(release).to receive(:latest_release_filename).and_return(latest_release_filename.path)
-                    command_in_not_release_directory.options[:dir] = release_source.path
-                  end
-                  after { latest_release_filename.delete }
-
-                  it 'uploads release' do
-                    expect(command_in_not_release_directory).to receive(:upload_manifest)
-
-                    expect {
-                      command_in_not_release_directory.upload
-                    }.to_not raise_error
-                  end
-                end
-              end
             end
           end
 

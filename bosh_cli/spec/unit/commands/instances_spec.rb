@@ -7,21 +7,16 @@ describe Bosh::Cli::Command::Instances do
   before do
     allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil)
     allow(command).to receive(:show_current_state)
-    command.options[:config] = Tempfile.new('bosh-cli-instances-spec').path
   end
   let(:director) { double(Bosh::Cli::Client::Director) }
-
-  after do
-    FileUtils.rm_rf(command.options[:config])
-  end
 
   describe 'list' do
     before { command.options[:target] = target }
     let(:target) { 'http://example.org' }
 
     context 'with no arguments' do
-      def perform
-        command.list
+      def perform;
+        command.list;
       end
 
       let(:manifest_file) do
@@ -48,8 +43,8 @@ describe Bosh::Cli::Command::Instances do
           before { allow(director).to receive(:list_deployments) { [{'name' => 'dep1'}, {'name' => 'dep2'}] } }
 
           it 'lists instances in deployment dep2 only' do
-            expect(command).to receive(:show_deployment).with('dep2', kind_of(Hash))
-            expect(command).to_not receive(:show_deployment).with('dep1', kind_of(Hash))
+            expect(command).to receive(:show_deployment).with('dep2', target: target)
+            expect(command).to_not receive(:show_deployment).with('dep1', target: target)
             perform
           end
         end
@@ -72,6 +67,7 @@ describe Bosh::Cli::Command::Instances do
       end
     end
   end
+
 
   describe 'show_deployment' do
     def perform

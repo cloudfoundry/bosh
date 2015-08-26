@@ -16,7 +16,6 @@ module Bosh::Cli::Command
       option '--dry-run', 'stop before writing release manifest'
       option '--name NAME', 'specify a custom release name'
       option '--version VERSION', 'specify a custom version number (ex: 1.0.0 or 1.0-beta.2+dev.10)'
-      option '--dir RELEASE_DIRECTORY', 'path to release directory'
 
       def create(manifest_file = nil)
         check_if_release_dir
@@ -29,7 +28,7 @@ module Bosh::Cli::Command
           end
 
           say('Recreating release from the manifest')
-          Bosh::Cli::ReleaseCompiler.compile(manifest_file, cache_dir, release.blobstore, [], release.dir)
+          Bosh::Cli::ReleaseCompiler.compile(manifest_file, cache_dir, release.blobstore)
           release_filename = manifest_file
         else
           version = options[:version]
@@ -56,7 +55,7 @@ module Bosh::Cli::Command
         # can't migrate without a default release name
         return if default_release_name.blank?
 
-        Bosh::Cli::Versions::MultiReleaseSupport.new(release.dir, default_release_name, self).migrate
+        Bosh::Cli::Versions::MultiReleaseSupport.new(@work_dir, default_release_name, self).migrate
       end
 
       def create_from_spec(version)
@@ -140,7 +139,7 @@ module Bosh::Cli::Command
       end
 
       def archive_repository_provider
-        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(release.dir, cache_dir, release.blobstore)
+        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, cache_dir, release.blobstore)
       end
 
       def build_release(job_artifacts, manifest_only, package_artifacts, license_artifacts, name, version)
@@ -164,7 +163,7 @@ module Bosh::Cli::Command
       end
 
       def build_packages
-        packages = Bosh::Cli::Resources::Package.discover(release.dir)
+        packages = Bosh::Cli::Resources::Package.discover(work_dir)
         artifacts = packages.map do |package|
           say("Building #{package.name.make_green}...")
           artifact = archive_builder.build(package)
@@ -190,7 +189,7 @@ module Bosh::Cli::Command
       end
 
       def build_jobs(packages)
-        jobs = Bosh::Cli::Resources::Job.discover(release.dir, packages)
+        jobs = Bosh::Cli::Resources::Job.discover(work_dir, packages)
         artifacts = jobs.map do |job|
           say("Building #{job.name.make_green}...")
           artifact = archive_builder.build(job)
@@ -202,7 +201,7 @@ module Bosh::Cli::Command
       end
 
       def build_licenses
-        licenses = Bosh::Cli::Resources::License.discover(release.dir)
+        licenses = Bosh::Cli::Resources::License.discover(work_dir)
         artifacts = licenses.map do |license|
           say("Building #{'license'.make_green}...")
           artifact = archive_builder.build(license)

@@ -21,8 +21,9 @@ module Bosh::Cli::Command
       show_current_state(deployment_name)
       no_track_unsupported
 
-      unless deployment_name.nil?
-        show_deployment(deployment_name, options)
+      if deployment_name.nil?
+      else
+        show_deployment deployment_name, options
       end
     end
 

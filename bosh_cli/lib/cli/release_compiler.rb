@@ -6,8 +6,8 @@ module Bosh::Cli
 
     attr_writer :tarball_path
 
-    def self.compile(manifest_file, artifacts_dir, blobstore, package_matches, release_source)
-      new(manifest_file, artifacts_dir, blobstore, package_matches, release_source).compile
+    def self.compile(manifest_file, artifacts_dir, blobstore)
+      new(manifest_file, artifacts_dir, blobstore).compile
     end
 
     # @param [String] manifest_file Release manifest path
@@ -15,7 +15,9 @@ module Bosh::Cli
     # @param [Array] package_matches List of package checksums that director
     #   can match
     # @param [String] release_source Release directory
-    def initialize(manifest_file, artifacts_dir, blobstore, package_matches, release_source)
+    def initialize(manifest_file, artifacts_dir, blobstore,
+                   package_matches = [], release_source = nil)
+
       @blobstore = blobstore
       @release_source = release_source || Dir.pwd
       @manifest_path = File.expand_path(manifest_file, @release_source)
