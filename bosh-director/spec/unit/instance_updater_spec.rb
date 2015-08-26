@@ -413,7 +413,7 @@ module Bosh::Director
       end
 
       it 'send an array of scripts to the agent to run' do
-        expect(agent_client).to receive(:run_scripts).with(["jobs/job_with_pre_start/bin/pre-start"],{})
+        expect(agent_client).to receive(:run_scripts).with("pre-start", {})
         subject.run_pre_start_scripts
       end
     end
