@@ -101,23 +101,64 @@ module Bosh::Cli::Command::Release
           end
 
           context 'without rebase' do
-            it 'should upload the release archive indicated by a manifest' do
-              allow(compiler).to receive(:exists?).and_return(true)
-              allow(compiler).to receive(:tarball_path).and_return(release_archive)
+            context 'when release tarball is passed in' do
+              it 'should upload the release archive indicated by a manifest' do
+                allow(compiler).to receive(:exists?).and_return(true)
+                allow(compiler).to receive(:tarball_path).and_return(release_archive)
 
-              expect(command).to receive(:upload_manifest)
-                .with(release_manifest, hash_including(:rebase => nil))
-                .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
-              command.upload(release_manifest)
+                expect(command).to receive(:upload_manifest)
+                                     .with(release_manifest, hash_including(:rebase => nil))
+                                     .and_call_original
+                expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
+                command.upload(release_manifest)
+              end
+
+              it 'should upload a release archive' do
+                expect(command).to receive(:upload_tarball)
+                                     .with(release_archive, hash_including(:rebase => nil))
+                                     .and_call_original
+                expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
+                command.upload(release_archive)
+              end
             end
 
-            it 'should upload a release archive' do
-              expect(command).to receive(:upload_tarball)
-                                   .with(release_archive, hash_including(:rebase => nil))
-                                   .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
-              command.upload(release_archive)
+            context 'when release manifest is passed in' do
+              let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
+              before do
+                release_source.add_dir('src')
+                release_source.add_dir('jobs')
+                release_source.add_file('config', 'final.yml', '{}')
+                release_source.add_dir('packages')
+                release_source.add_file('dev_releases/bosh', 'bosh-199+dev.1.yml', '---')
+                release_source.add_file('releases', 'bosh-199.yml', '---')
+
+                allow(command).to receive(:release).and_call_original
+              end
+
+              let(:dev_release_manifest_path) { File.join(release_source.path, 'dev_releases/bosh/bosh-199+dev.1.yml') }
+              let(:final_release_manifest_path) { File.join(release_source.path, 'releases/bosh-199.yml') }
+
+              context 'when not in release directory' do
+                it 'uploads dev release successfully' do
+                  expect(command).to receive(:upload_manifest)
+                                       .with(dev_release_manifest_path, hash_including(:rebase => nil))
+                                       .and_call_original
+                  expect(compiler).to receive(:exists?).and_return(true)
+                  allow(compiler).to receive(:tarball_path).and_return('fake-tarball-path')
+                  expect(command).to receive(:upload_tarball).with('fake-tarball-path', hash_including(:rebase => nil))
+                  command.upload(dev_release_manifest_path)
+                end
+
+                it 'uploads final release successfully' do
+                  expect(command).to receive(:upload_manifest)
+                                       .with(final_release_manifest_path, hash_including(:rebase => nil))
+                                       .and_call_original
+                  expect(compiler).to receive(:exists?).and_return(true)
+                  allow(compiler).to receive(:tarball_path).and_return('fake-tarball-path')
+                  expect(command).to receive(:upload_tarball).with('fake-tarball-path', hash_including(:rebase => nil))
+                  command.upload(final_release_manifest_path)
+                end
+              end
             end
 
             context 'when release is not passed in' do

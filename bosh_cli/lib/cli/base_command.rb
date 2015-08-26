@@ -215,9 +215,15 @@ module Bosh::Cli
     end
 
     def release_directory
-      return File.expand_path(options[:dir]) if options[:dir]
+      return @release_directory if @release_directory
 
-      @work_dir
+      if options[:dir]
+        @release_directory = File.expand_path(options[:dir])
+      else
+        @release_directory = @work_dir
+      end
+
+      @release_directory
     end
 
     def in_release_dir?
