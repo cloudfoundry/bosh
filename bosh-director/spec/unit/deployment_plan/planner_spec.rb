@@ -3,13 +3,17 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, manifest_text, cloud_config, deployment_model) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, deployment_model) }
 
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_config) { nil }
-      let(:manifest_text) { Psych.dump minimal_manifest }
+      let(:manifest_text) { generate_manifest_text }
       let(:planner_attributes) { {name: 'mycloud', properties: {}} }
       let(:deployment_model) { Models::Deployment.make }
+
+      def generate_manifest_text
+        Psych.dump minimal_manifest
+      end
 
       let(:minimal_manifest) do
         {
@@ -162,6 +166,13 @@ module Bosh::Director
 
             expect(subject).to receive(:with_release_locks).with(['stale','another_stale'])
             subject.persist_updates!
+          end
+
+          it 'saves original manifest' do
+            original_manifest = generate_manifest_text
+            minimal_manifest['update']['canaries'] = 10
+            planner.persist_updates!
+            expect(deployment_model.manifest).to eq(original_manifest)
           end
         end
       end

@@ -53,7 +53,7 @@ module Bosh::Director
         @properties = attrs.fetch(:properties)
         @releases = {}
 
-        @manifest_text = manifest_text
+        @manifest_text = deep_copy(manifest_text)
         @cloud_config = cloud_config
         @cloud_planner = CloudPlanner.new(cloud_config)
         @model = deployment_model
@@ -189,6 +189,12 @@ module Bosh::Director
         model.stemcells.each do |deployment_stemcell|
           deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
         end
+      end
+
+      private
+
+      def deep_copy(obj)
+        Marshal.load(Marshal.dump(obj))
       end
     end
 
