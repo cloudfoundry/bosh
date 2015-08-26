@@ -1,4 +1,3 @@
-require 'common/deep_copy'
 require 'bosh/template/property_helper'
 
 module Bosh::Director

@@ -2,6 +2,7 @@ require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
 require 'bosh/director/deployment_plan/disk_pool'
 require 'forwardable'
+require 'common/deep_copy'
 
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
@@ -53,7 +54,7 @@ module Bosh::Director
         @properties = attrs.fetch(:properties)
         @releases = {}
 
-        @manifest_text = deep_copy(manifest_text)
+        @manifest_text = Bosh::Common::DeepCopy.copy(manifest_text)
         @cloud_config = cloud_config
         @cloud_planner = CloudPlanner.new(cloud_config)
         @model = deployment_model
@@ -189,12 +190,6 @@ module Bosh::Director
         model.stemcells.each do |deployment_stemcell|
           deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
         end
-      end
-
-      private
-
-      def deep_copy(obj)
-        Marshal.load(Marshal.dump(obj))
       end
     end
 
