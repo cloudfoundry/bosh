@@ -78,10 +78,10 @@ describe Bosh::Cli::Command::Deployment do
       # NOTE: the point is to add coverage to catch
       # the signature change to Package.discover
       release = double('release')
+      cmd.options[:dir] = release_source.path
       allow(release).to receive(:dev_name).and_return('sample-release')
 
       allow(cmd).to receive(:prepare_deployment_manifest).and_return(double(:manifest, hash: manifest))
-      allow(cmd).to receive(:work_dir).and_return(release_source.path)
       allow(cmd).to receive(:release).and_return(release)
 
       Dir.chdir(release_source.path) do
