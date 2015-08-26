@@ -130,6 +130,7 @@ module Bosh::Director
     end
 
     def bind_instance_networks
+      # CHANGEME: something about instance plan's new network plans
       @deployment_plan.jobs_starting_on_deploy.each(&:bind_instance_networks)
     end
 

@@ -163,7 +163,13 @@ module Bosh::Director
     def make_instances(num)
       (0..num-1).map do
         vm = instance_double('Bosh::Director::DeploymentPlan::Vm', model: Models::Vm.make)
-        instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm, model: Models::Instance.make)
+        instance = instance_double(
+          'Bosh::Director::DeploymentPlan::Instance',
+          vm: vm,
+          model: Models::Instance.make,
+          take_old_reservations: [],
+          network_reservations: []
+        )
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
         expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))

@@ -323,8 +323,24 @@ module Bosh::Director
           end
         end
 
-        instances.each do |instance|
-          instance.take_old_reservations
+        # TODO: loop above should go away when we get rid of reservations
+        # something similar will maybe happen in JobSpecParser to figure out desired IPs or something?
+
+        instance_plans.each do |instance_plan|
+          # TODO: this should turn into some sort of bind_existing when we stop caring about the
+          # original_network_reservations side effects
+          obsolete_reservations = instance_plan.instance.take_old_reservations
+          desired_reservations = instance_plan.instance.network_reservations
+
+          obsolete_network_plans = obsolete_reservations.map do |reservation|
+            NetworkPlan.new(ip: reservation.ip, network: reservation.network, obsolete: true)
+          end
+
+          desired_network_plans = desired_reservations.map do |reservation|
+            NetworkPlan.new(ip: reservation.ip, network: reservation.network, obsolete: false)
+          end
+
+          instance_plan.network_plans = desired_network_plans + obsolete_network_plans
         end
       end
 

@@ -65,8 +65,12 @@ module Bosh::Director
         end
       end
 
-      def release_obsolete_network_reservations
-        # nothing to release
+      def take_old_reservations
+        [] # nothing obsolete
+      end
+
+      def network_reservations
+        [] # no one should care. we only use this outside of a deploy or for an obsolete instance plan
       end
 
       def update_cloud_properties!

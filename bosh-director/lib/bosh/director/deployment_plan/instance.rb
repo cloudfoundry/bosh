@@ -36,6 +36,8 @@ module Bosh::Director
 
       attr_reader :deployment
 
+      attr_reader :network_reservations
+
       def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
         instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
         instance.bind_existing_instance_model(desired_instance.existing_instance)
@@ -223,12 +225,6 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       def add_network_reservation(reservation)
         @network_reservations.add(reservation)
-      end
-
-      def release_obsolete_network_reservations
-        @original_network_reservations.each do |reservation|
-          reservation.release
-        end
       end
 
       ##
@@ -586,6 +582,8 @@ module Bosh::Director
             @logger.debug("unneeded reservation #{existing_reservation}")
           end
         end
+
+        @original_network_reservations # now obsolete
       end
 
       private

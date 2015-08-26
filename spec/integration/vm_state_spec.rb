@@ -55,6 +55,8 @@ describe 'vm state', type: :integration do
       first_manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
       set_deployment(manifest_hash: first_manifest_hash)
 
+      # this stop should do nothing, but right now bosh does a full deploy,
+      # which changes the instance IP
       expect(bosh_runner.run('stop foobar 0 --hard --force')).to match %r{foobar/0 has been detached}
       expect(director.vms('simple').size).to eq(0)
 
@@ -63,6 +65,7 @@ describe 'vm state', type: :integration do
         instances: 1,
         template: 'foobar_without_packages'
       )
+      # this deploy takes the newly freed IP
       deploy_simple_manifest(manifest_hash: second_manifest_hash)
       expect(director.vms('second').map(&:ips)).to eq(['192.168.1.2'])
 

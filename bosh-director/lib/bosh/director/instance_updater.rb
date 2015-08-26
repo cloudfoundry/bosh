@@ -31,6 +31,9 @@ module Bosh::Director
       @current_state = {}
 
       @agent = AgentClient.with_vm(@instance.model.vm)
+
+      ip_repo = DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new
+      @ip_provider = DeploymentPlan::IpProviderV2.new(ip_repo)
     end
 
     def update(options = {})
@@ -53,6 +56,7 @@ module Bosh::Director
 
       if @target_state == 'detached'
         @vm_deleter.delete_for_instance_plan(@instance_plan)
+        release_obsolete_ips
         return
       end
 
@@ -60,6 +64,7 @@ module Bosh::Director
         @logger.debug('Failed to update in place. Recreating VM')
         recreate_vm(nil)
       end
+      release_obsolete_ips
 
       update_dns
       update_persistent_disk
@@ -98,11 +103,15 @@ module Bosh::Director
         return false
       end
 
-      @instance.release_obsolete_network_reservations
-
       update_settings
 
       true
+    end
+
+    def release_obsolete_ips
+      @instance_plan.network_plans.select(&:obsolete?).each do |network_plan|
+        @ip_provider.delete(network_plan.ip, network_plan.network)
+      end
     end
 
     # Watch times don't include the get_state roundtrip time, so effective
