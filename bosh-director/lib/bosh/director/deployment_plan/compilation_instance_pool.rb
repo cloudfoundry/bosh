@@ -1,12 +1,12 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def initialize(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger)
+      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         @instance_reuser = instance_reuser
         @vm_creator = vm_creator
-        @vm_deleter = vm_deleter
         @deployment_plan =  deployment_plan
         @logger = logger
+        @instance_deleter = instance_deleter
       end
 
       def with_reused_vm(stemcell)
@@ -55,10 +55,14 @@ module Bosh::Director
 
       private
 
+      class NullEventLogStage
+        def advance_and_track(desc)
+          yield
+        end
+      end
+
       def tear_down_vm(instance)
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
-        @vm_deleter.delete_for_instance_plan(instance_plan)
-        instance.delete
+        @instance_deleter.delete_instances([instance], NullEventLogStage.new)
       end
 
       def create_instance(stemcell)

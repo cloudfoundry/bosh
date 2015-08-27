@@ -321,14 +321,6 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       @network.reserve(reservation)
       expect(reservation.ip).to eq(4294967295)
     end
-
-    it 'should not let you reserve a static IP' do
-      reservation = BD::StaticNetworkReservation.new(instance, @network, '0.0.0.1')
-
-      expect {
-        @network.reserve(reservation)
-      }.to raise_error BD::NetworkReservationWrongType
-    end
   end
 
   describe :release do
@@ -346,14 +338,6 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       reservation.resolve_ip(4294967295)
 
       @network.release(reservation)
-    end
-
-    it 'should not let you reserve a static IP' do
-      reservation = BD::StaticNetworkReservation.new(instance, @network, '0.0.0.1')
-
-      expect {
-        @network.reserve(reservation)
-      }.to raise_error BD::NetworkReservationWrongType
     end
   end
 

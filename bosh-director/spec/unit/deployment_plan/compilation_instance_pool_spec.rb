@@ -28,8 +28,9 @@ module Bosh::Director
       allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
+    let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
 
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
+    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
 
     before do
       allow(compilation_config).to receive_messages(
@@ -55,9 +56,9 @@ module Bosh::Director
       allow(another_agent_client).to receive(:update_settings)
       allow(another_agent_client).to receive(:get_state)
       allow(another_agent_client).to receive(:apply)
-      allow(network).to receive(:release)
       allow(ThreadPool).to receive_messages(new: thread_pool)
       allow(deployment_plan).to receive(:network).with('network name').and_return(network)
+      allow(instance_deleter).to receive(:delete_instances)
     end
 
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
@@ -106,30 +107,13 @@ module Bosh::Director
       end
 
       context 'when instance creation fails' do
-        before do
-          allow(cloud).to receive(:delete_vm).with(vm_model.cid)
-        end
-
         it 'deletes the vm from the cloud' do
-          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
           expect { action_that_raises }.to raise_error(create_instance_error)
         end
 
-        it 'deletes the vm model from the db' do
-          vm_model_id = vm_model.id
+        it 'deletes the instance' do
           expect { action_that_raises }.to raise_error(create_instance_error)
-          expect(Models::Vm[vm_model_id]).to be_nil
-        end
-
-        it 'releases the network reservation' do
-          expect(network).to receive(:release)
-          expect { action_that_raises }.to raise_error(create_instance_error)
-        end
-
-        it 'deletes the instance model' do
-          expect {
-            expect { action_that_raises }.to raise_error(create_instance_error)
-          }.to_not change(Bosh::Director::Models::Instance, :count).from(0)
+          expect(instance_deleter).to have_received(:delete_instances)
         end
       end
     end
@@ -167,7 +151,7 @@ module Bosh::Director
         end
 
         let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger)
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         end
         let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
         it 'spins up vm in the availability_zone' do
@@ -184,7 +168,6 @@ module Bosh::Director
       context 'when vm raises an Rpc timeout error' do
         it 'removes the vm from the reuser' do
           expect(instance_reuser).to receive(:remove_instance)
-          expect(cloud).to receive(:delete_vm)
           expect {
             compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
           }.to raise_error(create_instance_error)
@@ -193,7 +176,6 @@ module Bosh::Director
 
       context 'when vm raises an Rpc timeout error' do
         it 'no longer offers that vm for reuse' do
-          expect(cloud).to receive(:delete_vm)
           original = nil
           compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             original = instance
@@ -214,7 +196,6 @@ module Bosh::Director
       describe 'tear_down_vms' do
         let(:number_of_workers) { 1 }
         before do
-          allow(cloud).to receive(:delete_vm)
           compilation_instance_pool.with_reused_vm(stemcell) {}
           compilation_instance_pool.with_reused_vm(another_stemcell) {}
         end
@@ -225,26 +206,14 @@ module Bosh::Director
           expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
         end
 
-        it 'tears down each idle vm in vm pool' do
-          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
-          expect(cloud).to receive(:delete_vm).with(another_vm_model.cid)
-
+        it 'deletes the instance' do
           compilation_instance_pool.tear_down_vms(number_of_workers)
-        end
-
-        it 'deletes the instance model' do
-          expect {
-            compilation_instance_pool.tear_down_vms(number_of_workers)
-          }.to change(Bosh::Director::Models::Instance, :count).from(2).to(0)
+          expect(instance_deleter).to have_received(:delete_instances).exactly(2).times
         end
       end
     end
 
     describe 'with_single_use_vm' do
-      before do
-        allow(cloud).to receive(:delete_vm)
-      end
-
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_instance_pool.with_single_use_vm(stemcell) {} }
         let(:action_that_raises) { compilation_instance_pool.with_single_use_vm(stemcell) { raise create_instance_error } }

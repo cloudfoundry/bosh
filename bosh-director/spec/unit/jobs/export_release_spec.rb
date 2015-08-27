@@ -12,6 +12,10 @@ module Bosh::Director
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(job).to receive(:task_cancelled?) { false }
       allow(Config).to receive(:cloud)
+      blobstore = double(:blobstore)
+      blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
+      app = instance_double(App, blobstores: blobstores)
+      allow(App).to receive(:instance).and_return(app)
     end
 
     subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1') }

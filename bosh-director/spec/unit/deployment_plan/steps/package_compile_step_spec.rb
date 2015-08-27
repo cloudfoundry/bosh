@@ -13,8 +13,9 @@ module Bosh::Director
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
     let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment, name: 'mycloud') }
     let(:instance_reuser) { InstanceReuser.new }
+    let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, plan, logger)
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -26,6 +27,8 @@ module Bosh::Director
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
+
+      allow(instance_deleter).to receive(:delete_instances)
 
       allow(Config).to receive_messages(redis: double('fake-redis'))
 
@@ -173,7 +176,6 @@ module Bosh::Director
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
         expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))
-        expect(instance).to receive(:delete)
 
         instance
       end
@@ -236,7 +238,7 @@ module Bosh::Director
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
         expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
-        expect(vm_deleter).to receive(:delete_for_instance_plan).exactly(11).times
+        expect(instance_deleter).to receive(:delete_instances).exactly(11).times
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -346,7 +348,7 @@ module Bosh::Director
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
-        expect(vm_deleter).to receive(:delete_for_instance_plan).exactly(1).times
+        expect(instance_deleter).to receive(:delete_instances)
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -393,10 +395,6 @@ module Bosh::Director
         expect(agent).to receive(:get_state)
         expect(agent).to receive(:apply).with(initial_state)
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
-
-        expect(cloud).to receive(:delete_vm).with(vm_cid)
-
-        expect(@network).to receive(:release)
 
         compiler = DeploymentPlan::Steps::PackageCompileStep.new(
           [@j_dea],
@@ -583,7 +581,7 @@ module Bosh::Director
           allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DynamicNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
-          expect(vm_deleter).to receive(:delete_for_instance_plan).ordered
+          expect(instance_deleter).to receive(:delete_instances).ordered
           allow(network).to receive(:release)
 
           expect {

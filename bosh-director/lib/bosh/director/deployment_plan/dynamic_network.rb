@@ -64,8 +64,6 @@ module Bosh::Director
       # @return [Boolean] true if the reservation was fulfilled
       def reserve(reservation)
         @logger.debug("Reserving IP for dynamic network '#{@name}'")
-
-        reservation.mark_reserved_as(DynamicNetworkReservation)
       end
 
       ##
@@ -74,8 +72,6 @@ module Bosh::Director
       # @return [void]
       def release(reservation)
         @logger.debug("Releasing IP for dynamic network '#{@name}'")
-
-        reservation.validate_type(DynamicNetworkReservation)
       end
 
       ##
