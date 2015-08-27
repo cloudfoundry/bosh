@@ -17,12 +17,12 @@ describe 'availability zones', type: :integration do
         'e' => 'rp_value_for_e',
       }
       cloud_config_hash['availability_zones'] = [{
-        'name' => 'my-az',
-        'cloud_properties' => {
-          'a' => 'az_value_for_a',
-          'd' => 'az_value_for_d'
-        }
-      }]
+          'name' => 'my-az',
+          'cloud_properties' => {
+            'a' => 'az_value_for_a',
+            'd' => 'az_value_for_d'
+          }
+        }]
       cloud_config_hash['networks'].first['subnets'].first['availability_zone'] = 'my-az'
       cloud_config_hash
     end
@@ -81,7 +81,7 @@ describe 'availability zones', type: :integration do
     it 'places the job instance in the correct subnet based on the availability zone' do
       current_sandbox.with_health_monitor_running do
         simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['availability_zones'] = ['my-az','my-az2']
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
 
         cloud_config_hash['availability_zones'] = [
           {
@@ -122,6 +122,55 @@ describe 'availability zones', type: :integration do
         expect(first_vm.ips).to eq('192.168.1.2')
         expect(second_vm.ips).to eq('192.168.2.2')
       end
+    end
+
+    context 'when adding azs to jobs with persistent disks' do
+
+      it 'keeps all jobs in the same az when job count stays the same' do
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        simple_manifest['jobs'].first['persistent_disk_pool'] = Bosh::Spec::Deployments.disk_pool
+
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az'
+          },
+          {
+            'name' => 'my-az2'
+          }
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          },
+          {
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az2'
+          }
+        ]
+
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(director.vms.count).to eq(2)
+
+      end
+
+      it 'adds new jobs in the new az when scaling up job count' do
+
+      end
+
     end
   end
 end
