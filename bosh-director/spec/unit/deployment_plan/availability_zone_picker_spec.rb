@@ -11,7 +11,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
   end
 
   describe 'placing and matching' do
-    it 'a job in no zones with 3 instances, we expect' do
+    it 'a job in no zones with 3 instances, we expect two existing instances are reused and one new instance' do
       unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
       existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: [])
       existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 1, persistent_disks: [])
@@ -29,7 +29,25 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       expect(results[:obsolete]).to eq([])
     end
 
-    it 'a job in 2 zones with 3 instances, we expect' do
+    it 'a job in nil zones with 3 instances, we expect two existing instances are reused and one new instance' do
+      unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
+      existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: [])
+      existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 1, persistent_disks: [])
+      unmatched_existing_instanaces = [existing_0, existing_1]
+
+      azs = nil
+      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+
+      expect(results[:desired_existing]).to match_array([
+            Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0),
+            Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_1)])
+
+      expect(results[:desired_new]).to match_array([Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, nil, 2)])
+
+      expect(results[:obsolete]).to eq([])
+    end
+
+    it 'a job in 2 zones with 3 instances, we expect all instances will be new' do
       unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
       unmatched_existing_instances = []
 
@@ -118,7 +136,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
     end
 
     describe 'when a job is deployed in 2 zones with 3 existing instances, and re-deployed into 3 zones with 4 instances' do
-      it 'should know to use the zone with 2 existing instances as the zone with the extra instance' do
+      it 'uses the zone with 2 existing instances as the zone with the extra instance' do
         unmatched_desired_instances = [
           desired_instance,
           desired_instance,
@@ -162,7 +180,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         end
       end
 
-      describe 'with the same number of desired instances' do
+      describe 'with the same number of desired instances both in the same zone' do
         it 'should not move existing instances' do
           existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {
               availability_zone: '1', index: 0, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
@@ -204,13 +222,12 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
 
       describe 'when existing instances have persistent disk, no az, and are assigned an az' do
         xit 'should talk to dmitiry' do
-          existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: ['disk0'])
-          results = zone_picker.place_and_match_instances(azs, [desired_instance], [existing_0])
+          #not clear what should happen here. We're going to defer a decision until the 'migrated_jobs' story set.
         end
       end
 
-      describe "when none of instance's the persistent disks are active" do
-        it 'should not destroy/remove/re-balance them' do
+      describe "when none of instances' persistent disks are active" do
+        it 'should not destroy/remove/re-balance them, should do nothing' do
           existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: [
               Bosh::Director::Models::PersistentDisk.make(active: false)
             ]})

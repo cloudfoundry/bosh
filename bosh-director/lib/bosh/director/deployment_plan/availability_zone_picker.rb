@@ -2,44 +2,46 @@ module Bosh
   module Director
     module DeploymentPlan
       class AvailabilityZonePicker
-        def place_and_match_instances(azs, desired_instances, existing_instances)
-          existing_instances = existing_instances.sort_by { |instance| instance.index}
-          az_name_to_existing_instances  = az_name_to_existing_instances(existing_instances)
-          azs = azs_sorted_by_existing_instance_count_descending(azs, az_name_to_existing_instances)
-
-          placed_instances = PlacedInstances.new(azs)
-
+        def place_and_match_instances(desired_azs, desired_instances, existing_instances)
           unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances)
+          desired_azs = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
+          placed_instances = PlacedDesiredInstances.new(desired_azs)
 
-          unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance|
-            az = azs.find {|az| az.name == existing_instance.availability_zone}
-            next if az.nil?
-            desired_instance = desired_instances.pop
-            az_name_to_existing_instances[az.name].delete(existing_instance)
-            desired_instance.az = az
-            desired_instance.existing_instance = existing_instance
-            placed_instances.record_placement(az, desired_instance)
-          end
+          remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
+          balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
-          desired_instances.each do |desired_instance|
-            azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
-            az = azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed, az_name_to_existing_instances).first
-            desired_instance.az = az
-            desired_instance.existing_instance = existing_instance_for_az(az, az_name_to_existing_instances)
-            placed_instances.record_placement(az, desired_instance)
-          end
-
-          obsolete = az_name_to_existing_instances.values.flatten
-          assign_indexes(placed_instances.desired_existing, placed_instances.desired_new, obsolete)
+          obsolete = unplaced_existing_instances.unclaimed_instances
+          assign_indexes(placed_instances.existing, placed_instances.new, obsolete)
 
           {
-            desired_new: placed_instances.desired_new,
-            desired_existing: placed_instances.desired_existing,
+            desired_new: placed_instances.new,
+            desired_existing: placed_instances.existing,
             obsolete: obsolete,
           }
         end
 
         private
+
+        def place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
+          desired_instances = desired_instances.dup
+          unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance_model|
+            az = desired_azs.find { |az| az.name == existing_instance_model.availability_zone }
+            next if az.nil?
+            desired_instance = desired_instances.pop
+            unplaced_existing_instances.claim_instance(existing_instance_model)
+            placed_instances.record_placement(az, desired_instance, existing_instance_model)
+          end
+          desired_instances
+        end
+
+        def balance_across_desired_azs(desired_instances, placed_instances, unplaced_existing_instances)
+          desired_instances.each do |desired_instance|
+            azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
+            az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
+            existing_instance_model = unplaced_existing_instances.claim_instance_for_az(az)
+            placed_instances.record_placement(az, desired_instance, existing_instance_model)
+          end
+        end
 
         def assign_indexes(desired_existing, desired_new, obsolete)
           count = desired_new.count + desired_existing.count + obsolete.count
@@ -56,35 +58,10 @@ module Bosh
           end
         end
 
-        def azs_sorted_by_existing_instance_count_descending(azs, az_names_to_existing_instances)
-          return nil if azs.nil?
-          azs.sort_by { |az| - az_names_to_existing_instances.fetch(az.name, []).size }
-        end
-
-        def az_name_to_existing_instances(existing_instances)
-          az_name_to_existing_instances = {}
-          existing_instances.each do |instance|
-            az_name = instance.availability_zone
-            if az_name_to_existing_instances[az_name].nil?
-              az_name_to_existing_instances[az_name] = [instance]
-            else
-              az_name_to_existing_instances[az_name] << instance
-            end
-          end
-          az_name_to_existing_instances
-        end
-
-        def existing_instance_for_az(az, az_name_to_existing_instances)
-          az_name = az.nil? ? nil : az.name
-          instances = az_name_to_existing_instances[az_name]
-          unless instances.nil? || instances.empty?
-            instances.shift
-          end
-        end
-
         class UnplacedExistingInstances
           def initialize(existing_instance_models)
-            @instance_models = existing_instance_models
+            @instance_models = existing_instance_models.sort_by { |instance| instance.index}
+            @az_name_to_existing_instances  = initialize_azs_to_instances
           end
 
           def instances_with_persistent_disk
@@ -92,30 +69,63 @@ module Bosh
               instance_model.persistent_disks && instance_model.persistent_disks.count > 0
             end
           end
+
+          def azs_sorted_by_existing_instance_count_descending(azs)
+            return nil if azs.nil?
+            azs.sort_by { |az| - @az_name_to_existing_instances.fetch(az.name, []).size }
+          end
+
+          def claim_instance(existing_instance_model)
+            @az_name_to_existing_instances[existing_instance_model.availability_zone].delete(existing_instance_model)
+          end
+
+          def claim_instance_for_az(az)
+            az_name = az.nil? ? nil : az.name
+            instances = @az_name_to_existing_instances[az_name]
+            unless instances.nil? || instances.empty?
+              instances.shift
+            end
+          end
+
+          def unclaimed_instances
+            @az_name_to_existing_instances.values.flatten
+          end
+
+          private
+
+          def initialize_azs_to_instances
+            az_name_to_existing_instances = {}
+            @instance_models.each do |instance|
+              instances = az_name_to_existing_instances.fetch(instance.availability_zone, [])
+              instances << instance
+              az_name_to_existing_instances[instance.availability_zone] = instances
+            end
+            az_name_to_existing_instances
+          end
         end
 
-        class PlacedInstances
-          attr_reader :desired_new, :desired_existing, :obsolete
-
+        class PlacedDesiredInstances
+          attr_reader :new, :existing
           def initialize(azs)
             @placed = {}
-            azs.each do |az|
+            (azs || []).each do |az|
               @placed[az] = []
             end
 
-            @desired_new = []
-            @desired_existing = []
-            @obsolete = []
+            @new = []
+            @existing = []
           end
 
-          def record_placement(az, desired_instance)
+          def record_placement(az, desired_instance, existing_instance)
+            desired_instance.az = az
+            desired_instance.existing_instance = existing_instance
             az_desired_instances = @placed.fetch(az, [])
             az_desired_instances << desired_instance
             @placed[az] = az_desired_instances
             if desired_instance.existing_instance.nil?
-              desired_new << desired_instance
+              new << desired_instance
             else
-              desired_existing << desired_instance
+              existing << desired_instance
             end
           end
 
