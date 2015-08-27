@@ -325,42 +325,5 @@ module Bosh::Director
         expect { deleter.send(:delete_persistent_disks, [disk]) }.to raise_error(Bosh::Clouds::DiskNotFound)
       end
     end
-
-    describe :delete_dns do
-      it 'should generate a correct SQL query string' do
-        pattern = '0.foo.%.dep.bosh'
-        allow(Config).to receive(:dns_domain_name).and_return('bosh')
-        expect(deleter).to receive(:delete_dns_records).with(pattern, domain.id)
-        deleter.delete_dns('foo', 0)
-      end
-    end
-
-    describe :delete_snapshots do
-      let(:vm) { Models::Vm.make }
-      let(:instance) { Models::Instance.make(vm: vm, job: 'test', index: 5) }
-      let(:disk) { Models::PersistentDisk.make(instance: instance) }
-      let(:snapshot1) { Models::Snapshot.make(persistent_disk: disk) }
-      let(:snapshot2) { Models::Snapshot.make(persistent_disk: disk) }
-
-      context 'with one disk' do
-        it 'should delete all snapshots for an instance' do
-          snapshots = [snapshot1, snapshot2]
-          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots, keep_snapshots_in_the_cloud: false)
-          deleter.delete_snapshots(instance)
-        end
-      end
-
-      context 'with three disks' do
-        let(:disk2) { Models::PersistentDisk.make(instance: instance) }
-        let(:disk3) { Models::PersistentDisk.make(instance: instance) }
-        let(:snapshot3) { Models::Snapshot.make(persistent_disk: disk2) }
-
-        it 'should delete all snapshots for an instance' do
-          snapshots = [snapshot1, snapshot2, snapshot3]
-          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots, keep_snapshots_in_the_cloud: false)
-          deleter.delete_snapshots(instance)
-        end
-      end
-    end
   end
 end

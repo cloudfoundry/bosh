@@ -14,35 +14,6 @@ module Bosh::Director
       @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
-    def delete_instances(instances, event_log_stage, options = {})
-      max_threads = options[:max_threads] || Config.max_threads
-      ThreadPool.new(:max_threads => max_threads).wrap do |pool|
-        instances.each do |instance|
-          pool.process { delete_instance(instance, event_log_stage) }
-        end
-      end
-    end
-
-    def delete_snapshots(instance)
-      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
-      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
-    end
-
-    def delete_dns(job, index)
-      if Config.dns_enabled?
-        record_pattern = [
-          index,
-          canonical(job),
-          "%",
-          @deployment_plan.canonical_name,
-          dns_domain_name
-        ].join(".")
-        delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
-      end
-    end
-
-    private
-
     def delete_instance(instance, event_log_stage)
       @logger.info("Deleting instance '#{instance}'")
 
@@ -78,6 +49,17 @@ module Bosh::Director
       end
     end
 
+    def delete_instances(instances, event_log_stage, options = {})
+      max_threads = options[:max_threads] || Config.max_threads
+      ThreadPool.new(:max_threads => max_threads).wrap do |pool|
+        instances.each do |instance|
+          pool.process { delete_instance(instance, event_log_stage) }
+        end
+      end
+    end
+
+    private
+
     def stop(instance)
       return if @skip_stop
       skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
@@ -112,6 +94,24 @@ module Bosh::Director
           raise if disk.active
         end
         disk.destroy
+      end
+    end
+
+    def delete_snapshots(instance)
+      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
+      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
+    end
+
+    def delete_dns(job, index)
+      if Config.dns_enabled?
+        record_pattern = [
+          index,
+          canonical(job),
+          "%",
+          @deployment_plan.canonical_name,
+          dns_domain_name
+        ].join(".")
+        delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
       end
     end
   end

@@ -55,14 +55,8 @@ module Bosh::Director
 
       private
 
-      class NullEventLogStage
-        def advance_and_track(desc)
-          yield
-        end
-      end
-
       def delete_instance(instance)
-        @instance_deleter.delete_instances([instance], NullEventLogStage.new)
+        @instance_deleter.delete_instance(instance, EventLog::NullStage.new)
       end
 
       def create_instance(stemcell)
