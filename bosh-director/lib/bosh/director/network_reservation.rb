@@ -19,10 +19,6 @@ module Bosh::Director
       @network.reserve(self)
     end
 
-    def release
-      @network.release(self)
-    end
-
     private
 
     def formatted_ip

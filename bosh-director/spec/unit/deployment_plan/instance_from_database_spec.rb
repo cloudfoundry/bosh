@@ -13,19 +13,6 @@ describe Bosh::Director::DeploymentPlan::InstanceFromDatabase do
     Bosh::Director::DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, logger)
   end
 
-  describe '#delete' do
-    before do
-      Bosh::Director::Models::IpAddress.make(instance: instance_model)
-      Bosh::Director::Models::IpAddress.make(instance: instance_model)
-    end
-
-    it 'deletes instance IP reservations' do
-      expect(Bosh::Director::Models::IpAddress.all.size).to eq(2)
-      existing_instance.delete
-      expect(Bosh::Director::Models::IpAddress.all.size).to eq(0)
-    end
-  end
-
   context 'when instance does not have VM' do
     it 'can be created' do
       instance_model = Bosh::Director::Models::Instance.make(job: 'fake-job', index: 5)

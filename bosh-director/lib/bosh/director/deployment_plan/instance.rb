@@ -425,16 +425,6 @@ module Bosh::Director
         Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs) != @model.vm.trusted_certs_sha1
       end
 
-      def delete
-        @logger.debug("Deleting instance '#{self}'")
-        @network_reservations.each do |reservation|
-          reservation.release if reservation.reserved?
-        end
-        @network_reservations.clean
-
-        @model.destroy
-      end
-
       ##
       # @return [Boolean] returns true if the any of the expected specifications
       #   differ from the ones provided by the VM

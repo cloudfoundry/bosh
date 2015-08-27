@@ -92,10 +92,6 @@ module Bosh::Director
         @vm.model = vm_model
       end
 
-      def delete
-        @model.destroy
-      end
-
       private
 
       def agent_client
