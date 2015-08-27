@@ -122,8 +122,14 @@ module Bosh::Director
         end
 
         it 'releases the network reservation' do
-          expect(network).to receive(:release).with(instance_of(DynamicNetworkReservation))
+          expect(network).to receive(:release)
           expect { action_that_raises }.to raise_error(create_instance_error)
+        end
+
+        it 'deletes the instance model' do
+          expect {
+            expect { action_that_raises }.to raise_error(create_instance_error)
+          }.to_not change(Bosh::Director::Models::Instance, :count).from(0)
         end
       end
     end
@@ -224,6 +230,12 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with(another_vm_model.cid)
 
           compilation_instance_pool.tear_down_vms(number_of_workers)
+        end
+
+        it 'deletes the instance model' do
+          expect {
+            compilation_instance_pool.tear_down_vms(number_of_workers)
+          }.to change(Bosh::Director::Models::Instance, :count).from(2).to(0)
         end
       end
     end

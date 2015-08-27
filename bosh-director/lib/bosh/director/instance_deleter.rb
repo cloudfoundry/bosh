@@ -3,8 +3,9 @@ module Bosh::Director
   class InstanceDeleter
     include DnsHelper
 
-    def initialize(deployment_plan, options={})
+    def initialize(deployment_plan, ip_provider, options={})
       @deployment_plan = deployment_plan
+      @ip_provider = ip_provider
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
@@ -25,20 +26,6 @@ module Bosh::Director
     def delete_snapshots(instance)
       snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
       Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
-    end
-
-    def delete_persistent_disks(persistent_disks)
-      persistent_disks.each do |disk|
-        @logger.info("Deleting disk: `#{disk.disk_cid}', " +
-            "#{disk.active ? "active" : "inactive"}")
-        begin
-          @cloud.delete_disk(disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound => e
-          @logger.warn("Disk not found: #{disk.disk_cid}")
-          raise if disk.active
-        end
-        disk.destroy
-      end
     end
 
     def delete_dns(job, index)
@@ -85,22 +72,47 @@ module Bosh::Director
           end
         end
 
-        instance.delete
+        release_network_reservations(instance)
+
+        instance.model.destroy
       end
     end
 
     def stop(instance)
+      return if @skip_stop
       skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
       stopper = Stopper.new(instance, 'stopped', skip_drain, Config, @logger)
       stopper.stop
     end
 
+    # FIXME: why do we hate dependency injection?
     def error_ignorer
       @error_ignorer ||= ErrorIgnorer.new(@force, @logger)
     end
 
+    # FIXME: why do we hate dependency injection?
     def vm_deleter
       @vm_deleter ||= VmDeleter.new(@cloud, @logger, {force: @force})
+    end
+
+    def release_network_reservations(instance)
+      instance.network_reservations.each do |reservation|
+        @ip_provider.delete(reservation.ip, reservation.network) if reservation.reserved?
+      end
+    end
+
+    def delete_persistent_disks(persistent_disks)
+      persistent_disks.each do |disk|
+        @logger.info("Deleting disk: `#{disk.disk_cid}', " +
+            "#{disk.active ? "active" : "inactive"}")
+        begin
+          @cloud.delete_disk(disk.disk_cid)
+        rescue Bosh::Clouds::DiskNotFound => e
+          @logger.warn("Disk not found: #{disk.disk_cid}")
+          raise if disk.active
+        end
+        disk.destroy
+      end
     end
   end
 end
