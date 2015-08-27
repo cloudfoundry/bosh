@@ -121,6 +121,7 @@ module Bosh::Director
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
           expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:run_scripts).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
           expect(Models::Vm.find(agent_id: 'agent-007')).not_to be_nil

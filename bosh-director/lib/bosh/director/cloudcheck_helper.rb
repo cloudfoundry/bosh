@@ -154,6 +154,7 @@ module Bosh::Director
       agent_client(new_vm).apply(spec)
 
       if instance && instance.state == "started"
+        agent_client(new_vm).run_scripts('pre-start', {})
         agent_client(new_vm).start
       end
     end

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/dev/table_parser'
 
 describe 'deploy', type: :integration do
   with_reset_sandbox_before_each
@@ -91,12 +90,9 @@ describe 'deploy', type: :integration do
     it 'runs the pre-start scripts on the agent vm' do
       deploy({})
 
-      vms_output = bosh_runner.run("vms --details")
-      vm_details = Bosh::Dev::TableParser.new(vms_output).to_a
-      pre_start_vm_details = vm_details.select{ |vm| vm[:job_index] == 'job_with_templates_having_prestart_scripts/0' }[0]
-      agent_id = pre_start_vm_details[:agent_id]
-
+      agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+
       expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
       expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
     end
