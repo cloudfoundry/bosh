@@ -147,75 +147,163 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
     end
 
     describe 'when existing instances have persistent disk' do
-      describe 'adding an az' do
-        describe 'with the same number of desired instances' do
-          it 'should not move existing instances' do
-            unmatched_desired_instances = [desired_instance, desired_instance]
+      describe 'when existing instances have no az, and desired have no azs' do
+        it 'should not recreate the instances' do
+          existing_0 = instance_double(Bosh::Director::Models::Instance, {
+              availability_zone: nil, index: 0, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
+          desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_instances([], desired_instances, [existing_0])
 
-            existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 0, persistent_disks: ['disk0'])
-            existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 1, persistent_disks: ['disk1'])
-            unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
-
-            azs = [az1, az2]
-            results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
-
-            expect(results[:desired_existing]).to match_array([
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
-            expect(results[:desired_new]).to match_array([])
-            expect(results[:obsolete]).to match_array([])
-          end
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0)])
+          expect(results[:desired_new]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, nil, 1)])
+          expect(results[:obsolete]).to match_array([])
         end
+      end
 
-        describe 'when the existing instance is not in the set of desired azs' do
-          it 'should not reuse the existing instance' do
-            unmatched_desired_instances = [desired_instance, desired_instance]
+      describe 'with the same number of desired instances' do
+        it 'should not move existing instances' do
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {
+              availability_zone: '1', index: 0, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {
+              availability_zone: '1', index: 1, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
 
-            existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 0, persistent_disks: ['disk0'])
-            existing_zone66_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: '66', index: 1, persistent_disks: ['disk1'])
-            unmatched_existing_instances = [existing_zone1_0, existing_zone66_1]
+          desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
 
-            azs = [az1, az2]
-            results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
-
-            expect(results[:desired_existing]).to match_array([
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0)
-                ])
-            expect(results[:desired_new]).to match_array([
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 2)
-                ])
-            expect(results[:obsolete]).to match_array([existing_zone66_1])
-
-          end
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
+          expect(results[:desired_new]).to match_array([])
+          expect(results[:obsolete]).to match_array([])
         end
+      end
 
-        describe 'and some existing instances have no persistent disks' do
+      describe 'when the existing instance is not in the set of desired azs' do
+        it 'should not reuse the existing instance' do
+          unmatched_desired_instances = [desired_instance, desired_instance]
+
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 0, persistent_disks: ['disk0'])
+          existing_zone66_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: '66', index: 1, persistent_disks: ['disk1'])
+          unmatched_existing_instances = [existing_zone1_0, existing_zone66_1]
+
+          azs = [az1, az2]
+          results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0)
+              ])
+          expect(results[:desired_new]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 2)
+              ])
+          expect(results[:obsolete]).to match_array([existing_zone66_1])
 
         end
+      end
 
-        describe 'when existing instances have no az' do
-
+      describe 'when existing instances have persistent disk, no az, and are assigned an az' do
+        xit 'should talk to dmitiry' do
+          existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: ['disk0'])
+          results = zone_picker.place_and_match_instances(azs, [desired_instance], [existing_0])
         end
+      end
 
-        describe 'with one additional desired instance' do
-          it 'should add the instance to the additional az' do
-            unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
+      describe "when none of instance's the persistent disks are active" do
+        it 'should not destroy/remove/re-balance them' do
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make(active: false)
+            ]})
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 1, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make(active: false)
+            ]})
 
-            existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 0, persistent_disks: ['disk0'])
-            existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 1, persistent_disks: ['disk1'])
-            unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
+          desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
 
-            azs = [az1, az2]
-            results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
+          expect(results[:desired_new]).to match_array([])
+          expect(results[:obsolete]).to match_array([])
+        end
+      end
 
-            expect(results[:desired_existing]).to match_array([
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
-            expect(results[:desired_new]).to match_array([
-                  Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 2)
-                ])
-            expect(results[:obsolete]).to match_array([])
-          end
+      describe 'and some existing instances have no persistent disks' do
+        it 'should re-balance the instance that never had persistent disk' do
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: []})
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 1, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make(active: false)
+            ]})
+
+          desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
+
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
+          expect(results[:desired_new]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 2)])
+          expect(results[:obsolete]).to match_array([existing_zone1_0])
+        end
+      end
+
+      describe 'when an az that has instances with persistent disks is removed' do
+        it 'it should re-balance the instances across the remaining azs' do
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 1, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+          existing_zone2_2 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '2', index: 2, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+          existing_zone2_3 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '2', index: 3, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+          existing_zone3_4 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '3', index: 4, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+          existing_zone3_5 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '3', index: 5, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make
+            ]})
+
+          desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
+          existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3, existing_zone3_4, existing_zone3_5]
+          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, existing_instances)
+
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_2),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, existing_zone2_3),
+              ])
+          expect(results[:desired_new]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, nil, 6),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 7),
+              ])
+          expect(results[:obsolete]).to match_array([existing_zone3_4, existing_zone3_5])
+        end
+      end
+
+      describe 'with one additional desired instance' do
+        it 'should add the instance to the additional az' do
+          unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
+
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 0, persistent_disks: ['disk0'])
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: '1', index: 1, persistent_disks: ['disk1'])
+          unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
+
+          azs = [az1, az2]
+          results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
+          expect(results[:desired_new]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az2, nil, 2)
+              ])
+          expect(results[:obsolete]).to match_array([])
         end
       end
     end
