@@ -37,26 +37,7 @@ module Bosh
           s3_multipart_threshold: @options.fetch(:s3_multipart_threshold, 16_777_216),
         }
 
-        # credentials_source could be static (default) or env_or_profile
-        # static credentials must be included in aws_properties
-        # env_or_profile credentials will use the AWS DefaultCredentialsProvider
-        # to find AWS credentials in environment variables or EC2 instance profiles
-        credentials_source = @options.fetch(:credentials_source, 'static')
-
-        if credentials_source != 'static' && credentials_source != 'env_or_profile'
-          raise BlobstoreError, "invalid credentials_source"
-        end
-
-        if credentials_source == 'static'
-          aws_options[:access_key_id] = @options[:access_key_id]
-          aws_options[:secret_access_key] = @options[:secret_access_key]
-        end
-
-        if credentials_source == 'env_or_profile'
-          if !@options[:access_key_id].nil? || !@options[:secret_access_key].nil?
-            raise BlobstoreError, "can't use access_key_id or secret_access_key with env_or_profile credentials_source"
-          end
-        end
+        aws_options.merge!(aws_credentials)
 
         # using S3 without credentials is a special case:
         # it is really the simple blobstore client with a bucket name
@@ -192,6 +173,27 @@ module Bosh
 
       def full_oid_path(object_id)
          @options[:folder] ?  @options[:folder] + '/' + object_id : object_id
+      end
+
+      def aws_credentials
+        creds = {}
+        # credentials_source could be static (default) or env_or_profile
+        # static credentials must be included in aws_properties
+        # env_or_profile credentials will use the AWS DefaultCredentialsProvider
+        # to find AWS credentials in environment variables or EC2 instance profiles
+        case @options.fetch(:credentials_source, 'static')
+          when 'static'
+            creds[:access_key_id]     = @options[:access_key_id]
+            creds[:secret_access_key] = @options[:secret_access_key]
+
+          when 'env_or_profile'
+            if !@options[:access_key_id].nil? || !@options[:secret_access_key].nil?
+              raise BlobstoreError, "can't use access_key_id or secret_access_key with env_or_profile credentials_source"
+            end
+          else
+            raise BlobstoreError, 'invalid credentials_source'
+        end
+        return creds
       end
     end
   end
