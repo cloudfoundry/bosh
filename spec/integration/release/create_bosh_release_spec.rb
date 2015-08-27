@@ -11,10 +11,10 @@ describe 'create bosh release', type: :integration do
 
       Bundler.with_clean_env do
         create_dev_release_cmd = 'bundle exec rake release:create_dev_release --trace'
-        stdout, _, exit_status = Open3.capture3(create_dev_release_cmd, chdir: cloned_bosh_dir)
-        expect(exit_status).to be_success
+        output, exit_status = Open3.capture2e(create_dev_release_cmd, chdir: cloned_bosh_dir)
+        expect(exit_status).to(be_success, "'#{create_dev_release_cmd}' exited #{exit_status}:\n#{output}")
 
-        expect(stdout).to include('Release name: bosh')
+        expect(output).to include('Release name: bosh')
       end
     end
   end
