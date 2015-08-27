@@ -26,7 +26,7 @@ module Bosh::Director
         rescue => e
           unless instance.nil?
             @instance_reuser.remove_instance(instance)
-            tear_down_vm(instance)
+            delete_instance(instance)
           end
           raise e
         end
@@ -38,16 +38,16 @@ module Bosh::Director
           configure_instance(instance)
           yield instance
         ensure
-          tear_down_vm(instance) unless instance.nil?
+          delete_instance(instance) unless instance.nil?
         end
       end
 
-      def tear_down_vms(number_of_workers)
+      def delete_instances(number_of_workers)
         ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
            @instance_reuser.each do |instance|
             pool.process do
               @instance_reuser.remove_instance(instance)
-              tear_down_vm(instance)
+              delete_instance(instance)
             end
           end
         end
@@ -61,7 +61,7 @@ module Bosh::Director
         end
       end
 
-      def tear_down_vm(instance)
+      def delete_instance(instance)
         @instance_deleter.delete_instances([instance], NullEventLogStage.new)
       end
 

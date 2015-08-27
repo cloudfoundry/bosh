@@ -175,7 +175,7 @@ module Bosh::Director
               # Using a new ThreadPool instead of reusing the previous one,
               # as if there's a failed compilation, the thread pool will stop
               # processing any new thread.
-              @compilation_instance_pool.tear_down_vms(@compilation_config.workers)
+              @compilation_instance_pool.delete_instances(@compilation_config.workers)
             end
           end
         end

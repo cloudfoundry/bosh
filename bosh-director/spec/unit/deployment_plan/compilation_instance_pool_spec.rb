@@ -193,7 +193,7 @@ module Bosh::Director
         end
       end
 
-      describe 'tear_down_vms' do
+      describe 'delete_instances' do
         let(:number_of_workers) { 1 }
         before do
           compilation_instance_pool.with_reused_vm(stemcell) {}
@@ -202,12 +202,12 @@ module Bosh::Director
 
         it 'removes the vm from the reuser' do
           expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
-          compilation_instance_pool.tear_down_vms(number_of_workers)
+          compilation_instance_pool.delete_instances(number_of_workers)
           expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
         end
 
         it 'deletes the instance' do
-          compilation_instance_pool.tear_down_vms(number_of_workers)
+          compilation_instance_pool.delete_instances(number_of_workers)
           expect(instance_deleter).to have_received(:delete_instances).exactly(2).times
         end
       end
