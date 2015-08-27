@@ -42,19 +42,20 @@ module Bosh::Director::DeploymentPlan
         raise Bosh::Director::NetworkReservationIpReserved, message
       end
 
+      if @static_ips.include?(cidr_ip.to_i)
+        reservation_type = Bosh::Director::StaticNetworkReservation
+      else
+        reservation_type = Bosh::Director::DynamicNetworkReservation
+      end
+
       reserve_with_instance_validation(
         reservation.instance,
         cidr_ip,
-        reservation.is_a?(Bosh::Director::StaticNetworkReservation)
+        reservation_type.eql?(Bosh::Director::StaticNetworkReservation)
       )
 
-      if @static_ips.include?(cidr_ip.to_i)
-        reservation.mark_reserved_as(Bosh::Director::StaticNetworkReservation)
-        @logger.debug("Reserved static ip '#{cidr_ip}' for #{@network_desc}")
-      else
-        reservation.mark_reserved_as(Bosh::Director::DynamicNetworkReservation)
-        @logger.debug("Reserved dynamic ip '#{cidr_ip}' for #{@network_desc}")
-      end
+      reservation.mark_reserved_as(reservation_type)
+      @logger.debug("Reserved ip '#{cidr_ip}' for #{@network_desc} as #{reservation_type}")
     end
 
     # @param [NetAddr::CIDR] ip or [Integer] ip
@@ -120,7 +121,11 @@ module Bosh::Director::DeploymentPlan
 
       reserved_instance = ip_address.instance
       if reserved_instance == instance.model
-        ip_address.update(static: is_static) if ip_address.static != is_static
+        if ip_address.static != is_static
+          log_ip_type = is_static ? 'static' : 'dynamic'
+          @logger.debug("Switching reservation type of IP: '#{ip}' to #{log_ip_type}")
+          ip_address.update(static: is_static)
+        end
 
         return ip_address
       else

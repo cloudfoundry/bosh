@@ -333,29 +333,71 @@ module Bosh::Director::DeploymentPlan
               dynamic_reservation
             end
 
-            it 'updates IP type' do
-              static_reservation = BD::StaticNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
-
-              ip_provider.reserve_ip(static_reservation)
-
-              expect(Bosh::Director::Models::IpAddress.count).to eq(1)
-              original_address = Bosh::Director::Models::IpAddress.first
-              expect(original_address.static).to eq(true)
-
-              ip_provider_without_static_range = DatabaseIpProvider.new(
+            let(:ip_provider_without_static_range) do
+              DatabaseIpProvider.new(
                 range,
                 'fake-network',
                 restricted_ips,
                 Set.new,
                 logger
               )
-              dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.0.2')
-              ip_provider_without_static_range.reserve_ip(dynamic_reservation)
+            end
 
-              expect(Bosh::Director::Models::IpAddress.count).to eq(1)
-              new_address = Bosh::Director::Models::IpAddress.first
-              expect(new_address.static).to eq(false)
-              expect(new_address.address).to eq(original_address.address)
+            context 'from static to dynamic' do
+              it 'updates IP type' do
+                static_reservation = BD::StaticNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+                ip_provider.reserve_ip(static_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                original_address = Bosh::Director::Models::IpAddress.first
+                expect(original_address.static).to eq(true)
+
+                dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.0.2')
+                ip_provider_without_static_range.reserve_ip(dynamic_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                new_address = Bosh::Director::Models::IpAddress.first
+                expect(new_address.static).to eq(false)
+                expect(new_address.address).to eq(original_address.address)
+              end
+            end
+
+            context 'from dynamic to static' do
+              it 'updates IP type' do
+                dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.0.2')
+                ip_provider_without_static_range.reserve_ip(dynamic_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                original_address = Bosh::Director::Models::IpAddress.first
+                expect(original_address.static).to eq(false)
+
+                static_reservation = BD::StaticNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+                ip_provider.reserve_ip(static_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                new_address = Bosh::Director::Models::IpAddress.first
+                expect(new_address.static).to eq(true)
+                expect(new_address.address).to eq(original_address.address)
+              end
+            end
+
+            context 'reusing existing dynamic reservation as static' do
+              it 'updates IP type' do
+                dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.0.2')
+                ip_provider_without_static_range.reserve_ip(dynamic_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                original_address = Bosh::Director::Models::IpAddress.first
+                expect(original_address.static).to eq(false)
+
+                existing_reservation = BD::ExistingNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+                ip_provider.reserve_ip(existing_reservation)
+
+                expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+                new_address = Bosh::Director::Models::IpAddress.first
+                expect(new_address.static).to eq(true)
+                expect(new_address.address).to eq(original_address.address)
+              end
             end
           end
         end
