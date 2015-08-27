@@ -18,6 +18,8 @@ module Bosh::Stemcell
           rhel_os_stages
         when OperatingSystem::Ubuntu then
           ubuntu_os_stages
+        when OperatingSystem::Photon then
+          photon_os_stages
       end
     end
 
@@ -262,6 +264,18 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
+      ].flatten
+    end
+
+    def photon_os_stages
+      [
+        :base_photon,
+        bosh_steps,
+        :base_ssh,
+        :rsyslog_config,
+        :delay_monit_start,
+        :system_grub,
+        :cron_config,
       ].flatten
     end
 
