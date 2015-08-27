@@ -10,27 +10,27 @@ module Bosh::Spec
 
       logger.info("---------------> writing bosh.sh to #{bosh_work_dir.inspect}")
 
-      script = File.join(bosh_work_dir, 'bosh.sh')
-      File.open(script, 'w') do |file|
-        file.write('
+      @bosh_script = File.join(bosh_work_dir, 'bosh.sh')
+      File.open(@bosh_script, 'a') do |file|
+        file.write '
           #!/usr/bin/env bash
 
-          echo "RUNNING WITH 1.9.3-p551 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          rbenv local 1.9.3-p551
-          bundle exec bosh "$@"
-        ')
+          RBENV_VERSION=1.9.3-p551 rbenv shell 1.9.3-p551
+          RBENV_VERSION=1.9.3-p551 rbenv exec bundle exec bosh "$@"
+        '
       end
 
-      FileUtils.chmod(0744, script)
+      FileUtils.chmod(0744, @bosh_script)
     end
 
     def run(cmd, options = {})
+
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
 
     def run_interactively(cmd, env = {})
       Dir.chdir(@bosh_work_dir) do
-        BlueShell::Runner.run env, "bosh.sh -c #{@bosh_config} #{cmd}" do |runner|
+        BlueShell::Runner.run env, "#{@bosh_script} -c #{@bosh_config} #{cmd}" do |runner|
           yield runner
         end
       end
@@ -41,11 +41,15 @@ module Bosh::Spec
     end
 
     def run_in_current_dir(cmd, options = {})
+      File.open('/Users/pivotal/workspace/bosh/tmp/cli-ruby-version.txt', 'a') do |file|
+        file.write "\nbosh_runner ruby version: #{RUBY_VERSION}"
+      end
+
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
       @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
-      command   = "bosh.sh #{interactive_mode} -c #{@bosh_config} #{cmd}"
+      command   = "#{@bosh_script} #{interactive_mode} -c #{@bosh_config} #{cmd}"
       output    = nil
       env = options.fetch(:env, {})
       exit_code = 0

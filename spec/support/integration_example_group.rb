@@ -190,7 +190,7 @@ module IntegrationSandboxHelpers
 
     $sandbox_started = true
 
-    logger.info('Starting sandboxed environment for BOSH tests...')
+    logger.info("Starting sandboxed environment for BOSH tests with Ruby version, #{RUBY_VERSION}...")
     current_sandbox.start
   end
 
@@ -231,25 +231,6 @@ module IntegrationSandboxHelpers
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
     Dir.chdir(destination_dir) do
-      ignore = %w(
-        blobs
-        dev-releases
-        config/dev.yml
-        config/private.yml
-        releases/*.tgz
-        dev_releases
-        .dev_builds
-        .final_builds/jobs/**/*.tgz
-        .final_builds/packages/**/*.tgz
-        blobs
-        .blobs
-        .DS_Store
-      )
-
-      File.open('.gitignore', 'w+') do |f|
-        f.write(ignore.join("\n") + "\n")
-      end
-
       `git init;
        git config user.name "John Doe";
        git config user.email "john.doe@example.org";
