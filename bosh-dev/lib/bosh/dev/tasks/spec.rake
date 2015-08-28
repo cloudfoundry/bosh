@@ -73,13 +73,13 @@ namespace :spec do
     command = unit_cmd(build, log_file)
 
     # inject command name so coverage results for each component don't clobber others
-    if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}")
+    if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file
       puts "----- BEGIN #{build}"
       puts "            #{command}"
       print File.read(log_file)
       puts "----- END   #{build}\n\n"
     else
-      raise("#{build} failed to build unit tests: #{File.read(log_file)}")
+      raise("#{build} failed to build unit tests: #{File.read(log_file)}") if log_file
     end
   end
 
