@@ -13,7 +13,13 @@ module Bosh::Spec
       release_ruby = ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
       runner_ruby = ENV['RUBY_VERSION'] || release_ruby
 
-      @bosh_script = "chruby-exec #{runner_ruby} -- bundle exec bosh"
+      if has_chruby?
+        @bosh_script = "chruby-exec #{runner_ruby} -- bundle exec bosh"
+      else
+        @bosh_script = "bundle exec bosh"
+      end
+
+      logger.info "Running BOSH CLI via #{@bosh_script.inspect}"
     end
 
     def run(cmd, options = {})
@@ -38,7 +44,7 @@ module Bosh::Spec
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
-      @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
+      @logger.info("Running... bosh #{interactive_mode} #{cmd}")
       command   = "#{@bosh_script} #{interactive_mode} -c #{@bosh_config} #{cmd}"
       output    = nil
       env = options.fetch(:env, {})
@@ -98,6 +104,13 @@ module Bosh::Spec
     private
 
     DEBUG_HEADER = '*' * 20
+
+    def has_chruby?
+      out, status = Open3.capture2e('chruby-exec --help')
+      status.success?
+    rescue
+        false
+    end
 
     def output_debug_log(title, output)
       content = <<-EOF
