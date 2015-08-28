@@ -1,12 +1,11 @@
 module Bosh::Director::DeploymentPlan
   class NetworkPlan
     def initialize(attrs)
-      @ip = attrs.fetch(:ip)
-      @network = attrs.fetch(:network)
+      @reservation = attrs.fetch(:reservation)
       @obsolete = attrs.fetch(:obsolete, false)
     end
 
-    attr_reader :ip, :network
+    attr_reader :reservation
 
     def obsolete?
       !!@obsolete

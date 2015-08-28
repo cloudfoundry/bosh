@@ -131,7 +131,7 @@ module Bosh::Director
         expect(deleter).to receive(:delete_persistent_disks).with(persistent_disks)
         expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
         expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-        expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+        expect(ip_repo).to receive(:delete).with(reservation)
 
         expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -157,7 +157,7 @@ module Bosh::Director
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -181,7 +181,7 @@ module Bosh::Director
             expect(deleter).to receive(:delete_snapshots)
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -205,7 +205,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -229,7 +229,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.dep.bosh', domain.id)
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -251,7 +251,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
             expect(cloud).to receive(:delete_disk).exactly(2).times
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
@@ -274,7 +274,7 @@ module Bosh::Director
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
             expect(cloud).to receive(:delete_disk).exactly(2).times
             expect(deleter).to receive(:delete_dns_records)
-            expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+            expect(ip_repo).to receive(:delete).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
             expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
@@ -294,7 +294,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with(vm.model.cid)
           expect(cloud).to receive(:delete_disk).exactly(2).times
           expect(deleter).to receive(:delete_dns_records)
-          expect(ip_repo).to receive(:delete).with(reservation.ip, reservation.network)
+          expect(ip_repo).to receive(:delete).with(reservation)
 
           expect(cloud).to_not receive(:delete_snapshot)
 

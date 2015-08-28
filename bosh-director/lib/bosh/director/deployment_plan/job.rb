@@ -333,11 +333,11 @@ module Bosh::Director
           desired_reservations = instance_plan.instance.network_reservations
 
           obsolete_network_plans = obsolete_reservations.map do |reservation|
-            NetworkPlan.new(ip: reservation.ip, network: reservation.network, obsolete: true)
+            NetworkPlan.new(reservation: reservation, obsolete: true)
           end
 
           desired_network_plans = desired_reservations.map do |reservation|
-            NetworkPlan.new(ip: reservation.ip, network: reservation.network, obsolete: false)
+            NetworkPlan.new(reservation: reservation, obsolete: false)
           end
 
           instance_plan.network_plans = desired_network_plans + obsolete_network_plans

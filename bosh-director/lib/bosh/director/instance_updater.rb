@@ -110,7 +110,8 @@ module Bosh::Director
 
     def release_obsolete_ips
       @instance_plan.network_plans.select(&:obsolete?).each do |network_plan|
-        @ip_provider.delete(network_plan.ip, network_plan.network)
+        reservation = network_plan.reservation
+        @ip_provider.release(reservation)
       end
     end
 

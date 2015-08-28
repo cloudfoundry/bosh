@@ -4,20 +4,15 @@ module Bosh::Director::DeploymentPlan
       @ip_repo = ip_repo
     end
 
-    def delete(ip, network)
-      @ip_repo.delete(ip, network)
+    def release(reservation)
+      @ip_repo.delete(reservation)
     end
   end
 
   class IpRepoThatDelegatesToExistingStuff
-    # TODO: we're going to rewrite this once to be more clear once everything has moved inside of it
-    def delete(ip, network)
-      # FIXME: this should really only need a subnet, not the whole network
-      network.release(LiteReservation.new(ip))
-    end
-
-    # so the Network is happy
-    class LiteReservation < Struct.new(:ip)
+    # TODO: we're going to rewrite this to be more clear once everything has moved inside of it
+    def delete(reservation)
+      reservation.network.release(reservation)
     end
   end
 end

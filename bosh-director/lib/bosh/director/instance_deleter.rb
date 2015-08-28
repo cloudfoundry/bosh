@@ -79,7 +79,7 @@ module Bosh::Director
 
     def release_network_reservations(instance)
       instance.network_reservations.each do |reservation|
-        @ip_provider.delete(reservation.ip, reservation.network) if reservation.reserved?
+        @ip_provider.release(reservation) if reservation.reserved?
       end
     end
 
