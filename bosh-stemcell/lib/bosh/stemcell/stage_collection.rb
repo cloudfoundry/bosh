@@ -270,6 +270,7 @@ module Bosh::Stemcell
     def photon_os_stages
       [
         :base_photon,
+        :base_file_permission,
         bosh_steps,
         :base_ssh,
         :rsyslog_config,
