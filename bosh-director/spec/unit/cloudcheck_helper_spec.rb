@@ -138,7 +138,7 @@ module Bosh::Director
 
             expect(fake_new_agent).to receive(:mount_disk).with('disk-cid').ordered
             expect(fake_new_agent).to receive(:apply).with(spec).ordered
-            expect(fake_new_agent).to receive(:run_scripts).with('pre-start', {}).ordered
+            expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
             expect(fake_new_agent).to receive(:start).ordered
 
             fake_job_context
@@ -189,7 +189,7 @@ module Bosh::Director
             expect(fake_new_agent).to receive(:wait_until_ready).ordered
             expect(fake_new_agent).to receive(:update_settings).ordered
             expect(fake_new_agent).to receive(:apply).with(spec).ordered
-            expect(fake_new_agent).to receive(:run_scripts).with('pre-start', {}).ordered
+            expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
             expect(fake_new_agent).to receive(:start).ordered
 
             fake_job_context
@@ -211,7 +211,7 @@ module Bosh::Director
             allow(fake_new_agent).to receive(:wait_until_ready)
             allow(fake_new_agent).to receive(:update_settings)
             allow(fake_new_agent).to receive(:apply)
-            allow(fake_new_agent).to receive(:run_scripts).with('pre-start', {})
+            allow(fake_new_agent).to receive(:run_script).with('pre-start', {})
             allow(fake_new_agent).to receive(:start)
 
             fake_job_context

@@ -119,7 +119,7 @@ module Bosh::Director
     end
 
     def run_pre_start_scripts
-      @agent.run_scripts("pre-start", {})
+      @agent.run_script("pre-start", {})
     end
 
     def start!

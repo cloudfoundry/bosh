@@ -86,7 +86,7 @@ module Bosh::Director
       allow(AgentClient).to receive(:with_defaults).and_return(agent_client)
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
 
-      allow(agent_client).to receive(:run_scripts)
+      allow(agent_client).to receive(:run_script)
       allow(instance). to receive(:spec).and_return(
                               {
                                   'deployment' => 'simple',
@@ -408,12 +408,12 @@ module Bosh::Director
 
     describe '#run_pre_start_scripts' do
       it 'tells the agent to run_pre_start_scripts' do
-        expect(agent_client).to receive(:run_scripts)
+        expect(agent_client).to receive(:run_script)
         subject.run_pre_start_scripts
       end
 
       it 'send an array of scripts to the agent to run' do
-        expect(agent_client).to receive(:run_scripts).with("pre-start", {})
+        expect(agent_client).to receive(:run_script).with("pre-start", {})
         subject.run_pre_start_scripts
       end
     end

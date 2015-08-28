@@ -147,33 +147,33 @@ module Bosh::Director
           end
         end
 
-        describe 'run_scripts' do
+        describe 'run_script' do
           it 'sends the script name to the agent' do
-            expect(client).to receive(:send_message).with(:run_scripts, "script_name", {})
+            expect(client).to receive(:send_message).with(:run_script, "script_name", {})
             allow(client).to receive(:get_task)
-            client.run_scripts("script_name", {})
+            client.run_script("script_name", {})
           end
 
-          it 'periodically polls the run_scripts task while it is running' do
+          it 'periodically polls the run_script task while it is running' do
             allow(client).to receive(:handle_message_with_retry).and_return task
             allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
             expect(client).to receive(:get_task).with('fake-agent_task_id')
-            client.run_scripts("script_name", {})
+            client.run_script("script_name", {})
           end
 
-          it 'is only a warning when the remote agent does not implement run_scripts' do
-            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message run_scripts")
+          it 'is only a warning when the remote agent does not implement run_script' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message run_script")
 
-            expect(Config.logger).to receive(:warn).with("Ignoring run_scripts 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message run_scripts>." +
+            expect(Config.logger).to receive(:warn).with("Ignoring run_script 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message run_script>." +
             " Received while trying to run: script_name")
-            expect { client.run_scripts("script_name", {})}.to_not raise_error
+            expect { client.run_script("script_name", {})}.to_not raise_error
           end
 
           it 'still raises an exception for other RPC failures' do
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure wooooooow!")
 
             expect(client).to_not receive(:warning)
-            expect { client.run_scripts("script_name", {}) }.to raise_error
+            expect { client.run_script("script_name", {}) }.to raise_error
           end
         end
 
