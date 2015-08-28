@@ -451,11 +451,34 @@ module Bosh::Director::DeploymentPlan
             ]
         end
 
-        it 'returns nil' do
-          expect {
-            ip_provider.reserve_ip(create_reservation('192.168.0.2'))
-          }.to raise_error Bosh::Director::NetworkReservationIpReserved,
-            "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+        context 'when existing network reservation' do
+          it 'raises an error' do
+            reservation = BD::ExistingNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+            expect {
+              ip_provider.reserve_ip(reservation)
+            }.to_not raise_error
+          end
+        end
+
+        context 'when static network reservation' do
+          it 'raises an error' do
+            reservation = BD::StaticNetworkReservation.new(instance, network, cidr_ip('192.168.0.2'))
+            expect {
+              ip_provider.reserve_ip(reservation)
+            }.to raise_error Bosh::Director::NetworkReservationIpReserved,
+                "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+          end
+        end
+
+        context 'when dynamic network reservation' do
+          it 'raises an error' do
+            reservation =  BD::DynamicNetworkReservation.new(instance, network)
+            reservation.resolve_ip(cidr_ip('192.168.0.2'))
+            expect {
+              ip_provider.reserve_ip(reservation)
+            }.to raise_error Bosh::Director::NetworkReservationIpReserved,
+                "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+          end
         end
       end
     end

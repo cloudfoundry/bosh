@@ -25,7 +25,7 @@ module Bosh::Director
       describe :bind_existing do
         it "should bind to the static reservation if it's valid" do
           other = ExistingNetworkReservation.new(instance, network, '192.168.1.10')
-          other.reserve
+          other.network.reserve(other)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
           expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.10'))
@@ -56,7 +56,7 @@ module Bosh::Director
         it 'should not take the reservation if it is not in static range' do
           reservation = StaticNetworkReservation.new(instance, network, '192.168.1.2')
           other = ExistingNetworkReservation.new(instance, network, '192.168.1.2')
-          other.reserve
+          other.network.reserve(other)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
         end
@@ -69,7 +69,7 @@ module Bosh::Director
       describe '#bind_existing' do
         it 'should bind to the dynamic reservation if it is valid' do
           other = ExistingNetworkReservation.new(instance, network, '192.168.1.2')
-          other.reserve
+          other.network.reserve(other)
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(true)
           expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.2'))
@@ -87,38 +87,6 @@ module Bosh::Director
           reservation.bind_existing(other)
           expect(reservation.reserved?).to eq(false)
           expect(reservation.ip).to eq(nil)
-        end
-      end
-    end
-
-    describe ExistingNetworkReservation do
-      let(:reservation) { ExistingNetworkReservation.new(instance, network, '0.0.0.1') }
-      describe :reserve do
-        it 'reserves on a network' do
-          expect(network).to receive(:reserve).with(reservation)
-          reservation.reserve
-        end
-
-        context 'when IP is outside of subnet range' do
-          before do
-            allow(network).to receive(:reserve).with(reservation).and_raise(NetworkReservationIpOutsideSubnet)
-          end
-
-          it 'does not reserve IP' do
-            reservation.reserve
-            expect(reservation.reserved?).to eq(false)
-          end
-        end
-
-        context 'when IP is in reserved range' do
-          before do
-            allow(network).to receive(:reserve).with(reservation).and_raise(NetworkReservationIpReserved)
-          end
-
-          it 'does not reserve IP' do
-            reservation.reserve
-            expect(reservation.reserved?).to eq(false)
-          end
         end
       end
     end

@@ -262,8 +262,11 @@ module Bosh::Director
       end
 
       def bind_instance_networks
+        ip_provider = IpProviderV2.new(IpRepoThatDelegatesToExistingStuff.new)
         instances.each do |instance|
-          instance.reserve_networks
+          instance.network_reservations.each do |reservation|
+            ip_provider.reserve(reservation) unless reservation.reserved?
+          end
         end
       end
 

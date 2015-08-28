@@ -14,8 +14,9 @@ module Bosh::Director
     let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment, name: 'mycloud') }
     let(:instance_reuser) { InstanceReuser.new }
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
+    let(:ip_provider) { DeploymentPlan::IpProviderV2.new(DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)}
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, ip_provider)
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -174,7 +175,6 @@ module Bosh::Director
           network_reservations: []
         )
         expect(instance).to receive(:bind_unallocated_vm)
-        expect(instance).to receive(:reserve_networks)
         expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))
 
         instance

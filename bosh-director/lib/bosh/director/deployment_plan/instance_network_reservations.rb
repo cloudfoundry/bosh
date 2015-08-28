@@ -68,8 +68,9 @@ module Bosh::Director
       def add_existing(deployment, network_name, ip, ip_type)
         network = deployment.network(network_name) || deployment.default_network
         @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{@instance}' on network '#{network.name}'")
+        ip_provider = IpProviderV2.new(IpRepoThatDelegatesToExistingStuff.new)
         reservation = ExistingNetworkReservation.new(@instance, network, ip)
-        reservation.reserve
+        ip_provider.reserve(reservation)
         @reservations << reservation
       end
     end

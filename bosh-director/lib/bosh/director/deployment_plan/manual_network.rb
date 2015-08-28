@@ -61,6 +61,10 @@ module Bosh::Director
             return
           end
 
+          if reservation.is_a?(ExistingNetworkReservation)
+            return
+          end
+
           raise NetworkReservationIpOutsideSubnet,
             "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{@name}'"
         end

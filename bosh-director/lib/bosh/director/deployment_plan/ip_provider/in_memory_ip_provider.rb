@@ -38,7 +38,8 @@ module Bosh::Director
           @logger.debug("Reserved dynamic ip '#{ip}' for #{@network_desc}")
 
         elsif @restricted_ips.include?(ip.to_i)
-          message = "Failed to reserve IP '#{ip}' for #{@network_desc}: belongs to reserved range"
+          return if reservation.is_a?(ExistingNetworkReservation)
+          message = "Failed to reserve IP '#{ip}' for #{@network_desc}: IP belongs to reserved range"
           @logger.error(message)
           raise NetworkReservationIpReserved, message
         else

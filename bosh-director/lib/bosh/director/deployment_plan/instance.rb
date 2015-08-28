@@ -131,12 +131,6 @@ module Bosh::Director
         end
       end
 
-      def reserve_networks
-        @network_reservations.each do |reservation|
-          reservation.reserve unless reservation.reserved?
-        end
-      end
-
       def resource_pool
         @job.resource_pool
       end

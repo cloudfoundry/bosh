@@ -15,10 +15,6 @@ module Bosh::Director
       @reserved
     end
 
-    def reserve
-      @network.reserve(self)
-    end
-
     private
 
     def formatted_ip
@@ -104,13 +100,6 @@ module Bosh::Director
     def initialize(instance, network, ip)
       super(instance, network)
       @ip = ip_to_i(ip) if ip
-    end
-
-    def reserve
-      super
-    rescue NetworkReservationIpOutsideSubnet, NetworkReservationIpReserved
-      # existing reservation now is outside of subnet range or in reserved range,
-      # allow to change or release it
     end
 
     def reserved_as?(type)

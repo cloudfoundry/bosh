@@ -122,7 +122,7 @@ module Bosh::Director
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
         ip_provider = Bosh::Director::DeploymentPlan::IpProviderV2.new(Bosh::Director::DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)
         instance_deleter = Bosh::Director::InstanceDeleter.new(self, ip_provider)
-        compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
+        compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter, ip_provider)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
           jobs,
           compilation,

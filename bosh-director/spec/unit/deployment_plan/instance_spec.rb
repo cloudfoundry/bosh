@@ -829,34 +829,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#reserve_networks' do
-      let(:network_reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
-      before do
-        instance.add_network_reservation(network_reservation)
-        allow(plan).to receive(:network).with('fake-network').and_return(network)
-      end
-
-      context 'when network reservation is already reserved' do
-        before do
-          allow(network_reservation).to receive(:reserved?).and_return(true)
-        end
-
-        it 'does not reserve network reservation again' do
-          expect(network).to_not receive(:reserve)
-          instance.reserve_networks
-        end
-      end
-
-      context 'when network reservation is not reserved' do
-        it 'reserves network reservation with the network' do
-          expect(network).to receive(:reserve).with(network_reservation)
-
-          instance.reserve_networks
-        end
-      end
-    end
-
     describe '#cloud_properties' do
       context 'when the instance has an availability zone' do
         it 'merges the resource pool cloud properties into the availability zone cloud properties' do

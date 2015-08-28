@@ -191,13 +191,13 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.5'))
       }.to raise_error BD::NetworkReservationIpReserved,
           "Failed to reserve IP '192.168.0.5' " +
-            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
+            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
 
       expect {
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.10'))
       }.to raise_error BD::NetworkReservationIpReserved,
           "Failed to reserve IP '192.168.0.10' " +
-            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
+            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
 
       subnet.reserve_ip(create_dynamic_reservation('192.168.0.11'))
       subnet.reserve_ip(create_dynamic_reservation('192.168.0.253'))
@@ -206,7 +206,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
         subnet.reserve_ip(create_dynamic_reservation('192.168.0.254'))
       }.to raise_error BD::NetworkReservationIpReserved,
           "Failed to reserve IP '192.168.0.254' " +
-            "for network 'net_a' (192.168.0.0/24): belongs to reserved range"
+            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
     end
 
     context 'when there are reserved ranges' do

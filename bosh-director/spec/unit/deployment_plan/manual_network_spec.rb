@@ -60,19 +60,41 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     let(:static_ips) { ['192.168.1.5'] }
 
     context 'when IP is provided' do
-      let(:reservation) { BD::DynamicNetworkReservation.new(instance, manual_network) }
-
       context 'when it does not belong to any subnet' do
-        before { reservation.resolve_ip('192.168.2.6') }
+        context 'when existing network reservation' do
+          let(:reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.2.6') }
 
-        it 'raises NetworkReservationIpOutsideSubnet' do
-          expect {
-            manual_network.reserve(reservation)
-          }.to raise_error BD::NetworkReservationIpOutsideSubnet
+          it 'does not raises error' do
+            expect {
+              manual_network.reserve(reservation)
+            }.to_not raise_error
+          end
+        end
+
+        context 'when dynamic network reservation' do
+          let(:reservation) { BD::DynamicNetworkReservation.new(instance, manual_network) }
+          before { reservation.resolve_ip('192.168.2.6') }
+
+          it 'raises NetworkReservationIpOutsideSubnet' do
+            expect {
+              manual_network.reserve(reservation)
+            }.to raise_error BD::NetworkReservationIpOutsideSubnet
+          end
+        end
+
+        context 'when static network reservation' do
+          let(:reservation) { BD::StaticNetworkReservation.new(instance, manual_network, '192.168.2.6') }
+
+          it 'raises NetworkReservationIpOutsideSubnet' do
+            expect {
+              manual_network.reserve(reservation)
+            }.to raise_error BD::NetworkReservationIpOutsideSubnet
+          end
         end
       end
 
       context 'when it belongs to subnet' do
+        let(:reservation) { BD::DynamicNetworkReservation.new(instance, manual_network) }
         before { reservation.resolve_ip('192.168.1.6') }
 
         it 'reserves reservation' do

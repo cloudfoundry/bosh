@@ -37,6 +37,7 @@ module Bosh::Director::DeploymentPlan
     def reserve_ip(reservation)
       cidr_ip = CIDRIP.new(reservation.ip)
       if @restricted_ips.include?(cidr_ip.to_i)
+        return if reservation.is_a?(Bosh::Director::ExistingNetworkReservation)
         message = "Failed to reserve IP '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range"
         @logger.error(message)
         raise Bosh::Director::NetworkReservationIpReserved, message

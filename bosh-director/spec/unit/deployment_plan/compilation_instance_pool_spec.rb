@@ -29,8 +29,9 @@ module Bosh::Director
       thread_pool
     end
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
+    let(:ip_provider) {DeploymentPlan::IpProviderV2.new(DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)}
 
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
+    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider) }
 
     before do
       allow(compilation_config).to receive_messages(
@@ -151,7 +152,7 @@ module Bosh::Director
         end
 
         let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider)
         end
         let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
         it 'spins up vm in the availability_zone' do
