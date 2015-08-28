@@ -34,11 +34,14 @@ describe 'health_monitor: 1', type: :integration do
     resurrected_vm = director.wait_for_vm('job_with_templates_having_prestart_scripts/0', 300)
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
 
-    agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurrected_vm.agent_id}.log")
+    waiter = Bosh::Spec::Waiter.new(logger)
+    waiter.wait(50) do
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurrected_vm.agent_id}.log")
 
-    expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
-    expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
-    expect(agent_log).to include('jobs/job_2_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 2 pre-start script')
+      expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
+      expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
+      expect(agent_log).to include('jobs/job_2_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 2 pre-start script')
+    end
   end
 
   # ~8m
