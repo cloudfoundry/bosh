@@ -4,7 +4,6 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
- # NOTE: do NOT chruby switch here... it's done in the spec runner.
 check_param RUBY_VERSION
 check_param DB
 
@@ -30,6 +29,17 @@ case "$DB" in
 esac
 
 cd bosh-src
+
+# NOTE: We start the sandbox with the Ruby version specified in the BOSH
+# release. The integration runner switches the CLI based upon the RUBY_VERSION
+# environment variable.
+BOSH_RUBY=$(
+  grep -E "ruby-.*.tar.gz" release/packages/ruby/spec |\
+  sed -r "s/^.*ruby-(.*).tar.gz/\1/"
+)
+source /etc/profile.d/chruby.sh
+chruby $BOSH_RUBY
+
 print_git_state
 
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
