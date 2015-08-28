@@ -94,10 +94,6 @@ module Bosh::Cli::Command
     usage "cancel task"
     desc "Cancel task once it reaches the next checkpoint"
     def cancel(task_id)
-      File.open('/Users/pivotal/workspace/bosh/tmp/cli-ruby-version.txt', 'a') do |file|
-        file.write "\ntask.rb ruby version: #{RUBY_VERSION}"
-      end
-
       auth_required
       show_current_state
       task = Bosh::Cli::DirectorTask.new(director, task_id)

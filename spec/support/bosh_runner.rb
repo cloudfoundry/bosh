@@ -8,30 +8,24 @@ module Bosh::Spec
       @saved_logs_path = saved_logs_path
       @logger = logger
 
-      logger.info("---------------> writing bosh.sh to #{bosh_work_dir.inspect}")
+      bosh_base = File.expand_path('../../..', __FILE__)
+      ruby_spec = YAML.load_file(File.join(bosh_base, 'release/packages/ruby/spec'))
+      release_ruby = ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
+      runner_ruby = ENV['RUBY_VERSION'] || release_ruby
 
-      @bosh_script = File.join(bosh_work_dir, 'bosh.sh')
-      File.open(@bosh_script, 'a') do |file|
-        file.write '
-          #!/usr/bin/env bash
-
-          RBENV_VERSION=1.9.3-p551 rbenv shell 1.9.3-p551
-          RBENV_VERSION=1.9.3-p551 rbenv exec bundle exec bosh "$@"
-        '
-      end
-
-      FileUtils.chmod(0744, @bosh_script)
+      @bosh_script = "chruby-exec #{runner_ruby} -- bundle exec bosh"
     end
 
     def run(cmd, options = {})
-
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
 
     def run_interactively(cmd, env = {})
       Dir.chdir(@bosh_work_dir) do
-        BlueShell::Runner.run env, "#{@bosh_script} -c #{@bosh_config} #{cmd}" do |runner|
-          yield runner
+        Bundler.with_clean_env do
+          BlueShell::Runner.run env, "#{@bosh_script} -c #{@bosh_config} #{cmd}" do |runner|
+            yield runner
+          end
         end
       end
     end
@@ -41,10 +35,6 @@ module Bosh::Spec
     end
 
     def run_in_current_dir(cmd, options = {})
-      File.open('/Users/pivotal/workspace/bosh/tmp/cli-ruby-version.txt', 'a') do |file|
-        file.write "\nbosh_runner ruby version: #{RUBY_VERSION}"
-      end
-
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
@@ -55,8 +45,11 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, process_status = Open3.capture2e(env, command)
-        exit_code = process_status.exitstatus
+        Bundler.with_clean_env do
+          output, process_status = Open3.capture2e(env, command)
+          output.gsub!(/stty:.*$\n/, '') # because we run via chruby-exec
+          exit_code = process_status.exitstatus
+        end
       end
 
       @logger.info "Exit code is #{exit_code}"

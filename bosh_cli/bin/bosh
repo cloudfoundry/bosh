@@ -1,9 +1,4 @@
 #!/usr/bin/env ruby
-File.open('/Users/pivotal/workspace/bosh/tmp/cli-ruby-version.txt', 'a') do |file|
-  file.write "\nbosh_cli/bosh ruby version: #{RUBY_VERSION}"
-  file.write "\nENV: #{ENV.inspect}"
-end
-
 require_relative '../bin/optionally_run_with_bundler'
 OptionallyRunWithBundler.run(ENV)
 
