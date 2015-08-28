@@ -718,27 +718,23 @@ module Bosh::AwsCloud
     # will be able to authenticate to AWS.
     #
     def validate_credentials_source
-      validation_errors = []
-
       credentials_source = options['aws']['credentials_source'] || 'static'
 
       if credentials_source != 'env_or_profile' && credentials_source != 'static'
-        validation_errors << "Unknown credentials_source #{credentials_source}"
+        raise ArgumentError, "Unknown credentials_source #{credentials_source}"
       end
 
       if credentials_source == 'static'
         if !options["aws"].has_key?("access_key_id") || !options["aws"].has_key?("secret_access_key")
-            validation_errors << "Must use access_key_id and secret_access_key with static credentials_source"
+            raise ArgumentError, "Must use access_key_id and secret_access_key with static credentials_source"
         end
       end
 
       if credentials_source == 'env_or_profile'
         if options["aws"].has_key?("access_key_id") || options["aws"].has_key?("secret_access_key")
-            validation_errors << "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
+            raise ArgumentError, "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
         end
       end
-
-      raise ArgumentError, "Invalid credentials_source: #{validation_errors.join(', ')}" unless validation_errors.empty?
     end
 
     # Generates initial agent settings. These settings will be read by agent

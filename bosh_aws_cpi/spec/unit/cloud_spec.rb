@@ -277,7 +277,7 @@ describe Bosh::AwsCloud::Cloud do
         it 'raises an error' do
           expect { cloud }.to raise_error(
           ArgumentError,
-          'Invalid credentials_source: Must use access_key_id and secret_access_key with static credentials_source'
+          'Must use access_key_id and secret_access_key with static credentials_source'
           )
         end
       end
@@ -322,7 +322,7 @@ describe Bosh::AwsCloud::Cloud do
       it 'raises an error' do
         expect { cloud }.to raise_error(
         ArgumentError,
-        "Invalid credentials_source: Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
+        "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
         )
       end
     end
@@ -346,7 +346,7 @@ describe Bosh::AwsCloud::Cloud do
       it 'raises an error' do
         expect { cloud }.to raise_error(
         ArgumentError,
-        'Invalid credentials_source: Unknown credentials_source NotACredentialsSource'
+        'Unknown credentials_source NotACredentialsSource'
         )
       end
     end
