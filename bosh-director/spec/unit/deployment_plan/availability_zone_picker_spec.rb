@@ -31,7 +31,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
 
     it 'a job in nil zones with 3 instances, we expect two existing instances are reused and one new instance' do
       unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
-      existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: [])
+      existing_0 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 0, persistent_disks: ['disk-blah'])
       existing_1 = instance_double(Bosh::Director::Models::Instance, availability_zone: nil, index: 1, persistent_disks: [])
       unmatched_existing_instanaces = [existing_0, existing_1]
 

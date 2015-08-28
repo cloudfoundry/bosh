@@ -24,6 +24,7 @@ module Bosh
 
         def place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
           desired_instances = desired_instances.dup
+          return desired_instances if desired_azs.nil?
           unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance_model|
             az = desired_azs.find { |az| az.name == existing_instance_model.availability_zone }
             next if az.nil?

@@ -125,19 +125,74 @@ describe 'availability zones', type: :integration do
     end
 
     context 'when adding azs to jobs with persistent disks' do
-
       it 'keeps all jobs in the same az when job count stays the same' do
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
-        simple_manifest['jobs'].first['persistent_disk_pool'] = Bosh::Spec::Deployments.disk_pool
-
         cloud_config_hash['availability_zones'] = [
           {
-            'name' => 'my-az'
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az'
+            }
           },
           {
-            'name' => 'my-az2'
+            'name' => 'my-az2',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az2',
+            }
+          },
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          },
+          {
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az2'
           }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az']
+        simple_manifest['jobs'].first['persistent_disk'] = 1024
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(director.vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(director.vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+      end
+
+      it 'adds new jobs in the new az when scaling up job count' do
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az'
+            }
+          },
+          {
+            'name' => 'my-az2',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az2',
+            }
+          },
         ]
 
         cloud_config_hash['networks'].first['subnets'] = [
@@ -161,14 +216,24 @@ describe 'availability zones', type: :integration do
 
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az']
+        simple_manifest['jobs'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         expect(director.vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
 
-      end
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        simple_manifest['jobs'].first['instances'] = 3
+        deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      it 'adds new jobs in the new az when scaling up job count' do
-
+        expect(director.vms.count).to eq(3)
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[2].cid)['availability_zone']).to eq('my-az2')
       end
 
     end
