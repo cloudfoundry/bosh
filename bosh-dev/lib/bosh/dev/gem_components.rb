@@ -35,7 +35,6 @@ module Bosh::Dev
         bosh_cli_plugin_micro
         bosh_common
         bosh_cpi
-        bosh_openstack_cpi
         bosh-registry
         bosh_vsphere_cpi
         bosh-director
