@@ -4,6 +4,7 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
+ # NOTE: do NOT chruby switch here... it's done in the spec runner.
 check_param RUBY_VERSION
 check_param DB
 
@@ -28,15 +29,9 @@ case "$DB" in
     exit 1
 esac
 
-source /etc/profile.d/chruby.sh
-chruby $RUBY_VERSION
-
 cd bosh-src
-
 print_git_state
 
-bundle install --local
-
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
-
+bundle install --local
 bundle exec rake --trace go spec:integration

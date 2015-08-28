@@ -64,6 +64,7 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
+            RAKE_TASKS: go spec:unit:cli
             RUBY_VERSION: 1.9.3
 
   - name: unit-2.1
@@ -76,6 +77,7 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
+            RAKE_TASKS: go spec:unit
             RUBY_VERSION: 2.1.6
 
   - name: integration-1.9-postgres
@@ -159,7 +161,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
+      branch: ruby-split
 
   - name: bosh-candidate
     type: git
