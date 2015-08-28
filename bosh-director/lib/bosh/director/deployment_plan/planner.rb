@@ -55,8 +55,11 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
+      attr_reader :ip_provider
+
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
         @cloud_config = cloud_config
+        @ip_provider = IpProviderV2.new(IpRepoThatDelegatesToExistingStuff.new)
 
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -120,8 +123,7 @@ module Bosh::Director
 
         vm_deleter = VmDeleter.new(Config.cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
-        ip_provider = Bosh::Director::DeploymentPlan::IpProviderV2.new(Bosh::Director::DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)
-        instance_deleter = Bosh::Director::InstanceDeleter.new(self, ip_provider)
+        instance_deleter = Bosh::Director::InstanceDeleter.new(self)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter, ip_provider)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
           jobs,

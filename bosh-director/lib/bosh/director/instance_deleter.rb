@@ -3,9 +3,8 @@ module Bosh::Director
   class InstanceDeleter
     include DnsHelper
 
-    def initialize(deployment_plan, ip_provider, options={})
+    def initialize(deployment_plan, options={})
       @deployment_plan = deployment_plan
-      @ip_provider = ip_provider
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
@@ -79,7 +78,7 @@ module Bosh::Director
 
     def release_network_reservations(instance)
       instance.network_reservations.each do |reservation|
-        @ip_provider.release(reservation) if reservation.reserved?
+        @deployment_plan.ip_provider.release(reservation) if reservation.reserved?
       end
     end
 

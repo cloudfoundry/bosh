@@ -31,9 +31,6 @@ module Bosh::Director
       @current_state = {}
 
       @agent = AgentClient.with_vm(@instance.model.vm)
-
-      ip_repo = DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new
-      @ip_provider = DeploymentPlan::IpProviderV2.new(ip_repo)
     end
 
     def update(options = {})
@@ -111,7 +108,7 @@ module Bosh::Director
     def release_obsolete_ips
       @instance_plan.network_plans.select(&:obsolete?).each do |network_plan|
         reservation = network_plan.reservation
-        @ip_provider.release(reservation)
+        @deployment_plan.ip_provider.release(reservation)
       end
     end
 

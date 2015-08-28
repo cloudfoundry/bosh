@@ -76,7 +76,7 @@ module Bosh::Director
       end
 
       it 'deletes all job instances' do
-        expect(InstanceDeleter).to receive(:new).with(deployment, an_instance_of(DeploymentPlan::IpProviderV2))
+        expect(InstanceDeleter).to receive(:new).with(deployment)
         expect(instance_deleter).to receive(:delete_instances).
           with([instance1, instance2], event_log_stage)
 

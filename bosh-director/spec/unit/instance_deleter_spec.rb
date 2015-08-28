@@ -9,10 +9,10 @@ module Bosh::Director
     let(:cloud) { instance_double('Bosh::Cloud') }
     before { allow(Config).to receive(:cloud).and_return(cloud) }
 
-    let(:deployment_plan) { instance_double(DeploymentPlan::Planner, canonical_name: 'dep', dns_domain: domain) }
+    let(:deployment_plan) { instance_double(DeploymentPlan::Planner, canonical_name: 'dep', dns_domain: domain, ip_provider: ip_provider) }
     let(:ip_repo) { instance_double('Bosh::Director::DeploymentPlan::IpRepoThatDelegatesToExistingStuff') }
     let(:ip_provider) { DeploymentPlan:: IpProviderV2.new(ip_repo) }
-    let(:deleter) { InstanceDeleter.new(deployment_plan, ip_provider) }
+    let(:deleter) { InstanceDeleter.new(deployment_plan) }
 
     describe '#delete_instances' do
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
@@ -145,7 +145,7 @@ module Bosh::Director
       end
 
       context 'when force option is passed in' do
-        let(:deleter) { InstanceDeleter.new(deployment_plan, ip_provider, force: true) }
+        let(:deleter) { InstanceDeleter.new(deployment_plan, force: true) }
 
         context 'when stopping fails' do
           before do
@@ -287,7 +287,7 @@ module Bosh::Director
       end
 
       context 'when keep_snapshots_in_cloud is passed in' do
-        let(:deleter) { InstanceDeleter.new(deployment_plan, ip_provider, keep_snapshots_in_the_cloud: true) }
+        let(:deleter) { InstanceDeleter.new(deployment_plan, keep_snapshots_in_the_cloud: true) }
 
         it 'deletes snapshots from DB keeping snapshots in cloud' do
           expect(stopper).to receive(:stop)

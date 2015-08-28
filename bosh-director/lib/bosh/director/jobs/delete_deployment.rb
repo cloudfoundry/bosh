@@ -32,7 +32,7 @@ module Bosh::Director
             force: @force,
             keep_snapshots_in_the_cloud: @keep_snapshots
           }
-          instance_deleter = InstanceDeleter.new(deployment_plan, DeploymentPlan::IpProviderV2.new(DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new), deleter_options)
+          instance_deleter = InstanceDeleter.new(deployment_plan, deleter_options)
 
           dns_manager = DnsManager.new(logger)
           deployment_deleter = DeploymentDeleter.new(event_log, logger, dns_manager, Config.max_threads, Config.dns_enabled?)

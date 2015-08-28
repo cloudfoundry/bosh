@@ -60,7 +60,7 @@ module Bosh::Director
 
         instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
         expect(InstanceDeleter).to receive(:new)
-                                     .with(deployment_plan, an_instance_of(DeploymentPlan::IpProviderV2))
+                                     .with(deployment_plan)
                                      .and_return(instance_deleter)
 
         expect(instance_deleter).to receive(:delete_instances)

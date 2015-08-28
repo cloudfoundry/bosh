@@ -410,6 +410,7 @@ describe Bosh::Director::DeploymentPlan::Job do
     subject(:job) { described_class.new(deployment, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
     let(:network_reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+    let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2) }
 
     before do
       instance_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance})
@@ -418,13 +419,11 @@ describe Bosh::Director::DeploymentPlan::Job do
 
       job.instance_plans = [instance_plan]
       allow(instance).to receive(:network_reservations).with(no_args).and_return(network_reservations)
+      allow(deployment).to receive(:ip_provider).and_return(ip_provider)
     end
 
     context 'reservation has not been previously reserved' do
       it 'reserves the reservation' do
-        ip_provider = instance_double(Bosh::Director::DeploymentPlan::IpProviderV2)
-        allow(Bosh::Director::DeploymentPlan::IpProviderV2).to receive(:new).and_return(ip_provider)
-
         expect(ip_provider).to receive(:reserve)
 
         job.bind_instance_networks
@@ -437,9 +436,6 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
 
       it 'skips the reservation' do
-        ip_provider = instance_double(Bosh::Director::DeploymentPlan::IpProviderV2)
-        allow(Bosh::Director::DeploymentPlan::IpProviderV2).to receive(:new).and_return(ip_provider)
-
         expect(ip_provider).not_to receive(:reserve)
 
         job.bind_instance_networks
