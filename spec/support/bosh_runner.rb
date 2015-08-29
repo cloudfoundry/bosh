@@ -11,7 +11,7 @@ module Bosh::Spec
       bosh_base = File.expand_path('../../..', __FILE__)
       ruby_spec = YAML.load_file(File.join(bosh_base, 'release/packages/ruby/spec'))
       release_ruby = ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
-      runner_ruby = ENV['RUBY_VERSION'] || release_ruby
+      runner_ruby = ENV['CLI_RUBY_VERSION'] || release_ruby
 
       if has_chruby?
         @bosh_script = "chruby-exec #{runner_ruby} -- bundle exec bosh"

@@ -92,8 +92,8 @@ jobs:
         config:
           tags: ["bosh-integration"]
           params:
-            DB:           postgresql
-            RUBY_VERSION: 1.9.3
+            DB: postgresql
+            CLI_RUBY_VERSION: 1.9.3
             NUM_GROUPS: 16
 
   - name: integration-2.1-mysql
@@ -108,8 +108,8 @@ jobs:
         config:
           tags: ["bosh-integration"]
           params:
-            DB:           mysql
-            RUBY_VERSION: 2.1.6
+            DB: mysql
+            CLI_RUBY_VERSION: 2.1.6
             NUM_GROUPS: 16
 
   - name: integration-2.1-postgres
@@ -124,8 +124,8 @@ jobs:
         config:
           tags: ["bosh-integration"]
           params:
-            DB:           postgresql
-            RUBY_VERSION: 2.1.6
+            DB: postgresql
+            CLI_RUBY_VERSION: 2.1.6
             NUM_GROUPS: 16
 
   - name: publish-coverage
