@@ -21,19 +21,26 @@ Gem::Specification.new do |s|
   s.add_dependency 'sqlite3',     '~>1.3.7'
   s.add_dependency 'mono_logger', '~>1.1.0'
 
-  s.add_dependency 'bosh-core',      "~>#{version}"
-  s.add_dependency 'bosh_cli',      "~>#{version}"
-  s.add_dependency 'bosh-stemcell', "~>#{version}"
-  s.add_dependency 'bosh-registry', "~>#{version}"
-  s.add_dependency 'agent_client',  "~>#{version}"
-
+  # NOTE: We must specify all transitive BOSH gem dependencies found in the
+  # external CPIs, in order to ensure appropriate versions are installed.
+  # Also do the same in bosh-director.gemspec
+  # ----------------------------------------------------------------------------
+  s.add_dependency 'bosh_common',        "~>#{version}"
   s.add_dependency 'bosh_cpi',           "~>#{version}"
+  s.add_dependency 'bosh-registry',      "~>#{version}"
+  # ----------------------------------------------------------------------------
+
+  s.add_dependency 'agent_client',       "~>#{version}"
+  s.add_dependency 'blobstore_client',   "~>#{version}"
+  s.add_dependency 'bosh_cli',           "~>#{version}"
+  s.add_dependency 'bosh-core',          "~>#{version}"
+  s.add_dependency 'bosh-director-core', "~>#{version}"
+  s.add_dependency 'bosh-stemcell',      "~>#{version}"
+
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
-  s.add_dependency 'bosh_openstack_cpi', "~>1.3062.0"
+  s.add_dependency 'bosh_openstack_cpi', "~>2.0.0"
   s.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
-  s.add_dependency 'bosh-director-core', "~>#{version}"
-  s.add_dependency 'blobstore_client',   "~>#{version}"
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'

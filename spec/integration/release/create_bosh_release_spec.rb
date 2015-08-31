@@ -2,8 +2,6 @@ require 'spec_helper'
 
 describe 'create bosh release', type: :integration do
   it 'creates a bosh dev release successfully' do
-    pending 'resolving version comfilcts between BOSH and CPI gems'
-
     clone_source = File.join(File.expand_path(File.dirname(__FILE__)), '..', '..', '..')
     Dir.mktmpdir('bosh-release-test') do |test_dir|
       clone_target = File.join(test_dir, 'cloned-bosh')
