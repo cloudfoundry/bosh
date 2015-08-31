@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require 'fileutils'
+
 module Bosh::Director
   module Api
     class ResourceManager
@@ -10,14 +12,17 @@ module Bosh::Director
       end
 
       # Retrieves the resource `id` from the blobstore and stores it
-      # locally, and returns the path to the file
+      # locally, and returns the path to the file. It is the caller's
+      # responsibility to delete the resulting file at some point.
+      # An easy option is to call clean_old_tmpfiles before each call
+      # to this method.
       #
       # @param [String] id
       # @return [String] path to the contents of the blobstore id
       def get_resource_path(id)
         blobstore_resource(id) do |blobstore|
           random_name = "resource-#{SecureRandom.uuid}"
-          path = File.join(Dir.tmpdir, random_name)
+          path = File.join(resource_tmpdir, random_name)
 
           File.open(path, "w") do |f|
             blobstore.get(id, f)
@@ -27,6 +32,17 @@ module Bosh::Director
         end
       end
 
+      # Returns the directory where files created by get_resource_path will be written.
+      def resource_tmpdir
+        Dir.tmpdir
+      end
+
+      # Deletes all get_resource_path temporary files that are more than 5 minutes old.
+      def clean_old_tmpfiles
+        Dir.glob("#{resource_tmpdir}/resource-*").
+            select{|f| File.mtime(f) < (Time.now - (60*5)) }.
+            each{|f| FileUtils.rm_f(f) }
+      end
       # Retrieves the resource `id` from the blobstore and returns the
       # contents of it.
       # @param [String] id

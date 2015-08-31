@@ -38,9 +38,8 @@ module Bosh::Cli::Command
         nl
         progress_renderer.start(tarball_file_name, "downloading...")
         tmpfile = director.download_resource(tarball_blobstore_id)
-        File.open(tarball_file_path, "wb") do |file|
-          file << File.open(tmpfile).read
-        end
+
+        FileUtils.move(tmpfile, tarball_file_path)
         progress_renderer.finish(tarball_file_name, "downloaded")
 
         if file_checksum(tarball_file_path) != tarball_sha1
