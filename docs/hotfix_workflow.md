@@ -8,14 +8,14 @@
 - [ ] Push the hotfix branch
 - [ ] Kick off OS Image build(s) with `hotfix-STORY_ID` as the
   value for `BUILD_FLOW_GIT_COMMIT`
-- [ ] Update:
+- [ ] Update (on the hotfix branch):
   - `bosh-stemcell/OS_IMAGES.md`
   - `bosh-dev/.../os_image_versions.json`
 
   ...with the published OS image s3 key, found at the end of the
   OS image build output; push that change
-- [ ] Kick off the full Jenkins pipeline, based on the hotfix branch and
-  setting `FEATURE_BRANCH` as `hotfix-STORY_ID`
+- [ ] Kick off the full Jenkins pipeline, based on the hotfix branch, setting
+  `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as `hotfix-STORY_ID`
 - [ ] Upon successful completion of the Jenkins pipeline, locally...
   - [ ] `git pull hotfix-STORY_ID`
   - [ ] `git pull develop`
@@ -37,7 +37,7 @@
   - [ ] Reference the hotfix branch
   - [ ] **Exclude** the `promote-candidate` and `publish-coverage` steps
 - [ ] Follow steps 3-5 above (if there are no OS changes, you can probably
-  skip steps 3 & 4 from above)
+  skip steps 3 & 4)
 - [ ] Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before
   pushing `develop`
 
