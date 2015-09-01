@@ -41,7 +41,7 @@
 - [ ] 5. Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before
   pushing `develop`
 
-## Caveats:
+## Important!!!:
 
-- If your vars-from contents (secrets) are out of sync between `master` and
-  `develop` at the start of all of this, well... hmm...
+- Do not kick off another Jenkins pipeline build (off of the `candidate` branch)
+  until all changes from above have made it through the Concourse pipeline.
