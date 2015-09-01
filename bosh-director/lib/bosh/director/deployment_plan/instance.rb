@@ -210,7 +210,7 @@ module Bosh::Director
           # Target instance state should either be persisted in DB or provided
           # via deployment plan, otherwise something is really wrong
           raise InstanceTargetStateUndefined,
-                "Instance `#{self}' target state cannot be determined"
+            "Instance `#{self}' target state cannot be determined"
         end
       end
 
@@ -250,9 +250,9 @@ module Bosh::Director
           # if they're featured in agent state, in that case we put them into network spec to satisfy
           # ConfigurationHasher in both agent and director.
           if @current_state.is_a?(Hash) &&
-              @current_state['networks'].is_a?(Hash) &&
-              @current_state['networks'][network_name].is_a?(Hash) &&
-              network_settings[network_name]['type'] == 'dynamic'
+            @current_state['networks'].is_a?(Hash) &&
+            @current_state['networks'][network_name].is_a?(Hash) &&
+            network_settings[network_name]['type'] == 'dynamic'
             %w(ip netmask gateway).each do |key|
               network_settings[network_name][key] = @current_state['networks'][network_name][key]
             end
@@ -312,17 +312,26 @@ module Bosh::Director
       ##
       # @return [Boolean] returns true if the network configuration changed
       def networks_changed?
-        network_settings != @current_state['networks']
+        changed = network_settings != @current_state['networks']
+        log_changes(__method__, @current_state['networks'], network_settings) if changed
+        changed
       end
 
       ##
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
-        if @recreate || @job.deployment.recreate
+        if @recreate
+          @logger.debug("#{__method__} instance was initialized with \"recreate\" state")
+          return true
+        end
+
+        if @job.deployment.recreate
+          @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
           return true
         end
 
         if @job.resource_pool.spec != @current_state['resource_pool']
+          log_changes(__method__, @current_state['resource_pool'], @job.resource_pool.spec)
           return true
         end
 
@@ -333,10 +342,11 @@ module Bosh::Director
         # doesn't persist VM env to the version that does, there needs to
         # be at least one deployment that recreates all VMs before the following
         # code path gets exercised.
-        if @model && @model.vm && @model.vm.env && @job.resource_pool.env != @model.vm.env
+        changed = @model && @model.vm && @model.vm.env && @job.resource_pool.env != @model.vm.env
+        if changed
+          log_changes(__method__, @model.vm.env, @job.resource_pool.env)
           return true
         end
-
         false
       end
 
@@ -344,7 +354,9 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected configuration hash
       #   differs from the one provided by the VM
       def configuration_changed?
-        configuration_hash != @current_state['configuration_hash']
+        changed = configuration_hash != @current_state['configuration_hash']
+        log_changes(__method__, @current_state['configuration_hash'], configuration_hash) if changed
+        changed
       end
 
       ##
@@ -354,20 +366,22 @@ module Bosh::Director
         return true if @current_state.nil?
 
         job_spec = @job.spec
-        if job_spec != @current_state['job']
-          # The agent job spec could be in legacy form.  job_spec cannot be,
-          # though, because we got it from the spec function in job.rb which
-          # automatically makes it non-legacy.
-          return job_spec != Job.convert_from_legacy_spec(@current_state['job'])
-        end
-        return false
+        # The agent job spec could be in legacy form.  job_spec cannot be,
+        # though, because we got it from the spec function in job.rb which
+        # automatically makes it non-legacy.
+        converted_current = Job.convert_from_legacy_spec(@current_state['job'])
+        changed = job_spec != converted_current
+        log_changes(__method__, converted_current, job_spec) if changed
+        changed
       end
 
       ##
       # @return [Boolean] returns true if the expected packaged of the running
       #   instance differ from the ones provided by the VM
       def packages_changed?
-        @job.package_spec != @current_state['packages']
+        changed = @job.package_spec != @current_state['packages']
+        log_changes(__method__, @current_state['packages'], @job.package_spec) if changed
+        changed
       end
 
       ##
@@ -376,9 +390,13 @@ module Bosh::Director
       def persistent_disk_changed?
         new_disk_size = @job.persistent_disk_pool ? @job.persistent_disk_pool.disk_size : 0
         new_disk_cloud_properties = @job.persistent_disk_pool ? @job.persistent_disk_pool.cloud_properties : {}
-        return true if new_disk_size != disk_size
+        changed = new_disk_size != disk_size
+        log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}") if changed
+        return true if changed
 
-        new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
+        changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
+        log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties) if changed
+        changed
       end
 
       ##
@@ -387,8 +405,9 @@ module Bosh::Director
       def dns_changed?
         if Config.dns_enabled?
           dns_record_info.any? do |name, ip|
-            Models::Dns::Record.find(:name => name, :type => 'A',
-                                     :content => ip).nil?
+            not_found = Models::Dns::Record.find(:name => name, :type => 'A', :content => ip).nil?
+            @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+            not_found
           end
         else
           false
@@ -404,9 +423,18 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected job state differs from
       #   the one provided by the VM
       def state_changed?
-        @state == 'detached' ||
-          @state == 'started' && @current_state['job_state'] != 'running' ||
-          @state == 'stopped' && @current_state['job_state'] == 'running'
+        state_detached = @state == 'detached'
+        if state_detached
+          @logger.debug("#{__method__} instance state is '#{@state}'")
+          return state_detached
+        end
+        state_started_job_state_not_running = @state == 'started' && @current_state['job_state'] != 'running'
+        state_stopped_job_state_running = @state == 'stopped' && @current_state['job_state'] == 'running'
+        if state_started_job_state_not_running || state_stopped_job_state_running
+          @logger.debug("#{__method__} instance state is '#{@state}' and job_state is '#{@current_state['job_state']}'")
+
+        end
+        state_started_job_state_not_running || state_stopped_job_state_running
       end
 
       ##
@@ -416,7 +444,11 @@ module Bosh::Director
       #
       # @return [Boolean] true if the VM needs to be sent a new set of trusted certificates
       def trusted_certs_changed?
-        Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs) != @model.vm.trusted_certs_sha1
+        model_trusted_certs = @model.vm.trusted_certs_sha1
+        config_trusted_certs = Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
+        changed = config_trusted_certs != model_trusted_certs
+        log_changes(__method__, model_trusted_certs, config_trusted_certs) if changed
+        changed
       end
 
       ##
@@ -606,6 +638,10 @@ module Bosh::Director
 
       def check_model_not_bound
         raise DirectorError, "Instance `#{self}' model is already bound" if @model
+      end
+
+      def log_changes(method_sym, old_state, new_state)
+        @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state}")
       end
     end
   end
