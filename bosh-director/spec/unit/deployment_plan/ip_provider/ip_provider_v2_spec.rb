@@ -65,6 +65,23 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error(Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP")
         end
       end
+
+      context 'IP is within subnet and not nil' do
+        it 'should release IP' do
+          allow(instance).to receive(:availability_zone).and_return(BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
+
+          ip_provider.reserve(ip_reservation)
+          expect {
+            ip_provider.reserve(ip_reservation)
+          }.to raise_error(Bosh::Director::NetworkReservationAlreadyInUse)
+
+          ip_provider.release(ip_reservation)
+
+          expect {
+            ip_provider.reserve(ip_reservation)
+          }.not_to raise_error
+        end
+      end
     end
 
     describe :reserve do

@@ -1,13 +1,18 @@
 module Bosh::Director::DeploymentPlan
   class InMemoryIpRepo
+    include Bosh::Director::IpUtil
+
     def initialize(logger)
       @logger = logger
       @ips = []
     end
 
     def delete(ip, subnet)
+      ip = ip_to_netaddr(ip)
+
       if subnet.range.contains?(ip)
         entry_to_delete = {ip: ip.to_i, subnet: subnet}
+        @logger.debug("Deleting ip '#{ip.ip}' for #{subnet.network}")
         @ips.delete(entry_to_delete)
         return
       end
@@ -17,9 +22,9 @@ module Bosh::Director::DeploymentPlan
       raise Bosh::Director::NetworkReservationIpNotOwned, message
     end
 
-    # @param [NetAddr::CIDR] ip
-    # @param [DeploymentPlan::ManualNetworkSubnet] subnet
     def add(ip, subnet)
+      ip = ip_to_netaddr(ip)
+
       if subnet.range.contains?(ip)
         entry_to_add = {ip: ip.to_i, subnet: subnet}
 
@@ -29,7 +34,7 @@ module Bosh::Director::DeploymentPlan
           raise BD::NetworkReservationAlreadyInUse, message
         end
 
-        @logger.debug("Releasing static ip '#{ip}' for #{subnet.network}")
+        @logger.debug("Reserving ip '#{ip.ip}' for #{subnet.network}")
         @ips << {ip: ip.to_i, subnet: subnet}
         return
       end
