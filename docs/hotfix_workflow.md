@@ -20,7 +20,9 @@
   - [ ] `git pull hotfix-STORY_ID`
   - [ ] `git pull develop`
   - [ ] `git merge hotfix-STORY_ID` (onto `develop`)
-- [ ] Update the `promote_artifacts` step to switch back to `develop`
+  - [ ] `git push` (`develop`)
+  - [ ] `git branch -d hotfix-STORY_ID && git push origin :hotfix-STORY_ID`,
+    to delete the local and remote hotfix branches
 
 ## If there are code changes
 
@@ -34,8 +36,10 @@
   **NOTE:** this pipeline should...
   - [ ] Reference the hotfix branch
   - [ ] **Exclude** the `promote-candidate` and `publish-coverage` steps
-- [ ] Follow steps 3-8 above (if there are no OS changes, you can probably
+- [ ] Follow steps 3-5 above (if there are no OS changes, you can probably
   skip steps 3 & 4 from above)
+- [ ] Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before
+  pushing `develop`
 
 ## Caveats:
 
