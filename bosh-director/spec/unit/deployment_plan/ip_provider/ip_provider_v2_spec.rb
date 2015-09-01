@@ -139,7 +139,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'allocates dynamic IPs across multiple subnets for a single AZ' do
             allow(instance).to receive(:availability_zone).and_return(BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
-            ip_provider.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
+            manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network))
 
             ip_provider.reserve(reservation)
             expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.3.2/32')
@@ -149,7 +149,7 @@ module Bosh::Director::DeploymentPlan
             it 'raises NetworkReservationNotEnoughCapacity' do
               allow(instance).to receive(:availability_zone).and_return(nil)
               # Trying to reserve 1 more IP than the available
-              3.times { ip_provider.reserve(BD::DynamicNetworkReservation.new(instance, manual_network)) }
+              3.times { manual_network.reserve(BD::DynamicNetworkReservation.new(instance, manual_network)) }
 
               expect {
                 ip_provider.reserve(reservation)

@@ -13,6 +13,64 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
   end
 
+  describe :reserve do
+    before(:each) do
+      @network = BD::DeploymentPlan::VipNetwork.new({
+          "name" => "foo",
+          "cloud_properties" => {
+              "foz" => "baz"
+          }
+      }, logger)
+    end
+
+    it "should reserve static reservations" do
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
+      expect {
+        @network.reserve(reservation)
+      }.to_not raise_error
+    end
+
+    it "should fail to reserve dynamic IPs" do
+      reservation = BD::DynamicNetworkReservation.new(instance, @network)
+      expect {
+        @network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationWrongType
+    end
+
+    it "should not let you reserve a used IP" do
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
+      @network.reserve(reservation)
+      expect {
+        @network.reserve(reservation)
+      }.to raise_error BD::NetworkReservationAlreadyInUse
+    end
+  end
+
+  describe :release do
+    before(:each) do
+      @network = BD::DeploymentPlan::VipNetwork.new({
+          "name" => "foo",
+          "cloud_properties" => {
+              "foz" => "baz"
+          }
+      }, logger)
+    end
+
+    it "should release the IP from the used pool" do
+      reservation = BD::StaticNetworkReservation.new(instance, @network, "0.0.0.1")
+      @network.reserve(reservation)
+      @network.release(reservation)
+    end
+
+    it "should fail when there is no IP" do
+      reservation = BD::DynamicNetworkReservation.new(instance, @network)
+
+      expect {
+        @network.release(reservation)
+      }.to raise_error(/without an IP/)
+    end
+  end
+
   describe :network_settings do
     before(:each) do
       @network = BD::DeploymentPlan::VipNetwork.new({

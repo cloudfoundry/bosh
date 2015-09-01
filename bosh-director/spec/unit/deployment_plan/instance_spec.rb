@@ -5,8 +5,6 @@ module Bosh::Director::DeploymentPlan
     subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
-    let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
-    let(:ip_provider) { IpProviderV2.new(in_memory_ip_repo, logger) }
 
     before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
     let(:domain_name) { 'test_domain' }
@@ -23,7 +21,7 @@ module Bosh::Director::DeploymentPlan
         canonical_name: 'mycloud',
         model: deployment,
         network: net,
-        using_global_networking?: true,
+        using_global_networking?: true
       })
     end
     let(:network_resolver) { GlobalNetworkResolver.new(plan) }
@@ -122,7 +120,7 @@ module Bosh::Director::DeploymentPlan
 
         let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
         before do
-          ip_provider.reserve(reservation)
+          network.reserve(reservation)
           instance.add_network_reservation(reservation)
         end
 
@@ -200,7 +198,7 @@ module Bosh::Director::DeploymentPlan
 
         before do
           allow(plan).to receive(:network).with(network_name).and_return(network)
-          ip_provider.reserve(reservation)
+          network.reserve(reservation)
         end
 
         context 'when job is started on deploy' do
@@ -688,7 +686,8 @@ module Bosh::Director::DeploymentPlan
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
       let(:index) { 0 }
       before do
-        ip_provider.reserve(reservation)
+
+        network.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
@@ -764,7 +763,7 @@ module Bosh::Director::DeploymentPlan
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
       let(:index) { 0 }
       before do
-        ip_provider.reserve(reservation)
+        network.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
       end
