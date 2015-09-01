@@ -16,7 +16,7 @@ module Bosh::Director
           @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
-          @ip_repo.delete(reservation.ip, find_subnet_containing(reservation))
+          @ip_repo.delete(reservation.ip, reservation.network.subnets.first)
         end
       end
 

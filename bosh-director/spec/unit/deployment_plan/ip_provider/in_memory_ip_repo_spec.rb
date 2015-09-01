@@ -26,12 +26,12 @@ module Bosh::Director::DeploymentPlan
     let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
     let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
-    let(:cloud_config) { BD::Models::CloudConfig.make(manifest: cloud_manifest) }
+    let(:cloud_config) { BD::Models::CloudConfig.make(manifest: cloud_manifest)}
     let(:deployment_plan) { planner_factory.create_from_manifest(deployment_manifest, cloud_config, {}) }
     let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
     let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
     let(:network_name) { network_spec['name'] }
-    let(:instance) { instance_double(BD::DeploymentPlan::Instance, availability_zone: nil) }
+    let(:instance) {instance_double(BD::DeploymentPlan::Instance, availability_zone: nil)}
 
     describe :add do
       context 'when IP was already added in that subnet' do
@@ -57,14 +57,6 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error(Bosh::Director::NetworkReservationIpNotOwned,
               message)
         end
-      end
-
-      it 'adds the IP' do
-        ip_repo.add(ip_address, subnet)
-
-        expect {
-          ip_repo.add(ip_address, subnet)
-        }.to raise_error BD::NetworkReservationAlreadyInUse
       end
     end
 
@@ -94,23 +86,6 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error(Bosh::Director::NetworkReservationIpNotOwned,
               message)
         end
-      end
-    end
-
-    context 'when IP is a Fixnum' do
-      let(:ip_address_to_i) { NetAddr::CIDR.create('192.168.1.3').to_i }
-      it 'adds and deletes IPs' do
-        ip_repo.add(ip_address_to_i, subnet)
-
-        expect {
-          ip_repo.add(ip_address_to_i, subnet)
-        }.to raise_error BD::NetworkReservationAlreadyInUse
-
-        ip_repo.delete(ip_address_to_i, subnet)
-
-        expect {
-          ip_repo.add(ip_address_to_i, subnet)
-        }.to_not raise_error
       end
     end
   end
