@@ -169,7 +169,7 @@ module Bosh::Director
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
+        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
         let(:task_dir) { Dir.mktmpdir }
 
         before {
