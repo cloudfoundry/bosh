@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `VUlbpM_lQcwk2XCzQ6.bv1DDLNdQf_mZ`
+  - update libexpat and lib64expat for USN-2726-1
+
 * `Y5msN.ChBUBRNvr16rYmtHwjEgKCBaZI`
   - changes for stig
 
@@ -19,7 +22,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 * `UNdcxBFcKRVwhrWu2YQZeJkyiPTItQni`
   - disable single-user mode boot in grub2
   - disable bluetooth module and service
-  
+
 * `RVb_.SznfEzXu3kZuE6BNKSOUtYXlDTR`
   - bump libsqlite3-0 to 3.8.2-1ubuntu2.1
 
