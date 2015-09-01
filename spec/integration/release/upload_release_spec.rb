@@ -188,6 +188,63 @@ describe 'upload release', type: :integration do
     end
   end
 
+  describe 're-uploading a release after it fails in a previous attempt' do
+    before { target_and_login }
+
+    it 'should not throw an error, and should backfill missing items while not uploading already uploaded packages' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release-1-corrupted.tgz')}")
+      clean_release_out = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+
+      expect(clean_release_out).to include('pkg_4_depends_on_3 (9207b8a277403477e50cfae52009b31c840c49d4) SKIP')
+      expect(clean_release_out).to include('pkg_5_depends_on_4_and_1 (3cacf579322370734855c20557321dadeee3a7a4) UPLOAD')
+      expect(clean_release_out).to include('Started creating new packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4. Done')
+      expect(clean_release_out).to include('Started processing 4 existing packages > Processing 4 existing packages. Done')
+      expect(clean_release_out).to include('Started creating new jobs > job_using_pkg_5/fb41300edf220b1823da5ab4c243b085f9f249af. Done')
+      expect(clean_release_out).to include('Started processing 5 existing jobs > Processing 5 existing jobs. Done')
+
+      bosh_releases_out = bosh_runner.run("releases")
+      expect(bosh_releases_out).to include(<<-EOF)
++--------------+----------+-------------+
+| Name         | Versions | Commit Hash |
++--------------+----------+-------------+
+| test_release | 1        | 50e58513+   |
++--------------+----------+-------------+
+(+) Uncommitted changes
+      EOF
+
+      inspect_release_out = scrub_blobstore_ids(bosh_runner.run("inspect release test_release/1"))
+      expect(inspect_release_out).to include(<<-EOF)
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+| Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+| job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |
+| job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |
+| job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |
+| job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |
+| job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |
+| job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
++-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+
++--------------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+| Package                  | Fingerprint                              | Compiled For | Blobstore ID                         | SHA1                                     |
++--------------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 93fade7dd8950d8a1dd2bf5ec751e478af3150e9 |
+| pkg_2                    | f5c1c303c2308404983cf1e7566ddc0a22a22154 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | b2751daee5ef20b3e4f3ebc3452943c28f584500 |
+| pkg_3_depends_on_2       | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 62fff2291aac72f5bd703dba0c5d85d0e23532e0 |
+| pkg_4_depends_on_3       | 9207b8a277403477e50cfae52009b31c840c49d4 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 603f212d572b0307e4c51807c5e03c47944bb9c3 |
+| pkg_5_depends_on_4_and_1 | 3cacf579322370734855c20557321dadeee3a7a4 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ad733ca76ab4747747d8f9f1ddcfa568519a2e00 |
++--------------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+      EOF
+    end
+
+    it 'does not allow uploading same release version with different commit hash' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release-1-corrupted_with_different_commit.tgz')}")
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      }.to raise_error(RuntimeError, /Error 30014: release `test_release\/1' has already been uploaded with commit_hash as `50e58513' and uncommitted_changes as `true'/)
+    end
+  end
+
   describe 'uploading a release with the same packages as some other release' do
     before { target_and_login }
 
@@ -205,13 +262,20 @@ describe 'upload release', type: :integration do
       expect(scrub_blobstore_ids(test_release_desc)).to eq(scrub_blobstore_ids(shared_release_desc))
     end
 
-    it 'raises an error if the upload release version already exists but there are packages with different fingerprints' do
+    it 'raises an error if the uploaded release version already exists but there are packages with different fingerprints' do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       expect {
         bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-pkg2-updated.tgz')}")
-      }.to raise_error(RuntimeError, /Error 30012: package pkg_2\/e7f5b11c43476d74b2d12129b93cba584943e8d3 not part of previous upload of release test_release\/1/)
+      }.to raise_error(RuntimeError, /Error 30012: package `pkg_2' had different fingerprint in previously uploaded release `test_release\/1'/)
+    end
 
+    it 'raises an error if the uploaded release version already exists but there are jobs with different fingerprints' do
+      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-job1-updated.tgz')}")
+      }.to raise_error(RuntimeError, /Error 30013: job `job_using_pkg_1' had different fingerprint in previously uploaded release `test_release\/1'/)
     end
 
     it "allows sharing of packages across releases when the original packages does not have source" do
