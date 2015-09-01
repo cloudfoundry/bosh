@@ -305,24 +305,6 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
   end
 
-  describe :release do
-    before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.parse({
-          'name' => 'foo',
-          'cloud_properties' => {
-            'foz' => 'baz'
-          }
-        }, [], logger)
-    end
-
-    it 'should release the IP from the subnet' do
-      reservation = BD::DynamicNetworkReservation.new(instance, @network)
-      reservation.resolve_ip(4294967295)
-
-      @network.release(reservation)
-    end
-  end
-
   describe :network_settings do
     before(:each) do
       @network = BD::DeploymentPlan::DynamicNetwork.parse({
