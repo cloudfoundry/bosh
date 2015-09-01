@@ -11,13 +11,13 @@
     - `bosh-stemcell/OS_IMAGES.md`
     - `bosh-dev/.../os_image_versions.json`
 
-     with the published OS image s3 key, found at the end of the OS image build
+     ...with the published OS image s3 key, found at the end of the OS image build
      output; push that change
   1. Update the `promote_artifacts` step to reference `hotfix-STORY_ID`,
      instead of `develop`.
 
     **NOTE:** this build step will (automatically)...
-    1. Merge the branch to master
+    1. Merge the branch to `master`
     2. Bump BOSH gem versions (by way of applying a patch) and commit and
        push that on `master`, with "Adding final release..."
     3. Publish all the gems
