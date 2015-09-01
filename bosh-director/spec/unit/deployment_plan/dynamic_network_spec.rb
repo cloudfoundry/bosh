@@ -305,24 +305,6 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
   end
 
-  describe :reserve do
-    before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.parse({
-          'name' => 'foo',
-          'cloud_properties' => {
-            'foz' => 'baz'
-          }
-        }, [], logger)
-    end
-
-    it 'should reserve an existing IP' do
-      reservation = BD::DynamicNetworkReservation.new(instance, @network)
-      reservation.resolve_ip(4294967295)
-      @network.reserve(reservation)
-      expect(reservation.ip).to eq(4294967295)
-    end
-  end
-
   describe :release do
     before(:each) do
       @network = BD::DeploymentPlan::DynamicNetwork.parse({
