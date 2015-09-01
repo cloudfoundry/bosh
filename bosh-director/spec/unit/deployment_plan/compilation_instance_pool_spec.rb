@@ -10,8 +10,18 @@ module Bosh::Director
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment_model, name: 'mycloud') }
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network name') }
+    let(:deployment_plan) do
+      instance_double('Bosh::Director::DeploymentPlan::Planner',
+        compilation: compilation_config,
+        model: deployment_model,
+        name: 'mycloud',
+        ip_provider: ip_provider,
+      )
+    end
+    let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
+    let(:network) do
+      instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'network name', subnets: [subnet])
+    end
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
     let(:another_vm_model) { Models::Vm.make }
@@ -29,9 +39,10 @@ module Bosh::Director
       thread_pool
     end
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
-    let(:ip_provider) {DeploymentPlan::IpProviderV2.new(DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)}
+    let(:ip_repo) {instance_double(DeploymentPlan::InMemoryIpRepo, add: nil, delete: nil)}
+    let(:ip_provider) {DeploymentPlan::IpProviderV2.new(ip_repo, false, logger)}
 
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider) }
+    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
 
     before do
       allow(compilation_config).to receive_messages(
@@ -66,7 +77,7 @@ module Bosh::Director
 
     shared_examples_for 'a compilation vm pool' do
       it 'reserves a network for a new vm' do
-        expect(network).to receive(:reserve).with(instance_of(DynamicNetworkReservation))
+        expect(ip_provider).to receive(:reserve).with(instance_of(DynamicNetworkReservation))
         action
       end
 
@@ -152,7 +163,7 @@ module Bosh::Director
         end
 
         let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider)
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         end
         let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
         it 'spins up vm in the availability_zone' do

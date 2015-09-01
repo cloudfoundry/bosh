@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
       if @global_networking
         DatabaseIpProvider.new(range, network_name, restricted_ips, static_ips, @logger)
       else
-        InMemoryIpProvider.new(range, network_name, restricted_ips, static_ips, @logger)
+        nil # if you try and call this it's wrong
       end
     end
   end

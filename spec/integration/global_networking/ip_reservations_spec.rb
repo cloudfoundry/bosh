@@ -323,7 +323,7 @@ describe 'global networking', type: :integration do
         ]
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Failed to reserve IP '192.168.1.11' for network 'a' (192.168.1.0/24): already reserved")
+        expect(output).to include("Failed to reserve IP '192.168.1.11' for 'a': already reserved")
       end
     end
 

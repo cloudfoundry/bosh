@@ -32,7 +32,7 @@ module Bosh::Director
         if reservation.ip.nil?
           @logger.error("Failed to reserve IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
-                "Must have IP for static reservations"
+            "Must have IP for static reservations"
         end
 
         if @reserved_ips.include?(reservation.ip)
@@ -55,7 +55,7 @@ module Bosh::Director
         unless reservation.ip
           @logger.error("Failed to release IP for vip network '#{@name}': IP must be provided")
           raise NetworkReservationIpMissing,
-                "Can't release reservation without an IP"
+            "Can't release reservation without an IP"
         end
         @logger.debug("Releasing IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
         @reserved_ips.delete(reservation.ip)

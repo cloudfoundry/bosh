@@ -1,13 +1,12 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider)
+      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         @instance_reuser = instance_reuser
         @vm_creator = vm_creator
         @deployment_plan =  deployment_plan
         @logger = logger
         @instance_deleter = instance_deleter
-        @ip_provider = ip_provider
       end
 
       def with_reused_vm(stemcell)
@@ -77,7 +76,7 @@ module Bosh::Director
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
         reservation = DynamicNetworkReservation.new(instance, compilation_network)
         instance.add_network_reservation(reservation)
-        @ip_provider.reserve(reservation)
+        @deployment_plan.ip_provider.reserve(reservation)
 
         instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
         @vm_creator.create_for_instance_plan(instance_plan, [])

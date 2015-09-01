@@ -52,10 +52,10 @@ module Bosh::Director
         reserved_property = safe_property(subnet_spec, "reserved", :optional => true)
         static_property = safe_property(subnet_spec, "static", :optional => true)
 
-        restricted_ips = Set.new
-        restricted_ips.add(@gateway.to_i) if @gateway
-        restricted_ips.add(network_id.to_i)
-        restricted_ips.add(broadcast.to_i)
+        @restricted_ips = Set.new
+        @restricted_ips.add(@gateway.to_i) if @gateway
+        @restricted_ips.add(network_id.to_i)
+        @restricted_ips.add(broadcast.to_i)
 
         each_ip(reserved_property) do |ip|
           unless @range.contains?(ip)
@@ -63,32 +63,26 @@ module Bosh::Director
               "Reserved IP `#{format_ip(ip)}' is out of " +
                 "network `#{@network.name}' range"
           end
-          restricted_ips.add(ip)
+          @restricted_ips.add(ip)
         end
 
-        static_ips = Set.new
+        @static_ips = Set.new
         each_ip(static_property) do |ip|
-          unless @range.contains?(ip) && !restricted_ips.include?(ip)
+          unless @range.contains?(ip) && !@restricted_ips.include?(ip)
             raise NetworkStaticIpOutOfRange,
               "Static IP `#{format_ip(ip)}' is out of " +
                 "network `#{@network.name}' range"
           end
-          static_ips.add(ip)
+          @static_ips.add(ip)
         end
 
         legacy_reserved_ranges.each do |cidr_range|
           cidr_range.range(0, nil, Objectify: true).each do |ip|
-            restricted_ips.add(ip.to_i) unless static_ips.include?(ip.to_i)
+            @restricted_ips.add(ip.to_i) unless @static_ips.include?(ip.to_i)
           end
         end
 
-        @ip_provider = ip_provider_factory.create(@range, @network.name, restricted_ips, static_ips)
-      end
-
-      def overlaps?(subnet)
-        @range == subnet.range ||
-          @range.contains?(subnet.range) ||
-          subnet.range.contains?(@range)
+        @ip_provider = ip_provider_factory.create(@range, @network.name, @restricted_ips, @static_ips)
       end
 
       def reserve_ip(reservation)
@@ -101,6 +95,20 @@ module Bosh::Director
 
       def allocate_dynamic_ip(instance)
         @ip_provider.allocate_dynamic_ip(instance)
+      end
+
+      def overlaps?(subnet)
+        @range == subnet.range ||
+          @range.contains?(subnet.range) ||
+          subnet.range.contains?(@range)
+      end
+
+      def restricted_ips
+        @restricted_ips
+      end
+
+      def static_ips
+        @static_ips
       end
 
       private

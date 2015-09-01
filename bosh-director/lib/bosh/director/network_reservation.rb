@@ -115,6 +115,10 @@ module Bosh::Director
       true
     end
 
+    def desc
+      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}'"}"
+    end
+
     def to_s
       "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}}"
     end

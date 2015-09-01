@@ -175,85 +175,6 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       expect(subnet.dns).to eq(%w(1.2.3.4 5.6.7.8))
     end
 
-    it 'should not allow reservation of reserved IPs' do
-      subnet = make_subnet(
-        {
-          'range' => '192.168.0.0/24', # 254 IPs
-          'reserved' => '192.168.0.5 - 192.168.0.10', # 6 IPs
-          'gateway' => '192.168.0.254', # 1 IP
-        },
-        []
-      )
-
-      subnet.reserve_ip(create_dynamic_reservation('192.168.0.4'))
-
-      expect {
-        subnet.reserve_ip(create_dynamic_reservation('192.168.0.5'))
-      }.to raise_error BD::NetworkReservationIpReserved,
-          "Failed to reserve IP '192.168.0.5' " +
-            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
-
-      expect {
-        subnet.reserve_ip(create_dynamic_reservation('192.168.0.10'))
-      }.to raise_error BD::NetworkReservationIpReserved,
-          "Failed to reserve IP '192.168.0.10' " +
-            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
-
-      subnet.reserve_ip(create_dynamic_reservation('192.168.0.11'))
-      subnet.reserve_ip(create_dynamic_reservation('192.168.0.253'))
-
-      expect {
-        subnet.reserve_ip(create_dynamic_reservation('192.168.0.254'))
-      }.to raise_error BD::NetworkReservationIpReserved,
-          "Failed to reserve IP '192.168.0.254' " +
-            "for network 'net_a' (192.168.0.0/24): IP belongs to reserved range"
-    end
-
-    context 'when there are reserved ranges' do
-      let(:reserved_ranges) { [NetAddr::CIDR.create('192.168.0.0/28')] }
-
-      it 'should not allow reservation of IPs from legacy reserved ranges' do
-        subnet = make_subnet(
-          {
-            'range' => '192.168.0.0/24',
-            'gateway' => '192.168.0.254',
-          },
-          []
-        )
-
-        expect {
-          subnet.reserve_ip(create_dynamic_reservation('192.168.0.1'))
-        }.to raise_error BD::NetworkReservationIpReserved
-      end
-
-      it 'should allocate dynamic IPs outside of those ranges' do
-        subnet = make_subnet(
-          {
-            'range' => '192.168.0.0/24',
-            'gateway' => '192.168.0.254',
-          },
-          []
-        )
-
-        expect(subnet.allocate_dynamic_ip(instance)).to eq(NetAddr::CIDR.create('192.168.0.16').to_i)
-      end
-
-      it 'allows specifying static IPs that are in legacy reserved ranges' do
-        subnet = make_subnet(
-          {
-            'range' => '192.168.0.0/24',
-            'gateway' => '192.168.0.254',
-            'static' => ['192.168.0.1']
-          },
-          []
-        )
-
-        expect {
-          subnet.reserve_ip(create_static_reservation('192.168.0.1'))
-        }.to_not raise_error
-      end
-    end
-
     it 'should fail when reserved range is not valid' do
       expect {
         make_subnet(
@@ -268,28 +189,6 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       }.to raise_error(Bosh::Director::NetworkReservedIpOutOfRange,
           "Reserved IP `192.167.0.5' is out of " +
             "network `net_a' range")
-    end
-
-    it 'should allow reservation of static IPs' do
-      subnet = make_subnet(
-        {
-          'range' => '192.168.0.0/24', # 254 IPs
-          'static' => '192.168.0.5 - 192.168.0.10', # 6 IPs
-          'gateway' => '192.168.0.254', # 1 IP
-          'cloud_properties' => {'foo' => 'bar'}
-        },
-        []
-      )
-
-      expect { subnet.reserve_ip(create_dynamic_reservation('192.168.0.4')) }.to_not raise_error
-      expect { subnet.reserve_ip(create_static_reservation('192.168.0.5')) }.to_not raise_error
-      expect { subnet.reserve_ip(create_static_reservation('192.168.0.10')) }.to_not raise_error
-      expect { subnet.reserve_ip(create_dynamic_reservation('192.168.0.11')) }.to_not raise_error
-      expect { subnet.reserve_ip(create_dynamic_reservation('192.168.0.253')) }.to_not raise_error
-
-      expect {
-        subnet.reserve_ip(create_dynamic_reservation('192.168.0.254'))
-      }.to raise_error BD::NetworkReservationIpReserved
     end
 
     it 'should fail when the static IP is not valid' do
