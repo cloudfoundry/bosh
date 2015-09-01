@@ -11,12 +11,19 @@ module Bosh::Director
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
-    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, model: deployment, name: 'mycloud') }
+    let(:plan) do
+      instance_double('Bosh::Director::DeploymentPlan::Planner',
+        compilation: compilation_config,
+        model: deployment,
+        name: 'mycloud',
+        ip_provider: ip_provider
+      )
+    end
     let(:instance_reuser) { InstanceReuser.new }
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
-    let(:ip_provider) { DeploymentPlan::IpProviderV2.new(DeploymentPlan::IpRepoThatDelegatesToExistingStuff.new)}
+    let(:ip_provider) { DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), logger)}
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, ip_provider)
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -379,7 +386,6 @@ module Bosh::Director
         allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
         allow(compilation_config).to receive_messages(workers: 1)
         allow(@network).to receive(:network_settings).and_return('network settings')
-        expect(@network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -554,7 +560,8 @@ module Bosh::Director
         double('Bosh::Director::DeploymentPlan',
           compilation: compilation_config,
           model: Models::Deployment.make,
-          name: 'fake-deployment'
+          name: 'fake-deployment',
+          ip_provider: ip_provider
         )
       end
       let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }

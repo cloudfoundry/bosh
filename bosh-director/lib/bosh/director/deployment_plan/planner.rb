@@ -59,7 +59,6 @@ module Bosh::Director
 
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
         @cloud_config = cloud_config
-        @ip_provider = IpProviderV2.new(IpRepoThatDelegatesToExistingStuff.new)
 
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -86,6 +85,8 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @logger = Config.logger
+
+        @ip_provider = IpProviderV2.new(InMemoryIpRepo.new(@logger), @logger)
       end
 
       def_delegators :@cloud_planner,
@@ -124,7 +125,7 @@ module Bosh::Director
         vm_deleter = VmDeleter.new(Config.cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
         instance_deleter = Bosh::Director::InstanceDeleter.new(self)
-        compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter, ip_provider)
+        compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
           jobs,
           compilation,

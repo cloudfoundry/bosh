@@ -1,27 +1,80 @@
 module Bosh::Director::DeploymentPlan
   class IpProviderV2
-    def initialize(ip_repo)
+    include ::Bosh::Director::IpUtil
+
+    def initialize(ip_repo, logger)
+      @logger = logger
       @ip_repo = ip_repo
     end
 
     def release(reservation)
-      @ip_repo.delete(reservation)
+      return unless reservation.network.is_a?(ManualNetwork)
+
+      # TODO: select the right subnet
+      if reservation.ip.nil?
+        @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
+        raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
+      else
+        @ip_repo.delete(reservation.ip, reservation.network.subnets.first)
+      end
     end
 
     def reserve(reservation)
-      @ip_repo.create(reservation)
-    end
-  end
+      return unless reservation.network.is_a?(ManualNetwork)
 
-  class IpRepoThatDelegatesToExistingStuff
-    # TODO: we're going to rewrite this to be more clear once everything has moved inside of it
-    def delete(reservation)
-      reservation.network.release(reservation)
+      if reservation.ip.nil? && reservation.is_a?(BD::DynamicNetworkReservation)
+        @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
+
+        filter_subnet_by_instance_az(reservation).each do |subnet|
+          @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
+          ip = subnet.allocate_dynamic_ip(reservation.instance)
+          if ip
+            @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+            reservation.resolve_ip(ip)
+            reservation.mark_reserved_as(BD::DynamicNetworkReservation)
+            return
+          end
+        end
+      end
+
+      if reservation.ip
+        cidr_ip = format_ip(reservation.ip)
+        @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{reservation.network.name}'")
+
+        subnet = find_subnet_containing(reservation)
+        if subnet
+          subnet.reserve_ip(reservation)
+          @ip_repo.add(reservation.ip, reservation.network.subnets.first)
+          return
+        end
+
+        if reservation.is_a?(BD::ExistingNetworkReservation)
+          return
+        end
+
+        raise BD::NetworkReservationIpOutsideSubnet,
+          "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{reservation.network.name}'"
+      end
+
+      raise BD::NetworkReservationNotEnoughCapacity,
+        "Failed to reserve IP for '#{reservation.instance}' for manual network '#{reservation.network.name}': no more available"
     end
 
-    def create(reservation)
-      # FIXME: this should really only need a subnet, not the whole network
-      reservation.network.reserve(reservation)
+    private
+
+    def filter_subnet_by_instance_az(reservation)
+      instance_az = reservation.instance.availability_zone
+      if instance_az.nil?
+        reservation.network.subnets
+      else
+        reservation.network.subnets.select do |subnet|
+          subnet.availability_zone == instance_az.name
+        end
+      end
+    end
+
+    def find_subnet_containing(reservation)
+      reservation.network.subnets.find { |subnet| subnet.range.contains?(reservation.ip) }
     end
   end
 end
