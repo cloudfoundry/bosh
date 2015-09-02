@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version      = Bosh::Template::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'Renders bosh templates'
-  s.description  = "Renders bosh templates\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "Renders bosh templates"
   s.author       = 'Pivotal'
   s.email        = 'support@cloudfoundry.com'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README.md)
+  s.files        = Dir['README.md', 'lib/**/*'].select{ |f| File.file? f }
   s.test_files   = s.files.grep(%r{^(test|spec|features)/})
   s.require_path = 'lib'
 

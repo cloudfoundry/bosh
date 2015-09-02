@@ -6,14 +6,14 @@ Gem::Specification.new do |s|
   s.version     = Bosh::SimpleBlobstoreServer::VERSION
   s.platform    = Gem::Platform::RUBY
   s.summary     = 'BOSH Simple Blobstore Server'
-  s.description = "BOSH Simple Blobstore Server\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description = "BOSH Simple Blobstore Server"
   s.author      = 'VMware'
   s.homepage    = 'https://github.com/cloudfoundry/bosh'
   s.license     = 'Apache 2.0'
   s.email       = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n")
+  s.files        = Dir['lib/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
 
   s.add_dependency 'thin',    '~>1.5.0'

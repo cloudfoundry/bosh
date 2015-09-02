@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH AWS CPI'
-  s.description  = "BOSH AWS CPI\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "BOSH AWS CPI"
   s.author       = 'VMware'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- bin/* lib/* scripts/*`.split("\n") + %w(README.md)
+  s.files        = Dir['README.md', 'bin/**/*', 'lib/**/*', 'scripts/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
   s.bindir       = 'bin'
   s.executables  = %w(aws_cpi bosh_aws_console)

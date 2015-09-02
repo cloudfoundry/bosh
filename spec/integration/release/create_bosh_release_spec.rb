@@ -8,27 +8,30 @@ describe 'create bosh release', type: :integration do
       clone_bosh(clone_source, clone_target)
 
       Bundler.with_clean_env do
-        create_dev_release_cmd = 'bundle exec rake release:create_dev_release --trace'
-        output, exit_status = Open3.capture2e(create_dev_release_cmd, chdir: clone_target)
-        expect(exit_status).to(be_success, "'#{create_dev_release_cmd}' exited #{exit_status}:\n#{output}")
+        expect(File).to exist(clone_target)
+
+        command = 'bundle exec rake release:create_dev_release --trace'
+        output, exit_status = Open3.capture2e(command, chdir: clone_target)
+        expect(exit_status).to(be_success, "'#{command}' exited #{exit_status}:\n#{output}")
 
         expect(output).to include('Release name: bosh')
       end
     end
   end
 
+  private
+
   def clone_bosh(source, target)
-    stdout, stderr, exit_status = Open3.capture3(%Q{
+    output, exit_status = Open3.capture2e(%Q{
+      set -e
+      tempdir=$(mktemp -d -p /tmp bosh-src.XXXXXXX)
       cd #{source}
-      files=$(git ls-files --exclude-standard -c -o)
-      for file in $files ; do
-        if [ -f "$file" ] ; then
-          dir=$(dirname $file)
-          mkdir -p #{target}/$dir && cp -R $file #{target}/$dir
-        fi
-      done
+      cp -r . $tempdir
+      cd $tempdir
+      rm -rf $(cat .gitignore | sed 's/^\///g')
+      mv $tempdir #{target}
     })
 
-    expect(exit_status).to be_success
+    expect(exit_status).to(be_success, "'clone_bosh' exited #{exit_status}:\n#{output}")
   end
 end

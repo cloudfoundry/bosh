@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version      = Bosh::Registry::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH Registry'
-  s.description  = "BOSH Registry\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "BOSH Registry"
   s.author       = 'VMware'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README.md)
+  s.files        = Dir['README.md', 'db/**/*', 'lib/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
   s.bindir       = 'bin'
   s.executables  = %w(bosh-registry bosh-registry-migrate)

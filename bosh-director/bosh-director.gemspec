@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH Director'
-  s.description  = "BOSH Director\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "BOSH Director"
   s.author       = 'VMware'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/* db/*`.split("\n")
+  s.files        = Dir['db/**/*', 'lib/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the

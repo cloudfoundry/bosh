@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version     = version
   s.platform    = Gem::Platform::RUBY
   s.summary     = 'BOSH CLI plugin for Micro BOSH deployment'
-  s.description = "BOSH CLI plugin for Micro BOSH deployment\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description = "BOSH CLI plugin for Micro BOSH deployment"
   s.author      = 'VMware'
   s.homepage    = 'https://github.com/cloudfoundry/bosh'
   s.license     = 'Apache 2.0'
   s.email       = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files         = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
+  s.files         = Dir['README.rdoc', 'config/**/*', 'lib/**/*'].select{ |f| File.file? f }
   s.require_paths = ['lib', 'config']
 
   s.add_dependency 'sqlite3',     '~>1.3.7'

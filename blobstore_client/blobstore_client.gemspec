@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH blobstore client'
-  s.description  = "BOSH blobstore client\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "BOSH blobstore client"
   s.author       = 'VMware'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- bin/* lib/* config/*`.split("\n") + %w(README.md)
+  s.files        = Dir['README.md', 'bin/**/*', 'config/**/*', 'lib/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
   s.bindir       = 'bin'
   s.executables  = %w(blobstore_client_console)

@@ -8,14 +8,14 @@ Gem::Specification.new do |s|
   s.version     = version
   s.platform    = Gem::Platform::RUBY
   s.summary     = 'BOSH plugin to easily create and delete an AWS VPC'
-  s.description = "BOSH plugin to easily create and delete an AWS VPC\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description = "BOSH plugin to easily create and delete an AWS VPC"
   s.author      = 'VMware'
   s.homepage    = 'https://github.com/cloudfoundry/bosh'
   s.license     = 'Apache 2.0'
   s.email       = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files         = `git ls-files -- lib/* templates/* migrations/*`.split($/)
+  s.files         = Dir['lib/**/*', 'migrations/**/*', 'templates/**/*'].select{ |f| File.file? f }
   s.require_paths = ['lib', 'migrations']
 
   s.add_dependency 'bosh-core',             "~>#{version}"

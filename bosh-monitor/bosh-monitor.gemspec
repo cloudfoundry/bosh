@@ -6,14 +6,14 @@ Gem::Specification.new do |s|
   s.version      = Bosh::Monitor::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'BOSH Health Monitor'
-  s.description  = "BOSH Health Monitor\n#{`git rev-parse HEAD`[0, 6]}"
+  s.description  = "BOSH Health Monitor"
   s.author       = 'VMware'
   s.homepage     = 'https://github.com/cloudfoundry/bosh'
   s.license      = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README.md)
+  s.files        = Dir['README.md', 'lib/**/*'].select{ |f| File.file? f }
   s.require_path = 'lib'
 
   s.add_dependency 'eventmachine',    '~>1.0.0'
