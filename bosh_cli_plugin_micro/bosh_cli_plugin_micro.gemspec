@@ -3,48 +3,48 @@ require File.expand_path('../lib/bosh/deployer/version', __FILE__)
 
 version = Bosh::Deployer::VERSION
 
-Gem::Specification.new do |s|
-  s.name        = 'bosh_cli_plugin_micro'
-  s.version     = version
-  s.platform    = Gem::Platform::RUBY
-  s.summary     = 'BOSH CLI plugin for Micro BOSH deployment'
-  s.description = "BOSH CLI plugin for Micro BOSH deployment"
-  s.author      = 'VMware'
-  s.homepage    = 'https://github.com/cloudfoundry/bosh'
-  s.license     = 'Apache 2.0'
-  s.email       = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name        = 'bosh_cli_plugin_micro'
+  spec.version     = version
+  spec.platform    = Gem::Platform::RUBY
+  spec.summary     = 'BOSH CLI plugin for Micro BOSH deployment'
+  spec.description = "BOSH CLI plugin for Micro BOSH deployment"
+  spec.author      = 'VMware'
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache 2.0'
+  spec.email       = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files         = Dir['README.rdoc', 'config/**/*', 'lib/**/*'].select{ |f| File.file? f }
-  s.require_paths = ['lib', 'config']
+  spec.files         = Dir['README.rdoc', 'config/**/*', 'lib/**/*'].select{ |f| File.file? f }
+  spec.require_paths = ['lib', 'config']
 
-  s.add_dependency 'sqlite3',     '~>1.3.7'
-  s.add_dependency 'mono_logger', '~>1.1.0'
+  spec.add_dependency 'sqlite3',     '~>1.3.7'
+  spec.add_dependency 'mono_logger', '~>1.1.0'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
   # external CPIs, in order to ensure appropriate versions are installed.
   # Also do the same in bosh-director.gemspec
   # ----------------------------------------------------------------------------
-  s.add_dependency 'bosh_common',        "~>#{version}"
-  s.add_dependency 'bosh_cpi',           "~>#{version}"
-  s.add_dependency 'bosh-registry',      "~>#{version}"
+  spec.add_dependency 'bosh_common',        "~>#{version}"
+  spec.add_dependency 'bosh_cpi',           "~>#{version}"
+  spec.add_dependency 'bosh-registry',      "~>#{version}"
   # ----------------------------------------------------------------------------
 
-  s.add_dependency 'agent_client',       "~>#{version}"
-  s.add_dependency 'blobstore_client',   "~>#{version}"
-  s.add_dependency 'bosh_cli',           "~>#{version}"
-  s.add_dependency 'bosh-core',          "~>#{version}"
-  s.add_dependency 'bosh-director-core', "~>#{version}"
-  s.add_dependency 'bosh-stemcell',      "~>#{version}"
+  spec.add_dependency 'agent_client',       "~>#{version}"
+  spec.add_dependency 'blobstore_client',   "~>#{version}"
+  spec.add_dependency 'bosh_cli',           "~>#{version}"
+  spec.add_dependency 'bosh-core',          "~>#{version}"
+  spec.add_dependency 'bosh-director-core', "~>#{version}"
+  spec.add_dependency 'bosh-stemcell',      "~>#{version}"
 
-  s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
-  s.add_dependency 'bosh_openstack_cpi', "~>2.0.0"
-  s.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
-  s.add_dependency 'bosh_vsphere_cpi',   "~>2.0.0"
+  spec.add_dependency 'bosh_aws_cpi',       "~>#{version}"
+  spec.add_dependency 'bosh_openstack_cpi', "~>2.0.0"
+  spec.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
+  spec.add_dependency 'bosh_vsphere_cpi',   "~>2.0.0"
 
-  s.add_development_dependency 'rake'
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'fakefs'
-  s.add_development_dependency 'timecop'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'fakefs'
+  spec.add_development_dependency 'timecop'
 end

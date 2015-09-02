@@ -3,29 +3,29 @@ require File.expand_path('../lib/bosh_cli_plugin_aws/version', __FILE__)
 
 version = Bosh::AwsCliPlugin::VERSION
 
-Gem::Specification.new do |s|
-  s.name        = 'bosh_cli_plugin_aws'
-  s.version     = version
-  s.platform    = Gem::Platform::RUBY
-  s.summary     = 'BOSH plugin to easily create and delete an AWS VPC'
-  s.description = "BOSH plugin to easily create and delete an AWS VPC"
-  s.author      = 'VMware'
-  s.homepage    = 'https://github.com/cloudfoundry/bosh'
-  s.license     = 'Apache 2.0'
-  s.email       = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name        = 'bosh_cli_plugin_aws'
+  spec.version     = version
+  spec.platform    = Gem::Platform::RUBY
+  spec.summary     = 'BOSH plugin to easily create and delete an AWS VPC'
+  spec.description = "BOSH plugin to easily create and delete an AWS VPC"
+  spec.author      = 'VMware'
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache 2.0'
+  spec.email       = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files         = Dir['lib/**/*', 'migrations/**/*', 'templates/**/*'].select{ |f| File.file? f }
-  s.require_paths = ['lib', 'migrations']
+  spec.files         = Dir['lib/**/*', 'migrations/**/*', 'templates/**/*'].select{ |f| File.file? f }
+  spec.require_paths = ['lib', 'migrations']
 
-  s.add_dependency 'bosh-core',             "~>#{version}"
-  s.add_dependency 'bosh_cli',              "~>#{version}"
-  s.add_dependency 'bosh_aws_cpi',          "~>#{version}"
-  s.add_dependency 'bosh_cli_plugin_micro', "~>#{version}"
-  s.add_dependency 'bosh-stemcell',         "~>#{version}"
+  spec.add_dependency 'bosh-core',             "~>#{version}"
+  spec.add_dependency 'bosh_cli',              "~>#{version}"
+  spec.add_dependency 'bosh_aws_cpi',          "~>#{version}"
+  spec.add_dependency 'bosh_cli_plugin_micro', "~>#{version}"
+  spec.add_dependency 'bosh-stemcell',         "~>#{version}"
 
-  s.add_development_dependency 'rake'
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'webmock'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'webmock'
 end
