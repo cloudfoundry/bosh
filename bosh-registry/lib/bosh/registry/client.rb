@@ -108,7 +108,7 @@ module Bosh::Registry
 
       response = @client.delete(url, {:header => @headers})
 
-      if response.status != 200
+      unless [200, 404].include? response.status
         cloud_error("Cannot delete settings for '#{instance_id}', got HTTP #{response.status}")
       end
 
