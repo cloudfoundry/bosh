@@ -48,6 +48,13 @@ module Bosh::Director
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
           subnet = find_subnet_containing(reservation)
+
+          if subnet && subnet.restricted_ips.include?(reservation.ip.to_i) && !reservation.is_a?(ExistingNetworkReservation)
+            message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network.name}': IP belongs to reserved range"
+            @logger.error(message)
+            raise Bosh::Director::NetworkReservationIpReserved, message
+          end
+
           if subnet && subnet.static_ips.include?(reservation.ip.to_i)
             @ip_repo.add(reservation.ip, subnet)
             reservation.mark_reserved_as(StaticNetworkReservation)

@@ -80,20 +80,6 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error BD::NetworkReservationAlreadyInUse
         end
       end
-
-      context 'when IP is in reserved range' do
-        before do
-          network_spec['subnets'].first['reserved'] = ['192.168.1.5']
-        end
-        let(:restricted_ips) { [ip_address] }
-
-        it 'raises Bosh::Director::NetworkReservationIpReserved' do
-          message = "Failed to reserve IP '192.168.1.5' for network '#{network_name}': IP belongs to reserved range"
-          expect {
-            ip_repo.add(ip_address, subnet)
-          }.to raise_error(Bosh::Director::NetworkReservationIpReserved, message)
-        end
-      end
     end
 
     describe :delete do

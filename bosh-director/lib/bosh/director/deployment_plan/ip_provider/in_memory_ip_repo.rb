@@ -20,12 +20,6 @@ module Bosh::Director::DeploymentPlan
     def add(ip, subnet)
       ip = ip_to_netaddr(ip)
 
-      if subnet.restricted_ips.include?(ip.to_i)
-        message = "Failed to reserve IP '#{ip.ip}' for network '#{subnet.network.name}': IP belongs to reserved range"
-        @logger.error(message)
-        raise Bosh::Director::NetworkReservationIpReserved, message
-      end
-
       if subnet.range.contains?(ip)
         entry_to_add = {ip: ip.to_i, network_name: subnet.network.name}
 
