@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'securerandom'
 
 describe 'create bosh release', type: :integration do
   it 'creates a bosh dev release successfully' do
@@ -24,7 +25,8 @@ describe 'create bosh release', type: :integration do
   def clone_bosh(source, target)
     output, exit_status = Open3.capture2e(%Q{
       set -e
-      tempdir=$(mktemp -d -p /tmp bosh-src.XXXXXXX)
+      tempdir=/tmp/bosh-src.#{SecureRandom.hex(4)}
+      mkdir $tempdir
       cd #{source}
       cp -r . $tempdir
       cd $tempdir
