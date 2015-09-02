@@ -35,7 +35,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'bosh_openstack_cpi', "~>2.0.0"
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
-  s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
+  s.add_dependency 'bosh_vsphere_cpi',   "~>2.0.0"
   s.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
 
   s.add_dependency 'bcrypt-ruby',        '~>3.0.1'

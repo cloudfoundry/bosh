@@ -36,7 +36,6 @@ module Bosh::Dev
         bosh_common
         bosh_cpi
         bosh-registry
-        bosh_vsphere_cpi
         bosh-director
         bosh-director-core
         bosh-monitor
