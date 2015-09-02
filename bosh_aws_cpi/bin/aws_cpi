@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+require 'ostruct'
+require 'bosh_aws_cpi'
+require 'bosh/cpi'
+require 'bosh/cpi/cli'
+
+cpi_config = YAML.load_file(ARGV.shift)
+cloud_config = OpenStruct.new(:logger => Logger.new(STDERR))
+
+Bosh::Clouds::Config.configure(cloud_config)
+
+cpi_log = StringIO.new # Empty on AWS
+
+cpi_lambda = lambda do
+  unless cpi_config.has_key?('cloud') && cpi_config['cloud'].has_key?('properties')
+    raise "Could not find cloud properties in the configuration"
+  end
+  cloud_properties = cpi_config['cloud']['properties']
+  Bosh::Clouds::Aws.new(cloud_properties)
+end
+
+cli = Bosh::Cpi::Cli.new(cpi_lambda, cpi_log, STDOUT)
+
+cli.run(ARGF.read)

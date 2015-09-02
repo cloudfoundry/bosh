@@ -1,0 +1,14 @@
+---
+platform: linux
+image: docker:///bosh/integration
+inputs:
+- name: bosh-src
+- name: bosh-concourse-ci
+run:
+  path: bash
+  args: ['-l', 'bosh-src/bosh_aws_cpi/ci/tasks/run-lifecycle.sh']
+params:
+  cpi_release_name: bosh-aws-cpi
+  base_os: ubuntu
+  cpi_directory: bosh_aws_cpi
+

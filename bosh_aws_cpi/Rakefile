@@ -1,0 +1,1 @@
+require 'bosh/cpi/tasks'
