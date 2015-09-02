@@ -46,9 +46,7 @@ module Bosh::Director
 
         single_step_stage("Verifying manifest") { verify_manifest(release_dir) }
 
-        with_release_lock(@name) {
-          process_release(release_dir)
-        }
+        with_release_lock(@name) { process_release(release_dir) }
 
         "Created release `#{@name}/#{@version}'"
 
@@ -97,9 +95,7 @@ module Bosh::Director
 
         begin
           @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
-          unless @version == @manifest["version"]
-            logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'")
-          end
+          logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'") unless @version == @manifest["version"]
         rescue SemiSemantic::ParseError
           raise ReleaseVersionInvalid, "Release version invalid: #{@manifest["version"]}"
         end
@@ -206,6 +202,7 @@ module Bosh::Director
           end
 
           packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
+
           if packages.empty?
             new_packages << package_meta
             next
@@ -227,14 +224,25 @@ module Bosh::Director
             end
 
             if existing_package.release_versions.include? @release_version_model
+              if existing_package.blobstore_id.nil?
+                packages.each do |package|
+                  unless package.blobstore_id.nil?
+                    package_meta["blobstore_id"] = package.blobstore_id
+                    package_meta["sha1"] = package.sha1
+                    break
+                  end
+                end
+              end
               registered_packages << [existing_package, package_meta]
             else
               existing_packages << [existing_package, package_meta]
             end
+
           else
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
+
             packages.each do |package|
               unless package.blobstore_id.nil?
                 package_meta["blobstore_id"] = package.blobstore_id
@@ -246,13 +254,9 @@ module Bosh::Director
           end
         end
 
-        did_something = false
+        package_stemcell_hashes1 = create_packages(new_packages, release_dir)
 
-        package_stemcell_hashes1, created_package = create_packages(new_packages, release_dir)
-        did_something |= created_package
-
-        package_stemcell_hashes2, modified_package = use_existing_packages(existing_packages, release_dir)
-        did_something |= modified_package
+        package_stemcell_hashes2 = use_existing_packages(existing_packages, release_dir)
 
         if @compiled_release
           compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
@@ -264,11 +268,10 @@ module Bosh::Director
             end
           end
           consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
-          did_something |= create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
         else
-          did_something |= backfill_source_for_packages(registered_packages, release_dir)
+          backfill_source_for_packages(registered_packages, release_dir)
         end
-        did_something
       end
 
       # @return [boolean] true if sources were added to at least one package; false if the call had no effect.
@@ -293,7 +296,7 @@ module Bosh::Director
       # @return [Array<Hash>] package & stemcell matching pairs that were registered. empty if no packages were changed.
       def use_existing_packages(packages, release_dir)
         if packages.empty?
-          return [], false
+          return []
         end
 
         package_stemcell_hashes = []
@@ -319,17 +322,16 @@ module Bosh::Director
           end
         end
 
-        return package_stemcell_hashes, true
+        return package_stemcell_hashes
       end
 
       # Creates packages using provided metadata
       # @param [Array<Hash>] packages Packages metadata
       # @param [String] release_dir local path to the unpacked release
       # @return [Array<Hash>, boolean] array of compiled package & stemcell matching pairs that were registered, and a
-      # flag indicating if any changes were made to the database.
       def create_packages(package_metas, release_dir)
         if package_metas.empty?
-          return [], false
+          return []
         end
 
         package_stemcell_hashes = []
@@ -354,7 +356,7 @@ module Bosh::Director
           end
         end
 
-        return package_stemcell_hashes, true
+        return package_stemcell_hashes
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
@@ -450,8 +452,7 @@ module Bosh::Director
       def save_package_source_blob(package, package_meta, release_dir)
         return false unless package.blobstore_id.nil?
 
-        name, version = package_meta['name'], package_meta['version']
-        existing_blob = package_meta['blobstore_id']
+        name, version, existing_blob = package_meta['name'], package_meta['version'], package_meta['blobstore_id']
         desc = "package '#{name}/#{version}'"
 
         package.sha1 = package_meta['sha1']
