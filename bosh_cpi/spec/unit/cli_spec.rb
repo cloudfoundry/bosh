@@ -197,7 +197,7 @@ describe Bosh::Cpi::Cli do
     describe 'create_disk' do
       it 'takes json and calls specified method on the cpi' do
         expect(cpi).to(receive(:create_disk).
-          with(100_000, 'fake-vm-cid')) { logs_io.write('fake-log') }.
+          with(100_000, 'fake-vm-cid', nil)) { logs_io.write('fake-log') }.
           and_return('fake-disk-cid')
 
         subject.run <<-JSON
@@ -205,7 +205,8 @@ describe Bosh::Cpi::Cli do
             "method": "create_disk",
             "arguments": [
               100000,
-              "fake-vm-cid"
+              "fake-vm-cid",
+              null
             ],
             "context" : { "director_uuid" : "abc" }
           }
@@ -292,13 +293,13 @@ describe Bosh::Cpi::Cli do
     describe 'snapshot_disk' do
       it 'takes json and calls specified method on the cpi' do
         expect(cpi).to(receive(:snapshot_disk).
-          with('fake-disk-cid')) { logs_io.write('fake-log') }.
+          with('fake-disk-cid', nil)) { logs_io.write('fake-log') }.
           and_return('fake-snapshot-cid')
 
         subject.run <<-JSON
           {
             "method": "snapshot_disk",
-            "arguments": ["fake-disk-cid"],
+            "arguments": ["fake-disk-cid", null],
             "context" : { "director_uuid" : "abc" }
           }
         JSON
