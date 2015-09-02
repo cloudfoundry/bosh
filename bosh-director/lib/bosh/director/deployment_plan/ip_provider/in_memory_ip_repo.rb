@@ -8,20 +8,13 @@ module Bosh::Director::DeploymentPlan
       @recently_released_ips = []
     end
 
-    def delete(ip, subnet)
+    def delete(ip, network_name)
       ip = ip_to_netaddr(ip)
+      entry_to_delete = {ip: ip.to_i, network_name: network_name}
 
-      if subnet.range.contains?(ip)
-        entry_to_delete = {ip: ip.to_i, subnet: subnet}
-        @logger.debug("Deleting ip '#{ip.ip}' for #{subnet.network}")
-        @ips.delete(entry_to_delete)
-        @recently_released_ips << (entry_to_delete)
-        return
-      end
-
-      message = "Can't release IP '#{ip.ip}' back to '#{subnet.network.name}' network: " +
-        "it's neither in dynamic nor in static pool"
-      raise Bosh::Director::NetworkReservationIpNotOwned, message
+      @logger.debug("Deleting ip '#{ip.ip}' for #{network_name}")
+      @ips.delete(entry_to_delete)
+      @recently_released_ips << (entry_to_delete)
     end
 
     def add(ip, subnet)
@@ -34,7 +27,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       if subnet.range.contains?(ip)
-        entry_to_add = {ip: ip.to_i, subnet: subnet}
+        entry_to_add = {ip: ip.to_i, network_name: subnet.network.name}
 
         if @ips.include?(entry_to_add)
           message = "Failed to reserve IP '#{ip.ip}' for '#{subnet.network.name}': already reserved"
@@ -42,7 +35,7 @@ module Bosh::Director::DeploymentPlan
           raise Bosh::Director::NetworkReservationAlreadyInUse, message
         end
 
-        @logger.debug("Reserving ip '#{ip.ip}' for #{subnet.network}")
+        @logger.debug("Reserving ip '#{ip.ip}' for #{subnet.network.name}")
         @ips << entry_to_add
         @recently_released_ips.delete(entry_to_add)
 
@@ -59,7 +52,9 @@ module Bosh::Director::DeploymentPlan
         return subnet.range[i] if available_for_dynamic?(subnet.range[i], subnet)
       end
 
-      entry = @recently_released_ips.find { |entry| entry[:subnet] == subnet }
+      entry = @recently_released_ips.find do |entry|
+        entry[:network_name] == subnet.network.name && subnet.range.contains?(entry[:ip])
+      end
       unless entry.nil?
         return ip_to_netaddr(entry[:ip])
       end
@@ -73,8 +68,8 @@ module Bosh::Director::DeploymentPlan
       return false unless subnet.range.contains?(ip)
       return false if subnet.static_ips.include?(ip.to_i)
       return false if subnet.restricted_ips.include?(ip.to_i)
-      return false if @recently_released_ips.include?({ip: ip.to_i, subnet: subnet})
-      return false if @ips.include?({ip: ip.to_i, subnet: subnet})
+      return false if @recently_released_ips.include?({ip: ip.to_i, network_name: subnet.network.name})
+      return false if @ips.include?({ip: ip.to_i, network_name: subnet.network.name})
       true
     end
   end

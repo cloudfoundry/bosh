@@ -67,14 +67,6 @@ module Bosh::Director
       end
 
       ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        @logger.debug("Releasing IP for dynamic network '#{@name}'")
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation

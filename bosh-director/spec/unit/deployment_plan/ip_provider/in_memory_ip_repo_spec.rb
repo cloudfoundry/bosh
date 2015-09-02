@@ -104,24 +104,11 @@ module Bosh::Director::DeploymentPlan
           ip_repo.add(ip_address, subnet)
         }.to raise_error BD::NetworkReservationAlreadyInUse
 
-        ip_repo.delete(ip_address, subnet)
+        ip_repo.delete(ip_address, subnet.network.name)
 
         expect {
           ip_repo.add(ip_address, subnet)
         }.to_not raise_error
-      end
-
-      context 'when IP is outside of subnet range' do
-        let(:ip_address) { NetAddr::CIDR.create('192.168.5.5') }
-
-        it 'should fail if the IP is not in range' do
-          message = "Can't release IP '192.168.5.5' back to '#{network_name}' network: " +
-            "it's neither in dynamic nor in static pool"
-          expect {
-            ip_repo.delete(ip_address, subnet)
-          }.to raise_error(Bosh::Director::NetworkReservationIpNotOwned,
-              message)
-        end
       end
     end
 
@@ -134,7 +121,7 @@ module Bosh::Director::DeploymentPlan
           ip_repo.add(ip_address_to_i, subnet)
         }.to raise_error BD::NetworkReservationAlreadyInUse
 
-        ip_repo.delete(ip_address_to_i, subnet)
+        ip_repo.delete(ip_address_to_i, subnet.network.name)
 
         expect {
           ip_repo.add(ip_address_to_i, subnet)
@@ -181,10 +168,10 @@ module Bosh::Director::DeploymentPlan
         ip_repo.add(subnet_2_ip_2, second_subnet)
 
         # Release allocated IPs in random order
-        ip_repo.delete(subnet_2_ip_1, second_subnet)
-        ip_repo.delete(subnet_1_ip_2, subnet)
-        ip_repo.delete(subnet_1_ip_1, subnet)
-        ip_repo.delete(subnet_2_ip_2, second_subnet)
+        ip_repo.delete(subnet_2_ip_1, second_subnet.network.name)
+        ip_repo.delete(subnet_1_ip_2, subnet.network.name)
+        ip_repo.delete(subnet_1_ip_1, subnet.network.name)
+        ip_repo.delete(subnet_2_ip_2, second_subnet.network.name)
 
         # Verify that re-acquiring the released IPs retains order
         expect(ip_repo.get_dynamic_ip(subnet)).to eq(subnet_1_ip_2)

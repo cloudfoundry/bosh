@@ -87,7 +87,12 @@ module Bosh::Director
 
         @logger = Config.logger
 
-        @ip_provider = IpProviderV2.new(InMemoryIpRepo.new(@logger), using_global_networking?, @logger)
+        if using_global_networking?
+          @ip_repo = DatabaseIpRepo.new(@logger)
+        else
+          @ip_repo = InMemoryIpRepo.new(@logger)
+        end
+        @ip_provider = IpProviderV2.new(@ip_repo, using_global_networking?, @logger)
       end
 
       def_delegators :@cloud_planner,

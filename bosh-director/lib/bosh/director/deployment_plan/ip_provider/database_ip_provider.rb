@@ -38,7 +38,7 @@ module Bosh::Director::DeploymentPlan
       cidr_ip = CIDRIP.new(reservation.ip)
       if @restricted_ips.include?(cidr_ip.to_i)
         return if reservation.is_a?(Bosh::Director::ExistingNetworkReservation)
-        message = "Failed to reserve IP '#{cidr_ip}' for #{@network_desc}: IP belongs to reserved range"
+        message = "Failed to reserve IP '#{cidr_ip}' for network '#{@network_name}': IP belongs to reserved range"
         @logger.error(message)
         raise Bosh::Director::NetworkReservationIpReserved, message
       end
@@ -57,27 +57,6 @@ module Bosh::Director::DeploymentPlan
 
       reservation.mark_reserved_as(reservation_type)
       @logger.debug("Reserved ip '#{cidr_ip}' for #{@network_desc} as #{reservation_type}")
-    end
-
-    # @param [NetAddr::CIDR] ip or [Integer] ip
-    def release_ip(ip)
-      cidr_ip = CIDRIP.new(ip)
-
-      ip_address = Bosh::Director::Models::IpAddress.first(
-        address: cidr_ip.to_i,
-        network_name: @network_name,
-      )
-
-      unless ip_address
-        @logger.debug("Failed to release ip '#{cidr_ip}' for #{@network_desc}: not reserved")
-        raise Bosh::Director::NetworkReservationIpNotOwned,
-          "Can't release IP '#{cidr_ip}' " +
-            "back to network '#{@network_name}': " +
-            "it's neither in dynamic nor in static pool"
-      end
-
-      @logger.debug("Releasing ip '#{cidr_ip}'")
-      ip_address.destroy
     end
 
     private
@@ -120,6 +99,10 @@ module Bosh::Director::DeploymentPlan
 
       retry unless ip_address
 
+      validate_instance_and_update_reservation_type(instance, ip, ip_address, is_static)
+    end
+
+    def validate_instance_and_update_reservation_type(instance, ip, ip_address, is_static)
       reserved_instance = ip_address.instance
       if reserved_instance == instance.model
         if ip_address.static != is_static

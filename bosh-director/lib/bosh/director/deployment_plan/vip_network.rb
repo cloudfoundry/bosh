@@ -48,20 +48,6 @@ module Bosh::Director
       end
 
       ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        unless reservation.ip
-          @logger.error("Failed to release IP for vip network '#{@name}': IP must be provided")
-          raise NetworkReservationIpMissing,
-            "Can't release reservation without an IP"
-        end
-        @logger.debug("Releasing IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
-        @reserved_ips.delete(reservation.ip)
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation

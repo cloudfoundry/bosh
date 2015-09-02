@@ -134,27 +134,6 @@ module Bosh::Director
           "Failed to reserve IP for '#{reservation.instance}' for manual network '#{@name}': no more available"
       end
 
-      ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        unless reservation.ip
-          @logger.error("Failed to release IP for manual network '#{@name}': IP must be provided")
-          raise NetworkReservationIpMissing,
-            "Can't release reservation without an IP"
-        end
-
-        @logger.error("Releasing IP '#{format_ip(reservation.ip)}' for manual network #{@name}")
-        subnet = find_subnet_containing(reservation.ip) #FIXME: we shouldn't need a subnet to release an ip
-
-        if subnet
-          subnet.release_ip(reservation.ip)
-        else
-          @default_subnet.release_ip(reservation.ip)
-        end
-      end
-
       private
 
       def filter_subnet_by_instance_az(instance)

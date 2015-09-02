@@ -89,10 +89,6 @@ module Bosh::Director
         @ip_provider.reserve_ip(reservation)
       end
 
-      def release_ip(ip)
-        @ip_provider.release_ip(ip)
-      end
-
       def allocate_dynamic_ip(instance)
         @ip_provider.allocate_dynamic_ip(instance)
       end

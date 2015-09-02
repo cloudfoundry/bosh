@@ -466,7 +466,7 @@ module Bosh::Director::DeploymentPlan
             expect {
               ip_provider.reserve_ip(reservation)
             }.to raise_error Bosh::Director::NetworkReservationIpReserved,
-                "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+                "Failed to reserve IP '192.168.0.2' for network 'fake-network': IP belongs to reserved range"
           end
         end
 
@@ -477,40 +477,8 @@ module Bosh::Director::DeploymentPlan
             expect {
               ip_provider.reserve_ip(reservation)
             }.to raise_error Bosh::Director::NetworkReservationIpReserved,
-                "Failed to reserve IP '192.168.0.2' for network 'fake-network' (192.168.0.0/24): IP belongs to reserved range"
+                "Failed to reserve IP '192.168.0.2' for network 'fake-network': IP belongs to reserved range"
           end
-        end
-      end
-    end
-
-    describe 'release_ip' do
-      context 'when IP was reserved' do
-        let(:static_ips) do
-          Set.new [
-              cidr_ip('192.168.0.2'),
-            ]
-        end
-
-        it 'releases the IP' do
-          ip_provider.reserve_ip(create_reservation('192.168.0.2'))
-          expect(Bosh::Director::Models::IpAddress.count).to eq(1)
-          ip_provider.release_ip(cidr_ip('192.168.0.2'))
-          expect(Bosh::Director::Models::IpAddress.count).to eq(0)
-        end
-      end
-
-      context 'when IP is restricted' do
-        let(:restricted_ips) do
-          Set.new [
-              cidr_ip('192.168.0.3'),
-            ]
-        end
-
-        it 'raises an error' do
-          expect {
-            ip_provider.release_ip(cidr_ip('192.168.0.3'))
-          }.to raise_error Bosh::Director::NetworkReservationIpNotOwned,
-              "Can't release IP '192.168.0.3' back to network 'fake-network': it's neither in dynamic nor in static pool"
         end
       end
     end

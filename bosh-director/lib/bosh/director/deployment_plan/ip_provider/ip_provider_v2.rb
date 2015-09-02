@@ -10,17 +10,13 @@ module Bosh::Director
       end
 
       def release(reservation)
-        if @using_global_networking
-          return reservation.network.release(reservation)
-        end
-
         return unless reservation.network.is_a?(ManualNetwork)
 
         if reservation.ip.nil?
           @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
-          @ip_repo.delete(reservation.ip, find_subnet_containing(reservation))
+          @ip_repo.delete(reservation.ip, reservation.network.name)
         end
       end
 
