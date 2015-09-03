@@ -49,7 +49,7 @@ PATH
       bosh-director-core (~> 1.3067.0)
       bosh-registry (~> 1.3067.0)
       bosh-template (~> 1.3067.0)
-      bosh_aws_cpi (~> 1.3067.0)
+      bosh_aws_cpi (~> 2.0.0)
       bosh_common (~> 1.3067.0)
       bosh_cpi (~> 1.3067.0)
       bosh_openstack_cpi (~> 2.0.0)
@@ -129,24 +129,13 @@ PATH
   specs:
     bosh-stemcell (1.3067.0)
       bosh-core (~> 1.3067.0)
-      bosh_aws_cpi (~> 1.3067.0)
+      bosh_aws_cpi (~> 2.0.0)
 
 PATH
   remote: bosh-template
   specs:
     bosh-template (1.3067.0)
       semi_semantic (~> 1.1.0)
-
-PATH
-  remote: bosh_aws_cpi
-  specs:
-    bosh_aws_cpi (1.3067.0)
-      aws-sdk (= 1.60.2)
-      bosh-registry (~> 1.3067.0)
-      bosh_common (~> 1.3067.0)
-      bosh_cpi (~> 1.3067.0)
-      httpclient (= 2.4.0)
-      yajl-ruby (>= 0.8.2)
 
 PATH
   remote: bosh_cli
@@ -173,7 +162,7 @@ PATH
     bosh_cli_plugin_aws (1.3067.0)
       bosh-core (~> 1.3067.0)
       bosh-stemcell (~> 1.3067.0)
-      bosh_aws_cpi (~> 1.3067.0)
+      bosh_aws_cpi (~> 2.0.0)
       bosh_cli (~> 1.3067.0)
       bosh_cli_plugin_micro (~> 1.3067.0)
 
@@ -187,7 +176,7 @@ PATH
       bosh-director-core (~> 1.3067.0)
       bosh-registry (~> 1.3067.0)
       bosh-stemcell (~> 1.3067.0)
-      bosh_aws_cpi (~> 1.3067.0)
+      bosh_aws_cpi (~> 2.0.0)
       bosh_cli (~> 1.3067.0)
       bosh_common (~> 1.3067.0)
       bosh_cpi (~> 1.3067.0)
@@ -234,6 +223,13 @@ GEM
     bcrypt-ruby (3.0.1)
     blue-shell (0.3.0)
       rspec
+    bosh_aws_cpi (2.0.0)
+      aws-sdk (= 1.60.2)
+      bosh-registry
+      bosh_common
+      bosh_cpi
+      httpclient (= 2.4.0)
+      yajl-ruby (>= 0.8.2)
     bosh_openstack_cpi (2.0.0)
       bosh-registry
       bosh_common
@@ -544,7 +540,7 @@ DEPENDENCIES
   bosh-release!
   bosh-stemcell!
   bosh-template!
-  bosh_aws_cpi!
+  bosh_aws_cpi (~> 2.0.0)
   bosh_cli!
   bosh_cli_plugin_aws!
   bosh_cli_plugin_micro!

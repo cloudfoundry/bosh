@@ -4,7 +4,6 @@ source 'https://rubygems.org'
 
 gem 'agent_client', path: 'agent_client'
 gem 'blobstore_client', path: 'blobstore_client'
-gem 'bosh_aws_cpi', path: 'bosh_aws_cpi'
 gem 'bosh_common', path: 'bosh_common'
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh_cpi', path: 'bosh_cpi'
@@ -19,6 +18,7 @@ gem 'bosh-release', path: 'bosh-release'
 gem 'bosh-template', path: 'bosh-template'
 gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 
+gem 'bosh_aws_cpi', '~>2.0.0'
 gem 'rake', '~>10.0'
 
 group :production do

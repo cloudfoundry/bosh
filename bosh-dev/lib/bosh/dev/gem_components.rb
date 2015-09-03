@@ -29,7 +29,6 @@ module Bosh::Dev
         bosh-core
         bosh-stemcell
         bosh-template
-        bosh_aws_cpi
         bosh_cli
         bosh_cli_plugin_aws
         bosh_cli_plugin_micro
