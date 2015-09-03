@@ -121,6 +121,7 @@ module Bosh::Director
             state: 'started',
             compilation: job.compilation?,
             uuid: SecureRandom.uuid,
+            availability_zone: availability_zone_name,
           })
       end
 

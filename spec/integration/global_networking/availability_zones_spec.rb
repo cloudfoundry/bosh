@@ -35,6 +35,20 @@ describe 'availability zones', type: :integration do
       manifest_hash
     end
 
+    it 'should reuse an instance when vm creation fails the first time' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      current_sandbox.cpi.commands.make_create_vm_always_fail
+      manifest = simple_manifest
+      manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
+
+      deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+
+      current_sandbox.cpi.commands.allow_create_vm_to_succeed
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      expect(director.vms.count).to eq(1)
+    end
+
     it 'creates VM with properties from both availability zone and resource pool' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
