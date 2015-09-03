@@ -305,7 +305,7 @@ describe 'upload release', type: :integration do
       expect(output).to include('Started creating new compiled packages > go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include("Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08.")
-      expect(output).to include("Compiled Release uploaded")
+      expect(output).to include("Release uploaded")
     end
 
     it 'should populate compiled packages for two matching stemcells' do
@@ -319,7 +319,7 @@ describe 'upload release', type: :integration do
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-centos-7-go_agent/3001')
       expect(output).to include('Started creating new compiled packages > hello-go/03df8c27c4525622aacc0d7013af30a9f2195393 for bosh-aws-xen-hvm-centos-7-go_agent/3001')
       expect(output).to include('Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08.')
-      expect(output).to include("Compiled Release uploaded")
+      expect(output).to include("Release uploaded")
     end
 
     it 'upload a compiled release tarball' do
@@ -328,7 +328,7 @@ describe 'upload release', type: :integration do
       expect(output).to include('Started creating new packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393')
       expect(output).to include('Started creating new compiled packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393 for ubuntu-stemcell/1.')
       expect(output).to include('Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08')
-      expect(output).to include('Compiled Release uploaded')
+      expect(output).to include('Release uploaded')
     end
 
     it 'should not do any expensive operations for 2nd upload of a compiled release tarball' do
@@ -365,13 +365,13 @@ describe 'upload release', type: :integration do
       output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Started processing 1 existing package > Processing 1 existing package')
       expect(output).to include('Started processing 1 existing job > Processing 1 existing job')
-      expect(output).to include('Compiled Release uploaded')
+      expect(output).to include('Release uploaded')
     end
 
     it 'backfills the source code for an already exisiting compiled release' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-      expect(output).to include('Compiled Release uploaded')
+      expect(output).to include('Release uploaded')
 
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       expect(output).to include('Release uploaded')
@@ -427,7 +427,7 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-      expect(output).to include('Compiled Release uploaded')
+      expect(output).to include('Release uploaded')
 
       output = scrub_blobstore_ids(bosh_runner.run('inspect release test_release/1'))
       expect(output).to include(<<-EOF)

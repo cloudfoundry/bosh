@@ -131,7 +131,7 @@ module Bosh::Cli::Command
           report = 'Release rebased'
         else
           say("\nUploading release\n")
-          report = tarball.compiled_release? ? 'Compiled Release uploaded' : 'Release uploaded'
+          report = 'Release uploaded'
         end
 
         status, task_id = director.upload_release(tarball_path, {rebase: rebase})
