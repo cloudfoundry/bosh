@@ -58,6 +58,8 @@ module Bosh
 
         def parse_from_manifest(manifest_hash, cloud_config, options)
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
+          @logger.debug("Migrated deployment manifest:\n#{deployment_manifest}")
+          @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
           name = deployment_manifest['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name)

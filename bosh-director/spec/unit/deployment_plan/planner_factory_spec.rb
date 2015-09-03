@@ -53,6 +53,26 @@ module Bosh
             expect(planner.name).to eq('migrated_name')
           end
 
+          it 'logs the migrated manifests' do
+            allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
+              [hash.merge({'name' => 'migrated_name'}), cloud_config.manifest]
+            end
+
+            planner
+# rubocop:disable LineLength
+            expected_deployment_manifest_log = <<LOGMESSAGE
+Migrated deployment manifest:
+{"name"=>"migrated_name", "director_uuid"=>"deadbeef", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "jobs"=>[{"name"=>"foobar", "templates"=>[{"name"=>"foobar"}], "resource_pool"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "properties"=>{}}]}
+LOGMESSAGE
+            expected_cloud_manifest_log = <<LOGMESSAGE
+Migrated cloud config manifest:
+{"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "resource_pools"=>[{"name"=>"a", "size"=>3, "cloud_properties"=>{}, "network"=>"a", "stemcell"=>{"name"=>"ubuntu-stemcell", "version"=>"1"}}]}
+LOGMESSAGE
+# rubocop:enable LineLength
+            expect(logger_io.string).to include(expected_deployment_manifest_log)
+            expect(logger_io.string).to include(expected_cloud_manifest_log)
+          end
+
           describe 'attributes of the planner' do
             it 'has a backing model' do
               expect(planner.model.name).to eq('simple')
