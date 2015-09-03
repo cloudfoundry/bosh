@@ -72,7 +72,11 @@ module Bosh::Director
         apply_state
       end
 
-      start! if need_start?
+      if need_start?
+        run_pre_start_scripts
+        start!
+      end
+      
 
       wait_until_running
 
@@ -130,6 +134,10 @@ module Bosh::Director
           break if current_state["job_state"] != "running"
         end
       end
+    end
+
+    def run_pre_start_scripts
+      @agent.run_script("pre-start", {})
     end
 
     def start!

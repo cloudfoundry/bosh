@@ -18,6 +18,8 @@ module Bosh::Stemcell
           rhel_os_stages
         when OperatingSystem::Ubuntu then
           ubuntu_os_stages
+        when OperatingSystem::Photon then
+          photon_os_stages
       end
     end
 
@@ -213,6 +215,7 @@ module Bosh::Stemcell
      [
         :base_centos,
         :base_centos_packages,
+        :base_file_permission,
         :base_ssh,
         :system_kernel_modules,
         :system_ixgbevf,
@@ -229,6 +232,7 @@ module Bosh::Stemcell
       [
         :base_rhel,
         :base_centos_packages,
+        :base_file_permission,
         :base_ssh,
         :system_kernel_modules,
         bosh_steps,
@@ -247,6 +251,7 @@ module Bosh::Stemcell
         :base_apt,
         :base_ubuntu_build_essential,
         :base_ubuntu_packages,
+        :base_file_permission,
         :base_ssh,
         :bosh_sysstat,
         :system_kernel,
@@ -259,6 +264,19 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
+      ].flatten
+    end
+
+    def photon_os_stages
+      [
+        :base_photon,
+        :base_file_permission,
+        bosh_steps,
+        :base_ssh,
+        :rsyslog_config,
+        :delay_monit_start,
+        :system_grub,
+        :cron_config,
       ].flatten
     end
 

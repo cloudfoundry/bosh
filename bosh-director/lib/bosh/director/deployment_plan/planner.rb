@@ -2,6 +2,7 @@ require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
 require 'bosh/director/deployment_plan/disk_pool'
 require 'forwardable'
+require 'common/deep_copy'
 
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
@@ -64,7 +65,7 @@ module Bosh::Director
         @properties = attrs.fetch(:properties)
         @releases = {}
 
-        @manifest_text = manifest_text
+        @manifest_text = Bosh::Common::DeepCopy.copy(manifest_text)
         @cloud_config = cloud_config
         @model = deployment_model
 

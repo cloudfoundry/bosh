@@ -42,7 +42,7 @@ module Bosh::Dev
         expect(get_head_commit_message(remote_dir)).to eq('my commit message')
       end
 
-      context 'when pushing changes fails because of non-fast-forward push' do
+      context 'when pushing changes fails to rebase' do
         before do
           Dir.chdir(remote_dir) do
             config_git_user
@@ -56,7 +56,24 @@ module Bosh::Dev
         it 'raises PushNonFastForwardError' do
           expect {
             git_repo_updater.update_directory(local_dir, 'my commit message')
-          }.to raise_error GitRepoUpdater::PushRejectedError
+          }.to raise_error /Failed to git pull/
+        end
+      end
+
+      context 'when pushing changes fails because of non-fast-forward push' do
+        before do
+          Dir.chdir(remote_dir) do
+            config_git_user
+            `git checkout master`
+            File.write('non-conflict', 'remote changes')
+            `git commit -am 'Remote commit'`
+            `git checkout -b another-branch`
+          end
+        end
+
+        it 'tries to rebase' do
+          git_repo_updater.update_directory(local_dir, 'my commit message')
+          expect(get_head_commit_message(remote_dir)).to eq('Initial commit')
         end
       end
     end

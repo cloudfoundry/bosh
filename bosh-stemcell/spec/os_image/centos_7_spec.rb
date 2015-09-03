@@ -5,6 +5,7 @@ describe 'CentOS 7 OS image', os_image: true do
   it_behaves_like 'a CentOS or RHEL based OS image'
   it_behaves_like 'a systemd-based OS image'
   it_behaves_like 'a Linux kernel 3.x based OS image'
+  it_behaves_like 'a Linux kernel module configured OS image'
 
   context 'installed by base_centos' do
     describe file('/etc/locale.conf') do

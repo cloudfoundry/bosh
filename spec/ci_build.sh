@@ -20,6 +20,7 @@ mkdir -p $TMPDIR
   if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
     git submodule update --init --recursive
+    git clean -dff
   fi
 )
 

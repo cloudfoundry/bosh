@@ -1,4 +1,4 @@
 # Block until tests write out unblock_packaging file
-until [ -a "${BOSH_INSTALL_TARGET}/unblock_packaging" ]; do
+until [ ! -d "${BOSH_INSTALL_TARGET}" ] || [ -a "${BOSH_INSTALL_TARGET}/unblock_packaging" ]; do
   sleep 0.5
 done

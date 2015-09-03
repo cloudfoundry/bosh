@@ -54,6 +54,7 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered
         expect(fake_new_agent).to receive(:apply).with(spec).ordered
+        expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
         expect(fake_new_agent).to receive(:start).ordered
 
         expect(fake_cloud).to receive(:delete_vm).with('vm-cid')

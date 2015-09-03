@@ -15,7 +15,7 @@ module Bosh::Dev
         return if no_changes?
 
         commit_changes(commit_message)
-        push
+        push_with_rebase
       end
     end
 
@@ -35,11 +35,30 @@ module Bosh::Dev
       raise "Failed committing modified files in #{Dir.pwd}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
     end
 
+    def push_with_rebase
+      attempt = 0
+      begin
+        attempt += 1
+        push
+      rescue PushRejectedError
+        pull
+
+        retry if attempt < 3
+      end
+    end
+
+    def pull
+      stdout, stderr, status = exec_cmd('git pull --rebase')
+      unless status.success?
+        raise "Failed to git pull from #{Dir.pwd}: stdout: '#{stdout}', stderr: '#{stderr}'"
+      end
+    end
+
     def push
       stdout, stderr, status = exec_cmd('git push')
       unless status.success?
         err_message =  "Failed git pushing from #{Dir.pwd}: stdout: '#{stdout}', stderr: '#{stderr}'"
-        if stderr =~ /\[rejected\]/
+        if stderr =~ /rejected/
           raise PushRejectedError, err_message
         else
           raise err_message

@@ -10,8 +10,15 @@ module Bosh::Director
       end
 
       get '/:id' do
+        @resource_manager.clean_old_tmpfiles
+
         tmp_file = @resource_manager.get_resource_path(params[:id])
-        send_disposable_file(tmp_file, :type => 'application/x-gzip')
+
+        status 200
+        headers \
+          'Content-Type'  => 'application/x-gzip',
+          'X-Accel-Redirect' => File.join('/x_accel_files/', tmp_file)
+        body ''
       end
     end
   end

@@ -1,4 +1,3 @@
-require 'common/deep_copy'
 require 'bosh/template/property_helper'
 require 'bosh/director/deployment_plan/job_network_parser'
 require 'bosh/director/deployment_plan/job_availability_zone_parser'

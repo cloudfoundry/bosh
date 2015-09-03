@@ -51,7 +51,15 @@ http {
     proxy_read_timeout       <%= p('director.proxy_timeout') %>;
     proxy_max_temp_file_size 0;
 
+    location /x_accel_files/ {
+      internal;
+      alias /;
+    }
+
     location / {
+      proxy_set_header X-Sendfile-Type X-Accel-Redirect;
+      proxy_set_header X-Accel-Mapping /=/x_accel_files/;
+
       proxy_pass http://director;
 
       if ($content_type = "application/x-compressed") {

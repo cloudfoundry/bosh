@@ -235,9 +235,13 @@ module Bosh::Director
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
-            package = packages.first
-            package_meta["blobstore_id"] = package.blobstore_id
-            package_meta["sha1"] = package.sha1
+            packages.each do |package|
+              unless package.blobstore_id.nil?
+                package_meta["blobstore_id"] = package.blobstore_id
+                package_meta["sha1"] = package.sha1
+                break
+              end
+            end
             new_packages << package_meta
           end
         end

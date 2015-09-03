@@ -67,6 +67,46 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'it supports running pre-start scripts' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      create_and_upload_test_release
+      upload_stemcell
+
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'job_with_templates_having_prestart_scripts',
+                             templates: [
+                                 {'name' => 'job_1_with_pre_start_script'},
+                                 {'name' => 'job_2_with_pre_start_script'}
+                             ],
+                             instances: 1)]
+          })
+      set_deployment(manifest_hash: manifest)
+    end
+
+    it 'runs the pre-start scripts on the agent vm' do
+      deploy({})
+
+      agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+
+      expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
+      expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
+    end
+
+    xit 'waits for the pre-start scripts to run before continuing' do
+
+    end
+
+    xit 'error out if run_script errors' do
+
+    end
+
+  end
+
   it 'supports scaling down and then scaling up' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

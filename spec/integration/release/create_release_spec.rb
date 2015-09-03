@@ -20,6 +20,8 @@ describe 'create release', type: :integration do
           './jobs/foobar.tgz',
           './jobs/foobar_without_packages.tgz',
           './jobs/job_with_blocking_compilation.tgz',
+          './jobs/job_1_with_pre_start_script.tgz',
+          './jobs/job_2_with_pre_start_script.tgz',
           './jobs/transitive_deps.tgz',
           './jobs/id_job.tgz',
           './packages/a.tgz',
@@ -104,6 +106,8 @@ describe 'create release', type: :integration do
               job_desc('foobar'),
               job_desc('foobar_without_packages'),
               job_desc('job_with_blocking_compilation'),
+              job_desc('job_1_with_pre_start_script'),
+              job_desc('job_2_with_pre_start_script'),
               job_desc('transitive_deps'),
               job_desc('id_job')
             ),

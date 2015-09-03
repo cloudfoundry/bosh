@@ -1,5 +1,3 @@
-require 'common/deep_copy'
-
 module Bosh::Director
   module DeploymentPlan
     class DeploymentSpecParser

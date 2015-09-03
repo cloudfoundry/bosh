@@ -266,6 +266,16 @@ module Bosh::Spec
       job_hash
     end
 
+    def self.job_with_many_templates(options={})
+      {
+          'name'          => options.fetch(:name),
+          'templates'      => options.fetch(:templates),
+          'resource_pool' => 'a',
+          'instances'     => options.fetch(:instances, 3),
+          'networks'      => [{ 'name' => 'a' }],
+      }
+    end
+
     def self.manifest_with_errand
       manifest = simple_manifest.merge('name' => 'errand')
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1

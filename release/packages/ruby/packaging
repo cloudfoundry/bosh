@@ -15,7 +15,7 @@ tar xzf ruby/yaml-0.1.5.tar.gz
 tar xzf ruby/ruby-*.tar.gz
 (
   set -e
-  cd ruby-2.1.4
+  cd ruby-2.1.6
   if [ "`uname -m`" == "ppc64le" ]; then
     cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./tool
   fi

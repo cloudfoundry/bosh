@@ -28,6 +28,7 @@ module Bosh::Stemcell
               :base_apt,
               :base_ubuntu_build_essential,
               :base_ubuntu_packages,
+              :base_file_permission,
               :base_ssh,
               :bosh_sysstat,
               :system_kernel,
@@ -57,6 +58,7 @@ module Bosh::Stemcell
             [
               :base_centos,
               :base_centos_packages,
+              :base_file_permission,
               :base_ssh,
               :system_kernel_modules,
               :system_ixgbevf,
@@ -83,6 +85,7 @@ module Bosh::Stemcell
             [
               :base_rhel,
               :base_centos_packages,
+              :base_file_permission,
               :base_ssh,
               :system_kernel_modules,
               :bosh_sysctl,

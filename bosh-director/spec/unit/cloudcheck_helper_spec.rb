@@ -141,7 +141,8 @@ module Bosh::Director
             vm
           end
 
-          expect(fake_new_agent).to receive(:start)
+          expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
+          expect(fake_new_agent).to receive(:start).ordered
 
           test_problem_handler.apply_resolution(:recreate_vm)
         end

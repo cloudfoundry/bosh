@@ -1,0 +1,27 @@
+#!/bin/bash
+
+PIDFILE=/var/vcap/sys/run/job_2_with_pre_start_script.pid
+
+case $1 in
+
+  start)
+    echo $$ > $PIDFILE
+
+    while true; do
+      echo "job_2_with_pre_start_script is running"
+      sleep 1
+    done
+    ;;
+
+  stop)
+    tail -1 $PIDFILE | xargs kill
+
+    rm -f $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: job_2_with_pre_start_script_ctl {start|stop}"
+    ;;
+esac
+
+exit 0

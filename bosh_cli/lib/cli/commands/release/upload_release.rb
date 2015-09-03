@@ -9,6 +9,8 @@ module Bosh::Cli::Command
         'known by director (discards local job/package',
         'versions in favor of versions assigned by director)'
       option '--skip-if-exists', 'no-op; retained for backward compatibility'
+      option '--dir RELEASE_DIRECTORY', 'path to release directory'
+
       def upload(release_file = nil)
         auth_required
         show_current_state
@@ -62,7 +64,7 @@ module Bosh::Cli::Command
         blobstore = release.blobstore
         tmpdir = Dir.mktmpdir
 
-        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, cache_dir, blobstore, package_matches)
+        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, cache_dir, blobstore, package_matches, release.dir)
         need_repack = true
 
         unless compiler.exists?
@@ -153,17 +155,17 @@ module Bosh::Cli::Command
         task_report(status, task_id, report)
       end
 
-      # if we aren't already in a release directory, try going up two levels
-      # to see if that is a release directory, and then use that as the base
       def find_release_dir(manifest_path)
-        unless in_release_dir?
-          dir = File.expand_path('../..', manifest_path)
-          Dir.chdir(dir)
-          if in_release_dir?
-            @release = Bosh::Cli::Release.new(dir, options[:final])
-          end
-        end
+        release_dir_for_final_manfiest = File.expand_path('../..', manifest_path)
+        release_dir_for_dev_manfiest = File.expand_path('../../..', manifest_path)
 
+        [
+          release_dir_for_final_manfiest,
+          release_dir_for_dev_manfiest
+        ].each do |release_dir|
+          @release_directory = release_dir
+          break if in_release_dir?
+        end
       end
 
       def get_remote_release(name)

@@ -1,0 +1,8 @@
+---
+name: job_2_with_pre_start_script
+templates:
+  pre-start.erb: bin/pre-start
+  job_2_ctl: bin/job_2_ctl
+
+packages: []
+properties: {}

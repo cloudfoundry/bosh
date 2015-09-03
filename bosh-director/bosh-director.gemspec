@@ -18,17 +18,27 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* db/*`.split("\n")
   s.require_path = 'lib'
 
-  s.add_dependency 'bcrypt-ruby',        '~>3.0.1'
+  # NOTE: We must specify all transitive BOSH gem dependencies found in the
+  # external CPIs, in order to ensure appropriate versions are installed.
+  # Also do the same in bosh_cli_plugin_micro.gemspec
+  # Review this once CPIs are completely externalized and "micro" goes away.
+  # ----------------------------------------------------------------------------
+  s.add_dependency 'bosh_common',        "~>#{version}"
+  s.add_dependency 'bosh_cpi',           "~>#{version}"
+  s.add_dependency 'bosh-registry',      "~>#{version}"
+  # ----------------------------------------------------------------------------
+
   s.add_dependency 'blobstore_client',   "~>#{version}"
   s.add_dependency 'bosh-core',          "~>#{version}"
   s.add_dependency 'bosh-director-core', "~>#{version}"
-  s.add_dependency 'bosh_common',        "~>#{version}"
   s.add_dependency 'bosh-template',      "~>#{version}"
-  s.add_dependency 'bosh_cpi',           "~>#{version}"
-  s.add_dependency 'bosh_openstack_cpi', "~>#{version}"
+
+  s.add_dependency 'bosh_openstack_cpi', "~>2.0.0"
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
   s.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
+
+  s.add_dependency 'bcrypt-ruby',        '~>3.0.1'
   s.add_dependency 'eventmachine',       '~>1.0.0'
   s.add_dependency 'fog-aws',          '<=0.1.1'
   s.add_dependency 'fog',              '~>1.31.0'

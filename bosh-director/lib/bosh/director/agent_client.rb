@@ -118,6 +118,18 @@ module Bosh::Director
       end
     end
 
+    def run_script(script_name, options)
+      begin
+        send_message(:run_script, script_name, options)
+      rescue RpcRemoteException => e
+        if e.message =~ /unknown message/
+          @logger.warn("Ignoring run_script 'unknown message' error from the agent: #{e.inspect}. Received while trying to run: #{script_name}")
+        else
+          raise
+        end
+      end
+    end
+
     def stop(*args)
       send_message(:stop, *args)
     end

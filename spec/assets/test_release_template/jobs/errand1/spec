@@ -32,9 +32,9 @@ properties:
     description: 'Exit code to return from the errand script'
     default: 0
 
-  errand1.sleep_duration_in_seconds:
-    description: 'Number of seconds errand script is going to sleep'
-    default: 0
+  errand1.blocking_errand:
+    description: 'Whether to block errand execution'
+    default: false
 
   errand1.logs.stdout:
     description: 'Output to place into sys/log/errand1/stdout.log'

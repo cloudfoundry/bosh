@@ -20,7 +20,7 @@ case "$DB" in
       mkdir -p $PGDATA
       mkdir -p $PGLOGS
       initdb -U postgres -D $PGDATA
-      pg_ctl start -l $PGLOGS/server.log
+      pg_ctl start -l $PGLOGS/server.log -o "-N 400"
     '
     ;;
   *)

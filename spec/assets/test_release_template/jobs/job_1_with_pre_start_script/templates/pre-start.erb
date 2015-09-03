@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo message on stdout of job 1 pre-start script
+echo template interpolation works in this script: <%= p('pre_start_message_1') %>
+
+echo message on stderr of job 1 pre-start script >&2

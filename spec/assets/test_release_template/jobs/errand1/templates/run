@@ -15,7 +15,13 @@ echo -n "<%= properties.errand1.logs.stdout %>" > sys/log/errand1/stdout.log
 echo -n "<%= properties.errand1.logs.custom %>" > sys/log/custom.log
 
 # Delay
-sleep <%= properties.errand1.sleep_duration_in_seconds %>
+<% if p('errand1.blocking_errand') %>
+until [ -a "jobs/errand1/unblock_errand" ]; do
+  sleep 0.5
+done
+<% end %>
+
+sleep
 
 # Exit code
 exit <%= properties.errand1.exit_code %>

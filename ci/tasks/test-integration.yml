@@ -13,4 +13,4 @@ params:
   RUBY_VERSION: replace-me
   DB:           replace-me
   LOG_LEVEL:    INFO
-  NUM_GROUPS: 8
+  NUM_GROUPS:   16
