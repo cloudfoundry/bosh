@@ -28,20 +28,6 @@ namespace :migrations do
     end
   end
 
-  namespace :bosh_vsphere_cpi do
-    desc 'Generate new migration with NAME'
-    task :new, :name do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-
-      timestamp = Time.new.getutc.strftime('%Y%m%d%H%M%S')
-      new_migration_path = "bosh_vsphere_cpi/db/migrations/#{timestamp}_#{name}.rb"
-
-      puts "Creating #{new_migration_path}"
-      FileUtils.touch(new_migration_path)
-    end
-  end
-
   namespace :bosh_cli_plugin_aws do
     desc 'Generate a new AWS migration with NAME'
     task :new, :name do |_, args|
