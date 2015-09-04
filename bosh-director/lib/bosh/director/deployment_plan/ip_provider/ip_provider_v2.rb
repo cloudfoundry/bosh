@@ -42,9 +42,9 @@ module Bosh::Director
             filter_subnet_by_instance_az(reservation).each do |subnet|
               @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
               if @using_global_networking
-                ip = subnet.allocate_dynamic_ip(reservation.instance)
+                ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
                 if ip
-                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
+                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
                   reservation.resolve_ip(ip)
                   reservation.mark_reserved_as(DynamicNetworkReservation)
                   return

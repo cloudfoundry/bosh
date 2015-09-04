@@ -32,6 +32,15 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     end
+    let(:subnet) do
+      ManualNetworkSubnet.new(
+        network,
+        network_spec['subnets'].first,
+        availability_zones,
+        [],
+        ip_provider_factory
+      )
+    end
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -165,5 +174,163 @@ module Bosh::Director::DeploymentPlan
         end
       end
     end
+
+    describe :allocate_dynamic_ip do
+      let(:reservation) { BD::DynamicNetworkReservation.new(instance, network) }
+
+      context 'when there are no IPs reserved for that network' do
+        it 'returns the first in the range' do
+          ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.2')
+          expect(ip_address).to eq(expected_ip_address)
+        end
+      end
+
+      it 'reserves IP as dynamic' do
+        ip_repo.allocate_dynamic_ip(reservation, subnet)
+
+        saved_address = Bosh::Director::Models::IpAddress.first
+        expect(saved_address.static).to eq(false)
+      end
+
+      context 'when reserving more than one ip' do
+        it 'should reserve the next available address' do
+          first = ip_repo.allocate_dynamic_ip(reservation, subnet)
+          second = ip_repo.allocate_dynamic_ip(reservation, subnet)
+          expect(first).to eq(cidr_ip('192.168.1.2'))
+          expect(second).to eq(cidr_ip('192.168.1.3'))
+        end
+      end
+
+      context 'when there are restricted ips' do
+        it 'does not reserve them' do
+          network_spec['subnets'].first['reserved'] = ['192.168.1.2', '192.168.1.4']
+
+          expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(cidr_ip('192.168.1.3'))
+          expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(cidr_ip('192.168.1.5'))
+        end
+      end
+
+      context 'when there are static and restricted ips' do
+        it 'does not reserve them' do
+          network_spec['subnets'].first['reserved'] = ['192.168.1.2']
+          network_spec['subnets'].first['static'] = ['192.168.1.4']
+
+          expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(cidr_ip('192.168.1.3'))
+          expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(cidr_ip('192.168.1.5'))
+        end
+      end
+
+      context 'when there are available IPs between reserved IPs' do
+        it 'returns first non-reserved IP' do
+          network_spec['subnets'].first['static'] = ['192.168.1.2', '192.168.1.4']
+
+          reservation_1 = BD::StaticNetworkReservation.new(instance, network, '192.168.1.2')
+          reservation_2 = BD::StaticNetworkReservation.new(instance, network, '192.168.1.4')
+
+          ip_repo.add(reservation_1)
+          ip_repo.add(reservation_2)
+
+          reservation_3 = BD::DynamicNetworkReservation.new(instance, network)
+          ip_address = ip_repo.allocate_dynamic_ip(reservation_3, subnet)
+
+          expect(ip_address).to eq(cidr_ip('192.168.1.3'))
+        end
+      end
+
+      context 'when all IPs in the range are taken' do
+        it 'returns nil' do
+          network_spec['subnets'].first['range'] = '192.168.1.0/30'
+
+          ip_repo.allocate_dynamic_ip(reservation, subnet)
+
+          expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
+        end
+      end
+
+      context 'when reserving IP fails' do
+        def fail_saving_ips(ips, fail_error)
+          original_saves = {}
+          ips.each do |ip|
+            ip_address = Bosh::Director::Models::IpAddress.new(
+              address: ip,
+              network_name: 'my-manual-network',
+              instance: instance.model,
+              task_id: Bosh::Director::Config.current_job.task_id
+            )
+            original_save = ip_address.method(:save)
+            original_saves[ip] = original_save
+          end
+
+          allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do |model|
+            if ips.include?(model.address)
+              original_save = original_saves[model.address]
+              original_save.call
+              raise fail_error
+            end
+            model
+          end
+        end
+
+        shared_examples :retries_on_race_condition do
+          context 'when allocating some IPs fails' do
+            before do
+              network_spec['subnets'].first['range'] = '192.168.1.0/29'
+
+              fail_saving_ips([
+                  cidr_ip('192.168.1.2'),
+                  cidr_ip('192.168.1.3'),
+                  cidr_ip('192.168.1.4'),
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until it succeeds' do
+              expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(cidr_ip('192.168.1.5'))
+            end
+          end
+
+          context 'when allocating any IP fails' do
+            before do
+              network_spec['subnets'].first['range'] = '192.168.1.0/29'
+              network_spec['subnets'].first['reserved'] = ['192.168.1.5', '192.168.1.6']
+
+              fail_saving_ips([
+                  cidr_ip('192.168.1.2'),
+                  cidr_ip('192.168.1.3'),
+                  cidr_ip('192.168.1.4')
+                ],
+                fail_error
+              )
+            end
+
+            it 'retries until there are no more IPs available' do
+              expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
+            end
+          end
+        end
+
+        context 'when sequel validation errors' do
+          let(:fail_error) { Sequel::ValidationFailed.new('address and network are not unique') }
+
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when postgres unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('duplicate key value violates unique constraint') }
+
+          it_behaves_like :retries_on_race_condition
+        end
+
+        context 'when mysql unique errors' do
+          let(:fail_error) { Sequel::DatabaseError.new('Duplicate entry') }
+
+          it_behaves_like :retries_on_race_condition
+        end
+      end
+    end
+
   end
 end
