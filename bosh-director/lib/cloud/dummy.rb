@@ -252,6 +252,24 @@ module Bosh
         @inputs_recorder.read(method)
       end
 
+      def all_stemcells
+        Dir.entries(@base_dir).select { |files| files.match /stemcell_./ }
+      end
+
+      def all_snapshots
+        if File.exists?(snapshot_file(''))
+          Dir.glob(snapshot_file('*'))
+        else
+          []
+        end
+      end
+
+      def all_ips
+        Dir.glob(File.join(@base_dir, 'dummy_cpi_networks', '**', '*'))
+          .reject { |path| File.directory?(path) }
+          .map { |path| File.basename(path) }
+      end
+
       private
 
       def spawn_agent_process(agent_id)
