@@ -7,7 +7,6 @@ module Bosh::Director::DeploymentPlan
       let(:instance) { double(:instance, model: Bosh::Director::Models::Instance.make) }
       let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
       let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_legacy_ranges: Set.new) }
-      let(:ip_provider_factory) { IpProviderFactory.new(logger, global_networking: using_global_networking) }
       let(:vip_repo) { VipRepo.new(logger) }
       let(:manual_network_spec) {
         {
@@ -52,7 +51,6 @@ module Bosh::Director::DeploymentPlan
             BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
           ],
           global_network_resolver,
-          ip_provider_factory,
           logger
         )
       end
@@ -195,7 +193,7 @@ module Bosh::Director::DeploymentPlan
                     }.to raise_error Bosh::Director::NetworkReservationIpReserved,
                         "Failed to reserve IP '192.168.1.11' for network 'my-manual-network': IP belongs to reserved range"
                   end
-                  end
+                end
 
                 context 'when IP is static IP' do
                   it 'raises an error' do

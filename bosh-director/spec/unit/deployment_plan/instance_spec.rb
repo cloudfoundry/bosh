@@ -193,7 +193,6 @@ module Bosh::Director::DeploymentPlan
             },
             [],
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger, {}),
             logger
           )
         end
@@ -227,7 +226,6 @@ module Bosh::Director::DeploymentPlan
             },
             [instance.availability_zone],
             network_resolver,
-            Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger, {}),
             logger
           )
 

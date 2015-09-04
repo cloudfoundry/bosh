@@ -29,7 +29,6 @@ module Bosh::Director
           reservation.validate_type(StaticNetworkReservation)
 
           @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
-          #FIXME: We keep track of VIP Networks in-memory only
           @vip_repo.add(reservation)
           reservation.mark_reserved_as(StaticNetworkReservation)
           return

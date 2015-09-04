@@ -14,9 +14,8 @@ module Bosh::Director
       #
       # @param [Hash] network_spec parsed deployment manifest network section
       # @param [DeploymentPlan::GlobalNetworkResolver] global_network_resolver
-      # @param [DeploymentPlan::IpProviderFactory] ip_provider_factory
       # @param [Logger] logger
-      def initialize(network_spec, availability_zones, global_network_resolver, ip_provider_factory, logger)
+      def initialize(network_spec, availability_zones, global_network_resolver, logger)
         super(network_spec, logger)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
@@ -24,7 +23,7 @@ module Bosh::Director
 
         @subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.new(self, subnet_spec, availability_zones, reserved_ranges, ip_provider_factory)
+          new_subnet = ManualNetworkSubnet.new(self, subnet_spec, availability_zones, reserved_ranges)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
@@ -37,8 +36,7 @@ module Bosh::Director
           self,
           {'range' => '0.0.0.0/0', 'gateway' => '0.0.0.1'},
           [],
-          [],
-          ip_provider_factory
+          []
         )
 
         @logger = TaggedLogger.new(logger, 'network-configuration')
@@ -77,7 +75,6 @@ module Bosh::Director
         config
       end
 
-      ##
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)

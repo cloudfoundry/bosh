@@ -1,12 +1,13 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, ip_provider)
         @instance_reuser = instance_reuser
         @vm_creator = vm_creator
         @deployment_plan =  deployment_plan
         @logger = logger
         @instance_deleter = instance_deleter
+        @ip_provider = ip_provider
       end
 
       def with_reused_vm(stemcell)

@@ -2,10 +2,9 @@ require 'spec_helper'
 
 describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
-  let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, cloud_config: true) }
 
   def make_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.new(@network, properties, availability_zones, reserved_ranges, ip_provider_factory)
+    BD::DeploymentPlan::ManualNetworkSubnet.new(@network, properties, availability_zones, reserved_ranges)
   end
 
   let(:reserved_ranges) { [] }

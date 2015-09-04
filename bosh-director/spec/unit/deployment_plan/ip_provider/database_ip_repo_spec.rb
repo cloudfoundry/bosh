@@ -21,14 +21,12 @@ module Bosh::Director::DeploymentPlan
       }
     }
     let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_legacy_ranges: Set.new) }
-    let(:ip_provider_factory) { IpProviderFactory.new(logger, global_networking: true) }
     let(:availability_zones) { [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})] }
     let(:network) do
       ManualNetwork.new(
         network_spec,
         availability_zones,
         global_network_resolver,
-        ip_provider_factory,
         logger
       )
     end
@@ -37,8 +35,7 @@ module Bosh::Director::DeploymentPlan
         network,
         network_spec['subnets'].first,
         availability_zones,
-        [],
-        ip_provider_factory
+        []
       )
     end
 
@@ -54,7 +51,7 @@ module Bosh::Director::DeploymentPlan
     context :add do
       def dynamic_reservation_bound_to_existing_with_ip(ip)
         network_spec['subnets'].first['static'] = []
-        other_network = ManualNetwork.new(network_spec, availability_zones, global_network_resolver, ip_provider_factory, logger)
+        other_network = ManualNetwork.new(network_spec, availability_zones, global_network_resolver, logger)
 
         dynamic_reservation = BD::DynamicNetworkReservation.new(instance, other_network)
 

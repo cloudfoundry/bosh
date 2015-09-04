@@ -8,7 +8,7 @@ module Bosh::Director
       attr_reader :network, :range, :gateway, :dns, :cloud_properties,
         :netmask, :availability_zone
 
-      def initialize(network, subnet_spec, availability_zones, legacy_reserved_ranges, ip_provider_factory)
+      def initialize(network, subnet_spec, availability_zones, legacy_reserved_ranges)
         @network = network
 
         Config.logger.debug("reserved ranges #{legacy_reserved_ranges.inspect}")
@@ -81,12 +81,6 @@ module Bosh::Director
             @restricted_ips.add(ip.to_i) unless @static_ips.include?(ip.to_i)
           end
         end
-
-        @ip_provider = ip_provider_factory.create(@range, @network.name, @restricted_ips, @static_ips)
-      end
-
-      def allocate_dynamic_ip(instance)
-        @ip_provider.allocate_dynamic_ip(instance)
       end
 
       def overlaps?(subnet)

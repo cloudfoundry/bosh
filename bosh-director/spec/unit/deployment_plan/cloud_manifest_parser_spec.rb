@@ -11,10 +11,9 @@ module Bosh::Director
     }
     let(:event_log) { Config.event_log }
     let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_legacy_ranges: [])}
-    let(:ip_provider_factory) { instance_double(BD::DeploymentPlan::IpProviderFactory, create: nil) }
 
     describe '#parse' do
-      let(:parsed_cloud_planner) { subject.parse(cloud_manifest, ip_provider_factory, global_network_resolver) }
+      let(:parsed_cloud_planner) { subject.parse(cloud_manifest, global_network_resolver) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       describe 'availability zones' do
@@ -155,7 +154,7 @@ module Bosh::Director
                       }]
                   })
                 expect {
-                  subject.parse(valid_manifest, ip_provider_factory, global_network_resolver)
+                  subject.parse(valid_manifest, global_network_resolver)
                 }.to_not raise_error
               end
 
@@ -180,7 +179,7 @@ module Bosh::Director
                   })
 
                 expect {
-                  subject.parse(invalid_manifest, ip_provider_factory, global_network_resolver)
+                  subject.parse(invalid_manifest, global_network_resolver)
                 }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
               end
             end
@@ -209,7 +208,7 @@ module Bosh::Director
                       }]
                   })
                 expect {
-                  subject.parse(valid_manifest, ip_provider_factory, global_network_resolver)
+                  subject.parse(valid_manifest, global_network_resolver)
                 }.to_not raise_error
               end
 
@@ -230,7 +229,7 @@ module Bosh::Director
                   })
 
                 expect {
-                  subject.parse(invalid_manifest, ip_provider_factory, global_network_resolver)
+                  subject.parse(invalid_manifest, global_network_resolver)
                 }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
               end
             end

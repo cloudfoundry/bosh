@@ -14,7 +14,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.event_log, BD::Config.logger) }
   let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
-  let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   subject(:manual_network) do
@@ -25,7 +24,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
          BD::DeploymentPlan::AvailabilityZone.new('zone_2', {})
        ],
        global_network_resolver,
-       ip_provider_factory,
        logger
      )
    end

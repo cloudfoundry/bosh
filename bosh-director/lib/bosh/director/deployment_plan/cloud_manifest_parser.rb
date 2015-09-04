@@ -7,11 +7,11 @@ module Bosh::Director
         @logger = logger
       end
 
-      def parse(cloud_manifest, ip_provider_factory, global_network_resolver)
+      def parse(cloud_manifest, global_network_resolver)
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
-        networks = parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver, azs)
-        default_network = default_network(ip_provider_factory, global_network_resolver)
+        networks = parse_networks(cloud_manifest, global_network_resolver, azs)
+        default_network = default_network(global_network_resolver)
         compilation_config = parse_compilation(cloud_manifest, networks, az_list)
         resource_pools = parse_resource_pools(cloud_manifest)
         disk_pools = parse_disk_pools(cloud_manifest)
@@ -42,7 +42,7 @@ module Bosh::Director
         parsed_availability_zones
       end
 
-      def parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver, availability_zones)
+      def parse_networks(cloud_manifest, global_network_resolver, availability_zones)
         networks = safe_property(cloud_manifest, 'networks', :class => Array)
         if networks.empty?
           raise DeploymentNoNetworks, 'No networks specified'
@@ -53,7 +53,7 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ManualNetwork.new(network_spec, availability_zones, global_network_resolver, ip_provider_factory, @logger)
+              ManualNetwork.new(network_spec, availability_zones, global_network_resolver, @logger)
             when 'dynamic'
               DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'
@@ -72,13 +72,12 @@ module Bosh::Director
         parsed_networks
       end
 
-      def default_network(ip_provider_factory, global_network_resolver)
+      def default_network(global_network_resolver)
         # name does not matter, default network is used separately
         ManualNetwork.new(
           {'subnets' => [], 'name' => 'default'},
           [],
           global_network_resolver,
-          ip_provider_factory,
           @logger
         )
       end
