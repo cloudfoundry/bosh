@@ -144,7 +144,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'index' => 0,
-                      'uuid' => instance1.uuid,
+                      'id' => instance1.uuid,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
@@ -157,7 +157,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'index' => 1,
-                      'uuid' => instance2.uuid,
+                      'id' => instance2.uuid,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
@@ -196,13 +196,14 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           links_resolver.resolve(api_server_job)
           instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+
           expect(api_server_job.link_spec).to eq({
             'db' => {
               'nodes' => [
                 {
                   'name' => 'mysql',
                   'index' => 0,
-                  'uuid' => instance1.uuid,
+                  'id' => instance1.uuid,
                   'networks' => {
                     'fake-manual-network' => {
                       'address' => '127.0.0.4',
@@ -215,7 +216,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 {
                   'name' => 'mysql',
                   'index' => 1,
-                  'uuid' => instance2.uuid,
+                  'id' => instance2.uuid,
                   'networks' => {
                     'fake-manual-network' => {
                       'address' => '127.0.0.5',
@@ -274,7 +275,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               {
                 'name' => 'mysql',
                 'index' => 0,
-                'uuid' => instance1.uuid,
+                'id' => instance1.uuid,
                 'networks' => {
                   'fake-manual-network' => {
                       'address' => '127.0.0.3'
@@ -287,7 +288,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               {
                 'name' => 'mysql',
                 'index' => 1,
-                'uuid' => instance2.uuid,
+                'id' => instance2.uuid,
                 'networks' => {
                   'fake-manual-network' => {
                     'address' => '127.0.0.4'
