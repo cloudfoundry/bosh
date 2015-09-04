@@ -56,17 +56,6 @@ module Bosh::Director
       attr_reader :name, :canonical_name, :subnets
 
       ##
-      # Reserves a network resource.
-      #
-      # This is either an already used reservation being verified or a new one
-      # waiting to be fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
-      def reserve(reservation)
-        @logger.debug("Reserving IP for dynamic network '#{@name}'")
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation

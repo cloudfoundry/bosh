@@ -7,7 +7,8 @@ module Bosh::Director
     let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
     let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
     let(:in_memory_ip_repo) {BD::DeploymentPlan::InMemoryIpRepo.new(logger)}
-    let(:ip_provider) { BD::DeploymentPlan::IpProviderV2.new(in_memory_ip_repo, false, logger)}
+    let(:vip_repo) {BD::DeploymentPlan::VipRepo.new(logger)}
+    let(:ip_provider) { BD::DeploymentPlan::IpProviderV2.new(in_memory_ip_repo, vip_repo, false, logger)}
     let(:network_spec) do
       Bosh::Spec::Deployments.network
     end

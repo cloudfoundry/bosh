@@ -86,13 +86,14 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @logger = Config.logger
+        vip_repo = VipRepo.new(@logger)
 
         if using_global_networking?
           @ip_repo = DatabaseIpRepo.new(@logger)
         else
           @ip_repo = InMemoryIpRepo.new(@logger)
         end
-        @ip_provider = IpProviderV2.new(@ip_repo, using_global_networking?, @logger)
+        @ip_provider = IpProviderV2.new(@ip_repo, vip_repo, using_global_networking?, @logger)
       end
 
       def_delegators :@cloud_planner,

@@ -44,39 +44,30 @@ module Bosh::Director::DeploymentPlan
     let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
     let(:network_name) { network_spec['name'] }
     let(:instance) { instance_double(BD::DeploymentPlan::Instance, availability_zone: nil) }
+    let(:reservation) { BD::DynamicNetworkReservation.new(instance, network)}
 
     describe :add do
       context 'when IP was already added in that subnet' do
         before do
-          ip_repo.add(ip_address, subnet)
+          reservation.resolve_ip(ip_address)
+          ip_repo.add(reservation)
         end
 
         it 'raises an error' do
           message = "Failed to reserve IP '192.168.1.5' for '#{network_name}': already reserved"
           expect {
-            ip_repo.add(ip_address, subnet)
+            ip_repo.add(reservation)
           }.to raise_error(BD::NetworkReservationAlreadyInUse, message)
-        end
-      end
-
-      context 'when IP is outside of subnet range' do
-        let(:ip_address) { NetAddr::CIDR.create('192.168.5.5') }
-        it 'raises an error' do
-          message = "Can't reserve IP '192.168.5.5' to '#{network_name}' network: " +
-            "it's neither in dynamic nor in static pool"
-          expect {
-            ip_repo.add(ip_address, subnet)
-          }.to raise_error(Bosh::Director::NetworkReservationIpNotOwned,
-              message)
         end
       end
 
       context 'when IP is valid' do
         it 'adds the IP' do
-          ip_repo.add(ip_address, subnet)
+          reservation.resolve_ip(ip_address)
+          ip_repo.add(reservation)
 
           expect {
-            ip_repo.add(ip_address, subnet)
+            ip_repo.add(reservation)
           }.to raise_error BD::NetworkReservationAlreadyInUse
         end
       end
@@ -84,16 +75,17 @@ module Bosh::Director::DeploymentPlan
 
     describe :delete do
       it 'should delete IPs' do
-        ip_repo.add(ip_address, subnet)
+        reservation.resolve_ip(ip_address)
+        ip_repo.add(reservation)
 
         expect {
-          ip_repo.add(ip_address, subnet)
+          ip_repo.add(reservation)
         }.to raise_error BD::NetworkReservationAlreadyInUse
 
-        ip_repo.delete(ip_address, subnet.network.name)
+        ip_repo.delete(ip_address, network_name)
 
         expect {
-          ip_repo.add(ip_address, subnet)
+          ip_repo.add(reservation)
         }.to_not raise_error
       end
     end
@@ -101,16 +93,17 @@ module Bosh::Director::DeploymentPlan
     context 'when IP is a Fixnum' do
       let(:ip_address_to_i) { NetAddr::CIDR.create('192.168.1.3').to_i }
       it 'adds and deletes IPs' do
-        ip_repo.add(ip_address_to_i, subnet)
+        reservation.resolve_ip(ip_address_to_i)
+        ip_repo.add(reservation)
 
         expect {
-          ip_repo.add(ip_address_to_i, subnet)
+          ip_repo.add(reservation)
         }.to raise_error BD::NetworkReservationAlreadyInUse
 
-        ip_repo.delete(ip_address_to_i, subnet.network.name)
+        ip_repo.delete(ip_address_to_i, network_name)
 
         expect {
-          ip_repo.add(ip_address_to_i, subnet)
+          ip_repo.add(reservation)
         }.to_not raise_error
       end
     end
@@ -141,33 +134,46 @@ module Bosh::Director::DeploymentPlan
           ]
         }
       }
+
       it 'should allocate the least recently released IP' do
         subnet_1_ip_1 = NetAddr::CIDR.create('192.168.1.5')
-        ip_repo.add(subnet_1_ip_1, subnet)
+        reservation.resolve_ip(subnet_1_ip_1)
+        ip_repo.add(reservation)
+
         subnet_1_ip_2 = NetAddr::CIDR.create('192.168.1.6')
-        ip_repo.add(subnet_1_ip_2, subnet)
+        reservation.resolve_ip(subnet_1_ip_2)
+        ip_repo.add(reservation)
+
+        subnet_2_ip_1 = NetAddr::CIDR.create('192.168.2.5')
+        reservation.resolve_ip(subnet_2_ip_1)
+        ip_repo.add(reservation)
+
+        subnet_2_ip_2 = NetAddr::CIDR.create('192.168.2.6')
+        reservation.resolve_ip(subnet_2_ip_2)
+        ip_repo.add(reservation)
 
         second_subnet = ManualNetworkSubnet.new(network, network_spec['subnets'][1], availability_zones, [], ip_provider_factory)
-        subnet_2_ip_1 = NetAddr::CIDR.create('192.168.2.5')
-        ip_repo.add(subnet_2_ip_1, second_subnet)
-        subnet_2_ip_2 = NetAddr::CIDR.create('192.168.2.6')
-        ip_repo.add(subnet_2_ip_2, second_subnet)
 
         # Release allocated IPs in random order
-        ip_repo.delete(subnet_2_ip_1, second_subnet.network.name)
-        ip_repo.delete(subnet_1_ip_2, subnet.network.name)
-        ip_repo.delete(subnet_1_ip_1, subnet.network.name)
-        ip_repo.delete(subnet_2_ip_2, second_subnet.network.name)
+        ip_repo.delete(subnet_2_ip_1, network_name)
+        ip_repo.delete(subnet_1_ip_2, network_name)
+        ip_repo.delete(subnet_1_ip_1, network_name)
+        ip_repo.delete(subnet_2_ip_2, network_name)
 
         # Verify that re-acquiring the released IPs retains order
         expect(ip_repo.get_dynamic_ip(subnet)).to eq(subnet_1_ip_2)
-        ip_repo.add(subnet_1_ip_2, subnet)
+        reservation.resolve_ip(subnet_1_ip_2)
+        ip_repo.add(reservation)
+
         expect(ip_repo.get_dynamic_ip(subnet)).to eq(subnet_1_ip_1)
-        ip_repo.add(subnet_1_ip_1, subnet)
+        reservation.resolve_ip(subnet_1_ip_1)
+        ip_repo.add(reservation)
+
         expect(ip_repo.get_dynamic_ip(second_subnet)).to eq(subnet_2_ip_1)
-        ip_repo.add(subnet_2_ip_1, second_subnet)
+        reservation.resolve_ip(subnet_2_ip_1)
+        ip_repo.add(reservation)
+
         expect(ip_repo.get_dynamic_ip(second_subnet)).to eq(subnet_2_ip_2)
-        ip_repo.add(subnet_2_ip_2, second_subnet)
       end
     end
 
@@ -189,7 +195,8 @@ module Bosh::Director::DeploymentPlan
       it 'skips IP that has already been allocated range' do
         network_spec['subnets'].first['range'] = '192.168.1.0/30'
 
-        ip_repo.add('192.168.1.2', subnet)
+        reservation.resolve_ip('192.168.1.2')
+        ip_repo.add(reservation)
 
         expect(ip_repo.get_dynamic_ip(subnet)).to be_nil
       end

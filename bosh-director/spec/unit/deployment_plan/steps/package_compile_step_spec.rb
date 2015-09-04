@@ -21,7 +21,7 @@ module Bosh::Director
     end
     let(:instance_reuser) { InstanceReuser.new }
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
-    let(:ip_provider) { DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), false, logger)}
+    let(:ip_provider) { instance_double(DeploymentPlan::IpProviderV2, reserve: nil, release: nil)}
     let(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
     end

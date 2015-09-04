@@ -85,10 +85,6 @@ module Bosh::Director
         @ip_provider = ip_provider_factory.create(@range, @network.name, @restricted_ips, @static_ips)
       end
 
-      def reserve_ip(reservation)
-        @ip_provider.reserve_ip(reservation)
-      end
-
       def allocate_dynamic_ip(instance)
         @ip_provider.allocate_dynamic_ip(instance)
       end

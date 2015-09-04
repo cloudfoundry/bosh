@@ -15,11 +15,17 @@ module Bosh::Director
       @reserved
     end
 
+    def mark_reserved_as(type)
+      validate_type(type)
+      @reserved = true
+    end
+
     private
 
     def formatted_ip
       @ip.nil? ? nil : ip_to_netaddr(@ip).ip
     end
+
   end
 
   class StaticNetworkReservation < NetworkReservation
@@ -46,10 +52,6 @@ module Bosh::Director
       "{type=static, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
 
-    def mark_reserved_as(type)
-      validate_type(type)
-      @reserved = true
-    end
 
     def validate_type(type)
       if type != StaticNetworkReservation
@@ -81,11 +83,6 @@ module Bosh::Director
 
     def to_s
       "{type=dynamic, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
-    end
-
-    def mark_reserved_as(type)
-      validate_type(type)
-      @reserved = true
     end
 
     def validate_type(type)

@@ -95,57 +95,6 @@ module Bosh::Director
             "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
         end
       end
-
-      def reserve(reservation)
-        if reservation.ip
-          cidr_ip = format_ip(reservation.ip)
-          @logger.debug("Reserving static ip '#{cidr_ip}' for manual network '#{@name}'")
-
-          subnet = find_subnet_containing(reservation.ip)
-          if subnet
-            subnet.reserve_ip(reservation)
-            return
-          end
-
-          if reservation.is_a?(ExistingNetworkReservation)
-            return
-          end
-
-          raise NetworkReservationIpOutsideSubnet,
-            "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{@name}'"
-        end
-
-        if reservation.is_a?(DynamicNetworkReservation)
-          @logger.debug("Allocating dynamic ip for manual network '#{@name}'")
-
-          filter_subnet_by_instance_az(reservation.instance).each do |subnet|
-            @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
-            ip = subnet.allocate_dynamic_ip(reservation.instance)
-            if ip
-              @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
-              reservation.resolve_ip(ip)
-              reservation.mark_reserved_as(DynamicNetworkReservation)
-              return
-            end
-          end
-        end
-
-        raise NetworkReservationNotEnoughCapacity,
-          "Failed to reserve IP for '#{reservation.instance}' for manual network '#{@name}': no more available"
-      end
-
-      private
-
-      def filter_subnet_by_instance_az(instance)
-        instance_az = instance.availability_zone
-        if instance_az.nil?
-          @subnets
-        else
-          @subnets.select do |subnet|
-            subnet.availability_zone == instance_az.name
-          end
-        end
-      end
     end
   end
 end

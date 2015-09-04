@@ -20,34 +20,6 @@ module Bosh::Director
       end
 
       ##
-      # Reserves a network resource.
-      #
-      # This is either an already used reservation being verified or a new one
-      # waiting to be fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
-      def reserve(reservation)
-        reservation.validate_type(StaticNetworkReservation)
-
-        if reservation.ip.nil?
-          @logger.error("Failed to reserve IP for vip network '#{@name}': IP must be provided")
-          raise NetworkReservationIpMissing,
-            "Must have IP for static reservations"
-        end
-
-        if @reserved_ips.include?(reservation.ip)
-          raise Bosh::Director::NetworkReservationAlreadyInUse,
-            "Failed to reserve IP '#{format_ip(reservation.ip)}' for vip network '#{@name}': IP already reserved"
-        end
-
-        @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{@name}'")
-
-        reservation.mark_reserved_as(StaticNetworkReservation)
-
-        @reserved_ips.add(reservation.ip)
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation

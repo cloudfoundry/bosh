@@ -33,44 +33,24 @@ module Bosh::Director::DeploymentPlan
       ip_address.to_i
     end
 
-    # @param [NetworkReservation] reservation
-    def reserve_ip(reservation)
-      cidr_ip = CIDRIP.new(reservation.ip)
-      if @restricted_ips.include?(cidr_ip.to_i)
-        return if reservation.is_a?(Bosh::Director::ExistingNetworkReservation)
-        message = "Failed to reserve IP '#{cidr_ip}' for network '#{@network_name}': IP belongs to reserved range"
-        @logger.error(message)
-        raise Bosh::Director::NetworkReservationIpReserved, message
-      end
-
-      if @static_ips.include?(cidr_ip.to_i)
-        reservation_type = Bosh::Director::StaticNetworkReservation
-      else
-        reservation_type = Bosh::Director::DynamicNetworkReservation
-      end
-
-      reserve_with_instance_validation(
-        reservation.instance,
-        cidr_ip,
-        reservation_type.eql?(Bosh::Director::StaticNetworkReservation)
-      )
-
-      reservation.mark_reserved_as(reservation_type)
-      @logger.debug("Reserved ip '#{cidr_ip}' for #{@network_desc} as #{reservation_type}")
-    end
-
     private
 
     def try_to_allocate_dynamic_ip(instance)
-      addrs = Set.new(network_addresses)
+      addresses_in_use = Set.new(network_addresses)
       first_range_address = @range.first(Objectify: true).to_i - 1
-      addrs << first_range_address
+      addresses_we_cant_allocate = addresses_in_use
+      addresses_we_cant_allocate << first_range_address
 
-      addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
-      addrs.merge(@static_ips.to_a) unless @static_ips.empty?
+      addresses_we_cant_allocate.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
+      addresses_we_cant_allocate.merge(@static_ips.to_a) unless @static_ips.empty?
 
-      # find first address that doesn't have subsequent address
-      addr = addrs.to_a.reject {|a| a < first_range_address }.sort.find { |a| !addrs.include?(a+1) }
+      # find first in-use address whose subsequent address is not in use
+      # the subsequent address must be free
+      addr = addresses_we_cant_allocate
+               .to_a
+               .reject {|a| a < first_range_address }
+               .sort
+               .find { |a| !addresses_we_cant_allocate.include?(a+1) }
       ip_address = NetAddr::CIDRv4.new(addr+1)
 
       unless @range == ip_address || @range.contains?(ip_address)

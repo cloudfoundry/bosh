@@ -3,29 +3,37 @@ module Bosh::Director
     class IpProviderV2
       include IpUtil
 
-      def initialize(ip_repo, using_global_networking, logger)
+      def initialize(ip_repo, vip_repo, using_global_networking, logger)
         @logger = logger
         @ip_repo = ip_repo
         @using_global_networking = using_global_networking
+        @vip_repo = vip_repo
       end
 
       def release(reservation)
-        return unless reservation.network.is_a?(ManualNetwork)
+        return if reservation.network.is_a?(DynamicNetwork)
 
         if reservation.ip.nil?
           @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
-          @ip_repo.delete(reservation.ip, reservation.network.name)
+          ip_repo = reservation.network.is_a?(VipNetwork) ? @vip_repo : @ip_repo
+          ip_repo.delete(reservation.ip, reservation.network.name)
         end
       end
 
       def reserve(reservation)
-        if @using_global_networking
-          return reservation.network.reserve(reservation)
-        end
+        return if reservation.network.is_a?(DynamicNetwork)
 
-        return unless reservation.network.is_a?(ManualNetwork)
+        if reservation.network.is_a?(VipNetwork)
+          reservation.validate_type(StaticNetworkReservation)
+
+          @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
+          #FIXME: We keep track of VIP Networks in-memory only
+          @vip_repo.add(reservation)
+          reservation.mark_reserved_as(StaticNetworkReservation)
+          return
+        end
 
         if reservation.ip.nil?
           if reservation.is_a?(DynamicNetworkReservation)
@@ -33,13 +41,24 @@ module Bosh::Director
 
             filter_subnet_by_instance_az(reservation).each do |subnet|
               @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
-              ip = @ip_repo.get_dynamic_ip(subnet)
-              if ip
-                @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
-                @ip_repo.add(ip, subnet)
-                reservation.resolve_ip(ip)
-                reservation.mark_reserved_as(DynamicNetworkReservation)
-                return
+              if @using_global_networking
+                ip = subnet.allocate_dynamic_ip(reservation.instance)
+                if ip
+                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{@name}'")
+                  reservation.resolve_ip(ip)
+                  reservation.mark_reserved_as(DynamicNetworkReservation)
+                  return
+                end
+              else
+                ip = @ip_repo.get_dynamic_ip(subnet)
+                if ip
+                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+
+                  reservation.resolve_ip(ip)
+                  @ip_repo.add(reservation)
+                  reservation.mark_reserved_as(DynamicNetworkReservation)
+                  return
+                end
               end
             end
 
@@ -70,12 +89,12 @@ module Bosh::Director
             end
 
             if subnet.static_ips.include?(reservation.ip.to_i)
-              @ip_repo.add(reservation.ip, subnet)
+              @ip_repo.add(reservation)
               reservation.mark_reserved_as(StaticNetworkReservation)
               @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
               return
             else
-              @ip_repo.add(reservation.ip, subnet)
+              @ip_repo.add(reservation)
               reservation.mark_reserved_as(DynamicNetworkReservation)
               @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
               return
