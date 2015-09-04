@@ -11,7 +11,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   end
 
   let(:deployment_manifest) do
-    generate_deployment_manifest('fake-deployment', links, ['127.0.0.3'])
+    generate_deployment_manifest('fake-deployment', links, ['127.0.0.3', '127.0.0.4'])
   end
 
   def generate_deployment_manifest(name, links, mysql_static_ips)
@@ -38,7 +38,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {'name' => 'mysql-template', 'release' => 'fake-release'}
           ],
           'resource_pool' => 'fake-resource-pool',
-          'instances' => 1,
+          'instances' => 2,
           'networks' => [
             {
               'name' => 'fake-manual-network',
@@ -135,18 +135,35 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
+          # require 'pry'; binding.pry
+          instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
+          instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
           expect(api_server_job.link_spec).to eq({
                 'db' => {
                   'nodes' => [
                     {
                       'name' => 'mysql',
                       'index' => 0,
+                      'uuid' => instance1.uuid,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
                         },
                         'fake-dynamic-network' => {
                           'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                        }
+                      }
+                    },
+                    {
+                      'name' => 'mysql',
+                      'index' => 1,
+                      'uuid' => instance2.uuid,
+                      'networks' => {
+                        'fake-manual-network' => {
+                          'address' => '127.0.0.4',
+                        },
+                        'fake-dynamic-network' => {
+                          'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns',
                         }
                       }
                     }
@@ -162,7 +179,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       context 'when another deployment has link source' do
         before do
-          other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4'])
+          other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])
 
           planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
           deployment_plan = planner_factory.create_from_manifest(other_deployment_manifest, nil, {})
@@ -177,18 +194,34 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         it 'returns link from another deployment' do
           links_resolver.resolve(api_server_job)
+          instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
+          instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
           expect(api_server_job.link_spec).to eq({
             'db' => {
               'nodes' => [
                 {
                   'name' => 'mysql',
                   'index' => 0,
+                  'uuid' => instance1.uuid,
                   'networks' => {
                     'fake-manual-network' => {
                       'address' => '127.0.0.4',
                     },
                     'fake-dynamic-network' => {
                       'address' => '0.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                    }
+                  }
+                },
+                {
+                  'name' => 'mysql',
+                  'index' => 1,
+                  'uuid' => instance2.uuid,
+                  'networks' => {
+                    'fake-manual-network' => {
+                      'address' => '127.0.0.5',
+                    },
+                    'fake-dynamic-network' => {
+                      'address' => '1.mysql.fake-dynamic-network.other-deployment.fake-dns',
                     }
                   }
                 }
@@ -232,12 +265,16 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
+        instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
+        instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+
         expect(api_server_job.link_spec).to eq({
             'backup_db' => {
             'nodes' => [
               {
                 'name' => 'mysql',
-                'index' =>0,
+                'index' => 0,
+                'uuid' => instance1.uuid,
                 'networks' => {
                   'fake-manual-network' => {
                       'address' => '127.0.0.3'
@@ -245,6 +282,19 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   'fake-dynamic-network' => {
                       'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns'
                     }
+                }
+              },
+              {
+                'name' => 'mysql',
+                'index' => 1,
+                'uuid' => instance2.uuid,
+                'networks' => {
+                  'fake-manual-network' => {
+                    'address' => '127.0.0.4'
+                  },
+                  'fake-dynamic-network' => {
+                    'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                  }
                 }
               }
             ]

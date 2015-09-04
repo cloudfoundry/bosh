@@ -16,6 +16,7 @@ module Bosh::Director
             {
               'name' => @source.name,
               'index' => instance.index,
+              'uuid' => instance.uuid,
               'networks' => network_spec(instance.network_settings)
             }
           end
