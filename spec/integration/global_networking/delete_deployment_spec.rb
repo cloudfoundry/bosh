@@ -54,8 +54,6 @@ describe 'deleting deployment', type: :integration do
   end
 
   it 'should clean environment properly and free up resources even after a failed deployment' do
-    pending 'while we fix this behavior on the global-net branch'
-
     current_sandbox.cpi.commands.make_create_vm_always_fail
     target_and_login
 

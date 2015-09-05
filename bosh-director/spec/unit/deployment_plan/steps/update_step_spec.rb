@@ -7,12 +7,17 @@ module Bosh::Director
     subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
+    let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
+    let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
+
     let(:deployment_plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
         update_stemcell_references!: nil,
         persist_updates!: nil,
         jobs_starting_on_deploy: [],
-        instance_plans_with_missing_vms: []
+        instance_plans_with_missing_vms: [],
+        ip_provider: ip_provider,
+        skip_drain: skip_drain
       )
     end
     let(:cloud) { instance_double('Bosh::Cloud', delete_vm: nil) }
@@ -60,7 +65,7 @@ module Bosh::Director
 
         instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
         expect(InstanceDeleter).to receive(:new)
-                                     .with(deployment_plan)
+                                     .with(ip_provider, skip_drain)
                                      .and_return(instance_deleter)
 
         expect(instance_deleter).to receive(:delete_instances)

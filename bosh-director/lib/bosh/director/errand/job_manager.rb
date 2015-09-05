@@ -47,7 +47,7 @@ module Bosh::Director
 
       @logger.info('Deleting errand instances')
       event_log_stage = @event_log.begin_stage('Deleting errand instances', instances.size, [@job.name])
-      instance_deleter = InstanceDeleter.new(@deployment)
+      instance_deleter = InstanceDeleter.new(@deployment.ip_provider, @deployment.skip_drain)
       instance_deleter.delete_instances(instances, event_log_stage)
     end
 

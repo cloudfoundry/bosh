@@ -3,8 +3,9 @@ module Bosh::Director
   class InstanceDeleter
     include DnsHelper
 
-    def initialize(deployment_plan, options={})
-      @deployment_plan = deployment_plan
+    def initialize(ip_provider, skip_drain_decider, options={})
+      @ip_provider = ip_provider
+      @skip_drain_decider = skip_drain_decider
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
@@ -34,7 +35,7 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            delete_dns(instance.job_name, instance.index)
+            delete_dns(instance)
           end
 
           error_ignorer.with_force_check do
@@ -60,8 +61,7 @@ module Bosh::Director
     private
 
     def stop(instance)
-      return if @skip_stop
-      skip_drain = @deployment_plan.skip_drain_for_job?(instance.job_name)
+      skip_drain = @skip_drain_decider.for_job(instance.job_name) # FIXME: can we do something better?
       stopper = Stopper.new(instance, 'stopped', skip_drain, Config, @logger)
       stopper.stop
     end
@@ -77,8 +77,9 @@ module Bosh::Director
     end
 
     def release_network_reservations(instance)
+
       instance.network_reservations.each do |reservation|
-        @deployment_plan.ip_provider.release(reservation) if reservation.reserved?
+        @ip_provider.release(reservation) if reservation.reserved?
       end
     end
 
@@ -101,16 +102,22 @@ module Bosh::Director
       Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
     end
 
-    def delete_dns(job, index)
+    def delete_dns(instance)
       if Config.dns_enabled?
         record_pattern = [
-          index,
-          canonical(job),
+          instance.index,
+          canonical(instance.job_name),
           "%",
-          @deployment_plan.canonical_name,
+          canonical(instance.model.deployment.name),
           dns_domain_name
         ].join(".")
-        delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
+
+        dns_domain = Models::Dns::Domain.find(
+          :name => dns_domain_name,
+          :type => 'NATIVE',
+        )
+        dns_domain_id = dns_domain.nil? ? nil : dns_domain.id
+        delete_dns_records(record_pattern, dns_domain_id)
       end
     end
   end

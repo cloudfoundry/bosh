@@ -3,7 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::JobManager do
     subject { described_class.new(deployment, job, blobstore, cloud, event_log, logger) }
-    let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+    let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
+    let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
+    let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
+        ip_provider: ip_provider,
+        skip_drain: skip_drain
+      }) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
@@ -76,7 +81,7 @@ module Bosh::Director
       end
 
       it 'deletes all job instances' do
-        expect(InstanceDeleter).to receive(:new).with(deployment)
+        expect(InstanceDeleter).to receive(:new).with(ip_provider, skip_drain)
         expect(instance_deleter).to receive(:delete_instances).
           with([instance1, instance2], event_log_stage)
 

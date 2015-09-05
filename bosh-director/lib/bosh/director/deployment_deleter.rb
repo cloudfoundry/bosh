@@ -8,8 +8,8 @@ module Bosh::Director
       @dns_enabled = dns_enabled
     end
 
-    def delete(deployment_plan, instance_deleter, vm_deleter)
-      instances = deployment_plan.existing_instances.map do |instance_model|
+    def delete(deployment_model, instance_deleter, vm_deleter)
+      instances = deployment_model.instances.map do |instance_model|
         DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
       end
 
@@ -17,7 +17,6 @@ module Bosh::Director
       instance_deleter.delete_instances(instances, event_log_stage, max_threads: @max_threads)
 
       # For backwards compatibility for VMs that did not have instances
-      deployment_model = deployment_plan.model
       deployment_model.reload
       delete_vms(vm_deleter, deployment_model.vms)
 
@@ -33,7 +32,7 @@ module Bosh::Director
         deployment_model.remove_all_release_versions
       end
 
-      @event_log.begin_stage('Deleting properties', deployment_plan.model.properties.count)
+      @event_log.begin_stage('Deleting properties', deployment_model.properties.count)
       @logger.info('Deleting deployment properties')
       deployment_model.properties.each do |property|
         @event_log.track(property.name) do
@@ -43,7 +42,7 @@ module Bosh::Director
 
       @event_log.track('Deleting DNS records') do
         @logger.info('Deleting DNS records')
-        @dns_manager.delete_dns_for_deployment(deployment_plan.name) if @dns_enabled
+        @dns_manager.delete_dns_for_deployment(deployment_model.name) if @dns_enabled
       end
 
       @event_log.track('Destroying deployment') do

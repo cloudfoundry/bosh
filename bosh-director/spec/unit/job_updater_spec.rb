@@ -3,7 +3,13 @@ require 'spec_helper'
 describe Bosh::Director::JobUpdater do
   subject(:job_updater) { described_class.new(deployment_plan, job, job_renderer, links_resolver) }
 
-  let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan') }
+  let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
+  let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
+
+  let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
+      ip_provider: ip_provider,
+      skip_drain: skip_drain
+    }) }
 
   let(:job) do
     instance_double('Bosh::Director::DeploymentPlan::Job', {
