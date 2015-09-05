@@ -135,7 +135,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
-          # require 'pry'; binding.pry
           instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
           expect(api_server_job.link_spec).to eq({
@@ -145,6 +144,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'name' => 'mysql',
                       'index' => 0,
                       'id' => instance1.uuid,
+                      'availability_zone' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
@@ -158,6 +158,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'name' => 'mysql',
                       'index' => 1,
                       'id' => instance2.uuid,
+                      'availability_zone' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
@@ -198,37 +199,39 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
           expect(api_server_job.link_spec).to eq({
-            'db' => {
-              'nodes' => [
-                {
-                  'name' => 'mysql',
-                  'index' => 0,
-                  'id' => instance1.uuid,
-                  'networks' => {
-                    'fake-manual-network' => {
-                      'address' => '127.0.0.4',
+                'db' => {
+                  'nodes' => [
+                    {
+                      'name' => 'mysql',
+                      'index' => 0,
+                      'id' => instance1.uuid,
+                      'availability_zone' => nil,
+                      'networks' => {
+                        'fake-manual-network' => {
+                          'address' => '127.0.0.4',
+                        },
+                        'fake-dynamic-network' => {
+                          'address' => '0.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                        }
+                      }
                     },
-                    'fake-dynamic-network' => {
-                      'address' => '0.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                    {
+                      'name' => 'mysql',
+                      'index' => 1,
+                      'id' => instance2.uuid,
+                      'availability_zone' => nil,
+                      'networks' => {
+                        'fake-manual-network' => {
+                          'address' => '127.0.0.5',
+                        },
+                        'fake-dynamic-network' => {
+                          'address' => '1.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                        }
+                      }
                     }
-                  }
-                },
-                {
-                  'name' => 'mysql',
-                  'index' => 1,
-                  'id' => instance2.uuid,
-                  'networks' => {
-                    'fake-manual-network' => {
-                      'address' => '127.0.0.5',
-                    },
-                    'fake-dynamic-network' => {
-                      'address' => '1.mysql.fake-dynamic-network.other-deployment.fake-dns',
-                    }
-                  }
+                  ]
                 }
-              ]
-            }
-          })
+              })
         end
       end
 
@@ -261,7 +264,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when provided link name matches links name' do
       let (:links) { {'backup_db' => 'fake-deployment.mysql.mysql-template.db'} }
 
-      let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}]}
+      let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
       let(:provided_links) { ['db'] }
 
       it 'adds link to job' do
@@ -270,37 +273,39 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
         expect(api_server_job.link_spec).to eq({
-            'backup_db' => {
-            'nodes' => [
-              {
-                'name' => 'mysql',
-                'index' => 0,
-                'id' => instance1.uuid,
-                'networks' => {
-                  'fake-manual-network' => {
-                      'address' => '127.0.0.3'
-                  },
-                  'fake-dynamic-network' => {
-                      'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+              'backup_db' => {
+                'nodes' => [
+                  {
+                    'name' => 'mysql',
+                    'index' => 0,
+                    'id' => instance1.uuid,
+                    'availability_zone' => nil,
+                    'networks' => {
+                      'fake-manual-network' => {
+                        'address' => '127.0.0.3'
+                      },
+                      'fake-dynamic-network' => {
+                        'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                      }
                     }
-                }
-              },
-              {
-                'name' => 'mysql',
-                'index' => 1,
-                'id' => instance2.uuid,
-                'networks' => {
-                  'fake-manual-network' => {
-                    'address' => '127.0.0.4'
                   },
-                  'fake-dynamic-network' => {
-                    'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                  {
+                    'name' => 'mysql',
+                    'index' => 1,
+                    'id' => instance2.uuid,
+                    'availability_zone' => nil,
+                    'networks' => {
+                      'fake-manual-network' => {
+                        'address' => '127.0.0.4'
+                      },
+                      'fake-dynamic-network' => {
+                        'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                      }
+                    }
                   }
-                }
+                ]
               }
-            ]
-          }
-        })
+            })
       end
     end
 
@@ -350,7 +355,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when link specified in manifest is not required' do
 
       let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
-      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
 
       let(:requires_links) { [] }
       let(:provided_links) { ['db'] } # name and type is implicitly db
@@ -360,6 +364,165 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
             "Link 'db' is not required in job 'api-server'"
+      end
+    end
+
+    context 'when there is a cloud config' do
+      let(:deployment_plan) do
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+        planner = planner_factory.create_from_manifest(deployment_manifest, cloud_config, {})
+        planner.bind_models
+        planner
+      end
+
+      let(:links) { {'db' => 'mysql.mysql-template.db'} }
+
+      let(:deployment_manifest) { generate_manifest_without_cloud_config('fake_deployment', links, ['127.0.0.3', '127.0.0.4']) }
+
+      let(:cloud_config) do
+        Bosh::Director::Models::CloudConfig.make(manifest: {
+            'availability_zones' => [
+              {
+                'name' => 'az1',
+                'cloud_properties' => {}
+              },
+              {
+                'name' => 'az2',
+                'cloud_properties' => {}
+              }
+            ],
+            'networks' => [
+              {
+                'name' => 'fake-manual-network',
+                'type' => 'manual',
+                'subnets' => [
+                  {
+                    'name' => 'fake-subnet',
+                    'range' => '127.0.0.0/20',
+                    'gateway' => '127.0.0.1',
+                    'availability_zone' => 'az1',
+                    'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
+                  }
+                ]
+              },
+              {
+                'name' => 'fake-dynamic-network',
+                'type' => 'dynamic',
+              }
+            ],
+            'compilation' => {
+              'workers' => 1,
+              'network' => 'fake-manual-network',
+            },
+            'resource_pools' => [
+              {
+                'name' => 'fake-resource-pool',
+                'stemcell' => {
+                  'name' => 'fake-stemcell',
+                  'version' => 'fake-stemcell-version',
+                },
+                'network' => 'fake-manual-network',
+              }
+            ],
+          })
+      end
+
+      def generate_manifest_without_cloud_config(name, links, mysql_static_ips)
+        {
+          'name' => name,
+          'releases' => [
+            {
+              'name' => 'fake-release',
+              'version' => '1.0.0',
+            }
+          ],
+          'update' => {
+            'canaries' => 1,
+            'max_in_flight' => 1,
+            'canary_watch_time' => 1,
+            'update_watch_time' => 1,
+          },
+          'jobs' => [
+            {
+              'name' => 'api-server',
+              'templates' => [
+                {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links}
+              ],
+              'resource_pool' => 'fake-resource-pool',
+              'availability_zones' => ['az1'],
+              'instances' => 1,
+              'networks' => [
+                {
+                  'name' => 'fake-manual-network',
+                  'static_ips' => ['127.0.0.2']
+                }
+              ],
+            },
+            {
+              'name' => 'mysql',
+              'templates' => [
+                {'name' => 'mysql-template', 'release' => 'fake-release'}
+              ],
+              'resource_pool' => 'fake-resource-pool',
+              'instances' => 2,
+              'availability_zones' => ['az1'],
+              'networks' => [
+                {
+                  'name' => 'fake-manual-network',
+                  'static_ips' => ['127.0.0.3', '127.0.0.4'],
+                  'default' => ['dns', 'gateway'],
+
+                },
+                {
+                  'name' => 'fake-dynamic-network',
+                }
+              ],
+            },
+          ],
+        }
+      end
+
+      it 'adds link to job' do
+        Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+        Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+
+        links_resolver.resolve(api_server_job)
+        instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
+        instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+        expect(api_server_job.link_spec).to eq({
+              'db' => {
+                'nodes' => [
+                  {
+                    'name' => 'mysql',
+                    'index' => 0,
+                    'id' => instance1.uuid,
+                    'availability_zone' => 'az1',
+                    'networks' => {
+                      'fake-manual-network' => {
+                        'address' => '127.0.0.3',
+                      },
+                      'fake-dynamic-network' => {
+                        'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                      }
+                    }
+                  },
+                  {
+                    'name' => 'mysql',
+                    'index' => 1,
+                    'id' => instance2.uuid,
+                    'availability_zone' => 'az1',
+                    'networks' => {
+                      'fake-manual-network' => {
+                        'address' => '127.0.0.4',
+                      },
+                      'fake-dynamic-network' => {
+                        'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                      }
+                    }
+                  }
+                ]
+              }
+            })
       end
     end
   end
