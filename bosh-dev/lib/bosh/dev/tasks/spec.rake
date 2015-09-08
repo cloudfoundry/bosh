@@ -16,7 +16,7 @@ namespace :spec do
       run_integration_specs
     end
 
-    desc 'Install BOSH integration test dependencies (currently Nginx)'
+    desc 'Install BOSH integration test dependencies'
     task :install_dependencies do
       unless ENV['SKIP_DEPS'] == 'true'
         unless ENV['SKIP_NGINX'] == 'true'

@@ -19,3 +19,27 @@ print_git_state() {
     echo "---"
   fi
 }
+
+start_db() {
+  db=$1
+  echo "Starting $db..."
+  case "$db" in
+    mysql)
+      sudo service mysql start
+      ;;
+    postgresql)
+      su postgres -c '
+        export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+        export PGDATA=/tmp/postgres
+        export PGLOGS=/tmp/log/postgres
+        mkdir -p $PGDATA
+        mkdir -p $PGLOGS
+        initdb -U postgres -D $PGDATA
+        pg_ctl start -l $PGLOGS/server.log -o "-N 400"
+      '
+      ;;
+    *)
+      echo $"Usage: DB={mysql|postgresql} $0 {commands}"
+      exit 1
+  esac
+}

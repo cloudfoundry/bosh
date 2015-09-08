@@ -26,10 +26,19 @@ module Bosh::Spec
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
 
+    def base_env(env = {})
+      {
+        'HOME' => ENV['HOME'],
+        'TERM' => 'xterm-256color'
+      }.merge(env)
+    end
+
     def run_interactively(cmd, env = {})
+      command = "#{@bosh_script} -c #{@bosh_config} #{cmd}"
+
       Dir.chdir(@bosh_work_dir) do
         Bundler.with_clean_env do
-          BlueShell::Runner.run env, "#{@bosh_script} -c #{@bosh_config} #{cmd}" do |runner|
+          BoshBlueShell.new(base_env(env), command, unsetenv_others: true) do |runner|
             yield runner
           end
         end
@@ -45,15 +54,14 @@ module Bosh::Spec
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
       @logger.info("Running... bosh #{interactive_mode} #{cmd}")
-      command   = "#{@bosh_script} #{interactive_mode} -c #{@bosh_config} #{cmd}"
-      output    = nil
-      env = options.fetch(:env, {})
+      command = "#{@bosh_script} #{interactive_mode} -c #{@bosh_config} #{cmd}"
+      output = nil
+      env = base_env(options.fetch(:env, {}))
       exit_code = 0
 
       time = Benchmark.realtime do
         Bundler.with_clean_env do
-          output, process_status = Open3.capture2e(env, command)
-          output.gsub!(/stty:.*$\n/, '') # because we run via chruby-exec
+          output, process_status = Open3.capture2e(env, command, unsetenv_others: true)
           exit_code = process_status.exitstatus
         end
       end
@@ -123,6 +131,31 @@ module Bosh::Spec
       File.open(@saved_logs_path, 'a') { |f| f.write(content) }
 
       @logger.info(content)
+    end
+
+    # Fixes BlueShell::Runner#initialize at...
+    # https://github.com/pivotal/blue-shell/blob/c1d0c1fbfb1343d68bc10eb432e98ceb49ca6c12/lib/blue-shell/runner.rb
+    # TODO: pull request.
+    class BoshBlueShell < BlueShell::Runner
+      def initialize(*args)
+        @stdout, slave = PTY.open
+        system('stty raw', :in => slave)
+        read, @stdin = IO.pipe
+
+        opts = args.pop
+        opts.merge!(:in => read, :out => slave, :err => slave) if opts.is_a? Hash
+        args.push opts
+
+        @pid = spawn(*args)
+
+        @expector = BlueShell::BufferedReaderExpector.new(@stdout, ENV['DEBUG_BACON'])
+
+        if block_given?
+          yield self
+        else
+          wait_for_exit
+        end
+      end
     end
   end
 end

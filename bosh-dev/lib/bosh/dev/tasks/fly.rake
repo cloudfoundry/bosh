@@ -4,6 +4,7 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
+    env(RAKE_TASKS: '"go spec:unit"')
     execute('test-unit')
   end
 
@@ -15,6 +16,7 @@ namespace :fly do
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
+  desc 'Fly run an arbitrary command'
   task :run, [:command] do |_, args|
     env(COMMAND: %Q|\"#{args[:command]}\"|)
     execute('run', '-p')
@@ -28,7 +30,8 @@ namespace :fly do
 
   def env(modifications = {})
     @env ||= {
-      RUBY_VERSION: ENV['RUBY_VERSION'] || '2.1.6'
+      RUBY_VERSION: ruby_version, # TODO: pull from bosh release
+      CLI_RUBY_VERSION: (ENV['CLI_RUBY_VERSION'] || ruby_version)
     }
     @env.merge!(modifications) if modifications
 
@@ -37,6 +40,10 @@ namespace :fly do
 
   def execute(task, command_options =  nil)
     sh("#{env} fly #{concourse_target} execute #{command_options} -x -c ci/tasks/#{task}.yml -i bosh-src=$PWD")
+  end
+
+  def ruby_version
+    @ruby_version ||= (ENV['RUBY_VERSION'] || '2.1.6')
   end
 end
 
