@@ -4,7 +4,6 @@ describe 'deleting deployment', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should clean environment properly and free up resources' do
-    # current_sandbox.cpi.commands.make_create_vm_always_fail
     target_and_login
 
     expect(current_sandbox.cpi.all_stemcells).to eq []

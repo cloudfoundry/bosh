@@ -30,7 +30,7 @@ module Bosh::Director
           }
 
           # using_global_networking is always true
-          ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), true, logger)
+          ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), DeploymentPlan::VipRepo.new(logger), true, logger)
           skip_drain_decider = DeploymentPlan::AlwaysSkipDrain.new
 
           instance_deleter = InstanceDeleter.new(ip_provider, skip_drain_decider, deleter_options)

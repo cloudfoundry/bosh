@@ -295,6 +295,8 @@ module Bosh::Dev::Sandbox
       @director_service.start(director_config)
 
       @nginx_service.restart_if_needed
+
+      @cpi.reset
     end
 
     def setup_sandbox_root

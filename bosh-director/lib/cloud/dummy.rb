@@ -32,7 +32,7 @@ module Bosh
         @commands = CommandTransport.new(@base_dir, @logger)
         @inputs_recorder = InputsRecorder.new(@base_dir, @logger)
 
-        FileUtils.mkdir_p(@base_dir)
+        prepare
       rescue Errno::EACCES
         raise ArgumentError, "cannot create dummy cloud base directory #{@base_dir}"
       end
@@ -214,6 +214,15 @@ module Bosh
       end
 
       # Additional Dummy test helpers
+
+      def prepare
+        FileUtils.mkdir_p(@base_dir)
+      end
+
+      def reset
+        FileUtils.rm_rf(@base_dir)
+        prepare
+      end
 
       def vm_cids
         # Shuffle so that no one relies on the order of VMs

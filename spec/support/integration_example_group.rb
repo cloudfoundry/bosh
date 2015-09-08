@@ -231,7 +231,6 @@ module IntegrationSandboxHelpers
 
   def reset_sandbox
     current_sandbox.reset
-    FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
   end
 
   def setup_test_release_dir(destination_dir = ClientSandbox.test_release_dir)
