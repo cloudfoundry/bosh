@@ -35,37 +35,33 @@ module Bosh::Director
         end
 
         if reservation.ip.nil?
-          if reservation.is_a?(DynamicNetworkReservation)
-            @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
+          @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
-            filter_subnet_by_instance_az(reservation).each do |subnet|
-              @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
-              if @using_global_networking
-                ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
-                if ip
-                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
-                  reservation.resolve_ip(ip)
-                  reservation.mark_reserved_as(DynamicNetworkReservation)
-                  return
-                end
-              else
-                ip = @ip_repo.get_dynamic_ip(subnet)
-                if ip
-                  @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+          filter_subnet_by_instance_az(reservation).each do |subnet|
+            @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
+            if @using_global_networking
+              ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
+              if ip
+                @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+                reservation.resolve_ip(ip)
+                reservation.mark_reserved_as(DynamicNetworkReservation)
+                return
+              end
+            else
+              ip = @ip_repo.get_dynamic_ip(subnet)
+              if ip
+                @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
 
-                  reservation.resolve_ip(ip)
-                  @ip_repo.add(reservation)
-                  reservation.mark_reserved_as(DynamicNetworkReservation)
-                  return
-                end
+                reservation.resolve_ip(ip)
+                @ip_repo.add(reservation)
+                reservation.mark_reserved_as(DynamicNetworkReservation)
+                return
               end
             end
-
-            raise NetworkReservationNotEnoughCapacity,
-              "Failed to reserve IP for '#{reservation.instance}' for manual network '#{reservation.network.name}': no more available"
-          else
-            # TODO: is this case even possible?
           end
+
+          raise NetworkReservationNotEnoughCapacity,
+            "Failed to reserve IP for '#{reservation.instance}' for manual network '#{reservation.network.name}': no more available"
         end
 
         if reservation.ip
