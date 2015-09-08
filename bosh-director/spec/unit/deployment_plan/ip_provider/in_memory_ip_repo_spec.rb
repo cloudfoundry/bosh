@@ -159,44 +159,33 @@ module Bosh::Director::DeploymentPlan
         ip_repo.delete(subnet_2_ip_2, network_name)
 
         # Verify that re-acquiring the released IPs retains order
-        expect(ip_repo.get_dynamic_ip(subnet)).to eq(subnet_1_ip_2)
-        reservation.resolve_ip(subnet_1_ip_2)
-        ip_repo.add(reservation)
-
-        expect(ip_repo.get_dynamic_ip(subnet)).to eq(subnet_1_ip_1)
-        reservation.resolve_ip(subnet_1_ip_1)
-        ip_repo.add(reservation)
-
-        expect(ip_repo.get_dynamic_ip(second_subnet)).to eq(subnet_2_ip_1)
-        reservation.resolve_ip(subnet_2_ip_1)
-        ip_repo.add(reservation)
-
-        expect(ip_repo.get_dynamic_ip(second_subnet)).to eq(subnet_2_ip_2)
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(subnet_1_ip_2)
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq(subnet_1_ip_1)
+        expect(ip_repo.allocate_dynamic_ip(reservation, second_subnet)).to eq(subnet_2_ip_1)
+        expect(ip_repo.allocate_dynamic_ip(reservation, second_subnet)).to eq(subnet_2_ip_2)
       end
     end
 
-    context :get_dynamic_ip do
+    context :allocate_dynamic_ip do
       it 'skips IP in the static range' do
         network_spec['subnets'].first['range'] = '192.168.1.0/30'
         network_spec['subnets'].first['static'] = ['192.168.1.2']
 
-        expect(ip_repo.get_dynamic_ip(subnet)).to be_nil
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
         end
 
       it 'skips IP in the reserved range' do
         network_spec['subnets'].first['range'] = '192.168.1.0/30'
         network_spec['subnets'].first['reserved'] = ['192.168.1.2']
 
-        expect(ip_repo.get_dynamic_ip(subnet)).to be_nil
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
         end
 
-      it 'skips IP that has already been allocated range' do
+      it 'skips IP that has already been allocated' do
         network_spec['subnets'].first['range'] = '192.168.1.0/30'
 
-        reservation.resolve_ip('192.168.1.2')
-        ip_repo.add(reservation)
-
-        expect(ip_repo.get_dynamic_ip(subnet)).to be_nil
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to eq('192.168.1.2')
+        expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
       end
     end
   end

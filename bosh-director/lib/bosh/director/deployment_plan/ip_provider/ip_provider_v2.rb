@@ -23,40 +23,25 @@ module Bosh::Director
       end
 
       def reserve(reservation)
+        # Do nothing for Dynamic Network
         return if reservation.network.is_a?(DynamicNetwork)
 
-        if reservation.network.is_a?(VipNetwork)
-          reservation.validate_type(StaticNetworkReservation)
+        # Reserve IP for VIP Network
+        return reserve_vip(reservation) if reservation.network.is_a?(VipNetwork)
 
-          @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
-          @vip_repo.add(reservation)
-          reservation.mark_reserved_as(StaticNetworkReservation)
-          return
-        end
-
+        # Reserve IP for Manual Network
         if reservation.ip.nil?
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
             @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
-            if @using_global_networking
-              ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
-              if ip
-                @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
-                reservation.resolve_ip(ip)
-                reservation.mark_reserved_as(DynamicNetworkReservation)
-                return
-              end
-            else
-              ip = @ip_repo.get_dynamic_ip(subnet)
-              if ip
-                @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+            ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
 
-                reservation.resolve_ip(ip)
-                @ip_repo.add(reservation)
-                reservation.mark_reserved_as(DynamicNetworkReservation)
-                return
-              end
+            if ip
+              @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+              reservation.resolve_ip(ip)
+              reservation.mark_reserved_as(DynamicNetworkReservation)
+              return
             end
           end
 
@@ -107,6 +92,13 @@ module Bosh::Director
       end
 
       private
+      def reserve_vip(reservation)
+        reservation.validate_type(StaticNetworkReservation)
+
+        @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
+        @vip_repo.add(reservation)
+        reservation.mark_reserved_as(StaticNetworkReservation)
+      end
 
       def filter_subnet_by_instance_az(reservation)
         instance_az = reservation.instance.availability_zone

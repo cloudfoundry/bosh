@@ -20,7 +20,30 @@ module Bosh::Director::DeploymentPlan
     def add(reservation)
       ip = ip_to_netaddr(reservation.ip)
       network_name = reservation.network.name
+      add_ip(ip, network_name)
+    end
 
+    def allocate_dynamic_ip(reservation, subnet)
+      item = (0...subnet.range.size).find { |i| available_for_dynamic?(subnet.range[i], subnet) }
+
+      if item.nil?
+        entry = @recently_released_ips.find do |entry|
+          entry[:network_name] == subnet.network.name && subnet.range.contains?(entry[:ip])
+        end
+
+        ip = ip_to_netaddr(entry[:ip]) unless entry.nil?
+      else
+        ip = subnet.range[item]
+      end
+
+      add_ip(ip, subnet.network.name) unless ip.nil?
+
+      ip
+    end
+
+    private
+
+    def add_ip(ip, network_name)
       entry_to_add = {ip: ip.to_i, network_name: network_name}
 
       if @ips.include?(entry_to_add)
@@ -33,23 +56,6 @@ module Bosh::Director::DeploymentPlan
       @ips << entry_to_add
       @recently_released_ips.delete(entry_to_add)
     end
-
-    def get_dynamic_ip(subnet)
-      (0...subnet.range.size).each do |i|
-        return subnet.range[i] if available_for_dynamic?(subnet.range[i], subnet)
-      end
-
-      entry = @recently_released_ips.find do |entry|
-        entry[:network_name] == subnet.network.name && subnet.range.contains?(entry[:ip])
-      end
-      unless entry.nil?
-        return ip_to_netaddr(entry[:ip])
-      end
-
-      nil
-    end
-
-    private
 
     def available_for_dynamic?(ip, subnet)
       return false unless subnet.range.contains?(ip)
