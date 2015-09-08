@@ -262,18 +262,27 @@ module Bosh::Director
       ['arg 1', 2, { :test => 'blah' }]
     end
 
-    let(:test_rpc_args) do
-      @test_rpc_args = { arguments: test_args, method: :baz }
+    let(:expected_rpc_args) do
+      @expected_rpc_args = { protocol: Bosh::Director::AgentClient::PROTOCOL_VERSION, arguments: test_args, method: :baz }
     end
 
     it 'should send messages and return values' do
       response = { 'value' => 5 }
 
       expect(@nats_rpc).to receive(:send_request).
-        with('foo.bar', test_rpc_args).and_yield(response)
+        with('foo.bar', expected_rpc_args).and_yield(response)
 
       client = AgentClient.new('foo', 'bar')
       expect(client.baz(*test_args)).to eq(5)
+    end
+
+    it 'should include the current protocol version in each request' do
+      expect(@nats_rpc).to receive(:send_request).
+        with(anything(), hash_including(protocol: Bosh::Director::AgentClient::PROTOCOL_VERSION)).
+        and_yield({'value' => 'whatever'})
+
+      client = AgentClient.new('foo', 'bar')
+      client.baz(*test_args)
     end
 
     it 'should handle exceptions' do
@@ -286,7 +295,7 @@ module Bosh::Director
       }
 
       expect(@nats_rpc).to receive(:send_request).
-        with('foo.bar', test_rpc_args).and_yield(response)
+        with('foo.bar', expected_rpc_args).and_yield(response)
 
       rm = double(Bosh::Director::Api::ResourceManager)
       expect(rm).to receive(:get_resource).with('deadbeef').and_return('an exception')
@@ -304,7 +313,7 @@ module Bosh::Director
     describe 'timeouts/retries' do
       it 'should handle timeouts' do
         expect(@nats_rpc).to receive(:send_request).
-          with('foo.bar', test_rpc_args).and_return('req_id')
+          with('foo.bar', expected_rpc_args).and_return('req_id')
         expect(@nats_rpc).to receive(:cancel_request).with('req_id')
 
         client = AgentClient.new('foo', 'bar', timeout: 0.1)
@@ -323,7 +332,7 @@ module Bosh::Director
         args = { method: :baz, arguments: [] }
 
         expect(@nats_rpc).to receive(:send_request).
-          with('foo.bar', args).once.and_raise(Bosh::Director::RpcTimeout)
+          with('foo.bar', hash_including(args)).once.and_raise(Bosh::Director::RpcTimeout)
 
         client = AgentClient.new('foo', 'bar', client_opts)
 
@@ -336,7 +345,7 @@ module Bosh::Director
         args = { method: :baz, arguments: [] }
 
         expect(@nats_rpc).to receive(:send_request).
-          with('foo.bar', args).exactly(2).times.and_raise(Bosh::Director::RpcTimeout)
+          with('foo.bar', hash_including(args)).exactly(2).times.and_raise(Bosh::Director::RpcTimeout)
 
         client_opts = {
           timeout: 0.1,
@@ -354,7 +363,7 @@ module Bosh::Director
         args = { method: :baz, arguments: [] }
 
         expect(@nats_rpc).to receive(:send_request).
-          with('foo.bar', args).once.and_raise(RuntimeError.new('foo'))
+          with('foo.bar', hash_including(args)).once.and_raise(RuntimeError.new('foo'))
 
         client_opts = {
           timeout: 0.1,
@@ -434,7 +443,7 @@ module Bosh::Director
         }
 
         expect(@nats_rpc).to receive(:send_request).
-          with('foo.bar', test_rpc_args).and_yield(response)
+          with('foo.bar', expected_rpc_args).and_yield(response)
 
         rm = instance_double('Bosh::Director::Api::ResourceManager')
         expect(rm).to receive(:get_resource).with('cafe').and_return('blob')
@@ -489,7 +498,7 @@ module Bosh::Director
         }
 
         expect(nats_rpc).to receive(:send_request).with(
-          'fake-service-name.fake-client-id', method: :run_errand, arguments: [args])
+          'fake-service-name.fake-client-id', hash_including(method: :run_errand, arguments: [args]))
           .and_yield(nats_rpc_response)
 
         expect(client.run_errand(args)).to eq({
@@ -517,7 +526,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           nats_rpc_response = {
@@ -528,7 +537,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           expect(fake_block).to receive(:call).exactly(1).times
@@ -548,7 +557,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           nats_rpc_response = {
@@ -558,7 +567,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           expect(client).to receive(:sleep).with(1.0)
@@ -577,7 +586,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           expect(client.wait_for_task('fake-task-id', &fake_block)).to eq('fake-return-value')
@@ -596,7 +605,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           nats_rpc_response = {
@@ -607,7 +616,7 @@ module Bosh::Director
           }
 
           expect(nats_rpc).to receive(:send_request).once.with(
-            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
             .and_yield(nats_rpc_response)
 
           expect(client).to receive(:sleep).with(1.0)
