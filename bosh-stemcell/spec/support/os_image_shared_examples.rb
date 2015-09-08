@@ -165,10 +165,8 @@ shared_examples_for 'every OS image' do
 
   context '/etc/passwd file' do
     describe file('/etc/passwd') do
-      # should be owned by root user (stig: V-38450)
-      it { should be_owned_by('root') }
-      # should be group-owned by root group (stig: V-38451)
-      it { should be_grouped_into('root') }
+      it('should be owned by root user (stig: V-38450)') { should be_owned_by('root') }
+      it('should be group-owned by root group (stig: V-38451)') { should be_grouped_into('root') }
     end
 
     context 'should not contain password hash (stig: V-38499)' do
@@ -180,23 +178,17 @@ shared_examples_for 'every OS image' do
 
   context '/etc/group file' do
     describe file('/etc/group') do
-      # should be owned by root user (stig: V-38458)
-      it { should be_owned_by('root') }
-      # should be owned by root group (stig: V-38459)
-      it { should be_grouped_into('root') }
-      # should have mode 0644 (stig: V-38461)
-      it { should be_mode('644') }
+      it('should be owned by root user (stig: V-38458)') { should be_owned_by('root') }
+      it('should be owned by root group (stig: V-38459)') { should be_grouped_into('root') }
+      it('should have mode 0644 (stig: V-38461)') { should be_mode('644') }
     end
   end
 
   context '/etc/gshadow file' do
     describe file('/etc/gshadow') do
-      # should be owned by root user (stig: V-38443)
-      it { should be_owned_by('root') }
-      # should be owned by root group (stig: V-38448)
-      it { should be_grouped_into('root') }
-      # should have mode 0 (stig: V-38449)
-      it { should be_mode('0') }
+      it('should be owned by root user (stig: V-38443)') { should be_owned_by('root') }
+      it('should be owned by root group (stig: V-38448)') { should be_grouped_into('root') }
+      it('should have mode 0 (stig: V-38449)') { should be_mode('0') }
     end
   end
 
