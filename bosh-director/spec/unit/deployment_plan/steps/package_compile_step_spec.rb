@@ -83,6 +83,7 @@ module Bosh::Director
       @p_warden = make_package('warden', %w(common))
       @p_nginx = make_package('nginx', %w(common))
       @p_router = make_package('p_router', %w(ruby common))
+      @p_deps_ruby = make_package('needs_ruby', %w(ruby))
 
       rp_large = double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'large', stemcell: @stemcell_a)
 
@@ -96,6 +97,8 @@ module Bosh::Director
 
       @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_router], name: 'router')
 
+      @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
+
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
                                name: 'dea',
                                release: @release,
@@ -107,11 +110,19 @@ module Bosh::Director
                                   templates: [@t_nginx, @t_router, @t_warden],
                                   resource_pool: rp_small)
 
+      @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job',
+                                     name: 'needs_ruby',
+                                     release: @release,
+                                     templates: [@t_deps_ruby],
+                                     resource_pool: rp_small)
+      
       @package_set_a = [@p_dea, @p_nginx, @p_syslog, @p_warden, @p_common, @p_ruby]
 
       @package_set_b = [@p_nginx, @p_common, @p_router, @p_warden, @p_ruby]
 
-      (@package_set_a + @package_set_b).each do |package|
+      @package_set_c = [@p_deps_ruby]
+
+      (@package_set_a + @package_set_b + @package_set_c).each do |package|
         release_version_model.packages << package
       end
     end
@@ -240,6 +251,84 @@ module Bosh::Director
         @package_set_b.each do |package|
           expect(package.compiled_packages.size).to be >= 1
         end
+      end
+    end
+
+    context 'compiling packages with transitive dependencies' do
+      let(:agent) { instance_double('Bosh::Director::AgentClient') }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job) }
+      let(:net) { {'default' => 'network settings'} }
+      let(:vm_cid) { "vm-cid-0" }
+
+      before do
+        prepare_samples
+
+        allow(@network).to receive(:reserve) do |reservation|
+          expect(reservation).to be_an_instance_of(NetworkReservation)
+          reservation.reserved = true
+        end
+
+        vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+        allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
+        expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling))
+
+        initial_state = {
+            'deployment' => 'mycloud',
+            'resource_pool' => {},
+            'networks' => net
+        }
+
+        allow(AgentClient).to receive(:with_defaults).and_return(agent)
+        allow(agent).to receive(:wait_until_ready)
+        allow(agent).to receive(:update_settings)
+        allow(agent).to receive(:apply).with(initial_state)
+        allow(agent).to receive(:compile_package) do |*args|
+          name = args[2]
+          {
+              'result' => {
+                  'sha1' => "compiled.#{name}.sha1",
+                  'blobstore_id' => "blob.#{name}.id"
+              }
+          }
+        end
+
+        allow(@network).to receive(:network_settings).and_return('network settings')
+        allow(@network).to receive(:release)
+        allow(@director_job).to receive(:task_checkpoint)
+        allow(compiler).to receive(:with_compile_lock).and_yield
+        allow(@cloud).to receive(:delete_vm)
+      end
+
+      it 'sends information about immediate dependencies of the package being compiled' do
+
+        allow(@plan).to receive(:jobs).and_return([@j_deps_ruby])
+
+        allow(@cloud).to receive(:create_vm).
+                              with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
+                              and_return(vm_cid)
+
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "common", # package name
+                             "0.1-dev.1", # package version
+                             {}).ordered # immediate dependencies
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "ruby", # package name
+                             "0.1-dev.1", # package version
+                             {"common"=>{"name"=>"common", "version"=>"0.1-dev.1", "sha1"=>"compiled.common.sha1", "blobstore_id"=>"blob.common.id"}}).ordered # immediate dependencies
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "needs_ruby", # package name
+                             "0.1-dev.1", # package version
+                             {"ruby"=>{"name"=>"ruby", "version"=>"0.1-dev.1", "sha1"=>"compiled.ruby.sha1", "blobstore_id"=>"blob.ruby.id"}}).ordered # immediate dependencies
+
+        allow(@j_deps_ruby).to receive(:use_compiled_package)
+
+        compiler.perform
       end
     end
 
