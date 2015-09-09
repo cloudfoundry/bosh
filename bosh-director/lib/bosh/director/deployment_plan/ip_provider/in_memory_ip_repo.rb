@@ -3,7 +3,7 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
 
     def initialize(logger)
-      @logger = logger
+      @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
       @ips = []
       @recently_released_ips = []
     end

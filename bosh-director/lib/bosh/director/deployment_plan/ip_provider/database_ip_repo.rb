@@ -5,7 +5,7 @@ module Bosh::Director::DeploymentPlan
     class NoMoreIPsAvailableAndStopRetrying < StandardError; end
 
     def initialize(logger)
-      @logger = logger
+      @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
     end
 
     def delete(ip, network_name)

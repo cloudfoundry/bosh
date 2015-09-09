@@ -420,7 +420,7 @@ describe 'global networking', type: :integration do
       expect(output).to include("Failed to reserve IP for 'foobar/1' for manual network 'a': no more available")
     end
 
-    it 'does not resuse IP if one job is deleted and another created within a single deployment' do
+    it 'does not reuse IP if one job is deleted and another created within a single deployment' do
       # Until https://www.pivotaltracker.com/story/show/98057020 we cannot reuse the same IP
       # within single deployment
 

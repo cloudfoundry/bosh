@@ -4,7 +4,7 @@ module Bosh::Director
       include IpUtil
 
       def initialize(ip_repo, vip_repo, using_global_networking, logger)
-        @logger = logger
+        @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
         @ip_repo = ip_repo
         @using_global_networking = using_global_networking
         @vip_repo = vip_repo
@@ -47,9 +47,9 @@ module Bosh::Director
 
           raise NetworkReservationNotEnoughCapacity,
             "Failed to reserve IP for '#{reservation.instance}' for manual network '#{reservation.network.name}': no more available"
-        end
 
-        if reservation.ip
+        else
+
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
@@ -57,41 +57,43 @@ module Bosh::Director
 
           if subnet
             if subnet.restricted_ips.include?(reservation.ip.to_i)
-              if reservation.is_a?(ExistingNetworkReservation)
-                # FIXME: stop trying to reserve existing reservations. do something better.
-                # for now we just make sure to not mark it as reserved
-                return
-              else
-                message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network.name}': IP belongs to reserved range"
-                @logger.error(message)
-                raise Bosh::Director::NetworkReservationIpReserved, message
-              end
+              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network.name}': IP belongs to reserved range"
+              @logger.error(message)
+              raise Bosh::Director::NetworkReservationIpReserved, message
             end
 
-            if subnet.static_ips.include?(reservation.ip.to_i)
-              @ip_repo.add(reservation)
-              reservation.mark_reserved_as(StaticNetworkReservation)
-              @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
-              return
-            else
-              @ip_repo.add(reservation)
-              reservation.mark_reserved_as(DynamicNetworkReservation)
-              @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
-              return
-            end
+            @ip_repo.add(reservation)
+
+            mark_reserved_with_reservation_type(reservation, subnet)
           else
-            if reservation.is_a?(ExistingNetworkReservation)
-              @logger.debug("Couldn't find subnet containing existing network reservation for #{format_ip(reservation.ip)}. No longer reserved.")
-              return
-            else
-              raise NetworkReservationIpOutsideSubnet,
-                "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{reservation.network.name}'"
-            end
+            raise NetworkReservationIpOutsideSubnet,
+              "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{reservation.network.name}'"
           end
         end
       end
 
+      def reserve_existing_ips(reservation)
+        subnet = find_subnet_containing(reservation)
+        if subnet
+          return if subnet.restricted_ips.include?(reservation.ip.to_i)
+          @ip_repo.add(reservation) unless @using_global_networking
+
+          mark_reserved_with_reservation_type(reservation, subnet)
+        end
+      end
+
       private
+
+      def mark_reserved_with_reservation_type(reservation, subnet)
+        if subnet.static_ips.include?(reservation.ip.to_i)
+          reservation.mark_reserved_as(StaticNetworkReservation)
+          @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
+        else
+          reservation.mark_reserved_as(DynamicNetworkReservation)
+          @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
+        end
+      end
+
       def reserve_vip(reservation)
         reservation.validate_type(StaticNetworkReservation)
 
