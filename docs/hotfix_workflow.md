@@ -9,18 +9,19 @@
 - [ ] 3. Kick off appropriate OS Image build(s) with `hotfix-STORY_ID` as the value for `BUILD_FLOW_GIT_COMMIT`
 - [ ] 4. Update (on the hotfix branch):
   - `bosh-stemcell/OS_IMAGES.md`
-  - `bosh-dev/.../os_image_versions.json`  
+  - `bosh-dev/.../os_image_versions.json`
 
-    ...with the published OS image s3 key, found at the end of the OS image build output; push that change
+  ...with the published OS image s3 key, found at the end of the OS image build output; push that change
 - [ ] 5. Kick off the full Jenkins pipeline, based on the hotfix branch, setting `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as `hotfix-STORY_ID`
-
-    **NOTE:** The final step of the Jenkins pipeline will commit a release bump to `master` and merge that to `hotfix-STORY_ID`
+         NOTE: The final step of the Jenkins pipeline will commit a release bump to `master` and merge that to `hotfix-STORY_ID`
 - [ ] 6. Upon successful completion of the Jenkins pipeline, locally...
-  - [ ] `git pull master`
-  - [ ] `git pull develop`
-  - [ ] `git merge master` (onto `develop`)
+  - [ ] `git co master && git pull`
+  - [ ] `git co develop && git pull`
+  - [ ] `git merge master` (onto `develop`) # resolve any merge conflicts
   - [ ] `git push origin develop`
-  - [ ] `git branch -d hotfix-STORY_ID && git push origin :hotfix-STORY_ID`, to delete the local and remote hotfix branches
+  - [ ] optionally, delete the local and remote hotfix branches:
+      `git branch -d hotfix-STORY_ID`
+      `git push origin :hotfix-STORY_ID`
 
 ## If there are code changes
 
