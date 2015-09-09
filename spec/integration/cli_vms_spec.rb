@@ -86,11 +86,15 @@ describe 'cli: vms', type: :integration do
 +-----------+---------+--------+---------------+-------------+
 VMS
     output = bosh_runner.run('vms --details')
-    expect(output).to include(<<HEADER)
-+-----------+---------+--------+---------------+-------------+-------+--------------------------------------+--------------+
-| Job/index | State   | AZ     | Resource Pool | IPs         | CID   | Agent ID                             | Resurrection |
-+-----------+---------+--------+---------------+-------------+-------+--------------------------------------+--------------+
-HEADER
+    expect(output).to include('Job/index')
+    expect(output).to include('State')
+    expect(output).to include('AZ')
+    expect(output).to include('Resource Pool')
+    expect(output).to include('IPs')
+    expect(output).to include('CID')
+    expect(output).to include('Agent ID')
+    expect(output).to include('Resurrection')
+
     expect(output).to include('foobar/0')
     expect(output).to include('foobar/0')
     expect(output).to include('foobar/1')

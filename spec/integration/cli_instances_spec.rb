@@ -49,11 +49,16 @@ describe 'cli: deployment process', type: :integration do
 
     output = bosh_runner.run('instances --details')
 
-    expect(output).to include(<<HEADER)
-+----------+---------+--------+---------------+-------------+--------+----------+--------------------------------------+--------------+
-| Instance | State   | AZ     | Resource Pool | IPs         | VM CID | Disk CID | Agent ID                             | Resurrection |
-+----------+---------+--------+---------------+-------------+--------+----------+--------------------------------------+--------------+
-HEADER
+    expect(output).to include('Instance')
+    expect(output).to include('State')
+    expect(output).to include('AZ')
+    expect(output).to include('Resource Pool')
+    expect(output).to include('IPs')
+    expect(output).to include('VM CID')
+    expect(output).to include('Disk CID')
+    expect(output).to include('Agent ID')
+    expect(output).to include('Resurrection')
+
     expect(output).to include('foobar/0')
     expect(output).to include('foobar/0')
     expect(output).to include('foobar/1')
