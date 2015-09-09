@@ -34,15 +34,17 @@ module Bosh::Cli::Command
         return
       end
 
-      sorted = vms.sort do |a, b|
-        s = a['job_name'].to_s <=> b['job_name'].to_s
-        s = a['index'].to_i <=> b['index'].to_i if s == 0
-        s = a['resource_pool'].to_s <=> b['resource_pool'].to_s if s == 0
-        s
-      end
+      sorted = sort(vms)
+
+      has_az = vms.any? {|vm| vm.has_key? 'availability_zone' }
 
       vms_table = table do |t|
-        headings = ['Job/index', 'State', 'Resource Pool', 'IPs']
+        if has_az
+          headings = ['Job/index', 'State', 'AZ', 'Resource Pool', 'IPs']
+        else
+          headings = ['Job/index', 'State', 'Resource Pool', 'IPs']
+        end
+
         if options[:details]
           headings += ['CID', 'Agent ID', 'Resurrection']
         end
@@ -62,8 +64,14 @@ module Bosh::Cli::Command
           ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
+          az = vm['availability_zone'].nil? ? 'n/a' : vm['availability_zone']
 
-          row = [job, vm['job_state'], vm['resource_pool'], ips]
+          if has_az
+            row = [job, vm['job_state'], az, vm['resource_pool'], ips]
+          else
+            row = [job, vm['job_state'], vm['resource_pool'], ips]
+          end
+
 
           if options[:details]
             row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']
@@ -110,6 +118,17 @@ module Bosh::Cli::Command
       say(vms_table)
       nl
       say('VMs total: %d' % vms.size)
+    end
+
+    def sort(vms)
+      sorted = vms.sort do |a, b|
+        comparison = a['job_name'].to_s <=> b['job_name'].to_s
+        comparison = a['availability_zone'].to_s <=> b['availability_zone'].to_s if comparison == 0
+        comparison = a['index'].to_i <=> b['index'].to_i if comparison == 0
+        comparison = a['resource_pool'].to_s <=> b['resource_pool'].to_s if comparison == 0
+        comparison
+      end
+      sorted
     end
 
   end

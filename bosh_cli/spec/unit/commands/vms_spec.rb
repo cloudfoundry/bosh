@@ -58,55 +58,124 @@ describe Bosh::Cli::Command::Vms do
     let(:deployment) { 'dep1' }
     let(:options)    { {details: false, dns: false, vitals: false} }
 
+    let(:vm_state) {
+      {
+        'job_name' => 'job1',
+        'index' => 0,
+        'ips' => %w{192.168.0.1 192.168.0.2},
+        'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
+        'vitals' => 'vitals',
+        'job_state' => 'awesome',
+        'resource_pool' => 'rp1',
+        'vm_cid' => 'cid1',
+        'agent_id' => 'agent1',
+        'vitals' => {
+          'load' => [1, 2, 3],
+          'cpu' => {
+            'user' => 4,
+            'sys' => 5,
+            'wait' => 6,
+          },
+          'mem' => {
+            'percent' => 7,
+            'kb' => 8,
+          },
+          'swap' => {
+            'percent' => 9,
+            'kb' => 10,
+          },
+          'disk' => {
+            'system' => {'percent' => 11},
+            'ephemeral' => {'percent' => 12},
+            'persistent' => {'percent' => 13},
+          },
+        },
+        'resurrection_paused' => true,
+      }
+    }
+
+    context 'sorting multiple instances' do
+      it 'sort by job name first' do
+        vm_state.delete('availability_zone')
+
+        vm_state2 = vm_state.clone
+        vm_state2['job_name'] = 'job0'
+        vm_state2['availability_zone'] = 'az2'
+
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state2, vm_state] }
+
+        expect(command).to receive(:say) do |display_output|
+
+          expect(display_output.to_s).to include 'job0/0'
+          expect(display_output.to_s).to include 'job1/0'
+          expect(display_output.to_s.index('job0/0')).to be < display_output.to_s.index('job1/0')
+
+        end
+        perform
+      end
+
+      it 'if name is the same, sort by AZ' do
+        vm_state.delete('availability_zone')
+
+        vm_state2 = vm_state.clone
+        vm_state2['availability_zone'] = 'az1'
+
+        vm_state3 = vm_state.clone
+        vm_state3['availability_zone'] = 'az2'
+
+        vm_state4 = vm_state.clone
+        vm_state4['availability_zone'] = 'zone1'
+
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state3, vm_state4, vm_state2, vm_state] }
+
+        expect(command).to receive(:say) do |display_output|
+
+          expect(display_output.to_s).to include 'az1'
+          expect(display_output.to_s).to include 'az2'
+          expect(display_output.to_s).to include 'n/a'
+          expect(display_output.to_s).to include 'zone1'
+
+          expect(display_output.to_s.index('n/a')).to be < display_output.to_s.index('az1')
+          expect(display_output.to_s.index('az1')).to be < display_output.to_s.index('az2')
+          expect(display_output.to_s.index('az2')).to be < display_output.to_s.index('zone1')
+
+        end
+        perform
+      end
+
+    end
+
     context 'when deployment has vms' do
       before { allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state] } }
 
-      let(:vm_state) {
-        {
-          'job_name' => 'job1',
-          'index' => 0,
-          'ips' => %w{192.168.0.1 192.168.0.2},
-          'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
-          'vitals' => 'vitals',
-          'job_state' => 'awesome',
-          'resource_pool' => 'rp1',
-          'vm_cid' => 'cid1',
-          'agent_id' => 'agent1',
-          'vitals' => {
-            'load' => [1, 2, 3],
-            'cpu' => {
-              'user' => 4,
-              'sys' => 5,
-              'wait' => 6,
-            },
-            'mem' => {
-              'percent' => 7,
-              'kb' => 8,
-            },
-            'swap' => {
-              'percent' => 9,
-              'kb' => 10,
-            },
-            'disk' => {
-              'system' => {'percent' => 11},
-              'ephemeral' => {'percent' => 12},
-              'persistent' => {'percent' => 13},
-            },
-          },
-          'resurrection_paused' => true,
-        }
-      }
-
       context 'default' do
         it 'show basic vms information' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to include 'job1/0'
+            expect(output_display.to_s).to include 'awesome'
+            expect(output_display.to_s).to include 'awesome'
+            expect(output_display.to_s).to include 'rp1'
+            expect(output_display.to_s).to include '| 192.168.0.1'
+            expect(output_display.to_s).to include '| 192.168.0.2'
           end
           expect(command).to receive(:say).with('VMs total: 1')
+          perform
+        end
+
+        it 'show AZ information' do
+          vm_state['availability_zone'] = 'az1'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to include 'AZ'
+            expect(output_display.to_s).to include 'az1'
+          end
+          perform
+        end
+
+        it 'do not show AZ column when AZ is not defined' do
+          # vm_state.delete('availability_zone')
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to_not include 'AZ'
+          end
           perform
         end
       end
@@ -115,15 +184,15 @@ describe Bosh::Cli::Command::Vms do
         before { options[:details] = true }
 
         it 'shows vm details' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include 'cid1'
-            expect(s.to_s).to include 'agent1'
-            expect(s.to_s).to include 'paused'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to include 'job1/0'
+            expect(output_display.to_s).to include 'awesome'
+            expect(output_display.to_s).to include 'rp1'
+            expect(output_display.to_s).to include '| 192.168.0.1'
+            expect(output_display.to_s).to include '| 192.168.0.2'
+            expect(output_display.to_s).to include 'cid1'
+            expect(output_display.to_s).to include 'agent1'
+            expect(output_display.to_s).to include 'paused'
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -134,14 +203,14 @@ describe Bosh::Cli::Command::Vms do
         before { options[:dns] = true }
 
         it 'shows DNS A records' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include '| index.job.network.deployment.microbosh'
-            expect(s.to_s).to include '| index.job.network2.deployment.microbosh'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to include 'job1/0'
+            expect(output_display.to_s).to include 'awesome'
+            expect(output_display.to_s).to include 'rp1'
+            expect(output_display.to_s).to include '| 192.168.0.1'
+            expect(output_display.to_s).to include '| 192.168.0.2'
+            expect(output_display.to_s).to include '| index.job.network.deployment.microbosh'
+            expect(output_display.to_s).to include '| index.job.network2.deployment.microbosh'
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -152,21 +221,21 @@ describe Bosh::Cli::Command::Vms do
         before { options[:vitals] = true }
 
         it 'shows the vm vitals' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include '1, 2, 3'
-            expect(s.to_s).to include '4%'
-            expect(s.to_s).to include '5%'
-            expect(s.to_s).to include '6%'
-            expect(s.to_s).to include '7% (8.0K)'
-            expect(s.to_s).to include '9% (10.0K)'
-            expect(s.to_s).to include '11%'
-            expect(s.to_s).to include '12%'
-            expect(s.to_s).to include '13%'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to include 'job1/0'
+            expect(output_display.to_s).to include 'awesome'
+            expect(output_display.to_s).to include 'rp1'
+            expect(output_display.to_s).to include '| 192.168.0.1'
+            expect(output_display.to_s).to include '| 192.168.0.2'
+            expect(output_display.to_s).to include '1, 2, 3'
+            expect(output_display.to_s).to include '4%'
+            expect(output_display.to_s).to include '5%'
+            expect(output_display.to_s).to include '6%'
+            expect(output_display.to_s).to include '7% (8.0K)'
+            expect(output_display.to_s).to include '9% (10.0K)'
+            expect(output_display.to_s).to include '11%'
+            expect(output_display.to_s).to include '12%'
+            expect(output_display.to_s).to include '13%'
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -178,9 +247,9 @@ describe Bosh::Cli::Command::Vms do
           new_vm_state['vitals']['disk'].delete('persistent')
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to_not include '12%'
-            expect(s.to_s).to_not include '13%'
+          expect(command).to receive(:say) do |output_display|
+            expect(output_display.to_s).to_not include '12%'
+            expect(output_display.to_s).to_not include '13%'
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
