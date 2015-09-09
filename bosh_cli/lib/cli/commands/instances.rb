@@ -36,17 +36,27 @@ module Bosh::Cli::Command
         return
       end
 
-      sorted = instances.sort do |a, b|
-        s = a['job_name'].to_s <=> b['job_name'].to_s
-        s = a['index'].to_i <=> b['index'].to_i if s == 0
-        s = a['resource_pool'].to_s <=> b['resource_pool'].to_s if s == 0
-        s
-      end
+      sorted = sort(instances)
 
-      has_disk_cid = instances[0].has_key?('disk_cid')
+      has_disk_cid = instances.any? {|instance| instance.has_key? 'disk_cid'}
+      has_az = instances.any? {|instance| instance.has_key? 'availability_zone' }
 
-      instances_table = table do |t|
-        headings = ['Instance', 'State', 'Resource Pool', 'IPs']
+      instances_table = construct_table_to_display(has_disk_cid, has_az, options, sorted)
+
+      nl
+      say(instances_table)
+      nl
+      say('Instances total: %d' % instances.size)
+    end
+
+    def construct_table_to_display(has_disk_cid, has_az, options, sorted)
+      table do |display_table|
+        if has_az
+          headings = ['Instance', 'State', 'AZ', 'Resource Pool', 'IPs']
+        else
+          headings = ['Instance', 'State', 'Resource Pool', 'IPs']
+        end
+
         if options[:details]
           if has_disk_cid
             headings += ['VM CID', 'Disk CID', 'Agent ID', 'Resurrection']
@@ -63,15 +73,21 @@ module Bosh::Cli::Command
           headings += ['Memory Usage', 'Swap Usage']
           headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
         end
-        t.headings = headings
+        display_table.headings = headings
 
         sorted.each do |instance|
           job = "#{instance['job_name'] || 'unknown'}/#{instance['index'] || 'unknown'}"
           ips = Array(instance['ips']).join("\n")
           dns_records = Array(instance['dns']).join("\n")
           vitals = instance['vitals']
+          az = instance['availability_zone'].nil? ? 'n/a' : instance['availability_zone']
 
-          row = [job, instance['job_state'], instance['resource_pool'], ips]
+          if has_az
+            row = [job, instance['job_state'], az, instance['resource_pool'], ips]
+          else
+            row = [job, instance['job_state'], instance['resource_pool'], ips]
+          end
+
 
           if options[:details]
             if has_disk_cid
@@ -87,8 +103,8 @@ module Bosh::Cli::Command
 
           if options[:vitals]
             if vitals
-              cpu =  vitals['cpu']
-              mem =  vitals['mem']
+              cpu = vitals['cpu']
+              mem = vitals['mem']
               swap = vitals['swap']
               disk = vitals['disk']
 
@@ -114,14 +130,19 @@ module Bosh::Cli::Command
             end
           end
 
-          t << row
+          display_table << row
         end
       end
+    end
 
-      nl
-      say(instances_table)
-      nl
-      say('Instances total: %d' % instances.size)
+    def sort(instances)
+      instances.sort do |instance1, instance2|
+        comparison = instance1['job_name'].to_s <=> instance2['job_name'].to_s
+        comparison = instance1['availability_zone'].to_s <=> instance2['availability_zone'].to_s if comparison == 0
+        comparison = instance1['index'].to_i <=> instance2['index'].to_i if comparison == 0
+        comparison = instance1['resource_pool'].to_s <=> instance2['resource_pool'].to_s if comparison == 0
+        comparison
+      end
     end
 
   end

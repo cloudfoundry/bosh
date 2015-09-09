@@ -83,6 +83,7 @@ module Bosh::Director
           :resource_pool => resource_pool,
           :vitals => job_vitals,
           :resurrection_paused => vm.instance ? vm.instance.resurrection_paused  : nil,
+          :availability_zone => vm.instance ? vm.instance.availability_zone : nil,
         }
       end
 
