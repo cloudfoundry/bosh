@@ -58,11 +58,7 @@ module Bosh::Director
       end
 
       def update_availability_zone!
-        if @availability_zone.nil?
-          @model.update(availability_zone: nil)
-        else
-          @model.update(availability_zone: @availability_zone.name)
-        end
+        # since we loaded it from the DB there's no need to save it back
       end
 
       def take_old_reservations

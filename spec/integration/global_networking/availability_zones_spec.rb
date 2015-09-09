@@ -75,11 +75,14 @@ describe 'availability zones', type: :integration do
           'd' => 'az_value_for_d',
           'e' => 'rp_value_for_e',
         }
+
+        expect(original_vm.availability_zone).to eq('my-az')
         expect(current_sandbox.cpi.read_cloud_properties(original_vm.cid)).to eq(expected_cloud_properties)
 
         resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
         expect(current_sandbox.cpi.read_cloud_properties(resurrected_vm.cid)).to eq(expected_cloud_properties)
+        expect(resurrected_vm.availability_zone).to eq(original_vm.availability_zone)
       end
     end
 

@@ -21,6 +21,7 @@ module Bosh::Spec
           vm_data[:cid],
           vm_data[:agent_id],
           vm_data[:ips],
+          vm_data[:az],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
           @director_nats_port,
           @logger,
