@@ -10,7 +10,8 @@ run:
   path: bosh-src/ci/tasks/test-integration.sh
 
 params:
-  CLI_RUBY_VERSION: replace-me
-  DB:               replace-me
+  CLI_RUBY_VERSION: required
+  DB:               required
   LOG_LEVEL:        INFO
   NUM_GROUPS:       16
+  SPEC_PATH:        optional

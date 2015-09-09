@@ -10,6 +10,6 @@ run:
   path: bosh-src/ci/tasks/run.sh
 
 params:
-  COMMAND:      replace-me
-  RUBY_VERSION: replace-me
-  DB:
+  COMMAND:      required
+  RUBY_VERSION: required
+  DB:           optional

@@ -5,6 +5,7 @@ set -e
 source bosh-src/ci/tasks/utils.sh
 check_param CLI_RUBY_VERSION
 check_param DB
+check_param SPEC_PATH
 
 cd bosh-src
 print_git_state

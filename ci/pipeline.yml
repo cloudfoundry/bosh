@@ -161,7 +161,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: split-02
+      branch: develop
 
   - name: bosh-candidate
     type: git

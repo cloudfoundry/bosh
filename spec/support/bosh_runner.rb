@@ -37,10 +37,8 @@ module Bosh::Spec
       command = "#{@bosh_script} -c #{@bosh_config} #{cmd}"
 
       Dir.chdir(@bosh_work_dir) do
-        Bundler.with_clean_env do
-          BoshBlueShell.new(base_env(env), command, unsetenv_others: true) do |runner|
-            yield runner
-          end
+        BoshBlueShell.new(base_env(env), command, unsetenv_others: true) do |runner|
+          yield runner
         end
       end
     end
@@ -60,10 +58,8 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        Bundler.with_clean_env do
-          output, process_status = Open3.capture2e(env, command, unsetenv_others: true)
-          exit_code = process_status.exitstatus
-        end
+        output, process_status = Open3.capture2e(env, command, unsetenv_others: true)
+        exit_code = process_status.exitstatus
       end
 
       @logger.info "Exit code is #{exit_code}"
