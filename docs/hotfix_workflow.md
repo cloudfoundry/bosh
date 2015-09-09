@@ -5,24 +5,22 @@
 (only kernel and/or package updates)...
 
 - [ ] 1. Create a `hotfix-STORY_ID` branch off of `master`
-- [ ] 2. Push the hotfix branch
-- [ ] 3. Kick off OS Image build(s) with `hotfix-STORY_ID` as the
-  value for `BUILD_FLOW_GIT_COMMIT`
+- [ ] 2. Push the hotfix branch: `git push -u origin hotfix-STORY_ID`
+- [ ] 3. Kick off appropriate OS Image build(s) with `hotfix-STORY_ID` as the value for `BUILD_FLOW_GIT_COMMIT`
 - [ ] 4. Update (on the hotfix branch):
   - `bosh-stemcell/OS_IMAGES.md`
-  - `bosh-dev/.../os_image_versions.json`
+  - `bosh-dev/.../os_image_versions.json`  
 
-  ...with the published OS image s3 key, found at the end of the
-  OS image build output; push that change
-- [ ] 5. Kick off the full Jenkins pipeline, based on the hotfix branch, setting
-  `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as `hotfix-STORY_ID`
+    ...with the published OS image s3 key, found at the end of the OS image build output; push that change
+- [ ] 5. Kick off the full Jenkins pipeline, based on the hotfix branch, setting `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as `hotfix-STORY_ID`
+
+    **NOTE:** The final step of the Jenkins pipeline will commit a release bump to `master` and merge that to `hotfix-STORY_ID`
 - [ ] 6. Upon successful completion of the Jenkins pipeline, locally...
-  - [ ] `git pull hotfix-STORY_ID`
+  - [ ] `git pull master`
   - [ ] `git pull develop`
-  - [ ] `git merge hotfix-STORY_ID` (onto `develop`)
+  - [ ] `git merge master` (onto `develop`)
   - [ ] `git push origin develop`
-  - [ ] `git branch -d hotfix-STORY_ID && git push origin :hotfix-STORY_ID`,
-    to delete the local and remote hotfix branches
+  - [ ] `git branch -d hotfix-STORY_ID && git push origin :hotfix-STORY_ID`, to delete the local and remote hotfix branches
 
 ## If there are code changes
 
@@ -30,16 +28,13 @@
 
 - [ ] 1. Create a `hotfix-STORY_ID` branch off of `master`
 - [ ] 2. Make code changes and push the hotfix branch
-- [ ] 3. Copy `ci/pipeline.yml` to `ci/pipeline-hotfix-STORY_ID.yml` and
-  configure a new `hotfix-STORY_ID` pipeline; push this change
+- [ ] 3. Copy `ci/pipeline.yml` to `ci/pipeline-hotfix-STORY_ID.yml` and configure a new `hotfix-STORY_ID` pipeline; push this change
 
-  **NOTE:** this pipeline should...
+    **NOTE:** this pipeline should...
   - [ ] Reference the hotfix branch
   - [ ] **Exclude** the `promote-candidate` and `publish-coverage` steps
-- [ ] 4. Follow steps 3-5 above (if there are no OS changes, you can probably
-  skip steps 3 & 4)
-- [ ] 5. Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before
-  pushing `develop`
+- [ ] 4. Follow steps 3-5 above (if there are no OS changes, you can probably skip steps 3 & 4)
+- [ ] 5. Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before pushing `develop`
 
 ## Important!!!:
 
