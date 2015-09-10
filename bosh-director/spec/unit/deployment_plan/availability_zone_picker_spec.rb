@@ -18,7 +18,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       unmatched_existing_instanaces = [existing_0, existing_1]
 
       azs = []
-      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+      results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instanaces)
 
       expect(results[:desired_existing]).to match_array([
             Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0),
@@ -36,7 +36,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       unmatched_existing_instanaces = [existing_0, existing_1]
 
       azs = nil
-      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+      results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instanaces)
 
       expect(results[:desired_existing]).to match_array([
             Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0),
@@ -52,7 +52,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       unmatched_existing_instances = []
 
       azs = [az1, az2]
-      results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+      results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
       expect(results[:desired_existing]).to match_array([])
       expect(results[:desired_new]).to match_array([
@@ -70,7 +70,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         unmatched_existing_instanaces = [existing_1, existing_0]
 
         azs = []
-        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instanaces)
 
         expect(results[:desired_existing]).to eq([Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0)])
         expect(results[:desired_new]).to eq([])
@@ -89,7 +89,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         unmatched_existing_instances = [existing_zone1_0, existing_zone1_2, existing_zone2_1]
 
         azs = [az1]
-        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -120,7 +120,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone1_2, existing_zone2_3, existing_zone2_4]
 
         azs = [az1, az2, az3]
-        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -151,7 +151,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         unmatched_existing_instances = [existing_zone1_0, existing_zone2_0, existing_zone2_2]
 
         azs = [az1, az2, az3]
-        results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
               Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -169,8 +169,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         it 'should not recreate the instances' do
           existing_0 = instance_double(Bosh::Director::Models::Instance, {
               availability_zone: nil, index: 0, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
-          desired_instances = [desired_instance, desired_instance]
-          results = zone_picker.place_and_match_instances([], desired_instances, [existing_0])
+          unmatched_desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_in([], unmatched_desired_instances, [existing_0])
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, nil, existing_0)])
@@ -187,8 +187,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {
               availability_zone: '1', index: 1, persistent_disks: [Bosh::Director::Models::PersistentDisk.make]})
 
-          desired_instances = [desired_instance, desired_instance]
-          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
+          unmatched_desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -207,7 +207,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           unmatched_existing_instances = [existing_zone1_0, existing_zone66_1]
 
           azs = [az1, az2]
-          results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+          results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0)
@@ -235,8 +235,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
               Bosh::Director::Models::PersistentDisk.make(active: false)
             ]})
 
-          desired_instances = [desired_instance, desired_instance]
-          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
+          unmatched_desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -253,8 +253,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
               Bosh::Director::Models::PersistentDisk.make(active: false)
             ]})
 
-          desired_instances = [desired_instance, desired_instance]
-          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
+          unmatched_desired_instances = [desired_instance, desired_instance]
+          results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_1)])
@@ -264,8 +264,30 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
         end
       end
 
+      describe 'where 2 or more existing instances in the same AZ with persistent disk and scale down to 1' do
+        it 'should eliminate one of the instances' do
+          existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make(active: true)
+            ]})
+          existing_zone1_1 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 1, persistent_disks: [
+              Bosh::Director::Models::PersistentDisk.make(active: false)
+            ]})
+
+          unmatched_desired_instances = [desired_instance]
+          unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
+
+          results = zone_picker.place_and_match_in([az1], unmatched_desired_instances, unmatched_existing_instances)
+
+          expect(results[:desired_existing]).to match_array([
+                Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0)])
+          expect(results[:desired_new]).to match_array([])
+          expect(results[:obsolete]).to match_array([existing_zone1_1])
+
+        end
+      end
+
       describe 'when an az that has instances with persistent disks is removed' do
-        it 'it should re-balance the instances across the remaining azs' do
+        it 'should re-balance the instances across the remaining azs' do
           existing_zone1_0 = instance_double(Bosh::Director::Models::Instance, {availability_zone: '1', index: 0, persistent_disks: [
               Bosh::Director::Models::PersistentDisk.make
             ]})
@@ -285,9 +307,9 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
               Bosh::Director::Models::PersistentDisk.make
             ]})
 
-          desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
-          existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3, existing_zone3_4, existing_zone3_5]
-          results = zone_picker.place_and_match_instances([az1, az2], desired_instances, existing_instances)
+          unmatched_desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
+          unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3, existing_zone3_4, existing_zone3_5]
+          results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),
@@ -312,7 +334,7 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
 
           azs = [az1, az2]
-          results = zone_picker.place_and_match_instances(azs, unmatched_desired_instances, unmatched_existing_instances)
+          results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing]).to match_array([
                 Bosh::Director::DeploymentPlan::DesiredInstance.new(nil, nil, nil, az1, existing_zone1_0),

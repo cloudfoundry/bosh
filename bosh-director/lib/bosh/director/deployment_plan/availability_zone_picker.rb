@@ -2,7 +2,7 @@ module Bosh
   module Director
     module DeploymentPlan
       class AvailabilityZonePicker
-        def place_and_match_instances(desired_azs, desired_instances, existing_instances)
+        def place_and_match_in(desired_azs, desired_instances, existing_instances)
           unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances)
           desired_azs = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
           placed_instances = PlacedDesiredInstances.new(desired_azs)
@@ -26,6 +26,7 @@ module Bosh
           desired_instances = desired_instances.dup
           return desired_instances if desired_azs.nil?
           unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance_model|
+            break if desired_instances.empty?
             az = desired_azs.find { |az| az.name == existing_instance_model.availability_zone }
             next if az.nil?
             desired_instance = desired_instances.pop

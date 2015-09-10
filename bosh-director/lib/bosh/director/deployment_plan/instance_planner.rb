@@ -11,7 +11,7 @@ module Bosh
         def plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
           availability_zones = job.availability_zones
 
-          instances_by_type = @availability_zone_picker.place_and_match_instances(availability_zones, desired_instances, existing_instances)
+          instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances)
 
           new_desired_instances = instances_by_type[:desired_new]
           existing_desired_instances = instances_by_type[:desired_existing]
