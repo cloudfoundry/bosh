@@ -10,21 +10,14 @@ module Bosh
           # so our InstancePlan doesnt think it's obsolete
           desired_instance = DeploymentPlan::DesiredInstance.new(nil, {}, nil)
 
-          obsolete_reservations = instance.take_old_reservations
-          desired_reservations = instance.network_reservations
-          obsolete_network_plans = obsolete_reservations.map do |reservation|
-            NetworkPlan.new(reservation: reservation, obsolete: true)
-          end
-          desired_network_plans = desired_reservations.map do |reservation|
-            NetworkPlan.new(reservation: reservation, obsolete: false)
-          end
+          network_plans = NetworkPlan.plans_from_instance(instance)
 
           instance_plan = new(
             existing_instance: instance.model,
             instance: instance,
             desired_instance: desired_instance
           )
-          instance_plan.network_plans = desired_network_plans + obsolete_network_plans
+          instance_plan.network_plans = network_plans
           instance_plan
         end
 

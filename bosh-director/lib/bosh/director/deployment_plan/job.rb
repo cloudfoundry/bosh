@@ -331,18 +331,8 @@ module Bosh::Director
         instance_plans.each do |instance_plan|
           # TODO: this should turn into some sort of bind_existing when we stop caring about the
           # original_network_reservations side effects
-          obsolete_reservations = instance_plan.instance.take_old_reservations
-          desired_reservations = instance_plan.instance.network_reservations
-
-          obsolete_network_plans = obsolete_reservations.map do |reservation|
-            NetworkPlan.new(reservation: reservation, obsolete: true)
-          end
-
-          desired_network_plans = desired_reservations.map do |reservation|
-            NetworkPlan.new(reservation: reservation, obsolete: false)
-          end
-
-          instance_plan.network_plans = desired_network_plans + obsolete_network_plans
+          network_plans = NetworkPlan.plans_from_instance(instance_plan.instance)
+          instance_plan.network_plans = network_plans
         end
       end
 
