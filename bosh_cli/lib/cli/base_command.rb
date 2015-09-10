@@ -119,7 +119,7 @@ module Bosh::Cli
     end
 
     def cache_dir
-      @cache_dir = (ENV['BOSH_CACHE'] || File.join(Dir.home, '.bosh', 'cache'))
+      File.join(Dir.home, '.bosh', 'cache')
     end
 
     def show_current_state(deployment_name=nil)

@@ -433,7 +433,7 @@ describe 'create release', type: :integration do
     )
 
     sha1 = index['builds'][fingerprint]['sha1']
-    artifact_tarball = File.join(ENV['BOSH_CACHE'], sha1)
+    artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
     expect(File.exist?(artifact_tarball)).to eq(true)
 
     tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])

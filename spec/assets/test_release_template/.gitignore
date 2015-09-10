@@ -1,19 +1,16 @@
 # From Bosh::Cli::Command::Release#git_init
-# ...with modifications.
-.DS_Store
+config/dev.yml
+config/private.yml
+releases/*.tgz
+dev_releases
 .blobs
+blobs
 .dev_builds
+.idea
+.DS_Store
 .final_builds/jobs/**/*.tgz
 .final_builds/packages/**/*.tgz
-.idea
-.ruby-version
 *.swp
 *~
 *#
 #*
-blobs
-config/dev.yml
-config/private.yml
-dev-releases
-dev_releases
-releases/*.tgz

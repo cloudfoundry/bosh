@@ -21,14 +21,15 @@ module Bosh::Core
       stdout.puts command if options[:output_command]
       lines = []
 
-      env = {
-        'HOME' => ENV['HOME'],
-        'PATH' => base_path,
-      }.merge(options[:env] || {})
+      if options[:env]
+        # Wrap in a shell because existing api to Shell#run takes a string
+        # which makes it really hard to pass it to popen with custom environment.
+         popen_args = [options[:env], ENV['SHELL'] || 'bash', '-c', command]
+      else
+        popen_args = command
+      end
 
-      popen_args = [env, ENV['SHELL'] || 'bash', '-c', command, { unsetenv_others: true }]
       io = IO.popen(popen_args)
-
       io.each do |line|
         stdout.puts line.chomp
         lines << line.chomp
@@ -37,10 +38,6 @@ module Bosh::Core
       io.close
 
       lines
-    end
-
-    def base_path
-      (ENV['PATH'] || '').split(':').reject { |part| part.match('ruby') }.join(':')
     end
 
     def tail(lines, options)

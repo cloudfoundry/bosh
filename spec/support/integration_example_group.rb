@@ -190,7 +190,7 @@ module IntegrationSandboxHelpers
 
     $sandbox_started = true
 
-    logger.info("Starting sandboxed environment for BOSH tests with Ruby version, #{RUBY_VERSION}...")
+    logger.info('Starting sandboxed environment for BOSH tests...')
     current_sandbox.start
   end
 
@@ -231,6 +231,25 @@ module IntegrationSandboxHelpers
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
     Dir.chdir(destination_dir) do
+      ignore = %w(
+        blobs
+        dev-releases
+        config/dev.yml
+        config/private.yml
+        releases/*.tgz
+        dev_releases
+        .dev_builds
+        .final_builds/jobs/**/*.tgz
+        .final_builds/packages/**/*.tgz
+        blobs
+        .blobs
+        .DS_Store
+      )
+
+      File.open('.gitignore', 'w+') do |f|
+        f.write(ignore.join("\n") + "\n")
+      end
+
       `git init;
        git config user.name "John Doe";
        git config user.email "john.doe@example.org";
@@ -246,21 +265,8 @@ module IntegrationSandboxHelpers
   end
 
   def setup_home_dir
-    ENV['_ORIG_HOME_'] ||= ENV['HOME']
-
-    template = File.join(ASSETS_DIR, 'bosh_home_dir')
-    user_home = ENV['_ORIG_HOME_']
-    spec_home = ClientSandbox.home_dir
-
-    FileUtils.cp_r(template, spec_home, :preserve => true)
-
-    ['.gem', '.rubies'].each do |dir|
-      target = File.join(spec_home, dir)
-      File.symlink(File.join(user_home, dir), target)
-    end
-
-    ENV['HOME'] = spec_home
-    ENV['BOSH_CACHE'] = File.join(spec_home, '.bosh', 'cache')
+    FileUtils.mkdir_p(ClientSandbox.home_dir)
+    ENV['HOME'] = ClientSandbox.home_dir
   end
 
   def cleanup_sandbox_dir

@@ -10,5 +10,4 @@ run:
   path: bosh-src/ci/tasks/test-unit.sh
 
 params:
-  RAKE_TASKS:   required
-  RUBY_VERSION: required
+  RUBY_VERSION: replace-me

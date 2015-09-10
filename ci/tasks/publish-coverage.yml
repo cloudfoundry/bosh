@@ -10,5 +10,5 @@ run:
   path: bosh-src/ci/tasks/publish-coverage.sh
 
 params:
-  CODECLIMATE_REPO_TOKEN: required
+  CODECLIMATE_REPO_TOKEN: replace-me
   RUBY_VERSION:           2.1.6

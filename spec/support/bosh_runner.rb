@@ -7,24 +7,6 @@ module Bosh::Spec
       @nats_log_path = nats_log_path
       @saved_logs_path = saved_logs_path
       @logger = logger
-
-      bosh_base = File.expand_path('../../..', __FILE__)
-      ruby_spec = YAML.load_file(File.join(bosh_base, 'release/packages/ruby/spec'))
-      ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
-      release_ruby = $1
-      runner_ruby = ENV['CLI_RUBY_VERSION'] || release_ruby
-
-      if has_chruby?
-        @bosh_script = "chruby-exec #{runner_ruby} -- bundle exec bosh"
-      else
-        @bosh_script = "bundle exec bosh"
-      end
-
-      logger.info "Running BOSH CLI via #{@bosh_script.inspect}"
-    end
-
-    def reset
-      FileUtils.rm_rf(@bosh_config)
     end
 
     def run(cmd, options = {})
@@ -32,27 +14,29 @@ module Bosh::Spec
     end
 
     def run_interactively(cmd, env = {})
-      command = "#{@bosh_script} -c #{@bosh_config} #{cmd}"
-
       Dir.chdir(@bosh_work_dir) do
-        BoshBlueShell.new(base_env(env), command, unsetenv_others: true) do |runner|
+        BlueShell::Runner.run env, "bosh -c #{@bosh_config} #{cmd}" do |runner|
           yield runner
         end
       end
+    end
+
+    def reset
+      FileUtils.rm_rf(@bosh_config)
     end
 
     def run_in_current_dir(cmd, options = {})
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
-      @logger.info("Running... bosh #{interactive_mode} #{cmd}")
-      command = "#{@bosh_script} #{interactive_mode} -c #{@bosh_config} #{cmd}"
-      output = nil
-      env = base_env(options.fetch(:env, {}))
+      @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
+      command   = "bosh #{interactive_mode} -c #{@bosh_config} #{cmd}"
+      output    = nil
+      env = options.fetch(:env, {})
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, process_status = Open3.capture2e(env, command, unsetenv_others: true)
+        output, process_status = Open3.capture2e(env, command)
         exit_code = process_status.exitstatus
       end
 
@@ -103,26 +87,6 @@ module Bosh::Spec
 
     DEBUG_HEADER = '*' * 20
 
-    def base_env(env = {})
-      {
-        'BOSH_CACHE' => ENV['BOSH_CACHE'],
-        'HOME' => ENV['HOME'],
-        'PATH' => base_path,
-        # 'TERM' => 'xterm-256color'
-      }.merge(env)
-    end
-
-    def base_path
-      (ENV['PATH'] || '').split(':').reject { |part| part.match('ruby') }.join(':')
-    end
-
-    def has_chruby?
-      out, status = Open3.capture2e('chruby-exec --help')
-      status.success?
-    rescue
-        false
-    end
-
     def output_debug_log(title, output)
       content = <<-EOF
         #{DEBUG_HEADER} start #{title} #{DEBUG_HEADER}
@@ -134,31 +98,6 @@ module Bosh::Spec
       File.open(@saved_logs_path, 'a') { |f| f.write(content) }
 
       @logger.info(content)
-    end
-
-    # Fixes BlueShell::Runner#initialize at...
-    # https://github.com/pivotal/blue-shell/blob/c1d0c1fbfb1343d68bc10eb432e98ceb49ca6c12/lib/blue-shell/runner.rb
-    # TODO: pull request.
-    class BoshBlueShell < BlueShell::Runner
-      def initialize(*args)
-        @stdout, slave = PTY.open
-        system('stty raw', :in => slave)
-        read, @stdin = IO.pipe
-
-        opts = args.pop
-        opts.merge!(:in => read, :out => slave, :err => slave) if opts.is_a? Hash
-        args.push opts
-
-        @pid = spawn(*args)
-
-        @expector = BlueShell::BufferedReaderExpector.new(@stdout, ENV['DEBUG_BACON'])
-
-        if block_given?
-          yield self
-        else
-          wait_for_exit
-        end
-      end
     end
   end
 end
