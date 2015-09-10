@@ -5,79 +5,121 @@ require 'cli/base_command'
 describe Bosh::Cli::Runner do
   let(:runner) { described_class.new([]) }
 
-  before { allow(runner).to receive(:exit) }
+  describe '#initialize' do
+    context 'when the CLI_RUBY_VERSION environment variable is set' do
+      context 'and it matches the running Ruby version' do
+        around do |example|
+          with_cli_ruby(RUBY_VERSION, &example)
+        end
 
-  describe 'command that raises cli error' do
-    let(:runner) { described_class.new(['cli-error']) }
-
-    class CliErrorCommand < Bosh::Cli::Command::Base
-      usage 'cli-error'
-      desc 'a command that raises a cli error'
-      def error
-        raise Bosh::Cli::CliError, 'cli-error'
+        it 'does not raise an error' do
+          expect {
+            Bosh::Cli::Runner.new([])
+          }.to_not raise_error
+        end
       end
-    end
 
-    it 'exits with 1' do
-      expect(runner).to receive(:exit).with(1)
-      capture_stderr { runner.run }
-    end
+      context 'and it does not match the running Ruby version' do
+        around do |example|
+          with_cli_ruby('GARBAGE', &example)
+        end
 
-    it 'writes error output to stderr' do
-      stderr = capture_stderr { runner.run }
-      expect(stderr).to include 'cli-error'
+        it 'raises an error' do
+          expect {
+            Bosh::Cli::Runner.new([])
+          }.to raise_error(Bosh::Cli::CliError, "Version mismatch: ENV['CLI_RUBY_VERSION'] 'GARBAGE' does not match RUBY_VERSION: '#{RUBY_VERSION}'")
+        end
+      end
     end
   end
 
-  describe 'command that raises an unexpected error' do
-    let(:runner) { described_class.new(['unexpected-error']) }
-
-    class UnexpectedErrorCommand < Bosh::Cli::Command::Base
-      usage 'unexpected-error'
-      desc 'a command that raises an unexpected error'
-      def error
-        raise StandardError, 'unexpected-error'
-      end
+  describe '#run' do
+    before do
+      allow(runner).to receive(:exit)
     end
 
-    it 'propagates the error' do
-      expect {
+    describe 'command that raises cli error' do
+      let(:runner) { described_class.new(['cli-error']) }
+
+      class CliErrorCommand < Bosh::Cli::Command::Base
+        usage 'cli-error'
+        desc 'a command that raises a cli error'
+        def error
+          raise Bosh::Cli::CliError, 'cli-error'
+        end
+      end
+
+      it 'exits with 1' do
+        expect(runner).to receive(:exit).with(1)
         capture_stderr { runner.run }
-      }.to raise_error(StandardError, /unexpected-error/)
-    end
-  end
+      end
 
-  describe 'unknown command' do
-    let(:runner) { described_class.new(['bad_argument']) }
-
-    it 'exits with 1' do
-      expect(runner).to receive(:exit).with(1)
-      capture_stderr { runner.run }
+      it 'writes error output to stderr' do
+        stderr = capture_stderr { runner.run }
+        expect(stderr).to include 'cli-error'
+      end
     end
 
-    it 'writes error output to stderr' do
-      stderr = capture_stderr { runner.run }
-      expect(stderr).to include 'Unknown command: bad_argument'
-    end
-  end
+    describe 'command that raises an unexpected error' do
+      let(:runner) { described_class.new(['unexpected-error']) }
 
-  describe 'invalid command option' do
-    let(:runner) { described_class.new(['invalid-option', '--invalid-option']) }
+      class UnexpectedErrorCommand < Bosh::Cli::Command::Base
+        usage 'unexpected-error'
+        desc 'a command that raises an unexpected error'
+        def error
+          raise StandardError, 'unexpected-error'
+        end
+      end
 
-    class InvalidOptionCommand < Bosh::Cli::Command::Base
-      usage 'invalid-option'
-      desc 'a command that will be used with an invalid option'
-      def invalid_option; end
-    end
-
-    it 'exits with 1' do
-      expect(runner).to receive(:exit).with(1)
-      capture_stderr { runner.run }
+      it 'propagates the error' do
+        expect {
+          capture_stderr { runner.run }
+        }.to raise_error(StandardError, /unexpected-error/)
+      end
     end
 
-    it 'writes error output to stderr' do
-      stderr = capture_stderr { runner.run }
-      expect(stderr).to include 'invalid option: --invalid-option'
+    describe 'unknown command' do
+      let(:runner) { described_class.new(['bad_argument']) }
+
+      it 'exits with 1' do
+        expect(runner).to receive(:exit).with(1)
+        capture_stderr { runner.run }
+      end
+
+      it 'writes error output to stderr' do
+        stderr = capture_stderr { runner.run }
+        expect(stderr).to include 'Unknown command: bad_argument'
+      end
+    end
+
+    describe 'invalid command option' do
+      let(:runner) { described_class.new(['invalid-option', '--invalid-option']) }
+
+      class InvalidOptionCommand < Bosh::Cli::Command::Base
+        usage 'invalid-option'
+        desc 'a command that will be used with an invalid option'
+        def invalid_option; end
+      end
+
+      it 'exits with 1' do
+        expect(runner).to receive(:exit).with(1)
+        capture_stderr { runner.run }
+      end
+
+      it 'writes error output to stderr' do
+        stderr = capture_stderr { runner.run }
+        expect(stderr).to include 'invalid option: --invalid-option'
+      end
+    end
+
+    describe '--parallel option' do
+      let(:runner) { described_class.new(['--parallel', '5']) }
+
+      it "sets the parallel_downloads config to the number given" do
+        runner.run
+        expect(Bosh::Cli::Config.max_parallel_downloads).to eq 5
+        Bosh::Cli::Config.max_parallel_downloads = nil
+      end
     end
   end
 
@@ -144,16 +186,6 @@ describe Bosh::Cli::Runner do
     end
   end
 
-  describe '--parallel option' do
-    let(:runner) { described_class.new(['--parallel', '5']) }
-
-    it "sets the parallel_downloads config to the number given" do
-      runner.run
-      expect(Bosh::Cli::Config.max_parallel_downloads).to eq 5
-      Bosh::Cli::Config.max_parallel_downloads = nil
-    end
-  end
-
   def capture_stderr
     orig_stderr = $stderr
     new_stderr = StringIO.new
@@ -163,5 +195,18 @@ describe Bosh::Cli::Runner do
     new_stderr.string
   ensure
     $stderr = orig_stderr
+  end
+
+  def with_cli_ruby(version)
+    original = ENV['CLI_RUBY_VERSION']
+    ENV['CLI_RUBY_VERSION'] = version
+
+    yield
+
+    if original.nil?
+      ENV.delete('CLI_RUBY_VERSION')
+    else
+      ENV['CLI_RUBY_VERSION'] = original
+    end
   end
 end

@@ -21,6 +21,10 @@ module Bosh::Cli
       @args = args
       @options = options.dup
 
+      if ENV.has_key?('CLI_RUBY_VERSION') && ENV['CLI_RUBY_VERSION'] != RUBY_VERSION
+        raise CliError, "Version mismatch: ENV['CLI_RUBY_VERSION'] '#{ENV['CLI_RUBY_VERSION']}' does not match RUBY_VERSION: '#{RUBY_VERSION}'"
+      end
+
       banner = "Usage: bosh [<options>] <command> [<args>]"
       @option_parser = OptionParser.new(banner)
 

@@ -10,7 +10,8 @@ module Bosh::Spec
 
       bosh_base = File.expand_path('../../..', __FILE__)
       ruby_spec = YAML.load_file(File.join(bosh_base, 'release/packages/ruby/spec'))
-      release_ruby = ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
+      ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
+      release_ruby = $1
       runner_ruby = ENV['CLI_RUBY_VERSION'] || release_ruby
 
       if has_chruby?
@@ -24,13 +25,6 @@ module Bosh::Spec
 
     def run(cmd, options = {})
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
-    end
-
-    def base_env(env = {})
-      {
-        'HOME' => ENV['HOME'],
-        'TERM' => 'xterm-256color'
-      }.merge(env)
     end
 
     def run_interactively(cmd, env = {})
@@ -108,6 +102,19 @@ module Bosh::Spec
     private
 
     DEBUG_HEADER = '*' * 20
+
+    def base_env(env = {})
+      {
+        'BOSH_CACHE' => ENV['BOSH_CACHE'],
+        'HOME' => ENV['HOME'],
+        'PATH' => base_path,
+        'TERM' => 'xterm-256color'
+      }.merge(env)
+    end
+
+    def base_path
+      ENV['PATH'].split(':').reject { |part| part.match('ruby') }.join(':')
+    end
 
     def has_chruby?
       out, status = Open3.capture2e('chruby-exec --help')

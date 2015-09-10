@@ -247,7 +247,7 @@ module IntegrationSandboxHelpers
 
   def setup_home_dir
     FileUtils.mkdir_p(ClientSandbox.home_dir)
-    ENV['HOME'] = ClientSandbox.home_dir
+    ENV['BOSH_CACHE'] = File.join(ClientSandbox.home_dir, '.bosh', 'cache')
   end
 
   def cleanup_sandbox_dir
