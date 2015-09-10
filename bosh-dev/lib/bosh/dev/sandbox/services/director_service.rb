@@ -105,6 +105,7 @@ module Bosh::Dev::Sandbox
 
       until resque_is_done?
         if attempt > max_attempts
+          @logger.error("Resque queue failed to drain in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
           raise "Resque queue failed to drain in #{timeout} seconds"
         end
 
