@@ -113,7 +113,7 @@ module Bosh::Spec
     end
 
     def base_path
-      ENV['PATH'].split(':').reject { |part| part.match('ruby') }.join(':')
+      (ENV['PATH'] || '').split(':').reject { |part| part.match('ruby') }.join(':')
     end
 
     def has_chruby?

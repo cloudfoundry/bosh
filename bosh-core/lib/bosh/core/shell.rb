@@ -40,7 +40,7 @@ module Bosh::Core
     end
 
     def base_path
-      ENV['PATH'].split(':').reject { |part| part.match('ruby') }.join(':')
+      (ENV['PATH'] || '').split(':').reject { |part| part.match('ruby') }.join(':')
     end
 
     def tail(lines, options)
