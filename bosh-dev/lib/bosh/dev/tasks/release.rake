@@ -17,9 +17,11 @@ namespace :release do
     rebase_arg = args[:rebase] ? '--rebase' : ''
 
     Dir.chdir('release') do
-      sh("bosh -n upload release #{rebase_arg}")
+      shell("bosh -n upload release #{rebase_arg}")
     end
   end
+
+  private
 
   def create_release(options={})
     name = options[:name] || 'bosh'
@@ -28,11 +30,36 @@ namespace :release do
 
     Dir.chdir(release_dir) do
       if final
-        sh('bosh create release --final')
+        shell('bosh create release --final')
       else
         File.open('config/dev.yml', 'w+') { |f| f.write("---\ndev_name: #{name}\n") }
-        sh('bosh create release --force')
+        shell('bosh create release --force')
       end
+    end
+  end
+
+  def has_chruby?
+    out, status = Open3.capture2e('chruby-exec --help')
+    status.success?
+  rescue
+      false
+  end
+
+  def runner_ruby
+    ENV['CLI_RUBY_VERSION'] || begin
+      bosh_base = File.expand_path('../../../../../..', __FILE__)
+      ruby_spec = YAML.load_file(File.join(bosh_base, 'release/packages/ruby/spec'))
+      ruby_spec['files'].find { |f| f =~ /ruby-(.*).tar.gz/ }
+      $1
+    end
+  end
+
+  def shell(command)
+    if has_chruby?
+      sh("chruby-exec #{runner_ruby} -- bundle exec #{command}")
+    else
+      # this one with 2.1.6 and 1.9.3
+      sh("bundle exec #{command}")
     end
   end
 end

@@ -23,6 +23,10 @@ module Bosh::Spec
       logger.info "Running BOSH CLI via #{@bosh_script.inspect}"
     end
 
+    def reset
+      FileUtils.rm_rf(@bosh_config)
+    end
+
     def run(cmd, options = {})
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
@@ -35,10 +39,6 @@ module Bosh::Spec
           yield runner
         end
       end
-    end
-
-    def reset
-      FileUtils.rm_rf(@bosh_config)
     end
 
     def run_in_current_dir(cmd, options = {})
@@ -108,7 +108,7 @@ module Bosh::Spec
         'BOSH_CACHE' => ENV['BOSH_CACHE'],
         'HOME' => ENV['HOME'],
         'PATH' => base_path,
-        'TERM' => 'xterm-256color'
+        # 'TERM' => 'xterm-256color'
       }.merge(env)
     end
 

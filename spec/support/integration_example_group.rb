@@ -246,8 +246,21 @@ module IntegrationSandboxHelpers
   end
 
   def setup_home_dir
-    FileUtils.mkdir_p(ClientSandbox.home_dir)
-    ENV['BOSH_CACHE'] = File.join(ClientSandbox.home_dir, '.bosh', 'cache')
+    ENV['_ORIG_HOME_'] ||= ENV['HOME']
+
+    template = File.join(ASSETS_DIR, 'bosh_home_dir')
+    user_home = ENV['_ORIG_HOME_']
+    spec_home = ClientSandbox.home_dir
+
+    FileUtils.cp_r(template, spec_home, :preserve => true)
+
+    ['.gem', '.rubies'].each do |dir|
+      target = File.join(spec_home, dir)
+      File.symlink(File.join(user_home, dir), target)
+    end
+
+    ENV['HOME'] = spec_home
+    ENV['BOSH_CACHE'] = File.join(spec_home, '.bosh', 'cache')
   end
 
   def cleanup_sandbox_dir

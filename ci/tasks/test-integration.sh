@@ -20,16 +20,27 @@ BOSH_RUBY=$(
   sed -r "s/^.*ruby-(.*).tar.gz/\1/"
 )
 
+echo
+echo "Running BOSH integration specs with..."
+echo "  - Ruby $CLI_RUBY_VERSION for the CLI"
+echo "  - Ruby $BOSH_RUBY for the Sandbox/Director"
+
 source /etc/profile.d/chruby.sh
 
 if [ "$CLI_RUBY_VERSION" != "$BOSH_RUBY" ] ; then
   # Make sure rubygems are installed for the CLI.
+  echo
+  echo "Installing gems for $CLI_RUBY_VERSION..."
+  echo
   chruby $CLI_RUBY_VERSION
   bundle install --local
 fi
 
-export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
-
+echo
+echo "Installing gems for $BOSH_RUBY..."
+echo
 chruby $BOSH_RUBY
 bundle install --local
+
+export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 bundle exec rake --trace spec:integration
