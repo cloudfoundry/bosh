@@ -262,10 +262,13 @@ module Bosh::Director
       end
 
       def bind_instance_networks
-        instances.each do |instance|
-          instance.network_reservations.each do |reservation|
+        instance_plans
+          .reject(&:obsolete?)
+          .flat_map(&:network_plans)
+          .reject(&:obsolete?)
+          .each do |network_plan|
+            reservation = network_plan.reservation
             @deployment.ip_provider.reserve(reservation) unless reservation.reserved?
-          end
         end
       end
 

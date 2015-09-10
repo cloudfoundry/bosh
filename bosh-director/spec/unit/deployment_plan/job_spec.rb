@@ -5,7 +5,14 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment, name: 'fake-deployment') }
+  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2, reserve: nil) }
+  let(:plan) do
+    instance_double('Bosh::Director::DeploymentPlan::Planner',
+      model: deployment,
+      name: 'fake-deployment',
+      ip_provider: fake_ip_provider,
+    )
+  end
   let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
@@ -379,15 +386,35 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_instances' do
-    subject(:job) { described_class.new(deployment, logger) }
+    subject(:job) { described_class.new(plan, logger) }
 
     it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
       instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
+      instance0_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: false)
+      instance0_obsolete_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: false)
       instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
-      instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
+      instance1_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: false)
+      instance1_reserved_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: true)
+      instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
+          desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
+          existing_instance: nil,
+          instance: instance0,
+        })
+      instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new({
+          desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
+          existing_instance: nil,
+          instance: instance1,
+        })
+      instance_plan0.network_plans = [
+        BD::DeploymentPlan::NetworkPlan.new(reservation: instance0_reservation),
+        BD::DeploymentPlan::NetworkPlan.new(reservation: instance0_obsolete_reservation, obsolete: true),
+      ]
+      instance_plan1.network_plans = [
+        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_reservation),
+        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_reserved_reservation),
+      ]
+
       obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
-      network_reservations = Bosh::Director::DeploymentPlan::InstanceNetworkReservations.new(double(:instance), double(:logger))
 
       job.instance_plans = [instance_plan0, instance_plan1, obsolete_plan]
 
@@ -398,49 +425,13 @@ describe Bosh::Director::DeploymentPlan::Job do
         expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
         expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
       end
-      [instance0, instance1].each do |instance|
-        expect(instance).to receive(:network_reservations).with(no_args).ordered.and_return(network_reservations)
-      end
 
       job.bind_instances
-    end
-  end
 
-  describe '#bind_instance_networks' do
-    subject(:job) { described_class.new(deployment, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-    let(:network_reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
-    let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2) }
-
-    before do
-      instance_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance})
-      network_reservations = Bosh::Director::DeploymentPlan::InstanceNetworkReservations.new(instance, logger)
-      network_reservations.add(network_reservation)
-
-      job.instance_plans = [instance_plan]
-      allow(instance).to receive(:network_reservations).with(no_args).and_return(network_reservations)
-      allow(deployment).to receive(:ip_provider).and_return(ip_provider)
-    end
-
-    context 'reservation has not been previously reserved' do
-      it 'reserves the reservation' do
-        expect(ip_provider).to receive(:reserve)
-
-        job.bind_instance_networks
-      end
-    end
-
-    context 'reservation has already been previously reserved' do
-      before do
-        allow(network_reservation).to receive(:reserved?).and_return(true)
-      end
-
-      it 'skips the reservation' do
-        expect(ip_provider).not_to receive(:reserve)
-
-        job.bind_instance_networks
-      end
-
+      expect(fake_ip_provider).to have_received(:reserve).with(instance0_reservation)
+      expect(fake_ip_provider).to have_received(:reserve).with(instance1_reservation)
+      expect(fake_ip_provider).to_not have_received(:reserve).with(instance0_obsolete_reservation)
+      expect(fake_ip_provider).to_not have_received(:reserve).with(instance1_reserved_reservation)
     end
   end
 
