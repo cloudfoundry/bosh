@@ -87,3 +87,15 @@ ruby/ruby-2.1.6.tar.gz:
   object_id: e9661aba-2eb4-46e8-a976-f28c607c5e51
   sha: 426289b6647ce35ad101091825b6e7e5fce207f3
   size: 15141710
+ruby/bundler-1.10.6.gem:
+  object_id: a7313017-fac0-4306-8610-4a050339d792
+  sha: 55a37fccd1c0cb5542d468e35d3be46dd0667f73
+  size: 251392
+ruby/ruby-2.1.7.tar.gz:
+  object_id: 3b5c759a-361b-4407-9933-4ad927fd7751
+  sha: e2e195a4a58133e3ad33b955c829bb536fa3c075
+  size: 15151458
+ruby/rubygems-2.4.8.tgz:
+  object_id: 25e5548c-2c64-4a30-9d4e-f7f7bae02578
+  sha: 0db6b2f1cdd2267fe19f1f875057c2f2ce9f5696
+  size: 447712

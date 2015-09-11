@@ -3,7 +3,7 @@
 set -e
 set -x
 
-RUBY_VERSIONS=( "1.9.3" "2.1.6" )
+RUBY_VERSIONS=( "1.9.3" "2.1.7" )
 
 source /etc/profile.d/chruby.sh
 

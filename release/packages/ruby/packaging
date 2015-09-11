@@ -15,7 +15,7 @@ tar xzf ruby/yaml-0.1.5.tar.gz
 tar xzf ruby/ruby-*.tar.gz
 (
   set -e
-  cd ruby-2.1.6
+  cd ruby-2.1.7
   if [ "`uname -m`" == "ppc64le" ]; then
     cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./tool
   fi
@@ -24,11 +24,10 @@ tar xzf ruby/ruby-*.tar.gz
   make install
 )
 
-tar zxvf ruby/rubygems-2.3.0.tgz
-
+tar zxvf ruby/rubygems-*.tgz
 (
   set -e
-  cd rubygems-2.3.0
+  cd rubygems-2.4.8
 
   ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb --no-ri --no-rdoc
 
@@ -38,4 +37,4 @@ tar zxvf ruby/rubygems-2.3.0.tgz
   fi
 )
 
-${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.6.3.gem --local --no-ri --no-rdoc
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.10.6.gem --local --no-ri --no-rdoc
