@@ -28,7 +28,7 @@ namespace :fly do
 
   def env(modifications = {})
     @env ||= {
-      RUBY_VERSION: ENV['RUBY_VERSION'] || '2.1.6'
+      RUBY_VERSION: ENV['RUBY_VERSION'] || '2.1.7'
     }
     @env.merge!(modifications) if modifications
 

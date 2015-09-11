@@ -76,7 +76,7 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
-            RUBY_VERSION: 2.1.6
+            RUBY_VERSION: 2.1.7
 
   - name: integration-1.9-postgres
     public: true
@@ -107,7 +107,7 @@ jobs:
           tags: ["bosh-integration"]
           params:
             DB:           mysql
-            RUBY_VERSION: 2.1.6
+            RUBY_VERSION: 2.1.7
             NUM_GROUPS: 16
 
   - name: integration-2.1-postgres
@@ -123,7 +123,7 @@ jobs:
           tags: ["bosh-integration"]
           params:
             DB:           postgresql
-            RUBY_VERSION: 2.1.6
+            RUBY_VERSION: 2.1.7
             NUM_GROUPS: 16
 
   - name: publish-coverage
@@ -159,7 +159,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
+      branch: ruby-2.1.7
 
   - name: bosh-candidate
     type: git
