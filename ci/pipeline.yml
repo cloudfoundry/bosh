@@ -159,7 +159,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: ruby-2.1.7
+      branch: develop
 
   - name: bosh-candidate
     type: git
