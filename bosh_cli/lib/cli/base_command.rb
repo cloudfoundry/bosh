@@ -87,6 +87,10 @@ module Bosh::Cli
         Bosh::Cli::Runner.new(args, @options).run
       end
 
+      def run_nested_command(*args)
+        Bosh::Cli::Runner.new(args, @options).run(false)
+      end
+
       def confirmed?(question = 'Are you sure?')
         return true if non_interactive?
         ask("#{question} (type 'yes' to continue): ") == 'yes'

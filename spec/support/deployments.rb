@@ -237,6 +237,25 @@ module Bosh::Spec
       })
     end
 
+    def self.remote_release_manifest(remote_release_url)
+      minimal_manifest.merge({
+        'jobs' => [
+          {
+            'name' => 'job',
+            'template' => 'job_using_pkg_1',
+            'instances' => 1,
+            'resource_pool' => 'a',
+            'networks' => [{'name' => 'a'}]
+          }
+        ],
+        'releases' => [{
+            'name'    => 'test_release',
+            'version' => 'latest',
+            'url' => remote_release_url
+        }]
+      })
+    end
+
     def self.simple_job(options={})
       {
         'name'          => options.fetch(:name, 'foobar'),
