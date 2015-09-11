@@ -1,4 +1,5 @@
 require 'rspec'
+require 'bosh/dev/ruby_version'
 
 namespace :fly do
   # bundle exec rake fly:unit
@@ -28,7 +29,7 @@ namespace :fly do
 
   def env(modifications = {})
     @env ||= {
-      RUBY_VERSION: ENV['RUBY_VERSION'] || '2.1.7'
+      RUBY_VERSION: ENV['RUBY_VERSION'] || Bosh::Dev::RubyVersion.release_version
     }
     @env.merge!(modifications) if modifications
 
