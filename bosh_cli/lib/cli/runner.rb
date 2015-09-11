@@ -32,7 +32,7 @@ module Bosh::Cli
 
     # Find and run CLI command
     # @return [void]
-    def run
+    def run(exit_on_success=true)
       Config.interactive = !@options[:non_interactive]
       Config.poll_interval = @options[:poll_interval]
 
@@ -54,7 +54,7 @@ module Bosh::Cli
       command.runner = self
       begin
         exit_code = command.run(@args, @options)
-        exit(exit_code)
+        exit(exit_code) if exit_on_success || exit_code != 0
       rescue OptionParser::ParseError => e
         say_err(e.message)
         nl
