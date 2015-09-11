@@ -178,8 +178,8 @@ module Bosh::Director
           'Bosh::Director::DeploymentPlan::Instance',
           vm: vm,
           model: Models::Instance.make,
-          take_old_reservations: [],
-          network_reservations: []
+          network_reservations: [],
+          original_network_reservations: []
         )
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))

@@ -79,7 +79,7 @@ module Bosh::Director
         instance.add_network_reservation(reservation)
         @deployment_plan.ip_provider.reserve(reservation)
 
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
         @vm_creator.create_for_instance_plan(instance_plan, [])
       end
     end

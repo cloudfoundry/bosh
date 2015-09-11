@@ -22,7 +22,7 @@ module Bosh::Director
           stop(instance)
         end
 
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
         vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
 
         unless instance.model.compilation

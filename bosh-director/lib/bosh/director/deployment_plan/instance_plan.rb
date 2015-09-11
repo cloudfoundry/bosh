@@ -5,12 +5,13 @@ module Bosh
 
         # FIXME: This is pretty sad. But it should go away when we move away from using
         # Instance and just become part of making an InstancePlan
-        def self.create_from_deployment_plan_instance(instance)
+        def self.create_from_deployment_plan_instance(instance, logger)
           # no one currently cares if this DesiredInstance is real, we just want to have one for now
           # so our InstancePlan doesnt think it's obsolete
           desired_instance = DeploymentPlan::DesiredInstance.new(nil, {}, nil)
 
-          network_plans = NetworkPlan.plans_from_instance(instance)
+          network_plans = NetworkPlanner.new(logger)
+                            .plan_ips(instance.network_reservations, instance.original_network_reservations)
 
           instance_plan = new(
             existing_instance: instance.model,

@@ -36,7 +36,7 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      attr_reader :network_reservations
+      attr_reader :original_network_reservations, :network_reservations
 
       def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
         instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
@@ -570,29 +570,6 @@ module Bosh::Director
         return nil if @availability_zone.nil?
 
         @availability_zone.name
-      end
-
-      ##
-      # Take any existing valid network reservations
-      # @param [Hash<String, NetworkReservation>] reservations
-      # @return [void]
-      def take_old_reservations
-        @logger.debug("taking old reservations. existing reservations: #{@original_network_reservations.to_a.join(',')}")
-        @original_network_reservations.each do |existing_reservation|
-          reservation = @network_reservations.find_for_network(existing_reservation.network)
-          if reservation
-            @logger.debug("existing reservation #{existing_reservation} is still needed by #{reservation}")
-            reservation.bind_existing(existing_reservation)
-            if reservation.reserved?
-              @logger.debug("Found matching existing reservation #{existing_reservation} for `#{self}'")
-              @original_network_reservations.delete(existing_reservation)
-            end
-          else
-            @logger.debug("unneeded reservation #{existing_reservation}")
-          end
-        end
-
-        @original_network_reservations # now obsolete
       end
 
       private

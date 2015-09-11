@@ -38,7 +38,7 @@ describe Bosh::Director::VmCreator do
     allow(instance).to receive(:apply_spec).and_return({})
     instance
   end
-  let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance) }
+  let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, logger) }
 
   let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'fake-job', resource_pool: resource_pool) }
   let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }

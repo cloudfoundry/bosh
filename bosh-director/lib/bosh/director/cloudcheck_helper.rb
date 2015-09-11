@@ -85,7 +85,7 @@ module Bosh::Director
       validate_env(vm.env)
 
       instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
-      instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance)
+      instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
 
       begin
         vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
