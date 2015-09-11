@@ -87,6 +87,10 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
+      build_manifest.hash['releases'].each do |release|
+        run_nested_command "upload", "release", release['url'] unless release['url'].blank?
+      end
+
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
       inspect_deployment_changes(
@@ -274,7 +278,7 @@ module Bosh::Cli::Command
 
       [deployment["name"], releases.join("\n"), stemcells.join("\n"), deployment.fetch("cloud_config", "none")]
     end
-    
+
     def names_and_versions_from(arr)
       arr.map { |hash|
         hash.values_at("name", "version").join("/")
