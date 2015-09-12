@@ -1,5 +1,5 @@
 module Bosh
   module AwsCliPlugin
-    VERSION = '1.3069.0'
+    VERSION = '1.3071.0'
   end
 end
