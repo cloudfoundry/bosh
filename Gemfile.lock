@@ -223,7 +223,7 @@ GEM
     bcrypt-ruby (3.0.1)
     blue-shell (0.3.0)
       rspec
-    bosh_aws_cpi (2.0.0)
+    bosh_aws_cpi (2.0.1)
       aws-sdk (= 1.60.2)
       bosh-registry
       bosh_common
@@ -540,7 +540,7 @@ DEPENDENCIES
   bosh-release!
   bosh-stemcell!
   bosh-template!
-  bosh_aws_cpi (~> 2.0.0)
+  bosh_aws_cpi (~> 2.0.1)
   bosh_cli!
   bosh_cli_plugin_aws!
   bosh_cli_plugin_micro!
