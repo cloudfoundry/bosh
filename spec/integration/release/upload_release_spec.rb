@@ -202,7 +202,7 @@ describe 'upload release', type: :integration do
       shared_release_desc = bosh_runner.run("inspect release release_with_shared_blobs/1")
 
       expect(test_release_desc).to_not eq(shared_release_desc)
-      expect(scrub_blobstore_ids(test_release_desc)).to eq(scrub_blobstore_ids(shared_release_desc))
+      expect(scrub_random_ids(test_release_desc)).to eq(scrub_random_ids(shared_release_desc))
     end
 
     it 'raises an error if the upload release version already exists but there are packages with different fingerprints' do
@@ -323,7 +323,7 @@ describe 'upload release', type: :integration do
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       expect(output).to include('Compiled Release uploaded')
 
-      output = scrub_blobstore_ids(bosh_runner.run('inspect release test_release/1'))
+      output = scrub_random_ids(bosh_runner.run('inspect release test_release/1'))
       expect(output).to include(<<-EOF)
 +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
 | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
