@@ -88,6 +88,7 @@ module Bosh::Dev::Sandbox
 
       until resque_is_ready?
         if attempt > max_attempts
+           @logger.error("Resque queue failed to start workers in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
            raise "Resque failed to start workers in #{timeout} seconds"
         end
 
