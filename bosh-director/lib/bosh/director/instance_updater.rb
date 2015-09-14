@@ -90,6 +90,11 @@ module Bosh::Director
     end
 
     def try_to_update_in_place
+      if @instance.cloud_properties_changed?
+        @logger.debug("Cloud Properties have changed. Can't update VM in place")
+        return false
+      end
+
       if @instance.resource_pool_changed?
         @logger.debug("Resource pool has changed. Can't update VM in place")
         return false

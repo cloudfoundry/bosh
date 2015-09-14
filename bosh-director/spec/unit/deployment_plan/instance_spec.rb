@@ -39,10 +39,10 @@ module Bosh::Director::DeploymentPlan
         compilation?: false
       )
     end
-    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
+    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool', cloud_properties: {}) }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-    let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
+    let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:vm) { Vm.new }
     before do
       allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -1075,6 +1075,89 @@ module Bosh::Director::DeploymentPlan
         spec = instance.apply_spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
+      end
+    end
+
+    describe '#cloud_properties_changed?' do
+      let(:instance_model) {
+        model = Bosh::Director::Models::Instance.make(deployment: deployment)
+        model.cloud_properties_hash = { 'a' => 'b' }
+        model
+      }
+      let(:job) {
+        job = instance_double('Bosh::Director::DeploymentPlan::Job',
+          name: 'fake-job',
+          resource_pool: resource_pool)
+      }
+
+      before do
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      describe 'when neither the resource pool cloud properties, nor the availability zone cloud properties change' do
+        it 'should return false' do
+          expect(instance.cloud_properties_changed?).to eq(false)
+        end
+      end
+
+      describe 'when the cloud properties change' do
+
+        describe 'logging' do
+          before do
+            availability_zone.cloud_properties['baz'] = 'bang'
+            resource_pool.cloud_properties['abcd'] = 'wera'
+          end
+
+          it 'should log the change' do
+            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"a"=>"b", "baz"=>"bang", "abcd"=>"wera"}')
+            instance.cloud_properties_changed?
+          end
+        end
+
+        describe 'when the availability zone cloud properties change' do
+          before do
+            availability_zone.cloud_properties['baz'] = 'bang'
+          end
+
+          it 'should return true' do
+            expect(instance.cloud_properties_changed?).to eq(true)
+          end
+        end
+
+        describe 'when the resource pool cloud properties change' do
+          before do
+            resource_pool.cloud_properties['abcd'] = 'wera'
+          end
+
+          it 'should return true' do
+            expect(instance.cloud_properties_changed?).to eq(true)
+          end
+        end
+
+        describe 'when there is no availability zone' do
+          let(:availability_zone) {nil}
+          let(:instance_model) {
+            model = Bosh::Director::Models::Instance.make(deployment: deployment)
+            model.cloud_properties_hash = { }
+            model
+          }
+
+          describe 'and resource pool cloud properties has not changed' do
+            it 'should return false' do
+              expect(instance.cloud_properties_changed?).to be(false)
+            end
+          end
+
+          describe 'when there is no availability zone and resource pool cloud properties change' do
+            before do
+              resource_pool.cloud_properties['abcd'] = 'wera'
+            end
+
+            it 'should return true' do
+              expect(instance.cloud_properties_changed?).to be(true)
+            end
+          end
+        end
       end
     end
 

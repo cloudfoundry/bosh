@@ -310,6 +310,12 @@ module Bosh::Director
         changed
       end
 
+      def cloud_properties_changed?
+        changed = cloud_properties != @model.cloud_properties_hash
+        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
+        changed
+      end
+
       ##
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
@@ -457,6 +463,7 @@ module Bosh::Director
         changes = Set.new
         unless @state == 'detached' && @current_state.nil?
           changes << :restart if @restart
+          changes << :cloud_properties if cloud_properties_changed?
           changes << :resource_pool if resource_pool_changed?
           changes << :network if networks_changed?
           changes << :packages if packages_changed?

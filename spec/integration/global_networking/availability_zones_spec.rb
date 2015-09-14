@@ -253,6 +253,67 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(director.vms[2].cid)['availability_zone']).to eq('my-az2')
       end
 
+      it 'updates instances when az cloud properties change and deployment is re-deployed' do
+        cloud_hash = cloud_config_hash
+        cloud_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az',
+              'a' => 'should_be_overwritten_from_rp_cloud_properties',
+              'b' => 'cp_value_for_b'
+            }
+          }
+        ]
+
+        cloud_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          }
+        ]
+        upload_cloud_config(cloud_config_hash: cloud_hash)
+
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
+        manifest['jobs'].first['availability_zones'] = ['my-az']
+
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)).to eq({
+              'availability_zone' => 'my-az',
+              'b' => 'cp_value_for_b',
+              'a' => 'rp_value_for_a',
+              'e' => 'rp_value_for_e'
+            })
+
+        cloud_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az',
+              'foo' => 'bar'
+            }
+          }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_hash)
+
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)).to eq({
+          'availability_zone' => 'my-az',
+          'a' => 'rp_value_for_a',
+          'e' => 'rp_value_for_e',
+          'foo' => 'bar'
+        })
+
+        expect(current_sandbox.cpi.invocations_for_method('delete_vm').count).to eq(1)
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(2)
+      end
     end
   end
 end
