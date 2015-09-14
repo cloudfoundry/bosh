@@ -342,11 +342,11 @@ describe Bosh::Cli::Client::Director do
 
     it 'uploads remote release (with options)' do
       expect(@director).to receive(:request_and_track).
-        with(:post, '/releases?rebase=true&skip_if_exists=true', hash_including(
+        with(:post, '/releases?rebase=true&skip_if_exists=true&sha1=abcd1234', hash_including(
                :content_type => 'application/json',
                :payload      => JSON.generate('location' => 'release_uri'))).
         and_return(true)
-      @director.upload_remote_release('release_uri', rebase: true, skip_if_exists: true)
+      @director.upload_remote_release('release_uri', rebase: true, skip_if_exists: true, sha1: 'abcd1234')
     end
 
     it 'gets release info' do

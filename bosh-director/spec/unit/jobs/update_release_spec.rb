@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'support/release_helper'
+require 'digest'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
@@ -129,6 +130,33 @@ module Bosh::Director
           expect(job).to receive(:process_release)
 
           job.perform
+        end
+
+        context 'with a sha1' do
+          context 'when the sha1 does match' do
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => Digest::SHA1.file(release_path).hexdigest } }
+            it 'verifies the sha1 matches the release' do
+              allow(job).to receive(:release_path).and_return(release_path)
+
+              expect(job).to receive(:download_remote_release)
+              expect(job).to receive(:process_release)
+
+              job.perform
+            end
+          end
+
+          context 'when the sha1 does not match' do
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => 'abcd1234'} }
+            it 'raises an error when the sha1 does not match' do
+              allow(job).to receive(:release_path).and_return(release_path)
+
+              expect(job).to receive(:download_remote_release)
+
+              expect {
+                job.perform
+              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch)
+            end
+          end
         end
       end
 

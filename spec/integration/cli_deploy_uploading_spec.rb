@@ -13,10 +13,11 @@ describe 'cli: deploy uploading', type: :integration do
     after { file_server.stop }
 
     let(:release_url) { file_server.http_url("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
+    let(:release_sha) { '14ab572f7d00333d8e528ab197a513d44c709257' }
 
     it 'uploads the release from the remote url in the manifest' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha))
 
       target_and_login
       bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
@@ -26,11 +27,39 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
+
+    it 'fails when the sha1 does not match' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'abcd1234'))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Release SHA1 `#{release_sha}' does not match the expected SHA1 `abcd1234'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+
+    it 'fails to deploy when the url is provided, but sha is not' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, ''))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Expected SHA1 when specifying remote URL for release `test_release'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
   end
 
   it 'fails to deploy when the url is invalid' do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest('http://example.com/invalid_url'))
+    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest('http://example.com/invalid_url', 'abcd1234'))
 
     target_and_login
     bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")

@@ -11,6 +11,7 @@ module Bosh::Director
       @compiled_release = false
 
       attr_accessor :release_model
+      attr_reader :release_path, :release_url, :sha1, :name
 
       def self.job_type
         :update_release
@@ -23,6 +24,7 @@ module Bosh::Director
           # file will be downloaded to the release_path
           @release_path = File.join(Dir.tmpdir, "release-#{SecureRandom.uuid}")
           @release_url = release_path
+          @sha1 = options['sha1']
         else
           # file already exists at the release_path
           @release_path = release_path
@@ -39,7 +41,9 @@ module Bosh::Director
         logger.info("Processing update release")
         logger.info("Release rebase will be performed") if @rebase
 
-        single_step_stage("Downloading remote release") { download_remote_release } if @release_url
+        single_step_stage("Downloading remote release") { download_remote_release } if release_url
+
+        single_step_stage("Verifying remote release") { verify_sha1 } if sha1
 
         release_dir = nil
         single_step_stage("Extracting release") { release_dir = extract_release }
@@ -55,11 +59,11 @@ module Bosh::Director
 
       ensure
         FileUtils.rm_rf(release_dir) if release_dir
-        FileUtils.rm_rf(@release_path) if @release_path
+        FileUtils.rm_rf(release_path) if release_path
       end
 
       def download_remote_release
-        download_remote_file('release', @release_url, @release_path)
+        download_remote_file('release', release_url, release_path)
       end
 
       # Extracts release tarball
@@ -67,9 +71,9 @@ module Bosh::Director
       def extract_release
         release_dir = Dir.mktmpdir
 
-        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{@release_path} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", :on_error => :return)
         if result.failed?
-          logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
+          logger.error("Failed to extract release archive '#{release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
           FileUtils.rm_rf(release_dir)
           raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
@@ -102,6 +106,13 @@ module Bosh::Director
 
         @commit_hash = @manifest.fetch("commit_hash", nil)
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
+      end
+
+      def verify_sha1
+        release_hash = Digest::SHA1.file(release_path).hexdigest
+        if release_hash != sha1
+          raise ReleaseSha1DoesNotMatch, "Release SHA1 `#{release_hash}' does not match the expected SHA1 `#{sha1}'"
+        end
       end
 
       def compiled_release
