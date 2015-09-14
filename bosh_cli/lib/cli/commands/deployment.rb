@@ -95,6 +95,9 @@ module Bosh::Cli::Command
             err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
             run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
           end
+          unless release['path'].blank?
+            run_nested_command "upload", "release", release['path']
+          end
         end
       end
 
