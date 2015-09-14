@@ -257,6 +257,25 @@ module Bosh::Spec
       })
     end
 
+    def self.local_release_manifest(local_release_path)
+      minimal_manifest.merge({
+        'jobs' => [
+          {
+            'name' => 'job',
+            'template' => 'job_using_pkg_1',
+            'instances' => 1,
+            'resource_pool' => 'a',
+            'networks' => [{'name' => 'a'}]
+          }
+        ],
+        'releases' => [{
+            'name'    => 'test_release',
+            'version' => 'latest',
+            'path' => local_release_path,
+        }]
+      })
+    end
+
     def self.simple_job(options={})
       {
         'name'          => options.fetch(:name, 'foobar'),
