@@ -10,6 +10,7 @@ module Bosh::Cli::Command
         'versions in favor of versions assigned by director)'
       option '--skip-if-exists', 'no-op; retained for backward compatibility'
       option '--dir RELEASE_DIRECTORY', 'path to release directory'
+      option '--sha1 SHA1', 'SHA1 of the remote release'
 
       def upload(release_file = nil)
         auth_required
@@ -19,6 +20,7 @@ module Bosh::Cli::Command
         upload_options = {
           :rebase => options[:rebase],
           :repack => true,
+          :sha1 => options[:sha1]
         }
 
         #only check release_dir if not compiled release tarball
@@ -152,6 +154,7 @@ module Bosh::Cli::Command
         status, task_id = director.upload_remote_release(
           release_location,
           rebase: upload_options[:rebase],
+          sha1: upload_options[:sha1]
         )
         task_report(status, task_id, report)
       end

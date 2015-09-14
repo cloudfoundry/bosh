@@ -77,6 +77,7 @@ module Bosh::Director
   ReleaseInvalidPackage = err(30012)
   ReleaseExistingJobFingerprintMismatch = err(30013)
   ReleaseVersionCommitHashMismatch = err(30014)
+  ReleaseSha1DoesNotMatch = err(30015)
 
   ValidationInvalidType = err(40000)
   ValidationMissingField = err(40001)

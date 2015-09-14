@@ -88,8 +88,15 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-      build_manifest.hash['releases'].each do |release|
-        run_nested_command "upload", "release", release['url'] unless release['url'].blank?
+
+      manifest = build_manifest
+      if manifest.hash['releases']
+        build_manifest.hash['releases'].each do |release|
+          unless release['url'].blank?
+            err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
+            run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
+          end
+        end
       end
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
