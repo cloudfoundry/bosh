@@ -237,7 +237,7 @@ module Bosh::Spec
       })
     end
 
-    def self.remote_release_manifest(remote_release_url)
+    def self.remote_release_manifest(remote_release_url, sha1)
       minimal_manifest.merge({
         'jobs' => [
           {
@@ -251,7 +251,8 @@ module Bosh::Spec
         'releases' => [{
             'name'    => 'test_release',
             'version' => 'latest',
-            'url' => remote_release_url
+            'url' => remote_release_url,
+            'sha1' => sha1
         }]
       })
     end
