@@ -19,6 +19,7 @@ module Bosh::Cli::Command
       option '--dir RELEASE_DIRECTORY', 'path to release directory'
 
       def create(manifest_file = nil)
+        switch_to_release_dir
         check_if_release_dir
 
         migrate_to_support_multiple_releases
