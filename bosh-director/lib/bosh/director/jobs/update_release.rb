@@ -285,6 +285,7 @@ module Bosh::Director
             logger.info("Adding source for package `#{package_desc}'")
             had_effect |= save_package_source_blob(package, package_meta, release_dir)
             package.save
+            @packages[package.name] = package
           end
         end
 

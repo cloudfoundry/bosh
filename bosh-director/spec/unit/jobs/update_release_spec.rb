@@ -196,208 +196,163 @@ module Bosh::Director
         end
       end
 
-      context 'when extraction succeeds' do
-        it 'saves release version' do
-          job.perform
+      it 'saves release version' do
+        job.perform
 
-          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-          expect(rv).to_not be_nil
-        end
+        rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+        expect(rv).to_not be_nil
+      end
 
-        it 'resolves package dependencies' do
-          expect(job).to receive(:resolve_package_dependencies)
-          job.perform
-        end
+      it 'resolves package dependencies' do
+        expect(job).to receive(:resolve_package_dependencies)
+        job.perform
+      end
 
-        it 'deletes release archive and extraction directory' do
-          expect(FileUtils).to receive(:rm_rf).with(release_dir)
-          expect(FileUtils).to receive(:rm_rf).with(release_path)
+      it 'deletes release archive and extraction directory' do
+        expect(FileUtils).to receive(:rm_rf).with(release_dir)
+        expect(FileUtils).to receive(:rm_rf).with(release_path)
 
-          job.perform
-        end
+        job.perform
+      end
 
-        context 'release already exists' do
-          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
+      context 'release already exists' do
+        before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
 
-          context 'when rebase is passed' do
-            let(:job_options) { { 'rebase' => true } }
+        context 'when rebase is passed' do
+          let(:job_options) { { 'rebase' => true } }
 
-            context 'when there are package changes' do
-              let(:manifest_packages) do
-                [
-                  {
-                    'sha1' => 'fake-sha-1',
-                    'fingerprint' => 'fake-fingerprint-1',
-                    'name' => 'fake-name-1',
-                    'version' => 'fake-version-1'
-                  }
-                ]
-              end
+          context 'when there are package changes' do
+            let(:manifest_packages) do
+              [
+                {
+                  'sha1' => 'fake-sha-1',
+                  'fingerprint' => 'fake-fingerprint-1',
+                  'name' => 'fake-name-1',
+                  'version' => 'fake-version-1'
+                }
+              ]
+            end
 
-              it 'sets a next release version' do
-                expect(job).to receive(:create_package)
-                expect(job).to receive(:register_package)
+            it 'sets a next release version' do
+              expect(job).to receive(:create_package)
+              expect(job).to receive(:register_package)
+              job.perform
+
+              rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
+              expect(rv).to_not be_nil
+            end
+          end
+
+          context 'when there are no job and package changes' do
+            it 'still can pass and set a next release version' do
+              # it just generate the next release version without creating/registering package
+              expect {
                 job.perform
+              }.to_not raise_error
 
-                rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
-                expect(rv).to_not be_nil
-              end
-            end
-
-            context 'when there are no job and package changes' do
-              it 'still can pass and set a next release version' do
-                # it just generate the next release version without creating/registering package
-                expect {
-                  job.perform
-                }.to_not raise_error
-
-                rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
-                expect(rv).to_not be_nil
-              end
-            end
-          end
-
-          context 'when skip_if_exists is passed' do
-            let(:job_options) { { 'skip_if_exists' => true } }
-
-            it 'does not create a release' do
-              expect(job).not_to receive(:create_package)
-              expect(job).not_to receive(:create_job)
-              job.perform
+              rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
+              expect(rv).to_not be_nil
             end
           end
         end
 
-        context 'when the same release is uploaded with different commit hash' do
-          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true) }
+        context 'when skip_if_exists is passed' do
+          let(:job_options) { { 'skip_if_exists' => true } }
 
-          it 'fails with a ReleaseVersionCommitHashMismatch exception' do
-            expect {
-              job.perform
-            }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch)
-          end
-        end
-
-        context 'when the release version does not match database valid format' do
-          before do
-            # We only want to verify that the proper error is raised
-            # If version can not be validated because it has wrong model format
-            # Currently SemiSemantic Version validates version that matches the model format
-            stub_const("Bosh::Director::Models::VALID_ID", /^[a-z0-9]+$/i)
-          end
-
-          let(:release_version) { 'bad-version' }
-
-          it 'raises an error ReleaseVersionInvalid' do
-            expect {
-              job.perform
-            }.to raise_error(Sequel::ValidationFailed)
-          end
-        end
-
-        context 'when there are packages in manifest' do
-          let(:manifest_packages) do
-            [
-              {
-                'sha1' => 'fake-sha-1',
-                'fingerprint' => 'fake-fingerprint-1',
-                'name' => 'fake-name-1',
-                'version' => 'fake-version-1'
-              },
-              {
-                'sha1' => 'fake-sha-2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2'
-              }
-            ]
-          end
-
-          before do
-            Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
-          end
-
-          it "creates packages that don't already exist" do
-            expect(job).to receive(:create_packages).with([
-              {
-                'sha1' => 'fake-sha-2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2',
-                'dependencies' => []
-              }
-            ], release_dir)
-            job.perform
-          end
-
-          it 'raises an error if a different fingerprint was detected for an already existing package' do
-            pkg = Models::Package.make(release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fake-sha-2')
-            release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
-            release_version.add_package(pkg)
-
-            allow(job).to receive(:create_packages)
-
-            expect {
-              job.perform
-            }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package `fake-name-2' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
-          end
-        end
-
-        context 'when there are jobs in manifest' do
-          let(:manifest_jobs) do
-            [
-              {
-                'sha1' => 'fake-sha-1',
-                'fingerprint' => 'fake-fingerprint-1',
-                'name' => 'fake-name-1',
-                'version' => 'fake-version-1',
-                'templates' => {}
-              },
-              {
-                'sha1' => 'fake-sha-2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2',
-                'templates' => {}
-              }
-            ]
-          end
-
-          before do
-            Models::Template.make(
-              release: release,
-              name: 'fake-name-1',
-              version: 'fake-version-1',
-              fingerprint: 'fake-fingerprint-1'
-            )
-          end
-
-          it "creates jobs that don't already exist" do
-            expect(job).to receive(:create_jobs).with([
-              {
-                'sha1' => 'fake-sha-2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2',
-                'templates' => {}
-              }
-            ], release_dir)
+          it 'does not create a release' do
+            expect(job).not_to receive(:create_package)
+            expect(job).not_to receive(:create_job)
             job.perform
           end
         end
+      end
 
-        describe 'event_log' do
-          it 'prints that release was created' do
-            allow(Config.event_log).to receive(:begin_stage).and_call_original
-            expect(Config.event_log).to receive(:begin_stage).with('Release has been created', 1)
-            job.perform
-          end
+      context 'when the same release is uploaded with different commit hash' do
+        before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true) }
 
-          it 'prints name and version' do
-            allow(Config.event_log).to receive(:track).and_call_original
-            expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
+        it 'fails with a ReleaseVersionCommitHashMismatch exception' do
+          expect {
             job.perform
-          end
+          }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch)
+        end
+      end
+
+      context 'when the release version does not match database valid format' do
+        before do
+          # We only want to verify that the proper error is raised
+          # If version can not be validated because it has wrong model format
+          # Currently SemiSemantic Version validates version that matches the model format
+          stub_const("Bosh::Director::Models::VALID_ID", /^[a-z0-9]+$/i)
+        end
+
+        let(:release_version) { 'bad-version' }
+
+        it 'raises an error ReleaseVersionInvalid' do
+          expect {
+            job.perform
+          }.to raise_error(Sequel::ValidationFailed)
+        end
+      end
+
+      context 'when there are packages in manifest' do
+        let(:manifest_packages) do
+          [
+            {
+              'sha1' => 'fake-sha-1',
+              'fingerprint' => 'fake-fingerprint-1',
+              'name' => 'fake-name-1',
+              'version' => 'fake-version-1'
+            },
+            {
+              'sha1' => 'fake-sha-2',
+              'fingerprint' => 'fake-fingerprint-2',
+              'name' => 'fake-name-2',
+              'version' => 'fake-version-2'
+            }
+          ]
+        end
+
+        before do
+          Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
+        end
+
+        it "creates packages that don't already exist" do
+          expect(job).to receive(:create_packages).with([
+            {
+              'sha1' => 'fake-sha-2',
+              'fingerprint' => 'fake-fingerprint-2',
+              'name' => 'fake-name-2',
+              'version' => 'fake-version-2',
+              'dependencies' => []
+            }
+          ], release_dir)
+          job.perform
+        end
+
+        it 'raises an error if a different fingerprint was detected for an already existing package' do
+          pkg = Models::Package.make(release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fake-sha-2')
+          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          release_version.add_package(pkg)
+
+          allow(job).to receive(:create_packages)
+
+          expect {
+            job.perform
+          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package `fake-name-2' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
+        end
+      end
+
+      describe 'event_log' do
+        it 'prints that release was created' do
+          allow(Config.event_log).to receive(:begin_stage).and_call_original
+          expect(Config.event_log).to receive(:begin_stage).with('Release has been created', 1)
+          job.perform
+        end
+
+        it 'prints name and version' do
+          allow(Config.event_log).to receive(:track).and_call_original
+          expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
+          job.perform
         end
       end
 
@@ -446,6 +401,77 @@ module Bosh::Director
           expect {
             job.perform
           }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job `fake-job-1' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
+        end
+
+        it "creates jobs that don't already exist" do
+          Models::Template.make(
+              release: release,
+              name: 'fake-job-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1'
+          )
+          expect(job).to receive(:create_jobs).with([
+              {
+                  'sha1' => 'fake-sha1-2',
+                  'fingerprint' => 'fake-fingerprint-2',
+                  'name' => 'fake-job-2',
+                  'version' => 'fake-version-2',
+                  'templates' => {}
+              }
+          ], release_dir)
+          job.perform
+        end
+      end
+
+      context 'when manifest contains packages and jobs' do
+        let(:manifest_jobs) do [
+            {
+                'name' => 'zbz',
+                'version' => '666',
+                'templates' => {},
+                'packages' => %w(zbb),
+                'fingerprint' => 'job-fingerprint-3'
+            }
+        ]
+        end
+        let(:manifest_packages) do [
+            {
+                'name' => 'foo',
+                'version' => '2.33-dev',
+                'dependencies' => %w(bar),
+                'fingerprint' => 'package-fingerprint-1',
+                'sha1' => 'package-sha1-1'
+            },
+            {
+                'name' => 'bar',
+                'version' => '3.14-dev',
+                'dependencies' => [],
+                'fingerprint' => 'package-fingerprint-2',
+                'sha1' => 'package-sha1-2'
+            },
+            {
+                'name' => 'zbb',
+                'version' => '333',
+                'dependencies' => [],
+                'fingerprint' => 'package-fingerprint-3',
+                'sha1' => 'package-sha1-3'
+            }
+        ]
+        end
+
+        it 'process packages should include all packages from the manifest in the packages array, even previously existing ones' do
+          pkg_foo = Models::Package.make(release: release, name: 'foo', version: '2.33-dev', fingerprint: 'package-fingerprint-1', sha1: 'package-sha1-1', blobstore_id: 'bs1')
+          pkg_bar = Models::Package.make(release: release, name: 'bar', version: '3.14-dev', fingerprint: 'package-fingerprint-2', sha1: 'package-sha1-2', blobstore_id: 'bs2')
+          pkg_zbb = Models::Package.make(release: release, name: 'zbb', version: '333', fingerprint: 'package-fingerprint-3', sha1: 'package-sha1-3', blobstore_id: 'bs3')
+          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          release_version.add_package(pkg_foo)
+          release_version.add_package(pkg_bar)
+          release_version.add_package(pkg_zbb)
+
+          expect(BlobUtil).to receive(:create_blob).and_return('blob_id')
+          allow(blobstore).to receive(:create)
+
+          job.perform
         end
       end
     end
