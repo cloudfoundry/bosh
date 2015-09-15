@@ -2,6 +2,7 @@ module Bosh::Director
   module DeploymentPlan
     class DynamicNetwork
       include DnsHelper
+      include Bosh::Director::IpUtil
       extend DnsHelper
       extend ValidationHelper
 
@@ -62,7 +63,10 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = Network::VALID_DEFAULTS)
-        reservation.validate_type(DynamicNetworkReservation)
+        if reservation.type != DynamicNetworkReservation
+          raise NetworkReservationWrongType,
+            "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to dynamic pool"
+        end
 
         subnet = subnets.first # TODO: care about AZ someday
 

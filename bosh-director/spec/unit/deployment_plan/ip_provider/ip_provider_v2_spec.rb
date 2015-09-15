@@ -113,14 +113,15 @@ module Bosh::Director::DeploymentPlan
           context 'when VipNetwork' do
             it 'releases IP' do
               reservation = BD::StaticNetworkReservation.new(instance, vip_network, '192.168.1.2')
+              other_reservation_with_same_ip = BD::StaticNetworkReservation.new(instance, vip_network, '192.168.1.2')
 
               ip_provider.reserve(reservation)
               expect {
-                ip_provider.reserve(reservation)
+                ip_provider.reserve(other_reservation_with_same_ip)
               }.to raise_error
 
               ip_provider.release(reservation)
-              expect { ip_provider.reserve(reservation) }.not_to raise_error
+              expect { ip_provider.reserve(other_reservation_with_same_ip) }.not_to raise_error
             end
           end
         end
@@ -184,7 +185,7 @@ module Bosh::Director::DeploymentPlan
                   end
                 end
 
-                context 'when IP is static IP' do
+                context 'when user accidentally includes a static IP in the range' do
                   it 'raises an error' do
                     manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
 
@@ -226,7 +227,7 @@ module Bosh::Director::DeploymentPlan
                   end
                 end
 
-                context 'when IP is NOT a static IP' do
+                context 'when user accidentally assigns an IP to a job that is NOT a static IP' do
                   it 'raises an error' do
                     manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
                     reservation = BD::DynamicNetworkReservation.new(instance, manual_network)

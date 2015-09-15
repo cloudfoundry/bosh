@@ -266,9 +266,10 @@ module Bosh::Director
           .reject(&:obsolete?)
           .flat_map(&:network_plans)
           .reject(&:obsolete?)
+          .reject(&:existing?)
           .each do |network_plan|
-            reservation = network_plan.reservation
-            @deployment.ip_provider.reserve(reservation) unless reservation.reserved?
+          reservation = network_plan.reservation
+          deployment.ip_provider.reserve(reservation)
         end
       end
 

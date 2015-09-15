@@ -54,11 +54,12 @@ module Bosh::Director::DeploymentPlan
         other_network = ManualNetwork.new(network_spec, availability_zones, global_network_resolver, logger)
 
         dynamic_reservation = BD::DynamicNetworkReservation.new(instance, other_network)
+        dynamic_reservation.resolve_ip(ip)
 
-        network_spec['subnets'].first['static'] = ['192.168.1.5']
+        network_spec['subnets'].first['static'] = [ip]
         existing_reservation = BD::ExistingNetworkReservation.new(instance, network, ip)
         existing_reservation.mark_reserved_as(BD::DynamicNetworkReservation)
-        dynamic_reservation.bind_existing(existing_reservation)
+        ip_repo.add(existing_reservation)
 
         dynamic_reservation
       end

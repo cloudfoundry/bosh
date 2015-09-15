@@ -15,33 +15,17 @@ module Bosh::Director
       @reserved
     end
 
-    def mark_reserved_as(type)
-      validate_type(type)
-      @reserved = true
-    end
-
     private
 
     def formatted_ip
       @ip.nil? ? nil : ip_to_netaddr(@ip).ip
     end
-
   end
 
   class StaticNetworkReservation < NetworkReservation
     def initialize(instance, network, ip)
       super(instance, network)
       @ip = ip_to_i(ip)
-    end
-
-    # @param [ExistingNetworkReservation] other
-    def bind_existing(other)
-      return unless other.instance_of?(ExistingNetworkReservation)
-      return unless other.reserved_as?(StaticNetworkReservation)
-
-      return if @ip != other.ip
-
-      @reserved = true
     end
 
     def desc
@@ -52,27 +36,23 @@ module Bosh::Director
       "{type=static, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
 
-
-    def validate_type(type)
-      if type != StaticNetworkReservation
+    def mark_reserved_as(type)
+      if type != self.type
         raise NetworkReservationWrongType,
-          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to static pool"
+          "IP '#{format_ip(@ip)}' on network '#{@network.name}' does not belong to static pool"
       end
+
+      @reserved = true
+    end
+
+    def type
+      StaticNetworkReservation
     end
   end
 
   #TODO: Rename DynamicNetworkReservation to something more logical
   # DynamicNetworkReservation is the network reservation for BOSH manual networks with dynamic ip reservation
   class DynamicNetworkReservation < NetworkReservation
-    # @param [ExistingNetworkReservation] other
-    def bind_existing(other)
-      return unless other.instance_of?(ExistingNetworkReservation)
-      return unless other.reserved_as?(DynamicNetworkReservation)
-
-      @ip = other.ip
-      @reserved = true
-    end
-
     def resolve_ip(ip)
       @ip = ip_to_i(ip)
     end
@@ -85,11 +65,17 @@ module Bosh::Director
       "{type=dynamic, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
 
-    def validate_type(type)
-      if type != DynamicNetworkReservation
+    def mark_reserved_as(type)
+      if type != self.type
         raise NetworkReservationWrongType,
-          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to dynamic pool"
+          "IP '#{format_ip(@ip)}' on network '#{@network.name}' does not belong to dynamic pool"
       end
+
+      @reserved = true
+    end
+
+    def type
+      DynamicNetworkReservation
     end
   end
 
@@ -103,13 +89,13 @@ module Bosh::Director
       @reserved && @reserved_as == type
     end
 
+    def reserved_as
+      @reserved_as
+    end
+
     def mark_reserved_as(type)
       @reserved_as = type
       @reserved = true
-    end
-
-    def validate_type(_)
-      true
     end
 
     def desc

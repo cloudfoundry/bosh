@@ -23,6 +23,9 @@ module Bosh::Director
       end
 
       def reserve(reservation)
+        #TODO: We should not be calling reserve on reservations that have already been reserved
+        return if reservation.reserved?
+
         # Do nothing for Dynamic Network
         return if reservation.network.is_a?(DynamicNetwork)
 
@@ -34,7 +37,6 @@ module Bosh::Director
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
-            @logger.debug("Trying to allocate a dynamic IP in subnet'#{subnet.inspect}'")
             ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
 
             if ip
@@ -73,11 +75,13 @@ module Bosh::Director
       end
 
       def reserve_existing_ips(reservation)
+        @logger.debug('Reserving existing ips')
         subnet = find_subnet_containing(reservation)
         if subnet
           return if subnet.restricted_ips.include?(reservation.ip.to_i)
           @ip_repo.add(reservation) unless @using_global_networking
 
+          @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
           mark_reserved_with_reservation_type(reservation, subnet)
         end
       end
@@ -95,7 +99,10 @@ module Bosh::Director
       end
 
       def reserve_vip(reservation)
-        reservation.validate_type(StaticNetworkReservation)
+        if reservation.type != StaticNetworkReservation
+          raise NetworkReservationWrongType,
+            "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to static pool"
+        end
 
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
         @vip_repo.add(reservation)

@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2, reserve: nil) }
+  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2, reserve: nil, reserve_existing_ips: nil) }
   let(:plan) do
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       model: deployment,
@@ -394,7 +394,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       instance0_obsolete_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: false)
       instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
       instance1_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: false)
-      instance1_reserved_reservation = instance_double(Bosh::Director::StaticNetworkReservation, reserved?: true)
+      instance1_existing_reservation = instance_double(Bosh::Director::ExistingNetworkReservation)
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
           desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
           existing_instance: nil,
@@ -411,7 +411,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       ]
       instance_plan1.network_plans = [
         BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_reservation),
-        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_reserved_reservation),
+        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_existing_reservation),
       ]
 
       obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
@@ -431,7 +431,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       expect(fake_ip_provider).to have_received(:reserve).with(instance0_reservation)
       expect(fake_ip_provider).to have_received(:reserve).with(instance1_reservation)
       expect(fake_ip_provider).to_not have_received(:reserve).with(instance0_obsolete_reservation)
-      expect(fake_ip_provider).to_not have_received(:reserve).with(instance1_reserved_reservation)
+      expect(fake_ip_provider).to_not have_received(:reserve_existing_ips).with(instance1_existing_reservation)
     end
   end
 
