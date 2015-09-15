@@ -5,31 +5,30 @@ module Bosh::Director
       include IpUtil
 
       def self.create_from_state(instance, state, deployment, logger)
-        reservations = new(instance, logger)
+        reservations = new(logger)
         reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance}'")
 
         state.fetch('networks', []).each do |network_name, network_config|
-          reservations.add_existing(deployment, network_name,  network_config['ip'], '')
+          reservations.add_existing(instance, deployment, network_name,  network_config['ip'], '')
         end
 
         reservations
       end
 
       def self.create_from_db(instance, deployment, logger)
-        reservations = new(instance, logger)
+        reservations = new(logger)
         reservations.logger.debug("Creating instance network reservations from database for instance '#{instance}'")
 
         ip_addresses = instance.model.ip_addresses.clone
 
         ip_addresses.each do |ip_address|
-          reservations.add_existing(deployment, ip_address.network_name, ip_address.address, ip_address.type)
+          reservations.add_existing(instance, deployment, ip_address.network_name, ip_address.address, ip_address.type)
         end
 
         reservations
       end
 
-      def initialize(instance, logger)
-        @instance = instance
+      def initialize(logger)
         @reservations = []
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
@@ -65,10 +64,10 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_existing(deployment, network_name, ip, ip_type)
+      def add_existing(instance, deployment, network_name, ip, ip_type)
         network = deployment.network(network_name) || deployment.default_network
-        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{@instance}' on network '#{network.name}'")
-        reservation = ExistingNetworkReservation.new(@instance, network, ip)
+        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{instance}' on network '#{network.name}'")
+        reservation = ExistingNetworkReservation.new(instance, network, ip)
         deployment.ip_provider.reserve_existing_ips(reservation)
         @reservations << reservation
       end

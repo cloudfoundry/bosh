@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
-    let(:instance_network_reservations) { DeploymentPlan::InstanceNetworkReservations.new(instance, logger) }
+    let(:instance_network_reservations) { DeploymentPlan::InstanceNetworkReservations.new(logger) }
 
     let(:instance) do
       instance_double(DeploymentPlan::Instance, to_s: 'fake-instance')

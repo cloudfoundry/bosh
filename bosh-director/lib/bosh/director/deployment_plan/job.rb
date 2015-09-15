@@ -334,7 +334,7 @@ module Bosh::Director
 
         instance_plans.each do |instance_plan|
           # TODO: this should turn into some sort of bind_existing when we stop caring about the
-          # original_network_reservations side effects
+          # network_reservations side effects
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(
                               instance_plan.instance.network_reservations,

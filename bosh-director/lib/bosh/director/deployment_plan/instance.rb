@@ -73,10 +73,10 @@ module Bosh::Director
         @current_state = instance_state || {}
 
         # reservations generated from deployment manifest
-        @network_reservations = InstanceNetworkReservations.new(self, logger)
+        @network_reservations = InstanceNetworkReservations.new(logger)
 
         # reservation generated from current state/DB
-        @original_network_reservations = InstanceNetworkReservations.new(self, logger) # TODO: don't do this
+        @original_network_reservations = InstanceNetworkReservations.new(logger)
 
         @state = state
 
