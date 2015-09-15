@@ -12,8 +12,11 @@ RSpec.configure do |config|
       Bosh::Core::Shell.new.run("sudo rm -rf #{@os_image_dir}")
     end
   else
-    warning = 'All OS_IMAGE tests are being skipped. ENV["OS_IMAGE"] must be set to test OS images'
-    puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
-    config.filter_run_excluding os_image: true
+    # when running stemcell testings, we need also run the os image testings again
+    unless ENV["STEMCELL_IMAGE"]
+      warning = 'Both ENV["OS_IMAGE"] and ENV["STEMCELL_IMAGE"] are not set, os_image test cases are being skipped.'
+      puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
+      config.filter_run_excluding os_image: true
+    end
   end
 end
