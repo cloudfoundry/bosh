@@ -150,6 +150,23 @@ describe Bosh::Cli::Command::Instances do
       end
     end
 
+    context 'when the server returns instance ids' do
+      before {
+        vm_state['instance_id'] = 'abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        vm_state2 = vm_state.clone
+        vm_state2['instance_id'] = 'stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        vm_state2['index'] = 1
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state, vm_state2] }
+      }
+
+      it 'should include the instance id in the output' do
+        expect(command).to receive(:say) do |display_output|
+          expect(display_output.to_s).to include 'job1/abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)'
+          expect(display_output.to_s).to include 'job1/stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)'
+        end
+        perform
+      end
+    end
 
     context 'sorting multiple instances' do
       it 'sort by job name first' do

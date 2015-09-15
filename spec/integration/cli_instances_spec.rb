@@ -49,6 +49,7 @@ describe 'cli: deployment process', type: :integration do
 
     output = bosh_runner.run('instances --details')
 
+    output = scrub_random_ids(output)
     expect(output).to include('Instance')
     expect(output).to include('State')
     expect(output).to include('AZ')
@@ -59,26 +60,28 @@ describe 'cli: deployment process', type: :integration do
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
 
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/1')
-    expect(output).to include('foobar/2')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')
 
 
-    expect(bosh_runner.run('instances --dns')).to include(<<INSTANCES)
-+----------+---------+--------+---------------+-------------+------------------------+
-| Instance | State   | AZ     | Resource Pool | IPs         | DNS A records          |
-+----------+---------+--------+---------------+-------------+------------------------+
-| foobar/0 | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
-| foobar/1 | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
-| foobar/2 | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
-+----------+---------+--------+---------------+-------------+------------------------+
+    output = bosh_runner.run('instances --dns')
+    expect(scrub_random_ids(output)).to include(<<INSTANCES)
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| Instance                                        | State   | AZ     | Resource Pool | IPs         | DNS A records          |
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
 INSTANCES
 
     output = bosh_runner.run('instances --vitals')
+
+    output = scrub_random_ids(output)
     expect(output).to include('Instance')
     expect(output).to include('State')
     expect(output).to include('AZ')
@@ -95,22 +98,22 @@ INSTANCES
     expect(output).to include('Ephemeral')
     expect(output).to include('Persistent')
 
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/1')
-    expect(output).to include('foobar/2')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')
 
-    expect(bosh_runner.run('instances')).to include(<<INSTANCES)
-+----------+---------+--------+---------------+-------------+
-| Instance | State   | AZ     | Resource Pool | IPs         |
-+----------+---------+--------+---------------+-------------+
-| foobar/0 | running | zone-1 | a             | 192.168.1.2 |
-| foobar/1 | running | zone-2 | a             | 192.168.2.2 |
-| foobar/2 | running | zone-3 | a             | 192.168.3.2 |
-+----------+---------+--------+---------------+-------------+
+    output = bosh_runner.run('instances')
+    expect(scrub_random_ids(output)).to include(<<INSTANCES)
++-------------------------------------------------+---------+--------+---------------+-------------+
+| Instance                                        | State   | AZ     | Resource Pool | IPs         |
++-------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 |
++-------------------------------------------------+---------+--------+---------------+-------------+
 INSTANCES
 
   end

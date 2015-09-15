@@ -49,20 +49,23 @@ module Bosh::Cli::Command
       say('Instances total: %d' % instances.size)
     end
 
+    private
+
     def construct_table_to_display(has_disk_cid, has_az, options, sorted)
       table do |display_table|
+
+        headings = ['Instance', 'State']
         if has_az
-          headings = ['Instance', 'State', 'AZ', 'Resource Pool', 'IPs']
-        else
-          headings = ['Instance', 'State', 'Resource Pool', 'IPs']
+          headings << 'AZ'
         end
+        headings += ['Resource Pool', 'IPs']
 
         if options[:details]
+          headings << 'VM CID'
           if has_disk_cid
-            headings += ['VM CID', 'Disk CID', 'Agent ID', 'Resurrection']
-          else
-            headings += ['VM CID', 'Agent ID', 'Resurrection']
+            headings += ['Disk CID']
           end
+          headings +=['Agent ID', 'Resurrection']
         end
         if options[:dns]
           headings += ['DNS A records']
@@ -76,17 +79,20 @@ module Bosh::Cli::Command
         display_table.headings = headings
 
         sorted.each do |instance|
-          job = "#{instance['job_name'] || 'unknown'}/#{instance['index'] || 'unknown'}"
+          job_name = instance['job_name'] || 'unknown'
+          index = instance['index'] || 'unknown'
+          job = instance.has_key?('instance_id') ? "#{job_name}/#{instance['instance_id']} (#{index})" : "#{job_name}/#{index}"
           ips = Array(instance['ips']).join("\n")
           dns_records = Array(instance['dns']).join("\n")
           vitals = instance['vitals']
           az = instance['availability_zone'].nil? ? 'n/a' : instance['availability_zone']
 
+          row = [job, instance['job_state']]
           if has_az
-            row = [job, instance['job_state'], az, instance['resource_pool'], ips]
-          else
-            row = [job, instance['job_state'], instance['resource_pool'], ips]
+            row << az
           end
+
+          row += [instance['resource_pool'], ips]
 
 
           if options[:details]

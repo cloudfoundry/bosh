@@ -262,6 +262,44 @@ module Bosh::Director
         job.perform
 
       end
+
+      it 'should return instance id' do
+        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        Models::Instance.create(
+          deployment: @deployment,
+          job: 'dea',
+          index: '0',
+          state: 'started',
+          resurrection_paused: true,
+          vm: vm,
+          uuid: 'blarg'
+        )
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+            'vm_cid' => 'fake-vm-cid',
+            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+            'agent_id' => 'fake-agent-id',
+            'job_state' => 'running',
+            'resource_pool' => { 'name' => 'test_resource_pool' },
+          )
+
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['instance_id']).to eq('blarg')
+          # expect(status['vm_cid']).to eq('fake-vm-cid')
+          # expect(status['disk_cid']).to be_nil
+          # expect(status['agent_id']).to eq('fake-agent-id')
+          # expect(status['job_state']).to eq('running')
+          # expect(status['resource_pool']).to eq('test_resource_pool')
+          # expect(status['vitals']).to be_nil
+        end
+
+        job.perform
+      end
     end
 
     describe '#process_vm' do
