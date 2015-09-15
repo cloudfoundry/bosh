@@ -51,7 +51,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
         raise NotImplementedError,
               "#network_settings not implemented for #{self.class}"
       end

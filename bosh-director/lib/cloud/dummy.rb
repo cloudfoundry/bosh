@@ -80,8 +80,14 @@ module Bosh
             ips << { 'network' => network_name, 'ip' => network.fetch('ip') }
           else
             if cmd.ip_address
-              ips << { 'network' => network_name, 'ip' => cmd.ip_address }
-              write_agent_default_network(agent_id, cmd.ip_address)
+              ip_address = cmd.ip_address
+            elsif cloud_properties['az_name']
+              ip_address = cmd.ip_address_for_az(cloud_properties['az_name'])
+            end
+
+            if ip_address
+              ips << { 'network' => network_name, 'ip' => ip_address }
+              write_agent_default_network(agent_id, ip_address)
             end
           end
         end
@@ -472,36 +478,63 @@ module Bosh
 
         def make_create_vm_always_use_dynamic_ip(ip_address)
           @logger.info("Making create_vm method to set ip address #{ip_address}")
-          always_path = File.join(@cpi_commands, 'create_vm', 'always')
           FileUtils.mkdir_p(File.dirname(always_path))
           File.write(always_path, ip_address)
         end
 
+        def set_dynamic_ips_for_azs(az_to_ips)
+          @logger.info("Making create_vm method to set #{az_to_ips.inspect}")
+          FileUtils.mkdir_p(File.dirname(azs_path))
+          File.write(azs_path, JSON.generate(az_to_ips))
+        end
+
         def make_create_vm_always_fail
           @logger.info("Making create_vm method always fail")
-          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
           FileUtils.mkdir_p(File.dirname(failed_path))
           File.write(failed_path, "")
         end
 
         def allow_create_vm_to_succeed
           @logger.info("Allowing create_vm method to succeed (removing any mandatory failures)")
-          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
           FileUtils.rm(failed_path)
         end
 
         def next_create_vm_cmd
           @logger.info('Reading create_vm configuration')
-          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
-          always_path = File.join(@cpi_commands, 'create_vm', 'always')
           ip_address = File.read(always_path) if File.exists?(always_path)
+          azs_to_ip = File.exists?(azs_path) ? JSON.load(File.read(azs_path)) : {}
           failed = File.exists?(failed_path)
-          CreateVmCommand.new(ip_address, failed)
+          CreateVmCommand.new(ip_address, azs_to_ip, failed)
+        end
+
+        private
+
+        def azs_path
+          File.join(@cpi_commands, 'create_vm', 'az_ips')
+        end
+
+        def always_path
+          File.join(@cpi_commands, 'create_vm', 'always')
+        end
+
+        def failed_path
+          File.join(@cpi_commands, 'create_vm', 'fail')
         end
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end
-      class CreateVmCommand < Struct.new(:ip_address, :failed)
+      class CreateVmCommand
+        attr_reader :ip_address, :failed
+
+        def initialize(ip_address, azs_to_ip, failed)
+          @ip_address = ip_address
+          @azs_to_ip = azs_to_ip
+          @failed = failed
+        end
+
+        def ip_address_for_az(az_name)
+          @azs_to_ip[az_name]
+        end
 
         def failed?
           failed

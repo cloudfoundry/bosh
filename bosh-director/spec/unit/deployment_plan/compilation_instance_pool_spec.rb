@@ -50,10 +50,10 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false,
-          availability_zone: nil
+          availability_zone: availability_zone
         )
       allow(network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
-      allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway']).and_return('network settings')
+      allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway'], availability_zone).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
@@ -71,6 +71,7 @@ module Bosh::Director
       allow(deployment_plan).to receive(:network).with('network name').and_return(network)
       allow(instance_deleter).to receive(:delete_instance)
     end
+    let(:availability_zone) { nil }
 
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
 

@@ -408,6 +408,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               {
                 'name' => 'fake-dynamic-network',
                 'type' => 'dynamic',
+                'subnets' => [
+                  {'availability_zone' => 'az1'}
+                ]
               }
             ],
             'compilation' => {
