@@ -145,6 +145,20 @@ describe Bosh::Cli::Command::Vms do
 
     end
 
+    context 'when instance_id is present' do
+      before do
+        vm_state['instance_id'] = 'my_instance_id'
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state] }
+      end
+
+      it 'shows instance id' do
+        expect(command).to receive(:say) do |output_display|
+          expect(output_display.to_s).to include 'job1/my_instance_id (0)'
+        end
+        perform
+      end
+    end
+
     context 'when deployment has vms' do
       before { allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state] } }
 

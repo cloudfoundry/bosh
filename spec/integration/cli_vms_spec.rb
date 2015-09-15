@@ -8,10 +8,10 @@ describe 'cli: vms', type: :integration do
     manifest_hash['releases'].first['version'] = 'latest'
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    vms = bosh_runner.run('vms')
-    expect(vms).to match /foobar\/0/
-    expect(vms).to match /foobar\/1/
-    expect(vms).to match /foobar\/2/
+    vms = scrub_random_ids(bosh_runner.run('vms'))
+    expect(vms).to include "foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)"
+    expect(vms).to include "foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)"
+    expect(vms).to include "foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)"
     expect(vms).to match /VMs total: 3/
   end
 
@@ -76,17 +76,19 @@ describe 'cli: vms', type: :integration do
     manifest_hash['jobs'].first['availability_zones'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
-    expect(bosh_runner.run('vms')).to include(<<VMS)
-+-----------+---------+--------+---------------+-------------+
-| Job/index | State   | AZ     | Resource Pool | IPs         |
-+-----------+---------+--------+---------------+-------------+
-| foobar/0  | running | zone-1 | a             | 192.168.1.2 |
-| foobar/1  | running | zone-2 | a             | 192.168.2.2 |
-| foobar/2  | running | zone-3 | a             | 192.168.3.2 |
-+-----------+---------+--------+---------------+-------------+
+    expect(scrub_random_ids(bosh_runner.run('vms'))).to include(<<VMS)
++-------------------------------------------------+---------+--------+---------------+-------------+
+| VM                                              | State   | AZ     | Resource Pool | IPs         |
++-------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 |
++-------------------------------------------------+---------+--------+---------------+-------------+
 VMS
     output = bosh_runner.run('vms --details')
-    expect(output).to include('Job/index')
+
+    output = scrub_random_ids(output)
+    expect(output).to include('VM')
     expect(output).to include('State')
     expect(output).to include('AZ')
     expect(output).to include('Resource Pool')
@@ -95,26 +97,27 @@ VMS
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
 
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/1')
-    expect(output).to include('foobar/2')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')
 
-    expect(bosh_runner.run('vms --dns')).to include(<<VMS)
-+-----------+---------+--------+---------------+-------------+------------------------+
-| Job/index | State   | AZ     | Resource Pool | IPs         | DNS A records          |
-+-----------+---------+--------+---------------+-------------+------------------------+
-| foobar/0  | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
-| foobar/1  | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
-| foobar/2  | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
-+-----------+---------+--------+---------------+-------------+------------------------+
+    expect(scrub_random_ids(bosh_runner.run('vms --dns'))).to include(<<VMS)
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| VM                                              | State   | AZ     | Resource Pool | IPs         | DNS A records          |
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
++-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
 VMS
 
     output = bosh_runner.run('vms --vitals')
-    expect(output).to include('Job/index')
+
+    output = scrub_random_ids(output)
+    expect(output).to include('VM')
     expect(output).to include('State')
     expect(output).to include('AZ')
     expect(output).to include('Resource Pool')
@@ -130,10 +133,9 @@ VMS
     expect(output).to include('Ephemeral')
     expect(output).to include('Persistent')
 
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/0')
-    expect(output).to include('foobar/1')
-    expect(output).to include('foobar/2')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
+    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')

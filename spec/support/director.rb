@@ -22,6 +22,9 @@ module Bosh::Spec
           vm_data[:agent_id],
           vm_data[:ips],
           vm_data[:az],
+          vm_data[:instance_id],
+          vm_data[:job_name],
+          vm_data[:index],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
           @director_nats_port,
           @logger,
@@ -133,6 +136,13 @@ module Bosh::Spec
       headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
       vms = values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      vms.each do |vm|
+        match_data = /(\w+)\/([0-9a-f]{8}-[0-9a-f-]{27})\s\((\d+)\)/.match(vm[:vm])
+        vm[:job_name] = match_data[1]
+        vm[:instance_id] = match_data[2]
+        vm[:index] = match_data[3]
+        vm[:job_index] = "#{match_data[1]}/#{match_data[2]}"
+      end
 
       # collapse rows for single VM with multiple IPs
       result = []

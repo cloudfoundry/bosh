@@ -39,11 +39,12 @@ module Bosh::Cli::Command
       has_az = vms.any? {|vm| vm.has_key? 'availability_zone' }
 
       vms_table = table do |t|
+        headings = ['VM', 'State']
+
         if has_az
-          headings = ['Job/index', 'State', 'AZ', 'Resource Pool', 'IPs']
-        else
-          headings = ['Job/index', 'State', 'Resource Pool', 'IPs']
+          headings << 'AZ'
         end
+        headings += ['Resource Pool', 'IPs']
 
         if options[:details]
           headings += ['CID', 'Agent ID', 'Resurrection']
@@ -60,18 +61,20 @@ module Bosh::Cli::Command
         t.headings = headings
 
         sorted.each do |vm|
-          job = "#{vm['job_name'] || 'unknown'}/#{vm['index'] || 'unknown'}"
+          job_name = vm['job_name'] || 'unknown'
+          job_index = vm['index'] || 'unknown'
+          job = vm.has_key?('instance_id') ? "#{job_name}/#{vm['instance_id']} (#{job_index})" : "#{job_name}/#{job_index}"
           ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
           az = vm['availability_zone'].nil? ? 'n/a' : vm['availability_zone']
 
+          row = [job, vm['job_state']]
           if has_az
-            row = [job, vm['job_state'], az, vm['resource_pool'], ips]
-          else
-            row = [job, vm['job_state'], vm['resource_pool'], ips]
+            row << az
           end
 
+          row += [vm['resource_pool'], ips]
 
           if options[:details]
             row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']
