@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class DynamicNetwork
+    class DynamicNetwork < NetworkWithSubnets
       include DnsHelper
       include Bosh::Director::IpUtil
       extend DnsHelper
@@ -92,12 +92,10 @@ module Bosh::Director
         config
       end
 
+      private
+
       def find_subnet_for_az(az_name)
         @subnets.find { |subnet| subnet.availability_zone.eql?(az_name) }
-      end
-
-      def validate_has_job!(az_names, job_name)
-        # nothing to validate
       end
     end
   end

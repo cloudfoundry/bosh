@@ -406,4 +406,47 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
     end
   end
+
+  describe 'validate_has_job' do
+    let(:network_spec) do
+      Bosh::Spec::Deployments.network.merge(
+        'type' => 'dynamic',
+        'subnets' => [
+          {
+            'availability_zone' => 'zone_1',
+          },
+          {
+            'availability_zone' => 'zone_2'
+          },
+        ]
+      )
+    end
+
+    let(:network) do
+      BD::DeploymentPlan::DynamicNetwork.parse(
+        network_spec,
+        [
+          BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+          BD::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
+        ],
+        logger
+      )
+    end
+
+    it 'passes when all availability zone names are contained by subnets' do
+      expect { network.validate_has_job!([], 'foo-job') }.to_not raise_error
+      expect { network.validate_has_job!(['zone_1'], 'foo-job') }.to_not raise_error
+      expect { network.validate_has_job!(['zone_2'], 'foo-job') }.to_not raise_error
+      expect { network.validate_has_job!(['zone_1', 'zone_2'], 'foo-job') }.to_not raise_error
+    end
+
+    it 'raises when any availability zone are not contained by a subnet' do
+      expect {
+        network.validate_has_job!(['zone_1', 'zone_3', 'zone_2', 'zone_4'], 'foo-job')
+      }.to raise_error(
+          Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
+          "Job 'foo-job' refers to an availability zone(s) '[\"zone_3\", \"zone_4\"]' but 'a' has no matching subnet(s)."
+        )
+    end
+  end
 end
