@@ -262,6 +262,41 @@ module Bosh::Director
         job.perform
 
       end
+
+      it 'should return processes info' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
+          'job_state' => 'running',
+          'processes' => [
+            {'name' => 'fake-process-1', 'state' => 'running' },
+            {'name' => 'fake-process-2', 'state' => 'failing' },
+          ],
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+        )
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']).to be_nil
+          expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
+                                             {'name' => 'fake-process-2', 'state' => 'failing' }])
+        end
+
+        job.perform
+
+      end
     end
 
     describe '#process_vm' do
