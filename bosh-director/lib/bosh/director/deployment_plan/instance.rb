@@ -302,14 +302,6 @@ module Bosh::Director
         @current_state['persistent_disk'].to_i > 0
       end
 
-      ##
-      # @return [Boolean] returns true if the network configuration changed
-      def networks_changed?
-        changed = network_settings != @current_state['networks']
-        log_changes(__method__, @current_state['networks'], network_settings) if changed
-        changed
-      end
-
       def cloud_properties_changed?
         changed = cloud_properties != @model.cloud_properties_hash
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
@@ -465,7 +457,6 @@ module Bosh::Director
           changes << :restart if @restart
           changes << :cloud_properties if cloud_properties_changed?
           changes << :resource_pool if resource_pool_changed?
-          changes << :network if networks_changed?
           changes << :packages if packages_changed?
           changes << :persistent_disk if persistent_disk_changed?
           changes << :configuration if configuration_changed?

@@ -143,18 +143,6 @@ module Bosh::Director::DeploymentPlan
               })
         end
 
-        it '#network_changed? should return true' do
-          expect(instance.networks_changed?).to be(true)
-        end
-
-        it '#network_changed? should log the network changes' do
-          expect(logger).to receive(:debug).with('networks_changed? changed FROM: ' +
-                '{"net_a"=>{"ip"=>"10.0.0.6", "netmask"=>"255.255.255.0", "gateway"=>"10.0.0.1"}}' +
-                ' TO: {"net_a"=>{"type"=>"dynamic", "cloud_properties"=>{"foo"=>"bar"}, "dns"=>["1.2.3.4"], ' +
-                '"dns_record_name"=>"0.job.net-a.mycloud.test_domain", "ip"=>"10.0.0.6", "netmask"=>"255.255.255.0", "gateway"=>"10.0.0.1"}}')
-          instance.networks_changed?
-        end
-
         describe '#dns_changed?' do
           describe 'when the dns record for the instance is not found' do
             it '#dns_changed? should return true' do
@@ -491,7 +479,7 @@ module Bosh::Director::DeploymentPlan
         instance.bind_to_vm_model(vm_model)
       end
 
-      context 'when persistent disk size is 0' do
+      context 'when agent returns updated configuration hash' do
         before do
           state = {
             'deployment' => 'fake-deployment',
@@ -509,44 +497,13 @@ module Bosh::Director::DeploymentPlan
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
           expect(agent_client).to receive(:apply).with(state).ordered
 
-          returned_state = state.merge({'networks' => {'fake-network' => 'fake-new-network-settings'}})
+          returned_state = state.merge('configuration_hash' => 'fake-old-configuration-hash')
           expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
         end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           instance.apply_vm_state
-          expect(instance.networks_changed?).to be_truthy
-        end
-      end
-
-      context 'when persistent disk size is greater than 0' do
-        before do
-          job.persistent_disk = 100
-        end
-
-        it 'updates the model with the spec, applies the state to the agent, and sets the current state of the instance' do
-          state = {
-            'deployment' => 'fake-deployment',
-            'job' => 'fake-job-spec',
-            'index' => 0,
-            'id' => 'uuid-1',
-            'networks' => {'fake-network' => 'fake-network-settings'},
-            'resource_pool' => 'fake-resource-pool-spec',
-            'packages' => {},
-            'configuration_hash' => 'fake-desired-configuration-hash',
-            'dns_domain_name' => 'test_domain',
-            'persistent_disk' => 100,
-          }
-
-          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
-          expect(agent_client).to receive(:apply).with(state).ordered
-
-          returned_state = state.merge('configuration_hash' => 'fake-desired-configuration-hash')
-          expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
-
-          expect {
-            instance.apply_vm_state
-          }.to change { instance.configuration_changed? }.from(true).to(false)
+          expect(instance.configuration_changed?).to be_truthy
         end
       end
     end

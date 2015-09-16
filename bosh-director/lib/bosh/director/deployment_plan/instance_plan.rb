@@ -26,6 +26,7 @@ module Bosh
           @existing_instance = attrs.fetch(:existing_instance)
           @desired_instance = attrs.fetch(:desired_instance)
           @instance = attrs.fetch(:instance)
+          @network_plans = []
         end
 
         attr_reader :desired_instance, :existing_instance, :instance
