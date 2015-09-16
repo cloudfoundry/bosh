@@ -30,10 +30,6 @@ namespace :spec do
             raise
           end
         end
-
-        unless ENV['SKIP_UAA'] == 'true'
-          Bosh::Dev::Sandbox::UaaService.install
-        end
       end
     end
 

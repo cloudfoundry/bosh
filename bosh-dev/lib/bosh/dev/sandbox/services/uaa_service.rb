@@ -17,20 +17,6 @@ module Bosh::Dev::Sandbox
       @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', @port, @log_location, logger)
     end
 
-    def self.install
-      FileUtils.rm_rf(INSTALL_DIR)
-      FileUtils.mkdir_p(INSTALL_DIR)
-
-      tomcat_url = 'https://s3.amazonaws.com/bosh-dependencies/apache-tomcat-8.0.21.tar.gz'
-      out = `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
-      raise out unless $? == 0
-
-      uaa_url = 'https://s3.amazonaws.com/bosh-dependencies/cloudfoundry-identity-uaa-2.0.3.war'
-      webapp_path = File.join(TOMCAT_DIR, 'webapps', 'uaa.war')
-      out = `curl --output #{webapp_path} -L #{uaa_url}`
-      raise out unless $? == 0
-    end
-
     def start
       uaa_process.start
 
