@@ -29,14 +29,12 @@ module Bosh::Dev
         bosh-core
         bosh-stemcell
         bosh-template
-        bosh_aws_cpi
         bosh_cli
         bosh_cli_plugin_aws
         bosh_cli_plugin_micro
         bosh_common
         bosh_cpi
         bosh-registry
-        bosh_vsphere_cpi
         bosh-director
         bosh-director-core
         bosh-monitor

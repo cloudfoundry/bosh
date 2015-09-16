@@ -3,7 +3,7 @@
 set -e
 set -x
 
-RUBY_VERSIONS=( "1.9.3" "2.1.6" )
+RUBY_VERSIONS=( "1.9.3" "2.1.7" )
 CHRUBY_VER="0.3.9"
 CHRUBY_URL=https://github.com/postmodern/chruby/archive/v${CHRUBY_VER}.tar.gz
 RUBY_INSTALL_VER="0.5.0"

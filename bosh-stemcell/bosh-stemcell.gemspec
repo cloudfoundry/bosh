@@ -15,12 +15,12 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  spec.files         = `git ls-files -- lib/*`.split($/) + %w(README.md)
+  spec.files         = Dir['README.md', 'lib/**/*'].select{ |f| File.file? f }
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = %w[lib]
 
-  spec.add_dependency 'bosh_aws_cpi', "~>#{version}"
+  spec.add_dependency 'bosh_aws_cpi', "~>2.0.0"
   spec.add_dependency 'bosh-core', "~>#{version}"
 
   spec.add_development_dependency 'fakefs'

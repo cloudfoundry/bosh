@@ -7,6 +7,12 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `07SVLfhlpQJWWKphcELs9MV2pwgs1n3y`
+  - update ubuntu for FreeType vulnerabilities for USN-2739-1
+
+* `Ty4YAJAYPLWkhtcuJdBytQungO6WXdvu`
+  - update kernel for USN-2738-1
+
 * `VUlbpM_lQcwk2XCzQ6.bv1DDLNdQf_mZ`
   - update libexpat and lib64expat for USN-2726-1
 
@@ -244,6 +250,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `UNpmsea6Zi8Vf93FoqL_Jlxz13v0gozh`
+  - update centos to match ubuntu update for USN-2739-1
 
 * `j2ML2KnCoVtBwWUfLYRakaH8vkEQ.eX_`
   - update openssh-server for USN-2710-1

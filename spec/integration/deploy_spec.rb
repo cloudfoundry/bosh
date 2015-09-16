@@ -71,40 +71,129 @@ describe 'deploy', type: :integration do
     before do
       target_and_login
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-      create_and_upload_test_release
       upload_stemcell
-
-      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
-          {
-              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
-                             name: 'job_with_templates_having_prestart_scripts',
-                             templates: [
-                                 {'name' => 'job_1_with_pre_start_script'},
-                                 {'name' => 'job_2_with_pre_start_script'}
-                             ],
-                             instances: 1)]
-          })
-      set_deployment(manifest_hash: manifest)
     end
 
-    it 'runs the pre-start scripts on the agent vm' do
+    context 'when the pre-start scripts are valid' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_templates_having_prestart_scripts',
+                               templates: [
+                                   {'name' => 'job_1_with_pre_start_script'},
+                                   {'name' => 'job_2_with_pre_start_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'runs the pre-start scripts on the agent vm, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
+        deploy({})
+
+        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_pre_start_script/bin/pre-start' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 pre-start script')
+
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_pre_start_script/pre-start.stdout.log")
+        expect(job_2_stdout).to match('message on stdout of job 2 pre-start script')
+      end
+    end
+
+    it 'should append the logs to the previous pre-start logs' do
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'releases' => [{
+                                 'name'    => 'release_with_prestart_script',
+                                 'version' => '1',
+                             }],
+              'jobs' => [
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                      name: 'job_with_templates_having_prestart_scripts',
+                      templates: [
+                          {'name' => 'job_1_with_pre_start_script'}
+                      ],
+                      instances: 1)]
+          })
+      set_deployment(manifest_hash: manifest)
+      bosh_runner.run("upload release #{spec_asset('pre_start_script_releases/release_with_prestart_script-1.tgz')}")
+      deploy({})
+
+      # re-upload a different release version to make the pre-start scripts run
+      manifest['releases'][0]['version'] = '2'
+      set_deployment(manifest_hash: manifest)
+      bosh_runner.run("upload release #{spec_asset('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
       deploy({})
 
       agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
-      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+      job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+      job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
 
-      expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
-      expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
+      expect(job_1_stdout).to match(<<-EOF)
+message on stdout of job 1 pre-start script
+template interpolation works in this script: this is pre_start_message_1
+message on stdout of job 1 new version pre-start script
+      EOF
+
+      expect(job_1_stderr).to match(<<-EOF)
+message on stderr of job 1 pre-start script
+message on stderr of job 1 new version pre-start script
+      EOF
     end
 
-    xit 'waits for the pre-start scripts to run before continuing' do
+    context 'when the pre-start scripts are corrupted' do
 
+      before do
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'releases' => [{
+                                   'name'    => 'release_with_corrupted_pre_start',
+                                   'version' => '1',
+                               }],
+                'jobs' => [
+                    Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_templates_having_prestart_scripts',
+                               templates: [
+                                   {'name' => 'job_with_valid_pre_start_script'},
+                                   {'name' => 'job_with_corrupted_pre_start_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'error out if run_script errors, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
+        bosh_runner.run("upload release #{spec_asset('pre_start_script_releases/release_with_corrupted_pre_start-1.tgz')}")
+        expect{
+          deploy({})
+        }.to raise_error(RuntimeError, /result: 1 of 2 pre-start scripts failed. Failed Jobs: job_with_corrupted_pre_start_script. Successful Jobs: job_with_valid_pre_start_script./)
+
+        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_with_valid_pre_start_script/bin/pre-start' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_with_corrupted_pre_start_script/bin/pre-start' script has failed with error")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_valid_pre_start_script/pre-start.stdout.log")
+        expect(job_1_stdout).to match('message on stdout of job_with_valid_pre_start_script pre-start script')
+
+        job_corrupted_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_corrupted_pre_start_script/pre-start.stdout.log")
+        expect(job_corrupted_stdout).to match('message on stdout of job_with_corrupted_pre_start_script pre-start script')
+
+        job_corrupted_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_corrupted_pre_start_script/pre-start.stderr.log")
+        expect(job_corrupted_stderr).not_to be_empty
+      end
     end
-
-    xit 'error out if run_script errors' do
-
-    end
-
   end
 
   it 'supports scaling down and then scaling up' do

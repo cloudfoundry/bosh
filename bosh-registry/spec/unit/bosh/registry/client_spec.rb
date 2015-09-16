@@ -80,8 +80,32 @@ describe Bosh::Registry::Client do
   end
 
   describe '#delete_settings' do
-    it 'should raise an error if the settings could not deleted' do
+    it 'should not raise an error when deleting settings returns 200' do
+      allow(response).to receive(:status).and_return(200)
+      allow(httpclient).to receive(:delete).with(
+          'http://localhost:25001/instances/id/settings',
+          { :header => header }
+      ).and_return(response)
+
+      expect {
+        subject.delete_settings('id')
+      }.to_not raise_error
+    end
+
+    it 'should not raise an error when deleting settings returns 404' do
       allow(response).to receive(:status).and_return(404)
+      allow(httpclient).to receive(:delete).with(
+          'http://localhost:25001/instances/id/settings',
+          { :header => header }
+      ).and_return(response)
+
+      expect {
+        subject.delete_settings('id')
+      }.to_not raise_error
+    end
+
+    it 'should raise an error if attempting to delete settings does not return 200 or 404' do
+      allow(response).to receive(:status).and_return(500)
       allow(httpclient).to receive(:delete).with(
           'http://localhost:25001/instances/id/settings',
           { :header => header }

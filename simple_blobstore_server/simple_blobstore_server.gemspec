@@ -1,28 +1,27 @@
 # coding: utf-8
 require File.expand_path('../lib/simple_blobstore_server/version', __FILE__)
 
-Gem::Specification.new do |s|
-  s.name        = 'simple_blobstore_server'
-  s.version     = Bosh::SimpleBlobstoreServer::VERSION
-  s.platform    = Gem::Platform::RUBY
-  s.summary     = 'BOSH Simple Blobstore Server'
-  s.description = "BOSH Simple Blobstore Server\n#{`git rev-parse HEAD`[0, 6]}"
-  s.author      = 'VMware'
-  s.homepage    = 'https://github.com/cloudfoundry/bosh'
-  s.license     = 'Apache 2.0'
-  s.email       = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name        = 'simple_blobstore_server'
+  spec.version     = Bosh::SimpleBlobstoreServer::VERSION
+  spec.platform    = Gem::Platform::RUBY
+  spec.summary     = 'BOSH Simple Blobstore Server'
+  spec.description = "BOSH Simple Blobstore Server"
+  spec.author      = 'VMware'
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache 2.0'
+  spec.email       = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n")
-  s.require_path = 'lib'
+  spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
+  spec.require_path = 'lib'
+  spec.bindir       = 'bin'
+  spec.executables << 'simple_blobstore_server'
 
-  s.add_dependency 'thin',    '~>1.5.0'
-  s.add_dependency 'sinatra', '~> 1.4.2'
+  spec.add_dependency 'thin',    '~>1.5.0'
+  spec.add_dependency 'sinatra', '~> 1.4.2'
 
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'rack-test'
-
-  s.bindir      = 'bin'
-  s.executables << 'simple_blobstore_server'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'rack-test'
 end

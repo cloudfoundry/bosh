@@ -10,7 +10,8 @@ HOST=<%= p("postgres.listen_address") %>
 PORT=<%= p("postgres.port") %>
 USER='<%= p("postgres.user") %>'
 PASSWORD='<%= p("postgres.password") %>'
-DBNAME='<%= p("postgres.database") %>'
+DBNAMES=(<%= p("postgres.additional_databases").join(" ") %>)
+DBNAMES+=('<%= p("postgres.database") %>')
 
 SCRIPT=$(basename $0)
 mkdir -p /var/vcap/sys/log/monit
@@ -55,14 +56,19 @@ case "$1" in
 
       set +e
 
-      echo "Trying to create database..."
-      su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/createdb $DBNAME -p $PORT"
+      for DBNAME in "${DBNAMES[@]}"
+      do
 
-      echo "Trying to create user..."
-      LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "create role \"$USER\" NOSUPERUSER LOGIN INHERIT CREATEDB"
+        echo "Trying to create database $DBNAME..."
+        su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/createdb $DBNAME -p $PORT"
 
-      echo "Trying to alter user (to change password)..."
-      LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "alter role \"$USER\" with password '$PASSWORD'"
+        echo "Trying to create user..."
+        LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "create role \"$USER\" NOSUPERUSER LOGIN INHERIT CREATEDB"
+
+        echo "Trying to alter user (to change password)..."
+        LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "alter role \"$USER\" with password '$PASSWORD'"
+
+      done
 
       set -e
 

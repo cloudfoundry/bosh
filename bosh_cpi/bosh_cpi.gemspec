@@ -3,26 +3,26 @@ require File.expand_path('../lib/cloud/version', __FILE__)
 
 version = Bosh::Clouds::VERSION
 
-Gem::Specification.new do |s|
-  s.name        = 'bosh_cpi'
-  s.version     = version
-  s.platform    = Gem::Platform::RUBY
-  s.summary     = 'BOSH CPI'
-  s.description = "BOSH CPI\n#{`git rev-parse HEAD`[0, 6]}"
-  s.author      = 'VMware'
-  s.homepage    = 'https://github.com/cloudfoundry/bosh'
-  s.license     = 'Apache 2.0'
-  s.email       = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name        = 'bosh_cpi'
+  spec.version     = version
+  spec.platform    = Gem::Platform::RUBY
+  spec.summary     = 'BOSH CPI'
+  spec.description = "BOSH CPI"
+  spec.author      = 'VMware'
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache 2.0'
+  spec.email       = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n")
-  s.require_path = 'lib'
+  spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
+  spec.require_path = 'lib'
 
-  s.add_dependency 'bosh_common', "~>#{version}"
-  s.add_dependency 'membrane',    '~>1.1.0'
-  s.add_dependency 'logging',     '~>1.8.2'
+  spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'membrane',    '~>1.1.0'
+  spec.add_dependency 'logging',     '~>1.8.2'
 
-  s.add_development_dependency 'rake'
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
 end

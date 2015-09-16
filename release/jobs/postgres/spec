@@ -23,3 +23,6 @@ properties:
   postgres.database:
     description: Default Postgres database (it will be created during the startup process)
     default: bosh
+  postgres.additional_databases:
+    description: Additional Postgres databases to be created (during the startup process)
+    default: []

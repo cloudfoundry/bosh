@@ -1,28 +1,28 @@
 # coding: utf-8
 require File.expand_path('../lib/agent_client/version', __FILE__)
 
-Gem::Specification.new do |s|
-  s.name         = 'agent_client'
-  s.version      = Bosh::Agent::Client::VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = 'BOSH agent client'
-  s.description  = "BOSH agent client\n#{`git rev-parse HEAD`[0, 6]}"
-  s.author       = 'VMware'
-  s.homepage     = 'https://github.com/cloudfoundry/bosh'
-  s.license      = 'Apache 2.0'
-  s.email        = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name         = 'agent_client'
+  spec.version      = Bosh::Agent::Client::VERSION
+  spec.platform     = Gem::Platform::RUBY
+  spec.summary      = 'BOSH agent client'
+  spec.description  = "BOSH agent client"
+  spec.author       = 'VMware'
+  spec.homepage     = 'https://github.com/cloudfoundry/bosh'
+  spec.license      = 'Apache 2.0'
+  spec.email        = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n")
-  s.require_path = 'lib'
-  s.test_files   = s.files.grep(%r{^(test|spec|features)/})
-  s.bindir       = 'bin'
-  s.executables  << 'agent_client'
+  spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
+  spec.require_path = 'lib'
+  spec.test_files   = spec.files.grep(%r{^(test|spec|features)/})
+  spec.bindir       = 'bin'
+  spec.executables  << 'agent_client'
 
-  s.add_dependency 'httpclient', '=2.4.0'
-  s.add_dependency 'yajl-ruby', '~>1.2.0'
+  spec.add_dependency 'httpclient', '=2.4.0'
+  spec.add_dependency 'yajl-ruby', '~>1.2.0'
 
-  s.add_development_dependency 'rspec', '~> 3.0'
-  s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'rspec-instafail'
+  spec.add_development_dependency 'rspec', '~> 3.0'
+  spec.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'rspec-instafail'
 end

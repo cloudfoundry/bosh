@@ -1,39 +1,38 @@
 # coding: utf-8
 require File.expand_path('../lib/bosh/monitor/version', __FILE__)
 
-Gem::Specification.new do |s|
-  s.name         = 'bosh-monitor'
-  s.version      = Bosh::Monitor::VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = 'BOSH Health Monitor'
-  s.description  = "BOSH Health Monitor\n#{`git rev-parse HEAD`[0, 6]}"
-  s.author       = 'VMware'
-  s.homepage     = 'https://github.com/cloudfoundry/bosh'
-  s.license      = 'Apache 2.0'
-  s.email        = 'support@cloudfoundry.com'
-  s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+Gem::Specification.new do |spec|
+  spec.name         = 'bosh-monitor'
+  spec.version      = Bosh::Monitor::VERSION
+  spec.platform     = Gem::Platform::RUBY
+  spec.summary      = 'BOSH Health Monitor'
+  spec.description  = "BOSH Health Monitor"
+  spec.author       = 'VMware'
+  spec.homepage     = 'https://github.com/cloudfoundry/bosh'
+  spec.license      = 'Apache 2.0'
+  spec.email        = 'support@cloudfoundry.com'
+  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README.md)
-  s.require_path = 'lib'
+  spec.files        = Dir['README.md', 'lib/**/*'].select{ |f| File.file? f }
+  spec.require_path = 'lib'
+  spec.bindir       = 'bin'
+  spec.executables << 'bosh-monitor-console'
+  spec.executables << 'bosh-monitor'
+  spec.executables << 'listener'
 
-  s.add_dependency 'eventmachine',    '~>1.0.0'
-  s.add_dependency 'logging',         '~>1.8.2'
-  s.add_dependency 'em-http-request', '~>0.3.0'
-  s.add_dependency 'nats',      '=0.5.0.beta.12'
-  s.add_dependency 'yajl-ruby', '~>1.2.0'
-  s.add_dependency 'thin',      '~>1.5.0'
-  s.add_dependency 'sinatra',   '~>1.4.2'
-  s.add_dependency 'aws-sdk',   '1.60.2'
-  s.add_dependency 'dogapi',    '~> 1.6.0'
-  s.add_dependency 'cf-uaa-lib',  '~>3.2.1'
-  s.add_dependency 'httpclient',  '=2.4.0'
+  spec.add_dependency 'eventmachine',    '~>1.0.0'
+  spec.add_dependency 'logging',         '~>1.8.2'
+  spec.add_dependency 'em-http-request', '~>0.3.0'
+  spec.add_dependency 'nats',      '=0.5.0.beta.12'
+  spec.add_dependency 'yajl-ruby', '~>1.2.0'
+  spec.add_dependency 'thin',      '~>1.5.0'
+  spec.add_dependency 'sinatra',   '~>1.4.2'
+  spec.add_dependency 'aws-sdk',   '1.60.2'
+  spec.add_dependency 'dogapi',    '~> 1.6.0'
+  spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
+  spec.add_dependency 'httpclient',  '=2.4.0'
 
-  s.add_development_dependency 'rake'
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
-
-  s.bindir      = 'bin'
-  s.executables << 'bosh-monitor-console'
-  s.executables << 'bosh-monitor'
-  s.executables << 'listener'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
 end

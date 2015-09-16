@@ -10,7 +10,7 @@ install:
   - 'bundle install --local --without development'
 
 rvm:
-  - ruby-2.1.6
+  - ruby-2.1.7
 
 env:
   # limit unit test threads to 1 to avoid SimpleCov race conditions:

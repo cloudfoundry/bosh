@@ -36,11 +36,20 @@ describe 'health_monitor: 1', type: :integration do
 
     waiter = Bosh::Spec::Waiter.new(logger)
     waiter.wait(50) do
-      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurrected_vm.agent_id}.log")
+      agent_id = resurrected_vm.agent_id
 
-      expect(agent_log).to include("jobs/job_1_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
-      expect(agent_log).to include('jobs/job_1_with_pre_start_script/bin/pre-start Stderr: message on stderr of job 1 pre-start script')
-      expect(agent_log).to include('jobs/job_2_with_pre_start_script/bin/pre-start Stdout: message on stdout of job 2 pre-start script')
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+      expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
+      expect(agent_log).to include("/jobs/job_2_with_pre_start_script/bin/pre-start' script has successfully executed")
+
+      job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+      expect(job_1_stdout).to match("message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1")
+
+      job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
+      expect(job_1_stderr).to match('message on stderr of job 1 pre-start script')
+
+      job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_pre_start_script/pre-start.stdout.log")
+      expect(job_2_stdout).to match('message on stdout of job 2 pre-start script')
     end
   end
 

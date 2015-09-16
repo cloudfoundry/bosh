@@ -32,6 +32,7 @@ module Bosh::Director
       allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: 'network settings') }
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
@@ -49,8 +50,7 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
-      @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', reserve: nil)
-      allow(plan).to receive(:network).with('default').and_return(@network)
+      allow(plan).to receive(:network).with('default').and_return(network)
 
       @n_workers = 3
       allow(compilation_config).to receive_messages(
@@ -101,6 +101,7 @@ module Bosh::Director
       @p_warden = make_package('warden', %w(common))
       @p_nginx = make_package('nginx', %w(common))
       @p_router = make_package('p_router', %w(ruby common))
+      @p_deps_ruby = make_package('needs_ruby', %w(ruby))
 
       rp_large = double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'large', stemcell: @stemcell_a)
 
@@ -114,6 +115,8 @@ module Bosh::Director
 
       @t_router = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_router], name: 'router')
 
+      @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
+
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
         name: 'dea',
         release: @release,
@@ -125,11 +128,19 @@ module Bosh::Director
         templates: [@t_nginx, @t_router, @t_warden],
         resource_pool: rp_small)
 
+      @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job',
+                                     name: 'needs_ruby',
+                                     release: @release,
+                                     templates: [@t_deps_ruby],
+                                     resource_pool: rp_small)
+
       @package_set_a = [@p_dea, @p_nginx, @p_syslog, @p_warden, @p_common, @p_ruby]
 
       @package_set_b = [@p_nginx, @p_common, @p_router, @p_warden, @p_ruby]
 
-      (@package_set_a + @package_set_b).each do |package|
+      @package_set_c = [@p_deps_ruby]
+
+      (@package_set_a + @package_set_b + @package_set_c).each do |package|
         release_version_model.packages << package
       end
     end
@@ -262,6 +273,75 @@ module Bosh::Director
       end
     end
 
+    context 'compiling packages with transitive dependencies' do
+      let(:agent) { instance_double('Bosh::Director::AgentClient') }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([@j_deps_ruby], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job) }
+      let(:net) { {'default' => 'network settings'} }
+      let(:vm_cid) { "vm-cid-0" }
+
+      before do
+        prepare_samples
+
+        vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+        allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
+        expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling))
+
+        initial_state = {
+            'deployment' => 'mycloud',
+            'resource_pool' => {},
+            'networks' => net
+        }
+
+        allow(AgentClient).to receive(:with_vm).and_return(agent)
+        allow(agent).to receive(:wait_until_ready)
+        allow(agent).to receive(:update_settings)
+        allow(agent).to receive(:apply).with(initial_state)
+        allow(agent).to receive(:compile_package) do |*args|
+          name = args[2]
+          {
+              'result' => {
+                  'sha1' => "compiled.#{name}.sha1",
+                  'blobstore_id' => "blob.#{name}.id"
+              }
+          }
+        end
+
+        allow(@director_job).to receive(:task_checkpoint)
+        allow(compiler).to receive(:with_compile_lock).and_yield
+        allow(cloud).to receive(:delete_vm)
+        allow(vm_creator).to receive(:create_for_instance_plan)
+      end
+
+      it 'sends information about immediate dependencies of the package being compiled' do
+        allow(cloud).to receive(:create_vm).
+                              with(instance_of(String), @stemcell_b.model.cid, {}, net, [], {}).
+                              and_return(vm_cid)
+
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "common", # package name
+                             "0.1-dev.1", # package version
+                             {}).ordered # immediate dependencies
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "ruby", # package name
+                             "0.1-dev.1", # package version
+                             {"common"=>{"name"=>"common", "version"=>"0.1-dev.1", "sha1"=>"compiled.common.sha1", "blobstore_id"=>"blob.common.id"}}).ordered # immediate dependencies
+        expect(agent).to receive(:compile_package).with(
+                             anything(), # source package blobstore id
+                             anything(), # source package sha1
+                             "needs_ruby", # package name
+                             "0.1-dev.1", # package version
+                             {"ruby"=>{"name"=>"ruby", "version"=>"0.1-dev.1", "sha1"=>"compiled.ruby.sha1", "blobstore_id"=>"blob.ruby.id"}}).ordered # immediate dependencies
+
+        allow(@j_deps_ruby).to receive(:use_compiled_package)
+
+        compiler.perform
+      end
+    end
+
     context 'when the deploy is cancelled and there is a pending compilation' do
       # this can happen when the cancellation comes in when there is a package to be compiled,
       # and the compilation is not even in-flight. e.g.
@@ -385,7 +465,6 @@ module Bosh::Director
 
         allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
         allow(compilation_config).to receive_messages(workers: 1)
-        allow(@network).to receive(:network_settings).and_return('network settings')
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
@@ -441,8 +520,6 @@ module Bosh::Director
       end
 
       before do # create vm
-        allow(@network).to receive(:reserve)
-        allow(@network).to receive(:network_settings)
         allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
 
@@ -454,7 +531,6 @@ module Bosh::Director
           expect(AgentClient).to receive(:with_vm).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
-          allow(@network).to receive(:release)
 
           compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield

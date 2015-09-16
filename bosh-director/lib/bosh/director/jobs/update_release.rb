@@ -28,14 +28,9 @@ module Bosh::Director
           @release_path = release_path
         end
 
-        @release_model = nil
-        @release_version_model = nil
+        @release_model, @release_version_model, @manifest, @name, @version = nil, nil, nil, nil, nil
 
         @rebase = !!options['rebase']
-
-        @manifest = nil
-        @name = nil
-        @version = nil
       end
 
       # Extracts release tarball, verifies release manifest and saves release in DB
@@ -51,14 +46,11 @@ module Bosh::Director
 
         single_step_stage("Verifying manifest") { verify_manifest(release_dir) }
 
-        with_release_lock(@name) {
-          process_release(release_dir)
-        }
+        with_release_lock(@name) { process_release(release_dir) }
 
         "Created release `#{@name}/#{@version}'"
 
       rescue Exception => e
-        remove_release_version_model
         raise e
 
       ensure
@@ -103,9 +95,7 @@ module Bosh::Director
 
         begin
           @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
-          unless @version == @manifest["version"]
-            logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'")
-          end
+          logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'") unless @version == @manifest["version"]
         rescue SemiSemantic::ParseError
           raise ReleaseVersionInvalid, "Release version invalid: #{@manifest["version"]}"
         end
@@ -129,18 +119,22 @@ module Bosh::Director
       def process_release(release_dir)
         @release_model = Models::Release.find_or_create(:name => @name)
 
-        if @rebase
-          @version = next_release_version
-        end
+        @version = next_release_version if @rebase
 
         version_attrs = { :release => @release_model, :version => @version.to_s }
-        version_attrs[:uncommitted_changes] = @uncommitted_changes if @uncommitted_changes
-        version_attrs[:commit_hash] = @commit_hash if @commit_hash
 
-        @release_is_new = false
-        @release_version_model = Models::ReleaseVersion.find_or_create(version_attrs) {
-          @release_is_new = true
-        }
+        release_is_new = false
+        @release_version_model = Models::ReleaseVersion.find_or_create(version_attrs){ release_is_new = true }
+
+        if release_is_new
+          @release_version_model.uncommitted_changes = @uncommitted_changes if @uncommitted_changes
+          @release_version_model.commit_hash = @commit_hash if @commit_hash
+          @release_version_model.save
+        else
+          if @release_version_model.commit_hash != @commit_hash || @release_version_model.uncommitted_changes != @uncommitted_changes
+            raise ReleaseVersionCommitHashMismatch, "release `#{@name}/#{@version}' has already been uploaded with commit_hash as `#{@commit_hash}' and uncommitted_changes as `#{@uncommitted_changes}'"
+          end
+        end
 
         single_step_stage("Resolving package dependencies") do
           resolve_package_dependencies(@manifest[@packages_folder])
@@ -148,7 +142,7 @@ module Bosh::Director
 
         @packages = {}
         process_packages(release_dir)
-        process_jobs(release_dir) if @release_is_new
+        process_jobs(release_dir)
 
         event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
         event_log.track("#{@name}/#{@version}") {}
@@ -200,13 +194,16 @@ module Bosh::Director
         registered_packages = []
 
         @manifest[@packages_folder].each do |package_meta|
-          # Checking whether we might have the same bits somewhere
+          # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
+          @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
+            if package.fingerprint != package_meta['fingerprint']
+              raise ReleaseInvalidPackage, "package `#{package_meta['name']}' had different fingerprint in previously uploaded release `#{@name}/#{@version}'"
+            end
+          end
 
           packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
+
           if packages.empty?
-            unless @release_is_new
-              raise ReleaseInvalidPackage, "package #{package_meta['name']}/#{package_meta['version']} not part of previous upload of release #{@name}/#{@version}"
-            end
             new_packages << package_meta
             next
           end
@@ -227,14 +224,25 @@ module Bosh::Director
             end
 
             if existing_package.release_versions.include? @release_version_model
+              if existing_package.blobstore_id.nil?
+                packages.each do |package|
+                  unless package.blobstore_id.nil?
+                    package_meta["blobstore_id"] = package.blobstore_id
+                    package_meta["sha1"] = package.sha1
+                    break
+                  end
+                end
+              end
               registered_packages << [existing_package, package_meta]
             else
               existing_packages << [existing_package, package_meta]
             end
+
           else
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
+
             packages.each do |package|
               unless package.blobstore_id.nil?
                 package_meta["blobstore_id"] = package.blobstore_id
@@ -246,13 +254,9 @@ module Bosh::Director
           end
         end
 
-        did_something = false
+        package_stemcell_hashes1 = create_packages(new_packages, release_dir)
 
-        package_stemcell_hashes1, created_package = create_packages(new_packages, release_dir)
-        did_something |= created_package
-
-        package_stemcell_hashes2, modified_package = use_existing_packages(existing_packages, release_dir)
-        did_something |= modified_package
+        package_stemcell_hashes2 = use_existing_packages(existing_packages, release_dir)
 
         if @compiled_release
           compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
@@ -264,11 +268,10 @@ module Bosh::Director
             end
           end
           consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
-          did_something |= create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
         else
-          did_something |= backfill_source_for_packages(registered_packages, release_dir)
+          backfill_source_for_packages(registered_packages, release_dir)
         end
-        did_something
       end
 
       # @return [boolean] true if sources were added to at least one package; false if the call had no effect.
@@ -293,7 +296,7 @@ module Bosh::Director
       # @return [Array<Hash>] package & stemcell matching pairs that were registered. empty if no packages were changed.
       def use_existing_packages(packages, release_dir)
         if packages.empty?
-          return [], false
+          return []
         end
 
         package_stemcell_hashes = []
@@ -319,17 +322,16 @@ module Bosh::Director
           end
         end
 
-        return package_stemcell_hashes, true
+        return package_stemcell_hashes
       end
 
       # Creates packages using provided metadata
       # @param [Array<Hash>] packages Packages metadata
       # @param [String] release_dir local path to the unpacked release
       # @return [Array<Hash>, boolean] array of compiled package & stemcell matching pairs that were registered, and a
-      # flag indicating if any changes were made to the database.
       def create_packages(package_metas, release_dir)
         if package_metas.empty?
-          return [], false
+          return []
         end
 
         package_stemcell_hashes = []
@@ -354,7 +356,7 @@ module Bosh::Director
           end
         end
 
-        return package_stemcell_hashes, true
+        return package_stemcell_hashes
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
@@ -450,8 +452,7 @@ module Bosh::Director
       def save_package_source_blob(package, package_meta, release_dir)
         return false unless package.blobstore_id.nil?
 
-        name, version = package_meta['name'], package_meta['version']
-        existing_blob = package_meta['blobstore_id']
+        name, version, existing_blob = package_meta['name'], package_meta['version'], package_meta['blobstore_id']
         desc = "package '#{name}/#{version}'"
 
         package.sha1 = package_meta['sha1']
@@ -500,6 +501,12 @@ module Bosh::Director
 
         @manifest["jobs"].each do |job_meta|
           # Checking whether we might have the same bits somewhere
+          @release_version_model.templates.select { |t| t.name == job_meta["name"] }.each do |tmpl|
+            if tmpl.fingerprint != job_meta["fingerprint"]
+              raise ReleaseExistingJobFingerprintMismatch, "job `#{job_meta["name"]}' had different fingerprint in previously uploaded release `#{@name}/#{@version}'"
+            end
+          end
+
           jobs = Models::Template.where(fingerprint: job_meta["fingerprint"]).all
 
           template = jobs.find do |job|
@@ -552,12 +559,14 @@ module Bosh::Director
           jobs.each do |template, _|
             job_desc = "#{template.name}/#{template.version}"
             logger.info("Using existing job `#{job_desc}'")
-            register_template(template)
+            register_template(template) unless template.release_versions.include? @release_version_model
           end
         end
 
         true
       end
+
+      private
 
       # Marks job template model as being used by release version
       # @param [Models::Template] template Job template model
@@ -565,8 +574,6 @@ module Bosh::Director
       def register_template(template)
         @release_version_model.add_template(template)
       end
-
-      private
 
       # Returns the next release version (to be used for rebased release)
       # @return [String]
@@ -576,16 +583,6 @@ module Bosh::Director
         strings = models.map(&:version)
         list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
         list.rebase(@version)
-      end
-
-      # Removes release version model, along with all packages and templates.
-      # @return [void]
-      def remove_release_version_model
-        return unless @release_version_model && !@release_version_model.new?
-
-        @release_version_model.remove_all_packages
-        @release_version_model.remove_all_templates
-        @release_version_model.destroy
       end
     end
   end

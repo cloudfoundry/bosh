@@ -2,6 +2,9 @@ require 'bosh/director/agent_message_converter'
 
 module Bosh::Director
   class AgentClient
+
+    PROTOCOL_VERSION = 2
+
     DEFAULT_POLL_INTERVAL = 1.0
 
     # in case of timeout errors
@@ -179,7 +182,7 @@ module Bosh::Director
       cond = result.new_cond
       timeout_time = Time.now.to_f + @timeout
 
-      request = { :method => method_name, :arguments => args }
+      request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
       if @encryption_handler
         @logger.info("Request: #{request}")

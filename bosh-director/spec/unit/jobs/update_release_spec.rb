@@ -72,7 +72,6 @@ module Bosh::Director
       end
 
       it 'should process packages for compiled release' do
-          #expect(job).to receive(:process_packages)
           expect(job).to receive(:create_packages)
           expect(job).to receive(:use_existing_packages)
           expect(job).to receive(:create_compiled_packages)
@@ -96,6 +95,8 @@ module Bosh::Director
         {
           'name' => 'appcloud',
           'version' => release_version,
+          'commit_hash' => '12345678',
+          'uncommitted_changes' => true,
           'jobs' => manifest_jobs,
           'packages' => manifest_packages,
         }
@@ -216,7 +217,7 @@ module Bosh::Director
         end
 
         context 'release already exists' do
-          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6') }
+          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
 
           context 'when rebase is passed' do
             let(:job_options) { { 'rebase' => true } }
@@ -261,9 +262,19 @@ module Bosh::Director
 
             it 'does not create a release' do
               expect(job).not_to receive(:create_package)
-              expect(job).not_to receive(:create_jobs)
+              expect(job).not_to receive(:create_job)
               job.perform
             end
+          end
+        end
+
+        context 'when the same release is uploaded with different commit hash' do
+          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true) }
+
+          it 'fails with a ReleaseVersionCommitHashMismatch exception' do
+            expect {
+              job.perform
+            }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch)
           end
         end
 
@@ -317,6 +328,18 @@ module Bosh::Director
               }
             ], release_dir)
             job.perform
+          end
+
+          it 'raises an error if a different fingerprint was detected for an already existing package' do
+            pkg = Models::Package.make(release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fake-sha-2')
+            release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+            release_version.add_package(pkg)
+
+            allow(job).to receive(:create_packages)
+
+            expect {
+              job.perform
+            }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package `fake-name-2' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
           end
         end
 
@@ -411,6 +434,18 @@ module Bosh::Director
 
           expect(Models::Template.all.size).to eq(2)
           expect(Models::Template.all.map(&:name)).to match_array(['fake-job-1', 'fake-job-2'])
+        end
+
+        it 'raises an error if a different fingerprint was detected for an already existing job' do
+          corrupted_job = Models::Template.make(release: release, name: 'fake-job-1', version: 'fake-version-1', fingerprint: 'different-finger-print', sha1: 'fake-sha1-1')
+          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          release_version.add_template(corrupted_job)
+
+          allow(job).to receive(:process_packages)
+
+          expect {
+            job.perform
+          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job `fake-job-1' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
         end
       end
     end
