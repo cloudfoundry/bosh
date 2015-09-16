@@ -1,7 +1,8 @@
 module Bosh::Director
   class InstanceUpdater::NetworkUpdater
-    def initialize(instance, agent_client, cloud, logger)
-      @instance = instance
+    def initialize(instance_plan, agent_client, cloud, logger)
+      @instance_plan = instance_plan
+      @instance = instance_plan.instance
       @agent_client = agent_client
       @cloud = cloud
       @logger = TaggedLogger.new(logger, 'network-configuration')
@@ -9,7 +10,7 @@ module Bosh::Director
 
     # return boolean indicating whether success to recreate vm
     def update
-      return @logger.debug('Skipping network re-configuration') unless @instance.networks_changed?
+      return @logger.debug('Skipping network re-configuration') unless @instance_plan.networks_changed?
 
       vm_cid = @instance.model.vm.cid
       network_settings = @instance.network_settings

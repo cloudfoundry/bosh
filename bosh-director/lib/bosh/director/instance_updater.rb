@@ -47,7 +47,7 @@ module Bosh::Director
         return
       end
 
-      unless try_to_update_in_place(instance_plan.instance)
+      unless try_to_update_in_place(instance_plan)
         @logger.debug('Failed to update in place. Recreating VM')
         recreate_vm(instance_plan, nil)
       end
@@ -270,7 +270,8 @@ module Bosh::Director
       end
     end
 
-    def try_to_update_in_place(instance)
+    def try_to_update_in_place(instance_plan)
+      instance = instance_plan.instance
       if instance.cloud_properties_changed?
         @logger.debug("Cloud Properties have changed. Can't update VM in place")
         return false
@@ -282,7 +283,7 @@ module Bosh::Director
       end
       @logger.debug('Trying to update VM settings in place')
 
-      network_updater = NetworkUpdater.new(instance, agent(instance), @cloud, @logger)
+      network_updater = NetworkUpdater.new(instance_plan, agent(instance), @cloud, @logger)
       success = network_updater.update
 
       unless success

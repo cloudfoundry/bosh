@@ -7,9 +7,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     attr_reader :reservation
+    attr_accessor :existing
 
     def obsolete?
       !!@obsolete
+    end
+
+    def desired?
+      !existing? && !obsolete?
     end
 
     def existing?

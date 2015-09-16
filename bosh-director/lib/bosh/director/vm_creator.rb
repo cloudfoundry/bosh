@@ -63,6 +63,7 @@ module Bosh::Director
       attach_disks_for(instance)
 
       instance.apply_vm_state
+      instance_plan.mark_desired_network_plans_as_existing
     end
 
     def attach_disks_for(instance)
