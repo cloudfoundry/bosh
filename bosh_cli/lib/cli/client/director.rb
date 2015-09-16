@@ -96,6 +96,7 @@ module Bosh
         def upload_remote_stemcell(stemcell_location, options = {})
           options                = options.dup
           payload                = { 'location' => stemcell_location }
+          payload[:sha1]         = options[:sha1] if options[:sha1]
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
 

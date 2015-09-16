@@ -102,6 +102,15 @@ module Bosh::Cli::Command
         end
       end
 
+      if manifest.hash['resource_pools']
+        build_manifest.hash['resource_pools'].each do |resource_pool|
+          unless resource_pool['stemcell']['url'].blank?
+            err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
+            run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1']
+          end
+        end
+      end
+
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
       inspect_deployment_changes(

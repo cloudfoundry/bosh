@@ -38,6 +38,20 @@ module Bosh::Director
           expect_redirect_to_queued_task(last_response)
         end
 
+        context 'when a sha1 is provided' do
+          it 'allows json body with remote stemcell location and sha1' do
+            post '/', Yajl::Encoder.encode({'location' => 'http://stemcell_url', 'sha1' => 'shawone'}), { 'CONTENT_TYPE' => 'application/json' }
+            expect_redirect_to_queued_task(last_response)
+          end
+
+          it 'allow form parameters with a stemcell local file path and sha1' do
+            allow(File).to receive(:exists?).with('/path/to/stemcell.tgz').and_return(true)
+
+            post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'shawone'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
         it 'only consumes application/json and multipart/form-data' do
           post '/', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
           expect(last_response.status).to eq(404)
