@@ -3,17 +3,17 @@ require 'bosh/director/stopper'
 
 module Bosh::Director
   describe Stopper do
-    subject(:stopper) { described_class.new(instance, target_state, skip_drain, config, logger) }
+    subject(:stopper) { described_class.new(instance_plan, target_state, skip_drain, config, logger) }
 
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
         apply_spec: 'fake-spec',
         resource_pool_changed?: false,
         persistent_disk_changed?: false,
-        networks_changed?: false,
         model: instance_model
       })
     end
+    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, networks_changed?: false) }
     let(:instance_model) { Models::Instance.make }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
@@ -139,7 +139,7 @@ module Bosh::Director
       end
 
       context 'when the networks have changed' do
-        before { allow(instance).to receive(:networks_changed?).and_return(true) }
+        before { allow(instance_plan).to receive(:networks_changed?).and_return(true) }
         its(:shutting_down?) { should be(true) }
       end
 

@@ -18,11 +18,12 @@ module Bosh::Director
       @logger.info("Deleting instance '#{instance}'")
 
       event_log_stage.advance_and_track(instance.to_s) do
+        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
+
         error_ignorer.with_force_check do
-          stop(instance)
+          stop(instance_plan)
         end
 
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
         vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
 
         unless instance.model.compilation
@@ -60,9 +61,9 @@ module Bosh::Director
 
     private
 
-    def stop(instance)
-      skip_drain = @skip_drain_decider.for_job(instance.job_name) # FIXME: can we do something better?
-      stopper = Stopper.new(instance, 'stopped', skip_drain, Config, @logger)
+    def stop(instance_plan)
+      skip_drain = @skip_drain_decider.for_job(instance_plan.instance.job_name) # FIXME: can we do something better?
+      stopper = Stopper.new(instance_plan, 'stopped', skip_drain, Config, @logger)
       stopper.stop
     end
 

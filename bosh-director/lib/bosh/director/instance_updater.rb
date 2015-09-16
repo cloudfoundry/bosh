@@ -38,7 +38,7 @@ module Bosh::Director
       only_trusted_certs_changed = trusted_certs_change_only?(instance) # figure this out before we start changing things
 
       Preparer.new(instance, agent(instance), @logger).prepare
-      stop(instance)
+      stop(instance_plan)
       take_snapshot(instance)
 
       if instance.state == 'detached'
@@ -103,9 +103,10 @@ module Bosh::Director
       instance.changes.include?(:trusted_certs) && instance.changes.size == 1
     end
 
-    def stop(instance)
+    def stop(instance_plan)
+      instance = instance_plan.instance
       skip_drain = deployment_plan(instance).skip_drain_for_job?(instance.job.name)
-      stopper = Stopper.new(instance, instance.state, skip_drain, Config, @logger)
+      stopper = Stopper.new(instance_plan, instance.state, skip_drain, Config, @logger)
       stopper.stop
     end
 

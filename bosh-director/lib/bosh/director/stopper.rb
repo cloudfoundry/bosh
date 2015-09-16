@@ -1,7 +1,8 @@
 module Bosh::Director
   class Stopper
-    def initialize(instance, target_state, skip_drain, config, logger)
-      @instance = instance
+    def initialize(instance_plan, target_state, skip_drain, config, logger)
+      @instance_plan = instance_plan
+      @instance = instance_plan.instance
       @target_state = target_state
       @skip_drain = skip_drain
       @config = config
@@ -46,7 +47,7 @@ module Bosh::Director
         @target_state == 'detached' ||
         @instance.resource_pool_changed? ||
         @instance.persistent_disk_changed? ||
-        @instance.networks_changed?
+        @instance_plan.networks_changed?
     end
 
     def wait_for_dynamic_drain(initial_drain_time)

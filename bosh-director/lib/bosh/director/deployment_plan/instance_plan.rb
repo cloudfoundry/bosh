@@ -32,6 +32,12 @@ module Bosh
 
         attr_accessor :network_plans
 
+        def networks_changed?
+          desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+          obsolete_plans = network_plans.select(&:obsolete?)
+          obsolete_plans.any? || desired_plans.any?
+        end
+
         def obsolete?
           desired_instance.nil?
         end

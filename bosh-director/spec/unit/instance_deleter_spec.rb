@@ -71,7 +71,7 @@ module Bosh::Director
       let(:stopper) { instance_double(Stopper) }
       before do
         allow(Stopper).to receive(:new).with(
-            instance,
+            instance_of(DeploymentPlan::InstancePlan),
             'stopped',
             true,
             Config,
