@@ -23,7 +23,7 @@ module Bosh::Director
       end
 
       def reserve(reservation)
-        #TODO: We should not be calling reserve on reservations that have already been reserved
+        # We should not be calling reserve on reservations that have already been reserved
         return if reservation.reserved?
 
         # Do nothing for Dynamic Network

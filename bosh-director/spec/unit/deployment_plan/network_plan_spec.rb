@@ -35,7 +35,7 @@ module Bosh::Director::DeploymentPlan
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
-          expect(desired_plans.count).to eq(2)
+          expect(desired_plans.count).to eq(1)
           expect(obsolete_plans.count).to eq(1)
         end
 
@@ -69,17 +69,8 @@ module Bosh::Director::DeploymentPlan
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
-          expect(desired_plans.count).to eq(3)
+          expect(desired_plans.count).to eq(2)
           expect(obsolete_plans.count).to eq(1)
-        end
-
-        it 'should update instance#desired_network_reservations with desired reservations' do
-          network_planner.plan_ips(desired_reservations, existing_reservations)
-          allow(instance).to receive(:desired_network_reservations).and_return(desired_reservations)
-
-          reservations = instance.desired_network_reservations
-
-          expect(reservations.count).to eq(3)
         end
       end
 

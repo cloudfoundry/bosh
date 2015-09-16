@@ -67,7 +67,6 @@ module Bosh::Director
         start!(instance)
       end
 
-
       wait_until_running(instance)
 
       if instance.state == "started" && current_state["job_state"] != "running"
