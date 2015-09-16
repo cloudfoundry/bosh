@@ -7,15 +7,15 @@ describe 'deploy', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['name'] = 'fake-name1'
     deploy_from_scratch(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
+    expect_running_vms_with_names_and_count('fake-name1' => 3)
 
     manifest_hash['jobs'].first['name'] = 'fake-name2'
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name2/0 fake-name2/1 fake-name2/2))
+    expect_running_vms_with_names_and_count('fake-name2' => 3)
 
     manifest_hash['jobs'].first['name'] = 'fake-name1'
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
+    expect_running_vms_with_names_and_count('fake-name1' => 3)
   end
 
   it 'deployment fails when starting task fails' do
@@ -53,7 +53,7 @@ describe 'deploy', type: :integration do
       it 'respects the cloud related configurations in the deployment manifest' do
         deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
 
-        expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
+        expect_running_vms_with_names_and_count('foobar' => 3)
         expect_output('deployments', <<-OUT)
           +--------+----------------------+-------------------+--------------+
           | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
@@ -202,15 +202,15 @@ message on stderr of job 1 new version pre-start script
 
     manifest_hash['jobs'].first['instances'] = 3
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
+    expect_running_vms_with_names_and_count('foobar' => 3)
 
     manifest_hash['jobs'].first['instances'] = 2
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1))
+    expect_running_vms_with_names_and_count('foobar' => 2)
 
     manifest_hash['jobs'].first['instances'] = 4
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
+    expect_running_vms_with_names_and_count('foobar' => 4)
   end
 
   it 'supports dynamically sized resource pools' do
@@ -221,22 +221,22 @@ message on stderr of job 1 new version pre-start script
     manifest_hash['jobs'].first['instances'] = 3
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
+    expect_running_vms_with_names_and_count('foobar' => 3)
 
     # scale down
     manifest_hash['jobs'].first['instances'] = 1
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0))
+    expect_running_vms_with_names_and_count('foobar' => 1)
 
     # scale up, below original size
     manifest_hash['jobs'].first['instances'] = 2
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1))
+    expect_running_vms_with_names_and_count('foobar' => 2)
 
     # scale up, above original size
     manifest_hash['jobs'].first['instances'] = 4
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
+    expect_running_vms_with_names_and_count('foobar' => 4)
   end
 
   it 'outputs properly formatted deploy information' do
@@ -391,20 +391,6 @@ Can't use release 'test_release_a/1'. It references packages without source code
           end
         end
       end
-    end
-  end
-
-  def expect_running_vms(job_name_index_list)
-    vms = director.vms
-    check_for_unknowns(vms)
-    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
-    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
-  end
-
-  def check_for_unknowns(vms)
-    uniq_vm_names = vms.map(&:job_name_index).uniq
-    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown/unknown'
-      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
     end
   end
 end

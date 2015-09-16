@@ -68,30 +68,30 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['jobs'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
         expect_errands('fake-errand-name', 'second-errand-name')
 
         # with keep alive, does not delete/create errand vms (always exactly 1 fake-errand-name/0)
         output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1,'fake-errand-name' => 1)
 
         output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1, 'fake-errand-name' => 1)
 
         # without keep alive, deletes vm (no fake-errand-name/0)
         output, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
 
         output, exit_code = bosh_runner.run('run errand second-errand-name', return_exit_code: true)
         expect(output).to include('second-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
       end
     end
 
@@ -106,29 +106,29 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['jobs'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
 
         expect_errands('fake-errand-name', 'second-errand-name')
 
         output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1, 'fake-errand-name' => 1)
 
         output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1, 'fake-errand-name' => 1)
 
         output, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
 
         output, exit_code = bosh_runner.run('run errand second-errand-name', return_exit_code: true)
         expect(output).to include('second-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
+        expect_running_vms_with_names_and_count('foobar' => 1)
       end
     end
   end

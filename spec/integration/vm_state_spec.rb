@@ -7,18 +7,18 @@ describe 'vm state', type: :integration do
     it 'removes vm but keeps its disk' do
       deploy_from_scratch
 
-      expect(director.vms.map(&:job_name_index)).to contain_exactly('foobar/0', 'foobar/1', 'foobar/2')
-
+      vms = director.vms
+      vm_with_index_0 = vms.find{ |vm| vm.index == '0'}
       disks_before_detaching = current_sandbox.cpi.disk_cids
 
       expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 has been detached}
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
 
-      expect(director.vms.map(&:job_name_index)).to contain_exactly('foobar/1', 'foobar/2')
+      expect(director.vms.map(&:instance_id)).to eq(vms.map(&:instance_id) - [vm_with_index_0.instance_id])
 
       bosh_runner.run('start foobar 0')
 
-      expect(director.vms.map(&:job_name_index)).to contain_exactly('foobar/0', 'foobar/1', 'foobar/2')
+      expect(director.vms.map(&:instance_id)).to eq(vms.map(&:instance_id))
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
     end
 

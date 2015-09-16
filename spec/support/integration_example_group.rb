@@ -177,9 +177,25 @@ module IntegrationExampleGroup
       to include(format_output(expected_output))
   end
 
-  def expect_running_vms(job_name_index_list)
+  def check_for_unknowns(vms)
+    uniq_vm_names = vms.map(&:job_name_index).uniq
+    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown/unknown'
+      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
+    end
+  end
+
+  def expect_running_vms_with_names_and_count(job_names_to_vm_counts)
     vms = director.vms
-    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
+    check_for_unknowns(vms)
+    names = vms.map(&:job_name)
+
+    total_expected_vms = job_names_to_vm_counts.values.inject(0) {|sum, count| sum + count}
+    expect(vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{vms.size}. Present were VMs with job name: #{names}"
+
+    job_names_to_vm_counts.each do |job_name, expected_count|
+      expect(names.select {|name| name == job_name}.size).to eq(expected_count)
+    end
+
     expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 end

@@ -435,7 +435,7 @@ describe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['first-job/0'])
+      expect_running_vms_with_names_and_count('first-job' => 1)
 
       manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
       output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)

@@ -14,7 +14,7 @@ module Bosh::Spec
 
     def vms(deployment_name = '', options={})
       vms_details(deployment_name, options).map do |vm_data|
-        Vm.new(
+        Bosh::Spec::Vm.new(
           @waiter,
           vm_data[:job_index],
           vm_data[:state],
@@ -136,18 +136,27 @@ module Bosh::Spec
       headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
       vms = values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+
+      job_name_match_index = 1
+      instance_id_match_index =2
+      index_match_index = 3
+
       vms.each do |vm|
-        match_data = /(\w+)\/([0-9a-f]{8}-[0-9a-f-]{27})\s\((\d+)\)/.match(vm[:vm])
-        vm[:job_name] = match_data[1]
-        vm[:instance_id] = match_data[2]
-        vm[:index] = match_data[3]
-        vm[:job_index] = "#{match_data[1]}/#{match_data[2]}"
+        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})\s\((\d+)\)/.match(vm[:vm])
+        if row_is_ip_address_for_previous_row(match_data)
+          vm[:is_ip_address_for_previous_row] = true
+        else
+          vm[:job_name] = match_data[job_name_match_index]
+          vm[:instance_id] = match_data[instance_id_match_index]
+          vm[:index] = match_data[index_match_index]
+          vm[:job_index] = "#{match_data[job_name_match_index]}/#{match_data[index_match_index]}"
+        end
       end
 
       # collapse rows for single VM with multiple IPs
       result = []
       vms.each_with_index do |vm, i|
-        if vm[:job_index].empty?
+        if vm[:is_ip_address_for_previous_row]
           vms[i-1][:ips] = Array(vms[i-1][:ips])
           vms[i-1][:ips] << vm[:ips]
         else
@@ -156,6 +165,10 @@ module Bosh::Spec
       end
 
       result
+    end
+
+    def row_is_ip_address_for_previous_row(match_data)
+      match_data.nil? || match_data.size != 4
     end
   end
 end
