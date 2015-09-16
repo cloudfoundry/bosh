@@ -225,6 +225,22 @@ describe 'cli: stemcell', type: :integration do
           end
         end
       end
+
+      context 'when a sha1 is provided' do
+        it 'accepts shas' do
+          output = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 2ff0f2c5aac7ec46e0482d764fe8effed930bf0a")
+          expect(output).to include("Stemcell uploaded and created.")
+        end
+
+        it 'fails if the sha is incorrect' do
+          output, exit_code = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 shawone", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(output).to include("Error 50005")
+          expect(exit_code).to eq(1)
+        end
+      end
     end
   end
 end

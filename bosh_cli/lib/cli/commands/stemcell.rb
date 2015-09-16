@@ -31,6 +31,7 @@ module Bosh::Cli
 Note that --skip-if-exists and --fix can not be used together."
     option '--skip-if-exists', 'skips upload if stemcell already exists'
     option '--fix', 'replaces the stemcell if already exists'
+    option '--sha1 SHA1', 'sha1 of the remote stemcell'
     def upload(stemcell_location)
       auth_required
       show_current_state
@@ -75,7 +76,10 @@ Note that --skip-if-exists and --fix can not be used together."
         say("Using remote stemcell `#{stemcell_location}'")
       end
 
-      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location, options[:fix]?{fix: true}:{})
+      selected_options = {}
+      selected_options[:fix] = options[:fix] if options[:fix]
+      selected_options[:sha1] = options[:sha1] if options[:sha1]
+      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location, selected_options)
       success_message = 'Stemcell uploaded and created.'
 
       if status == :error && options[:skip_if_exists] && last_event(task_id)['error']['code'] == STEMCELL_EXISTS_ERROR_CODE

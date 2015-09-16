@@ -23,6 +23,23 @@ module Bosh::Director
 
         expect(subject.create_stemcell_from_url(username, stemcell_url, options)).to eql(task)
       end
+
+      context 'when a sha1 is provided for the stemcell' do
+        let(:options) {
+          {sha1: 'shawone'}
+        }
+
+        it 'enqueues a task to upload a remote stemcell' do
+          expect(job_queue).to receive(:enqueue).with(
+            username,
+            Jobs::UpdateStemcell,
+            'create stemcell',
+            [stemcell_url, { remote: true, sha1: 'shawone'}],
+          ).and_return(task)
+
+          expect(subject.create_stemcell_from_url(username, stemcell_url, options)).to eql(task)
+        end
+      end
     end
 
     describe '#create_stemcell_from_file_path' do
@@ -40,6 +57,25 @@ module Bosh::Director
           ).and_return(task)
 
           expect(subject.create_stemcell_from_file_path(username, stemcell_path, options)).to eql(task)
+        end
+
+        context 'when a sha1 is provided for the stemcell' do
+          let(:options) {
+            {sha1: 'shawone'}
+          }
+
+          before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
+
+          it 'enqueues a task to upload a remote stemcell' do
+            expect(job_queue).to receive(:enqueue).with(
+              username,
+              Jobs::UpdateStemcell,
+              'create stemcell',
+              [stemcell_path, { sha1: 'shawone' }],
+            ).and_return(task)
+
+            expect(subject.create_stemcell_from_file_path(username, stemcell_path, options)).to eql(task)
+          end
         end
       end
 
