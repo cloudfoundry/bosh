@@ -64,7 +64,7 @@ module Bosh::Director
       # @param [AvailabilityZone] availability zone
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = Network::VALID_DEFAULTS, availability_zone = nil)
-        if reservation.type != DynamicNetworkReservation
+        unless reservation.dynamic?
           raise NetworkReservationWrongType,
             "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to dynamic pool"
         end

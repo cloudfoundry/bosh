@@ -11,7 +11,7 @@ module Bosh
           desired_instance = DeploymentPlan::DesiredInstance.new(nil, {}, nil)
 
           network_plans = NetworkPlanner.new(logger)
-                            .plan_ips(instance.network_reservations, instance.original_network_reservations)
+                            .plan_ips(instance.desired_network_reservations, instance.existing_network_reservations)
 
           instance_plan = new(
             existing_instance: instance.model,

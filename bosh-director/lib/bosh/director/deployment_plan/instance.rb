@@ -36,7 +36,7 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      attr_reader :original_network_reservations, :network_reservations
+      attr_reader :existing_network_reservations, :desired_network_reservations
 
       def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
         instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
@@ -73,10 +73,10 @@ module Bosh::Director
         @current_state = instance_state || {}
 
         # reservations generated from deployment manifest
-        @network_reservations = InstanceNetworkReservations.new(logger)
+        @desired_network_reservations = InstanceNetworkReservations.new(logger)
 
         # reservation generated from current state/DB
-        @original_network_reservations = InstanceNetworkReservations.new(logger)
+        @existing_network_reservations = InstanceNetworkReservations.new(logger)
 
         @state = state
 
@@ -151,11 +151,11 @@ module Bosh::Director
 
       def bind_existing_reservations(state)
         if deployment.using_global_networking?
-          @original_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
+          @existing_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
         else
           # This is for backwards compatibility when we did not store
           # network reservations in DB and constructed them from instance state
-          @original_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
+          @existing_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
         end
       end
 
@@ -211,7 +211,7 @@ module Bosh::Director
       # Adds a new network to this instance
       # @param [NetworkReservation] reservation
       def add_network_reservation(reservation)
-        @network_reservations.add(reservation)
+        @desired_network_reservations.add(reservation)
       end
 
       ##
@@ -223,7 +223,7 @@ module Bosh::Director
         end
 
         network_settings = {}
-        @network_reservations.each do |reservation|
+        @desired_network_reservations.each do |reservation|
           network_name = reservation.network.name
           network_settings[network_name] = reservation.network.network_settings(reservation, default_properties[network_name], availability_zone)
 

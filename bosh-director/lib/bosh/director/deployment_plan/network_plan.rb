@@ -27,17 +27,18 @@ module Bosh::Director::DeploymentPlan
       existing_network_plans = []
 
       existing_reservations.each do |existing_reservation|
-        reservation = desired_reservations.find { |ip| ip.network == existing_reservation.network }
-        if reservation && existing_reservation.reserved?
-          @logger.debug("Existing reservation #{existing_reservation} is still needed by #{reservation}")
+        desired_reservation = desired_reservations.find { |ip| ip.network == existing_reservation.network }
 
-          if both_are_dynamic_reservations(existing_reservation, reservation) ||
-            both_are_static_reservations_with_same_ip(existing_reservation, reservation)
+        if desired_reservation && existing_reservation.reserved?
+          @logger.debug("Existing reservation #{existing_reservation} is still needed by #{desired_reservation}")
+
+          if both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
+            both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
             existing_network_plans << NetworkPlan.new(reservation: existing_reservation, existing: true)
-            @logger.debug("Found matching existing reservation #{existing_reservation} for '#{reservation}'")
+            @logger.debug("Found matching existing reservation #{existing_reservation} for '#{desired_reservation}'")
             unplaced_existing_reservations.delete(existing_reservation)
-            reservation.resolve_ip(existing_reservation.ip) if reservation.is_a?(Bosh::Director::DynamicNetworkReservation)
-            reservation.mark_reserved_as(reservation.type)
+            desired_reservation.resolve_ip(existing_reservation.ip) if desired_reservation.dynamic?
+            desired_reservation.mark_reserved
           end
         else
           @logger.debug("Unneeded reservation #{existing_reservation}")
@@ -58,14 +59,13 @@ module Bosh::Director::DeploymentPlan
     private
 
     def both_are_dynamic_reservations(existing_reservation, reservation)
-
-      existing_reservation.reserved_as.name == reservation.type.name &&
-        reservation.is_a?(Bosh::Director::DynamicNetworkReservation)
+      existing_reservation.type == reservation.type &&
+        reservation.dynamic?
     end
 
     def both_are_static_reservations_with_same_ip(existing_reservation, reservation)
-      existing_reservation.reserved_as.name == reservation.type.name &&
-        reservation.is_a?(Bosh::Director::StaticNetworkReservation) &&
+      existing_reservation.type == reservation.type &&
+        reservation.static? &&
         reservation.ip == existing_reservation.ip
     end
   end

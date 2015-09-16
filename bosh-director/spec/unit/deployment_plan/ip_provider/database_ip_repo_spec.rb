@@ -49,33 +49,32 @@ module Bosh::Director::DeploymentPlan
     end
 
     context :add do
-      def dynamic_reservation_bound_to_existing_with_ip(ip)
+      def dynamic_reservation_with_ip(ip)
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network_without_static_pool)
+        reservation.resolve_ip(ip)
+        reservation.mark_reserved
+        ip_repo.add(reservation)
+
+        reservation
+      end
+
+      let(:network_without_static_pool) do
         network_spec['subnets'].first['static'] = []
-        other_network = ManualNetwork.new(network_spec, availability_zones, global_network_resolver, logger)
-
-        dynamic_reservation = BD::DynamicNetworkReservation.new(instance, other_network)
-        dynamic_reservation.resolve_ip(ip)
-
-        network_spec['subnets'].first['static'] = [ip]
-        existing_reservation = BD::ExistingNetworkReservation.new(instance, network, ip)
-        existing_reservation.mark_reserved_as(BD::DynamicNetworkReservation)
-        ip_repo.add(existing_reservation)
-
-        dynamic_reservation
+        ManualNetwork.new(network_spec, availability_zones, global_network_resolver, logger)
       end
 
       context 'when reservation changes type' do
         context 'from Static to Dynamic' do
           it 'updates type of reservation' do
             network_spec['subnets'].first['static'] = ['192.168.1.5']
-            static_reservation = BD::StaticNetworkReservation.new(instance, network, '192.168.1.5')
+            static_reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
             ip_repo.add(static_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             original_address = Bosh::Director::Models::IpAddress.first
             expect(original_address.static).to eq(true)
 
-            dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.1.5')
+            dynamic_reservation = dynamic_reservation_with_ip('192.168.1.5')
             ip_repo.add(dynamic_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -87,14 +86,15 @@ module Bosh::Director::DeploymentPlan
 
         context 'from Dynamic to Static' do
           it 'update type of reservation' do
-            dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.1.5')
+            dynamic_reservation = dynamic_reservation_with_ip('192.168.1.5')
             ip_repo.add(dynamic_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             original_address = Bosh::Director::Models::IpAddress.first
             expect(original_address.static).to eq(false)
 
-            static_reservation = BD::StaticNetworkReservation.new(instance, network, '192.168.1.5')
+            network_spec['subnets'].first['static'] = ['192.168.1.5']
+            static_reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
             ip_repo.add(static_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -106,13 +106,14 @@ module Bosh::Director::DeploymentPlan
 
         context 'from Existing to Static' do
           it 'updates type of reservation' do
-            dynamic_reservation = dynamic_reservation_bound_to_existing_with_ip('192.168.1.5')
+            dynamic_reservation = dynamic_reservation_with_ip('192.168.1.5')
             ip_repo.add(dynamic_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             original_address = Bosh::Director::Models::IpAddress.first
             expect(original_address.static).to eq(false)
 
+            network_spec['subnets'].first['static'] = ['192.168.1.5']
             existing_reservation = BD::ExistingNetworkReservation.new(instance, network, '192.168.1.5')
             ip_repo.add(existing_reservation)
 
@@ -133,7 +134,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           network_spec['subnets'].first['static'] = ['192.168.1.5']
-          reservation = BD::StaticNetworkReservation.new(instance, network, '192.168.1.5')
+          reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
           ip_repo.add(reservation)
 
           saved_address = Bosh::Director::Models::IpAddress.order(:address).last
@@ -149,8 +150,8 @@ module Bosh::Director::DeploymentPlan
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
           other_instance = double(:instance, model: Bosh::Director::Models::Instance.make, availability_zone: BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
-          original_static_network_reservation = BD::StaticNetworkReservation.new(instance, network, '192.168.1.5')
-          new_static_network_reservation = BD::StaticNetworkReservation.new(other_instance, network, '192.168.1.5')
+          original_static_network_reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
+          new_static_network_reservation = BD::DesiredNetworkReservation.new_static(other_instance, network, '192.168.1.5')
 
           ip_repo.add(original_static_network_reservation)
 
@@ -162,7 +163,7 @@ module Bosh::Director::DeploymentPlan
         it 'should succeed if it is reserved by the same instance' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
-          static_network_reservation = BD::StaticNetworkReservation.new(instance, network, '192.168.1.5')
+          static_network_reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
 
           ip_repo.add(static_network_reservation)
 
@@ -174,7 +175,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe :allocate_dynamic_ip do
-      let(:reservation) { BD::DynamicNetworkReservation.new(instance, network) }
+      let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, network) }
 
       context 'when there are no IPs reserved for that network' do
         it 'returns the first in the range' do
@@ -224,13 +225,13 @@ module Bosh::Director::DeploymentPlan
         it 'returns first non-reserved IP' do
           network_spec['subnets'].first['static'] = ['192.168.1.2', '192.168.1.4']
 
-          reservation_1 = BD::StaticNetworkReservation.new(instance, network, '192.168.1.2')
-          reservation_2 = BD::StaticNetworkReservation.new(instance, network, '192.168.1.4')
+          reservation_1 = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.2')
+          reservation_2 = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.4')
 
           ip_repo.add(reservation_1)
           ip_repo.add(reservation_2)
 
-          reservation_3 = BD::DynamicNetworkReservation.new(instance, network)
+          reservation_3 = BD::DesiredNetworkReservation.new_dynamic(instance, network)
           ip_address = ip_repo.allocate_dynamic_ip(reservation_3, subnet)
 
           expect(ip_address).to eq(cidr_ip('192.168.1.3'))

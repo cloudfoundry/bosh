@@ -32,18 +32,19 @@ module Bosh::Director::DeploymentPlan
                      .flatten
 
       if static_ips.include?(cidr_ip.to_i)
-        reservation_type = Bosh::Director::StaticNetworkReservation
+        reservation_type = :static
       else
-        reservation_type = Bosh::Director::DynamicNetworkReservation
+        reservation_type = :dynamic
       end
       reserve_with_instance_validation(
         reservation.instance,
         cidr_ip,
         reservation,
-        reservation_type.eql?(Bosh::Director::StaticNetworkReservation)
+        reservation_type.eql?(:static)
       )
 
-      reservation.mark_reserved_as(reservation_type)
+      reservation.resolve_type(reservation_type)
+      reservation.mark_reserved
       @logger.debug("Reserved ip '#{cidr_ip}' for #{reservation.network.name} as #{reservation_type}")
     end
 

@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :network_settings do
     it 'should provide the network settings from the subnet' do
-      reservation = BD::StaticNetworkReservation.new(instance, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(instance, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation, [])).to eq({
             'ip' => '192.168.1.2',
@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::StaticNetworkReservation.new(instance, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(instance, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation)).to eq({
             'ip' => '192.168.1.2',
@@ -82,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::DynamicNetworkReservation.new(instance, manual_network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(instance, manual_network)
 
       expect {
         manual_network.network_settings(reservation)

@@ -51,8 +51,8 @@ module Bosh::Director
           job_name: 'fake-job-name',
           index: 5,
           to_s: 'fake-job-name/5',
-          network_reservations: fake_network_reservations,
-          original_network_reservations: []
+          desired_network_reservations: fake_network_reservations,
+          existing_network_reservations: []
         )
 
         allow(fake_network_reservations).to receive(:map) do

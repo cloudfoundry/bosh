@@ -104,7 +104,7 @@ module Bosh::Director::DeploymentPlan
           })
       end
 
-      let(:reservation) { Bosh::Director::StaticNetworkReservation.new(instance, network, ipaddress) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_static(instance, network, ipaddress) }
 
       let(:current_state) { {'networks' => {network_name => network_info}} }
 
@@ -122,7 +122,7 @@ module Bosh::Director::DeploymentPlan
           DynamicNetwork.new(network_name, network_name, subnets, logger)
         end
 
-        let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
         before do
           ip_provider.reserve(reservation)
           instance.add_network_reservation(reservation)
@@ -230,7 +230,7 @@ module Bosh::Director::DeploymentPlan
           )
 
         end
-        let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
 
         before do
           allow(plan).to receive(:network).with(network_name).and_return(network)
@@ -484,7 +484,7 @@ module Bosh::Director::DeploymentPlan
       before do
         instance.configuration_hash = 'fake-desired-configuration-hash'
 
-        reservation = Bosh::Director::DynamicNetworkReservation.new(instance, network)
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
         instance.add_network_reservation(reservation)
 
         instance.bind_unallocated_vm
@@ -894,7 +894,7 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
-      let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
@@ -999,7 +999,7 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
-      let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }

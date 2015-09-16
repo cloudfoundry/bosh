@@ -317,7 +317,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     let(:subnets) { [] }
 
     it 'should provide dynamic network settings' do
-      reservation = BD::DynamicNetworkReservation.new(instance, @network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(instance, @network)
       reservation.resolve_ip(4294967295)
       expect(@network.network_settings(reservation,[])).to eq({
             'type' => 'dynamic',
@@ -327,7 +327,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::DynamicNetworkReservation.new(instance, @network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(instance, @network)
       reservation.resolve_ip(4294967295)
       expect(@network.network_settings(reservation)).to eq({
             'type' => 'dynamic',
@@ -337,7 +337,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should fail when for static reservation' do
-      reservation = BD::StaticNetworkReservation.new(instance, @network, 1)
+      reservation = BD::DesiredNetworkReservation.new_static(instance, @network, 1)
       expect {
         @network.network_settings(reservation)
       }.to raise_error BD::NetworkReservationWrongType
@@ -364,7 +364,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       it 'returns settings from subnet that belongs to specified availability zone' do
 
-        reservation = BD::DynamicNetworkReservation.new(instance, network)
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
 
         expect(network.network_settings(reservation, [], az2)).to eq({
           'type' => 'dynamic',
@@ -374,7 +374,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'returns first subnet if instance does not have availability zone' do
-        reservation = BD::DynamicNetworkReservation.new(instance, network)
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
 
         expect(network.network_settings(reservation, [])).to eq({
           'type' => 'dynamic',
@@ -397,7 +397,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                 }]
             }, azs, logger)
 
-        reservation = BD::DynamicNetworkReservation.new(instance, network)
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
 
         unknown_az = BD::DeploymentPlan::AvailabilityZone.new('fake-unknown-az', {})
         expect {

@@ -321,9 +321,9 @@ module Bosh::Director
             static_ips = network.static_ips
 
             if static_ips
-              reservation = StaticNetworkReservation.new(instance, network.deployment_network, static_ips[index])
+              reservation = DesiredNetworkReservation.new_static(instance, network.deployment_network, static_ips[index])
             else
-              reservation = DynamicNetworkReservation.new(instance, network.deployment_network)
+              reservation = DesiredNetworkReservation.new_dynamic(instance, network.deployment_network)
             end
             instance.add_network_reservation(reservation)
           end
@@ -337,8 +337,8 @@ module Bosh::Director
           # network_reservations side effects
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(
-                              instance_plan.instance.network_reservations,
-                              instance_plan.instance.original_network_reservations
+                              instance_plan.instance.desired_network_reservations,
+                              instance_plan.instance.existing_network_reservations
                             )
           instance_plan.network_plans = network_plans
         end

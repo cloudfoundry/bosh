@@ -42,7 +42,8 @@ module Bosh::Director
             if ip
               @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
-              reservation.mark_reserved_as(DynamicNetworkReservation)
+              reservation.resolve_type(:dynamic)
+              reservation.mark_reserved
               return
             end
           end
@@ -90,23 +91,22 @@ module Bosh::Director
 
       def mark_reserved_with_reservation_type(reservation, subnet)
         if subnet.static_ips.include?(reservation.ip.to_i)
-          reservation.mark_reserved_as(StaticNetworkReservation)
+          reservation.resolve_type(:static)
+          reservation.mark_reserved
           @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
         else
-          reservation.mark_reserved_as(DynamicNetworkReservation)
+          reservation.resolve_type(:dynamic)
+          reservation.mark_reserved
           @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
         end
       end
 
       def reserve_vip(reservation)
-        if reservation.type != StaticNetworkReservation
-          raise NetworkReservationWrongType,
-            "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to static pool"
-        end
+        reservation.resolve_type(:static)
 
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
         @vip_repo.add(reservation)
-        reservation.mark_reserved_as(StaticNetworkReservation)
+        reservation.mark_reserved
       end
 
       def filter_subnet_by_instance_az(reservation)

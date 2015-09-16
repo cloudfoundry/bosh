@@ -189,11 +189,11 @@ module Bosh::Director
           'Bosh::Director::DeploymentPlan::Instance',
           vm: vm,
           model: Models::Instance.make,
-          network_reservations: [],
-          original_network_reservations: []
+          desired_network_reservations: [],
+          existing_network_reservations: []
         )
         expect(instance).to receive(:bind_unallocated_vm)
-        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DynamicNetworkReservation))
+        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
         instance
       end
@@ -661,7 +661,7 @@ module Bosh::Director
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
           allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
-          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DynamicNetworkReservation))
+          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
           expect(instance_deleter).to receive(:delete_instance).ordered

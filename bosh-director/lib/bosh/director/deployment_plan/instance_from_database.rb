@@ -57,11 +57,11 @@ module Bosh::Director
         @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
-      def network_reservations
+      def desired_network_reservations
         [] # no one should care. we only use this outside of a deploy or for an obsolete instance plan
       end
 
-      def original_network_reservations
+      def existing_network_reservations
         [] # hopefully no one cares???? it requires polling the agent if we're not using global networking
       end
 

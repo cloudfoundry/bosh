@@ -77,7 +77,7 @@ module Bosh::Director
     end
 
     def release_network_reservations(instance)
-      instance.network_reservations.each do |reservation|
+      instance.desired_network_reservations.each do |reservation|
         @ip_provider.release(reservation) if reservation.reserved?
       end
     end

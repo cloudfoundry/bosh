@@ -12,14 +12,14 @@ module Bosh::Director
       it 'throws nice error' do
         network = instance_double(DeploymentPlan::ManualNetwork, name: 'fake-network')
 
-        reservation = StaticNetworkReservation.new(
+        reservation = DesiredNetworkReservation.new_static(
           instance,
           network,
           '192.168.0.1'
         )
         instance_network_reservations.add(reservation)
 
-        second_reservation = StaticNetworkReservation.new(
+        second_reservation = DesiredNetworkReservation.new_static(
           instance,
           network,
           '192.168.0.2'
