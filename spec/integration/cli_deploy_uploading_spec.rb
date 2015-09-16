@@ -103,7 +103,6 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a remote stemcell' do
-
     let(:release_filename) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
 
     let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
@@ -113,19 +112,41 @@ describe 'cli: deploy uploading', type: :integration do
     after { file_server.stop }
 
     let(:stemcell_url) { file_server.http_url("valid_stemcell.tgz") }
-    let(:stemcell_sha) { 'tbd' }
+    let(:stemcell_sha) { '2ff0f2c5aac7ec46e0482d764fe8effed930bf0a' }
 
     it 'uploads the stemcell from the remote url in the manifest' do
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, stemcell_sha))
 
       target_and_login
-      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 
       expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
+    it 'fails to deploy when the url is provided, but sha is not' do
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, ''))
+
+      target_and_login
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Expected SHA1 when specifying remote URL for stemcell `ubuntu-stemcell'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+
+    it 'fails when the sha1 does not match' do
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, 'abcd1234'))
+
+      target_and_login
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to include "Stemcell SHA1 `#{stemcell_sha}' does not match the expected SHA1 `abcd1234'"
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
     end
   end
 end

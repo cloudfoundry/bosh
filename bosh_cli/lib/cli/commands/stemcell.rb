@@ -29,6 +29,8 @@ module Bosh::Cli
     usage 'upload stemcell'
     desc 'Upload stemcell (stemcell_location can be a local file or a remote URI)'
     option '--skip-if-exists', 'skips upload if stemcell already exists'
+    option '--sha1 SHA1', 'sha1 of the remote stemcell'
+
     def upload(stemcell_location)
       auth_required
       show_current_state
@@ -71,7 +73,7 @@ module Bosh::Cli
         say("Using remote stemcell `#{stemcell_location}'")
       end
 
-      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location, options)
       success_message = 'Stemcell uploaded and created.'
 
       if status == :error && options[:skip_if_exists] && last_event(task_id)['error']['code'] == STEMCELL_EXISTS_ERROR_CODE
@@ -168,11 +170,11 @@ module Bosh::Cli
       end
     end
 
-    def apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+    def apply_upload_stemcell_strategy(stemcell_type, stemcell_location, options={})
       if stemcell_type == 'local'
         director.upload_stemcell(stemcell_location)
       else
-        director.upload_remote_stemcell(stemcell_location)
+        director.upload_remote_stemcell(stemcell_location, options)
       end
     end
 
