@@ -76,18 +76,18 @@ module Bosh::Director
     def resolve_type(type)
       if @type != type
         raise NetworkReservationWrongType,
-          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to #{@type.to_s} pool"
+          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to #{@type} pool"
       end
 
       @type = type
     end
 
     def desc
-      "#{type.to_s} reservation with IP '#{formatted_ip}'"
+      "#{type} reservation with IP '#{formatted_ip}'"
     end
 
     def to_s
-      "{type=#{type.to_s}, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
+      "{type=#{type}, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
     end
   end
 end
