@@ -213,7 +213,7 @@ describe 'upload release', type: :integration do
 (+) Uncommitted changes
       EOF
 
-      inspect_release_out = scrub_blobstore_ids(bosh_runner.run("inspect release test_release/1"))
+      inspect_release_out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
       expect(inspect_release_out).to include(<<-EOF)
 +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
 | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
@@ -390,7 +390,7 @@ describe 'upload release', type: :integration do
       inspect_release_with_other_name_out = bosh_runner.run("inspect release test_release_with_other_name/1")
       inspect_release_out = bosh_runner.run("inspect release test_release/1")
 
-      expect(scrub_blobstore_ids(inspect_release_out)).to include(<<-EOF)
+      expect(scrub_random_ids(inspect_release_out)).to include(<<-EOF)
 +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
 | Package                  | Fingerprint                              | Compiled For                            | Blobstore ID                         | SHA1                                     |
 +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+

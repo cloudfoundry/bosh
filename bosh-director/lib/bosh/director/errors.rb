@@ -180,8 +180,9 @@ module Bosh::Director
   NetworkInvalidDns = err(160004)
   NetworkReservedIpOutOfRange = err(160005)
   NetworkStaticIpOutOfRange = err(160006)
-  NetworkSubnetUnknownAvailabilityZone= err(160007)
+  NetworkSubnetUnknownAvailabilityZone = err(160007)
   NetworkInvalidProperty = err(160008)
+  NetworkSubnetInvalidAvailabilityZone = err(160009)
 
   ResourcePoolUnknownNetwork = err(170001)
   ResourcePoolNotEnoughCapacity = err(170002)

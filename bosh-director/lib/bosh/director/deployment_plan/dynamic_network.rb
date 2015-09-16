@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class DynamicNetwork
+    class DynamicNetwork < NetworkWithSubnets
       include DnsHelper
       include Bosh::Director::IpUtil
       extend DnsHelper
@@ -61,14 +61,23 @@ module Bosh::Director
       #
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
+      # @param [AvailabilityZone] availability zone
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = Network::VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = Network::VALID_DEFAULTS, availability_zone = nil)
         if reservation.type != DynamicNetworkReservation
           raise NetworkReservationWrongType,
             "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to dynamic pool"
         end
 
-        subnet = subnets.first # TODO: care about AZ someday
+        if availability_zone.nil?
+          subnet = subnets.first
+        else
+          subnet = find_subnet_for_az(availability_zone.name)
+          unless subnet
+            raise NetworkSubnetInvalidAvailabilityZone,
+              "Network '#{name}' has no matching subnet for availability zone '#{availability_zone.name}'"
+          end
+        end
 
         config = {
           "type" => "dynamic",
@@ -83,8 +92,10 @@ module Bosh::Director
         config
       end
 
-      def validate_has_job!(az_names, job_name)
-        # nothing to validate
+      private
+
+      def find_subnet_for_az(az_name)
+        @subnets.find { |subnet| subnet.availability_zone_name.eql?(az_name) }
       end
     end
   end

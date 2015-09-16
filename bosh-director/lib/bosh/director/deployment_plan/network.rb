@@ -28,30 +28,12 @@ module Bosh::Director
       end
 
       ##
-      # Reserves a network resource.
-      #
-      # Will update the passed in reservation if it can be fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
-      def reserve(reservation)
-        raise NotImplementedError, "#reserve not implemented for #{self.class}"
-      end
-
-      ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        raise NotImplementedError, "#release not implemented for #{self.class}"
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
         raise NotImplementedError,
               "#network_settings not implemented for #{self.class}"
       end
@@ -62,6 +44,20 @@ module Bosh::Director
 
       def validate_has_job!(az_names, job_name)
         raise NotImplementedError
+      end
+    end
+
+    class NetworkWithSubnets < Network
+      def validate_has_job!(az_names, job_name)
+        unreferenced_zones = az_names - availability_zones
+        unless unreferenced_zones.empty?
+          raise Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
+            "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
+        end
+      end
+
+      def availability_zones
+        @subnets.map(&:availability_zone_name).compact.uniq
       end
     end
   end

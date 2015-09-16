@@ -93,19 +93,14 @@ describe Bosh::Director::JobUpdater do
       let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
 
       before do
-        allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(canary_plan, job_renderer).and_return(canary_updater)
-
-        allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(changed_instance_plan, job_renderer).and_return(changed_updater)
-
-        allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(unchanged_instance_plan, job_renderer).and_return(unchanged_updater)
+        allow(Bosh::Director::InstanceUpdater).to receive(:new)
+                                                    .with(job_renderer)
+                                                    .and_return(canary_updater, changed_updater, unchanged_updater)
       end
 
       it 'should update changed job instances with canaries' do
-        expect(canary_updater).to receive(:update).with(canary: true)
-        expect(changed_updater).to receive(:update).with(no_args)
+        expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
+        expect(changed_updater).to receive(:update).with(changed_instance_plan)
         expect(unchanged_updater).to_not receive(:update)
 
         job_updater.update
@@ -123,7 +118,7 @@ describe Bosh::Director::JobUpdater do
       end
 
       it 'should not continue updating changed job instances if canaries failed' do
-        expect(canary_updater).to receive(:update).with(canary: true).and_raise(update_error)
+        expect(canary_updater).to receive(:update).with(canary_plan, canary: true).and_raise(update_error)
         expect(changed_updater).to_not receive(:update)
         expect(unchanged_updater).to_not receive(:update)
 
@@ -140,8 +135,8 @@ describe Bosh::Director::JobUpdater do
       end
 
       it 'should raise an error if updating changed jobs instances failed' do
-        expect(canary_updater).to receive(:update).with(canary: true)
-        expect(changed_updater).to receive(:update).and_raise(update_error)
+        expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
+        expect(changed_updater).to receive(:update).with(changed_instance_plan).and_raise(update_error)
         expect(unchanged_updater).to_not receive(:update)
 
         expect { job_updater.update }.to raise_error(update_error)

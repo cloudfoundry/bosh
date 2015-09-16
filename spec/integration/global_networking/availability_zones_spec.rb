@@ -95,50 +95,104 @@ describe 'availability zones', type: :integration do
       expect(template).to include('availability_zone=my-az')
     end
 
-    it 'places the job instance in the correct subnet based on the availability zone' do
-      current_sandbox.with_health_monitor_running do
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+    it 'places the job instance in the correct subnet in manual network based on the availability zone' do
+      simple_manifest['jobs'].first['instances'] = 2
+      simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
 
-        cloud_config_hash['availability_zones'] = [
-          {
-            'name' => 'my-az'
-          },
-          {
-            'name' => 'my-az2'
-          }
-        ]
+      cloud_config_hash['availability_zones'] = [
+        {
+          'name' => 'my-az'
+        },
+        {
+          'name' => 'my-az2'
+        }
+      ]
 
-        cloud_config_hash['networks'].first['subnets'] = [
-          {
-            'range' => '192.168.1.0/24',
-            'gateway' => '192.168.1.1',
-            'dns' => ['192.168.1.1', '192.168.1.2'],
-            'reserved' => [],
-            'cloud_properties' => {},
-            'availability_zone' => 'my-az'
-          },
-          {
-            'range' => '192.168.2.0/24',
-            'gateway' => '192.168.2.1',
-            'dns' => ['192.168.2.1', '192.168.2.2'],
-            'reserved' => [],
-            'cloud_properties' => {},
-            'availability_zone' => 'my-az2'
-          }
-        ]
+      cloud_config_hash['networks'].first['subnets'] = [
+        {
+          'range' => '192.168.1.0/24',
+          'gateway' => '192.168.1.1',
+          'dns' => ['192.168.1.1', '192.168.1.2'],
+          'reserved' => [],
+          'cloud_properties' => {},
+          'availability_zone' => 'my-az'
+        },
+        {
+          'range' => '192.168.2.0/24',
+          'gateway' => '192.168.2.1',
+          'dns' => ['192.168.2.1', '192.168.2.2'],
+          'reserved' => [],
+          'cloud_properties' => {},
+          'availability_zone' => 'my-az2'
+        }
+      ]
 
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        deploy_simple_manifest(manifest_hash: simple_manifest)
+      expect(director.vms.count).to eq(2)
+      first_vm = director.vms[0]
+      second_vm = director.vms[1]
 
-        expect(director.vms.count).to eq(2)
-        first_vm = director.vms[0]
-        second_vm = director.vms[1]
+      expect(first_vm.ips).to eq('192.168.1.2')
+      expect(second_vm.ips).to eq('192.168.2.2')
+    end
 
-        expect(first_vm.ips).to eq('192.168.1.2')
-        expect(second_vm.ips).to eq('192.168.2.2')
+    it 'places the job instance in the correct subnet in dynamic network based on the availability zone' do
+      simple_manifest['jobs'].first['instances'] = 2
+      simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+      simple_manifest['jobs'].first['templates'] =[{'name' => 'foobar_without_packages'}]
+
+      cloud_config_hash['availability_zones'] = [
+        {
+          'name' => 'my-az',
+          'cloud_properties' => {'az_name' => 'my-az'}
+        },
+        {
+          'name' => 'my-az2',
+          'cloud_properties' => {'az_name' => 'my-az2'}
+        }
+      ]
+
+      cloud_config_hash['networks'].first['type'] = 'dynamic'
+      cloud_config_hash['networks'].first['subnets'] = [
+        {
+          'dns' => ['192.168.1.1'],
+          'cloud_properties' => {'first-subnet-key' => 'first-subnet-value'},
+          'availability_zone' => 'my-az'
+        },
+        {
+          'dns' => ['192.168.2.1'],
+          'cloud_properties' => {'second-subnet-key' => 'second-subnet-value'},
+          'availability_zone' => 'my-az2'
+        }
+      ]
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      current_sandbox.cpi.commands.set_dynamic_ips_for_azs({
+        'my-az' => '192.168.1.1',
+        'my-az2' => '192.168.2.1'
+      })
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      network_cloud_properties = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+        invocation.inputs['networks']['a']['cloud_properties']
       end
+
+      expect(network_cloud_properties).to contain_exactly(
+        {'first-subnet-key' => 'first-subnet-value'},
+        {'second-subnet-key' => 'second-subnet-value'}
+      )
+
+      vms = director.vms
+      expect(vms.count).to eq(2)
+
+      expect(vms[0].ips).to eq('192.168.1.1')
+      expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)).to eq({'az_name' => 'my-az', 'a' => 'rp_value_for_a', 'e' => 'rp_value_for_e'})
+
+      expect(vms[1].ips).to eq('192.168.2.1')
+      expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)).to eq({'az_name' => 'my-az2', 'a' => 'rp_value_for_a', 'e' => 'rp_value_for_e'})
     end
 
     context 'when adding azs to jobs with persistent disks' do

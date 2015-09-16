@@ -225,7 +225,7 @@ module Bosh::Director
         network_settings = {}
         @network_reservations.each do |reservation|
           network_name = reservation.network.name
-          network_settings[network_name] = reservation.network.network_settings(reservation, default_properties[network_name])
+          network_settings[network_name] = reservation.network.network_settings(reservation, default_properties[network_name], availability_zone)
 
           # Temporary hack for running errands.
           # We need to avoid RunErrand task thinking that

@@ -2,7 +2,7 @@ module Bosh::Director
   module DeploymentPlan
     ##
     # Represents a explicitly configured network.
-    class ManualNetwork < Network
+    class ManualNetwork < NetworkWithSubnets
       include IpUtil
       include DnsHelper
       include ValidationHelper
@@ -48,7 +48,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
         unless reservation.ip
           raise NetworkReservationIpMissing,
                 "Can't generate network settings without an IP"
@@ -75,22 +75,12 @@ module Bosh::Director
         config
       end
 
+      private
+
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
         @subnets.find { |subnet| subnet.range.contains?(ip) }
-      end
-
-      def availability_zones
-        @subnets.map(&:availability_zone).compact.uniq
-      end
-
-      def validate_has_job!(az_names, job_name)
-        unreferenced_zones = az_names - availability_zones
-        unless unreferenced_zones.empty?
-          raise Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
-            "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
-        end
       end
     end
   end

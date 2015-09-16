@@ -118,7 +118,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, 'az-name')]
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, 'foo-az')]
           DynamicNetwork.new(network_name, network_name, subnets, logger)
         end
 
@@ -895,10 +895,10 @@ module Bosh::Director::DeploymentPlan
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
       let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
-      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
+      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-      let(:network) { DynamicNetwork.parse(network_spec, [], logger) }
+      let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
@@ -1000,10 +1000,10 @@ module Bosh::Director::DeploymentPlan
       let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
       let(:properties) { {'key' => 'value'} }
       let(:reservation) { Bosh::Director::DynamicNetworkReservation.new(instance, network) }
-      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
+      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-      let(:network) { DynamicNetwork.parse(network_spec, [], logger) }
+      let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
