@@ -75,7 +75,7 @@ describe 'Links', type: :integration do
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.vm('my_api/0')
+        link_vm = director.vm('my_api', '0')
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(2)
@@ -143,7 +143,7 @@ describe 'Links', type: :integration do
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.vm('my_api/0')
+        link_vm = director.vm('my_api', '0')
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['backup'].size).to eq(1)
@@ -203,13 +203,13 @@ describe 'Links', type: :integration do
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        first_node_vm = director.vm('first_node/0')
+        first_node_vm = director.vm('first_node', '0')
         first_node_template = YAML.load(first_node_vm.read_job_template('node', 'config.yml'))
 
         expect(first_node_template['nodes']['node1_ips']).to eq(['192.168.1.11'])
         expect(first_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
 
-        second_node_vm = director.vm('second_node/0')
+        second_node_vm = director.vm('second_node', '0')
         second_node_template = YAML.load(second_node_vm.read_job_template('node', 'config.yml'))
 
         expect(second_node_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
@@ -313,7 +313,7 @@ describe 'Links', type: :integration do
         deploy_simple_manifest(manifest_hash: first_manifest)
         deploy_simple_manifest(manifest_hash: second_manifest)
 
-        second_deployment_vm = director.vm('second_deployment_node/0', deployment: 'second')
+        second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
 
         expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])

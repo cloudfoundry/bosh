@@ -46,9 +46,9 @@ describe 'global networking', type: :integration do
       cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.2']
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      original_vm = director.vm('foobar/0')
+      original_vm = director.vm('foobar', '0')
       original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar/0', 300)
+      resurrected_vm = director.wait_for_vm('foobar', '0', 300)
       expect(resurrected_vm.cid).to_not eq(original_vm.cid)
       vms = director.vms
       expect(vms.size).to eq(1)

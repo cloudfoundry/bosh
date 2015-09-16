@@ -20,7 +20,7 @@ describe 'deploy', type: :integration do
 
   it 'deployment fails when starting task fails' do
     deploy_from_scratch
-    director.vm('foobar/0').fail_start_task
+    director.vm('foobar', '0').fail_start_task
     _, exit_code = deploy(failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
   end
@@ -93,7 +93,7 @@ describe 'deploy', type: :integration do
       it 'runs the pre-start scripts on the agent vm, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
         deploy({})
 
-        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+        agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
         expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
@@ -135,7 +135,7 @@ describe 'deploy', type: :integration do
       bosh_runner.run("upload release #{spec_asset('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
       deploy({})
 
-      agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+      agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
       job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
       job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
 
@@ -178,7 +178,7 @@ message on stderr of job 1 new version pre-start script
           deploy({})
         }.to raise_error(RuntimeError, /result: 1 of 2 pre-start scripts failed. Failed Jobs: job_with_corrupted_pre_start_script. Successful Jobs: job_with_valid_pre_start_script./)
 
-        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+        agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
         expect(agent_log).to include("/jobs/job_with_valid_pre_start_script/bin/pre-start' script has successfully executed")

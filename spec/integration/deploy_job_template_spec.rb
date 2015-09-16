@@ -8,7 +8,7 @@ describe 'deploy job template', type: :integration do
     manifest_hash['properties'] = { 'test_property' => 1 }
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    foobar_vm = director.vm('foobar/0')
+    foobar_vm = director.vm('foobar', '0')
 
     template = foobar_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('test_property=1')
@@ -35,7 +35,7 @@ describe 'deploy job template', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
     # VM deployed for the first time knows about correct dynamic IP
-    template = director.vm('foobar/0').read_job_template('foobar', 'bin/foobar_ctl')
+    template = director.vm('foobar', '0').read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=127.0.0.101')
 
     # Force VM recreation
@@ -46,7 +46,7 @@ describe 'deploy job template', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     # Recreated VM due to the resource pool change knows about correct dynamic IP
-    template = director.vm('foobar/0').read_job_template('foobar', 'bin/foobar_ctl')
+    template = director.vm('foobar', '0').read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=127.0.0.102')
   end
 

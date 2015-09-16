@@ -171,9 +171,9 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(no_login: true, env: client_env)
 
-        original_vm = director.vm('foobar/0', env: client_env)
+        original_vm = director.vm('foobar', '0', env: client_env)
         original_vm.kill_agent
-        resurrected_vm = director.wait_for_vm('foobar/0', 300, env: client_env)
+        resurrected_vm = director.wait_for_vm('foobar', '0', 300, env: client_env)
         expect(resurrected_vm.cid).to_not eq(original_vm.cid)
       end
     end

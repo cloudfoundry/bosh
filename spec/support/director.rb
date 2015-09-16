@@ -16,7 +16,6 @@ module Bosh::Spec
       vms_details(deployment_name, options).map do |vm_data|
         Bosh::Spec::Vm.new(
           @waiter,
-          vm_data[:job_index],
           vm_data[:state],
           vm_data[:cid],
           vm_data[:agent_id],
@@ -33,18 +32,18 @@ module Bosh::Spec
     end
 
     # vm always returns a vm
-    def vm(job_name_index, options={})
+    def vm(job_name, index, options={})
       deployment_name = options.fetch(:deployment, '')
-      vm = vms(deployment_name, options).detect { |vm| vm.job_name_index == job_name_index }
-      vm || raise("Failed to find vm #{job_name_index}")
+      vm = vms(deployment_name, options).detect { |vm| vm.job_name == job_name && vm.index == index }
+      vm || raise("Failed to find vm #{job_name}/#{index}")
     end
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds
     # (Do not add default timeout value to be more explicit in tests)
-    def wait_for_vm(job_name_index, timeout_seconds, options = {})
+    def wait_for_vm(job_name, index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms('', options).detect { |vm| vm.job_name_index == job_name_index }
+        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
@@ -91,7 +90,7 @@ module Bosh::Spec
 
     def kill_vm_and_wait_for_resurrection(vm)
       vm.kill_agent
-      resurrected_vm = wait_for_vm(vm.job_name_index, 300)
+      resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300)
 
       if vm.cid == resurrected_vm.cid
         raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
@@ -149,7 +148,6 @@ module Bosh::Spec
           vm[:job_name] = match_data[job_name_match_index]
           vm[:instance_id] = match_data[instance_id_match_index]
           vm[:index] = match_data[index_match_index]
-          vm[:job_index] = "#{match_data[job_name_match_index]}/#{match_data[index_match_index]}"
         end
       end
 

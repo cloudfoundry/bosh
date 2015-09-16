@@ -71,7 +71,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
 
-      director.wait_for_vm('fake-errand-name/0', 10)
+      director.wait_for_vm('fake-errand-name', '0', 10)
 
       cancel_output = bosh_runner.run("cancel task #{task_id}")
       expect(cancel_output).to match(/Task #{task_id} is getting canceled/)

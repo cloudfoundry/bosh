@@ -55,7 +55,7 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.vm('foobar/0')
+      original_vm = director.vm('foobar', '0')
 
       upload_a_different_cloud_config
 
@@ -73,7 +73,7 @@ describe 'Changing cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_vm = director.vm('foobar/0')
+      original_vm = director.vm('foobar', '0')
 
       upload_a_different_cloud_config
 
@@ -87,7 +87,7 @@ describe 'Changing cloud config', type: :integration do
         expect(runner).to have_output 'done'
       end
 
-      recreated_vm = director.vm('foobar/0')
+      recreated_vm = director.vm('foobar', '0')
       expect(recreated_vm.cid).to_not eq(original_vm.cid)
 
       expect(original_vm.ips).to eq(recreated_vm.ips)

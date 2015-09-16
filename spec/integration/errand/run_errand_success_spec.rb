@@ -25,7 +25,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       output = bosh_runner.run_until_succeeds('locks')
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
 
-      errand_vm = director.vms.find { |vm| vm.job_name_index == 'fake-errand-name/0' }
+      errand_vm = director.vms.find { |vm| vm.job_name == 'fake-errand-name' && vm.index == '0' }
       expect(errand_vm).to_not be_nil
 
       errand_vm.unblock_errand('errand1')
