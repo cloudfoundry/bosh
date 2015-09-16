@@ -28,24 +28,6 @@ module Bosh::Director
       end
 
       ##
-      # Reserves a network resource.
-      #
-      # Will update the passed in reservation if it can be fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
-      def reserve(reservation)
-        raise NotImplementedError, "#reserve not implemented for #{self.class}"
-      end
-
-      ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        raise NotImplementedError, "#release not implemented for #{self.class}"
-      end
-
-      ##
       # Returns the network settings for the specific reservation.
       #
       # @param [NetworkReservation] reservation
@@ -75,7 +57,7 @@ module Bosh::Director
       end
 
       def availability_zones
-        @subnets.map(&:availability_zone).compact.uniq
+        @subnets.map(&:availability_zone_name).compact.uniq
       end
     end
   end

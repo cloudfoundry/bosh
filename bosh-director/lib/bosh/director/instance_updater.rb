@@ -333,7 +333,7 @@ module Bosh::Director
       @agent = AgentClient.with_vm(instance_plan.instance.vm.model)
 
       #TODO: we only render the templates again because dynamic networking may have
-      #      asssigned an ip address, so the state we got back from the @agent may
+      #      assigned an ip address, so the state we got back from the @agent may
       #      result in a different instance.template_spec.  Ideally, we clean up the @agent interaction
       #      so that we only have to do this once.
       @job_renderer.render_job_instance(instance_plan.instance)

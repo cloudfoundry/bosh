@@ -95,7 +95,7 @@ module Bosh::Director
       private
 
       def find_subnet_for_az(az_name)
-        @subnets.find { |subnet| subnet.availability_zone.eql?(az_name) }
+        @subnets.find { |subnet| subnet.availability_zone_name.eql?(az_name) }
       end
     end
   end

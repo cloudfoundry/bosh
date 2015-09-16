@@ -52,7 +52,6 @@ module Bosh::Director
           reuse_compilation_vms: false,
           availability_zone: availability_zone
         )
-      allow(network).to receive(:reserve) { |reservation| reservation.mark_reserved_as(DynamicNetworkReservation) }
       allow(network).to receive(:network_settings).with(instance_of(DynamicNetworkReservation), ['dns', 'gateway'], availability_zone).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)

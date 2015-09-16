@@ -49,7 +49,7 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
-      @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', reserve: nil)
+      @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default')
       allow(plan).to receive(:network).with('default').and_return(@network)
 
       @n_workers = 3
@@ -441,7 +441,6 @@ module Bosh::Director
       end
 
       before do # create vm
-        allow(@network).to receive(:reserve)
         allow(@network).to receive(:network_settings)
         allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
@@ -454,7 +453,6 @@ module Bosh::Director
           expect(AgentClient).to receive(:with_vm).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
-          allow(@network).to receive(:release)
 
           compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield

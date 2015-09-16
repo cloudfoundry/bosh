@@ -28,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.length).to eq(1)
         expect(network.subnets.first.dns).to eq(['1.2.3.4', '5.6.7.8'])
         expect(network.subnets.first.cloud_properties).to eq({'foz' => 'baz'})
-        expect(network.subnets.first.availability_zone).to eq('foo-zone')
+        expect(network.subnets.first.availability_zone_name).to eq('foo-zone')
       end
 
       it 'defaults cloud properties to empty hash' do
@@ -68,7 +68,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           },
           [],
           logger)
-        expect(network.subnets.first.availability_zone).to eq(nil)
+        expect(network.subnets.first.availability_zone_name).to eq(nil)
       end
 
       it 'does not allow availability zone to be nil' do
@@ -138,10 +138,10 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.length).to eq(2)
         expect(network.subnets.first.dns).to eq(['1.2.3.4', '5.6.7.8'])
         expect(network.subnets.first.cloud_properties).to eq({'foz' => 'baz'})
-        expect(network.subnets.first.availability_zone).to eq('foz-zone')
+        expect(network.subnets.first.availability_zone_name).to eq('foz-zone')
         expect(network.subnets.last.dns).to eq(['9.8.7.6', '5.4.3.2'])
         expect(network.subnets.last.cloud_properties).to eq({'bar' => 'bat'})
-        expect(network.subnets.last.availability_zone).to eq('foo-zone')
+        expect(network.subnets.last.availability_zone_name).to eq('foo-zone')
       end
 
       it 'defaults cloud properties to empty hash' do
@@ -198,7 +198,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           logger
         )
 
-        expect(network.subnets.first.availability_zone).to eq(nil)
+        expect(network.subnets.first.availability_zone_name).to eq(nil)
       end
 
       it 'does not allow availability zone to be nil' do
