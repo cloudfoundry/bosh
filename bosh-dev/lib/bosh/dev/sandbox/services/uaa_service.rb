@@ -2,9 +2,14 @@ module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
 
+    TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'
+    UAA_FILENAME = 'uaa.war'
+
+    UAA_VERSION = 'cloudfoundry-identity-uaa-2.0.3'
+
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-    INSTALL_DIR = File.join(REPO_ROOT, 'tmp', 'integration-uaa')
-    TOMCAT_DIR = File.join(INSTALL_DIR, 'apache-tomcat-8.0.21')
+    INSTALL_DIR = File.join('/tmp', 'integration-uaa', UAA_VERSION)
+    TOMCAT_DIR = File.join(INSTALL_DIR, TOMCAT_VERSIONED_FILENAME)
 
     def initialize(port_provider, base_log_path, logger)
       @port = port_provider.get_port(:uaa_http)
@@ -18,15 +23,17 @@ module Bosh::Dev::Sandbox
     end
 
     def self.install
-      FileUtils.rm_rf(INSTALL_DIR)
-      FileUtils.mkdir_p(INSTALL_DIR)
+      webapp_path = File.join(TOMCAT_DIR, 'webapps', UAA_FILENAME)
+      return if File.exist?(webapp_path)
 
-      tomcat_url = 'https://s3.amazonaws.com/bosh-dependencies/apache-tomcat-8.0.21.tar.gz'
+      FileUtils.mkdir_p(TOMCAT_DIR)
+
+      tomcat_url = "https://s3.amazonaws.com/bosh-dependencies/#{TOMCAT_VERSIONED_FILENAME}.tar.gz"
       out = `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
       raise out unless $? == 0
 
-      uaa_url = 'https://s3.amazonaws.com/bosh-dependencies/cloudfoundry-identity-uaa-2.0.3.war'
-      webapp_path = File.join(TOMCAT_DIR, 'webapps', 'uaa.war')
+      uaa_url = "https://s3.amazonaws.com/bosh-dependencies/#{UAA_VERSION}.war"
+
       out = `curl --output #{webapp_path} -L #{uaa_url}`
       raise out unless $? == 0
     end
