@@ -37,7 +37,7 @@ module Bosh::Director
         delete_persistent_disks(instance.persistent_disks)
         delete_dns(instance.job, instance.index)
 
-        RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
+        RenderedJobTemplatesCleaner.new(instance, @blobstore, @logger).clean_all
 
         vm.db.transaction do
           instance.destroy

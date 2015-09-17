@@ -67,7 +67,7 @@ module Bosh::Director
         expect(@cloud).to receive(:delete_vm).with(vm.cid)
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
-        allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
+        allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore, logger).and_return(job_templates_cleaner)
         expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
         @deleter.delete_instance(instance, event_log_stage)

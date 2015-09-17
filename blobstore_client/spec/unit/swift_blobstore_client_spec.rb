@@ -114,6 +114,33 @@ module Bosh::Blobstore
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
           end
+
+          it 'should raise Bosh::Blobstore::NotFound error when the file is not found in swift during deleting' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(nil)
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error NotFound, /Swift object '#{oid}' not found/
+          end
+
+          it 'should raise BlobstoreError error when failed to delete the object' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy).and_raise BlobstoreError
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
+          end
         end
 
         describe '#object_exists?' do
@@ -250,6 +277,33 @@ module Bosh::Blobstore
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
           end
+
+          it 'should raise Bosh::Blobstore::NotFound error when the file is not found in swift during deleting' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(nil)
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error NotFound, /Swift object '#{oid}' not found/
+          end
+
+          it 'should raise BlobstoreError error when failed to delete the object' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy).and_raise BlobstoreError
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
+          end
         end
 
         describe '#object_exists?' do
@@ -385,6 +439,33 @@ module Bosh::Blobstore
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             @client.delete(oid)
+          end
+
+          it 'should raise Bosh::Blobstore::NotFound error when the file is not found in swift during deleting' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(nil)
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error NotFound, /Swift object '#{oid}' not found/
+          end
+
+          it 'should raise BlobstoreError error when failed to delete the object' do
+            allow(@swift).to receive(:directories).and_return(directories)
+            oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
+
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:get).with('object_id').and_return(object)
+            expect(object).to receive(:destroy).and_raise BlobstoreError
+
+            expect{
+              @client.delete(oid)
+            }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
           end
         end
 

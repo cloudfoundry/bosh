@@ -368,7 +368,7 @@ module Bosh::Blobstore
           client.delete('fake-oid')
         end
 
-        it 'should raise an error when the object is missing' do
+        it 'should raise Bosh::Blobstore:NotFound error when the object is missing' do
           allow(blob).to receive_messages(exists?: false)
 
           expect(client).to receive(:get_object_from_s3).
@@ -377,7 +377,7 @@ module Bosh::Blobstore
 
           expect {
             client.delete('fake-oid')
-          }.to raise_error(BlobstoreError, 'no such object: fake-oid')
+          }.to raise_error(NotFound, "Object 'fake-oid' is not found")
         end
       end
 
