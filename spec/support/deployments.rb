@@ -71,6 +71,41 @@ module Bosh::Spec
       })
     end
 
+    def self.local_stemcell_manifest(stemcell_path)
+      minimal_manifest.merge(
+      {
+      'networks' => [{
+          'name' => 'a',
+          'subnets' => [{
+              'range' => '192.168.1.0/24',
+              'gateway' => '192.168.1.1',
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'static' => ['192.168.1.10'],
+              'reserved' => [],
+              'cloud_properties' => {},
+            }],
+        }],
+
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => {},
+        },
+
+        'resource_pools' => [{
+          'name' => 'a',
+          'size' => 3,
+          'cloud_properties' => {},
+          'network' => 'a',
+          'stemcell' => {
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'url' => stemcell_path,
+          },
+        }],
+      })
+    end
+
     def self.resource_pool
       {
         'name' => 'a',
@@ -307,7 +342,7 @@ module Bosh::Spec
         'releases' => [{
             'name'    => 'test_release',
             'version' => 'latest',
-            'path' => local_release_path,
+            'url' => local_release_path,
         }]
       })
     end

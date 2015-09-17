@@ -71,12 +71,12 @@ describe 'cli: deploy uploading', type: :integration do
     end
   end
 
-  context 'with a local tarball' do
-    let(:release_path) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
+  context 'with a local release tarball' do
+      let(:release_path) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
 
     it 'uploads the release from the local file path in the manifest' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest(release_path))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("file://" + release_path))
 
       target_and_login
       bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
@@ -87,9 +87,23 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
-    it 'fails to deploy when the path is invalid' do
+    it 'fails to deploy when the url is invalid' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('goobers'))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Invalid URL format for release `test_release' with URL `goobers'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+
+    it 'fails to deploy when the path is not a release' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file:///goobers'))
 
       target_and_login
       bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
@@ -146,6 +160,50 @@ describe 'cli: deploy uploading', type: :integration do
 
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to include "Stemcell SHA1 `#{stemcell_sha}' does not match the expected SHA1 `abcd1234'"
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+  end
+
+  context 'with a local stemcell' do
+    let(:release_filename) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
+
+    it 'uploads the stemcell from the local path in the manifest' do
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("file://" + stemcell_filename))
+      # write a local stemcell manifest thing for us to use
+
+      target_and_login
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
+    it 'fails to deploy when the path is not a stemcell' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("file:///goobers"))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Stemcell is invalid, please fix, verify and upload again/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+
+    it 'fails to deploy when the url is invalid' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("goobers"))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Invalid URL format for stemcell `ubuntu-stemcell' with URL `goobers'. Supported schemes: file, http, https./
       expect(output).not_to match /Deployed `minimal' to `Test Director'/
     end
   end

@@ -31,7 +31,7 @@ module Bosh::Cli
 Note that --skip-if-exists and --fix can not be used together."
     option '--skip-if-exists', 'skips upload if stemcell already exists'
     option '--fix', 'replaces the stemcell if already exists'
-    option '--sha1 SHA1', 'sha1 of the remote stemcell'
+    option '--sha1 SHA1', 'SHA1 of the remote stemcell'
     def upload(stemcell_location)
       auth_required
       show_current_state
