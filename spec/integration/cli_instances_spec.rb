@@ -50,43 +50,27 @@ describe 'cli: deployment process', type: :integration do
     output = bosh_runner.run('instances --details')
 
     output = scrub_random_ids(output)
-    expect(output).to include('Instance')
-    expect(output).to include('State')
-    expect(output).to include('AZ')
-    expect(output).to include('Resource Pool')
-    expect(output).to include('IPs')
     expect(output).to include('VM CID')
     expect(output).to include('Disk CID')
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
 
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
-    expect(output).to include('zone-1')
-    expect(output).to include('zone-2')
-    expect(output).to include('zone-3')
-
-
     output = bosh_runner.run('instances --dns')
     expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| Instance                                        | State   | AZ     | Resource Pool | IPs         | DNS A records          |
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
++--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records          |
++--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
++--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
+
+(*) Bootstrap node
 INSTANCES
 
     output = bosh_runner.run('instances --vitals')
 
     output = scrub_random_ids(output)
-    expect(output).to include('Instance')
-    expect(output).to include('State')
-    expect(output).to include('AZ')
-    expect(output).to include('Resource Pool')
-    expect(output).to include('IPs')
     expect(output).to include('Load')
     expect(output).to include('User')
     expect(output).to include('Sys')
@@ -98,22 +82,17 @@ INSTANCES
     expect(output).to include('Ephemeral')
     expect(output).to include('Persistent')
 
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-    expect(output).to include('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
-    expect(output).to include('zone-1')
-    expect(output).to include('zone-2')
-    expect(output).to include('zone-3')
-
     output = bosh_runner.run('instances')
     expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+-------------------------------------------------+---------+--------+---------------+-------------+
-| Instance                                        | State   | AZ     | Resource Pool | IPs         |
-+-------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 |
-+-------------------------------------------------+---------+--------+---------------+-------------+
++--------------------------------------------------+---------+--------+---------------+-------------+
+| Instance                                         | State   | AZ     | Resource Pool | IPs         |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 |
++--------------------------------------------------+---------+--------+---------------+-------------+
+
+(*) Bootstrap node
 INSTANCES
 
   end

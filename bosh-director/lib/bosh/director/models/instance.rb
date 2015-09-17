@@ -49,6 +49,10 @@ module Bosh::Director::Models
     def cloud_properties_hash=(hash)
       self.cloud_properties = JSON.dump(hash)
     end
+
+    def bootstrap?
+      self.index.zero?
+    end
   end
 
   Instance.plugin :association_dependencies

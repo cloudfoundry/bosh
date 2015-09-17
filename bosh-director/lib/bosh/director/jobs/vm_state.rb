@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class VmState < BaseJob
@@ -85,6 +83,7 @@ module Bosh::Director
           :resurrection_paused => vm.instance ? vm.instance.resurrection_paused  : nil,
           :availability_zone => vm.instance ? vm.instance.availability_zone : nil,
           :instance_id => vm.instance ? vm.instance.uuid : nil,
+          :is_bootstrap => vm.instance ? vm.instance.bootstrap? : false
         }
       end
 

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli::Command
   class Instances < Base
     usage 'instances'
@@ -7,7 +5,7 @@ module Bosh::Cli::Command
     option '--details', 'Return detailed instance information'
     option '--dns', 'Return instance DNS A records'
     option '--vitals', 'Return instance vitals information'
-    def list()
+    def list
       auth_required
       deployment_required
       manifest = Bosh::Cli::Manifest.new(deployment, director)
@@ -42,9 +40,12 @@ module Bosh::Cli::Command
       has_az = instances.any? {|instance| instance.has_key? 'availability_zone' }
 
       instances_table = construct_table_to_display(has_disk_cid, has_az, options, sorted)
+      legend = '(*) Bootstrap node'
 
       nl
       say(instances_table)
+      nl
+      say(legend)
       nl
       say('Instances total: %d' % instances.size)
     end
@@ -72,7 +73,7 @@ module Bosh::Cli::Command
         end
         if options[:vitals]
           headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
-          headings += ["CPU\nUser", "CPU\nSys", "CPU\nWait"]
+          headings += %W(CPU\nUser CPU\nSys CPU\nWait)
           headings += ['Memory Usage', 'Swap Usage']
           headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
         end
@@ -81,7 +82,16 @@ module Bosh::Cli::Command
         sorted.each do |instance|
           job_name = instance['job_name'] || 'unknown'
           index = instance['index'] || 'unknown'
-          job = instance.has_key?('instance_id') ? "#{job_name}/#{instance['instance_id']} (#{index})" : "#{job_name}/#{index}"
+          job = if instance.has_key?('instance_id')
+                  is_bootstrap = instance.fetch('is_bootstrap', false)
+                  if is_bootstrap
+                    "#{job_name}/#{instance['instance_id']}* (#{index})"
+                  else
+                    "#{job_name}/#{instance['instance_id']} (#{index})"
+                  end
+                else
+                  "#{job_name}/#{index}"
+                end
           ips = Array(instance['ips']).join("\n")
           dns_records = Array(instance['dns']).join("\n")
           vitals = instance['vitals']

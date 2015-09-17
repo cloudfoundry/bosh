@@ -2,6 +2,25 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 module Bosh::Director
   describe Jobs::VmState do
+    def stub_agent_get_state_to_return_state_with_vitals
+      expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'vitals' => {
+            'load' => ['1', '5', '15'],
+            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+            'mem' => { 'percent' => 'p', 'kb' => 'k' },
+            'swap' => { 'percent' => 'p', 'kb' => 'k' },
+            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
+          },
+        )
+    end
+
     before do
       @deployment = Models::Deployment.make
       @result_file = double('result_file')
@@ -18,7 +37,7 @@ module Bosh::Director
       before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
-      it 'parses agent info into vm_state' do
+      it 'parses agent info into vm_state WITHOUT vitals' do
         Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
         expect(agent).to receive(:get_state).with('full').and_return(
@@ -44,23 +63,9 @@ module Bosh::Director
         job.perform
       end
 
-      it 'parses agent info into vm_state with vitals' do
+      it 'parses agent info into vm_state WITH vitals' do
         Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
-          'vitals' => {
-            'load' => ['1', '5', '15'],
-            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
-            'mem' => { 'percent' => 'p', 'kb' => 'k' },
-            'swap' => { 'percent' => 'p', 'kb' => 'k' },
-            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
-          },
-        )
+        stub_agent_get_state_to_return_state_with_vitals
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
@@ -83,9 +88,7 @@ module Bosh::Director
 
       it 'should return DNS A records if they exist' do
         Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
         domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
-
         Models::Dns::Record.make(
           domain: domain,
           name: 'index.job.network.deployment.microbosh',
@@ -93,24 +96,11 @@ module Bosh::Director
           content: '1.1.1.1',
           ttl: 14400,
         )
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
-        )
+        stub_agent_get_state_to_return_state_with_vitals
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['dns']).to eq(['index.job.network.deployment.microbosh'])
-          expect(status['vm_cid']).to eq('fake-vm-cid')
-          expect(status['agent_id']).to eq('fake-agent-id')
-          expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
-          expect(status['vitals']).to be_nil
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -136,7 +126,6 @@ module Bosh::Director
 
       it 'should get the resurrection paused status' do
         vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -145,24 +134,7 @@ module Bosh::Director
           resurrection_paused: true,
           vm: vm,
         )
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'index' => 0,
-          'job' => { 'name' => 'dea' },
-          'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
-          'vitals' => {
-            'load' => ['1', '5', '15'],
-            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
-            'mem' => { 'percent' => 'p', 'kb' => 'k' },
-            'swap' => { 'percent' => 'p', 'kb' => 'k' },
-            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
-          },
-        )
-
+        stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
@@ -175,7 +147,6 @@ module Bosh::Director
 
       it 'should return disk cid info when active disks found' do
         vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
         instance = Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -183,44 +154,25 @@ module Bosh::Director
           state: 'started',
           vm: vm,
         )
-
         Models::PersistentDisk.create(
           instance: instance,
           active: true,
           disk_cid: 'fake-disk-cid',
         )
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'disk_cid' => 'fake-disk-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'index' => 0,
-          'job' => { 'name' => 'dea' },
-          'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
-        )
-
+        stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['disk_cid']).to eq('fake-disk-cid')
-          expect(status['agent_id']).to eq('fake-agent-id')
-          expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
-          expect(status['vitals']).to be_nil
         end
 
         job.perform
-
       end
 
-      it 'should return disk cid info when no active disks found' do
+      it 'should return disk cid info when NO active disks found' do
         vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
         instance = Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -228,35 +180,19 @@ module Bosh::Director
           state: 'started',
           vm: vm,
         )
-
         Models::PersistentDisk.create(
           instance: instance,
           active: false,
           disk_cid: 'fake-disk-cid',
         )
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-          'vm_cid' => 'fake-vm-cid',
-          'disk_cid' => 'fake-disk-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-          'agent_id' => 'fake-agent-id',
-          'index' => 0,
-          'job' => { 'name' => 'dea' },
-          'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
-        )
+        stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['ips']).to eq(['1.1.1.1'])
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['disk_cid']).to be_nil
-          expect(status['agent_id']).to eq('fake-agent-id')
-          expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
-          expect(status['vitals']).to be_nil
         end
 
         job.perform
@@ -265,7 +201,6 @@ module Bosh::Director
 
       it 'should return instance id' do
         vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -275,30 +210,64 @@ module Bosh::Director
           vm: vm,
           uuid: 'blarg'
         )
-
-        expect(agent).to receive(:get_state).with('full').and_return(
-            'vm_cid' => 'fake-vm-cid',
-            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-            'agent_id' => 'fake-agent-id',
-            'job_state' => 'running',
-            'resource_pool' => { 'name' => 'test_resource_pool' },
-          )
-
+        stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['instance_id']).to eq('blarg')
-          # expect(status['vm_cid']).to eq('fake-vm-cid')
-          # expect(status['disk_cid']).to be_nil
-          # expect(status['agent_id']).to eq('fake-agent-id')
-          # expect(status['job_state']).to eq('running')
-          # expect(status['resource_pool']).to eq('test_resource_pool')
-          # expect(status['vitals']).to be_nil
         end
 
         job.perform
+      end
+
+      context 'when instance is a bootstrap node' do
+        it 'should return is_bootstrap as true' do
+          vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+          Models::Instance.create(
+            deployment: @deployment,
+            job: 'dea',
+            index: '0',
+            state: 'started',
+            resurrection_paused: true,
+            vm: vm,
+            uuid: 'blarg'
+          )
+          stub_agent_get_state_to_return_state_with_vitals
+          job = Jobs::VmState.new(@deployment.id, 'full')
+
+          expect(@result_file).to receive(:write) do |agent_status|
+            status = JSON.parse(agent_status)
+            expect(status['is_bootstrap']).to be_truthy
+          end
+
+          job.perform
+        end
+      end
+
+      context 'when instance is NOT a bootstrap node' do
+        it 'should return is_bootstrap as false' do
+          vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+          Models::Instance.create(
+            deployment: @deployment,
+            job: 'dea',
+            index: '1',
+            state: 'started',
+            resurrection_paused: true,
+            vm: vm,
+            uuid: 'blarg'
+          )
+          stub_agent_get_state_to_return_state_with_vitals
+          job = Jobs::VmState.new(@deployment.id, 'full')
+
+          expect(@result_file).to receive(:write) do |agent_status|
+            status = JSON.parse(agent_status)
+            expect(status['is_bootstrap']).to be_falsey
+          end
+
+          job.perform
+        end
       end
     end
 
