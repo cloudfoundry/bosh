@@ -92,11 +92,16 @@ module Bosh::Cli::Command
       if manifest.hash['releases']
         build_manifest.hash['releases'].each do |release|
           unless release['url'].blank?
-            err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
-            run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
-          end
-          unless release['path'].blank?
-            run_nested_command "upload", "release", release['path']
+            parsed_uri = URI.parse(release['url'])
+            case parsed_uri.scheme
+            when 'file'
+              run_nested_command "upload", "release", parsed_uri.path
+            when 'http', 'https'
+              err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
+              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
+            else
+              err("Invalid URL format for release `#{release['name']}' with URL `#{release['url']}'. Supported schemes: file, http, https.")
+            end
           end
         end
       end
@@ -104,8 +109,16 @@ module Bosh::Cli::Command
       if manifest.hash['resource_pools']
         build_manifest.hash['resource_pools'].each do |resource_pool|
           unless resource_pool['stemcell']['url'].blank?
-            err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
-            run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1']
+            parsed_uri = URI.parse(resource_pool['stemcell']['url'])
+            case parsed_uri.scheme
+            when 'file'
+              run_nested_command "upload", "stemcell", parsed_uri.path
+            when 'http', 'https'
+              err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
+              run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1']
+            else
+              err("Invalid URL format for stemcell `#{resource_pool['stemcell']['name']}' with URL `#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
+            end
           end
         end
       end

@@ -29,7 +29,7 @@ module Bosh::Cli
     usage 'upload stemcell'
     desc 'Upload stemcell (stemcell_location can be a local file or a remote URI)'
     option '--skip-if-exists', 'skips upload if stemcell already exists'
-    option '--sha1 SHA1', 'sha1 of the remote stemcell'
+    option '--sha1 SHA1', 'SHA1 of the remote stemcell'
 
     def upload(stemcell_location)
       auth_required
