@@ -99,6 +99,8 @@ jobs:
       file: bosh-load-tests/ci/tasks/test.yml
       config:
         tags: ["bosh-integration"]
+        params:
+          RUBY_VERSION: 2.1.7
 
 resources:
   - name: bosh-src
