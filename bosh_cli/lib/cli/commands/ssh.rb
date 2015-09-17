@@ -157,6 +157,7 @@ module Bosh::Cli
         ensure
           nl
           say('Cleaning up ssh artifacts')
+          remove_host_public_key(sessions.first['ip'])
           indices = sessions.map { |session| session['index'] }
           director.cleanup_ssh(deployment_name, job, "^#{user}$", indices)
           gateway.shutdown! if gateway
@@ -183,6 +184,11 @@ module Bosh::Cli
         setup_ssh(deployment_name, job, index, password) do |sessions, user, gateway|
           session = sessions.first
 
+          if session.include?('public_key')
+            remove_host_public_key(session['ip'])
+            add_host_public_key(session)
+          end
+
           unless session['status'] == 'success' && session['ip']
             err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
           end
@@ -202,6 +208,15 @@ module Bosh::Cli
             Process.waitpid(ssh_session)
           end
         end
+      end
+
+      def add_host_public_key(session)
+        entry = "#{session['ip']} #{session['public_key']}"
+        %x[echo "#{entry.strip}" >> ~/.ssh/known_hosts]
+      end
+
+      def remove_host_public_key(ip)
+        %x[ssh-keygen -R #{ip} &>/dev/null]
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
