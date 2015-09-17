@@ -22,7 +22,7 @@ module Bosh::Director
       instance_plans = @job.instance_plans
                          .reject(&:obsolete?)
                          .select do |instance_plan|
-        instance_plan.instance.changed? || instance_plan.networks_changed?
+        instance_plan.changed?
       end
 
       if instance_plans.empty?
@@ -31,8 +31,7 @@ module Bosh::Director
       end
 
       instance_plans.each do |instance_plan|
-        changes = instance_plan.instance.changes
-        changes << :networks if instance_plan.networks_changed?
+        changes = instance_plan.changes
         @logger.debug("Need to update instance '#{instance_plan.instance}', changes: #{changes}")
       end
 

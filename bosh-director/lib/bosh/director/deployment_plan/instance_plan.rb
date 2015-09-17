@@ -33,6 +33,31 @@ module Bosh
 
         attr_accessor :network_plans
 
+        ##
+        # @return [Boolean] returns true if the any of the expected specifications
+        #   differ from the ones provided by the VM
+        def changed?
+          !changes.empty?
+        end
+
+        ##
+        # @return [Set<Symbol>] returns a set of all of the specification differences
+        def changes
+          changes = Set.new
+          changes << :restart if instance.restart_needed?
+          changes << :cloud_properties if instance.cloud_properties_changed?
+          changes << :resource_pool if instance.resource_pool_changed?
+          changes << :network if networks_changed?
+          changes << :packages if instance.packages_changed?
+          changes << :persistent_disk if instance.persistent_disk_changed?
+          changes << :configuration if instance.configuration_changed?
+          changes << :job if instance.job_changed?
+          changes << :state if instance.state_changed?
+          changes << :dns if instance.dns_changed?
+          changes << :trusted_certs if instance.trusted_certs_changed?
+          changes
+        end
+
         def networks_changed?
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
@@ -41,6 +66,14 @@ module Bosh
 
         def mark_desired_network_plans_as_existing
           network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
+        end
+
+        def release_obsolete_ips
+          network_plans.select(&:obsolete?).each do |network_plan|
+            reservation = network_plan.reservation
+            @instance.job.deployment.ip_provider.release(reservation)
+          end
+          network_plans.delete_if(&:obsolete?)
         end
 
         def obsolete?

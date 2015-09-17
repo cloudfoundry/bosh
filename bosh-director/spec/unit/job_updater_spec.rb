@@ -42,8 +42,13 @@ describe Bosh::Director::JobUpdater do
 
     context 'when job is up to date' do
       let(:instance_plans) do
-        instance = instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false, changes: [])
-        instance_plan = BD::DeploymentPlan::InstancePlan.new(instance: instance, desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance), existing_instance: nil)
+        instance_plan = BD::DeploymentPlan::InstancePlan.new(
+          instance: instance_double(BD::DeploymentPlan::Instance),
+          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          existing_instance: nil
+        )
+        allow(instance_plan).to receive(:changed?) { false }
+        allow(instance_plan).to receive(:changes) { [] }
         [instance_plan]
       end
 
@@ -62,28 +67,40 @@ describe Bosh::Director::JobUpdater do
     end
 
     context 'when job needs to be updated' do
-      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1, changed?: true, changes: ['dns']) }
-      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2, changed?: true, changes: ['network']) }
+      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
+      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2) }
       let(:unchanged_instance) do
-        instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, changed?: false, changes: [])
+        instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3)
       end
       let(:canary_plan) do
-        BD::DeploymentPlan::InstancePlan.new(
+        plan = BD::DeploymentPlan::InstancePlan.new(
           instance: canary,
           desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
-          existing_instance: nil)
+          existing_instance: nil
+        )
+        allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:changes) { ['dns']}
+        plan
       end
       let(:changed_instance_plan) do
-        BD::DeploymentPlan::InstancePlan.new(
+        plan = BD::DeploymentPlan::InstancePlan.new(
           instance: changed_instance,
           desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
-          existing_instance: BD::Models::Instance.make)
+          existing_instance: BD::Models::Instance.make
+        )
+        allow(plan).to receive(:changed?) { true }
+        allow(plan).to receive(:changes) { ['network']}
+        plan
       end
       let(:unchanged_instance_plan) do
-        BD::DeploymentPlan::InstancePlan.new(
+        plan = BD::DeploymentPlan::InstancePlan.new(
           instance: unchanged_instance,
           desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
-          existing_instance: BD::Models::Instance.make)
+          existing_instance: BD::Models::Instance.make
+        )
+        allow(plan).to receive(:changed?) { false }
+        allow(plan).to receive(:changes) { [] }
+        plan
       end
 
       let(:instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }

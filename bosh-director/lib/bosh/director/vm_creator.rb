@@ -64,6 +64,7 @@ module Bosh::Director
 
       instance.apply_vm_state
       instance_plan.mark_desired_network_plans_as_existing
+      instance_plan.release_obsolete_ips
     end
 
     def attach_disks_for(instance)

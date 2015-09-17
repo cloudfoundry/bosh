@@ -10,7 +10,10 @@ module Bosh::Director
 
     # return boolean indicating whether success to recreate vm
     def update
-      return @logger.debug('Skipping network re-configuration') unless @instance_plan.networks_changed?
+      unless @instance_plan.networks_changed?
+        @logger.debug('Skipping network re-configuration')
+        return true
+      end
 
       vm_cid = @instance.model.vm.cid
       network_settings = @instance.network_settings

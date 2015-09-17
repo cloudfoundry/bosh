@@ -302,6 +302,10 @@ module Bosh::Director
         @current_state['persistent_disk'].to_i > 0
       end
 
+      def restart_needed?
+        @restart
+      end
+
       def cloud_properties_changed?
         changed = cloud_properties != @model.cloud_properties_hash
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
@@ -440,32 +444,6 @@ module Bosh::Director
         changed = config_trusted_certs != model_trusted_certs
         log_changes(__method__, model_trusted_certs, config_trusted_certs) if changed
         changed
-      end
-
-      ##
-      # @return [Boolean] returns true if the any of the expected specifications
-      #   differ from the ones provided by the VM
-      def changed?
-        !changes.empty?
-      end
-
-      ##
-      # @return [Set<Symbol>] returns a set of all of the specification differences
-      def changes
-        changes = Set.new
-        unless @state == 'detached' && @current_state.nil?
-          changes << :restart if @restart
-          changes << :cloud_properties if cloud_properties_changed?
-          changes << :resource_pool if resource_pool_changed?
-          changes << :packages if packages_changed?
-          changes << :persistent_disk if persistent_disk_changed?
-          changes << :configuration if configuration_changed?
-          changes << :job if job_changed?
-          changes << :state if state_changed?
-          changes << :dns if dns_changed?
-          changes << :trusted_certs if trusted_certs_changed?
-        end
-        changes
       end
 
       ##

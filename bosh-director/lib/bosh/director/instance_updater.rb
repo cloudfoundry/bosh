@@ -24,26 +24,27 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
-      @logger.info("Updating instance #{instance}, changes: #{instance.changes.to_a.join(', ')}")
+      @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
       @canary = options.fetch(:canary, false)
 
       # Optimization to only update DNS if nothing else changed.
-      if dns_change_only?(instance_plan.instance)
+      if dns_change_only?(instance_plan)
         @logger.debug('Only change is DNS configuration')
         update_dns(instance_plan.instance)
         return
       end
 
-      only_trusted_certs_changed = trusted_certs_change_only?(instance) # figure this out before we start changing things
+      only_trusted_certs_changed = trusted_certs_change_only?(instance_plan) # figure this out before we start changing things
 
       Preparer.new(instance, agent(instance), @logger).prepare
       stop(instance_plan)
       take_snapshot(instance)
 
       if instance.state == 'detached'
+        @logger.info("Detaching instance #{instance}")
         @vm_deleter.delete_for_instance_plan(instance_plan)
-        release_obsolete_ips(instance_plan)
+        instance_plan.release_obsolete_ips
         return
       end
 
@@ -51,7 +52,7 @@ module Bosh::Director
         @logger.debug('Failed to update in place. Recreating VM')
         recreate_vm(instance_plan, nil)
       end
-      release_obsolete_ips(instance_plan)
+      instance_plan.release_obsolete_ips
 
       update_dns(instance)
       update_persistent_disk(instance)
@@ -99,8 +100,8 @@ module Bosh::Director
       @logger.warn("agent start raised an exception: #{e.inspect}, ignoring for compatibility")
     end
 
-    def trusted_certs_change_only?(instance)
-      instance.changes.include?(:trusted_certs) && instance.changes.size == 1
+    def trusted_certs_change_only?(instance_plan)
+      instance_plan.changes.include?(:trusted_certs) && instance_plan.changes.size == 1
     end
 
     def stop(instance_plan)
@@ -244,8 +245,8 @@ module Bosh::Director
       @canary
     end
 
-    def dns_change_only?(instance)
-      instance.changes.include?(:dns) && instance.changes.size == 1
+    def dns_change_only?(instance_plan)
+      instance_plan.changes.include?(:dns) && instance_plan.changes.size == 1
     end
 
     # Watch times don't include the get_state roundtrip time, so effective
@@ -317,13 +318,6 @@ module Bosh::Director
       end
 
       delete_mounted_disk(instance, old_disk) if old_disk
-    end
-
-    def release_obsolete_ips(instance_plan)
-      instance_plan.network_plans.select(&:obsolete?).each do |network_plan|
-        reservation = network_plan.reservation
-        deployment_plan(instance_plan.instance).ip_provider.release(reservation)
-      end
     end
 
     def recreate_vm(instance_plan, new_disk_cid)
