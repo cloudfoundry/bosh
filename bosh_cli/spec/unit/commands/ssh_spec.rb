@@ -165,7 +165,7 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should setup ssh' do
-        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes")
+        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes", "")
 
         expect(director).to receive(:setup_ssh).and_return([:done, 42])
         expect(director).to receive(:get_task_result_log).with(42).
@@ -181,7 +181,7 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should disable strict host key checking' do
-          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=no")
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=no", "")
 
           allow(director).to receive(:setup_ssh).and_return([:done, 42])
           allow(director).to receive(:get_task_result_log).with(42).
@@ -203,7 +203,7 @@ describe Bosh::Cli::Command::Ssh do
         it 'should setup ssh with gateway host' do
           expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
           expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes", "")
 
           expect(director).to receive(:setup_ssh).and_return([:done, 42])
           expect(director).to receive(:get_task_result_log).with(42).
@@ -226,7 +226,7 @@ describe Bosh::Cli::Command::Ssh do
           it 'should setup ssh with gateway host and user' do
             expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
             expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes", "")
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
@@ -242,7 +242,7 @@ describe Bosh::Cli::Command::Ssh do
           it 'should setup ssh with gateway host and user and identity file' do
             expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {keys: ['/tmp/private_file']}).and_return(net_ssh)
             expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes", "")
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
@@ -278,7 +278,7 @@ describe Bosh::Cli::Command::Ssh do
             it 'should disable strict host key checking' do
               allow(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
               allow(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-              expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=no")
+              expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=no", "")
 
               allow(director).to receive(:setup_ssh).and_return([:done, 42])
               allow(director).to receive(:get_task_result_log).with(42).
