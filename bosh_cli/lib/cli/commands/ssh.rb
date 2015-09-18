@@ -215,11 +215,13 @@ module Bosh::Cli
 
       def add_host_public_key(session)
         entry = "#{session['ip']} #{session['host_public_key']}"
-        %x[echo "#{entry.strip}" > #{SSH_BOSH_KNOWN_HOST}]
+        known_host_file = File.new(SSH_BOSH_KNOWN_HOST, "w")
+        known_host_file.puts(entry)
+        known_host_file.close
       end
 
       def remove_host_public_key
-        %x[rm -rf #{SSH_BOSH_KNOWN_HOST}]
+        File.delete(SSH_BOSH_KNOWN_HOST) if File.exist?(SSH_BOSH_KNOWN_HOST)
       end
 
       def perform_operation(operation, deployment_name, job, index, args)

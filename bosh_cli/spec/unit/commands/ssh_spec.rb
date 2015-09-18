@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'net/ssh/gateway'
 
 describe Bosh::Cli::Command::Ssh do
-  include FakeFS::SpecHelpers
 
   let(:command) { described_class.new }
   let(:net_ssh) { double('ssh') }
@@ -28,6 +27,8 @@ describe Bosh::Cli::Command::Ssh do
     File.open('fake-deployment', 'w') { |f| f.write(manifest.to_yaml) }
     allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
+
+    allow(File).to receive(:delete)
 
     allow(command).to receive(:random_ssh_username).and_return('testable_user')
     allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
@@ -173,6 +174,45 @@ describe Bosh::Cli::Command::Ssh do
         expect(director).to receive(:cleanup_ssh)
 
         command.shell('dea/0')
+      end
+
+      context 'when host returns a host_public_key' do
+
+        let(:host_file) { Tempfile.new("bosh_known_host") }
+
+        before do
+          allow(director).to receive(:setup_ssh).and_return([:done, 42])
+          allow(director).to receive(:cleanup_ssh)
+          allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1', 'host_public_key' => 'fake_public_key'}]))
+        end
+
+        after do
+          allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+        end
+
+        it 'should create a bosh known host file' do
+          expect(File).to receive(:new).and_return(host_file)
+          expect(host_file).to receive(:puts).with("127.0.0.1 fake_public_key")
+          expect(host_file).to receive(:close)
+          expect(Process).to receive(:spawn)
+
+          command.shell('dea/0')
+        end
+
+        it 'should call ssh with bosh known hosts path' do
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes", "-o UserKnownHostsFile=/tmp/bosh_known_host")
+
+          command.shell('dea/0')
+        end
+
+        it 'should delete the bosh known host file on cleanup' do
+           expect(File).to receive(:exist?).exactly(2).times.and_return(true)
+           expect(File).to receive(:delete).with("/tmp/bosh_known_host")
+           expect(Process).to receive(:spawn)
+
+          command.shell('dea/0')
+        end
+
       end
 
       context 'when strict host key checking is overriden to false' do
