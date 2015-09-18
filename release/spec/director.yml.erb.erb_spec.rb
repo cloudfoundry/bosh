@@ -72,6 +72,7 @@ describe 'director.yml.erb.erb' do
   context 'given a generally valid manifest' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
+        'credentials_source' => 'static',
         'access_key_id' => 'key',
         'secret_access_key' => 'secret',
         'default_key_name' => 'default_key_name',
@@ -391,6 +392,7 @@ describe 'director.yml.erb.erb' do
   context 'when configured for aws' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
+        'credentials_source' => 'static',
         'access_key_id' => 'key',
         'secret_access_key' => 'secret',
         'default_key_name' => 'default_key_name',
@@ -423,6 +425,37 @@ describe 'director.yml.erb.erb' do
       }
     end
 
+    context 'when credentials_source is not static' do
+      before do
+        deployment_manifest_fragment['properties']['aws']['credentials_source'] = 'env_or_profile'
+        deployment_manifest_fragment['properties']['aws'].delete('access_key_id')
+        deployment_manifest_fragment['properties']['aws'].delete('secret_access_key')
+        deployment_manifest_fragment['properties']['aws']['default_iam_instance_profile'] = 'my_iam_profile'
+
+      end
+
+      it 'renders aws properties' do
+        expect(parsed_yaml['cloud']['properties']['aws']).to eq({
+          'credentials_source' => 'env_or_profile',
+          'access_key_id' => nil,
+          'secret_access_key' => nil,
+          'default_iam_instance_profile' => 'my_iam_profile',
+          'default_key_name' => 'default_key_name',
+          'default_security_groups' => 'default_security_groups',
+          'region' => 'region',
+          'ec2_endpoint' => 'some_ec2_endpoint',
+          'elb_endpoint' => 'some_elb_endpoint',
+          'max_retries' => 3,
+          'http_read_timeout' => 300,
+          'http_wire_trace' => true,
+          'ssl_verify_peer' => false,
+          'ssl_ca_file' => '/custom/cert/ca-certificates',
+          'ssl_ca_path' => '/custom/cert/'
+        })
+      end
+
+    end
+
     it 'sets plugin to aws' do
       expect(parsed_yaml['cloud']).to include({
         'plugin' => 'aws'
@@ -453,8 +486,10 @@ describe 'director.yml.erb.erb' do
 
     it 'renders aws properties' do
       expect(parsed_yaml['cloud']['properties']['aws']).to eq({
+        'credentials_source' => 'static',
         'access_key_id' => 'key',
         'secret_access_key' => 'secret',
+        'default_iam_instance_profile' => nil,
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
         'region' => 'region',
@@ -501,10 +536,29 @@ describe 'director.yml.erb.erb' do
     end
 
     context 'and using an s3 blobstore' do
+      context 'when credentials_source is not static' do
+        before do
+          deployment_manifest_fragment['properties']['blobstore']['credentials_source'] = 'env_or_profile'
+          deployment_manifest_fragment['properties']['blobstore'].delete('access_key_id')
+          deployment_manifest_fragment['properties']['blobstore'].delete('secret_access_key')
+
+        end
+
+        it 'sets the blobstore fields appropriately' do
+          expect(parsed_yaml['blobstore']['options']).to eq({
+            'bucket_name' => 'mybucket',
+            'credentials_source' => 'env_or_profile',
+            'access_key_id' => nil,
+            'secret_access_key' => nil,
+          })
+        end
+      end
+
       before do
         deployment_manifest_fragment['properties']['blobstore'] = {
           'provider' => 's3',
           'bucket_name' => 'mybucket',
+          'credentials_source' => 'static',
           'access_key_id' => 'key',
           'secret_access_key' => 'secret',
         }
@@ -513,6 +567,7 @@ describe 'director.yml.erb.erb' do
       it 'sets the blobstore fields appropriately' do
         expect(parsed_yaml['blobstore']['options']).to eq({
           'bucket_name' => 'mybucket',
+          'credentials_source' => 'static',
           'access_key_id' => 'key',
           'secret_access_key' => 'secret',
         })
@@ -522,15 +577,54 @@ describe 'director.yml.erb.erb' do
         it 'has the same config as the toplevel blobstore' do
           expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
             'bucket_name' => 'mybucket',
+            'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
           })
+        end
+
+        context 'when credentials_source is not static' do
+          before do
+            deployment_manifest_fragment['properties']['agent'] = {
+              'blobstore' => {
+                'credentials_source' => 'env_or_profile',
+                'access_key_id' => nil,
+                'secret_access_key' => nil,
+              }
+            }
+          end
+
+          it 'falls back to blobstore credential' do
+            expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+              'bucket_name' => 'mybucket',
+              'credentials_source' => 'env_or_profile',
+              'access_key_id' => 'key',
+              'secret_access_key' => 'secret',
+            })
+          end
+
+          context 'when blobstore does not have credentials' do
+            before do
+              deployment_manifest_fragment['properties']['blobstore'].delete('access_key_id')
+              deployment_manifest_fragment['properties']['blobstore'].delete('secret_access_key')
+            end
+
+            it 'access key and secret key to nil' do
+              expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                'bucket_name' => 'mybucket',
+                'credentials_source' => 'env_or_profile',
+                'access_key_id' => nil,
+                'secret_access_key' => nil,
+              })
+            end
+          end
         end
 
         context 'when there are override values for the agent' do
           before do
             deployment_manifest_fragment['properties']['agent'] = {
               'blobstore' => {
+                'credentials_source' => 'static',
                 'access_key_id' => 'agent-key',
                 'secret_access_key' => 'agent-secret',
               }
@@ -540,6 +634,7 @@ describe 'director.yml.erb.erb' do
           it 'uses the override values' do
             expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
               'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
               'access_key_id' => 'agent-key',
               'secret_access_key' => 'agent-secret',
             })
@@ -564,6 +659,7 @@ describe 'director.yml.erb.erb' do
           [parsed_yaml['blobstore'], parsed_yaml['compiled_package_cache']].each do |blobstore|
             expect(blobstore['options']).to eq({
               'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
               'access_key_id' => 'key',
               'secret_access_key' => 'secret',
               'use_ssl' => false,
@@ -581,6 +677,7 @@ describe 'director.yml.erb.erb' do
 
           expect(parsed_yaml['blobstore']['options']).to eq({
             'bucket_name' => 'mybucket',
+            'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
             'use_ssl' => true,
@@ -596,6 +693,7 @@ describe 'director.yml.erb.erb' do
           it 'has the same config as the toplevel blobstore' do
             expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
               'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
               'access_key_id' => 'key',
               'secret_access_key' => 'secret',
               'use_ssl' => false,
@@ -611,6 +709,7 @@ describe 'director.yml.erb.erb' do
             before do
               deployment_manifest_fragment['properties']['agent'] = {
                 'blobstore' => {
+                  'credentials_source' => 'static',
                   'access_key_id' => 'agent-key',
                   'secret_access_key' => 'agent-secret',
                   'host' => 'fakehost.example.com',
@@ -625,6 +724,7 @@ describe 'director.yml.erb.erb' do
             it 'uses the override values' do
               expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
                 'bucket_name' => 'mybucket',
+                'credentials_source' => 'static',
                 'access_key_id' => 'agent-key',
                 'secret_access_key' => 'agent-secret',
                 'use_ssl' => true,
