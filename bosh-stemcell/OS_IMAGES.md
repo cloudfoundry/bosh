@@ -251,6 +251,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `7usDt2skfd6jEm_0EK7NXRMmSG0BYz7r`
+  - bump kernel
+
 * `UNpmsea6Zi8Vf93FoqL_Jlxz13v0gozh`
   - update centos to match ubuntu update for USN-2739-1
 
