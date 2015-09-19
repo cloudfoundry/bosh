@@ -43,14 +43,44 @@ describe 'cli: instances', type: :integration do
 | foobar/0    | running | a             | 192.168.1.5 |
 |   process-1 | running |               |             |
 |   process-2 | running |               |             |
+|   process-3 | failing |               |             |
 +-------------+---------+---------------+-------------+
 | foobar/1    | running | a             | 192.168.1.6 |
 |   process-1 | running |               |             |
 |   process-2 | running |               |             |
+|   process-3 | failing |               |             |
 +-------------+---------+---------------+-------------+
 | foobar/2    | running | a             | 192.168.1.7 |
 |   process-1 | running |               |             |
 |   process-2 | running |               |             |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+INSTANCES
+
+  end
+
+  it 'should return instances --failing' do
+    deploy_from_scratch
+    instances_failing = bosh_runner.run('instances --failing')
+
+    expect(instances_failing).to match /No failing instances/
+  end
+
+  it 'should return instances --ps --failing' do
+    deploy_from_scratch
+    instances_ps = bosh_runner.run('instances --ps --failing')
+    expect(instances_ps).to include(<<INSTANCES)
++-------------+---------+---------------+-------------+
+| Instance    | State   | Resource Pool | IPs         |
++-------------+---------+---------------+-------------+
+| foobar/0    | running | a             | 192.168.1.5 |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/1    | running | a             | 192.168.1.6 |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/2    | running | a             | 192.168.1.7 |
+|   process-3 | failing |               |             |
 +-------------+---------+---------------+-------------+
 INSTANCES
 

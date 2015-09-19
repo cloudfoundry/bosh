@@ -8,6 +8,7 @@ module Bosh::Cli::Command
     option '--dns', 'Return instance DNS A records'
     option '--vitals', 'Return instance vitals information'
     option '--ps', "Return instance process information"
+    option '--failing', "Only show failing ones"
     def list()
       auth_required
       deployment_required
@@ -44,6 +45,7 @@ module Bosh::Cli::Command
         s
       end
 
+      row_count = 0
       has_disk_cid = instances[0].has_key?('disk_cid')
 
       instances_table = table do |t|
@@ -65,9 +67,19 @@ module Bosh::Cli::Command
           headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
         end
         t.headings = headings
-
-        s = instances.size
         sorted.each do |instance|
+          if options[:failing]
+            if options[:ps]
+              instance['processes'].keep_if { |p| p['state'] != 'running' }
+              next if instance['processes'].size == 0 && instance['job_state'] != 'failing'
+            else
+              next if instance['job_state'] != 'failing'
+            end
+          end
+
+          row_count += 1
+          t << :separator if row_count.between?(2, sorted.size)
+
           job = "#{instance['job_name'] || 'unknown'}/#{instance['index'] || 'unknown'}"
           ips = Array(instance['ips']).join("\n")
           dns_records = Array(instance['dns']).join("\n")
@@ -117,7 +129,6 @@ module Bosh::Cli::Command
           end
 
           t << row
-          s -= 1
           if options[:ps] && instance['processes']
             instance['processes'].each do |process|
               name = process['name']
@@ -126,16 +137,20 @@ module Bosh::Cli::Command
               (headings.size - 2).times { process_row << '' }
               t << process_row
             end
-            t << :separator if s > 0
           end
         end
       end
 
+      if options[:failing] && row_count == 0
+        nl
+        say('No failing instances')
+        nl
+        return
+      end
       nl
       say(instances_table)
       nl
-      say('Instances total: %d' % instances.size)
+      say('Instances total: %d' % row_count )
     end
-
   end
 end
