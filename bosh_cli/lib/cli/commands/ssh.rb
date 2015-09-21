@@ -6,7 +6,6 @@ module Bosh::Cli
       SSH_USER_PREFIX     = 'bosh_'
       SSH_DSA_PUB         = File.expand_path('~/.ssh/id_dsa.pub')
       SSH_RSA_PUB         = File.expand_path('~/.ssh/id_rsa.pub')
-      SSH_BOSH_KNOWN_HOST = '/tmp/bosh_known_host'
 
       # bosh ssh
       usage 'ssh'
@@ -138,6 +137,8 @@ module Bosh::Cli
           end
         end
 
+        sessions.first['uuid'] = SecureRandom::uuid
+
         begin
           if options[:gateway_host]
             require 'net/ssh/gateway'
@@ -158,7 +159,7 @@ module Bosh::Cli
         ensure
           nl
           say('Cleaning up ssh artifacts')
-          remove_host_public_key
+          remove_host_public_key(sessions.first)
           indices = sessions.map { |session| session['index'] }
           director.cleanup_ssh(deployment_name, job, "^#{user}$", indices)
           gateway.shutdown! if gateway
@@ -185,12 +186,6 @@ module Bosh::Cli
         setup_ssh(deployment_name, job, index, password) do |sessions, user, gateway|
           session = sessions.first
 
-          set_user_known_host_file = String.new
-
-          if session.include?('host_public_key')
-            add_host_public_key(session)
-            set_user_known_host_file = "-o UserKnownHostsFile=#{SSH_BOSH_KNOWN_HOST}"
-          end
 
           unless session['status'] == 'success' && session['ip']
             err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
@@ -203,25 +198,50 @@ module Bosh::Cli
 
           if gateway
             port        = gateway.open(session['ip'], 22)
+            set_user_known_host_file = set_user_known_host_option(session, port)
             ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s, skip_strict_host_key_checking, set_user_known_host_file)
             Process.waitpid(ssh_session)
             gateway.close(port)
           else
+            set_user_known_host_file = set_user_known_host_option(session, nil)
             ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}", skip_strict_host_key_checking, set_user_known_host_file)
             Process.waitpid(ssh_session)
           end
         end
       end
 
-      def add_host_public_key(session)
-        entry = "#{session['ip']} #{session['host_public_key']}"
-        known_host_file = File.new(SSH_BOSH_KNOWN_HOST, "w")
-        known_host_file.puts(entry)
+      def set_user_known_host_option(session, gatewayPort)
+        if session.include?('host_public_key')
+          hostEntryIP =  if gatewayPort then "[localhost]:#{gatewayPort}" else session['ip'] end
+          hostEntry = "#{hostEntryIP} #{session['host_public_key']}"
+          add_host_public_key(session, hostEntry)
+
+          return "-o UserKnownHostsFile=#{known_host_file_name(session)}"
+        else
+          return String.new
+        end
+      end
+
+      def known_host_file_name(session)
+        File.join(ENV['HOME'], '.bosh', 'tmp', "#{session['uuid']}_known_hosts")
+      end
+
+      def add_host_public_key(session, hostEntry)
+        file_name = known_host_file_name(session)
+
+        dirname = File.dirname(file_name)
+        unless File.directory?(dirname)
+          FileUtils.mkdir_p(dirname)
+        end
+
+        known_host_file = File.new(file_name, "w")
+        known_host_file.puts(hostEntry)
         known_host_file.close
       end
 
-      def remove_host_public_key
-        File.delete(SSH_BOSH_KNOWN_HOST) if File.exist?(SSH_BOSH_KNOWN_HOST)
+      def remove_host_public_key(session)
+        fileName = known_host_file_name(session)
+        File.delete(fileName) if File.exist?(fileName)
       end
 
       def perform_operation(operation, deployment_name, job, index, args)

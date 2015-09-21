@@ -33,6 +33,9 @@ describe Bosh::Cli::Command::Ssh do
     allow(command).to receive(:random_ssh_username).and_return('testable_user')
     allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
     command.add_option(:default_password, 'password')
+
+    allow(ENV).to receive(:[])
+    allow(ENV).to receive(:[]).with("HOME").and_return("/tmp")
   end
 
   context 'shell' do
@@ -179,36 +182,45 @@ describe Bosh::Cli::Command::Ssh do
       context 'when host returns a host_public_key' do
 
         let(:host_file) { Tempfile.new("bosh_known_host") }
+        let(:host_file_name) { File.join(ENV['HOME'], '.bosh', 'tmp', 'random_uuid_known_hosts') }
 
         before do
           allow(director).to receive(:setup_ssh).and_return([:done, 42])
           allow(director).to receive(:cleanup_ssh)
           allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1', 'host_public_key' => 'fake_public_key'}]))
+          allow(SecureRandom).to receive(:uuid).and_return("random_uuid")
+          allow(Process).to receive(:spawn)
         end
 
         after do
           allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         end
 
+        it 'should create a bosh temp directory if it does not exist' do
+          expect(File).to receive(:dirname).with(host_file_name).and_return("/home/.bosh/tmp")
+          expect(File).to receive(:directory?).and_return(false)
+          expect(FileUtils).to receive(:mkdir_p).with("/home/.bosh/tmp")
+
+          command.shell("dea/0")
+        end
+
         it 'should create a bosh known host file' do
           expect(File).to receive(:new).and_return(host_file)
           expect(host_file).to receive(:puts).with("127.0.0.1 fake_public_key")
           expect(host_file).to receive(:close)
-          expect(Process).to receive(:spawn)
 
           command.shell('dea/0')
+
         end
 
         it 'should call ssh with bosh known hosts path' do
-          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes", "-o UserKnownHostsFile=/tmp/bosh_known_host")
-
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes", "-o UserKnownHostsFile=#{host_file_name}")
           command.shell('dea/0')
         end
 
         it 'should delete the bosh known host file on cleanup' do
            expect(File).to receive(:exist?).exactly(2).times.and_return(true)
-           expect(File).to receive(:delete).with("/tmp/bosh_known_host")
-           expect(Process).to receive(:spawn)
+           expect(File).to receive(:delete).with(host_file_name)
 
           command.shell('dea/0')
         end
@@ -331,6 +343,43 @@ describe Bosh::Cli::Command::Ssh do
               command.shell('dea/0')
             end
           end
+
+          context 'when host returns a host_public_key' do
+            let(:host_file) { Tempfile.new("bosh_known_host") }
+            let(:host_file_name) { File.join(ENV['HOME'], '.bosh', 'tmp', 'random_uuid_known_hosts') }
+
+            before do
+              expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
+              expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+
+              allow(director).to receive(:setup_ssh).and_return([:done, 42])
+              allow(director).to receive(:cleanup_ssh)
+              allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1', 'host_public_key' => 'fake_public_key'}]))
+              allow(SecureRandom).to receive(:uuid).and_return("random_uuid")
+              allow(Process).to receive(:spawn)
+              allow(net_ssh).to receive(:close)
+              allow(net_ssh).to receive(:shutdown!)
+            end
+
+            after do
+              allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+            end
+
+            it 'should create a bosh known host file with localhost entry' do
+              expect(File).to receive(:new).and_return(host_file)
+              expect(host_file).to receive(:puts).with('[localhost]:2345 fake_public_key')
+              expect(host_file).to receive(:close)
+
+              command.shell('dea/0')
+            end
+
+            it 'should call ssh with bosh known hosts path' do
+              expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost','-p', '2345', '-o StrictHostKeyChecking=yes', "-o UserKnownHostsFile=#{host_file_name}")
+              command.shell('dea/0')
+            end
+
+          end
+
         end
       end
     end
