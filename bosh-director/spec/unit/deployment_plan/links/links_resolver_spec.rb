@@ -150,7 +150,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                           'address' => '127.0.0.3',
                         },
                         'fake-dynamic-network' => {
-                          'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns",
                         }
                       }
                     },
@@ -164,7 +164,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                           'address' => '127.0.0.4',
                         },
                         'fake-dynamic-network' => {
-                          'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns",
                         }
                       }
                     }
@@ -211,7 +211,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                           'address' => '127.0.0.4',
                         },
                         'fake-dynamic-network' => {
-                          'address' => '0.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.other-deployment.fake-dns",
                         }
                       }
                     },
@@ -225,7 +225,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                           'address' => '127.0.0.5',
                         },
                         'fake-dynamic-network' => {
-                          'address' => '1.mysql.fake-dynamic-network.other-deployment.fake-dns',
+                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.other-deployment.fake-dns",
                         }
                       }
                     }
@@ -285,7 +285,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                         'address' => '127.0.0.3'
                       },
                       'fake-dynamic-network' => {
-                        'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns"
                       }
                     }
                   },
@@ -299,7 +299,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                         'address' => '127.0.0.4'
                       },
                       'fake-dynamic-network' => {
-                        'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns"
                       }
                     }
                   }
@@ -505,7 +505,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                         'address' => '127.0.0.3',
                       },
                       'fake-dynamic-network' => {
-                        'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns",
                       }
                     }
                   },
@@ -519,7 +519,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                         'address' => '127.0.0.4',
                       },
                       'fake-dynamic-network' => {
-                        'address' => '1.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.fake-dns",
                       }
                     }
                   }

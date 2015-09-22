@@ -255,6 +255,16 @@ module Bosh::Director
         network_settings
       end
 
+      def network_addresses
+        network_addresses = {}
+        network_settings.each do |network_name, network|
+          network_addresses[network_name] = {
+            'address' => network['type'] == 'dynamic' ? dns_record_name(uuid, network_name) : network['ip']
+          }
+        end
+        network_addresses
+      end
+
       ##
       # @return [Integer] persistent disk size
       def disk_size

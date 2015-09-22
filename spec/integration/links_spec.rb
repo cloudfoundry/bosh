@@ -9,6 +9,12 @@ describe 'Links', type: :integration do
     bosh_runner.run_in_dir('upload release', ClientSandbox.links_release_dir)
   end
 
+  def find_vm(vms, job_name, index)
+    vms.find do |vm|
+      vm.job_name == job_name && vm.index == index
+    end
+  end
+
   before do
     target_and_login
     upload_links_release
@@ -75,7 +81,11 @@ describe 'Links', type: :integration do
       it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
-        link_vm = director.vm('my_api', '0')
+        vms = director.vms
+        link_vm = find_vm(vms, 'my_api', '0')
+        mysql_0_vm = find_vm(vms, 'mysql', '0')
+        mysql_1_vm = find_vm(vms, 'mysql', '1')
+
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(2)
@@ -90,7 +100,7 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => '0.mysql.dynamic-network.simple.bosh'
+                  'address' => "#{mysql_0_vm.instance_id}.mysql.dynamic-network.simple.bosh"
                 }
               ]
             },
@@ -104,7 +114,7 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => '1.mysql.dynamic-network.simple.bosh'
+                  'address' => "#{mysql_1_vm.instance_id}.mysql.dynamic-network.simple.bosh"
                 }
               ]
             }

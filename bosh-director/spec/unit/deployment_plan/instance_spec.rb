@@ -126,6 +126,8 @@ module Bosh::Director::DeploymentPlan
         before do
           ip_provider.reserve(reservation)
           instance.add_network_reservation(reservation)
+          allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
+          instance.bind_unallocated_vm
         end
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
@@ -143,12 +145,15 @@ module Bosh::Director::DeploymentPlan
               })
         end
 
-        describe '#dns_changed?' do
-          before do
-            allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
-            instance.bind_unallocated_vm
+        describe '#network_addresses' do
+          it 'returns the id based dns record address for the instance'do
+            expect(instance.network_addresses).to eq({
+                  'net_a' => {'address' => 'uuid-1.job.net-a.mycloud.test_domain'}
+                })
           end
+        end
 
+        describe '#dns_changed?' do
           describe 'when the index dns record for the instance is not found' do
             before do
               ::Bosh::Director::Models::Dns::Record.create(:name => 'uuid-1.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
@@ -221,6 +226,14 @@ module Bosh::Director::DeploymentPlan
 
           instance.bind_existing_instance_model(instance_model)
           expect(instance.network_settings).to eql(net_settings)
+        end
+
+        describe '#network_addresses' do
+          it 'returns the ip addresses for manual networks on the instance'do
+            expect(instance.network_addresses).to eq({
+                  'net_a' => {'address' => '10.0.0.6'}
+                })
+          end
         end
       end
 

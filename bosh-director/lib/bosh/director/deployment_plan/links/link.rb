@@ -19,21 +19,10 @@ module Bosh::Director
               'index' => instance.index,
               'id' => instance.uuid,
               'availability_zone' => availability_zone,
-              'networks' => network_spec(instance.network_settings)
+              'networks' => instance.network_addresses
             }
           end
         }
-      end
-
-      private
-
-      def network_spec(network_settings)
-        Hash[*network_settings.map do |name, settings|
-          address = settings['type'] == 'dynamic' ? settings['dns_record_name'] : settings['ip']
-          result = { 'address' => address }
-
-          [name, result]
-        end.flatten]
       end
     end
   end
