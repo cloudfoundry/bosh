@@ -31,10 +31,6 @@ module Bosh::Director
         @model.index
       end
 
-      def uuid
-        @model.uuid
-      end
-
       def to_s
         "#{job_name}/#{index}"
       end

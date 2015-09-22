@@ -16,7 +16,7 @@ module Bosh::Director
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
       let(:instances_to_delete) do
         instances = []
-        5.times { instances << instance_double(DeploymentPlan::Instance) }
+        5.times { instances << double('instance') }
         instances
       end
 
@@ -46,11 +46,10 @@ module Bosh::Director
 
         instance = instance_double(
           DeploymentPlan::InstanceFromDatabase,
-          model: Models::Instance.make(vm: vm.model, deployment: deployment, uuid: 'uuid-1'),
+          model: Models::Instance.make(vm: vm.model, deployment: deployment),
           vm: vm,
           job_name: 'fake-job-name',
           index: 5,
-          uuid: 'uuid-1',
           to_s: 'fake-job-name/5',
           desired_network_reservations: fake_network_reservations,
           existing_network_reservations: []
@@ -130,7 +129,6 @@ module Bosh::Director
         expect(stopper).to receive(:stop)
         expect(deleter).to receive(:delete_snapshots).with(instance.model)
         expect(deleter).to receive(:delete_persistent_disks).with(persistent_disks)
-        expect(deleter).to receive(:delete_dns_records).with('uuid-1.fake-job-name.%.deployment-name.bosh', domain.id)
         expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
         expect(cloud).to receive(:delete_vm).with(vm.model.cid)
         expect(ip_provider).to receive(:release).with(reservation)
@@ -158,7 +156,6 @@ module Bosh::Director
             expect(deleter).to receive(:delete_snapshots)
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
-            expect(deleter).to receive(:delete_dns_records).with('uuid-1.fake-job-name.%.deployment-name.bosh', domain.id)
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(ip_provider).to receive(:release).with(reservation)
 
@@ -184,7 +181,6 @@ module Bosh::Director
             expect(deleter).to receive(:delete_snapshots)
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
-            expect(deleter).to receive(:delete_dns_records).with('uuid-1.fake-job-name.%.deployment-name.bosh', domain.id)
             expect(ip_provider).to receive(:release).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
@@ -209,7 +205,6 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(deleter).to receive(:delete_persistent_disks)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
-            expect(deleter).to receive(:delete_dns_records).with('uuid-1.fake-job-name.%.deployment-name.bosh', domain.id)
             expect(ip_provider).to receive(:release).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
@@ -233,7 +228,6 @@ module Bosh::Director
             expect(stopper).to receive(:stop)
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
-            expect(deleter).to receive(:delete_dns_records).with('uuid-1.fake-job-name.%.deployment-name.bosh', domain.id)
             expect(deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
             expect(ip_provider).to receive(:release).with(reservation)
 
@@ -279,7 +273,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_vm).with(vm.model.cid)
             expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
             expect(cloud).to receive(:delete_disk).exactly(2).times
-            expect(deleter).to receive(:delete_dns_records).exactly(2).times
+            expect(deleter).to receive(:delete_dns_records)
             expect(ip_provider).to receive(:release).with(reservation)
 
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
@@ -299,7 +293,7 @@ module Bosh::Director
           expect(stopper).to receive(:stop)
           expect(cloud).to receive(:delete_vm).with(vm.model.cid)
           expect(cloud).to receive(:delete_disk).exactly(2).times
-          expect(deleter).to receive(:delete_dns_records).exactly(2).times
+          expect(deleter).to receive(:delete_dns_records)
           expect(ip_provider).to receive(:release).with(reservation)
 
           expect(cloud).to_not receive(:delete_snapshot)

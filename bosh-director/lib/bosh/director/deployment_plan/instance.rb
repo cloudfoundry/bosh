@@ -236,7 +236,7 @@ module Bosh::Director
           # in network configuration that errand job might need.
           # (e.g. errand job desires static ip)
           if @job.starts_on_deploy?
-            network_settings[network_name]['dns_record_name'] = dns_record_name(index, network_name)
+            network_settings[network_name]['dns_record_name'] = dns_record_name(network_name)
           end
 
           # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
@@ -284,18 +284,16 @@ module Bosh::Director
       def dns_record_info
         dns_record_info = {}
         network_settings.each do |network_name, network|
-          index_dns_name = dns_record_name(index, network_name)
-          dns_record_info[index_dns_name] = network['ip']
-          id_dns_name = dns_record_name(uuid, network_name)
-          dns_record_info[id_dns_name] = network['ip']
+          name = dns_record_name(network_name)
+          dns_record_info[name] = network['ip']
         end
         dns_record_info
       end
 
       ##
       # @return [String] dns record name
-      def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
+      def dns_record_name(network_name)
+        [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
       end
 
       ##
