@@ -107,6 +107,34 @@ module Bosh::Director
         job.perform
       end
 
+      it 'should return DNS A records ordered by instance id records first' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+        domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
+        Models::Dns::Record.make(
+          domain: domain,
+          name: '0.job.network.deployment.microbosh',
+          type: 'A',
+          content: '1.1.1.1',
+          ttl: 14400,
+        )
+        Models::Dns::Record.make(
+          domain: domain,
+          name: 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh',
+          type: 'A',
+          content: '1.1.1.1',
+          ttl: 14400,
+        )
+        stub_agent_get_state_to_return_state_with_vitals
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['dns']).to eq(['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'])
+        end
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+        job.perform
+      end
+
       it 'should handle unresponsive agents' do
         Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 

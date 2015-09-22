@@ -65,15 +65,16 @@ module Bosh::Director
         if @domain
           ips.each do |ip|
             records = Models::Dns::Record.filter(domain_id: @domain.id, type: "A", content: ip)
-            dns_records << records.collect { |record| record.name } unless records.empty?
+            records.each { |record| dns_records << record.name } unless records.empty?
           end
+          dns_records.sort_by! { |name| -name.split('.').first.length }
         end
 
         {
           :vm_cid => vm.cid,
           :disk_cid => vm.instance ? vm.instance.persistent_disk_cid : nil,
           :ips => ips,
-          :dns => dns_records.flatten,
+          :dns => dns_records,
           :agent_id => vm.agent_id,
           :job_name => job_name,
           :index => job_index,
