@@ -196,21 +196,16 @@ describe Bosh::Cli::Command::Ssh do
           allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         end
 
-        it 'should create a bosh temp directory if it does not exist' do
+        it 'should create a bosh temp directory and the known host file' do
           expect(File).to receive(:dirname).with(host_file_name).and_return("/home/.bosh/tmp")
           expect(File).to receive(:directory?).and_return(false)
           expect(FileUtils).to receive(:mkdir_p).with("/home/.bosh/tmp")
 
-          command.shell("dea/0")
-        end
-
-        it 'should create a bosh known host file' do
           expect(File).to receive(:new).and_return(host_file)
           expect(host_file).to receive(:puts).with("127.0.0.1 fake_public_key")
           expect(host_file).to receive(:close)
 
-          command.shell('dea/0')
-
+          command.shell("dea/0")
         end
 
         it 'should call ssh with bosh known hosts path' do
