@@ -95,12 +95,14 @@ module Bosh::Dev::Sandbox
       director_config = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(
-        @database,
-        director_ruby_port,
-        redis_port,
-        base_log_path,
-        director_tmp_path,
-        director_config,
+        {
+          database: @database,
+          director_port: director_ruby_port,
+          redis_port: redis_port,
+          base_log_path: base_log_path,
+          director_tmp_path: director_tmp_path,
+          director_config: director_config
+        },
         @logger
       )
       setup_heath_monitor

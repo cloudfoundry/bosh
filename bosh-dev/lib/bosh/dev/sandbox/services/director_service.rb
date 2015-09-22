@@ -12,12 +12,13 @@ module Bosh::Dev::Sandbox
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
 
-    def initialize(database, director_port, redis_port, base_log_path, director_tmp_path, director_config, logger)
-      @database = database
-      @redis_port = redis_port
+    def initialize(options, logger)
+      @database = options[:database]
+      @redis_port = options[:redis_port]
       @logger = logger
-      @director_tmp_path = director_tmp_path
-      @director_config = director_config
+      @director_tmp_path = options[:director_tmp_path]
+      @director_config = options[:director_config]
+      base_log_path = options[:base_log_path]
 
       log_location = "#{base_log_path}.director.out"
       @process = Service.new(
@@ -26,7 +27,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @socket_connector = SocketConnector.new('director', 'localhost', director_port, log_location, @logger)
+      @socket_connector = SocketConnector.new('director', 'localhost', options[:director_port], log_location, @logger)
 
       @worker_processes = 3.times.map do |index|
         Service.new(
@@ -97,7 +98,7 @@ module Bosh::Dev::Sandbox
       @logger.debug('Waiting for Resque queue to drain...')
       attempt = 0
       delay = 0.1
-      timeout = 2
+      timeout = 60
       max_attempts = timeout/delay
 
       until resque_is_done?
