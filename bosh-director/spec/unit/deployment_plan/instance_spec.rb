@@ -144,19 +144,45 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe '#dns_changed?' do
-          describe 'when the dns record for the instance is not found' do
+          before do
+            allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
+            instance.bind_unallocated_vm
+          end
+
+          describe 'when the index dns record for the instance is not found' do
+            before do
+              ::Bosh::Director::Models::Dns::Record.create(:name => 'uuid-1.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
+            end
+
             it '#dns_changed? should return true' do
               expect(instance.dns_changed?).to be(true)
             end
+
             it 'should log the dns changes' do
               expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '0.job.net-a.mycloud.test_domain' and ip '10.0.0.6' was not found in the db.")
               instance.dns_changed?
             end
           end
 
-          describe 'when the dns record for the instance is found' do
+          describe 'when the id dns record for the instance is not found' do
             before do
               ::Bosh::Director::Models::Dns::Record.create(:name => '0.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
+            end
+
+            it '#dns_changed? should return true' do
+              expect(instance.dns_changed?).to be(true)
+            end
+
+            it 'should log the dns changes' do
+              expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.job.net-a.mycloud.test_domain' and ip '10.0.0.6' was not found in the db.")
+              instance.dns_changed?
+            end
+          end
+
+          describe 'when the dns records for the instance are found' do
+            before do
+              ::Bosh::Director::Models::Dns::Record.create(:name => '0.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
+              ::Bosh::Director::Models::Dns::Record.create(:name => "#{instance.uuid}.job.net-a.mycloud.test_domain", :type => 'A', :content => '10.0.0.6')
             end
 
             it '#dns_changed? should return false' do
