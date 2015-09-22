@@ -35,6 +35,7 @@ module Bosh
           @track_tasks         = !options.delete(:no_track)
           @num_retries         = options.fetch(:num_retries, 5)
           @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
+          @ca_cert             = options[:ca_cert]
         end
 
         def uuid
@@ -728,8 +729,30 @@ module Bosh
           http_client.receive_timeout = API_TIMEOUT
           http_client.connect_timeout = CONNECT_TIMEOUT
 
-          http_client.ssl_config.verify_mode     = OpenSSL::SSL::VERIFY_NONE
-          http_client.ssl_config.verify_callback = Proc.new {}
+          if @ca_cert.nil?
+            http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+            http_client.ssl_config.verify_callback = Proc.new {}
+          else
+            unless File.exists?(@ca_cert)
+              raise DirectorError, 'Invalid ca certificate path'
+            end
+
+            parsed_url = nil
+            begin
+              parsed_url = URI.parse(uri)
+            rescue => e
+              raise CliError, "Failed to parse director URL: #{e.message}"
+            end
+
+            unless parsed_url.instance_of?(URI::HTTPS)
+              raise CliError, 'CA certificate cannot be used with HTTP protocol'
+            end
+
+            # pass in client certificate
+            cert_store = OpenSSL::X509::Store.new
+            cert_store.add_file(@ca_cert)
+            http_client.ssl_config.cert_store = cert_store
+          end
 
           if @credentials
             headers['Authorization'] = @credentials.authorization_header

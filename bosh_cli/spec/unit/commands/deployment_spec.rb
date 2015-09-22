@@ -49,6 +49,61 @@ describe Bosh::Cli::Command::Deployment do
     cmd.list
   end
 
+  describe 'deployment' do
+    before { @config = Support::TestConfig.new(cmd) }
+    after { @config.clean }
+
+    context 'when target is set' do
+      before do
+        allow(director).to receive(:get_status).and_return({'uuid' => 'director-uuid'})
+        config = @config.load
+        config.target = 'https://127.0.0.1:8080'
+        config.set_alias('target', 'manifest-uuid', 'url-from-config')
+        config.save_ca_cert_path('/ca-cert-path-from-config', 'url-from-config')
+        config.save_ca_cert_path('/fake-ca-cert')
+        config.save
+      end
+
+      let(:manifest_file) do
+        manifest_file = File.join(Dir.mktmpdir, 'manifest')
+        write_yaml({ 'director_uuid' => 'manifest-uuid' }, manifest_file)
+        manifest_file
+      end
+
+      after { FileUtils.rm_rf(manifest_file) }
+
+      context 'when current target uuid is not the same as the uuid in manifest' do
+        let(:director) { instance_double(Bosh::Cli::Client::Director) }
+
+        it 'changes current target and ca_cert' do
+          expect(Bosh::Cli::Client::Director).to receive(:new).with(
+              'https://127.0.0.1:8080',
+              anything,
+              ca_cert: '/fake-ca-cert'
+            ).and_return(director).twice # 1 time to get auth info, 2 second to get uuid
+
+          expect(Bosh::Cli::Client::Director).to receive(:new).with(
+              'url-from-config',
+              anything,
+              ca_cert: '/ca-cert-path-from-config'
+            ).and_return(director)
+
+          cmd.set_current(manifest_file)
+          config = @config.load
+          expect(config.target).to eq('url-from-config')
+          expect(config.ca_cert).to eq('/ca-cert-path-from-config')
+        end
+      end
+
+      it 'sets deployment manifest' do
+        allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+        cmd.set_current(manifest_file)
+        config = @config.load
+        expect(config.deployment).to eq(manifest_file)
+      end
+    end
+  end
+
   describe 'bosh validate jobs' do
     let(:manifest) do
       {

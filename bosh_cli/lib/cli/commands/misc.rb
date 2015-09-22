@@ -83,7 +83,7 @@ module Bosh::Cli::Command
       end
 
       director_url = normalize_url(director_url)
-      director = Bosh::Cli::Client::Director.new(director_url)
+      director = Bosh::Cli::Client::Director.new(director_url, nil, ca_cert: options[:ca_cert])
 
       begin
         status = director.get_status
@@ -237,7 +237,7 @@ module Bosh::Cli::Command
     end
 
     def get_director_status
-      Bosh::Cli::Client::Director.new(target, credentials).get_status
+      Bosh::Cli::Client::Director.new(target, credentials, ca_cert: config.ca_cert).get_status
     end
   end
 end

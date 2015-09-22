@@ -31,7 +31,7 @@ module Bosh::Cli::Command
       end
 
       if target
-        old_director = Bosh::Cli::Client::Director.new(target, credentials)
+        old_director = Bosh::Cli::Client::Director.new(target, credentials, ca_cert: config.ca_cert)
         old_director_uuid = old_director.get_status["uuid"] rescue nil
       else
         old_director_uuid = nil
@@ -49,8 +49,9 @@ module Bosh::Cli::Command
               "Please find your director IP or hostname and target it first.")
         end
 
+        target_ca_cert = config.ca_cert(new_target_url)
         new_director = Bosh::Cli::Client::Director.new(
-          new_target_url, credentials)
+          new_target_url, credentials, ca_cert: target_ca_cert)
 
         status = new_director.get_status
 

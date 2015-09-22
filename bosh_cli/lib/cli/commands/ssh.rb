@@ -240,8 +240,8 @@ module Bosh::Cli
       end
 
       def remove_host_public_key(session)
-        fileName = known_host_file_name(session)
-        File.delete(fileName) if File.exist?(fileName)
+        file_name = known_host_file_name(session)
+        FileUtils.rm_rf(file_name) if File.exist?(file_name)
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
