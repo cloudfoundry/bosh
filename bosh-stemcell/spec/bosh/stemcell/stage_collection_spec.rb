@@ -57,6 +57,7 @@ module Bosh::Stemcell
           expect(stage_collection.operating_system_stages).to eq(
             [
               :base_centos,
+              :base_runsvdir,
               :base_centos_packages,
               :base_file_permission,
               :base_ssh,
@@ -84,6 +85,7 @@ module Bosh::Stemcell
           expect(stage_collection.operating_system_stages).to eq(
             [
               :base_rhel,
+              :base_runsvdir,
               :base_centos_packages,
               :base_file_permission,
               :base_ssh,

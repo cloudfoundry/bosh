@@ -214,6 +214,7 @@ module Bosh::Stemcell
     def centos_os_stages
      [
         :base_centos,
+        :base_runsvdir,
         :base_centos_packages,
         :base_file_permission,
         :base_ssh,
@@ -231,6 +232,7 @@ module Bosh::Stemcell
     def rhel_os_stages
       [
         :base_rhel,
+        :base_runsvdir,
         :base_centos_packages,
         :base_file_permission,
         :base_ssh,
@@ -282,11 +284,11 @@ module Bosh::Stemcell
 
     def bosh_steps
       [
-          :bosh_sysctl,
-          :bosh_users,
-          :bosh_monit,
-          :bosh_ntpdate,
-          :bosh_sudoers,
+        :bosh_sysctl,
+        :bosh_users,
+        :bosh_monit,
+        :bosh_ntpdate,
+        :bosh_sudoers,
       ]
     end
 

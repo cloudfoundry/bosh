@@ -29,6 +29,12 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
     end
   end
 
+  context 'installed by base_runsvdir' do
+    describe file('/var/run') do
+      it { should be_linked_to('/run') }
+    end
+  end
+
   context 'installed or excluded by base_centos_packages' do
     %w(
       firewalld
