@@ -90,9 +90,19 @@ module Bosh::Dev::Sandbox
 
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
+      setup_database(db_opts)
+
       director_config = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
-      @director_service = DirectorService.new(director_ruby_port, redis_port, base_log_path, director_tmp_path, director_config, @logger)
+      @director_service = DirectorService.new(
+        @database,
+        director_ruby_port,
+        redis_port,
+        base_log_path,
+        director_tmp_path,
+        director_config,
+        @logger
+      )
       setup_heath_monitor
 
       @scheduler_process = Service.new(
@@ -100,8 +110,6 @@ module Bosh::Dev::Sandbox
         {output: "#{base_log_path}.scheduler.out"},
         @logger,
       )
-
-      setup_database(db_opts)
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
