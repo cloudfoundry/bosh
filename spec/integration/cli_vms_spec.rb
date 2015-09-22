@@ -105,13 +105,16 @@ VMS
     expect(output).to include('zone-3')
 
     expect(scrub_random_ids(bosh_runner.run('vms --dns'))).to include(<<VMS)
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| VM                                              | State   | AZ     | Resource Pool | IPs         | DNS A records          |
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
-+-------------------------------------------------+---------+--------+---------------+-------------+------------------------+
++-------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+| VM                                              | State   | AZ     | Resource Pool | IPs         | DNS A records                                             |
++-------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                 |         |        |               |             | 0.foobar.a.simple.bosh                                    |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1) | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                 |         |        |               |             | 1.foobar.a.simple.bosh                                    |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2) | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                 |         |        |               |             | 2.foobar.a.simple.bosh                                    |
++-------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
 VMS
 
     output = bosh_runner.run('vms --vitals')

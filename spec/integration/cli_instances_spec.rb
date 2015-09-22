@@ -57,13 +57,16 @@ describe 'cli: deployment process', type: :integration do
 
     output = bosh_runner.run('instances --dns')
     expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records          |
-+--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 | 0.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 | 1.foobar.a.simple.bosh |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 | 2.foobar.a.simple.bosh |
-+--------------------------------------------------+---------+--------+---------------+-------------+------------------------+
++--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+| Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records                                             |
++--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                  |         |        |               |             | 0.foobar.a.simple.bosh                                    |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                  |         |        |               |             | 1.foobar.a.simple.bosh                                    |
+| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+|                                                  |         |        |               |             | 2.foobar.a.simple.bosh                                    |
++--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
 
 (*) Bootstrap node
 INSTANCES
