@@ -44,7 +44,7 @@ module Bosh::Director
         })
       end
 
-      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+      let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
       let(:instance_model) do
         # not using an instance double since Sequel Model classes are a bit meta
@@ -129,20 +129,38 @@ module Bosh::Director
         context 'when latest archive has matching content_sha1' do
           let(:configuration_hash) { 'fake-latest-content-sha1' }
 
-          it 'does not persist new archive' do
-            perform
-            expect(rendered_job_instance).to_not have_received(:persist)
+          context 'when rendered template exists in blobstore' do
+            before { allow(blobstore).to receive(:exists?).with('fake-latest-blob-id').and_return(true) }
+
+            it 'does not persist new archive' do
+              perform
+              expect(rendered_job_instance).to_not have_received(:persist)
+            end
+
+            it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
+              perform
+              expect(Core::Templates::RenderedTemplatesArchive).to have_received(:new).
+                with('fake-latest-blob-id', 'fake-latest-sha1')
+              expect(instance).to have_received(:rendered_templates_archive=).with(latest_rendered_templates_archive)
+            end
           end
 
-          it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
-            perform
-            expect(Core::Templates::RenderedTemplatesArchive).to have_received(:new).
-              with('fake-latest-blob-id', 'fake-latest-sha1')
-            expect(instance).to have_received(:rendered_templates_archive=).with(latest_rendered_templates_archive)
+          context 'when rendered template is missing in blobstore' do
+            before do
+              allow(blobstore).to receive(:exists?).with('fake-latest-blob-id').and_return(false)
+              allow(Core::Templates::RenderedTemplatesArchive).to receive(:new).and_return(latest_archive)
+            end
+
+            it 'uploads the new archive and updates the record in db' do
+              expect(latest_archive).to receive(:update).with({:blobstore_id => 'fake-new-blob-id', :sha1 => 'fake-new-sha1'})
+              expect(rendered_job_instance).to receive(:persist).with(blobstore)
+              expect(instance).to receive(:rendered_templates_archive=).with(latest_archive)
+              perform
+            end
           end
         end
 
-        context 'when latest archive does have matching content_sha1' do
+        context 'when latest archive does not have matching content_sha1' do
           let(:configuration_hash) { 'fake-latest-non-matching-content-sha1' }
 
           it 'persists new archive' do
