@@ -251,6 +251,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `upXZonWLgbjXkN1VKg5W560cFsQ.D3J9`
+  - symlink /var/run to /run
+
 * `7usDt2skfd6jEm_0EK7NXRMmSG0BYz7r`
   - bump kernel
 
