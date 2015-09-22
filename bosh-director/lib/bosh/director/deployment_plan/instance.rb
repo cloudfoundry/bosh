@@ -39,14 +39,14 @@ module Bosh::Director
       attr_reader :existing_network_reservations, :desired_network_reservations
 
       def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, desired_instance.bootstrap, logger)
         instance.bind_existing_instance_model(desired_instance.existing_instance)
         instance.bind_existing_reservations(existing_instance_state)
         instance
       end
 
       def self.create(desired_instance, index, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, nil, desired_instance.az, logger)
+        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, nil, desired_instance.az, desired_instance.bootstrap, logger)
         instance.bind_new_instance_model
         instance
       end
@@ -58,13 +58,13 @@ module Bosh::Director
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, state, deployment, instance_state, availability_zone, logger)
+      def initialize(job, index, state, deployment, instance_state, availability_zone, bootstrap, logger)
         @job = job
         @index = index
         @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
-        @bootstrap = @index.zero?
+        @bootstrap = bootstrap
         @name = "#{@job.name}/#{@index}"
 
         @configuration_hash = nil
@@ -89,6 +89,10 @@ module Bosh::Director
             @restart = true
             @state = 'started'
         end
+      end
+
+      def bootstrap?
+        @bootstrap
       end
 
       def job_name
@@ -122,6 +126,7 @@ module Bosh::Director
             compilation: job.compilation?,
             uuid: SecureRandom.uuid,
             availability_zone: availability_zone_name,
+            bootstrap: bootstrap?
           })
       end
 
@@ -141,12 +146,12 @@ module Bosh::Director
       end
 
       # Updates this domain object to reflect an existing instance running on an existing vm
-      def bind_existing_instance_model(instance_model)
-        @uuid = instance_model.uuid
+      def bind_existing_instance_model(existing_instance_model)
+        @uuid = existing_instance_model.uuid
         check_model_not_bound
-        @model = instance_model
+        @model = existing_instance_model
         allocate_vm
-        @vm.model = instance_model.vm
+        @vm.model = existing_instance_model.vm
       end
 
       def bind_existing_reservations(state)

@@ -232,7 +232,8 @@ module Bosh::Director
             state: 'started',
             resurrection_paused: true,
             vm: vm,
-            uuid: 'blarg'
+            uuid: 'blarg',
+            bootstrap: true
           )
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')

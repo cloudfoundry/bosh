@@ -31,6 +31,19 @@ module Bosh::Spec
       end
     end
 
+    def instances(deployment_name = '', options={})
+      instances_output = @runner.run("instances #{deployment_name}", options)
+      instances = parse_table(instances_output, :instance)
+
+      instances.map do |instance_data|
+        Bosh::Spec::Instance.new(
+          instance_data[:instance_id],
+          !instance_data[:bootstrap].empty?,
+          instance_data[:az]
+        )
+      end
+    end
+
     # vm always returns a vm
     def vm(job_name, index, options={})
       deployment_name = options.fetch(:deployment, '')
@@ -105,7 +118,7 @@ module Bosh::Spec
       parse_table(@runner.run("vms #{deployment_name} --details",options))
     end
 
-    def parse_table(output)
+    def parse_table(output, table_type=:vm)
       rows = []
       current_row = -1
 
@@ -137,16 +150,18 @@ module Bosh::Spec
       vms = values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
 
       job_name_match_index = 1
-      instance_id_match_index =2
-      index_match_index = 3
+      instance_id_match_index = 2
+      bootstrap_match_index = 3
+      index_match_index = 4
 
       vms.each do |vm|
-        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})\s\((\d+)\)/.match(vm[:vm])
+        match_data = /(.*)\/([0-9a-f]{8}-[0-9a-f-]{27})(\*?)\s\((\d+)\)/.match(vm[table_type])
         if row_is_ip_address_for_previous_row(match_data)
           vm[:is_ip_address_for_previous_row] = true
         else
           vm[:job_name] = match_data[job_name_match_index]
           vm[:instance_id] = match_data[instance_id_match_index]
+          vm[:bootstrap] = match_data[bootstrap_match_index]
           vm[:index] = match_data[index_match_index]
         end
       end
@@ -166,7 +181,7 @@ module Bosh::Spec
     end
 
     def row_is_ip_address_for_previous_row(match_data)
-      match_data.nil? || match_data.size != 4
+      match_data.nil? || match_data.size != 5
     end
   end
 end

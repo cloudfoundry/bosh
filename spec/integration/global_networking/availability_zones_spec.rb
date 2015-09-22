@@ -369,5 +369,62 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(2)
       end
     end
+
+    context 'when adding and deleting azs from jobs' do
+      it 'selects a new bootstrap node if instance is deleted' do
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az'
+            }
+          },
+          {
+            'name' => 'my-az2',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az2',
+            }
+          },
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          },
+          {
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az2'
+          }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+        bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2'] - [bootstrap_node.az]
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        new_bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+        expect(bootstrap_node.id).not_to eq(new_bootstrap_node.id)
+
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        current_bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+        expect(current_bootstrap_node.id).to eq(new_bootstrap_node.id)
+      end
+    end
   end
 end

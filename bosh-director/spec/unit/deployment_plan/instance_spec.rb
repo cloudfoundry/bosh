@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, false, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
@@ -52,6 +52,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
+    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, instance_model, 1, true)}
 
     describe '#network_settings' do
       let(:job) do
@@ -238,7 +239,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'temporary errand hack' do
-
         let(:network) do
           ManualNetwork.new({
               'name' => network_name,
@@ -420,11 +420,11 @@ module Bosh::Director::DeploymentPlan
 
       it 'creates a new uuid for each instance' do
         allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
-        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
         first_instance.bind_unallocated_vm
         first_uuid = first_instance.uuid
         index = 1
-        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
         second_instance.bind_unallocated_vm
         second_uuid = second_instance.uuid
         expect(first_uuid).to_not be_nil
@@ -948,7 +948,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
         expect(spec['availability_zone']).to eq('foo-az')
-        expect(spec['bootstrap']).to eq(true)
+        expect(spec['bootstrap']).to eq(false)
       end
 
       it 'does not require persistent_disk_pool' do
@@ -1203,7 +1203,7 @@ module Bosh::Director::DeploymentPlan
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
           allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+          instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
 
           expect(instance.cloud_properties).to eq(
               {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -1215,7 +1215,7 @@ module Bosh::Director::DeploymentPlan
         it 'uses just the resource pool cloud properties' do
           allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, nil, logger)
+          instance = Instance.new(job, index, state, plan, current_state, nil, false, logger)
 
           expect(instance.cloud_properties).to eq(
               {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -1230,7 +1230,7 @@ module Bosh::Director::DeploymentPlan
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
         allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-        instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!
@@ -1239,6 +1239,53 @@ module Bosh::Director::DeploymentPlan
             {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
           )
 
+      end
+    end
+
+    describe '#create' do
+      it 'should persist an instance with attributes from the desired_instance' do
+        existing_instance = Bosh::Director::Models::Instance.make
+        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance, 1, true)
+
+        instance = Instance.create(desired_instance, 1, logger)
+
+        persisted_instance = BD::Models::Instance.find(uuid: 'uuid-1')
+        expect(persisted_instance.deployment_id).to eq(plan.model.id)
+        expect(persisted_instance.job).to eq(job.name)
+        expect(persisted_instance.index).to eq(1)
+        expect(persisted_instance.state).to eq('started')
+        expect(persisted_instance.compilation).to eq(job.compilation?)
+        expect(persisted_instance.uuid).to eq('uuid-1')
+        expect(persisted_instance.availability_zone).to eq(availability_zone.name)
+        expect(persisted_instance.bootstrap).to be_truthy
+      end
+    end
+
+    describe '#fetch_existing' do
+      it 'ensures persisted existing instance has the same state as in-memory existing instance' do
+        existing_instance = Bosh::Director::Models::Instance.make(
+          deployment_id: plan.model.id,
+          job: job.name,
+          index: 1,
+          state: 'started',
+          compilation: job.compilation?,
+          uuid: SecureRandom.uuid,
+          availability_zone: availability_zone.name,
+          bootstrap: false,
+         )
+        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance)
+        instance = Instance.fetch_existing(desired_instance, current_state, 1, logger)
+        persisted_instance = BD::Models::Instance.first
+        expect(BD::Models::Instance.count).to eq(1)
+
+        expect(persisted_instance.deployment_id).to eq(existing_instance.deployment_id)
+        expect(persisted_instance.job).to eq(existing_instance.job)
+        expect(persisted_instance.index).to eq(existing_instance.index)
+        expect(persisted_instance.state).to eq(existing_instance.state)
+        expect(persisted_instance.compilation).to eq(existing_instance.compilation)
+        expect(persisted_instance.uuid).to eq(existing_instance.uuid)
+        expect(persisted_instance.availability_zone).to eq(existing_instance.availability_zone)
+        expect(persisted_instance.bootstrap).to eq(false)
       end
     end
   end

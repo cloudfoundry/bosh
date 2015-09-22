@@ -29,6 +29,26 @@ module Bosh
             @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
           end
 
+          all_desired_instances = new_desired_instances+existing_desired_instances
+          bootstrap_instance = existing_desired_instances.map(&:existing_instance).find(&:bootstrap)
+
+          if bootstrap_instance.nil? && !all_desired_instances.empty?
+            lowest_indexed_desired_instance = all_desired_instances
+                                                .reject { |instance| instance.index.nil? }
+                                                .sort { |instance1, instance2| instance1.index <=> instance2.index }
+                                                .first
+
+            if lowest_indexed_desired_instance.existing_instance.nil?
+              new_desired_instances.each do |instance|
+                instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
+              end
+            else
+              existing_desired_instances.each do |instance|
+                instance.existing_instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
+              end
+            end
+          end
+
           desired_new_instance_plans = desired_new_instance_plans(new_desired_instances)
           desired_existing_instance_plans = desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance)
           obsolete_instance_plans = obsolete_instance_plans(obsolete_instance_models)

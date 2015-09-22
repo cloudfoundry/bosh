@@ -68,7 +68,7 @@ module Bosh::Director
         )
         compile_job = CompilationJob.new(resource_pool, @deployment_plan.compilation.network_name)
         availability_zone = @deployment_plan.compilation.availability_zone
-        Instance.new(compile_job, 0, 'started', @deployment_plan, {}, availability_zone, @logger)
+        Instance.new(compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
       end
 
       def configure_instance(instance)

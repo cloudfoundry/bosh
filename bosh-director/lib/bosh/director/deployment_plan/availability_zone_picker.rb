@@ -54,6 +54,7 @@ module Bosh
           end
           desired_existing.each do |desired_instance|
             candidate_indexes.delete(desired_instance.existing_instance.index)
+            desired_instance.index = desired_instance.existing_instance.index
           end
           desired_new.each do |desired_instance|
             desired_instance.index = candidate_indexes.shift

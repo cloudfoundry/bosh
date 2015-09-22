@@ -13,12 +13,16 @@ module Bosh::Director::Models
       validates_unique [:deployment_id, :job, :index]
       validates_unique [:vm_id] if vm_id
       validates_integer :index
-      validates_includes ["started", "stopped", "detached"], :state
+      validates_includes %w(started stopped detached), :state
     end
 
     def persistent_disk
       # Currently we support only 1 persistent disk.
       self.persistent_disks.find { |disk| disk.active }
+    end
+
+    def mark_as_bootstrap
+      self.update(bootstrap: true)
     end
 
     def persistent_disk_cid
@@ -48,10 +52,6 @@ module Bosh::Director::Models
 
     def cloud_properties_hash=(hash)
       self.cloud_properties = JSON.dump(hash)
-    end
-
-    def bootstrap?
-      self.index.zero?
     end
   end
 
