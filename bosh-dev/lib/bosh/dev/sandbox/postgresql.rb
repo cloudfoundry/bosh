@@ -27,6 +27,19 @@ module Bosh::Dev::Sandbox
       @runner.run(%Q{psql -U postgres -c 'drop database "#{db_name}";' > /dev/null 2>&1})
     end
 
+    def current_tasks
+      tasks_list_cmd = %Q{psql -U postgres #{db_name} -c "select description, output from tasks where state='processing';"}
+      task_lines = `#{tasks_list_cmd}`.lines.to_a[2...-2] || []
+
+      result = []
+      task_lines.each do |task_line|
+        items = task_line.split('|').map(&:strip)
+        result << {description: items[0], output: items[1] }
+      end
+
+      result
+    end
+
     def truncate_db
       @logger.info("Truncating postgres database #{db_name}")
       table_name_cmd = %Q{psql -U postgres #{db_name} -c "select tablename from pg_tables where schemaname='public';"}
