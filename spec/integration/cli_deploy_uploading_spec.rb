@@ -72,7 +72,7 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a local release tarball' do
-      let(:release_path) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
+    let(:release_path) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
 
     it 'uploads the release from the local file path in the manifest' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
@@ -113,6 +113,23 @@ describe 'cli: deploy uploading', type: :integration do
       output = bosh_runner.run('deploy', failure_expected: true)
       expect(output).to match /Release file doesn't exist/
       expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+  end
+
+  context 'with a local release directory' do
+    let(:release_path) { spec_asset("compiled_releases/test_release") }
+
+    it 'creates, uploads and deploys release from local folder' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("file://" + release_path, 'create'))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
   end
 

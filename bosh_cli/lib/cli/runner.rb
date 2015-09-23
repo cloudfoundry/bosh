@@ -53,8 +53,9 @@ module Bosh::Cli
 
       command.runner = self
       begin
-        exit_code = command.run(@args, @options)
+        exit_code, info = command.run(@args, @options)
         exit(exit_code) if exit_on_success || exit_code != 0
+        [exit_code, info]
       rescue OptionParser::ParseError => e
         say_err(e.message)
         nl

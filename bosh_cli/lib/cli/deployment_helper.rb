@@ -2,9 +2,10 @@ module Bosh::Cli
   module DeploymentHelper
     def build_manifest
       deployment_required
-      manifest = Manifest.new(deployment, director)
-      manifest.load
-      manifest
+      return @manifest if @manifest
+      @manifest = Manifest.new(deployment, director)
+      @manifest.load
+      @manifest
     end
 
     def prepare_deployment_manifest(options = {})
