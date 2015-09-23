@@ -1,16 +1,14 @@
 require 'cli/job_command_args'
+require 'cli/ssh_session'
 
 module Bosh::Cli
   module Command
     class Ssh < Base
       SSH_USER_PREFIX     = 'bosh_'
-      SSH_DSA_PUB         = File.expand_path('~/.ssh/id_dsa.pub')
-      SSH_RSA_PUB         = File.expand_path('~/.ssh/id_rsa.pub')
 
       # bosh ssh
       usage 'ssh'
       desc 'Execute command or start an interactive session'
-      option '--public_key FILE', 'Public key'
       option '--gateway_host HOST', 'Gateway host'
       option '--gateway_user USER', 'Gateway user'
       option '--gateway_identity_file FILE', 'Gateway identity file'
@@ -46,7 +44,6 @@ module Bosh::Cli
              'Note: for download /path/to/destination is a directory'
       option '--download', 'Download file'
       option '--upload', 'Upload file'
-      option '--public_key FILE', 'Public key'
       option '--gateway_host HOST', 'Gateway host'
       option '--gateway_user USER', 'Gateway user'
       option '--gateway_identity_file FILE', 'Gateway identity file'
@@ -116,9 +113,12 @@ module Bosh::Cli
         say("Target deployment is `#{deployment_name}'")
         nl
         say('Setting up ssh artifacts')
+
+        ssh_session = SSHSession.new
+
         status, task_id = director.setup_ssh(
           deployment_name, job, index, user,
-          public_key, encrypt_password(password))
+          ssh_session.public_key, encrypt_password(password))
 
         unless status == :done
           err("Failed to set up SSH: see task #{task_id} log for details")
@@ -137,7 +137,7 @@ module Bosh::Cli
           end
         end
 
-        sessions.first['uuid'] = SecureRandom::uuid
+        ssh_session.set_host_session(sessions.first)
 
         begin
           if options[:gateway_host]
@@ -155,11 +155,11 @@ module Bosh::Cli
             gateway = nil
           end
 
-          yield sessions, user, gateway
+          yield sessions, user, gateway, ssh_session
         ensure
           nl
           say('Cleaning up ssh artifacts')
-          remove_host_public_key(sessions.first)
+          ssh_session.cleanup
           indices = sessions.map { |session| session['index'] }
           director.cleanup_ssh(deployment_name, job, "^#{user}$", indices)
           gateway.shutdown! if gateway
@@ -183,9 +183,8 @@ module Bosh::Cli
           err('Please provide ssh password') if password.blank?
         end
 
-        setup_ssh(deployment_name, job, index, password) do |sessions, user, gateway|
+        setup_ssh(deployment_name, job, index, password) do |sessions, user, gateway, ssh_session|
           session = sessions.first
-
 
           unless session['status'] == 'success' && session['ip']
             err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
@@ -196,52 +195,20 @@ module Bosh::Cli
           skip_strict_host_key_checking = options[:strict_host_key_checking] =~ (/(no|false)$/i) ?
               '-o StrictHostKeyChecking=no' : '-o StrictHostKeyChecking=yes'
 
+          private_key_option = ssh_session.ssh_private_key_option
+
           if gateway
             port        = gateway.open(session['ip'], 22)
-            set_user_known_host_file = set_user_known_host_option(session, port)
-            ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s, skip_strict_host_key_checking, set_user_known_host_file)
-            Process.waitpid(ssh_session)
+            known_host_option  = ssh_session.ssh_known_host_option(port)
+            ssh_session_pid = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s, private_key_option, skip_strict_host_key_checking, known_host_option)
+            Process.waitpid(ssh_session_pid)
             gateway.close(port)
           else
-            set_user_known_host_file = set_user_known_host_option(session, nil)
-            ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}", skip_strict_host_key_checking, set_user_known_host_file)
-            Process.waitpid(ssh_session)
+            known_host_option = ssh_session.ssh_known_host_option(nil)
+            ssh_session_pid = Process.spawn('ssh', "#{user}@#{session['ip']}", private_key_option, skip_strict_host_key_checking, known_host_option)
+            Process.waitpid(ssh_session_pid)
           end
         end
-      end
-
-      def set_user_known_host_option(session, gatewayPort)
-        if session.include?('host_public_key')
-          hostEntryIP =  if gatewayPort then "[localhost]:#{gatewayPort}" else session['ip'] end
-          hostEntry = "#{hostEntryIP} #{session['host_public_key']}"
-          add_host_public_key(session, hostEntry)
-
-          return "-o UserKnownHostsFile=#{known_host_file_name(session)}"
-        else
-          return String.new
-        end
-      end
-
-      def known_host_file_name(session)
-        File.join(ENV['HOME'], '.bosh', 'tmp', "#{session['uuid']}_known_hosts")
-      end
-
-      def add_host_public_key(session, hostEntry)
-        file_name = known_host_file_name(session)
-
-        dirname = File.dirname(file_name)
-        unless File.directory?(dirname)
-          FileUtils.mkdir_p(dirname)
-        end
-
-        known_host_file = File.new(file_name, "w")
-        known_host_file.puts(hostEntry)
-        known_host_file.close
-      end
-
-      def remove_host_public_key(session)
-        file_name = known_host_file_name(session)
-        FileUtils.rm_rf(file_name) if File.exist?(file_name)
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
@@ -270,29 +237,6 @@ module Bosh::Cli
             end
           end
         end
-      end
-
-      # @return [String] Public key
-      def public_key
-        public_key_path = options[:public_key]
-
-        if public_key_path
-          unless File.file?(public_key_path)
-            err("Can't find file `#{public_key_path}'")
-          end
-          return File.read(public_key_path)
-        else
-          %x[ssh-add -L 1>/dev/null 2>&1]
-          if $?.exitstatus == 0
-            return %x[ssh-add -L].split("\n").first
-          else
-            [SSH_DSA_PUB, SSH_RSA_PUB].each do |key_file|
-              return File.read(key_file) if File.file?(key_file)
-            end
-          end
-        end
-
-        err('Please specify a public key file')
       end
 
       # @param [String] user

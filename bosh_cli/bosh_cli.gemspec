@@ -34,6 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'net-scp', '~>1.1.0'
   spec.add_dependency 'netaddr', '~>1.5.0'
   spec.add_dependency 'minitar', '~>0.5.4'
+  spec.add_dependency 'sshkey', '~>1.7.0'
 
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rspec-its'

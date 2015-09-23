@@ -154,6 +154,7 @@ PATH
       net-ssh-gateway (~> 1.2.0)
       netaddr (~> 1.5.0)
       progressbar (~> 0.9.0)
+      sshkey (~> 1.7.0)
       terminal-table (~> 1.4.3)
 
 PATH
@@ -503,6 +504,7 @@ GEM
     slop (3.5.0)
     specinfra (1.15.0)
     sqlite3 (1.3.10)
+    sshkey (1.7.0)
     sys-filesystem (1.1.4)
       ffi
     terminal-table (1.4.5)
