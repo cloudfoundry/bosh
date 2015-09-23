@@ -15,12 +15,23 @@ module Bosh::Cli
     end
 
     def ssh_known_host_option(port)
-      user_known_host_option(port)
+      path = user_known_host_path(port)
+      if path.length > 0
+        path = "-o UserKnownHostsFile=#{path}"
+      end
+      return path
+    end
+
+    def ssh_known_host_path(port)
+      user_known_host_path(port)
     end
 
     def ssh_private_key_option
-      private_key_file_name = File.join(ENV['HOME'], '.bosh', 'tmp', "#{@session_uuid}_key")
-      "-i#{private_key_file_name}"
+      "-i#{ssh_private_key_path}"
+    end
+
+    def ssh_private_key_path
+      File.join(ENV['HOME'], '.bosh', 'tmp', "#{@session_uuid}_key")
     end
 
     def cleanup
@@ -59,13 +70,12 @@ module Bosh::Cli
     end
 
 
-    def user_known_host_option(gatewayPort)
+    def user_known_host_path(gatewayPort)
       if @host_session.include?('host_public_key')
         hostEntryIP =  if gatewayPort then "[localhost]:#{gatewayPort}" else @host_session['ip'] end
         hostEntry = "#{hostEntryIP} #{@host_session['host_public_key']}"
         add_known_host_file(hostEntry)
-
-        return "-o UserKnownHostsFile=#{known_host_file_path}"
+        return known_host_file_path
       else
         return String.new
       end

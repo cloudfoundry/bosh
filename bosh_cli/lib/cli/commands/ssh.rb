@@ -212,13 +212,13 @@ module Bosh::Cli
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
-        setup_ssh(deployment_name, job, index, options[:default_password]) do |sessions, user, gateway|
+        setup_ssh(deployment_name, job, index, options[:default_password]) do |sessions, user, gateway, ssh_session|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
             end
 
-            with_ssh(user, session['ip'], gateway) do |ssh|
+            with_ssh(user, session['ip'],ssh_session, gateway) do |ssh|
               case operation
                 when :exec
                   nl
@@ -243,13 +243,20 @@ module Bosh::Cli
       # @param [String] ip
       # @param [optional, Net::SSH::Gateway] gateway
       # @yield [Net::SSH]
-      def with_ssh(user, ip, gateway = nil)
+      def with_ssh(user, ip, ssh_session, gateway = nil)
         require 'net/scp'
+        options = { :keys => ssh_session.ssh_private_key_path }
         if gateway
-          gateway.ssh(ip, user) { |ssh| yield ssh }
+          gateway.ssh(ip, user, options) { |ssh| yield ssh }
         else
           require 'net/ssh'
-          Net::SSH.start(ip, user) { |ssh| yield ssh }
+
+          known_host_path = ssh_session.ssh_known_host_path(nil)
+          if known_host_path.length > 0
+            options[:user_known_hosts_file] = known_host_path
+          end
+
+          Net::SSH.start(ip, user, options) { |ssh| yield ssh }
         end
       end
     end

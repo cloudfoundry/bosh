@@ -61,6 +61,10 @@ describe Bosh::Cli::SSHSession do
       expect(@session_object.ssh_private_key_option).to eq("-i#{private_key_file_name}")
     end
 
+    it 'should return valid private key path' do
+      expect(@session_object.ssh_private_key_path).to eq(private_key_file_name)
+    end
+
     it 'should delete private key and known hosts file on cleanup' do
       expect(File).to receive(:exist?).twice.and_return(true)
       expect(FileUtils).to receive(:rm_rf).with(known_host_file_name)
@@ -76,6 +80,11 @@ describe Bosh::Cli::SSHSession do
       it "should return empty string for ssh_known_host_option" do
         expect(@session_object.ssh_known_host_option(nil)).to eq(String.new)
         expect(@session_object.ssh_known_host_option(1234)).to eq(String.new)
+      end
+
+      it "should return empty string for ssh_known_host_path" do
+        expect(@session_object.ssh_known_host_path(nil)).to eq(String.new)
+        expect(@session_object.ssh_known_host_path(1234)).to eq(String.new)
       end
     end
 

@@ -158,6 +158,9 @@ describe Bosh::Cli::Command::Ssh do
           with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
 
+        expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
+        expect(ssh_session).to receive(:ssh_private_key_path)
+
         command.shell('dea/0', 'ls -l')
       end
     end
@@ -365,6 +368,10 @@ describe Bosh::Cli::Command::Ssh do
 
       command.add_option(:upload, false)
       allow(command).to receive(:job_exists_in_deployment?).and_return(true)
+
+      expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
+      expect(ssh_session).to receive(:ssh_private_key_path)
+
       command.scp('dea', '0', 'test', 'test')
     end
   end
