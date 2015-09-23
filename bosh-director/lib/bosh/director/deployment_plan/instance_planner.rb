@@ -31,8 +31,10 @@ module Bosh
 
           all_desired_instances = new_desired_instances+existing_desired_instances
           bootstrap_instance = existing_desired_instances.map(&:existing_instance).find(&:bootstrap)
+          @logger.info("Found existing bootstrap instance: #{bootstrap_instance.job}/#{bootstrap_instance.index} in az: #{bootstrap_instance.availability_zone}") if bootstrap_instance
 
           if bootstrap_instance.nil? && !all_desired_instances.empty?
+            @logger.info('No existing bootstrap instance. Going to pick a new bootstrap instance.')
             lowest_indexed_desired_instance = all_desired_instances
                                                 .reject { |instance| instance.index.nil? }
                                                 .sort { |instance1, instance2| instance1.index <=> instance2.index }

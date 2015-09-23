@@ -11,6 +11,10 @@ module Bosh::Director
           'job' => { 'name' => 'dea' },
           'job_state' => 'running',
           'resource_pool' => { 'name' => 'test_resource_pool' },
+          'processes' => [
+            {'name' => 'fake-process-1', 'state' => 'running'},
+            {'name' => 'fake-process-2', 'state' => 'failing'},
+          ],
           'vitals' => {
             'load' => ['1', '5', '15'],
             'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
@@ -250,7 +254,23 @@ module Bosh::Director
         job.perform
       end
 
-      context 'when instance is a bootstrap node' do
+      it 'should return processes info' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        stub_agent_get_state_to_return_state_with_vitals
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
+                {'name' => 'fake-process-2', 'state' => 'failing' }])
+        end
+
+        job.perform
+      end
+
+          context 'when instance is a bootstrap node' do
         it 'should return is_bootstrap as true' do
           vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
           Models::Instance.create(

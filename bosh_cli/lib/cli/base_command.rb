@@ -201,6 +201,10 @@ module Bosh::Cli
       end
     end
 
+    def switch_to_release_dir
+      Dir.chdir(release_directory)
+    end
+
     def check_if_release_dir
       unless in_release_dir?
         err("Sorry, your current directory doesn't look like release directory")

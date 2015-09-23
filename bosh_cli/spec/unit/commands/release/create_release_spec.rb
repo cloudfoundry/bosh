@@ -402,6 +402,8 @@ module Bosh::Cli::Command::Release
           allow(command).to receive(:dirty_blob_check)
           allow(command).to receive(:dirty_state?).and_return(false)
           allow(command).to receive(:release).and_return(release)
+
+          release_source.git_init
         end
 
         after do
@@ -431,6 +433,12 @@ module Bosh::Cli::Command::Release
 
               expect(File.exists?(next_manifest_path)).to be_truthy
             end
+
+            it 'generates correct commit sha' do
+              command.create
+              next_release_manifest = Psych.load(File.read(next_manifest_path))
+              expect(next_release_manifest['commit_hash']).to_not eq('00000000')
+            end
           end
 
           context 'when creating from manifest file' do
@@ -448,6 +456,12 @@ module Bosh::Cli::Command::Release
               }.not_to raise_error
 
               expect(File.exists?(next_tarball_path)).to be_truthy
+            end
+
+            it 'generates correct commit sha' do
+              command.create
+              next_release_manifest = Psych.load(File.read(next_manifest_path))
+              expect(next_release_manifest['commit_hash']).to_not eq('00000000')
             end
           end
         end

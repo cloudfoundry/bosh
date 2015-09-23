@@ -99,6 +99,14 @@ module Support
         end
       end
 
+      def git_init
+        Dir.chdir(@path) do
+          `git init`
+          `git add -A`
+          `git commit -m 'initial commit'`
+        end
+      end
+
       def add_tarball(name, &block)
         tarball = ReleaseTarball.new(name)
         yield tarball if block_given?

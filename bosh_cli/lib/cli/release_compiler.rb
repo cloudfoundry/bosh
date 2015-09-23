@@ -17,7 +17,7 @@ module Bosh::Cli
     # @param [String] release_source Release directory
     def initialize(manifest_file, artifacts_dir, blobstore, package_matches, release_source)
       @blobstore = blobstore
-      @release_source = release_source || Dir.pwd
+      @release_source = release_source
       @manifest_path = File.expand_path(manifest_file, @release_source)
       @tarball_path = nil
 

@@ -102,6 +102,17 @@ module Bosh::Director
         expect { release_job.create }.to raise_error(JobInvalidPackageSpec)
       end
 
+      it 'throws error if package is not in the array' do
+        job_with_missing_packages =
+            create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
+                       manifest: { 'name' => 'foo', 'templates' => {}, 'packages' =>  ['some_missing_package']  })
+        File.open(job_tarball_path, 'w') { |f| f.write(job_with_missing_packages) }
+
+        release_job.packages = { 'some_other_package_name' => {name: 'some other package name'}}
+
+        expect { release_job.create }.to raise_error(JobMissingPackage)
+      end
+
       context 'when job spec file includes provides' do
         it 'verifies it is an array' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => 'Invalid'})

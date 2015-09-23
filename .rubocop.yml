@@ -5,14 +5,11 @@ AllCops:
   Exclude:
     - agent_client/docs/**/*
     - bin/**/*
-    - bosh_aws_cpi/**/*
     - bosh_cli/**/*
     - bosh_cli_plugin_aws/**/*
     - bosh_common/**/*
     - bosh_cpi/**/*
-    - bosh_openstack_cpi/**/*
     - bosh-registry/**/*
-    - bosh_vsphere_cpi/**/*
     - bosh-monitor/**/*
     - bosh-release/**/*
     - release/**/*

@@ -13,6 +13,7 @@ module Bosh::Cli::Command
 
       def upload(release_file = nil)
         auth_required
+        switch_to_release_dir
         show_current_state
 
         upload_options = {

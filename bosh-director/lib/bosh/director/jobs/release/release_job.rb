@@ -1,5 +1,8 @@
 module Bosh::Director
   class ReleaseJob
+
+    attr_accessor :packages
+
     def initialize(job_meta, release_model, release_dir, packages, logger)
       @name = job_meta['name']
       @version = job_meta['version']
