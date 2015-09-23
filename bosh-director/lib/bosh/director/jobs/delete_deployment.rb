@@ -33,23 +33,6 @@ module Bosh::Director
           ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), DeploymentPlan::VipRepo.new(logger), true, logger)
           skip_drain_decider = DeploymentPlan::AlwaysSkipDrain.new
 
-          if Config.dns_enabled?
-            # Load these constants here while on the Job's 'main' thread.
-            # These constants are not 'require'd, they are 'autoload'ed
-            # in models.rb. The code in InstanceDeleter will run in a ThreadPool,
-            # one thread per instance. These threads conditionally reference these constants.
-            # We're seeing that in 1.9.3 that sometimes
-            # the constants loaded from one thread are not visible to other threads,
-            # causing failures.
-            # These constants cannot be required because they are Sequel model classes
-            # that refer to database configuration that is only present when the (optional)
-            # powerdns job is present and configured and points to a valid DB.
-            # This is an attempt to make sure the constants are loaded
-            # before forking off to other threads, hopefully eliminating the errors.
-            Bosh::Director::Models::Dns::Record.class
-            Bosh::Director::Models::Dns::Domain.class
-          end
-
           instance_deleter = InstanceDeleter.new(ip_provider, skip_drain_decider, deleter_options)
 
           dns_manager = DnsManager.new(logger)
