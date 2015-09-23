@@ -14,6 +14,10 @@ shared_examples_for 'All Stemcells' do
       it { should be_file }
       its(:content) { should match '^[0-9a-f]{40}\+?$' }
     end
+
+    describe command 'ls -l /etc/ssh/*_key*' do
+      its(:stderr) {should match /No such file or directory/}
+    end
   end
 
   context 'disable blank password logins (stig: V-38497)' do

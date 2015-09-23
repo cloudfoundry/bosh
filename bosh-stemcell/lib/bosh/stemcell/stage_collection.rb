@@ -85,6 +85,7 @@ module Bosh::Stemcell
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -101,6 +102,7 @@ module Bosh::Stemcell
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -125,6 +127,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -140,6 +143,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -158,6 +162,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -173,6 +178,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -192,6 +198,7 @@ module Bosh::Stemcell
         :bosh_disable_password_authentication,
         :bosh_aws_agent_settings,
         :disable_blank_passwords,
+        :bosh_clean_ssh,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -206,6 +213,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
+        :bosh_clean_ssh,
         # only used for spec test
         :image_create,
       ]
