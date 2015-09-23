@@ -734,23 +734,27 @@ module Bosh
             http_client.ssl_config.verify_callback = Proc.new {}
           else
             unless File.exists?(@ca_cert)
-              raise DirectorError, 'Invalid ca certificate path'
+              err('Invalid ca certificate path')
             end
 
             parsed_url = nil
             begin
               parsed_url = URI.parse(uri)
             rescue => e
-              raise CliError, "Failed to parse director URL: #{e.message}"
+              err("Failed to parse director URL: #{e.message}")
             end
 
             unless parsed_url.instance_of?(URI::HTTPS)
-              raise CliError, 'CA certificate cannot be used with HTTP protocol'
+              err('CA certificate cannot be used with HTTP protocol')
             end
 
             # pass in client certificate
-            cert_store = OpenSSL::X509::Store.new
-            cert_store.add_file(@ca_cert)
+            begin
+              cert_store = OpenSSL::X509::Store.new
+              cert_store.add_file(@ca_cert)
+            rescue OpenSSL::X509::StoreError
+              err('Invalid SSL Cert')
+            end
             http_client.ssl_config.cert_store = cert_store
           end
 
@@ -773,6 +777,10 @@ module Bosh
                HTTPClient::KeepAliveDisconnected,
                OpenSSL::SSL::SSLError,
                OpenSSL::X509::StoreError => e
+
+          if e.is_a?(OpenSSL::SSL::SSLError) && e.message.include?('certificate verify failed')
+            err('Invalid SSL Cert')
+          end
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e

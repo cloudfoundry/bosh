@@ -1,6 +1,11 @@
 require 'spec_helper'
 
 describe 'Director client', vcr: {cassette_name: 'director-https'} do
+  # cassete is recorded by running bosh director locally with nginx
+  # $ cd bosh-director; be bin/bosh-director -c config/bosh-director.yml
+  # start nginx the way integration test start it, point it to director on 8080 and change its port to 8081
+  # $ tmp/integration-nginx/sbin/nginx -c tmp/integration-tests-workspace/pid-10473/sandbox/nginx.conf
+  # add 'record: :all' to the vcr options to re-record
   let(:director) do
     Bosh::Cli::Client::Director.new(
       user_provided_director_url,
@@ -30,13 +35,23 @@ describe 'Director client', vcr: {cassette_name: 'director-https'} do
         end
       end
 
+      context 'when user provided incorrect certificate' do
+        let(:ca_cert) { invalid_cert_path }
+
+        it 'works' do
+          expect {
+            director.get('/info')
+          }.to raise_error 'Invalid SSL Cert'
+        end
+      end
+
       context 'when user provided invalid path certificate' do
         let(:ca_cert) { File.expand_path('../invalid_path.pem', __FILE__) }
 
         it 'fails' do
           expect {
             director.get('/info')
-          }.to raise_error Bosh::Cli::DirectorError, 'Invalid ca certificate path'
+          }.to raise_error 'Invalid ca certificate path'
         end
       end
 

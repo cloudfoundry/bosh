@@ -103,10 +103,8 @@ CERT
         cert_path = File.join(tmpdir, 'invalid_cert.pem')
         File.write(cert_path, invalid_ca_cert)
 
-        bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{cert_path}")
-        bosh_runner.run_interactively("login") do |runner|
-          expect(runner).to have_output 'Invalid SSL Cert'
-        end
+        output = bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{cert_path}", failure_expected: true)
+        expect(output).to include('Invalid SSL Cert')
       end
     end
 
@@ -199,17 +197,15 @@ CERT
     end
   end
 
-  context 'when UAA is configured with wrong certificate' do
+  context 'when UAA and director are configured with wrong certificate' do
     with_reset_sandbox_before_each(user_authentication: 'uaa', ssl_mode: 'wrong-ca')
 
-    before do
-      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
-    end
-
-    it 'fails to log in when incorrect credentials were provided' do
-      bosh_runner.run_interactively('login') do |runner|
-        expect(runner).to have_output 'Invalid SSL Cert'
-      end
+    it 'fails to target when correct certificate is passed in' do
+      output = bosh_runner.run(
+        "target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}",
+        failure_expected: true
+      )
+      expect(output).to include('Invalid SSL Cert')
     end
   end
 end
