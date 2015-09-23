@@ -3,11 +3,14 @@ require 'sshkey'
 module Bosh::Cli
   class SSHSession
 
-    attr_reader :public_key
+    SSH_USER_PREFIX     = 'bosh_'
+
+    attr_reader :public_key, :user
 
     def initialize
       @session_uuid = SecureRandom::uuid
       @public_key = generate_rsa_key
+      @user = random_ssh_username
     end
 
     def set_host_session(session)
@@ -69,6 +72,9 @@ module Bosh::Cli
       key_File.close
     end
 
+    def random_ssh_username
+      SSH_USER_PREFIX + rand(36**9).to_s(36)
+    end
 
     def user_known_host_path(gatewayPort)
       if @host_session.include?('host_public_key')

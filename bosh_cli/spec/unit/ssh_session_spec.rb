@@ -39,6 +39,13 @@ describe Bosh::Cli::SSHSession do
 
       described_class.new
     end
+
+    it 'should generate random user name' do
+
+      expect_any_instance_of(Bosh::Cli::SSHSession).to receive(:generate_rsa_key).and_return("public_key")
+      session = described_class.new
+      expect(session.user).to include(Bosh::Cli::SSHSession::SSH_USER_PREFIX)
+    end
   end
 
   context 'With Valid SSH Session object' do

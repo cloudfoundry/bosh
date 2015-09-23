@@ -31,12 +31,12 @@ describe Bosh::Cli::Command::Ssh do
     allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
 
-    allow(command).to receive(:random_ssh_username).and_return('testable_user')
     allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
     command.add_option(:default_password, 'password')
 
     allow(Bosh::Cli::SSHSession).to receive(:new).and_return(ssh_session)
     allow(ssh_session).to receive(:public_key).and_return("public_key")
+    allow(ssh_session).to receive(:user).and_return("testable_user")
     allow(ssh_session).to receive(:set_host_session)
     allow(ssh_session).to receive(:cleanup)
     allow(ssh_session).to receive(:ssh_private_key_option).and_return("-i/tmp/.bosh/tmp/random_uuid_key")
