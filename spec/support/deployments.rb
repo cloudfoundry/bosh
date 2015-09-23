@@ -328,7 +328,7 @@ module Bosh::Spec
       })
     end
 
-    def self.local_release_manifest(local_release_path)
+    def self.local_release_manifest(local_release_path, version = 'latest')
       minimal_manifest.merge({
         'jobs' => [
           {
@@ -341,7 +341,7 @@ module Bosh::Spec
         ],
         'releases' => [{
             'name'    => 'test_release',
-            'version' => 'latest',
+            'version' => version,
             'url' => local_release_path,
         }]
       })
