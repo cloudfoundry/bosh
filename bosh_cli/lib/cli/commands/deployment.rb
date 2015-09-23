@@ -88,15 +88,20 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-
       manifest = build_manifest
       if manifest.hash['releases']
-        build_manifest.hash['releases'].each do |release|
+        manifest.hash['releases'].each do |release|
           unless release['url'].blank?
             parsed_uri = URI.parse(release['url'])
             case parsed_uri.scheme
             when 'file'
-              run_nested_command "upload", "release", parsed_uri.path
+              if release['version'] == 'create'
+                _, info = run_nested_command "create", "release", "--name", release['name'], "--dir", parsed_uri.path, "--timestamp-version", "--force"
+                release['version'] = info[:generated_version]
+                run_nested_command "upload", "release", "--dir", parsed_uri.path, info[:generated_manifest_path]
+              else
+                run_nested_command "upload", "release", parsed_uri.path
+              end
             when 'http', 'https'
               err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
               run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
@@ -108,7 +113,7 @@ module Bosh::Cli::Command
       end
 
       if manifest.hash['resource_pools']
-        build_manifest.hash['resource_pools'].each do |resource_pool|
+        manifest.hash['resource_pools'].each do |resource_pool|
           unless resource_pool['stemcell']['url'].blank?
             parsed_uri = URI.parse(resource_pool['stemcell']['url'])
             case parsed_uri.scheme
