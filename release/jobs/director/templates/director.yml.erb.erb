@@ -81,7 +81,7 @@ blobstore:
   options:
 <% if p('blobstore.provider') == 's3' %>
     bucket_name: <%= p('blobstore.bucket_name') %>
-    credentials_source: <%= p('blobstore.credentials_source') %>
+    credentials_source: <%= p('blobstore.credentials_source', 'static') %>
     access_key_id: <%= p('blobstore.access_key_id', nil) %>
     secret_access_key: <%= p('blobstore.secret_access_key', nil) %>
 
@@ -142,7 +142,7 @@ compiled_package_cache:
   provider: s3
   options:
     bucket_name: <%= bucket_name %>
-    credentials_source: <%= p('compiled_package_cache.options.credentials_source') %>
+    credentials_source: <%= p('compiled_package_cache.options.credentials_source', 'static') %>
     access_key_id: <%= p('compiled_package_cache.options.access_key_id', nil) %>
     secret_access_key: <%= p('compiled_package_cache.options.secret_access_key', nil) %>
 <% if_p('compiled_package_cache.options.s3_port') do |port| %>
@@ -239,7 +239,7 @@ cloud:
   plugin: aws <% plugin = "aws" %>
   properties:
     aws:
-      credentials_source: <%= p('aws.credentials_source') %>
+      credentials_source: <%= p('aws.credentials_source', 'static') %>
       access_key_id: <%= p('aws.access_key_id', nil) %>
       secret_access_key: <%= p('aws.secret_access_key', nil) %>
       default_iam_instance_profile: <%= p('aws.default_iam_instance_profile', nil) %>
@@ -428,7 +428,7 @@ cloud:
         options:
       <% if p('blobstore.provider') == "s3" %>
           bucket_name: <%= p('blobstore.bucket_name') %>
-          credentials_source: <%= p(['agent.blobstore.credentials_source', 'blobstore.credentials_source']) %>
+          credentials_source: <%= p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil) %>
 
