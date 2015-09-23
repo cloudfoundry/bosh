@@ -2,15 +2,15 @@ module Bosh
   module Director
     module DeploymentPlan
       class AvailabilityZonePicker
-        def place_and_match_in(desired_azs, desired_instances, existing_instances)
-          unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances)
+        def place_and_match_in(desired_azs, desired_instances, existing_instances_with_azs)
+          unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances_with_azs)
           desired_azs = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
           placed_instances = PlacedDesiredInstances.new(desired_azs)
 
           remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
           balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
-          obsolete = unplaced_existing_instances.unclaimed_instances
+          obsolete = unplaced_existing_instances.unclaimed_instance_models
           assign_indexes(placed_instances.existing, placed_instances.new, obsolete)
 
           {
@@ -25,13 +25,13 @@ module Bosh
         def place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
           desired_instances = desired_instances.dup
           return desired_instances if desired_azs.nil?
-          unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance_model|
+          unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance|
             break if desired_instances.empty?
-            az = desired_azs.find { |az| az.name == existing_instance_model.availability_zone }
+            az = desired_azs.find { |az| az.name == existing_instance.az }
             next if az.nil?
             desired_instance = desired_instances.pop
-            unplaced_existing_instances.claim_instance(existing_instance_model)
-            placed_instances.record_placement(az, desired_instance, existing_instance_model)
+            unplaced_existing_instances.claim_instance(existing_instance)
+            placed_instances.record_placement(az, desired_instance, existing_instance)
           end
           desired_instances
         end
@@ -40,8 +40,8 @@ module Bosh
           desired_instances.each do |desired_instance|
             azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
             az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
-            existing_instance_model = unplaced_existing_instances.claim_instance_for_az(az)
-            placed_instances.record_placement(az, desired_instance, existing_instance_model)
+            existing_instance = unplaced_existing_instances.claim_instance_for_az(az)
+            placed_instances.record_placement(az, desired_instance, existing_instance)
           end
         end
 
@@ -63,14 +63,14 @@ module Bosh
         end
 
         class UnplacedExistingInstances
-          def initialize(existing_instance_models)
-            @instance_models = existing_instance_models.sort_by { |instance| instance.index}
+          def initialize(existing_instances_with_azs)
+            @instances = existing_instances_with_azs.sort_by { |instance| instance.model.index }
             @az_name_to_existing_instances  = initialize_azs_to_instances
           end
 
           def instances_with_persistent_disk
-            @instance_models.select do |instance_model|
-              instance_model.persistent_disks && instance_model.persistent_disks.count > 0
+            @instances.select do |instance|
+              instance.model.persistent_disks && instance.model.persistent_disks.count > 0
             end
           end
 
@@ -79,8 +79,8 @@ module Bosh
             azs.sort_by { |az| - @az_name_to_existing_instances.fetch(az.name, []).size }
           end
 
-          def claim_instance(existing_instance_model)
-            @az_name_to_existing_instances[existing_instance_model.availability_zone].delete(existing_instance_model)
+          def claim_instance(existing_instance)
+            @az_name_to_existing_instances[existing_instance.az].delete(existing_instance)
           end
 
           def claim_instance_for_az(az)
@@ -91,18 +91,18 @@ module Bosh
             end
           end
 
-          def unclaimed_instances
-            @az_name_to_existing_instances.values.flatten
+          def unclaimed_instance_models
+            @az_name_to_existing_instances.values.flatten.map(&:model)
           end
 
           private
 
           def initialize_azs_to_instances
             az_name_to_existing_instances = {}
-            @instance_models.each do |instance|
-              instances = az_name_to_existing_instances.fetch(instance.availability_zone, [])
+            @instances.each do |instance|
+              instances = az_name_to_existing_instances.fetch(instance.az, [])
               instances << instance
-              az_name_to_existing_instances[instance.availability_zone] = instances
+              az_name_to_existing_instances[instance.az] = instances
             end
             az_name_to_existing_instances
           end
@@ -122,12 +122,12 @@ module Bosh
 
           def record_placement(az, desired_instance, existing_instance)
             desired_instance.az = az
-            desired_instance.is_existing = !existing_instance.nil?
+            desired_instance.is_existing = existing_instance ? !existing_instance.model.nil? : false
             az_desired_instances = @placed.fetch(az, [])
             az_desired_instances << desired_instance
             @placed[az] = az_desired_instances
             if desired_instance.is_existing
-              diffed_instance = existing_instance
+              diffed_instance = existing_instance.model
               diffed_instance.state = desired_instance.state unless desired_instance.state.nil?
               diffed_instance.job = desired_instance.job.name
               diffed_instance.availability_zone = desired_instance.az.name unless desired_instance.az.nil?

@@ -44,6 +44,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         'resource_pool' => 'fake-resource-pool-name',
         'instances' => 1,
         'networks'  => [{'name' => 'fake-network-name'}],
+        'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}]
       }
     end
 
@@ -789,6 +790,16 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               Bosh::Director::ValidationInvalidType, "Property `availability_zones' (value 3) did not match the required type `Array'"
             )
         end
+      end
+    end
+
+    describe 'migrated_from' do
+      it 'sets migrated_from on a job' do
+        job = parser.parse(job_spec)
+        expect(job.migrated_from[0].name).to eq('job-1')
+        expect(job.migrated_from[0].az).to eq('z1')
+        expect(job.migrated_from[1].name).to eq('job-2')
+        expect(job.migrated_from[1].az).to eq('z2')
       end
     end
 

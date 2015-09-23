@@ -270,6 +270,10 @@ module Bosh::Director
         !@cloud_config.nil?
       end
 
+      def previously_deployed_using_global_networking?
+        !@model.cloud_config.nil?
+      end
+
       private
 
       def validate_packages

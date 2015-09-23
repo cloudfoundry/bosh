@@ -73,6 +73,8 @@ module Bosh::Director
 
       attr_accessor :networks
 
+      attr_accessor :migrated_from
+
       attr_reader :link_paths
 
       # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
@@ -104,6 +106,7 @@ module Bosh::Director
         @packages = {}
         @link_paths = {}
         @resolved_links = {}
+        @migrated_from = []
       end
 
       def self.is_legacy_spec?(job_spec)

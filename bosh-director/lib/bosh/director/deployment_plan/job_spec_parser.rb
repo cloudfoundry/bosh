@@ -38,6 +38,7 @@ module Bosh::Director
         parse_properties
         parse_resource_pool
         parse_update_config
+        parse_migrated_from
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
         @job.networks = networks
@@ -267,6 +268,15 @@ module Bosh::Director
         job_size.times.map do |index|
           instance_state = @job.instance_state(index)
           DesiredInstance.new(@job, instance_state, @deployment)
+        end
+      end
+
+      def parse_migrated_from
+        migrated_from = safe_property(@job_spec, 'migrated_from', class: Array, optional: true, :default => [])
+        migrated_from.each do |migrated_from_job_spec|
+          name = safe_property(migrated_from_job_spec, 'name', class: String)
+          az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
+          @job.migrated_from << MigratedFromJob.new(name, az)
         end
       end
 
