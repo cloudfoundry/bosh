@@ -41,7 +41,8 @@ describe 'CPI calls', type: :integration do
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
-          'index' => '0'
+          'index' => '0',
+          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
       compilation_vm_id = invocations[2].inputs['vm_cid']
@@ -50,17 +51,19 @@ describe 'CPI calls', type: :integration do
       expect(invocations[3].inputs).to match({
         'vm_cid' => compilation_vm_id,
         'metadata' => {
-          'compiling' => 'foo', 
-          'director' => 'Test Director', 
+          'compiling' => 'foo',
+          'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
-          'index' => '0'
-        }
+          'index' => '0',
+          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+
+      }
       })
 
       expect(invocations[4].method_name).to eq('delete_vm')
       expect(invocations[4].inputs).to match({'vm_cid' => compilation_vm_id})
-      
+
       expect(invocations[5].method_name).to eq('create_vm')
       expect(invocations[5].inputs).to match({
         'agent_id' => String,
@@ -87,7 +90,8 @@ describe 'CPI calls', type: :integration do
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
-          'index' => '0'
+          'index' => '0',
+          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
       compilation_vm_id = invocations[6].inputs['vm_cid']
@@ -100,7 +104,8 @@ describe 'CPI calls', type: :integration do
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
-          'index' => '0'
+          'index' => '0',
+          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
 
@@ -133,7 +138,8 @@ describe 'CPI calls', type: :integration do
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => 'foobar',
-          'index' => '0'
+          'index' => '0',
+          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
 
@@ -193,7 +199,8 @@ describe 'CPI calls', type: :integration do
             'director' => 'Test Director',
             'deployment' => 'simple',
             'job' => 'first-job',
-            'index' => '0'
+            'index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
         vm_cid = first_deploy_invocations[2].inputs['vm_cid']
@@ -283,7 +290,8 @@ describe 'CPI calls', type: :integration do
             'director' => 'Test Director',
             'deployment' => 'simple',
             'job' => 'first-job',
-            'index' => '0'
+            'index' => '0',
+            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
         new_vm_cid = second_deploy_invocations[5].inputs['vm_cid']
