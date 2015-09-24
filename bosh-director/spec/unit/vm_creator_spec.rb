@@ -42,7 +42,7 @@ describe Bosh::Director::VmCreator do
   let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, logger) }
 
   let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'fake-job', resource_pool: resource_pool) }
-  let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }
+  let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, vm: nil, index: 5, job: 'fake-job') }
 
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
@@ -79,15 +79,39 @@ describe Bosh::Director::VmCreator do
 
     expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
       expect(vm_cid).to eq('new-vm-cid')
-      expect(metadata).to eq({
+      expect(metadata).to match({
         deployment: 'deployment_name',
         job: 'fake-job',
         index: '5',
-        director: 'fake-director-name'
+        director: 'fake-director-name',
+        instance_id: instance_model.uuid
       })
     end
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+  end
+
+  context 'when instance uuid does not exist' do
+    let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }
+    it 'should set vm metadata without instance id' do
+      expect(cloud).to receive(:create_vm).with(
+          kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
+        ).and_return('new-vm-cid')
+
+      allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
+
+      expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
+        expect(vm_cid).to eq('new-vm-cid')
+        expect(metadata).to match({
+              deployment: 'deployment_name',
+              job: 'fake-job',
+              index: '5',
+              director: 'fake-director-name'
+            })
+      end
+
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+    end
   end
 
   it 'should create credentials when encryption is enabled' do
