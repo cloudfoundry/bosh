@@ -49,8 +49,8 @@ module Bosh::Director
 
         @deployment_plan.existing_instances.each do |instance|
           if instance.job == migrated_from_job.name
-            # TODO: validate job has az
-            migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, migrated_from_job.az)
+            az = migrated_from_job.az || instance.availability_zone
+            migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, az)
           end
         end
 
