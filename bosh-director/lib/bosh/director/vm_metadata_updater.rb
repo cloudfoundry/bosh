@@ -16,7 +16,7 @@ module Bosh::Director
         metadata[:deployment] = vm.deployment.name
 
         if vm.instance
-          metadata[:instance_id] = vm.instance.uuid
+          metadata[:id] = vm.instance.uuid
           metadata[:job] = vm.instance.job
           metadata[:index] = vm.instance.index.to_s
         end

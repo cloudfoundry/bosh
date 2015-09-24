@@ -57,7 +57,7 @@ describe Bosh::Director::VmMetadataUpdater do
 
         it 'updates vm metadata with instance specific metadata' do
           expected_vm_metadata = {
-            instance_id: 'some_instance_id',
+            id: 'some_instance_id',
             job: 'job-value',
             index: 'index-value',
           }
@@ -82,7 +82,7 @@ describe Bosh::Director::VmMetadataUpdater do
         end
 
         it 'updates vm metadata without including instance specific metadata' do
-          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_excluding(:instance_id, :job, :index))
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_excluding(:id, :job, :index))
           vm_metadata_updater.update(vm, {})
         end
       end
