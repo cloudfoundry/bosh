@@ -18,7 +18,7 @@ gem 'bosh-release', path: 'bosh-release'
 gem 'bosh-template', path: 'bosh-template'
 gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 
-gem 'bosh_aws_cpi', '~>2.0.1'
+gem 'bosh_aws_cpi', '~>2.0.2'
 gem 'rake', '~>10.0'
 
 group :production do

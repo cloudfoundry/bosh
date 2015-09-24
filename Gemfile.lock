@@ -224,7 +224,7 @@ GEM
     bcrypt-ruby (3.0.1)
     blue-shell (0.3.0)
       rspec
-    bosh_aws_cpi (2.0.1)
+    bosh_aws_cpi (2.0.2)
       aws-sdk (= 1.60.2)
       bosh-registry
       bosh_common
@@ -266,7 +266,7 @@ GEM
     coderay (1.1.0)
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
-    daemons (1.1.9)
+    daemons (1.2.3)
     diff-lcs (1.2.5)
     docile (1.1.5)
     dogapi (1.6.0)
@@ -276,7 +276,7 @@ GEM
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (1.1.0)
-    eventmachine (1.0.3)
+    eventmachine (1.0.8)
     excon (0.45.4)
     fakefs (0.6.7)
     ffi (1.9.10)
@@ -313,7 +313,7 @@ GEM
       fog-json (~> 1.0)
       fog-xml (~> 0.1)
       ipaddress (~> 0.8)
-    fog-brightbox (0.8.0)
+    fog-brightbox (0.9.0)
       fog-core (~> 1.22)
       fog-json
       inflecto (~> 0.0.2)
@@ -352,7 +352,7 @@ GEM
       fog-core
       fog-json
       fog-xml
-    fog-sakuracloud (1.0.1)
+    fog-sakuracloud (1.3.2)
       fog-core
       fog-json
     fog-serverlove (0.1.2)
@@ -382,20 +382,20 @@ GEM
     httpclient (2.4.0)
     inflecto (0.0.2)
     ipaddress (0.8.0)
-    json (1.7.7)
+    json (1.8.3)
     json_pure (1.8.1)
-    little-plugger (1.1.3)
+    little-plugger (1.1.4)
     logging (1.8.2)
       little-plugger (>= 1.1.3)
       multi_json (>= 1.8.4)
     machinist (1.0.6)
     membrane (1.1.0)
     method_source (0.8.2)
-    mime-types (2.3)
+    mime-types (2.6.2)
     mini_portile (0.6.2)
     minitar (0.5.4)
     mono_logger (1.1.0)
-    multi_json (1.11.1)
+    multi_json (1.11.2)
     mysql2 (0.3.11)
     nats (0.5.0.beta.12)
       daemons (>= 1.1.9)
@@ -404,7 +404,7 @@ GEM
       thin (>= 1.5.0)
     net-scp (1.1.2)
       net-ssh (>= 2.6.5)
-    net-ssh (2.9.1)
+    net-ssh (2.9.2)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
     netaddr (1.5.0)
@@ -424,7 +424,7 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
-    rack (1.6.0)
+    rack (1.6.4)
     rack-protection (1.5.3)
       rack
     rack-test (0.6.2)
@@ -490,10 +490,10 @@ GEM
       multi_json (~> 1.0)
       simplecov-html (~> 0.9.0)
     simplecov-html (0.9.0)
-    sinatra (1.4.5)
+    sinatra (1.4.6)
       rack (~> 1.4)
       rack-protection (~> 1.4)
-      tilt (~> 1.3, >= 1.3.4)
+      tilt (>= 1.3, < 3)
     sinatra-contrib (1.4.2)
       backports (>= 2.0)
       multi_json
