@@ -91,29 +91,6 @@ describe Bosh::Director::VmCreator do
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end
 
-  context 'when instance uuid does not exist' do
-    let(:instance_model) { Bosh::Director::Models::Instance.make(vm: nil, index: 5, job: 'fake-job') }
-    it 'should set vm metadata without instance id' do
-      expect(cloud).to receive(:create_vm).with(
-          kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, ['fake-disk-cid'], {}
-        ).and_return('new-vm-cid')
-
-      allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
-
-      expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
-        expect(vm_cid).to eq('new-vm-cid')
-        expect(metadata).to match({
-              deployment: 'deployment_name',
-              job: 'fake-job',
-              index: '5',
-              director: 'fake-director-name'
-            })
-      end
-
-      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-    end
-  end
-
   it 'should create credentials when encryption is enabled' do
     Bosh::Director::Config.encryption = true
     expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
