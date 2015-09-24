@@ -4,7 +4,7 @@ module Bosh
       class DesiredInstance < Struct.new(:job, :state, :deployment, :az, :is_existing, :index, :bootstrap)
 
         def inspect
-          "#{self.az}/#{self.index}"
+          "<az=#{self.az} index=#{self.index}>"
         end
 
         def bootstrap?
