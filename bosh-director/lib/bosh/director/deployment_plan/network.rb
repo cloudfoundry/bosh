@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       def availability_zones
-        @subnets.map(&:availability_zone_name).compact.uniq
+        @subnets.map(&:availability_zone_names).flatten.compact.uniq
       end
     end
   end

@@ -28,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.length).to eq(1)
         expect(network.subnets.first.dns).to eq(['1.2.3.4', '5.6.7.8'])
         expect(network.subnets.first.cloud_properties).to eq({'foz' => 'baz'})
-        expect(network.subnets.first.availability_zone_name).to eq('foo-zone')
+        expect(network.subnets.first.availability_zone_names).to eq(['foo-zone'])
       end
 
       it 'defaults cloud properties to empty hash' do
@@ -68,7 +68,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           },
           [],
           logger)
-        expect(network.subnets.first.availability_zone_name).to eq(nil)
+        expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
       it 'does not allow availability zone to be nil' do
@@ -138,10 +138,10 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.length).to eq(2)
         expect(network.subnets.first.dns).to eq(['1.2.3.4', '5.6.7.8'])
         expect(network.subnets.first.cloud_properties).to eq({'foz' => 'baz'})
-        expect(network.subnets.first.availability_zone_name).to eq('foz-zone')
+        expect(network.subnets.first.availability_zone_names).to eq(['foz-zone'])
         expect(network.subnets.last.dns).to eq(['9.8.7.6', '5.4.3.2'])
         expect(network.subnets.last.cloud_properties).to eq({'bar' => 'bat'})
-        expect(network.subnets.last.availability_zone_name).to eq('foo-zone')
+        expect(network.subnets.last.availability_zone_names).to eq(['foo-zone'])
       end
 
       it 'defaults cloud properties to empty hash' do
@@ -198,7 +198,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           logger
         )
 
-        expect(network.subnets.first.availability_zone_name).to eq(nil)
+        expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
       it 'does not allow availability zone to be nil' do
@@ -343,48 +343,64 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       }.to raise_error BD::NetworkReservationWrongType
     end
 
-    context 'when availability zone is specified' do
+    context 'when availability zone(s) is specified' do
+
       let(:azs) { [az1, az2] }
       let(:az1) { BD::DeploymentPlan::AvailabilityZone.new('fake-az', {'az_key' => 'az_value'}) }
       let(:az2) { BD::DeploymentPlan::AvailabilityZone.new('fake-az2', {'az_key' => 'az_value2'}) }
 
-      let (:network) do
-        BD::DeploymentPlan::DynamicNetwork.parse({
-            'name' => 'foo',
-            'subnets' => [{
-              'availability_zone' => 'fake-az',
-              'cloud_properties' => {'subnet_key' => 'subnet_value'}
-            },
-            {
-              'availability_zone' => 'fake-az2',
-              'cloud_properties' => {'subnet_key' => 'subnet_value2'}
-            }]
-          }, azs, logger)
+      context 'when multiple availability_zones are specified on the network' do
+        let (:network) do
+          BD::DeploymentPlan::DynamicNetwork.parse({
+              'name' => 'foo',
+              'subnets' => [{
+                  'availability_zones' => ['fake-az', 'fake-az2'],
+                  'cloud_properties' => {'subnet_key' => 'subnet_value'}
+                }]
+            }, azs, logger)
+        end
+
+        it 'returns settings from the subnet for both azs' do
+          reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+
+          expect(network.network_settings(reservation, [], az1)).to eq({
+                'type' => 'dynamic',
+                'cloud_properties' => {'subnet_key' => 'subnet_value'},
+                'default' => []
+              })
+
+          expect(network.network_settings(reservation, [], az2)).to eq({
+                'type' => 'dynamic',
+                'cloud_properties' => {'subnet_key' => 'subnet_value'},
+                'default' => []
+              })
+        end
+
+        it 'raises an error when an unknown az is specified' do
+          expect {
+            network = BD::DeploymentPlan::DynamicNetwork.parse({
+                'name' => 'foo',
+                'subnets' => [{
+                    'availability_zones' => ['fake-az', 'say-what'],
+                    'cloud_properties' => {'subnet_key' => 'subnet_value'}
+                  }]
+              }, azs, logger)
+          }.to raise_error Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'foo' refers to an unknown availability zone 'say-what'"
+        end
+
+        it 'returns first subnet if instance does not have availability zone' do
+          reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+
+          expect(network.network_settings(reservation, [])).to eq({
+                'type' => 'dynamic',
+                'cloud_properties' => {'subnet_key' => 'subnet_value'},
+                'default' => []
+              })
+        end
       end
 
-      it 'returns settings from subnet that belongs to specified availability zone' do
-
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
-
-        expect(network.network_settings(reservation, [], az2)).to eq({
-          'type' => 'dynamic',
-          'cloud_properties' => { 'subnet_key' => 'subnet_value2'},
-          'default' => []
-        })
-      end
-
-      it 'returns first subnet if instance does not have availability zone' do
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
-
-        expect(network.network_settings(reservation, [])).to eq({
-          'type' => 'dynamic',
-          'cloud_properties' => { 'subnet_key' => 'subnet_value'},
-          'default' => []
-        })
-      end
-
-      it 'raises an error when there is no subnet in requested az' do
-        network =
+      context 'when singular availability_zone is specified' do
+        let (:network) do
           BD::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
@@ -392,17 +408,54 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                   'cloud_properties' => {'subnet_key' => 'subnet_value'}
                 },
                 {
-                  'availability_zone' => 'fake-az',
+                  'availability_zone' => 'fake-az2',
                   'cloud_properties' => {'subnet_key' => 'subnet_value2'}
                 }]
             }, azs, logger)
+        end
 
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+        it 'returns settings from subnet that belongs to specified availability zone' do
 
-        unknown_az = BD::DeploymentPlan::AvailabilityZone.new('fake-unknown-az', {})
-        expect {
-          network.network_settings(reservation, [], unknown_az)
-        }.to raise_error BD::NetworkSubnetInvalidAvailabilityZone, "Network 'foo' has no matching subnet for availability zone 'fake-unknown-az'"
+          reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+
+          expect(network.network_settings(reservation, [], az2)).to eq({
+                'type' => 'dynamic',
+                'cloud_properties' => {'subnet_key' => 'subnet_value2'},
+                'default' => []
+              })
+        end
+
+        it 'returns first subnet if instance does not have availability zone' do
+          reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+
+          expect(network.network_settings(reservation, [])).to eq({
+                'type' => 'dynamic',
+                'cloud_properties' => {'subnet_key' => 'subnet_value'},
+                'default' => []
+              })
+        end
+
+        it 'raises an error when there is no subnet in requested az' do
+          network =
+            BD::DeploymentPlan::DynamicNetwork.parse({
+                'name' => 'foo',
+                'subnets' => [{
+                    'availability_zone' => 'fake-az',
+                    'cloud_properties' => {'subnet_key' => 'subnet_value'}
+                  },
+                  {
+                    'availability_zone' => 'fake-az',
+                    'cloud_properties' => {'subnet_key' => 'subnet_value2'}
+                  }]
+              }, azs, logger)
+
+          reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+
+          unknown_az = BD::DeploymentPlan::AvailabilityZone.new('fake-unknown-az', {})
+          expect {
+            network.network_settings(reservation, [], unknown_az)
+          }.to raise_error BD::NetworkSubnetInvalidAvailabilityZone, "Network 'foo' has no matching subnet for availability zone 'fake-unknown-az'"
+        end
       end
     end
   end

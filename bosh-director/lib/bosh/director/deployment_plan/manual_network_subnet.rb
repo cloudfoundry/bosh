@@ -6,7 +6,7 @@ module Bosh::Director
       include IpUtil
 
       attr_reader :network, :range, :gateway, :dns, :cloud_properties,
-        :netmask, :availability_zone_name
+        :netmask, :availability_zone_names
 
       def initialize(network, subnet_spec, availability_zones, legacy_reserved_ranges)
         @network = network
@@ -45,7 +45,7 @@ module Bosh::Director
 
         @dns = dns_servers(@network.name, subnet_spec)
 
-        @availability_zone_name = parse_availability_zone(subnet_spec, network, availability_zones)
+        @availability_zone_names = parse_availability_zones(subnet_spec, network, availability_zones)
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties", class: Hash, default: {})
 
@@ -99,17 +99,29 @@ module Bosh::Director
 
       private
 
-      def parse_availability_zone(subnet_spec, network, availability_zones)
-        availability_zone_name = safe_property(subnet_spec, 'availability_zone', class: String, optional: true)
-        unless availability_zone_name.nil? || availability_zones.any? { |az| az.name == availability_zone_name }
-          raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{network.name}' refers to an unknown availability zone '#{availability_zone_name}'"
+      def parse_availability_zones(subnet_spec, network, availability_zones)
+        if subnet_spec.has_key?('availability_zones')
+          zones = safe_property(subnet_spec, 'availability_zones', class: Array, optional: true)
+          zones.each do |zone|
+            check_validity_of_subnet_availability_zone(zone, availability_zones, network)
+          end
+          zones
+        else
+          availability_zone_name = safe_property(subnet_spec, 'availability_zone', class: String, optional: true)
+          check_validity_of_subnet_availability_zone(availability_zone_name, availability_zones, network)
+          availability_zone_name.nil? ? nil : [availability_zone_name]
         end
-        availability_zone_name
       end
 
       def invalid_gateway(reason)
         raise NetworkInvalidGateway,
               "Invalid gateway for network `#{@network.name}': #{reason}"
+      end
+
+      def check_validity_of_subnet_availability_zone(availability_zone_name, availability_zones, network)
+        unless availability_zone_name.nil? || availability_zones.any? { |az| az.name == availability_zone_name }
+          raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{network.name}' refers to an unknown availability zone '#{availability_zone_name}'"
+        end
       end
     end
   end

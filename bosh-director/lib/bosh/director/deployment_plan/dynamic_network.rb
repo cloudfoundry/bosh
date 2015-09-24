@@ -26,25 +26,38 @@ module Bosh::Director
 
           subnets = network_spec['subnets'].map do |subnet_properties|
             dns = dns_servers(subnet_properties['name'], subnet_properties)
-            cloud_properties =
-              safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
-            availability_zone = safe_property(subnet_properties, 'availability_zone', class: String, optional: true)
-            unless availability_zone.nil? || availability_zones.any? { |az| az.name == availability_zone }
-              raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{name}' refers to an unknown availability zone '#{availability_zone}'"
-            end
-            DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone)
+            cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
+            subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
+            DynamicNetworkSubnet.new(dns, cloud_properties, subnet_availability_zones)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-          availability_zone = safe_property(network_spec, 'availability_zone', class: String, optional: true)
-          unless availability_zone.nil? || availability_zones.any? { |az| az.name == availability_zone }
-            raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{name}' refers to an unknown availability zone '#{availability_zone}'"
-          end
           dns = dns_servers(network_spec['name'], network_spec)
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, availability_zone)]
+          network_availability_zones = parse_availability_zones(network_spec, availability_zones, name)
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, network_availability_zones)]
         end
 
         new(name, canonical_name, subnets, logger)
+      end
+
+      def self.parse_availability_zones(spec, availability_zones, name)
+        if spec.has_key?('availability_zones')
+          subnet_availability_zones = safe_property(spec, 'availability_zones', class: Array, optional: true)
+          subnet_availability_zones.each do |zone|
+            check_validity_of_availability_zone(zone, availability_zones, name)
+          end
+          subnet_availability_zones
+        else
+          availability_zone = safe_property(spec, 'availability_zone', class: String, optional: true)
+          check_validity_of_availability_zone(availability_zone, availability_zones, name)
+          availability_zone.nil? ? nil : [availability_zone]
+        end
+      end
+
+      def self.check_validity_of_availability_zone(availability_zone, availability_zones, name)
+        unless availability_zone.nil? || availability_zones.any? { |az| az.name == availability_zone }
+          raise Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network '#{name}' refers to an unknown availability zone '#{availability_zone}'"
+        end
       end
 
       def initialize(name, canonical_name, subnets, logger)
@@ -95,7 +108,7 @@ module Bosh::Director
       private
 
       def find_subnet_for_az(az_name)
-        @subnets.find { |subnet| subnet.availability_zone_name.eql?(az_name) }
+        @subnets.find { |subnet| subnet.availability_zone_names.include?(az_name) }
       end
     end
   end

@@ -115,7 +115,7 @@ module Bosh::Director
           reservation.network.subnets
         else
           reservation.network.subnets.select do |subnet|
-            subnet.availability_zone_name == instance_az.name
+            subnet.availability_zone_names.include?(instance_az.name)
           end
         end
       end
