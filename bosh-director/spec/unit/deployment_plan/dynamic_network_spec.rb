@@ -349,6 +349,23 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       let(:az1) { BD::DeploymentPlan::AvailabilityZone.new('fake-az', {'az_key' => 'az_value'}) }
       let(:az2) { BD::DeploymentPlan::AvailabilityZone.new('fake-az2', {'az_key' => 'az_value2'}) }
 
+      context 'when both availability_zones and availability_zone are both specified' do
+        let (:network) do
+          BD::DeploymentPlan::DynamicNetwork.parse({
+              'name' => 'foo',
+              'subnets' => [{
+                  'availability_zone' => 'fake-az',
+                  'availability_zones' => ['fake-az', 'fake-az2'],
+                  'cloud_properties' => {'subnet_key' => 'subnet_value'}
+                }]
+            }, azs, logger)
+        end
+
+        it 'errors' do
+          expect { network }.to raise_error  Bosh::Director::NetworkInvalidProperty, "Network 'foo' contains both 'availability_zone' and 'availability_zones'. Choose one."
+        end
+      end
+
       context 'when multiple availability_zones are specified on the network' do
         let (:network) do
           BD::DeploymentPlan::DynamicNetwork.parse({
@@ -374,6 +391,18 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                 'cloud_properties' => {'subnet_key' => 'subnet_value'},
                 'default' => []
               })
+        end
+
+        it 'raises an error when an empty availability_zones array is specified' do
+          expect {
+            network = BD::DeploymentPlan::DynamicNetwork.parse({
+                'name' => 'foo',
+                'subnets' => [{
+                    'availability_zones' => [],
+                    'cloud_properties' => {'subnet_key' => 'subnet_value'}
+                  }]
+              }, azs, logger)
+          }.to raise_error Bosh::Director::NetworkInvalidProperty, "Network 'foo' refers to an empty 'availability_zones' array"
         end
 
         it 'raises an error when an unknown az is specified' do

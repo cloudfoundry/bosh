@@ -100,8 +100,17 @@ module Bosh::Director
       private
 
       def parse_availability_zones(subnet_spec, network, availability_zones)
-        if subnet_spec.has_key?('availability_zones')
+        has_availability_zones_key = subnet_spec.has_key?('availability_zones')
+        has_availability_zone_key = subnet_spec.has_key?('availability_zone')
+        if has_availability_zones_key && has_availability_zone_key
+          raise Bosh::Director::NetworkInvalidProperty, "Network '#{network.name}' contains both 'availability_zone' and 'availability_zones'. Choose one."
+        end
+
+        if has_availability_zones_key
           zones = safe_property(subnet_spec, 'availability_zones', class: Array, optional: true)
+          if zones.empty?
+            raise Bosh::Director::NetworkInvalidProperty, "Network '#{network.name}' refers to an empty 'availability_zones' array"
+          end
           zones.each do |zone|
             check_validity_of_subnet_availability_zone(zone, availability_zones, network)
           end

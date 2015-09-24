@@ -224,19 +224,23 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     end
 
     describe 'availability zone(s)' do
-      context 'with no availability zone specified' do
-        it 'does not care whether that az name is in the list' do
+      context 'when the subnet defines both availability_zone and availability_zones properties' do
+        it 'errors' do
           expect {
             make_subnet(
               {
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
-                'cloud_properties' => {'foo' => 'bar'},
+                'cloud_properties' => {},
+                'availability_zone' => 'foo',
+                'availability_zones' => ['foo']
               },
-              []
-            )
-          }.to_not raise_error
+              [
+                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
+              ])
+          }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' contains both 'availability_zone' and 'availability_zones'. Choose one.")
         end
+
       end
 
       context 'when the subnet defines availability_zones property' do
@@ -258,6 +262,23 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           end
         end
 
+        describe 'and the array is empty' do
+          it 'errors' do
+            expect {
+              make_subnet(
+                {
+                  'range' => '192.168.0.0/24',
+                  'gateway' => '192.168.0.254',
+                  'cloud_properties' => {},
+                  'availability_zones' => []
+                },
+                [
+                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
+                ])
+            }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' refers to an empty 'availability_zones' array")
+          end
+        end
+
         describe 'and one of the zones dont exist' do
           it 'errors' do
             expect {
@@ -276,50 +297,41 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
         end
       end
 
-      context 'with a nil availability zone' do
-        it 'errors' do
-          expect {
-            make_subnet(
-              {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {'foo' => 'bar'},
-                'availability_zone' => nil
-              },
-              [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})]
-            )
-          }.to raise_error(BD::ValidationInvalidType)
-        end
-      end
+      context 'when the subnet defines availability_zone property' do
 
-      context 'with an availability zone that is present' do
-        def make_valid_subnet
-          make_subnet(
-            {
-              'range' => '192.168.0.0/24',
-              'gateway' => '192.168.0.254',
-              'cloud_properties' => {'foo' => 'bar'},
-              'availability_zone' => 'foo'
-            },
-            [
-              Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
-              Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})
-            ]
-          )
+        context 'with no availability zone specified' do
+          it 'does not care whether that az name is in the list' do
+            expect {
+              make_subnet(
+                {
+                  'range' => '192.168.0.0/24',
+                  'gateway' => '192.168.0.254',
+                  'cloud_properties' => {'foo' => 'bar'},
+                },
+                []
+              )
+            }.to_not raise_error
+          end
         end
 
-        it 'is valid' do
-          expect { make_valid_subnet }.to_not raise_error
+        context 'with a nil availability zone' do
+          it 'errors' do
+            expect {
+              make_subnet(
+                {
+                  'range' => '192.168.0.0/24',
+                  'gateway' => '192.168.0.254',
+                  'cloud_properties' => {'foo' => 'bar'},
+                  'availability_zone' => nil
+                },
+                [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})]
+              )
+            }.to raise_error(BD::ValidationInvalidType)
+          end
         end
 
-        it 'is returned by the subnet' do
-          expect(make_valid_subnet.availability_zone_names).to eq(['foo'])
-        end
-      end
-
-      context 'with an availability zone that is not present' do
-        it 'errors' do
-          expect {
+        context 'with an availability zone that is present' do
+          def make_valid_subnet
             make_subnet(
               {
                 'range' => '192.168.0.0/24',
@@ -329,8 +341,35 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
               },
               [
                 Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
+                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})
               ]
-            )}.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'net_a' refers to an unknown availability zone 'foo'")
+            )
+          end
+
+          it 'is valid' do
+            expect { make_valid_subnet }.to_not raise_error
+          end
+
+          it 'is returned by the subnet' do
+            expect(make_valid_subnet.availability_zone_names).to eq(['foo'])
+          end
+        end
+
+        context 'with an availability zone that is not present' do
+          it 'errors' do
+            expect {
+              make_subnet(
+                {
+                  'range' => '192.168.0.0/24',
+                  'gateway' => '192.168.0.254',
+                  'cloud_properties' => {'foo' => 'bar'},
+                  'availability_zone' => 'foo'
+                },
+                [
+                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
+                ]
+              )}.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'net_a' refers to an unknown availability zone 'foo'")
+          end
         end
       end
 
