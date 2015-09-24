@@ -57,7 +57,7 @@ module Bosh
 
         def plan_obsolete_jobs(desired_jobs, existing_instances)
           desired_job_names = Set.new(desired_jobs.map(&:name))
-          migrating_job_names = Set.new(desired_jobs.map(&:migrated_from).map(&:name))
+          migrating_job_names = Set.new(desired_jobs.map(&:migrated_from).flatten.map(&:name))
           existing_instances.reject do |existing_instance_model|
             desired_job_names.include?(existing_instance_model.job) ||
             migrating_job_names.include?(existing_instance_model.job)

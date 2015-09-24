@@ -154,6 +154,16 @@ module Bosh::Director
         instance_models
       end
 
+      def candidate_existing_instances
+        desired_job_names = jobs.map(&:name)
+        migrating_job_names = jobs.map(&:migrated_from).flatten.map(&:name)
+
+        existing_instances.select do |instance|
+          desired_job_names.include?(instance.job) ||
+            migrating_job_names.include?(instance.job)
+        end
+      end
+
       # Returns a list of Vms in the deployment (according to DB)
       # @return [Array<Models::Vm>]
       def vm_models
@@ -201,11 +211,7 @@ module Bosh::Director
       # Adds instance to deletion queue
       # @param [Bosh::Director::DeploymentPlan::InstanceFromDatabase]
       def mark_instance_for_deletion(instance)
-        if @jobs_name_index.has_key?(instance.job_name)
-          @jobs_name_index[instance.job_name].unneeded_instances << instance
-        else
-          @unneeded_instances << instance
-        end
+        @unneeded_instances << instance
       end
 
       # Adds a job by name

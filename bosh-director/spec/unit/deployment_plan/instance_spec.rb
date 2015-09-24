@@ -27,7 +27,8 @@ module Bosh::Director::DeploymentPlan
           network: net,
           using_global_networking?: true,
           recreate: plan_recreate,
-          availability_zones: [availability_zone]
+          availability_zones: [availability_zone],
+          previously_deployed_using_global_networking?: true,
         })
     end
     let(:network_resolver) { GlobalNetworkResolver.new(plan) }

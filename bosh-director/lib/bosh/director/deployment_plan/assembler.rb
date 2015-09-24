@@ -24,15 +24,8 @@ module Bosh::Director
         instance_repo = Bosh::Director::DeploymentPlan::Instance
         instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo)
         desired_jobs = @deployment_plan.jobs
-        desired_job_names = desired_jobs.map(&:name)
-        migrating_job_names = desired_jobs.map(&:migrated_from).flatten.map(&:name)
 
-        candidate_instances = @deployment_plan.existing_instances.select do |instance|
-          desired_job_names.include?(instance.job) ||
-            migrating_job_names.include?(instance.job)
-        end
-        states_by_existing_instance = current_states_by_instance(candidate_instances)
-
+        states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
         job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
         desired_jobs.each do |desired_job|
@@ -46,10 +39,8 @@ module Bosh::Director
           desired_job.reserve_ips
         end
 
-        instance_plans_obsolete_within_a_job = desired_jobs.flat_map(&:instance_plans).select(&:obsolete?)
-        # instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-        obsolete_instance_plans = instance_plans_obsolete_within_a_job
-        obsolete_instance_plans.map(&:instance).each { |instance| @deployment_plan.mark_instance_for_deletion(instance) }
+        instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
+        instance_plans_for_obsolete_jobs.map(&:instance).each { |instance| @deployment_plan.mark_instance_for_deletion(instance) }
 
         mark_unknown_vms_for_deletion
       end

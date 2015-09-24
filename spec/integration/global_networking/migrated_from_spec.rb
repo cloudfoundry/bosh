@@ -54,7 +54,7 @@ describe 'migrated from', type: :integration do
 
     let(:manifest_with_azs) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      job_spec = Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
+      job_spec = etcd_job
       job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
       job_spec['availability_zones'] = ['my-az-1', 'my-az-2']
       job_spec['migrated_from'] = [
@@ -78,36 +78,50 @@ describe 'migrated from', type: :integration do
       legacy_manifest['networks'].first['subnets'] = [subnet1, subnet2]
       legacy_manifest['disk_pools'] = [disk_pool_spec]
       legacy_manifest['jobs'] = [
-        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', static_ips: ['192.168.1.10'], persistent_disk_pool: 'fast_disks'),
-        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', static_ips: ['192.168.2.10'], persistent_disk_pool: 'fast_disks')
+        etcd_z1_job,
+        etcd_z2_job,
       ]
       legacy_manifest
     end
 
-    it 'when VM has no changes (same network and resource pool configuration) it does not recreate VM and disk' do
-      deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-      original_vms = director.vms
-      original_disks = current_sandbox.cpi.disk_cids
-      expect(original_vms[0].job_name).to eq('etcd_z1')
-      expect(original_vms[1].job_name).to eq('etcd_z2')
-
-      upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-      deploy_simple_manifest(manifest_hash: manifest_with_azs)
-
-      new_vms = director.vms
-      expect(new_vms[0].job_name).to eq('etcd')
-      expect(new_vms[1].job_name).to eq('etcd')
-
-      expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
-      expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
-
-      new_disks = current_sandbox.cpi.disk_cids
-      expect(new_disks).to eq(original_disks)
+    let(:etcd_z1_job) do
+      Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
+    end
+    let(:etcd_z2_job) do
+      Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
+    end
+    let(:etcd_job) do
+      Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
     end
 
-    context 'when migrating using dynamic networks' do
-      it 'keeps VM ips' do
+    context 'when using same static reservation' do
+      let(:etcd_z1_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', static_ips: ['192.168.1.10'], persistent_disk_pool: 'fast_disks')
+      end
+      let(:etcd_z2_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', static_ips: ['192.168.2.10'], persistent_disk_pool: 'fast_disks')
+      end
+      let(:etcd_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
+      end
 
+      it 'keeps VM, disk and IPs' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.map(&:job_name)).to eq(['etcd'])
+
+        expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
+        expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks).to eq(original_disks)
       end
     end
 
@@ -130,14 +144,58 @@ describe 'migrated from', type: :integration do
     end
 
     context 'when number of migrated instances is greater than number of instances in new job' do
-      it 'deletes extra instances' do
+      let(:etcd_z1_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
+      end
 
+      it 'deletes extra instances' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.size).to eq(3)
+        expect(original_disks.size).to eq(3)
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.size).to eq(2)
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
+
+        expect(original_vms.map(&:cid)).to include(*new_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks.size).to eq(2)
+        expect(original_disks).to include(*new_disks)
       end
     end
 
     context 'when number of migrated instances is less than number of instances in new job' do
-      it 'creates extra instances' do
+      let(:etcd_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 3, name: 'etcd', persistent_disk_pool: 'fast_disks')
+      end
 
+      it 'creates extra instances' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.size).to eq(2)
+        expect(original_disks.size).to eq(2)
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.size).to eq(3)
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd', 'etcd'])
+
+        expect(new_vms.map(&:cid)).to include(*original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks.size).to eq(3)
+        expect(new_disks).to include(*original_disks)
       end
     end
 
@@ -149,10 +207,8 @@ describe 'migrated from', type: :integration do
   end
 
   context 'when migrating into existing job' do
-    context 'when number of migrated job instances exceed the number of job instances' do
-      it 'preserves existing job instanced and deletes extra migrated job instances' do
+    it 'preserves existing job instances and migrated job instances' do
 
-      end
     end
   end
 

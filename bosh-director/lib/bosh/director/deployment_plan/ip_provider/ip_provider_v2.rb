@@ -80,7 +80,7 @@ module Bosh::Director
         subnet = find_subnet_containing(reservation)
         if subnet
           return if subnet.restricted_ips.include?(reservation.ip.to_i)
-          @ip_repo.add(reservation) unless @using_global_networking
+          @ip_repo.add(reservation)
 
           @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
           mark_reserved_with_reservation_type(reservation, subnet)

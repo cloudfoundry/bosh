@@ -399,7 +399,7 @@ module Bosh::Director::DeploymentPlan
         context 'when ExistingNetworkReservation' do
           let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
 
-          it 'should NOT add existing IP to list of reserved IPs' do
+          it 'fails when trying to reserve for another instance' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
 
             other_instance = double(:instance, model: Bosh::Director::Models::Instance.make)
@@ -408,7 +408,7 @@ module Bosh::Director::DeploymentPlan
 
             expect {
               ip_provider.reserve_existing_ips(new_reservation_wanting_existing_ip)
-            }.to_not raise_error
+            }.to raise_error /already reserved/
           end
         end
       end
