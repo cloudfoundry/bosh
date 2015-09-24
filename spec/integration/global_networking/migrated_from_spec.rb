@@ -13,8 +13,8 @@ describe 'migrated from', type: :integration do
     let(:cloud_config_hash_with_azs) do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['availability_zones'] = [
-        { 'name' => 'my-az-1'},
-        { 'name' => 'my-az-2'}
+        { 'name' => 'my-az-1' },
+        { 'name' => 'my-az-2' }
       ]
       cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2]
       cloud_config_hash['disk_pools'] = [disk_pool_spec]
@@ -155,10 +155,11 @@ describe 'migrated from', type: :integration do
       end
     end
 
-    context 'when instance network configuration changed' do
+    context 'when instance network configuration changed (from dynamic to static)' do
       let(:etcd_job) do
         Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
       end
+
       it 'recreates VM keeping persistent disk' do
         deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
         original_vms = director.vms
@@ -175,13 +176,39 @@ describe 'migrated from', type: :integration do
         expect(new_vms.map(&:cid)).not_to match_array(original_vms.map(&:cid))
 
         new_disks = current_sandbox.cpi.disk_cids
-        expect(new_disks).to eq(original_disks)
+        expect(new_disks).to match_array(original_disks)
       end
     end
 
     context 'when instance resource pool configuration changed' do
-      it 'recreates VM keeping persistent disk' do
+      before do
+        cloud_config_hash_with_azs['resource_pools'].first['cloud_properties'] = {
+          'new-cloud-property-key' => 'new-cloud-property-value'
+        }
+      end
 
+      it 'recreates VM keeping persistent disk' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+
+        expect(new_vms.map(&:cid)).not_to match_array(original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks).to match_array(original_disks)
+
+        new_vms.each do |new_vm|
+          expect(current_sandbox.cpi.read_cloud_properties(new_vm.cid)).to eq({
+            'new-cloud-property-key' => 'new-cloud-property-value'
+          })
+        end
       end
     end
 
