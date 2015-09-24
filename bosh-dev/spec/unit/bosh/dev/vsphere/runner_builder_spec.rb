@@ -50,8 +50,8 @@ module Bosh::Dev::VSphere
           .and_return(director_uuid)
 
         ENV['BOSH_VSPHERE_BAT_DEPLOYMENT_SPEC'] = '/fake/config/path.yml'
-        bat_deployment_manifest = instance_double('Bosh::Dev::VSphere::BatDeploymentManifest')
-        expect(Bosh::Dev::VSphere::BatDeploymentManifest)
+        bat_deployment_manifest = instance_double('Bosh::Dev::Bat::DeploymentManifest')
+        expect(Bosh::Dev::Bat::DeploymentManifest)
           .to receive(:load_from_file)
           .with('/fake/config/path.yml')
           .and_return(bat_deployment_manifest)
@@ -59,7 +59,6 @@ module Bosh::Dev::VSphere
         expect(bat_deployment_manifest).to receive(:net_type=).with('net-type')
         expect(bat_deployment_manifest).to receive(:director_uuid=).with(director_uuid)
         expect(bat_deployment_manifest).to receive(:stemcell=).with(stemcell_archive)
-        expect(bat_deployment_manifest).to receive(:validate).with(no_args)
 
         runner = instance_double('Bosh::Dev::Bat::Runner')
         expect(Bosh::Dev::Bat::Runner).to receive(:new).with(

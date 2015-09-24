@@ -35,7 +35,6 @@ PATH
       bosh_common
       bundler
       logging
-      membrane
       peach
       ruby_vcloud_sdk (= 0.7.1)
 
