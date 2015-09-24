@@ -36,19 +36,14 @@ module Bosh
           if bootstrap_instance.nil? && !all_desired_instances.empty?
             @logger.info('No existing bootstrap instance. Going to pick a new bootstrap instance.')
             lowest_indexed_desired_instance = all_desired_instances
-                                                .reject { |instance| instance.index.nil? } # why would this ever be the case?
+                                                .reject { |instance| instance.index.nil? }
                                                 .sort_by { |instance| instance.index }
                                                 .first
 
-            if lowest_indexed_desired_instance.respond_to?(:is_existing)
-              new_desired_instances.each do |instance|
-                instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
-              end
-              # lowest_indexed_desired_instance.mark_as_bootstrap
-            else
-              instances_by_type[:desired_existing].each do |instance_and_deployment|
-                instance = instance_and_deployment[:instance]
-                instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
+            all_desired_instances.each do |instance|
+              if instance == lowest_indexed_desired_instance
+                @logger.info("Marking new bootstrap instance: #{instance.job}/#{instance.index} in az #{instance.availability_zone}")
+                instance.mark_as_bootstrap
               end
             end
           end
