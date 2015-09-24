@@ -57,13 +57,13 @@ module Bosh::Registry
         end
 
         if credentials_source == 'static'
-          if !cloud_config["aws"].has_key?("access_key_id") || !cloud_config["aws"].has_key?("secret_access_key")
+          if cloud_config["aws"]["access_key_id"].nil? || cloud_config["aws"]["secret_access_key"].nil?
               raise ConfigError, "Must use access_key_id and secret_access_key with static credentials_source"
           end
         end
 
         if credentials_source == 'env_or_profile'
-          if cloud_config["aws"].has_key?("access_key_id") || cloud_config["aws"].has_key?("secret_access_key")
+          if cloud_config["aws"]["access_key_id"] || cloud_config["aws"]["secret_access_key"]
               raise ConfigError, "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
           end
         end
