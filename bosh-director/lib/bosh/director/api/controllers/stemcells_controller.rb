@@ -5,12 +5,12 @@ module Bosh::Director
     class StemcellsController < BaseController
       post '/', :consumes => :json do
         payload = json_decode(request.body)
-        task = @stemcell_manager.create_stemcell_from_url(current_user, payload['location'])
+        task = @stemcell_manager.create_stemcell_from_url(current_user, payload['location'], payload['sha1'])
         redirect "/tasks/#{task.id}"
       end
 
       post '/', :consumes => :multipart do
-        task = @stemcell_manager.create_stemcell_from_file_path(current_user, params[:nginx_upload_path])
+        task = @stemcell_manager.create_stemcell_from_file_path(current_user, params[:nginx_upload_path], params['sha1'])
         redirect "/tasks/#{task.id}"
       end
 

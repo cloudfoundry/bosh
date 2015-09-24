@@ -44,6 +44,9 @@ properties:
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # For AWS
+  aws.credentials_source:
+    description: AWS credentials source
+    default: static
   aws.access_key_id:
     description: AWS IAM Access Key ID
   aws.secret_access_key:

@@ -1,4 +1,4 @@
-<%= 
+<%=
   params = {
     'loglevel' => 'debug',
 
@@ -20,11 +20,12 @@
   }
 
   cloud_params = params['cloud']
-  if_p('aws.access_key_id', 'aws.secret_access_key', 'aws.region') do |access_key_id, secret_access_key, region| 
+  if_p('aws.region') do |region|
     cloud_params['plugin'] = 'aws'
     cloud_params['aws'] = {
-      'access_key_id' =>  access_key_id,
-      'secret_access_key' =>  secret_access_key,
+      'credentials_source' => p('aws.credentials_source', 'static'),
+      'access_key_id' =>  p('aws.access_key_id', nil),
+      'secret_access_key' => p('aws.secret_access_key', nil),
       'region' =>  region,
     }
     if_p('aws.ec2_endpoint') do |ec2_endpoint|

@@ -183,6 +183,9 @@ properties:
     default: 'dav'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
+  blobstore.credentials_source:
+    description: AWS Credential Source (static / env_or_profile)
+    default: 'static'
   blobstore.access_key_id:
     description: AWS access_key_id used by s3 blobstore plugin
   blobstore.secret_access_key:
@@ -239,6 +242,10 @@ properties:
     default: 's3'
   compiled_package_cache.options.bucket_name:
     description: AWS S3 Bucket used for the compiled package cache
+
+  compiled_package_cache.options.credentials_source:
+    description:  AWS credentials (static / env_or_profile)
+    default: 'static'
   compiled_package_cache.options.access_key_id:
     description: AWS access_key_id used for the compiled package cache
   compiled_package_cache.options.secret_access_key:
@@ -305,6 +312,9 @@ properties:
   # Cpi
   director.cpi_job:
     description: Name of cpi job (null to use bundled cpi gems)
+  agent.blobstore.credentials_source:
+    description:  AWS credentials (static / env_or_profile)
+    default: 'static'
   agent.blobstore.access_key_id:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
@@ -346,6 +356,11 @@ properties:
     description: Default ssh keypair used by aws cpi when creating vms
   aws.default_security_groups:
     description: Default security group used by aws cpi
+  aws.default_iam_instance_profile:
+    description: Default IAM profile to be used by aws cpi
+  aws.credentials_source:
+    description:  AWS credentials (static / env_or_profile)
+    default: 'static'
   aws.region:
     description: AWS Region used by aws cpi
   aws.ec2_endpoint:

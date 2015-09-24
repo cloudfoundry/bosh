@@ -233,7 +233,7 @@ module Bosh::Blobstore
         end
 
         before do
-          allow(client).to receive(:get_object_from_s3).and_return(blob)          
+          allow(client).to receive(:get_object_from_s3).and_return(blob)
         end
 
         it 'uses a proper content-type' do
@@ -413,6 +413,38 @@ module Bosh::Blobstore
           expect {
             client.delete('fake-oid')
           }.to raise_error(BlobstoreError, 'unsupported action')
+        end
+      end
+    end
+
+    describe 'credentials_source' do
+
+      context 'when credentials_source is invalid' do
+        before do
+          options.merge!('credentials_source' => 'NotACredentialsSource')
+        end
+
+        it 'raises an error' do
+          expect {
+            client
+          }.to raise_error(BlobstoreError, "invalid credentials_source")
+        end
+      end
+      
+      context 'when access_key_id and secret_access_key are provided with the env_or_profile credentials_source' do
+
+        before do
+          options.merge!(
+          'credentials_source' => 'env_or_profile',
+          'access_key_id' => 'KEY',
+          'secret_access_key' => 'SECRET'
+          )
+        end
+
+        it 'raises an error' do
+          expect {
+            client
+          }.to raise_error(BlobstoreError, "can't use access_key_id or secret_access_key with env_or_profile credentials_source")
         end
       end
     end

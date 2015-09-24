@@ -95,6 +95,7 @@ module Bosh
         def upload_remote_stemcell(stemcell_location, options = {})
           options                = options.dup
           payload                = { 'location' => stemcell_location }
+          payload[:sha1]         = options[:sha1] if options[:sha1]
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
 
@@ -639,6 +640,7 @@ module Bosh
         def releases_path(options = {})
           path = '/releases'
           params = [:rebase, :skip_if_exists].select { |p| options[p] }.map { |p| "#{p}=true" }
+          params.push "sha1=#{options[:sha1]}" unless options[:sha1].blank?
           path << "?#{params.join('&')}" unless params.empty?
           path
         end

@@ -19,7 +19,22 @@ module Bosh::Director
           [stemcell_url, { remote: true }],
         ).and_return(task)
 
-        expect(subject.create_stemcell_from_url(username, stemcell_url)).to eql(task)
+        expect(subject.create_stemcell_from_url(username, stemcell_url, nil)).to eql(task)
+      end
+
+      context 'when a sha1 is provided for the stemcell' do
+        let(:stemcell_sha) { 'shawone' }
+
+        it 'enqueues a task to upload a remote stemcell' do
+          expect(job_queue).to receive(:enqueue).with(
+            username,
+            Jobs::UpdateStemcell,
+            'create stemcell',
+            [stemcell_url, { remote: true, sha1: 'shawone'}],
+          ).and_return(task)
+
+          expect(subject.create_stemcell_from_url(username, stemcell_url, stemcell_sha)).to eql(task)
+        end
       end
     end
 
@@ -37,7 +52,24 @@ module Bosh::Director
             [stemcell_path],
           ).and_return(task)
 
-          expect(subject.create_stemcell_from_file_path(username, stemcell_path)).to eql(task)
+          expect(subject.create_stemcell_from_file_path(username, stemcell_path, nil)).to eql(task)
+        end
+
+        context 'when a sha1 is provided for the stemcell' do
+          let(:stemcell_sha) { 'shawone' }
+
+          before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
+
+          it 'enqueues a task to upload a remote stemcell' do
+            expect(job_queue).to receive(:enqueue).with(
+              username,
+              Jobs::UpdateStemcell,
+              'create stemcell',
+              [stemcell_path, { sha1: 'shawone' }],
+            ).and_return(task)
+
+            expect(subject.create_stemcell_from_file_path(username, stemcell_path, stemcell_sha)).to eql(task)
+          end
         end
       end
 
@@ -48,7 +80,7 @@ module Bosh::Director
           expect(job_queue).to_not receive(:enqueue)
 
           expect {
-            expect(subject.create_stemcell_from_file_path(username, stemcell_path))
+            expect(subject.create_stemcell_from_file_path(username, stemcell_path, nil))
           }.to raise_error(DirectorError, /Failed to create stemcell: file not found/)
         end
       end

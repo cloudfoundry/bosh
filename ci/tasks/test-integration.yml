@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///bosh/main#ruby-2.1.7
+image: docker:///bosh/main
 
 inputs:
 - name: bosh-src
