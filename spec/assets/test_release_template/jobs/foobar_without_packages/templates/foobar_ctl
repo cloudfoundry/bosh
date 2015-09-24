@@ -7,6 +7,9 @@ case $1 in
   start)
     echo $$ > $PIDFILE
 
+    echo "job_name=<%= spec.job.name %>"
+    echo "templates=<%= spec.job.templates.map(&:name).join(',') %>"
+
     exec /bin/sh 'while true; do echo "ZzZzZz..."; sleep 2; done'
     ;;
 

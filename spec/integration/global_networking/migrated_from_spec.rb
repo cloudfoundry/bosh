@@ -121,19 +121,61 @@ describe 'migrated from', type: :integration do
         expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
 
         new_disks = current_sandbox.cpi.disk_cids
-        expect(new_disks).to eq(original_disks)
+        expect(new_disks).to match_array(original_disks)
       end
     end
 
     context 'when templates of migrated jobs are different from desired job' do
-      it 'updates job instances with new desired job templates keeping persistent disk' do
+      let(:etcd_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks', templates: [{'name' => 'foobar_without_packages'}])
+      end
 
+      it 'updates job instances with new desired job templates keeping persistent disk' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
+
+        expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks).to match_array(original_disks)
+
+        new_vms.each do |new_vm|
+          template = new_vm.read_job_template('foobar_without_packages', 'bin/foobar_ctl')
+          expect(template).to include('job_name=etcd')
+          expect(template).to include('templates=foobar_without_packages')
+        end
       end
     end
 
     context 'when instance network configuration changed' do
+      let(:etcd_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
+      end
       it 'recreates VM keeping persistent disk' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
 
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+
+        expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
+        expect(new_vms.map(&:cid)).not_to match_array(original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks).to eq(original_disks)
       end
     end
 
@@ -196,12 +238,6 @@ describe 'migrated from', type: :integration do
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks.size).to eq(3)
         expect(new_disks).to include(*original_disks)
-      end
-    end
-
-    context 'when number of static IPs in new job less than required by migrated instances' do
-      it 'fails' do
-
       end
     end
   end

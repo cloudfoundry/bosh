@@ -32,7 +32,7 @@ module Bosh::Director
 
       instance_plans.each do |instance_plan|
         changes = instance_plan.changes
-        @logger.debug("Need to update instance '#{instance_plan.instance}', changes: #{changes}")
+        @logger.debug("Need to update instance '#{instance_plan.instance}', changes: #{changes.to_a.join(', ').inspect}")
       end
 
       @logger.info("Found #{instance_plans.size} instances to update")
