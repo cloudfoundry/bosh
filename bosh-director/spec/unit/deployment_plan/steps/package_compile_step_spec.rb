@@ -23,7 +23,7 @@ module Bosh::Director
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
     let(:ip_provider) { instance_double(DeploymentPlan::IpProviderV2, reserve: nil, release: nil)}
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, ip_provider)
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
