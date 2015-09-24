@@ -14,45 +14,47 @@ module Bosh
           instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances)
 
           new_desired_instances = instances_by_type[:desired_new]
-          existing_desired_instances = instances_by_type[:desired_existing]
+          existing_instances = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:instance] }
           obsolete_instance_models = instances_by_type[:obsolete]
 
           new_desired_instances.each do |desired_instance|
-            @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_desired_instance(desired_instance)}")
+            @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_instance(desired_instance)}")
           end
 
-          existing_desired_instances.each do |desired_instance|
-            @logger.info("Existing desired instance: #{desired_instance.job.name}/#{desired_instance.existing_instance.index} in az: #{az_name_for_desired_instance(desired_instance)}")
+          existing_instances.each do |existing_instance|
+            @logger.info("Existing desired instance: #{existing_instance.job}/#{existing_instance.index} in az: #{az_name_for_instance(existing_instance)}")
           end
 
           obsolete_instance_models.each do |instance|
             @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
           end
 
-          all_desired_instances = new_desired_instances+existing_desired_instances
-          bootstrap_instance = existing_desired_instances.map(&:existing_instance).find(&:bootstrap)
+          all_desired_instances = new_desired_instances+existing_instances
+          bootstrap_instance = existing_instances.find(&:bootstrap)
           @logger.info("Found existing bootstrap instance: #{bootstrap_instance.job}/#{bootstrap_instance.index} in az: #{bootstrap_instance.availability_zone}") if bootstrap_instance
 
           if bootstrap_instance.nil? && !all_desired_instances.empty?
             @logger.info('No existing bootstrap instance. Going to pick a new bootstrap instance.')
             lowest_indexed_desired_instance = all_desired_instances
-                                                .reject { |instance| instance.index.nil? }
-                                                .sort { |instance1, instance2| instance1.index <=> instance2.index }
+                                                .reject { |instance| instance.index.nil? } # why would this ever be the case?
+                                                .sort_by { |instance| instance.index }
                                                 .first
 
-            if lowest_indexed_desired_instance.existing_instance.nil?
+            if lowest_indexed_desired_instance.respond_to?(:is_existing)
               new_desired_instances.each do |instance|
                 instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
               end
+              # lowest_indexed_desired_instance.mark_as_bootstrap
             else
-              existing_desired_instances.each do |instance|
-                instance.existing_instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
+              instances_by_type[:desired_existing].each do |instance_and_deployment|
+                instance = instance_and_deployment[:instance]
+                instance.mark_as_bootstrap if instance == lowest_indexed_desired_instance
               end
             end
           end
 
           desired_new_instance_plans = desired_new_instance_plans(new_desired_instances)
-          desired_existing_instance_plans = desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance)
+          desired_existing_instance_plans = desired_existing_instance_plans(instances_by_type[:desired_existing], states_by_existing_instance)
           obsolete_instance_plans = obsolete_instance_plans(obsolete_instance_models)
 
           desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
@@ -70,8 +72,8 @@ module Bosh
 
         private
 
-        def az_name_for_desired_instance(desired_instance)
-          desired_instance.az.name unless desired_instance.az.nil?
+        def az_name_for_instance(instance)
+          instance.availability_zone
         end
 
         def obsolete_instance_plans(obsolete_desired_instances)
@@ -81,12 +83,22 @@ module Bosh
           end
         end
 
-        def desired_existing_instance_plans(existing_desired_instances, states_by_existing_instance)
-          existing_desired_instances.map do |desired_instance|
-            existing_instance = desired_instance.existing_instance
+        def desired_existing_instance_plans(existing_instances_and_deployment, states_by_existing_instance)
+          existing_instances_and_deployment.map do |existing_instance_and_deployment|
+            existing_instance = existing_instance_and_deployment[:instance]
+            deployment = existing_instance_and_deployment[:deployment]
             existing_instance_state = states_by_existing_instance[existing_instance]
-            instance = @instance_repo.fetch_existing(desired_instance, existing_instance_state, existing_instance.index, @logger)
-            InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance, instance: instance)
+            instance = @instance_repo.fetch_existing(existing_instance, existing_instance_state, deployment, @logger)
+            desired_existing_instance = DesiredInstance.new(
+              existing_instance.job,
+              existing_instance.state,
+              deployment,
+              existing_instance.availability_zone,
+              true,
+              existing_instance.index,
+              existing_instance.bootstrap
+            )
+            InstancePlan.new(desired_instance: desired_existing_instance, existing_instance: existing_instance, instance: instance)
           end
         end
 

@@ -52,10 +52,11 @@ module Bosh
           obsolete.each do |instance_model|
             candidate_indexes.delete(instance_model.index)
           end
-          desired_existing.each do |desired_instance|
-            candidate_indexes.delete(desired_instance.existing_instance.index)
-            desired_instance.index = desired_instance.existing_instance.index
-          end
+
+          desired_existing
+            .map {|instance_and_deployment| instance_and_deployment[:instance] }
+            .each { |existing_instance| candidate_indexes.delete(existing_instance.index) }
+
           desired_new.each do |desired_instance|
             desired_instance.index = candidate_indexes.shift
           end
@@ -121,14 +122,18 @@ module Bosh
 
           def record_placement(az, desired_instance, existing_instance)
             desired_instance.az = az
-            desired_instance.existing_instance = existing_instance
+            desired_instance.is_existing = !existing_instance.nil?
             az_desired_instances = @placed.fetch(az, [])
             az_desired_instances << desired_instance
             @placed[az] = az_desired_instances
-            if desired_instance.existing_instance.nil?
-              new << desired_instance
+            if desired_instance.is_existing
+              diffed_instance = existing_instance
+              diffed_instance.state = desired_instance.state unless desired_instance.state.nil?
+              diffed_instance.job = desired_instance.job.name
+              diffed_instance.availability_zone = desired_instance.az.name unless desired_instance.az.nil?
+              existing << { instance: diffed_instance, deployment: desired_instance.deployment }
             else
-              existing << desired_instance
+              new << desired_instance
             end
           end
 

@@ -26,7 +26,8 @@ module Bosh::Director::DeploymentPlan
           model: deployment,
           network: net,
           using_global_networking?: true,
-          recreate: plan_recreate
+          recreate: plan_recreate,
+          availability_zones: [availability_zone]
         })
     end
     let(:network_resolver) { GlobalNetworkResolver.new(plan) }
@@ -1263,6 +1264,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#fetch_existing' do
       it 'ensures persisted existing instance has the same state as in-memory existing instance' do
+        allow(plan).to receive(:jobs).and_return([job])
         existing_instance = Bosh::Director::Models::Instance.make(
           deployment_id: plan.model.id,
           job: job.name,
@@ -1273,8 +1275,7 @@ module Bosh::Director::DeploymentPlan
           availability_zone: availability_zone.name,
           bootstrap: false,
          )
-        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance)
-        instance = Instance.fetch_existing(desired_instance, current_state, 1, logger)
+        instance = Instance.fetch_existing(existing_instance, current_state, plan, logger)
         persisted_instance = BD::Models::Instance.first
         expect(BD::Models::Instance.count).to eq(1)
 

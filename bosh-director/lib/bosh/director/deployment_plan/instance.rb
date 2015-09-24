@@ -38,9 +38,12 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations, :desired_network_reservations
 
-      def self.fetch_existing(desired_instance, existing_instance_state, index, logger)
-        instance = new(desired_instance.job, index, desired_instance.state, desired_instance.deployment, existing_instance_state, desired_instance.az, desired_instance.bootstrap, logger)
-        instance.bind_existing_instance_model(desired_instance.existing_instance)
+      def self.fetch_existing(existing_instance, existing_instance_state, deployment, logger)
+        logger.debug("Fetching existing instance for: #{existing_instance.inspect}")
+        job = deployment.jobs.find {|job| job.name == existing_instance.job }
+        az = deployment.availability_zones.find {|az| az.name == existing_instance.availability_zone }
+        instance = new(job, existing_instance.index, existing_instance.state, deployment, existing_instance_state, az, existing_instance.bootstrap, logger)
+        instance.bind_existing_instance_model(existing_instance)
         instance.bind_existing_reservations(existing_instance_state)
         instance
       end
