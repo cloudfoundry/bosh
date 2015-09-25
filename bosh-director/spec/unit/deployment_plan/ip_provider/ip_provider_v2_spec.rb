@@ -329,40 +329,51 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe :reserve_existing_ips do
-        let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
+        context 'when dynamic network' do
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2') }
+          let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', 'canonical-name', [], logger) }
 
-        context 'when IP is a static IP' do
-          it 'should reserve IP as a StaticNetworkReservation' do
-            manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
+          it 'does not reserve IPs' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
-
-            expect(existing_network_reservation.static?).to be_truthy
+            expect(existing_network_reservation.static?).to be_falsey
           end
         end
 
-        context 'when IP is a dynamic IP' do
-          it 'should reserve IP as a DynamicNetworkReservation' do
-            ip_provider.reserve_existing_ips(existing_network_reservation)
+        context 'when manual network' do
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
+          context 'when IP is a static IP' do
+            it 'should reserve IP as a StaticNetworkReservation' do
+              manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
+              ip_provider.reserve_existing_ips(existing_network_reservation)
 
-            expect(existing_network_reservation.dynamic?).to be_truthy
+              expect(existing_network_reservation.static?).to be_truthy
+            end
           end
-        end
 
-        context 'when IP is in reserved range' do
-          it 'should not reserve IP' do
-            manual_network_spec['subnets'].first['reserved'] = ['192.168.1.2']
-            ip_provider.reserve_existing_ips(existing_network_reservation)
+          context 'when IP is a dynamic IP' do
+            it 'should reserve IP as a DynamicNetworkReservation' do
+              ip_provider.reserve_existing_ips(existing_network_reservation)
 
-            expect(existing_network_reservation).not_to be_reserved
+              expect(existing_network_reservation.dynamic?).to be_truthy
+            end
           end
-        end
 
-        context 'when IP is not in any subnet' do
-          it 'should not reserve IP' do
-            reservation_outside_subnet = BD::ExistingNetworkReservation.new(instance, manual_network, '10.0.0.1')
-            ip_provider.reserve_existing_ips(reservation_outside_subnet)
+          context 'when IP is in reserved range' do
+            it 'should not reserve IP' do
+              manual_network_spec['subnets'].first['reserved'] = ['192.168.1.2']
+              ip_provider.reserve_existing_ips(existing_network_reservation)
 
-            expect(reservation_outside_subnet).not_to be_reserved
+              expect(existing_network_reservation).not_to be_reserved
+            end
+          end
+
+          context 'when IP is not in any subnet' do
+            it 'should not reserve IP' do
+              reservation_outside_subnet = BD::ExistingNetworkReservation.new(instance, manual_network, '10.0.0.1')
+              ip_provider.reserve_existing_ips(reservation_outside_subnet)
+
+              expect(reservation_outside_subnet).not_to be_reserved
+            end
           end
         end
       end

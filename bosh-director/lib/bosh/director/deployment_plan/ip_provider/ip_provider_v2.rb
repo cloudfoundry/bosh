@@ -76,6 +76,9 @@ module Bosh::Director
       end
 
       def reserve_existing_ips(reservation)
+        # Do nothing for Dynamic Network
+        return if reservation.network.is_a?(DynamicNetwork)
+
         @logger.debug('Reserving existing ips')
         subnet = find_subnet_containing(reservation)
         if subnet

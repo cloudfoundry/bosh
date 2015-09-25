@@ -158,9 +158,8 @@ module Bosh::Director
       end
 
       def bind_existing_reservations(state)
-        if deployment.previously_deployed_using_global_networking?
-          @existing_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
-        else
+        @existing_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
+        if @existing_network_reservations.none? && state
           # This is for backwards compatibility when we did not store
           # network reservations in DB and constructed them from instance state
           @existing_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
