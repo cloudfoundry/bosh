@@ -68,7 +68,7 @@ module Bosh::Dev::Sandbox
     def hard_stop
       stop_workers
       resque_processes = `ps ax | grep resque`
-      @logger.debug("Hard stopped workers, running resque processes: #{resque_processes}")
+      @logger.info("Hard stopped workers, running resque processes: #{resque_processes}")
       @process.stop
     end
 
