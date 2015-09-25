@@ -146,8 +146,8 @@ module Bosh::Director
         true
       end
 
-      def starts_on_deploy?
-        false
+      def can_run_as_errand?
+        true
       end
     end
   end

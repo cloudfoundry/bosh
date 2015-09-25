@@ -37,7 +37,8 @@ module Bosh::Director::DeploymentPlan
         deployment: plan,
         name: 'fake-job',
         persistent_disk_pool: disk_pool,
-        compilation?: false
+        compilation?: false,
+        can_run_as_errand?: false
       )
     end
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool', cloud_properties: {}) }
@@ -61,7 +62,7 @@ module Bosh::Director::DeploymentPlan
             deployment: plan,
             name: 'fake-job',
             canonical_name: 'job',
-            starts_on_deploy?: true,
+            can_run_as_errand?: false,
             resource_pool: resource_pool,
             compilation?: false
           })
@@ -71,7 +72,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_name) { 'net_a' }
       let(:cloud_properties) { {'foo' => 'bar'} }
       let(:dns) { ['1.2.3.4'] }
-      let(:dns_record_name) { "0.job.net-a.mycloud.#{domain_name}" }
+      let(:dns_record_name) { "0.fake-job.net-a.fake-deployment.#{domain_name}" }
       let(:ipaddress) { '10.0.0.6' }
       let(:subnet_range) { '10.0.0.1/24' }
       let(:netmask) { '255.255.255.0' }
@@ -140,7 +141,7 @@ module Bosh::Director::DeploymentPlan
                     'foo' => 'bar'
                   },
                   'dns' => ['1.2.3.4'],
-                  'dns_record_name' => '0.job.net-a.mycloud.test_domain',
+                  'dns_record_name' => '0.fake-job.net-a.fake-deployment.test_domain',
                   'ip' => '10.0.0.6',
                   'netmask' => '255.255.255.0',
                   'gateway' => '10.0.0.1'}
@@ -265,8 +266,8 @@ module Bosh::Director::DeploymentPlan
           ip_provider.reserve(reservation)
         end
 
-        context 'when job is started on deploy' do
-          before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
+        context 'when job is not an errand' do
+          before { expect(job).to receive(:can_run_as_errand?).with(no_args).and_return(false) }
 
           it 'includes dns_record_name' do
             instance.add_network_reservation(reservation)
@@ -274,8 +275,8 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when job is not started on deploy' do
-          before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+        context 'when job is an errand' do
+          before { expect(job).to receive(:can_run_as_errand?).with(no_args).and_return(true) }
 
           it 'does not include dns_record_name' do
             instance.add_network_reservation(reservation)
@@ -498,7 +499,7 @@ module Bosh::Director::DeploymentPlan
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', {
             name: 'fake-network',
-            network_settings: 'fake-network-settings',
+            network_settings: {'fake-network-settings' => {}},
           })
       end
 
@@ -526,7 +527,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'networks' => {'fake-network' => 'fake-network-settings'},
+            'networks' => {'fake-network' => {'fake-network-settings' =>{}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test_domain'}},
             'resource_pool' => 'fake-resource-pool-spec',
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
@@ -908,7 +909,7 @@ module Bosh::Director::DeploymentPlan
           resource_pool: resource_pool,
           package_spec: packages,
           persistent_disk_pool: disk_pool,
-          starts_on_deploy?: true,
+          can_run_as_errand?: false,
           link_spec: 'fake-link',
           compilation?: false,
           properties: properties)
@@ -932,7 +933,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
+        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
             'cloud_properties' => network_spec['cloud_properties'],
@@ -1013,7 +1014,7 @@ module Bosh::Director::DeploymentPlan
           resource_pool: resource_pool,
           package_spec: packages,
           persistent_disk_pool: disk_pool,
-          starts_on_deploy?: true,
+          can_run_as_errand?: false,
           link_spec: 'fake-link',
           compilation?: false,
           properties: properties)
@@ -1037,7 +1038,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
+        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
             'cloud_properties' => network_spec['cloud_properties'],
