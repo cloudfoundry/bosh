@@ -227,12 +227,12 @@ module Bosh::Director
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
-        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_network_reservations, @current_state, availability_zone, @index).to_hash
+        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_network_reservations, @current_state, availability_zone, @index, @uuid)
       end
 
       def network_addresses
         network_addresses = {}
-        network_settings.each do |network_name, network|
+        network_settings.to_hash.each do |network_name, network|
           network_addresses[network_name] = {
             'address' => network['type'] == 'dynamic' ? dns_record_name(uuid, network_name) : network['ip']
           }
@@ -267,14 +267,7 @@ module Bosh::Director
       ##
       # @return [Hash<String, String>] dns record hash of dns name and IP
       def dns_record_info
-        dns_record_info = {}
-        network_settings.each do |network_name, network|
-          index_dns_name = dns_record_name(index, network_name)
-          dns_record_info[index_dns_name] = network['ip']
-          id_dns_name = dns_record_name(uuid, network_name)
-          dns_record_info[id_dns_name] = network['ip']
-        end
-        dns_record_info
+        network_settings.dns_record_info
       end
 
       ##
@@ -443,7 +436,7 @@ module Bosh::Director
           'job' => job.spec,
           'index' => index,
           'id' => uuid,
-          'networks' => network_settings,
+          'networks' => network_settings.to_hash,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
           'configuration_hash' => configuration_hash,
@@ -475,7 +468,7 @@ module Bosh::Director
           'bootstrap' => @bootstrap,
           'id' => uuid,
           'availability_zone' => availability_zone_name,
-          'networks' => network_settings,
+          'networks' => network_settings.to_hash,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
           'properties' => job.properties,

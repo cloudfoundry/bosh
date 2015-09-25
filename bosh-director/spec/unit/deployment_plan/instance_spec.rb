@@ -134,7 +134,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
-          expect(instance.network_settings).to eql({
+          expect(instance.network_settings.to_hash).to eql({
                 'net_a' => {
                   'type' => 'dynamic',
                   'cloud_properties' => {
@@ -159,7 +159,7 @@ module Bosh::Director::DeploymentPlan
         describe '#dns_changed?' do
           describe 'when the index dns record for the instance is not found' do
             before do
-              ::Bosh::Director::Models::Dns::Record.create(:name => 'uuid-1.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
+              ::Bosh::Director::Models::Dns::Record.create(:name => 'uuid-1.fake-job.net-a.fake-deployment.test_domain', :type => 'A', :content => '10.0.0.6')
             end
 
             it '#dns_changed? should return true' do
@@ -167,14 +167,14 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'should log the dns changes' do
-              expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '0.job.net-a.mycloud.test_domain' and ip '10.0.0.6' was not found in the db.")
+              expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '0.fake-job.net-a.fake-deployment.test_domain' and ip '10.0.0.6' was not found in the db.")
               instance.dns_changed?
             end
           end
 
           describe 'when the id dns record for the instance is not found' do
             before do
-              ::Bosh::Director::Models::Dns::Record.create(:name => '0.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
+              ::Bosh::Director::Models::Dns::Record.create(:name => '0.fake-job.net-a.fake-deployment.test_domain', :type => 'A', :content => '10.0.0.6')
             end
 
             it '#dns_changed? should return true' do
@@ -182,15 +182,15 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'should log the dns changes' do
-              expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.job.net-a.mycloud.test_domain' and ip '10.0.0.6' was not found in the db.")
+              expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.fake-job.net-a.fake-deployment.test_domain' and ip '10.0.0.6' was not found in the db.")
               instance.dns_changed?
             end
           end
 
           describe 'when the dns records for the instance are found' do
             before do
-              ::Bosh::Director::Models::Dns::Record.create(:name => '0.job.net-a.mycloud.test_domain', :type => 'A', :content => '10.0.0.6')
-              ::Bosh::Director::Models::Dns::Record.create(:name => "#{instance.uuid}.job.net-a.mycloud.test_domain", :type => 'A', :content => '10.0.0.6')
+              ::Bosh::Director::Models::Dns::Record.create(:name => '0.fake-job.net-a.fake-deployment.test_domain', :type => 'A', :content => '10.0.0.6')
+              ::Bosh::Director::Models::Dns::Record.create(:name => "#{instance.uuid}.fake-job.net-a.fake-deployment.test_domain", :type => 'A', :content => '10.0.0.6')
             end
 
             it '#dns_changed? should return false' do
@@ -225,10 +225,10 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns the network settings as set at the network spec' do
           net_settings = {network_name => network_settings.merge(network_info)}
-          expect(instance.network_settings).to eql(net_settings)
+          expect(instance.network_settings.to_hash).to eql(net_settings)
 
           instance.bind_existing_instance_model(instance_model)
-          expect(instance.network_settings).to eql(net_settings)
+          expect(instance.network_settings.to_hash).to eql(net_settings)
         end
 
         describe '#network_addresses' do
@@ -271,7 +271,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'includes dns_record_name' do
             instance.add_network_reservation(reservation)
-            expect(instance.network_settings['net_a']).to have_key('dns_record_name')
+            expect(instance.network_settings.to_hash['net_a']).to have_key('dns_record_name')
           end
         end
 
@@ -280,7 +280,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'does not include dns_record_name' do
             instance.add_network_reservation(reservation)
-            expect(instance.network_settings['net_a']).to_not have_key('dns_record_name')
+            expect(instance.network_settings.to_hash['net_a']).to_not have_key('dns_record_name')
           end
         end
       end
