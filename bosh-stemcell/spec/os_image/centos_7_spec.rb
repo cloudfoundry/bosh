@@ -27,6 +27,7 @@ describe 'CentOS 7 OS image', os_image: true do
     %w(
       bison
       bzip2-devel
+      cloud-utils-growpart
       cmake
       cronie-anacron
       curl
