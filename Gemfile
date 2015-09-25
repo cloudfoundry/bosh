@@ -21,7 +21,7 @@ gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 gem 'bosh_aws_cpi', '~>2.0.2'
 gem 'rake', '~>10.0'
 
-# json version is hardcoded in release director package
+# json version is hardcoded in release director, health_monitor and registry packages
 # when modified needs to be updated there as well
 gem 'json', '=1.8.3'
 
