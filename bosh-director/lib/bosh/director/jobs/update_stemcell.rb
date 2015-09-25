@@ -26,6 +26,10 @@ module Bosh::Director
           @stemcell_path = stemcell_path
         end
 
+        if options['sha1']
+          @stemcell_sha1 = options['sha1']
+        end
+
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
       end
@@ -38,6 +42,8 @@ module Bosh::Director
         track_and_log("Downloading remote stemcell") { download_remote_stemcell } if @stemcell_url
 
         stemcell_dir = Dir.mktmpdir("stemcell")
+
+        track_and_log("Verifying remote stemcell") { verify_sha1 } if @stemcell_sha1
 
         track_and_log("Extracting stemcell archive") do
           result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", :on_error => :return)
@@ -96,8 +102,15 @@ module Bosh::Director
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_path) if @stemcell_path
       end
-      
+
       private
+
+      def verify_sha1
+        stemcell_hash = Digest::SHA1.file(@stemcell_path).hexdigest
+        if stemcell_hash != @stemcell_sha1
+          raise StemcellSha1DoesNotMatch, "Stemcell SHA1 `#{stemcell_hash}' does not match the expected SHA1 `#{@stemcell_sha1}'"
+        end
+      end
 
       def download_remote_stemcell
         download_remote_file('stemcell', @stemcell_url, @stemcell_path)

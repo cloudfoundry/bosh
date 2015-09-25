@@ -4,7 +4,7 @@ module Bosh::Cli
       extend Bosh::Cli::CommandDiscovery
       include Bosh::Cli::DeploymentHelper
 
-      attr_accessor :options, :out, :args
+      attr_accessor :options, :out, :args, :info
       attr_reader :work_dir, :exit_code, :runner
 
       DEFAULT_DIRECTOR_PORT = 25555
@@ -18,6 +18,7 @@ module Bosh::Cli
         @exit_code = 0
         @out = nil
         @args = []
+        @info = {}
       end
 
       # @return [Bosh::Cli::Config] Current configuration
@@ -87,6 +88,10 @@ module Bosh::Cli
         Bosh::Cli::Runner.new(args, @options).run
       end
 
+      def run_nested_command(*args)
+        Bosh::Cli::Runner.new(args, @options).run(false)
+      end
+
       def confirmed?(question = 'Are you sure?')
         return true if non_interactive?
         ask("#{question} (type 'yes' to continue): ") == 'yes'
@@ -125,7 +130,7 @@ module Bosh::Cli
     end
 
     def cache_dir
-      File.join(Dir.home, '.bosh', 'cache')
+      ENV['BOSH_CACHE_DIR'] || File.join(Dir.home, '.bosh', 'cache')
     end
 
     def show_current_state(deployment_name=nil)
