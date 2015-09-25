@@ -55,7 +55,11 @@ module Bosh
 
           desired_existing
             .map {|instance_and_deployment| instance_and_deployment[:instance] }
-            .each { |existing_instance| candidate_indexes.delete(existing_instance.index) }
+            .each do |existing_instance|
+            unless candidate_indexes.delete(existing_instance.index)
+              existing_instance.update(index: candidate_indexes.shift)
+            end
+          end
 
           desired_new.each do |desired_instance|
             desired_instance.index = candidate_indexes.shift

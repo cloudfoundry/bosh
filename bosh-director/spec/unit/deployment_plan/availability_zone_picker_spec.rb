@@ -93,6 +93,29 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
       end
     end
 
+    describe 'indexes' do
+      context 'when several existing instances have same index (migration)' do
+        it 're-assignes indexes properly' do
+          unmatched_desired_instances = [desired_instance, desired_instance]
+          existing_0 = existing_instance_with_az(1, nil)
+          existing_1 = existing_instance_with_az(1, nil)
+          unmatched_existing_instances = [existing_1, existing_0]
+
+          azs = []
+          results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
+
+          new_indexes = []
+          new_indexes << results[:desired_existing][0][:instance].index
+          new_indexes << results[:desired_existing][1][:instance].index
+          expect(new_indexes).to match_array([0, 1])
+
+          expect(results[:desired_new]).to eq([])
+
+          expect(results[:obsolete]).to eq([])
+        end
+      end
+    end
+
     describe 'when a job is deployed in 2 zones with 3 existing instances, and re-deployed into one zone' do
       it 'should match the 2 existing instances from the desired zone to 2 of the desired instances' do
         unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
