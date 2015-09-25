@@ -60,11 +60,11 @@ describe 'cli: deployment process', type: :integration do
 +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
 | Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records                                             |
 +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                  |         |        |               |             | 0.foobar.a.simple.bosh                                    |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                  |         |        |               |             | 1.foobar.a.simple.bosh                                    |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
 |                                                  |         |        |               |             | 2.foobar.a.simple.bosh                                    |
 +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
 
@@ -90,9 +90,9 @@ INSTANCES
 +--------------------------------------------------+---------+--------+---------------+-------------+
 | Instance                                         | State   | AZ     | Resource Pool | IPs         |
 +--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx* (0) | running | zone-1 | a             | 192.168.1.2 |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)  | running | zone-2 | a             | 192.168.2.2 |
-| foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)  | running | zone-3 | a             | 192.168.3.2 |
+| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
 +--------------------------------------------------+---------+--------+---------------+-------------+
 
 (*) Bootstrap node

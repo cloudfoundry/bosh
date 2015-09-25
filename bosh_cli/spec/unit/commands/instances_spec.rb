@@ -161,8 +161,8 @@ describe Bosh::Cli::Command::Instances do
 
       it 'should include the instance id in the output' do
         expect(command).to receive(:say) do |display_output|
-          expect(display_output.to_s).to include 'job1/abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)'
-          expect(display_output.to_s).to include 'job1/stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)'
+          expect(display_output.to_s).to include 'job1/0 (abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
+          expect(display_output.to_s).to include 'job1/1 (stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
         end
         perform
       end

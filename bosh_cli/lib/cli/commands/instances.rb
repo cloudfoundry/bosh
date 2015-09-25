@@ -85,9 +85,9 @@ module Bosh::Cli::Command
           job = if instance.has_key?('instance_id')
                   is_bootstrap = instance.fetch('is_bootstrap', false)
                   if is_bootstrap
-                    "#{job_name}/#{instance['instance_id']}* (#{index})"
+                    "#{job_name}/#{index} (#{instance['instance_id']})*"
                   else
-                    "#{job_name}/#{instance['instance_id']} (#{index})"
+                    "#{job_name}/#{index} (#{instance['instance_id']})"
                   end
                 else
                   "#{job_name}/#{index}"
