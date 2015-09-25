@@ -550,7 +550,7 @@ DEPENDENCIES
   codeclimate-test-reporter
   fakefs
   httpclient
-  json
+  json (= 1.8.3)
   machinist (~> 1.0)
   minitar
   mysql2

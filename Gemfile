@@ -21,6 +21,10 @@ gem 'simple_blobstore_server', path: 'simple_blobstore_server'
 gem 'bosh_aws_cpi', '~>2.0.2'
 gem 'rake', '~>10.0'
 
+# json version is hardcoded in release director package
+# when modified needs to be updated there as well
+gem 'json', '=1.8.3'
+
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
@@ -30,7 +34,6 @@ end
 
 group :bat do
   gem 'httpclient'
-  gem 'json'
   gem 'minitar'
   gem 'net-ssh'
 end
