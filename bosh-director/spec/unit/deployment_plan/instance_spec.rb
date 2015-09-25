@@ -727,19 +727,6 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      describe 'when the instance is initialized with "recreate" state' do
-        let(:state) { 'recreate' }
-
-        it 'should return changed' do
-          expect(instance.resource_pool_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('resource_pool_changed? instance was initialized with "recreate" state')
-          instance.resource_pool_changed?
-        end
-      end
-
       describe "when the job's deployment is configured for recreate" do
         let(:plan_recreate) { true }
 

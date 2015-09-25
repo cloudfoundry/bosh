@@ -13,7 +13,7 @@ module Bosh::Director
         model: instance_model
       })
     end
-    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, networks_changed?: false) }
+    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, networks_changed?: false, needs_recreate?: false) }
     let(:instance_model) { Models::Instance.make }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }

@@ -128,7 +128,6 @@ module Bosh
             @placed[az] = az_desired_instances
             if desired_instance.is_existing
               diffed_instance = existing_instance.model
-              diffed_instance.state = desired_instance.state unless desired_instance.state.nil?
               diffed_instance.job = desired_instance.job.name
               diffed_instance.availability_zone = desired_instance.az.name unless desired_instance.az.nil?
               existing << { instance: diffed_instance, deployment: desired_instance.deployment }

@@ -37,7 +37,7 @@ module Bosh::Director
 
       only_trusted_certs_changed = trusted_certs_change_only?(instance_plan) # figure this out before we start changing things
 
-      Preparer.new(instance, agent(instance), @logger).prepare
+      Preparer.new(instance_plan, agent(instance), @logger).prepare
       stop(instance_plan)
       take_snapshot(instance)
 
@@ -273,6 +273,11 @@ module Bosh::Director
 
     def try_to_update_in_place(instance_plan)
       instance = instance_plan.instance
+      if instance_plan.needs_recreate?
+        @logger.debug("Skipping update VM in place: instance will be recreated")
+        return false
+      end
+
       if instance.cloud_properties_changed?
         @logger.debug("Cloud Properties have changed. Can't update VM in place")
         return false

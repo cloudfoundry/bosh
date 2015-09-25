@@ -82,16 +82,6 @@ module Bosh::Director
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
 
         @state = state
-
-        # Expanding virtual states
-        case @state
-          when 'recreate'
-            @recreate = true
-            @state = 'started'
-          when 'restart'
-            @restart = true
-            @state = 'started'
-        end
       end
 
       def bootstrap?
@@ -286,10 +276,6 @@ module Bosh::Director
         @current_state['persistent_disk'].to_i > 0
       end
 
-      def restart_needed?
-        @restart
-      end
-
       def cloud_properties_changed?
         changed = cloud_properties != @model.cloud_properties_hash
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
@@ -299,11 +285,6 @@ module Bosh::Director
       ##
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
-        if @recreate
-          @logger.debug("#{__method__} instance was initialized with \"recreate\" state")
-          return true
-        end
-
         if @job.deployment.recreate
           @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
           return true

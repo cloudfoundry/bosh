@@ -1,16 +1,20 @@
 module Bosh::Director
   class InstanceUpdater::Preparer
-    def initialize(instance, agent_client, logger)
-      @instance = instance
+    def initialize(instance_plan, agent_client, logger)
+      @instance_plan = instance_plan
       @agent_client = agent_client
       @logger = logger
     end
 
     def prepare
-      # If resource pool has changed or instance will be detached
+      instance = @instance_plan.instance
+      # If resource pool has changed or instance will be recreated/detached
       # there is no point in preparing current VM for future since it will be destroyed.
-      if !@instance.resource_pool_changed? && @instance.state != 'detached'
-        @agent_client.prepare(@instance.apply_spec)
+      unless instance.resource_pool_changed? ||
+        @instance_plan.needs_recreate? ||
+        instance.state == 'detached'
+
+        @agent_client.prepare(instance.apply_spec)
       end
     rescue RpcRemoteException => e
       if e.message =~ /unknown message/

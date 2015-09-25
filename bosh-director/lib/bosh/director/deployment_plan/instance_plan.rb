@@ -44,7 +44,8 @@ module Bosh
         # @return [Set<Symbol>] returns a set of all of the specification differences
         def changes
           changes = Set.new
-          changes << :restart if instance.restart_needed?
+          changes << :restart if needs_restart?
+          changes << :recreate if needs_recreate?
           changes << :cloud_properties if instance.cloud_properties_changed?
           changes << :resource_pool if instance.resource_pool_changed?
           changes << :network if networks_changed?
@@ -56,6 +57,14 @@ module Bosh
           changes << :dns if instance.dns_changed?
           changes << :trusted_certs if instance.trusted_certs_changed?
           changes
+        end
+
+        def needs_restart?
+          @desired_instance.virtual_state == 'restart'
+        end
+
+        def needs_recreate?
+          @desired_instance.virtual_state == 'recreate'
         end
 
         def networks_changed?

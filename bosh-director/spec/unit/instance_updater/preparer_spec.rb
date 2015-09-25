@@ -4,8 +4,9 @@ require 'bosh/director/instance_updater/preparer'
 
 module Bosh::Director
   describe InstanceUpdater::Preparer do
-    subject(:preparer) { described_class.new(instance, agent_client, logger) }
+    subject(:preparer) { described_class.new(instance_plan, agent_client, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, needs_recreate?: false) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
     describe '#prepare' do
@@ -23,9 +24,14 @@ module Bosh::Director
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
           before { allow(instance).to receive_messages(apply_spec: 'fake-spec') }
 
-          it 'sends prepare message to the instance' do
-            expect(agent_client).to receive(:prepare).with('fake-spec')
-            preparer.prepare
+
+          context 'when instance does not need to be recreated' do
+            before { allow(instance_plan).to receive_messages(needs_recreate?: false) }
+
+            it 'sends prepare message to the instance' do
+              expect(agent_client).to receive(:prepare).with('fake-spec')
+              preparer.prepare
+            end
           end
 
           context "and agent responds to 'prepare' message successfully" do
@@ -58,6 +64,11 @@ module Bosh::Director
 
         context "when state of the instance is 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+          it_does_not_send_prepare
+        end
+
+        context "when instance needs to be recreated" do
+          before { allow(instance_plan).to receive_messages(needs_recreate?: true) }
           it_does_not_send_prepare
         end
       end
