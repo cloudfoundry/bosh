@@ -44,7 +44,7 @@ module Bosh::Director
           end
         end
 
-        release_network_reservations(instance)
+        instance_plan.release_all_ips
 
         instance.model.destroy
       end
@@ -75,12 +75,6 @@ module Bosh::Director
     # FIXME: why do we hate dependency injection?
     def vm_deleter
       @vm_deleter ||= VmDeleter.new(@cloud, @logger, {force: @force})
-    end
-
-    def release_network_reservations(instance)
-      instance.desired_network_reservations.each do |reservation|
-        @ip_provider.release(reservation) if reservation.reserved?
-      end
     end
 
     def delete_persistent_disks(persistent_disks)
