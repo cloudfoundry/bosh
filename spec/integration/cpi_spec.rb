@@ -42,7 +42,7 @@ describe 'CPI calls', type: :integration do
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
-          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
       compilation_vm_id = invocations[2].inputs['vm_cid']
@@ -56,7 +56,7 @@ describe 'CPI calls', type: :integration do
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
-          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
 
       }
       })
@@ -91,7 +91,7 @@ describe 'CPI calls', type: :integration do
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
-          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
       compilation_vm_id = invocations[6].inputs['vm_cid']
@@ -105,7 +105,7 @@ describe 'CPI calls', type: :integration do
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
-          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
 
@@ -139,7 +139,7 @@ describe 'CPI calls', type: :integration do
           'deployment' => 'simple',
           'job' => 'foobar',
           'index' => '0',
-          'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
 
@@ -200,7 +200,7 @@ describe 'CPI calls', type: :integration do
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',
-            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
         vm_cid = first_deploy_invocations[2].inputs['vm_cid']
@@ -291,7 +291,7 @@ describe 'CPI calls', type: :integration do
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',
-            'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
         new_vm_cid = second_deploy_invocations[5].inputs['vm_cid']
