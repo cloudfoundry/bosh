@@ -603,12 +603,14 @@ describe 'global networking', type: :integration do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
-        original_ips = director.vms('my-deploy').map(&:ips).flatten
-        original_cids = director.vms('my-deploy').map(&:cid)
+        vms = director.vms('my-deploy')
+        original_ips = vms.map(&:ips).flatten
+        original_cids = vms.map(&:cid)
 
         deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
-        new_ips = director.vms('my-deploy').map(&:ips).flatten
-        new_cids = director.vms('my-deploy').map(&:cid)
+        vms = director.vms('my-deploy')
+        new_ips = vms.map(&:ips).flatten
+        new_cids = vms.map(&:cid)
 
         expect(new_cids).to_not match_array(original_cids)
         expect(new_ips).to match_array(original_ips)

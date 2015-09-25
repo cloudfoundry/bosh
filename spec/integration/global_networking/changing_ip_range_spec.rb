@@ -16,8 +16,9 @@ describe 'Changing ip ranges', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      original_instance_0 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
-      original_instance_1 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
+      vms = director.vms
+      original_instance_0 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
+      original_instance_1 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
 
       expect(original_instance_0.ips).to eq('192.168.1.2')
       expect(original_instance_1.ips).to eq('192.168.1.3')
@@ -27,8 +28,9 @@ describe 'Changing ip ranges', type: :integration do
 
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-      new_instance_0 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
-      new_instance_1 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
+      vms = director.vms
+      new_instance_0 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
+      new_instance_1 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
 
       expect(new_instance_0.ips).to eq('192.168.1.4')
       expect(new_instance_1.ips).to eq('192.168.1.3')
@@ -42,8 +44,9 @@ describe 'Changing ip ranges', type: :integration do
         deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(template: 'foobar_without_packages', instances: 2, available_ips: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-        original_instance_0 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
-        original_instance_1 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
+        vms = director.vms
+        original_instance_0 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
+        original_instance_1 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
 
         expect(original_instance_0.ips).to eq('192.168.1.2')
         expect(original_instance_1.ips).to eq('192.168.1.3')
@@ -51,8 +54,9 @@ describe 'Changing ip ranges', type: :integration do
         deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(template: 'foobar_without_packages', instances: 2, available_ips: 2, shift_ip_range_by: 1)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
-        new_instance_0 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
-        new_instance_1 = director.vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
+        vms = director.vms
+        new_instance_0 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '0' }
+        new_instance_1 = vms.find { |vm| vm.job_name == 'foobar' && vm.index == '1' }
 
         expect(new_instance_0.ips).to eq('192.168.1.4')
         expect(new_instance_1.ips).to eq('192.168.1.3')

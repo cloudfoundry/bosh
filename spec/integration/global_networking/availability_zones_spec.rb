@@ -53,8 +53,9 @@ describe 'availability zones', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      expect(director.vms.count).to eq(1)
-      vm_cid = director.vms.first.cid
+      vms = director.vms
+      expect(vms.count).to eq(1)
+      vm_cid = vms[0].cid
 
       expect(current_sandbox.cpi.read_cloud_properties(vm_cid)).to eq({
             'a' => 'rp_value_for_a',
@@ -68,8 +69,9 @@ describe 'availability zones', type: :integration do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        expect(director.vms.count).to eq(1)
-        original_vm = director.vms.first
+        vms = director.vms
+        expect(vms.count).to eq(1)
+        original_vm = vms.first
         expected_cloud_properties = {
           'a' => 'rp_value_for_a',
           'd' => 'az_value_for_d',
@@ -130,12 +132,10 @@ describe 'availability zones', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      expect(director.vms.count).to eq(2)
-      first_vm = director.vms[0]
-      second_vm = director.vms[1]
-
-      expect(first_vm.ips).to eq('192.168.1.2')
-      expect(second_vm.ips).to eq('192.168.2.2')
+      vms = director.vms
+      expect(vms.count).to eq(2)
+      expect(vms[0].ips).to eq('192.168.1.2')
+      expect(vms[1].ips).to eq('192.168.2.2')
     end
 
     it 'places the job instance in the correct subnet in dynamic network based on the availability zone' do
@@ -238,16 +238,18 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        expect(director.vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+        vms = director.vms
+        expect(vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
 
         simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        expect(director.vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+        vms = director.vms
+        expect(vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
       end
 
       it 'adds new jobs in the new az when scaling up job count' do
@@ -293,18 +295,19 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        expect(director.vms.count).to eq(2)
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
+        vms = director.vms
+        expect(vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
 
         simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
         simple_manifest['jobs'].first['instances'] = 3
         deploy_simple_manifest(manifest_hash: simple_manifest)
-
-        expect(director.vms.count).to eq(3)
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[0].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[1].cid)['availability_zone']).to eq('my-az')
-        expect(current_sandbox.cpi.read_cloud_properties(director.vms[2].cid)['availability_zone']).to eq('my-az2')
+        vms = director.vms
+        expect(vms.count).to eq(3)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[2].cid)['availability_zone']).to eq('my-az2')
       end
 
       it 'updates instances when az cloud properties change and deployment is re-deployed' do
