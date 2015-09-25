@@ -1,0 +1,29 @@
+#!/bin/bash
+
+PIDFILE=/var/vcap/sys/run/has_drain_script.pid
+
+case $1 in
+
+  start)
+    echo "test_property=<%= p('test_property') %>"
+
+    <% if_p('network_name') do |net_name| %>
+      echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+    <% end %>
+
+    echo $$ > $PIDFILE
+
+    exec /bin/sh /var/vcap/packages/bar/run.sh
+    ;;
+
+  stop)
+    tail -1 $PIDFILE | xargs kill
+
+    rm -rf $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: has_drain_script_ctl {start|stop}" ;;
+esac
+
+exit 0

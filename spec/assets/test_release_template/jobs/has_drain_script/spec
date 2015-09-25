@@ -1,0 +1,29 @@
+---
+name: has_drain_script
+templates:
+  has_drain_script_ctl: bin/has_drain_script_ctl
+  drain.erb: bin/drain
+
+packages:
+- foo
+- bar
+
+properties:
+  test_property:
+    description: A test property
+    default: 1
+
+  drain_type:
+    description: Used in drain script to trigger dynamic vs static drain behavior
+    default: static
+
+  dynamic_drain_wait1:
+    description: Number of seconds to wait when drain script is first called
+    default: -3
+
+  dynamic_drain_wait2:
+    description: Number of seconds to wait when drain script is called a second time
+    default: -2
+
+  network_name:
+    description: Network name used for determining printed IP address

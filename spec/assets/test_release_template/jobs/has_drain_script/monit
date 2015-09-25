@@ -1,0 +1,5 @@
+check process has_drain_script
+  with pidfile /var/vcap/sys/run/has_drain_script.pid
+  start program "/var/vcap/jobs/has_drain_script/bin/has_drain_script_ctl start"
+  stop program "/var/vcap/jobs/has_drain_script/bin/has_drain_script_ctl stop"
+  group vcap
