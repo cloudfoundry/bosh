@@ -11,7 +11,7 @@ mysqlclient_dir=/var/vcap/packages/mysql
 
 cat >> Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '1.7.7'
+gem 'json', '1.8.3'
 
 gem 'bosh-director'
 gem 'mysql2'
