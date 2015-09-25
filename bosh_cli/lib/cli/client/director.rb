@@ -293,6 +293,7 @@ module Bosh
 
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
+          options[:task_success_state] = :queued
 
           request_and_track(:post, url, options)
         end

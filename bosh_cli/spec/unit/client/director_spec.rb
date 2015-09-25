@@ -498,6 +498,51 @@ describe Bosh::Cli::Client::Director do
       @director.delete_snapshot('foo', 'snap0a')
     end
 
+    it 'ssh setup' do
+      payload = {
+          'command'         => 'setup',
+          'deployment_name' => 'foo',
+          'target'          => {
+              'job'     => 'bar',
+              'indexes' => [0]
+          },
+          'params'          => {
+              'user'       => 'user',
+              'public_key' => 'public_key',
+              'password'   => 'password'
+          }
+      }
+
+      expect(@director).to receive(:request_and_track).with(:post, '/deployments/foo/ssh',
+                                                            { :payload => JSON.generate(payload),
+                                                              :content_type => 'application/json'})
+                               .and_return([200, JSON.generate([]), {}])
+
+      @director.setup_ssh('foo', 'bar', 0, 'user', 'public_key', 'password')
+    end
+
+    it 'ssh cleanup' do
+
+      payload = {
+          'command'         => 'cleanup',
+          'deployment_name' => 'foo',
+          'target'          => {
+              'job'     => 'bar',
+              'indexes' => [0]
+          },
+          'params'          => { 'user_regex' => 'bosh_' }
+      }
+      expect(@director).to receive(:request_and_track).with(:post, '/deployments/foo/ssh',
+                                                            { :payload => JSON.generate(payload),
+                                                              :content_type => 'application/json',
+                                                              :task_success_state => :queued
+                                                            }
+                                                            )
+                               .and_return([200, JSON.generate([]), {}])
+
+      @director.cleanup_ssh('foo', 'bar', 'bosh_', [0])
+    end
+
     context 'when director returns 404' do
       let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
       before do
