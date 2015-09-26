@@ -32,7 +32,9 @@ RSpec.configure do |c|
   c.before(:suite) do
     unless ENV['TEST_ENV_NUMBER']
       agent_build_cmd = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent/bin/build', __FILE__)
-      system(agent_build_cmd)
+      unless system(agent_build_cmd)
+        raise 'Bosh agent build failed'
+      end
     end
   end
 end
