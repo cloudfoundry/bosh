@@ -53,12 +53,15 @@ module Bosh
             candidate_indexes.delete(instance_model.index)
           end
 
+          existing_indexes = []
           desired_existing
-            .map {|instance_and_deployment| instance_and_deployment[:instance] }
-            .each do |existing_instance|
-            unless candidate_indexes.delete(existing_instance.index)
-              existing_instance.update(index: candidate_indexes.shift)
+            .map {|instance_and_deployment| instance_and_deployment[:existing_instance_model] }
+            .each do |existing_instance_model|
+            candidate_indexes.delete(existing_instance_model.index)
+            if existing_indexes.include?(existing_instance_model.index)
+              existing_instance_model.update(index: candidate_indexes.shift)
             end
+            existing_indexes << existing_instance_model.index
           end
 
           desired_new.each do |desired_instance|
@@ -131,10 +134,10 @@ module Bosh
             az_desired_instances << desired_instance
             @placed[az] = az_desired_instances
             if desired_instance.is_existing
-              diffed_instance = existing_instance.model
-              diffed_instance.job = desired_instance.job.name
-              diffed_instance.availability_zone = desired_instance.az.name unless desired_instance.az.nil?
-              existing << { instance: diffed_instance, deployment: desired_instance.deployment }
+              existing << {
+                desired_instance: desired_instance,
+                existing_instance_model: existing_instance.model
+              }
             else
               new << desired_instance
             end

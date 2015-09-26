@@ -44,7 +44,7 @@ describe Bosh::Director::JobUpdater do
       let(:instance_plans) do
         instance_plan = BD::DeploymentPlan::InstancePlan.new(
           instance: instance_double(BD::DeploymentPlan::Instance),
-          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          desired_instance: BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
           existing_instance: nil
         )
         allow(instance_plan).to receive(:changed?) { false }
@@ -75,7 +75,7 @@ describe Bosh::Director::JobUpdater do
       let(:canary_plan) do
         plan = BD::DeploymentPlan::InstancePlan.new(
           instance: canary,
-          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          desired_instance:  BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
           existing_instance: nil
         )
         allow(plan).to receive(:changed?) { true }
@@ -85,7 +85,7 @@ describe Bosh::Director::JobUpdater do
       let(:changed_instance_plan) do
         plan = BD::DeploymentPlan::InstancePlan.new(
           instance: changed_instance,
-          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          desired_instance:  BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { true }
@@ -95,7 +95,7 @@ describe Bosh::Director::JobUpdater do
       let(:unchanged_instance_plan) do
         plan = BD::DeploymentPlan::InstancePlan.new(
           instance: unchanged_instance,
-          desired_instance: instance_double(BD::DeploymentPlan::DesiredInstance),
+          desired_instance: BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
           existing_instance: BD::Models::Instance.make
         )
         allow(plan).to receive(:changed?) { false }

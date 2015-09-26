@@ -14,7 +14,7 @@ module Bosh
           instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances)
 
           new_desired_instances = instances_by_type[:desired_new]
-          existing_instances = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:instance] }
+          existing_instances = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
           obsolete_instance_models = instances_by_type[:obsolete]
 
           new_desired_instances.each do |desired_instance|
@@ -82,20 +82,20 @@ module Bosh
 
         def desired_existing_instance_plans(existing_instances_and_deployment, states_by_existing_instance)
           existing_instances_and_deployment.map do |existing_instance_and_deployment|
-            existing_instance = existing_instance_and_deployment[:instance]
-            deployment = existing_instance_and_deployment[:deployment]
-            existing_instance_state = states_by_existing_instance[existing_instance]
-            instance = @instance_repo.fetch_existing(existing_instance, existing_instance_state, deployment, @logger)
+            existing_instance_model = existing_instance_and_deployment[:existing_instance_model]
+            desired_instance = existing_instance_and_deployment[:desired_instance]
+            existing_instance_state = states_by_existing_instance[existing_instance_model]
+            instance = @instance_repo.fetch_existing(existing_instance_model, existing_instance_state, desired_instance.deployment, @logger)
             desired_existing_instance = DesiredInstance.new(
-              existing_instance.job,
-              existing_instance.state,
-              deployment,
-              existing_instance.availability_zone,
+              desired_instance.job,
+              desired_instance.virtual_state,
+              desired_instance.deployment,
+              desired_instance.availability_zone,
               true,
-              existing_instance.index,
-              existing_instance.bootstrap
+              existing_instance_model.index,
+              existing_instance_model.bootstrap
             )
-            InstancePlan.new(desired_instance: desired_existing_instance, existing_instance: existing_instance, instance: instance)
+            InstancePlan.new(desired_instance: desired_existing_instance, existing_instance: existing_instance_model, instance: instance)
           end
         end
 
