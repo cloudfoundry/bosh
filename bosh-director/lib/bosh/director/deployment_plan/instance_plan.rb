@@ -104,16 +104,7 @@ module Bosh
               @instance.desired_network_reservations,
               @instance.current_state,
               @instance.availability_zone,
-              @instance.index,
-              @instance.uuid)
-          else
-            raise NotImplementedError, "network_settings requires job and deployment info. You likely have an 'InstanceFromDatabase'"
-          end
-        end
-
-        def network_settings_hash
-          if @instance.respond_to?(:job)
-            network_settings.to_hash
+              @instance.index).to_hash
           else
             @instance.apply_spec['networks']
           end

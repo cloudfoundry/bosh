@@ -41,7 +41,7 @@ module Bosh::Director
         instance.deployment_model,
         instance.resource_pool.stemcell,
         instance.cloud_properties,
-        instance_plan.network_settings_hash,
+        instance_plan.network_settings,
         disks,
         instance.resource_pool.env,
       )

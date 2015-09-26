@@ -31,7 +31,7 @@ module Bosh::Director
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?(instance_plan)
         @logger.debug('Only change is DNS configuration')
-        update_dns(instance_plan)
+        update_dns(instance_plan.instance)
         return
       end
 
@@ -54,7 +54,7 @@ module Bosh::Director
       end
       instance_plan.release_obsolete_ips
 
-      update_dns(instance_plan)
+      update_dns(instance)
       update_persistent_disk(instance)
 
       if only_trusted_certs_changed
@@ -176,13 +176,11 @@ module Bosh::Director
       disk.destroy
     end
 
-    def update_dns(instance_plan)
-      instance = instance_plan.instance
-
+    def update_dns(instance)
       return unless instance.dns_changed?
 
       domain = deployment_plan(instance).dns_domain
-      instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
+      instance.dns_record_info.each do |record_name, ip_address|
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
         update_dns_a_record(domain, record_name, ip_address)
         update_dns_ptr_record(record_name, ip_address)

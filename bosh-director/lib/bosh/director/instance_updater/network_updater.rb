@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       vm_cid = @instance.model.vm.cid
-      network_settings = @instance_plan.network_settings_hash
+      network_settings = @instance_plan.network_settings
 
       @logger.debug("Updating instance '#{vm_cid}' with new network settings: #{network_settings}")
 
