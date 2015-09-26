@@ -2,6 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
+
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
     let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model) }
     let(:recreated_vm) { Models::Vm.make(cid: 'vm-cid-2', agent_id: 'agent-007-2', deployment: deployment_model) }
@@ -44,7 +45,7 @@ module Bosh::Director
 
       it 'recreates a VM' do
         vm.update(:apply_spec => spec, env: { 'key1' => 'value1' })
-        Models::Instance.make(job: 'mysql_node', index: 0, vm: vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
+        Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')

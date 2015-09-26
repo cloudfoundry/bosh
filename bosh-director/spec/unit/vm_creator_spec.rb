@@ -14,7 +14,7 @@ describe Bosh::Director::VmCreator do
       get_state: nil
     )
   end
-  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, false, 'deployment_name', {}, [], {}, nil, 5).to_hash }
+  let(:network_settings) { {'network_a' => {'ip' => '1.2.3.4'}} }
   let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
     instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name')
@@ -35,20 +35,13 @@ describe Bosh::Director::VmCreator do
       logger
     )
     instance.bind_existing_instance_model(instance_model)
+    allow(instance).to receive(:network_settings).and_return(network_settings)
     allow(instance).to receive(:apply_spec).and_return({})
     instance
   end
   let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, logger) }
 
-  let(:job) do
-    instance_double(Bosh::Director::DeploymentPlan::Job,
-      name: 'fake-job',
-      resource_pool: resource_pool,
-      default_network: {},
-      can_run_as_errand?: false,
-      deployment: deployment_plan
-    )
-  end
+  let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'fake-job', resource_pool: resource_pool) }
   let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, vm: nil, index: 5, job: 'fake-job') }
 
   before do

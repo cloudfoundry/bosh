@@ -11,7 +11,6 @@ module Bosh::Director
       end
 
       def release(reservation)
-        return unless reservation.reserved?
         return if reservation.network.is_a?(DynamicNetwork)
 
         if reservation.ip.nil?

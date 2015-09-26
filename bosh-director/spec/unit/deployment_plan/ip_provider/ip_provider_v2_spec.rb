@@ -70,19 +70,9 @@ module Bosh::Director::DeploymentPlan
       describe :release do
         context 'when reservation does not have an IP' do
           it 'should raise an error' do
-            ip_reservation.mark_reserved
-
             expect {
               ip_provider.release(ip_reservation)
             }.to raise_error(Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP")
-          end
-        end
-
-        context 'when reservation has not been reserved' do
-          it 'should do nothing' do
-            expect {
-              ip_provider.release(ip_reservation)
-            }.not_to raise_error
           end
         end
 

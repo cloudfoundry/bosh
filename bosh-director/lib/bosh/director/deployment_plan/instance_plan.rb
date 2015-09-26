@@ -93,22 +93,6 @@ module Bosh
         def new?
           existing_instance.nil?
         end
-
-        def network_settings
-          if @instance.respond_to?(:job)
-            DeploymentPlan::NetworkSettings.new(
-              @instance.job.name,
-              @instance.job.can_run_as_errand?,
-              @instance.job.deployment.name,
-              @instance.job.default_network,
-              @instance.desired_network_reservations,
-              @instance.current_state,
-              @instance.availability_zone,
-              @instance.index).to_hash
-          else
-            @instance.apply_spec['networks']
-          end
-        end
       end
     end
   end
