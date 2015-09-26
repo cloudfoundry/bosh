@@ -116,6 +116,9 @@ module Bosh::Director
 
       def parse_disk_pools(cloud_manifest)
         disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true, :default => [])
+        if disk_pools.empty?
+          disk_pools = safe_property(cloud_manifest, 'disk_types', :class => Array, :optional => true, :default => [])
+        end
         parsed_disk_pools = disk_pools.map do |dp_spec|
           DiskPool.parse(dp_spec)
         end
