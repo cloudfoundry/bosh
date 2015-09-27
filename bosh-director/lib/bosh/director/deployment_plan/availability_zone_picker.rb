@@ -45,8 +45,8 @@ module Bosh
           end
         end
 
-        def assign_indexes(desired_existing, desired_new, obsolete)
-          count = desired_new.count + desired_existing.count + obsolete.count
+        def assign_indexes(desired_existing_instances, desired_new, obsolete)
+          count = desired_new.count + desired_existing_instances.count + obsolete.count
           candidate_indexes = (0..count).to_a
 
           obsolete.each do |instance_model|
@@ -54,12 +54,14 @@ module Bosh
           end
 
           existing_indexes = []
-          desired_existing
-            .map {|instance_and_deployment| instance_and_deployment[:existing_instance_model] }
-            .each do |existing_instance_model|
+          desired_existing_instances.each do |desired_existing_instance|
+            existing_instance_model = desired_existing_instance[:existing_instance_model]
+            desired_instance = desired_existing_instance[:desired_instance]
             candidate_indexes.delete(existing_instance_model.index)
             if existing_indexes.include?(existing_instance_model.index)
-              existing_instance_model.update(index: candidate_indexes.shift)
+              desired_instance.index = candidate_indexes.shift
+            else
+              desired_instance.index = existing_instance_model.index
             end
             existing_indexes << existing_instance_model.index
           end

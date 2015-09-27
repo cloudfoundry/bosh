@@ -8,7 +8,7 @@ module Bosh
         end
 
         def bootstrap?
-          self.bootstrap
+          !!self.bootstrap
         end
 
         def state

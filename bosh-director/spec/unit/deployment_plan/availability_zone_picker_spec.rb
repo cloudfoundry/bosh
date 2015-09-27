@@ -105,8 +105,8 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           new_indexes = []
-          new_indexes << results[:desired_existing][0][:existing_instance_model].index
-          new_indexes << results[:desired_existing][1][:existing_instance_model].index
+          new_indexes << results[:desired_existing][0][:desired_instance].index
+          new_indexes << results[:desired_existing][1][:desired_instance].index
           expect(new_indexes).to match_array([0, 1])
 
           expect(results[:desired_new]).to eq([])
@@ -127,6 +127,10 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
 
         azs = [az1]
         results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
+
+        expected_desired_zone1_0 = unmatched_desired_instances[0]
+        expected_desired_zone1_2 = unmatched_desired_instances[1]
+        expected_desired_zone1_2.index = 2
 
         expect(results[:desired_existing]).to match_array([
               {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
@@ -229,9 +233,13 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           unmatched_desired_instances = [desired_instance, desired_instance]
           results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
+          expected_desired_zone1_0 = unmatched_desired_instances[0]
+          expected_desired_zone1_1 = unmatched_desired_instances[1]
+          expected_desired_zone1_1.index = 1
+
           expect(results[:desired_existing]).to match_array([
-                {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
-                {existing_instance_model: existing_zone1_1.model, desired_instance: unmatched_desired_instances[1]}
+                {existing_instance_model: existing_zone1_0.model, desired_instance: expected_desired_zone1_0},
+                {existing_instance_model: existing_zone1_1.model, desired_instance: expected_desired_zone1_1}
               ])
 
           expect(results[:desired_new]).to match_array([])
@@ -275,9 +283,13 @@ describe Bosh::Director::DeploymentPlan::AvailabilityZonePicker do
           unmatched_desired_instances = [desired_instance, desired_instance]
           results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
+          expected_desired_zone1_0 = unmatched_desired_instances[0]
+          expected_desired_zone1_1 = unmatched_desired_instances[1]
+          expected_desired_zone1_1.index = 1
+
           expect(results[:desired_existing]).to match_array([
-                {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
-                {existing_instance_model: existing_zone1_1.model, desired_instance: unmatched_desired_instances[1]}
+                {existing_instance_model: existing_zone1_0.model, desired_instance: expected_desired_zone1_0},
+                {existing_instance_model: existing_zone1_1.model, desired_instance: expected_desired_zone1_1}
                ])
 
           expect(results[:desired_new]).to match_array([])

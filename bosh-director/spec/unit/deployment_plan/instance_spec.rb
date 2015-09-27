@@ -1154,8 +1154,9 @@ module Bosh::Director::DeploymentPlan
           uuid: SecureRandom.uuid,
           availability_zone: availability_zone.name,
           bootstrap: false,
-         )
-        instance = Instance.fetch_existing(existing_instance, current_state, plan, logger)
+        )
+        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance)
+        instance = Instance.fetch_existing(desired_instance, existing_instance, current_state, logger)
         persisted_instance = BD::Models::Instance.first
         expect(BD::Models::Instance.count).to eq(1)
 

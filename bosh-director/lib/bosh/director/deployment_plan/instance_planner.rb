@@ -85,17 +85,8 @@ module Bosh
             existing_instance_model = existing_instance_and_deployment[:existing_instance_model]
             desired_instance = existing_instance_and_deployment[:desired_instance]
             existing_instance_state = states_by_existing_instance[existing_instance_model]
-            instance = @instance_repo.fetch_existing(existing_instance_model, existing_instance_state, desired_instance.deployment, @logger)
-            desired_existing_instance = DesiredInstance.new(
-              desired_instance.job,
-              desired_instance.virtual_state,
-              desired_instance.deployment,
-              desired_instance.availability_zone,
-              true,
-              existing_instance_model.index,
-              existing_instance_model.bootstrap
-            )
-            InstancePlan.new(desired_instance: desired_existing_instance, existing_instance: existing_instance_model, instance: instance)
+            instance = @instance_repo.fetch_existing(desired_instance, existing_instance_model, existing_instance_state, @logger)
+            InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance_model, instance: instance)
           end
         end
 
