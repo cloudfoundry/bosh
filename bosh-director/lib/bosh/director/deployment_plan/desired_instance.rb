@@ -19,7 +19,7 @@ module Bosh
             when 'restart'
               'started'
             else
-              virtual_state
+              virtual_state || 'started'
           end
         end
 

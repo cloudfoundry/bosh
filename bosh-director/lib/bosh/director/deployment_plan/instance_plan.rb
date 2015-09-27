@@ -27,6 +27,7 @@ module Bosh
           @desired_instance = attrs.fetch(:desired_instance)
           @instance = attrs.fetch(:instance)
           @network_plans = []
+          @logger = Config.logger
         end
 
         attr_reader :desired_instance, :existing_instance, :instance
@@ -43,20 +44,22 @@ module Bosh
         ##
         # @return [Set<Symbol>] returns a set of all of the specification differences
         def changes
-          changes = Set.new
-          changes << :restart if needs_restart?
-          changes << :recreate if needs_recreate?
-          changes << :cloud_properties if instance.cloud_properties_changed?
-          changes << :resource_pool if instance.resource_pool_changed?
-          changes << :network if networks_changed?
-          changes << :packages if instance.packages_changed?
-          changes << :persistent_disk if instance.persistent_disk_changed?
-          changes << :configuration if instance.configuration_changed?
-          changes << :job if instance.job_changed?
-          changes << :state if instance.state_changed?
-          changes << :dns if instance.dns_changed?
-          changes << :trusted_certs if instance.trusted_certs_changed?
-          changes
+          return @changes if @changes
+
+          @changes = Set.new
+          @changes << :restart if needs_restart?
+          @changes << :recreate if needs_recreate?
+          @changes << :cloud_properties if instance.cloud_properties_changed?
+          @changes << :resource_pool if instance.resource_pool_changed?
+          @changes << :network if networks_changed?
+          @changes << :packages if instance.packages_changed?
+          @changes << :persistent_disk if instance.persistent_disk_changed?
+          @changes << :configuration if instance.configuration_changed?
+          @changes << :job if instance.job_changed?
+          @changes << :state if state_changed?
+          @changes << :dns if instance.dns_changed?
+          @changes << :trusted_certs if instance.trusted_certs_changed?
+          @changes
         end
 
         def needs_restart?
@@ -67,10 +70,35 @@ module Bosh
           @desired_instance.virtual_state == 'recreate'
         end
 
+        def needs_start?
+          @desired_instance.state == 'started'
+        end
+
+        def needs_detach?
+          @desired_instance.state == 'detached'
+        end
+
         def networks_changed?
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
           obsolete_plans.any? || desired_plans.any?
+        end
+
+        def state_changed?
+          @logger.debug("Instance desired state is '#{desired_instance.state}' and agent reports '#{instance.current_job_state}'")
+
+          case desired_instance.state
+            when 'detached'
+              existing_instance.state != 'detached'
+            when 'stopped'
+              instance.current_job_state == 'running'
+            when 'started'
+              instance.current_job_state != 'running'
+            else
+              @logger.error("Unknown instance desired state '#{desired_instance.state}'")
+              raise InstanceTargetStateUndefined,
+                    "Instance `#{self}' target state cannot be determined"
+          end
         end
 
         def mark_desired_network_plans_as_existing

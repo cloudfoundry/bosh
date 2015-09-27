@@ -549,57 +549,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#sync_state_with_db' do
-      let(:job) do
-        instance_double(
-          'Bosh::Director::DeploymentPlan::Job',
-          deployment: plan,
-          name: 'dea',
-          resource_pool: resource_pool,
-          compilation?: false
-        )
-      end
-      let(:index) { 3 }
-
-      context 'when desired state is stopped' do
-        let(:state) { 'stopped' }
-
-        it 'deployment plan -> DB' do
-          expect {
-            instance.sync_state_with_db
-          }.to raise_error(Bosh::Director::DirectorError, /model is not bound/)
-
-          instance.bind_unallocated_vm
-          expect(instance.model.state).to eq('started')
-          instance.sync_state_with_db
-          expect(instance.state).to eq('stopped')
-          expect(instance.model.state).to eq('stopped')
-        end
-      end
-
-      context 'when desired state is not set' do
-        let(:state) { nil }
-
-        it 'DB -> deployment plan' do
-          instance.bind_unallocated_vm
-          instance.model.update(:state => 'stopped')
-
-          instance.sync_state_with_db
-          expect(instance.model.state).to eq('stopped')
-          expect(instance.state).to eq('stopped')
-        end
-
-        it 'needs to find state in order to sync it' do
-          instance.bind_unallocated_vm
-          expect(instance.model).to receive(:state).and_return(nil)
-
-          expect {
-            instance.sync_state_with_db
-          }.to raise_error(Bosh::Director::InstanceTargetStateUndefined)
-        end
-      end
-    end
-
     describe '#job_changed?' do
       let(:job) { Job.new(plan, logger) }
       before do
@@ -759,63 +708,6 @@ module Bosh::Director::DeploymentPlan
           instance_model.vm.update(env: {'key' => 'previous_value'})
           expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: {"key"=>"previous_value"} TO: {"key"=>"value"}')
           instance.resource_pool_changed?
-        end
-      end
-    end
-
-    describe '#state_changed?' do
-      describe 'when there is no state changed' do
-        before do
-          current_state['job_state'] = 'running'
-        end
-
-        it 'should return false' do
-          expect(instance.state_changed?).to eq(false)
-        end
-      end
-
-      describe 'when the state is detached' do
-        let(:state) { 'detached' }
-
-        it 'should return true' do
-          expect(instance.state_changed?).to eq(true)
-        end
-
-        it 'should log the change' do
-          expect(logger).to receive(:debug).with("state_changed? instance state is 'detached'")
-          instance.state_changed?
-        end
-      end
-
-      describe 'when the state is started and the job state is not eq to runnning' do
-        let(:state) { 'started' }
-
-        before do
-          current_state['job_state'] = 'resting'
-        end
-
-        it 'should return true' do
-          expect(instance.state_changed?).to eq(true)
-        end
-        it 'should log the change' do
-          expect(logger).to receive(:debug).with("state_changed? instance state is 'started' and job_state is 'resting'")
-          instance.state_changed?
-        end
-      end
-
-      describe 'when the state is stopped and the job state is eq to runnning' do
-        let(:state) { 'stopped' }
-        before do
-          current_state['job_state'] = 'running'
-        end
-
-        it 'should return true' do
-          expect(instance.state_changed?).to eq(true)
-        end
-
-        it 'should log the change' do
-          expect(logger).to receive(:debug).with("state_changed? instance state is 'stopped' and job_state is 'running'")
-          instance.state_changed?
         end
       end
     end

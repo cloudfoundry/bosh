@@ -378,7 +378,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-        expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
       end
 
       job.bind_unallocated_vms
@@ -423,7 +422,6 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-        expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
       end
 
       job.bind_instances

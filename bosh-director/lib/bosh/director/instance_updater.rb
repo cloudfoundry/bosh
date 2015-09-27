@@ -41,10 +41,11 @@ module Bosh::Director
       stop(instance_plan)
       take_snapshot(instance)
 
-      if instance.state == 'detached'
+      if instance_plan.needs_detach?
         @logger.info("Detaching instance #{instance}")
         @vm_deleter.delete_for_instance_plan(instance_plan)
         instance_plan.release_obsolete_ips
+        instance.update_state
         return
       end
 
@@ -63,10 +64,11 @@ module Bosh::Director
         apply_state(instance)
       end
 
-      if instance.state == 'started'
+      if instance_plan.needs_start?
         run_pre_start_scripts(instance)
         start!(instance)
       end
+      instance.update_state
 
       wait_until_running(instance)
 

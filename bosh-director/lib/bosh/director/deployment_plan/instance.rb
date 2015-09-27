@@ -182,29 +182,6 @@ module Bosh::Director
       end
 
       ##
-      # Syncs instance state with instance model in DB. This is needed because
-      # not all instance states are available in the deployment manifest and we
-      # we cannot really persist this data in the agent state (as VM might be
-      # stopped or detached).
-      # @return [void]
-      def sync_state_with_db
-        check_model_bound
-
-        if @state
-          # Deployment plan explicitly sets state for this instance
-          @model.update(:state => @state)
-        elsif @model.state
-          # Instance has its state persisted from the previous deployment
-          @state = @model.state
-        else
-          # Target instance state should either be persisted in DB or provided
-          # via deployment plan, otherwise something is really wrong
-          raise InstanceTargetStateUndefined,
-            "Instance `#{self}' target state cannot be determined"
-        end
-      end
-
-      ##
       # Adds a new network to this instance
       # @param [NetworkReservation] reservation
       def add_network_reservation(reservation)
@@ -374,27 +351,12 @@ module Bosh::Director
         end
       end
 
-      ##
-      # Checks if agent view of the instance state is consistent with target
-      # instance state.
-      #
-      # In case the instance current state is 'detached' we should never get to
-      # this method call.
-      # @return [Boolean] returns true if the expected job state differs from
-      #   the one provided by the VM
-      def state_changed?
-        state_detached = @state == 'detached'
-        if state_detached
-          @logger.debug("#{__method__} instance state is '#{@state}'")
-          return state_detached
-        end
-        state_started_job_state_not_running = @state == 'started' && @current_state['job_state'] != 'running'
-        state_stopped_job_state_running = @state == 'stopped' && @current_state['job_state'] == 'running'
-        if state_started_job_state_not_running || state_stopped_job_state_running
-          @logger.debug("#{__method__} instance state is '#{@state}' and job_state is '#{@current_state['job_state']}'")
+      def current_job_state
+        @current_state['job_state']
+      end
 
-        end
-        state_started_job_state_not_running || state_stopped_job_state_running
+      def update_state
+        @model.update(state: @state)
       end
 
       ##
