@@ -78,14 +78,6 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when reservation has not been reserved' do
-          it 'should do nothing' do
-            expect {
-              ip_provider.release(ip_reservation)
-            }.not_to raise_error
-          end
-        end
-
         context 'when reservation has an IP' do
           it 'should release IP' do
             manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
