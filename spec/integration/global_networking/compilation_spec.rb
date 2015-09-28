@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe 'global networking', type: :integration do
+  include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
   before do
@@ -109,28 +110,26 @@ describe 'global networking', type: :integration do
 
   context 'when director fails to clean up compilation VM' do
     it 'releases its IP on subsequent deploy' do
-      upload_cloud_config
-      long_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'job_with_blocking_compilation')
-      deploy_simple_manifest(manifest_hash: long_compilation_manifest, no_track: true)
+      prepare_for_deploy
 
-      director.wait_for_first_available_vm
+      with_blocking_deploy(skip_task_wait: true) do
+        compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+          invocation.inputs['networks']['a']['ip']
+        end
 
-      compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
-        invocation.inputs['networks']['a']['ip']
+        expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
+
+        current_sandbox.director_service.hard_stop
+        current_sandbox.director_service.start(current_sandbox.director_config)
+
+        deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 2)
+        deploy_simple_manifest(manifest_hash: deployment_manifest)
+        expect(director.vms.map(&:ips)).to contain_exactly('192.168.1.2', '192.168.1.4')
+
+        deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 3)
+        deploy_simple_manifest(manifest_hash: deployment_manifest)
+        expect(director.vms.map(&:ips)).to contain_exactly('192.168.1.2', '192.168.1.3', '192.168.1.4')
       end
-
-      expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
-
-      current_sandbox.director_service.hard_stop
-      current_sandbox.director_service.start(current_sandbox.director_config)
-
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
-      deploy_simple_manifest(manifest_hash: deployment_manifest)
-      expect(director.vms.map(&:ips)).to contain_exactly('192.168.1.2', '192.168.1.4')
-
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 3)
-      deploy_simple_manifest(manifest_hash: deployment_manifest)
-      expect(director.vms.map(&:ips)).to contain_exactly('192.168.1.2', '192.168.1.3', '192.168.1.4')
     end
   end
 end

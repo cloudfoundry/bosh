@@ -106,12 +106,16 @@ module IntegrationExampleGroup
   end
 
   def deploy_from_scratch(options={})
+    prepare_for_deploy(options)
+    deploy_simple_manifest(options)
+  end
+
+  def prepare_for_deploy(options={})
     target_and_login unless options.fetch(:no_login, false)
 
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
-    deploy_simple_manifest(options)
   end
 
   def deploy_simple_manifest(options={})
