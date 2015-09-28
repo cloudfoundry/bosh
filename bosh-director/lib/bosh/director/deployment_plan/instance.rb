@@ -232,12 +232,6 @@ module Bosh::Director
       end
 
       ##
-      # @return [Hash<String, String>] dns record hash of dns name and IP
-      def dns_record_info
-        network_settings.dns_record_info
-      end
-
-      ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
         [hostname, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
@@ -337,7 +331,7 @@ module Bosh::Director
       #   instance differ from the ones configured on the DNS server
       def dns_changed?
         if Config.dns_enabled?
-          dns_record_info.any? do |name, ip|
+          network_settings.dns_record_info.any? do |name, ip|
             not_found = Models::Dns::Record.find(:name => name, :type => 'A', :content => ip).nil?
             @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
             not_found
