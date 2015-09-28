@@ -118,6 +118,7 @@ describe 'cli: deploy uploading', type: :integration do
 
   context 'with a local release directory' do
     let(:release_path) { spec_asset("compiled_releases/test_release") }
+    let(:release_tar) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
 
     it 'creates, uploads and deploys release from local folder' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
@@ -130,6 +131,34 @@ describe 'cli: deploy uploading', type: :integration do
 
       expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
+    it 'requires that the path is to a directory' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("file://" + release_tar, 'create'))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Path must be a release directory when version is `create'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
+    end
+
+    it 'rejects paths that are not local files' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("http://goobers.com/zakrulez", 'create'))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      output = bosh_runner.run('deploy', failure_expected: true)
+      expect(output).to match /Path must be a local release directory when version is `create'/
+      expect(output).not_to match /Deployed `minimal' to `Test Director'/
     end
   end
 
