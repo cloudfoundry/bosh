@@ -2,9 +2,12 @@ module Bosh::Director::DeploymentPlan
   class NetworkSettings
     include Bosh::Director::DnsHelper
 
-    def initialize(job, desired_reservations, state, availability_zone, instance_index)
-      @job = job
+    def initialize(job_name, is_errand, deployment_name, default_network, desired_reservations, state, availability_zone, instance_index)
+      @job_name = job_name
+      @is_errand = is_errand
       @desired_reservations = desired_reservations
+      @default_network = default_network
+      @deployment_name = deployment_name
       @state = state
       @availability_zone = availability_zone
       @instance_index = instance_index
@@ -12,7 +15,7 @@ module Bosh::Director::DeploymentPlan
 
     def to_hash
       default_properties = {}
-      @job.default_network.each do |key, value|
+      @default_network.each do |key, value|
         (default_properties[value] ||= []) << key
       end
 
@@ -29,8 +32,8 @@ module Bosh::Director::DeploymentPlan
         # Obviously this does not account for other changes
         # in network configuration that errand job might need.
         # (e.g. errand job desires static ip)
-        if @job.starts_on_deploy?
-          network_settings[network_name]['dns_record_name'] = dns_record_name(@instance_index, network_name, @job)
+        unless @is_errand
+          network_settings[network_name]['dns_record_name'] = dns_record_name(network_name)
         end
 
         # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
@@ -51,8 +54,8 @@ module Bosh::Director::DeploymentPlan
 
     private
 
-    def dns_record_name(hostname, network_name, job)
-      [hostname, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
+    def dns_record_name(network_name)
+      [@instance_index, canonical(@job_name), canonical(network_name), canonical(@deployment_name), dns_domain_name].join('.')
     end
   end
 end

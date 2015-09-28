@@ -29,6 +29,8 @@ module Bosh::Director
       # @return [String] job state
       attr_reader :state
 
+      attr_reader :current_state
+
       attr_reader :availability_zone
 
       # @return [DeploymentPlan::Vm] Associated resource pool VM
@@ -192,7 +194,7 @@ module Bosh::Director
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
-        NetworkSettings.new(job, desired_network_reservations, @current_state, availability_zone, @index).to_hash
+        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_network_reservations, @current_state, availability_zone, @index).to_hash
       end
 
       def network_addresses
