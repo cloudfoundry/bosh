@@ -37,13 +37,13 @@ module Bosh::Director::DeploymentPlan
         resource_pool: resource_pool,
         deployment: plan,
         name: 'fake-job',
-        persistent_disk_pool: disk_pool,
+        persistent_disk_type: disk_type,
         compilation?: false,
         can_run_as_errand?: false
       )
     end
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool', cloud_properties: {}) }
-    let(:disk_pool) { nil }
+    let(:disk_type) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:vm) { Vm.new }
@@ -610,8 +610,8 @@ module Bosh::Director::DeploymentPlan
 
       before { allow(instance_model).to receive(:uuid).and_return('123') }
 
-      let(:disk_pool) do
-        Bosh::Director::DeploymentPlan::DiskPool.parse(
+      let(:disk_type) do
+        Bosh::Director::DeploymentPlan::DiskType.parse(
           {
             'name' => 'fake-name',
             'disk_size' => disk_size,
@@ -680,13 +680,13 @@ module Bosh::Director::DeploymentPlan
           default_network: {},
           resource_pool: resource_pool,
           package_spec: packages,
-          persistent_disk_pool: disk_pool,
+          persistent_disk_type: disk_pool,
           can_run_as_errand?: false,
           link_spec: 'fake-link',
           compilation?: false,
           properties: properties)
       }
-      let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
+      let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_pool_spec) }
       let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
       let(:index) { 0 }
       before do
@@ -726,11 +726,72 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'does not require persistent_disk_pool' do
-        allow(job).to receive(:persistent_disk_pool).and_return(nil)
+        allow(job).to receive(:persistent_disk_type).and_return(nil)
 
         spec = instance.template_spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
+      end
+
+      context 'when persistent disk type' do
+        let(:job) {
+          job = instance_double('Bosh::Director::DeploymentPlan::Job',
+            name: 'fake-job',
+            deployment: plan,
+            spec: job_spec,
+            canonical_name: 'job',
+            instances: ['instance0'],
+            release: release,
+            default_network: {},
+            resource_pool: resource_pool,
+            package_spec: packages,
+            persistent_disk_type: disk_type,
+            can_run_as_errand?: false,
+            link_spec: 'fake-link',
+            compilation?: false,
+            properties: properties)
+        }
+        let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_type_spec) }
+        let(:disk_type_spec) { {'name' => 'default', 'disk_size' => 400, 'cloud_properties' => {}} }
+
+        it 'returns a valid instance template_spec' do
+          network_name = network_spec['name']
+          instance.add_network_reservation(reservation)
+          instance.bind_unallocated_vm
+          spec = instance.template_spec
+          expect(spec['deployment']).to eq('fake-deployment')
+          expect(spec['job']).to eq(job_spec)
+          expect(spec['index']).to eq(index)
+          expect(spec['networks']).to include(network_name)
+
+          expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
+
+          expect(spec['networks'][network_name]).to include(
+              'type' => 'dynamic',
+              'cloud_properties' => network_spec['cloud_properties'],
+              'dns_record_name' => expect_dns_name
+            )
+
+          expect(spec['resource_pool']).to eq(resource_pool_spec)
+          expect(spec['packages']).to eq(packages)
+          expect(spec['persistent_disk']).to eq(0)
+          expect(spec['persistent_disk_type']).to eq(disk_type_spec)
+          expect(spec['configuration_hash']).to be_nil
+          expect(spec['properties']).to eq(properties)
+          expect(spec['dns_domain_name']).to eq(domain_name)
+          expect(spec['links']).to eq('fake-link')
+          expect(spec['id']).to eq('uuid-1')
+          expect(spec['availability_zone']).to eq('foo-az')
+          expect(spec['bootstrap']).to eq(false)
+        end
+
+        it 'does not require persistent_disk_type' do
+          allow(job).to receive(:persistent_disk_type).and_return(nil)
+
+          spec = instance.template_spec
+          expect(spec['persistent_disk']).to eq(0)
+          expect(spec['persistent_disk_type']).to eq(nil)
+        end
       end
     end
 
@@ -785,14 +846,14 @@ module Bosh::Director::DeploymentPlan
           default_network: {},
           resource_pool: resource_pool,
           package_spec: packages,
-          persistent_disk_pool: disk_pool,
+          persistent_disk_type: disk_type,
           can_run_as_errand?: false,
           link_spec: 'fake-link',
           compilation?: false,
           properties: properties)
       }
-      let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
-      let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
+      let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_type_spec) }
+      let(:disk_type_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
       let(:index) { 0 }
       before do
         ip_provider.reserve(reservation)
@@ -839,8 +900,8 @@ module Bosh::Director::DeploymentPlan
         expect(instance.apply_spec).to_not have_key('rendered_templates_archive')
       end
 
-      it 'does not require persistent_disk_pool' do
-        allow(job).to receive(:persistent_disk_pool).and_return(nil)
+      it 'does not require persistent_disk_type' do
+        allow(job).to receive(:persistent_disk_type).and_return(nil)
 
         spec = instance.apply_spec
         expect(spec['persistent_disk']).to eq(0)

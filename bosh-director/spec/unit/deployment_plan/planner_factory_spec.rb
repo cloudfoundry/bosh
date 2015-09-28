@@ -130,9 +130,9 @@ LOGMESSAGE
               end
 
               it 'has disk_pools from the cloud config manifest' do
-                expect(planner.disk_pools.length).to eq(2)
-                expect(planner.disk_pool('disk_pool1').disk_size).to eq(3000)
-                expect(planner.disk_pool('disk_pool2').disk_size).to eq(1000)
+                expect(planner.disk_types.length).to eq(2)
+                expect(planner.disk_type('disk_pool1').disk_size).to eq(3000)
+                expect(planner.disk_type('disk_pool2').disk_size).to eq(1000)
               end
             end
 

@@ -1,6 +1,6 @@
 require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
-require 'bosh/director/deployment_plan/disk_pool'
+require 'bosh/director/deployment_plan/disk_type'
 require 'forwardable'
 require 'common/deep_copy'
 
@@ -105,8 +105,8 @@ module Bosh::Director
         :resource_pools,
         :resource_pool,
         :add_resource_pool,
-        :disk_pools,
-        :disk_pool,
+        :disk_types,
+        :disk_type,
         :compilation
 
       def canonical_name
@@ -303,7 +303,7 @@ module Bosh::Director
         @networks = self.class.index_by_name(options.fetch(:networks))
         @default_network = options.fetch(:default_network)
         @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
-        @disk_pools = self.class.index_by_name(options.fetch(:disk_pools))
+        @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
       end
@@ -340,16 +340,16 @@ module Bosh::Director
         @networks[name]
       end
 
-      def disk_pools
-        @disk_pools.values
+      def disk_types
+        @disk_types.values
       end
 
       def using_global_networking?
         false
       end
 
-      def disk_pool(name)
-        @disk_pools[name]
+      def disk_type(name)
+        @disk_types[name]
       end
 
       def self.index_by_name(collection)

@@ -305,8 +305,8 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected persistent disk or cloud_properties differs
       #   from the state currently configured on the VM
       def persistent_disk_changed?
-        new_disk_size = @job.persistent_disk_pool ? @job.persistent_disk_pool.disk_size : 0
-        new_disk_cloud_properties = @job.persistent_disk_pool ? @job.persistent_disk_pool.cloud_properties : {}
+        new_disk_size = @job.persistent_disk_type ? @job.persistent_disk_type.disk_size : 0
+        new_disk_cloud_properties = @job.persistent_disk_type ? @job.persistent_disk_type.cloud_properties : {}
         changed = new_disk_size != disk_size
         log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}") if changed
         return true if changed
@@ -370,8 +370,8 @@ module Bosh::Director
           'dns_domain_name' => dns_domain_name,
         }
 
-        if job.persistent_disk_pool
-          spec['persistent_disk'] = job.persistent_disk_pool.disk_size
+        if job.persistent_disk_type
+          spec['persistent_disk'] = job.persistent_disk_type.disk_size
         else
           spec['persistent_disk'] = 0
         end
@@ -403,11 +403,13 @@ module Bosh::Director
           'links' => job.link_spec,
         }
 
-        if job.persistent_disk_pool
+        if job.persistent_disk_type
           # supply both for reverse compatibility with old agent
-          spec['persistent_disk'] = job.persistent_disk_pool.disk_size
+          spec['persistent_disk'] = job.persistent_disk_type.disk_size
           # old agents will ignore this pool
-          spec['persistent_disk_pool'] = job.persistent_disk_pool.spec
+          # keep disk pool for backwards compatibility
+          spec['persistent_disk_pool'] = job.persistent_disk_type.spec
+          spec['persistent_disk_type'] = job.persistent_disk_type.spec
         else
           spec['persistent_disk'] = 0
         end

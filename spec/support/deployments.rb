@@ -63,6 +63,13 @@ module Bosh::Spec
       }
     end
 
+    def self.disk_type
+      {
+        'name' => 'disk_a',
+        'disk_size' => 123
+      }
+    end
+
     def self.minimal_manifest
       {
         'name' => 'minimal',

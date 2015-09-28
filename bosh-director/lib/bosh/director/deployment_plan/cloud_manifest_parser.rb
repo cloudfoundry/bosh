@@ -14,7 +14,7 @@ module Bosh::Director
         default_network = default_network(global_network_resolver)
         compilation_config = parse_compilation(cloud_manifest, networks, az_list)
         resource_pools = parse_resource_pools(cloud_manifest)
-        disk_pools = parse_disk_pools(cloud_manifest)
+        disk_types = parse_disk_types(cloud_manifest)
 
         CloudPlanner.new({
           availability_zones_list: az_list,
@@ -22,7 +22,7 @@ module Bosh::Director
           default_network: default_network,
           compilation: compilation_config,
           resource_pools: resource_pools,
-          disk_pools: disk_pools,
+          disk_types: disk_types,
         })
       end
 
@@ -114,22 +114,35 @@ module Bosh::Director
       end
 
 
-      def parse_disk_pools(cloud_manifest)
+      def parse_disk_types(cloud_manifest)
         disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true, :default => [])
-        if disk_pools.empty?
-          disk_pools = safe_property(cloud_manifest, 'disk_types', :class => Array, :optional => true, :default => [])
+        disk_types = safe_property(cloud_manifest, 'disk_types', :class => Array, :optional => true, :default => [])
+
+        if disk_pools.any? && disk_types.any?
+          raise DeploymentInvalidDiskSpecification, 'Both disk_types and disk_pools are specified, only one key is allowed *Disk pools will be DEPRECATED in the future'
         end
-        parsed_disk_pools = disk_pools.map do |dp_spec|
-          DiskPool.parse(dp_spec)
+
+        disk_names = []
+
+        if disk_pools.any?
+          disk_source = 'pool'
+          disk_names = disk_pools
+        elsif disk_types.any?
+          disk_source = 'type'
+          disk_names = disk_types
+        end
+
+        parsed_disk_types = disk_names.map do |dp_spec|
+          DiskType.parse(dp_spec)
         end
 
 
-        duplicates = detect_duplicates(parsed_disk_pools) { |dp| dp.name }
+        duplicates = detect_duplicates(parsed_disk_types) { |dp| dp.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateDiskPoolName, "Duplicate disk pool name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateDiskTypeName, "Duplicate disk #{disk_source} name `#{duplicates.first.name}'"
         end
 
-        parsed_disk_pools
+        parsed_disk_types
       end
 
       def detect_duplicates(collection, &iteratee)

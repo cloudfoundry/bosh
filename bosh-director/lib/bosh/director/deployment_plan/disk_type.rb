@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
-    class DiskPool
+    class DiskType
 
-      # @return [String] Disk pool name
+      # @return [String] Disk types name
       attr_accessor :name
 
       # @return [Integer] Disk size (or nil)
@@ -12,7 +12,7 @@ module Bosh::Director
       attr_accessor :cloud_properties
 
       def self.parse(dp_spec)
-        DiskPoolParser.new.parse(dp_spec)
+        DiskTypesParser.new.parse(dp_spec)
       end
 
       def initialize(name)
@@ -31,24 +31,24 @@ module Bosh::Director
 
       private
 
-      class DiskPoolParser
+      class DiskTypesParser
         include ValidationHelper
 
         def parse(dp_spec)
           name = safe_property(dp_spec, 'name', class: String)
-          disk_pool = DiskPool.new(name)
+          disk_types = DiskType.new(name)
 
           disk_size = safe_property(dp_spec, 'disk_size', class: Integer)
 
           if disk_size < 0
-            raise DiskPoolInvalidDiskSize,
-              "Disk pool `#{name}' references an invalid peristent disk size `#{disk_size}'"
+            raise DiskTypeInvalidDiskSize,
+              "Disk types `#{name}' references an invalid persistent disk size `#{disk_size}'"
           end
-          disk_pool.disk_size = disk_size
+          disk_types.disk_size = disk_size
 
-          disk_pool.cloud_properties = safe_property(dp_spec, 'cloud_properties', class: Hash, default: {})
+          disk_types.cloud_properties = safe_property(dp_spec, 'cloud_properties', class: Hash, default: {})
 
-          disk_pool
+          disk_types
         end
       end
 

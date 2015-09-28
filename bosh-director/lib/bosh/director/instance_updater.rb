@@ -322,7 +322,7 @@ module Bosh::Director
 
       old_disk = instance.model.persistent_disk
 
-      if instance.job.persistent_disk_pool && instance.job.persistent_disk_pool.disk_size > 0
+      if instance.job.persistent_disk_type && instance.job.persistent_disk_type.disk_size > 0
         disk = create_disk(instance)
         attach_disk(instance, disk)
         mount_and_migrate_disk(instance, disk, old_disk)
@@ -351,8 +351,8 @@ module Bosh::Director
     end
 
     def create_disk(instance)
-      disk_size = instance.job.persistent_disk_pool.disk_size
-      cloud_properties = instance.job.persistent_disk_pool.cloud_properties
+      disk_size = instance.job.persistent_disk_type.disk_size
+      cloud_properties = instance.job.persistent_disk_type.cloud_properties
 
       disk = nil
       instance.model.db.transaction do

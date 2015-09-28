@@ -164,30 +164,45 @@ module Bosh::Director
 
       def parse_disk
         disk_size = safe_property(@job_spec, 'persistent_disk', :class => Integer, :optional => true)
+        disk_type_name = safe_property(@job_spec, 'persistent_disk_type', :class => String, :optional => true)
         disk_pool_name = safe_property(@job_spec, 'persistent_disk_pool', :class => String, :optional => true)
 
-        if disk_size && disk_pool_name
+        if disk_type_name && disk_pool_name
           raise JobInvalidPersistentDisk,
-            "Job `#{@job.name}' references both a peristent disk size `#{disk_size}' " +
-              "and a peristent disk pool `#{disk_pool_name}'"
+            "Job `#{@job.name}' references both a persistent disk pool `#{disk_pool_name}' " +
+              "and a persistent disk type `#{disk_type_name}'"
+        end
+
+        if disk_type_name
+            disk_name = disk_type_name
+            disk_source = 'type'
+        else
+          disk_name = disk_pool_name
+          disk_source = 'pool'
+        end
+
+        if disk_size && disk_name
+          raise JobInvalidPersistentDisk,
+            "Job `#{@job.name}' references both a persistent disk size `#{disk_size}' " +
+              "and a persistent disk #{disk_source} `#{disk_name}'"
         end
 
         if disk_size
           if disk_size < 0
             raise JobInvalidPersistentDisk,
-              "Job `#{@job.name}' references an invalid peristent disk size `#{disk_size}'"
+              "Job `#{@job.name}' references an invalid persistent disk size `#{disk_size}'"
           else
             @job.persistent_disk = disk_size
           end
         end
 
-        if disk_pool_name
-          disk_pool = @deployment.disk_pool(disk_pool_name)
-          if disk_pool.nil?
-            raise JobUnknownDiskPool,
-                  "Job `#{@job.name}' references an unknown disk pool `#{disk_pool_name}'"
+        if disk_name
+          disk_type = @deployment.disk_type(disk_name)
+          if disk_type.nil?
+            raise JobUnknownDiskType,
+                  "Job `#{@job.name}' references an unknown disk #{disk_source} `#{disk_name}'"
           else
-            @job.persistent_disk_pool = disk_pool
+            @job.persistent_disk_type = disk_type
           end
         end
       end

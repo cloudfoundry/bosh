@@ -138,7 +138,7 @@ module Bosh::Director
         {}
       end
 
-      def persistent_disk_pool
+      def persistent_disk_type
         nil
       end
 
