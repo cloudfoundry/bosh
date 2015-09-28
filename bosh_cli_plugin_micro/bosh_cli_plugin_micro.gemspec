@@ -40,7 +40,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_aws_cpi',       "=2.0.2"
   spec.add_dependency 'bosh_openstack_cpi', "=2.0.0"
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
-  spec.add_dependency 'bosh_vsphere_cpi',   "=2.0.0"
+  spec.add_dependency 'bosh_vsphere_cpi',   "=2.1.0"
 
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
