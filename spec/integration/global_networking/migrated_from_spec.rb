@@ -91,6 +91,18 @@ describe 'migrated from', type: :integration do
       legacy_manifest
     end
 
+    def migrate_legacy_etcd_z1_and_z2
+      deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+      original_vms = director.vms
+      original_disks = current_sandbox.cpi.disk_cids
+      expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+      deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+      [original_vms, original_disks]
+    end
+
     context 'when using same static reservation' do
       let(:etcd_z1_job) do
         Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', static_ips: ['192.168.1.10'], persistent_disk_pool: 'fast_disks')
@@ -103,13 +115,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'keeps VM, disk and IPs' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
@@ -134,13 +140,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'keeps VM, disk and IPs' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
@@ -159,13 +159,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'updates job instances with new desired job templates keeping persistent disk' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
@@ -189,13 +183,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'recreates VM keeping persistent disk' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
@@ -216,13 +204,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'recreates VM keeping persistent disk' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
@@ -274,15 +256,7 @@ describe 'migrated from', type: :integration do
       end
 
       it 'creates extra instances' do
-        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_vms = director.vms
-        original_disks = current_sandbox.cpi.disk_cids
-        expect(original_vms.size).to eq(2)
-        expect(original_disks.size).to eq(2)
-        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
-
-        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
-        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.size).to eq(3)
