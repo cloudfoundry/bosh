@@ -29,48 +29,30 @@ module Bosh::Director
         vm.model = Models::Vm.make(cid: 'fake-vm-cid')
         vm
       end
+      let(:network) { instance_double(DeploymentPlan::ManualNetwork, name: 'manual-network') }
       let(:reservation) do
-        instance_double(NetworkReservation,
-          ip: '192.168.1.2',
-          network: instance_double(DeploymentPlan::ManualNetwork),
-          reserved?: true,
-        )
+        reservation = DesiredNetworkReservation.new(instance, network, '192.168.1.2', :dynamic)
+        reservation.mark_reserved
+
+        reservation
       end
 
+      let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
       let(:instance) do
-        fake_network_reservations = instance_double(DeploymentPlan::InstanceNetworkReservations)
-        allow(fake_network_reservations).to receive(:each).and_yield(reservation)
-        allow(fake_network_reservations).to receive(:clean)
+        deployment_plan = instance_double(DeploymentPlan::Planner, ip_provider: ip_provider, model: deployment_model)
+        job = instance_double(DeploymentPlan::Job, name: 'fake-job-name', deployment: deployment_plan)
 
-        deployment = Models::Deployment.make(name: 'deployment-name')
-
-        instance = instance_double(
-          DeploymentPlan::InstanceFromDatabase,
-          model: Models::Instance.make(vm: vm.model, deployment: deployment, uuid: 'uuid-1'),
-          vm: vm,
-          job_name: 'fake-job-name',
-          index: 5,
-          uuid: 'uuid-1',
-          to_s: 'fake-job-name/5',
-          desired_network_reservations: fake_network_reservations,
-          existing_network_reservations: []
-        )
-
-        allow(fake_network_reservations).to receive(:map) do
-          [
-            DeploymentPlan::InstancePlan.new(
-              instance: instance,
-              existing_instance: nil,
-              desired_instance: nil
-            )
-          ]
-        end
+        az = DeploymentPlan::AvailabilityZone.new('az', {})
+        instance = DeploymentPlan::Instance.new(job, 5, {}, deployment_plan, 'started', az, true, logger)
+        instance.bind_existing_instance_model(Models::Instance.make(vm: vm.model, deployment: deployment_model, uuid: 'uuid-1'))
 
         instance
       end
 
       let(:stopper) { instance_double(Stopper) }
       before do
+        instance.add_network_reservation(reservation)
+
         allow(Stopper).to receive(:new).with(
             instance_of(DeploymentPlan::InstancePlan),
             'stopped',

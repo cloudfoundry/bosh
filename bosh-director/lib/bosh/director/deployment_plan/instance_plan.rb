@@ -69,11 +69,21 @@ module Bosh
         end
 
         def release_obsolete_ips
-          network_plans.select(&:obsolete?).each do |network_plan|
+          network_plans
+            .select(&:obsolete?)
+            .each do |network_plan|
             reservation = network_plan.reservation
             @instance.job.deployment.ip_provider.release(reservation)
           end
           network_plans.delete_if(&:obsolete?)
+        end
+
+        def release_all_ips
+          network_plans.each do |network_plan|
+            reservation = network_plan.reservation
+            @instance.job.deployment.ip_provider.release(reservation) if reservation.reserved?
+          end
+          network_plans.clear
         end
 
         def obsolete?
