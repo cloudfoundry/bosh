@@ -18,6 +18,7 @@ module Bosh::Director
 
       @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
       @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
+      @dns_manager = DnsManager.new(@logger)
 
       @current_state = {}
     end
@@ -189,6 +190,12 @@ module Bosh::Director
         update_dns_a_record(domain, record_name, ip_address)
         update_dns_ptr_record(record_name, ip_address)
       end
+
+      if instance_plan.existing_instance &&
+        instance_plan.existing_instance.job != instance.job_name
+        @dns_manager.delete_dns_for_instance(instance_plan.existing_instance)
+      end
+
       flush_dns_cache
     end
 

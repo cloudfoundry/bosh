@@ -376,6 +376,34 @@ describe 'migrated from', type: :integration do
     end
   end
 
+  it 'updates dns records', dns: true do
+    original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
+    job_spec = etcd_z1_job
+    job_spec['availability_zones'] = ['my-az-1']
+    job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    original_manifest_with_azs['jobs'] = [job_spec]
+
+    deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
+    output = bosh_runner.run('vms --dns')
+    expect(output).to include('0.etcd-z1.a.simple.bosh')
+    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
+
+    new_manifest_hash = original_manifest_with_azs
+    job_spec = etcd_job
+    job_spec['instances'] = 1
+    job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    job_spec['availability_zones'] = ['my-az-1']
+    job_spec['migrated_from'] = [{'name' => 'etcd_z1'}]
+    new_manifest_hash['jobs'] = [job_spec]
+
+    deploy_simple_manifest(manifest_hash: new_manifest_hash)
+    output = bosh_runner.run('vms --dns')
+    expect(output).to include('0.etcd.a.simple.bosh')
+    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
+    expect(output).to_not include('0.etcd-z1.a.simple.bosh')
+    expect(scrub_random_ids(output)).to_not include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
+  end
+
   context 'when migrating job that was already migrated' do
     context 'when migrated_from is the same'
     context 'when migrated_from is not the same'

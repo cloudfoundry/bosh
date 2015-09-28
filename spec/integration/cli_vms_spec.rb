@@ -33,7 +33,7 @@ describe 'cli: vms', type: :integration do
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
   end
 
-  it 'should return az with vms' do
+  it 'should return az with vms', dns: true do
     target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

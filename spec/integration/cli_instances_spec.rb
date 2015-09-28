@@ -4,7 +4,7 @@ describe 'cli: deployment process', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
-  it 'check output for BOSH INSTANCES' do
+  it 'check output for BOSH INSTANCES', dns: true do
     target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
