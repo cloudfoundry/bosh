@@ -96,6 +96,7 @@ module Bosh::Cli::Command
             case parsed_uri.scheme
             when 'file'
               if release['version'] == 'create'
+                path_is_reasonable!(parsed_uri.path)
                 _, info = run_nested_command "create", "release", "--name", release['name'], "--dir", parsed_uri.path, "--timestamp-version", "--force"
                 release['version'] = info[:generated_version]
                 run_nested_command "upload", "release", "--dir", parsed_uri.path, info[:generated_manifest_path]
@@ -103,6 +104,7 @@ module Bosh::Cli::Command
                 run_nested_command "upload", "release", parsed_uri.path
               end
             when 'http', 'https'
+              err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
               err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
               run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
             else
@@ -322,5 +324,13 @@ module Bosh::Cli::Command
         hash.values_at("name", "version").join("/")
       }.sort
     end
+
+    def path_is_reasonable!(path)
+      #path is actually to a directory, not a file
+      unless File.directory?(path)
+        err "Path must be a release directory when version is `create'"
+      end
+    end
+
   end
 end
