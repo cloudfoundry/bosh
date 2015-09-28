@@ -2,7 +2,7 @@ module Bosh::Director::DeploymentPlan
   class NetworkSettings
     include Bosh::Director::DnsHelper
 
-    def initialize(job_name, is_errand, deployment_name, default_network, desired_reservations, state, availability_zone, instance_index)
+    def initialize(job_name, is_errand, deployment_name, default_network, desired_reservations, state, availability_zone, instance_index, instance_id)
       @job_name = job_name
       @is_errand = is_errand
       @desired_reservations = desired_reservations
@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
       @state = state
       @availability_zone = availability_zone
       @instance_index = instance_index
+      @instance_id = instance_id
     end
 
     def to_hash
@@ -33,7 +34,7 @@ module Bosh::Director::DeploymentPlan
         # in network configuration that errand job might need.
         # (e.g. errand job desires static ip)
         unless @is_errand
-          network_settings[network_name]['dns_record_name'] = dns_record_name(network_name)
+          network_settings[network_name]['dns_record_name'] = dns_record_name(@instance_index, network_name)
         end
 
         # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
@@ -52,10 +53,21 @@ module Bosh::Director::DeploymentPlan
       network_settings
     end
 
+    def dns_record_info
+      dns_record_info = {}
+      to_hash.each do |network_name, network|
+        index_dns_name = dns_record_name(@instance_index, network_name)
+        dns_record_info[index_dns_name] = network['ip']
+        id_dns_name = dns_record_name(@instance_id, network_name)
+        dns_record_info[id_dns_name] = network['ip']
+      end
+      dns_record_info
+    end
+
     private
 
-    def dns_record_name(network_name)
-      [@instance_index, canonical(@job_name), canonical(network_name), canonical(@deployment_name), dns_domain_name].join('.')
+    def dns_record_name(hostname, network_name)
+      [hostname, canonical(@job_name), canonical(network_name), canonical(@deployment_name), dns_domain_name].join('.')
     end
   end
 end
