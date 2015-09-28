@@ -185,6 +185,20 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
+    it 'is idempotent' do
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, stemcell_sha))
+
+      target_and_login
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+
+      expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
     it 'fails to deploy when the url is provided, but sha is not' do
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, ''))
 
