@@ -5,6 +5,8 @@ module Bosh::Director
     class Stemcell
       include ValidationHelper
 
+      attr_reader :alias
+
       # @return [String] Stemcell name
       attr_reader :name
 
@@ -16,6 +18,7 @@ module Bosh::Director
 
       # @param [Hash] spec Raw stemcell spec according to deployment manifest
       def initialize(spec)
+        @alias = safe_property(spec, "alias", :class => String, :optional => true)
         @name = safe_property(spec, "name", :class => String)
         @version = safe_property(spec, "version", :class => String)
 

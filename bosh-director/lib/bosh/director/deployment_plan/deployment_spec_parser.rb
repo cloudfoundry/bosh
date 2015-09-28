@@ -16,6 +16,7 @@ module Bosh::Director
         @deployment_manifest = deployment_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
+        parse_stemcells
         parse_properties
         parse_releases
         parse_update
@@ -25,6 +26,23 @@ module Bosh::Director
       end
 
       private
+
+      def parse_stemcells
+
+        if @deployment_manifest.has_key?('stemcells')
+          safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
+            if !stemcell_hash.has_key?('alias')
+              raise ValidationMissingField, "Alias is required for top level stemcell"
+            end
+
+            if @deployment.stemcells.has_key?(stemcell_hash['alias'])
+              raise StemcellAliasAlreadyExists, "Stemcell alias #{stemcell_hash['alias']} already exists"
+            end
+
+            @deployment.add_stemcell(Stemcell.new(stemcell_hash))
+          end
+        end
+      end
 
       def parse_name
         safe_property(@deployment_manifest, 'name', :class => String)

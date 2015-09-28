@@ -47,6 +47,63 @@ module Bosh::Director
         end
       end
 
+      describe 'stemcells' do
+        context 'when no top level stemcells' do
+          before do
+            manifest_hash.delete('stemcells')
+          end
+
+          it 'should not error out' do
+            expect(parsed_deployment.stemcells).to eq({})
+          end
+        end
+
+        context 'when there 1 stemcell' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'should not error out' do
+            expect(parsed_deployment.stemcells.count).to eq(1)
+          end
+
+          it 'should error out if stemcell hash does not have alias' do
+            manifest_hash['stemcells'].first.delete('alias')
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::ValidationMissingField
+          end
+        end
+
+        context 'when there are stemcells with duplicate alias' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1, stemcell_hash1]
+          end
+
+          it 'errors out when alias of stemcells are not unique' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::StemcellAliasAlreadyExists
+          end
+        end
+
+        context 'when there are 2 stemcells' do
+          before do
+            stemcell_hash0 = {'alias' => 'stemcell0', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash0, stemcell_hash1]
+          end
+
+          it 'should add stemcells to deployment plan' do
+            expect(parsed_deployment.stemcells.count).to eq(2)
+          end
+        end
+
+
+      end
+
       describe 'properties key' do
         it 'parses basic properties' do
           manifest_hash.merge!('properties' => { 'foo' => 'bar' })

@@ -38,6 +38,9 @@ module Bosh::Director
       #   All jobs in the deployment
       attr_reader :jobs
 
+      # Stemcells in deployment by alias
+      attr_reader :stemcells
+
       # Job instances from the old manifest that are not in the new manifest
       attr_accessor :unneeded_instances
 
@@ -69,6 +72,7 @@ module Bosh::Director
         @cloud_config = cloud_config
         @model = deployment_model
 
+        @stemcells = {}
         @jobs = []
         @jobs_name_index = {}
         @jobs_canonical_name_index = Set.new
@@ -173,6 +177,10 @@ module Bosh::Director
 
       def skip_drain_for_job?(name)
         @skip_drain.nil? ? false : @skip_drain.for_job(name)
+      end
+
+      def add_stemcell(stemcell)
+        @stemcells[stemcell.alias] = stemcell
       end
 
       # Adds a release by name
