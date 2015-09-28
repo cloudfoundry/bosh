@@ -50,5 +50,3 @@ require 'bosh/director/deployment_plan/options/skip_drain'
 require 'bosh/director/deployment_plan/ip_provider/in_memory_ip_repo'
 require 'bosh/director/deployment_plan/ip_provider/database_ip_repo'
 require 'bosh/director/deployment_plan/ip_provider/vip_repo'
-require 'bosh/director/deployment_plan/network_settings'
-
