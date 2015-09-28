@@ -134,29 +134,6 @@ module Bosh::Director::DeploymentPlan
           instance.bind_unallocated_vm
         end
 
-        it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
-          expect(instance.network_settings.to_hash).to eql({
-                'net_a' => {
-                  'type' => 'dynamic',
-                  'cloud_properties' => {
-                    'foo' => 'bar'
-                  },
-                  'dns' => ['1.2.3.4'],
-                  'dns_record_name' => '0.fake-job.net-a.fake-deployment.test_domain',
-                  'ip' => '10.0.0.6',
-                  'netmask' => '255.255.255.0',
-                  'gateway' => '10.0.0.1'}
-              })
-        end
-
-        describe '#network_addresses' do
-          it 'returns the id based dns record address for the instance'do
-            expect(instance.network_addresses).to eq({
-                  'net_a' => {'address' => 'uuid-1.job.net-a.mycloud.test_domain'}
-                })
-          end
-        end
-
         describe '#dns_changed?' do
           describe 'when the index dns record for the instance is not found' do
             before do
@@ -197,91 +174,6 @@ module Bosh::Director::DeploymentPlan
             it '#dns_changed? should return false' do
               expect(instance.dns_changed?).to be(false)
             end
-          end
-        end
-      end
-
-      context 'manual network' do
-        before { allow(plan).to receive(:network).with(network_name).and_return(network) }
-        let(:network) do
-          ManualNetwork.new({
-              'name' => network_name,
-              'dns' => dns,
-              'subnets' => [{
-                  'range' => subnet_range,
-                  'gateway' => gateway,
-                  'dns' => dns,
-                  'cloud_properties' => cloud_properties
-                }]
-            },
-            [],
-            network_resolver,
-            logger
-          )
-        end
-
-        before do
-          instance.add_network_reservation(reservation)
-        end
-
-        it 'returns the network settings as set at the network spec' do
-          net_settings = {network_name => network_settings.merge(network_info)}
-          expect(instance.network_settings.to_hash).to eql(net_settings)
-
-          instance.bind_existing_instance_model(instance_model)
-          expect(instance.network_settings.to_hash).to eql(net_settings)
-        end
-
-        describe '#network_addresses' do
-          it 'returns the ip addresses for manual networks on the instance'do
-            expect(instance.network_addresses).to eq({
-                  'net_a' => {'address' => '10.0.0.6'}
-                })
-          end
-        end
-      end
-
-      describe 'temporary errand hack' do
-        let(:network) do
-          ManualNetwork.new({
-              'name' => network_name,
-              'dns' => dns,
-              'subnets' => [{
-                  'range' => subnet_range,
-                  'gateway' => gateway,
-                  'dns' => dns,
-                  'cloud_properties' => cloud_properties,
-                  'availability_zone' => instance.availability_zone.name,
-                }]
-            },
-            [instance.availability_zone],
-            network_resolver,
-            logger
-          )
-
-        end
-        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
-
-        before do
-          allow(plan).to receive(:network).with(network_name).and_return(network)
-          ip_provider.reserve(reservation)
-        end
-
-        context 'when job is not an errand' do
-          before { expect(job).to receive(:can_run_as_errand?).with(no_args).and_return(false) }
-
-          it 'includes dns_record_name' do
-            instance.add_network_reservation(reservation)
-            expect(instance.network_settings.to_hash['net_a']).to have_key('dns_record_name')
-          end
-        end
-
-        context 'when job is an errand' do
-          before { expect(job).to receive(:can_run_as_errand?).with(no_args).and_return(true) }
-
-          it 'does not include dns_record_name' do
-            instance.add_network_reservation(reservation)
-            expect(instance.network_settings.to_hash['net_a']).to_not have_key('dns_record_name')
           end
         end
       end

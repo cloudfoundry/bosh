@@ -197,16 +197,6 @@ module Bosh::Director
         NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_network_reservations, @current_state, availability_zone, @index, @uuid)
       end
 
-      def network_addresses
-        network_addresses = {}
-        network_settings.to_hash.each do |network_name, network|
-          network_addresses[network_name] = {
-            'address' => network['type'] == 'dynamic' ? dns_record_name(uuid, network_name) : network['ip']
-          }
-        end
-        network_addresses
-      end
-
       ##
       # @return [Integer] persistent disk size
       def disk_size

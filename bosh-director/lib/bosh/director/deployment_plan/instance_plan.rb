@@ -146,6 +146,10 @@ module Bosh
             @instance.apply_spec['networks']
           end
         end
+
+        def network_addresses
+          network_settings.network_addresses
+        end
       end
     end
   end

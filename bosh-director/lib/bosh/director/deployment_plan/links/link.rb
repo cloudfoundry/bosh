@@ -12,14 +12,15 @@ module Bosh::Director
 
       def spec
         {
-          'nodes' => @source.instances.map do |instance|
+          'nodes' => @source.instance_plans.map do |instance_plan|
+            instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
               'name' => @source.name,
               'index' => instance.index,
               'id' => instance.uuid,
               'availability_zone' => availability_zone,
-              'networks' => instance.network_addresses
+              'networks' => instance_plan.network_addresses
             }
           end
         }
