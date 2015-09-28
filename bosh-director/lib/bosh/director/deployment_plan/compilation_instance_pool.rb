@@ -65,7 +65,7 @@ module Bosh::Director
           @deployment_plan.compilation.cloud_properties,
           @deployment_plan.compilation.env
         )
-        compile_job = CompilationJob.new(resource_pool, @deployment_plan)
+        compile_job = CompilationJob.new(resource_pool, @deployment_plan.compilation.network_name)
         availability_zone = @deployment_plan.compilation.availability_zone
         Instance.new(compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
       end
@@ -100,13 +100,12 @@ module Bosh::Director
     end
 
     class CompilationJob
-      attr_reader :resource_pool, :name, :deployment
+      attr_reader :resource_pool, :name
 
-      def initialize(resource_pool,deployment)
+      def initialize(resource_pool, network)
         @resource_pool = resource_pool
-        @network = deployment.compilation.network_name
+        @network = network
         @name = "compilation-#{SecureRandom.uuid}"
-        @deployment = deployment
       end
 
       def default_network
