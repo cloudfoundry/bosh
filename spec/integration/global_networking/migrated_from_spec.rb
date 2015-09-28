@@ -122,6 +122,37 @@ describe 'migrated from', type: :integration do
       end
     end
 
+    context 'when using dynamic reservation without any other changes' do
+      let(:etcd_z1_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
+      end
+      let(:etcd_z2_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
+      end
+      let(:etcd_job) do
+        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
+      end
+
+      it 'keeps VM, disk and IPs' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        original_vms = director.vms
+        original_disks = current_sandbox.cpi.disk_cids
+        expect(original_vms.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_vms = director.vms
+        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+
+        expect(new_vms.map(&:ips)).to match_array(original_vms.map(&:ips))
+        expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
+
+        new_disks = current_sandbox.cpi.disk_cids
+        expect(new_disks).to match_array(original_disks)
+      end
+    end
+
     context 'when templates of migrated jobs are different from desired job' do
       let(:etcd_job) do
         Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks', templates: [{'name' => 'foobar_without_packages'}])
