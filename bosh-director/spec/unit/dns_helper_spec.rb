@@ -265,4 +265,24 @@ module Bosh::Director
       end
     end
   end
+
+  describe DnsManager do
+    let(:dns_manager) { described_class.new(logger) }
+    let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
+
+    before do
+      allow(Config).to receive(:dns_domain_name).and_return(domain.name)
+    end
+
+    describe '#delete_dns_for_instance' do
+      let(:deployment_model) { Models::Deployment.make(name:'deployment-name') }
+      let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 5, job: 'fake-job-name', deployment: deployment_model) }
+
+      it 'deletes dns records for instance index and uuid' do
+        expect(dns_manager).to receive(:delete_dns_records).with('fake-uuid.fake-job-name.%.deployment-name.bosh', domain.id)
+        expect(dns_manager).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
+        dns_manager.delete_dns_for_instance(instance_model)
+      end
+    end
+  end
 end

@@ -233,15 +233,15 @@ module Bosh::Director
       delete_dns_records(record_pattern)
     end
 
-    def delete_dns_for_instance(instance)
+    def delete_dns_for_instance(instance_model)
       if Config.dns_enabled?
         dns_domain = Models::Dns::Domain.find(
           :name => dns_domain_name,
           :type => 'NATIVE',
         )
         dns_domain_id = dns_domain.nil? ? nil : dns_domain.id
-        delete_dns_records(record_pattern(instance.index, instance.job_name, instance.model.deployment.name), dns_domain_id)
-        delete_dns_records(record_pattern(instance.uuid, instance.job_name, instance.model.deployment.name), dns_domain_id)
+        delete_dns_records(record_pattern(instance_model.index, instance_model.job, instance_model.deployment.name), dns_domain_id)
+        delete_dns_records(record_pattern(instance_model.uuid, instance_model.job, instance_model.deployment.name), dns_domain_id)
       end
     end
 
