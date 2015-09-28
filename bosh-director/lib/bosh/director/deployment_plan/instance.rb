@@ -225,42 +225,7 @@ module Bosh::Director
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
-        default_properties = {}
-        @job.default_network.each do |key, value|
-          (default_properties[value] ||= []) << key
-        end
-
-        network_settings = {}
-        @desired_network_reservations.each do |reservation|
-          network_name = reservation.network.name
-          network_settings[network_name] = reservation.network.network_settings(reservation, default_properties[network_name], availability_zone)
-
-          # Temporary hack for running errands.
-          # We need to avoid RunErrand task thinking that
-          # network configuration for errand VM differs
-          # from network configuration for its Instance.
-          #
-          # Obviously this does not account for other changes
-          # in network configuration that errand job might need.
-          # (e.g. errand job desires static ip)
-          if @job.starts_on_deploy?
-            network_settings[network_name]['dns_record_name'] = dns_record_name(index, network_name)
-          end
-
-          # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
-          # if they're featured in agent state, in that case we put them into network spec to satisfy
-          # ConfigurationHasher in both agent and director.
-          if @current_state.is_a?(Hash) &&
-            @current_state['networks'].is_a?(Hash) &&
-            @current_state['networks'][network_name].is_a?(Hash) &&
-            network_settings[network_name]['type'] == 'dynamic'
-            %w(ip netmask gateway).each do |key|
-              network_settings[network_name][key] = @current_state['networks'][network_name][key]
-            end
-          end
-        end
-
-        network_settings
+        NetworkSettings.new(job, desired_network_reservations, @current_state, availability_zone, @index).to_hash
       end
 
       def network_addresses
