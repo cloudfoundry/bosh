@@ -89,6 +89,44 @@ module Bosh::Director
           end
         end
 
+        context 'when there are stemcells with no OS nor name' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'errors out' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::ValidationMissingField
+          end
+        end
+
+        context 'when there are stemcells with OS' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'os' => 'ubuntu-trusty', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'should not errors out' do
+            expect(parsed_deployment.stemcells.count).to eq(1)
+            expect(parsed_deployment.stemcells['stemcell1'].os).to eq('ubuntu-trusty')
+          end
+        end
+
+        context 'when there are stemcells with both name and OS' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'os' => 'ubuntu-trusty', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'errors out' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::StemcellBothNameAndOS
+          end
+        end
+
         context 'when there are 2 stemcells' do
           before do
             stemcell_hash0 = {'alias' => 'stemcell0', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }

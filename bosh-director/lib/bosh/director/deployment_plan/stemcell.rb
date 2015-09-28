@@ -6,6 +6,7 @@ module Bosh::Director
       include ValidationHelper
 
       attr_reader :alias
+      attr_reader :os
 
       # @return [String] Stemcell name
       attr_reader :name
@@ -19,7 +20,18 @@ module Bosh::Director
       # @param [Hash] spec Raw stemcell spec according to deployment manifest
       def initialize(spec)
         @alias = safe_property(spec, "alias", :class => String, :optional => true)
-        @name = safe_property(spec, "name", :class => String)
+
+        @name = safe_property(spec, "name", :class => String, :optional => true)
+        @os = safe_property(spec, "os", :class => String, :optional => true)
+
+        if @name.nil? && @os.nil?
+          raise ValidationMissingField, "An OS or a name must be specified for a stemcell"
+        end
+
+        if !@name.nil? && !@os.nil?
+          raise StemcellBothNameAndOS, "An OS and a name are both specified for a stemcell name: #{@name} and OS: #{os}"
+        end
+
         @version = safe_property(spec, "version", :class => String)
 
         @manager = Api::StemcellManager.new

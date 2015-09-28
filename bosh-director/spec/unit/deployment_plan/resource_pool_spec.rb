@@ -40,6 +40,29 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      context 'when stemcell name is missing' do
+        before { valid_spec['stemcell'].delete('name') }
+
+        it 'raises an error' do
+          expect {
+            ResourcePool.new(valid_spec, logger)
+          }.to raise_error(BD::ValidationMissingField)
+        end
+      end
+
+      context 'when stemcell has an os' do
+        before do
+          valid_spec['stemcell'].delete('name')
+          valid_spec['stemcell']['os'] = 'ubuntu-trusty'
+        end
+
+        it 'raises an error' do
+          expect {
+          ResourcePool.new(valid_spec, logger)
+          }.to raise_error(BD::ValidationMissingField)
+        end
+      end
+
       context 'when cloud_properties is missing' do
         before { valid_spec.delete('cloud_properties') }
 

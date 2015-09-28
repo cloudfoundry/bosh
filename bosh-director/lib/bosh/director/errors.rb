@@ -89,6 +89,7 @@ module Bosh::Director
   StemcellNotFound = err(50003, NOT_FOUND)
   StemcellInUse = err(50004)
   StemcellAliasAlreadyExists = err(50005)
+  StemcellBothNameAndOS = err(50006)
 
   PackageInvalidArchive = err(60000)
   PackageMissingSourceCode = err(60001)
