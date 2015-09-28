@@ -1,5 +1,9 @@
 shared_examples_for 'a CentOS or RHEL based OS image' do
 
+  describe command('ls -1 /lib/modules | wc -l') do
+    its(:stdout) {should eq "1\n"}
+  end
+
   describe package('apt') do
     it { should_not be_installed }
   end
