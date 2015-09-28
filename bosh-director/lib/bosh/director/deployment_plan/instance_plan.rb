@@ -70,14 +70,6 @@ module Bosh
           @desired_instance.virtual_state == 'recreate'
         end
 
-        def needs_start?
-          @desired_instance.state == 'started'
-        end
-
-        def needs_detach?
-          @desired_instance.state == 'detached'
-        end
-
         def networks_changed?
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
@@ -85,20 +77,19 @@ module Bosh
         end
 
         def state_changed?
-          @logger.debug("Instance desired state is '#{desired_instance.state}' and agent reports '#{instance.current_job_state}'")
-
-          case desired_instance.state
-            when 'detached'
-              existing_instance.state != 'detached'
-            when 'stopped'
-              instance.current_job_state == 'running'
-            when 'started'
-              instance.current_job_state != 'running'
-            else
-              @logger.error("Unknown instance desired state '#{desired_instance.state}'")
-              raise InstanceTargetStateUndefined,
-                    "Instance `#{self}' target state cannot be determined"
+          if desired_instance.state == 'detached' &&
+              existing_instance.state != desired_instance.state
+            @logger.debug("Instance '#{instance}' needs to be detached")
+            return true
           end
+
+          if instance.state == 'stopped' && instance.current_job_state == 'running' ||
+              instance.state == 'started' && instance.current_job_state != 'running'
+            @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
+            return true
+          end
+
+          false
         end
 
         def mark_desired_network_plans_as_existing
