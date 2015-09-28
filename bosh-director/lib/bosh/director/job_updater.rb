@@ -62,7 +62,8 @@ module Bosh::Director
       return if unneeded_instances.empty?
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
-      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @deployment_plan.skip_drain)
+      dns_manager = DnsManager.new(@logger)
+      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @deployment_plan.skip_drain, dns_manager)
       deleter.delete_instances(unneeded_instances, event_log_stage, max_threads: @job.update.max_in_flight)
 
       @logger.info('Deleted no longer needed instances')

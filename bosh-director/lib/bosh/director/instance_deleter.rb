@@ -3,9 +3,10 @@ module Bosh::Director
   class InstanceDeleter
     include DnsHelper
 
-    def initialize(ip_provider, skip_drain_decider, options={})
+    def initialize(ip_provider, skip_drain_decider, dns_manager, options={})
       @ip_provider = ip_provider
       @skip_drain_decider = skip_drain_decider
+      @dns_manager = dns_manager
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
@@ -36,7 +37,7 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            delete_dns(instance)
+            @dns_manager.delete_dns_for_instance(instance)
           end
 
           error_ignorer.with_force_check do
@@ -94,27 +95,6 @@ module Bosh::Director
     def delete_snapshots(instance)
       snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
       Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
-    end
-
-    def delete_dns(instance)
-      if Config.dns_enabled?
-        dns_domain = Models::Dns::Domain.find(
-          :name => dns_domain_name,
-          :type => 'NATIVE',
-        )
-        dns_domain_id = dns_domain.nil? ? nil : dns_domain.id
-        delete_dns_records(record_pattern(instance.index, instance.job_name, instance.model.deployment.name), dns_domain_id)
-        delete_dns_records(record_pattern(instance.uuid, instance.job_name, instance.model.deployment.name), dns_domain_id)
-      end
-    end
-
-    def record_pattern(hostname, job_name, deployment_name)
-      [ hostname,
-        canonical(job_name),
-        "%",
-        canonical(deployment_name),
-        dns_domain_name
-      ].join(".")
     end
   end
 end

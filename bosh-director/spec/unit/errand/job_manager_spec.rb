@@ -81,7 +81,7 @@ module Bosh::Director
       end
 
       it 'deletes all job instances' do
-        expect(InstanceDeleter).to receive(:new).with(ip_provider, skip_drain)
+        expect(InstanceDeleter).to receive(:new).with(ip_provider, skip_drain, instance_of(DnsManager))
         expect(instance_deleter).to receive(:delete_instances).
           with([instance1, instance2], event_log_stage)
 

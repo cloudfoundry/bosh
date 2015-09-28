@@ -131,7 +131,8 @@ module Bosh::Director
 
         vm_deleter = VmDeleter.new(Config.cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
-        instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, skip_drain)
+        dns_manager = DnsManager.new(@logger)
+        instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, skip_drain, dns_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
           jobs,
