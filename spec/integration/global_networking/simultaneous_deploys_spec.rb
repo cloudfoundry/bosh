@@ -39,26 +39,30 @@ describe 'simultaneous deploys', type: :integration do
   end
 
   context 'when there are not enough IPs for compilation for two deployments' do
-    it 'fails one of deploys' do
+    before do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 3)
       first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'job_with_blocking_compilation')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
-      first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
+      @first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
 
       director.wait_for_first_available_vm
 
-      compilation_vm = director.vms.first
-      expect(compilation_vm).to_not be_nil
+      @compilation_vm = director.vms.first
+      expect(@compilation_vm).to_not be_nil
+    end
 
+    after do
+      @compilation_vm.unblock_package
+
+      _, first_success = Bosh::Spec::DeployHelper.wait_for_deploy(@first_task_id)
+      expect(first_success).to eq(true)
+    end
+
+    it 'fails one of deploys' do
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
       second_output = deploy_simple_manifest(manifest_hash: second_deployment_manifest, failure_expected: true)
       expect(second_output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
-
-      compilation_vm.unblock_package
-
-      _, first_success = Bosh::Spec::DeployHelper.wait_for_deploy(first_task_id)
-      expect(first_success).to eq(true)
     end
   end
 
