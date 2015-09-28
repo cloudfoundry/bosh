@@ -13,7 +13,10 @@ module Bosh::Cli::TaskTracking
     def initialize(director, task_id, options = {})
       @director = director
       @task_id = task_id
-      @task_success_state = options[:task_success_state] || :done
+      @task_finished_states = 'done error cancelled'
+      if(options[:task_success_state])
+        @task_finished_states << options[:task_success_state].to_s
+      end
       @options = options
 
       @quiet = !!options[:quiet]
@@ -140,7 +143,7 @@ module Bosh::Cli::TaskTracking
     end
 
     def finished?(state)
-      "#{@task_success_state} error cancelled".include?(state)
+      @task_finished_states.include?(state)
     end
 
     def interactive?
