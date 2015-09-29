@@ -1,5 +1,5 @@
 module Bosh
   module Release
-    VERSION = '1.3087.0'
+    VERSION = '1.3088.0'
   end
 end
