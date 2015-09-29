@@ -115,6 +115,18 @@ module Bosh::Cli
             expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {:fix => true})
             command.upload('http://stemcell_location')
           end
+
+          context 'with --name and --version' do
+            let(:director_stemcells) { [{"name" => "ubuntu", "version" => "1" }]}
+            it 'should not upload a stemcell if one exists already' do
+              expect(director).to receive(:list_stemcells).and_return(director_stemcells)
+
+              expect(director).to_not receive(:upload_remote_release)
+              command.add_option(:name, "ubuntu")
+              command.add_option(:version, "1")
+              command.upload('http://stemcell_location')
+            end
+          end
         end
       end
     end

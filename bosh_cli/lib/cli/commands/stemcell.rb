@@ -32,6 +32,8 @@ Note that --skip-if-exists and --fix can not be used together."
     option '--skip-if-exists', 'skips upload if stemcell already exists'
     option '--fix', 'replaces the stemcell if already exists'
     option '--sha1 SHA1', 'SHA1 of the remote stemcell'
+    option '--name NAME', 'name of the remote stemcell'
+    option '--version VERSION', 'version of the remote stemcell'
     def upload(stemcell_location)
       auth_required
       show_current_state
@@ -72,6 +74,11 @@ Note that --skip-if-exists and --fix can not be used together."
         say('Uploading stemcell...')
         nl
       else
+        if options[:name] && options[:version]
+          director.list_stemcells.each do |stemcell|
+            return if stemcell['name'] == options[:name] && stemcell['version'] == options[:version]
+          end
+        end
         nl
         say("Using remote stemcell `#{stemcell_location}'")
       end
