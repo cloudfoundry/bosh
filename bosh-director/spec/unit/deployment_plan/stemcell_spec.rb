@@ -13,8 +13,8 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     BD::Models::Deployment.make(:name => name)
   end
 
-  def make_stemcell(name, version)
-    BD::Models::Stemcell.make(:name => name, :version => version)
+  def make_stemcell(name, version, os = 'os1')
+    BD::Models::Stemcell.make(:name => name, :operating_system=>os, :version => version)
   end
 
   let(:valid_spec) do
@@ -76,8 +76,25 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect(stemcell.deployments).to eq([deployment])
     end
 
+    it "should bind to latest stemcell model with os" do
+      deployment = make_deployment("mycloud")
+      plan = make_plan(deployment)
 
-    it "should bind to latest stemcell model" do
+      make_stemcell("stemcell-name", "10")
+      make_stemcell("stemcell-name", "0.5.0", 'os2')
+      stemcell1 = make_stemcell("stemcell-name", "0.5.2", 'os2')
+
+      sc = make({
+          'os' => 'os2',
+          "version" => "latest"})
+      sc.bind_model(plan)
+
+      expect(sc.model).to eq(stemcell1)
+      expect(stemcell1.deployments).to eq([deployment])
+      expect(sc.version).to eq('0.5.2')
+    end
+
+    it "should bind to latest stemcell model with name" do
       deployment = make_deployment("mycloud")
       plan = make_plan(deployment)
 
@@ -93,14 +110,76 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect(stemcell1.deployments).to eq([deployment])
     end
 
-    it "should fail if stemcell doesn't exist" do
+    it "should bind to stemcell with specified OS and version" do
       deployment = make_deployment("mycloud")
       plan = make_plan(deployment)
 
-      sc = make(valid_spec)
-      expect {
-        sc.bind_model(plan)
-      }.to raise_error(BD::StemcellNotFound)
+      stemcell1 = make_stemcell("stemcell-name", "0.5.0", 'os2')
+      make_stemcell("stemcell-name", "0.5.2", 'os2')
+
+      sc = make({
+          'os' => 'os2',
+          "version" => "0.5.0"})
+      sc.bind_model(plan)
+
+      expect(sc.model).to eq(stemcell1)
+      expect(stemcell1.deployments).to eq([deployment])
+    end
+
+    context "when stemcell cannot be found" do
+
+      it "returns error out if specified OS and version is not found" do
+        deployment = make_deployment("mycloud")
+        plan = make_plan(deployment)
+
+        make_stemcell("stemcell-name", "0.5.0", 'os2')
+        make_stemcell("stemcell-name", "0.5.2", 'os2')
+
+        sc = make({
+            'os' => 'os2',
+            "version" => "0.5.5"})
+        expect { sc.bind_model(plan) }.to raise_error BD::StemcellNotFound
+      end
+
+      it "returns error out if name and version is not found" do
+        deployment = make_deployment("mycloud")
+        plan = make_plan(deployment)
+
+        make_stemcell("stemcell-name1", "0.5.0")
+        make_stemcell("stemcell-name2", "0.5.2")
+
+        sc = make({
+            'name' => 'stemcell-name3',
+            "version" => "0.5.2"})
+        expect { sc.bind_model(plan) }.to raise_error BD::StemcellNotFound
+      end
+
+      it "fails if stemcell doesn't exist at all" do
+        deployment = make_deployment("mycloud")
+        plan = make_plan(deployment)
+
+        sc = make(valid_spec)
+        expect {
+          sc.bind_model(plan)
+        }.to raise_error(BD::StemcellNotFound)
+      end
+    end
+
+    it "binds stemcell to the first stemcell found when multiple stemcells match with OS and version" do
+      deployment = make_deployment("mycloud")
+      plan = make_plan(deployment)
+
+      make_stemcell("stemcell0", "0.5.0", 'os2')
+      make_stemcell("stemcell2", "0.5.2", 'os2')
+
+      stemcell_model1 = make_stemcell("stemcell1", "0.5.2", 'os2')
+
+      stemcell = make({"os" => "os2", "version" => "0.5.2"})
+
+      stemcell.bind_model(plan)
+
+      expect(stemcell.model[:operating_system]).to eq('os2')
+      expect(stemcell.model[:version]).to eq('0.5.2')
     end
 
     it "binds stemcells to the deployment DB" do

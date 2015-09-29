@@ -15,6 +15,17 @@ module Bosh::Director
         stemcell
       end
 
+      def latest_by_os(os)
+        stemcells = Bosh::Director::Models::Stemcell.where(:operating_system => os)
+
+        if stemcells.nil? || stemcells.empty?
+          raise StemcellNotFound,
+            "Stemcell with Operating System `#{os}' doesn't exist"
+        end
+
+        find_latest(stemcells)
+      end
+
       def latest_by_name(name)
         stemcells = Bosh::Director::Models::Stemcell.where(:name => name)
 
@@ -23,16 +34,7 @@ module Bosh::Director
             "Stemcell `#{name}' doesn't exist"
         end
 
-        versions = stemcells.map(&:version)
-
-        latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
-
-        latest_stemcell = stemcells.find do |stemcell|
-          parsed_version = Bosh::Common::Version::StemcellVersion.parse(stemcell.version).to_s
-          parsed_version == latest_version
-        end
-
-        latest_stemcell
+        find_latest(stemcells)
       end
 
       def find_by_os_and_version(os, version)
@@ -68,6 +70,21 @@ module Bosh::Director
         description = "delete stemcell: #{stemcell.name}/#{stemcell.version}"
 
         JobQueue.new.enqueue(username, Jobs::DeleteStemcell, description, [stemcell.name, stemcell.version, options])
+      end
+
+      private
+
+      def find_latest(stemcells)
+        versions = stemcells.map(&:version)
+
+        latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
+
+        latest_stemcell = stemcells.find do |stemcell|
+          parsed_version = Bosh::Common::Version::StemcellVersion.parse(stemcell.version).to_s
+          parsed_version == latest_version
+        end
+
+        latest_stemcell
       end
     end
   end

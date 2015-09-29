@@ -136,5 +136,48 @@ module Bosh::Director
         end
       end
     end
+
+    describe '#latest_by_os' do
+      context 'when there are no version' do
+
+        before {
+          Bosh::Director::Models::Stemcell.create(
+            name: 'some-other-name',
+            version: '10.9-dev',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+        }
+
+        it 'should raise error' do
+          expect {
+            expect(subject.latest_by_os ('stemcell_os_1'))
+          }.to raise_error(StemcellNotFound)
+        end
+      end
+
+      context 'when there are multiple versions' do
+        before {
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '10.9-dev',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+
+          Bosh::Director::Models::Stemcell.create(
+            name: 'my-stemcell-with-b-name',
+            version: '1471_2',
+            operating_system: 'stemcell_os',
+            cid: 'cloud-id-b',
+          )
+        }
+        it 'should return the stemcell matching the name with the latest version' do
+          stemcell = subject.latest_by_os ('stemcell_os')
+          expect(stemcell.version).to eq ('1471_2')
+          expect(stemcell.operating_system).to eq('stemcell_os')
+        end
+      end
+    end
   end
 end

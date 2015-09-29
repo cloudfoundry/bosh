@@ -29,10 +29,6 @@ module Bosh::Director
           safe_property(spec, "cloud_properties", class: Hash, default: {})
 
         stemcell_spec = safe_property(spec, "stemcell", class: Hash)
-        if stemcell_spec['name'].nil?
-          raise ValidationMissingField, "A name must be specified for a stemcell"
-        end
-
         @stemcell = Stemcell.new(stemcell_spec)
 
         @env = safe_property(spec, "env", class: Hash, default: {})

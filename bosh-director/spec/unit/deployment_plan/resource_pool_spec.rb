@@ -59,7 +59,7 @@ module Bosh::Director::DeploymentPlan
         it 'raises an error' do
           expect {
           ResourcePool.new(valid_spec, logger)
-          }.to raise_error(BD::ValidationMissingField)
+          }.not_to raise_error
         end
       end
 
