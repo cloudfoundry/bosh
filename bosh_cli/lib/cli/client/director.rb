@@ -721,15 +721,19 @@ module Bosh
           end
         end
 
+        def generate_http_client
+          @http_client ||= HTTPClient.new.tap do |http_client|
+            http_client.send_timeout    = API_TIMEOUT
+            http_client.receive_timeout = API_TIMEOUT
+            http_client.connect_timeout = CONNECT_TIMEOUT
+
+            http_client.ssl_config.verify_mode     = OpenSSL::SSL::VERIFY_NONE
+            http_client.ssl_config.verify_callback = Proc.new {}
+          end
+        end
+
         def perform_http_request(method, uri, payload = nil, headers = {}, &block)
-          http_client = HTTPClient.new
-
-          http_client.send_timeout    = API_TIMEOUT
-          http_client.receive_timeout = API_TIMEOUT
-          http_client.connect_timeout = CONNECT_TIMEOUT
-
-          http_client.ssl_config.verify_mode     = OpenSSL::SSL::VERIFY_NONE
-          http_client.ssl_config.verify_callback = Proc.new {}
+          http_client = generate_http_client
 
           if @credentials
             headers['Authorization'] = @credentials.authorization_header
