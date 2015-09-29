@@ -225,14 +225,14 @@ module Bosh::Director
 
       def validate_package_names_do_not_collide!
         releases_by_package_names = templates
-          .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }
-          .reduce({}) { |memo, package_name_and_release_version|
-            package_name = package_name_and_release_version.first
-            release_version = package_name_and_release_version.last
-            memo[package_name] ||= Set.new
-            memo[package_name] << release_version
-            memo
-          }
+                                      .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }
+                                      .reduce({}) { |memo, package_name_and_release_version|
+          package_name = package_name_and_release_version.first
+          release_version = package_name_and_release_version.last
+          memo[package_name] ||= Set.new
+          memo[package_name] << release_version
+          memo
+        }
 
         releases_by_package_names.each do |package_name, releases|
           if releases.size > 1
@@ -241,10 +241,10 @@ module Bosh::Director
             offending_template2 = templates.find { |t| t.release == release2 }
 
             raise JobPackageCollision,
-                  "Package name collision detected in job `#{@name}': "\
+              "Package name collision detected in job `#{@name}': "\
                   "template `#{release1.name}/#{offending_template1.name}' depends on package `#{release1.name}/#{package_name}', "\
                   "template `#{release2.name}/#{offending_template2.name}' depends on `#{release2.name}/#{package_name}'. " +
-                  'BOSH cannot currently collocate two packages with identical names from separate releases.'
+                'BOSH cannot currently collocate two packages with identical names from separate releases.'
           end
         end
       end
@@ -316,28 +316,35 @@ module Bosh::Director
 
       def reserve_ips
         networks.each do |network|
-          instances.each_with_index do |instance, index|
-            # TODO: care about instance.availabililty_zone
+          instance_plans.each_with_index do |instance_plan, index|
             static_ips = network.static_ips
-
             if static_ips
-              reservation = DesiredNetworkReservation.new_static(instance, network.deployment_network, static_ips[index])
+              reservation = DesiredNetworkReservation.new_static(instance_plan.instance, network.deployment_network, static_ips[index])
             else
-              reservation = DesiredNetworkReservation.new_dynamic(instance, network.deployment_network)
+              reservation = DesiredNetworkReservation.new_dynamic(instance_plan.instance, network.deployment_network)
             end
-            instance.add_network_reservation(reservation)
+
+            @logger.debug("Requesting #{reservation.desc} for '#{reservation.instance}' on network '#{reservation.network.name}' based on deployment manifest")
+            # old_reservation = instance_plan.network_plans.find { |np| np.reservation.network == reservation.network }
+
+            # if old_reservation
+            #   raise NetworkReservationAlreadyExists,
+            #     "Failed to add #{reservation.desc} for instance '#{reservation.instance}' on network '#{reservation.network.name}', " +
+            #       "instance already has #{old_reservation.desc} on the same network"
+            # else
+              network_plan = NetworkPlan.new(reservation: reservation)
+              instance_plan.network_plans << network_plan
+            # end
           end
         end
-
         # TODO: loop above should go away when we get rid of reservations
         # something similar will maybe happen in JobSpecParser to figure out desired IPs or something?
 
         instance_plans.each do |instance_plan|
-          # TODO: this should turn into some sort of bind_existing when we stop caring about the
-          # network_reservations side effects
+          desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(
-                              instance_plan.instance.desired_network_reservations,
+                              desired_reservations,
                               instance_plan.instance.existing_network_reservations
                             )
           instance_plan.network_plans = network_plans
@@ -363,8 +370,8 @@ module Bosh::Director
 
         raise JobIncompatibleSpecs,
           "Job `#{name}' has specs with conflicting property definition styles between" +
-          " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
-          " `properties' and one which doesn't."
+            " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
+            " `properties' and one which doesn't."
       end
 
       def extract_template_properties(collection)

@@ -38,15 +38,6 @@ module Bosh::Director::DeploymentPlan
           expect(desired_plans.count).to eq(1)
           expect(obsolete_plans.count).to eq(1)
         end
-
-        it 'should update instance#desired_network_reservations with desired reservations' do
-          network_planner.plan_ips(desired_reservations, existing_reservations)
-          allow(instance).to receive(:desired_network_reservations).and_return(desired_reservations)
-
-          reservations = instance.desired_network_reservations
-
-          expect(reservations.count).to eq(2)
-        end
       end
 
       context 'when there new reservations' do
@@ -92,15 +83,6 @@ module Bosh::Director::DeploymentPlan
           expect(existing_plans.count).to eq(0)
           expect(desired_plans.count).to eq(0)
           expect(obsolete_plans.count).to eq(2)
-        end
-
-        it 'should update instance#desired_network_reservations with desired reservations' do
-          network_planner.plan_ips(desired_reservations, existing_reservations)
-          allow(instance).to receive(:desired_network_reservations).and_return(desired_reservations)
-
-          reservations = instance.desired_network_reservations
-
-          expect(reservations).to be_empty
         end
       end
     end

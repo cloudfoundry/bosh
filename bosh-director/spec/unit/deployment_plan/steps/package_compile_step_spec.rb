@@ -193,7 +193,6 @@ module Bosh::Director
           existing_network_reservations: []
         )
         expect(instance).to receive(:bind_unallocated_vm)
-        expect(instance).to receive(:add_network_reservation).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
         instance
       end

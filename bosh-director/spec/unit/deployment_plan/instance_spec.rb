@@ -115,6 +115,9 @@ module Bosh::Director::DeploymentPlan
       before do
         allow(job).to receive(:instance_state).with(0).and_return('started')
         allow(job).to receive(:default_network).and_return({})
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
+        network_plans = [NetworkPlan.new(reservation: reservation)]
+        allow(job).to receive(:instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
@@ -129,7 +132,6 @@ module Bosh::Director::DeploymentPlan
         let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
         before do
           ip_provider.reserve(reservation)
-          instance.add_network_reservation(reservation)
           allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
           instance.bind_unallocated_vm
         end
@@ -367,6 +369,9 @@ module Bosh::Director::DeploymentPlan
         job.templates = [template]
         job.name = 'fake-job'
         job.default_network = {}
+        reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance, network, '10.0.0.6')
+        network_plans = [NetworkPlan.new(reservation: reservation)]
+        job.instance_plans = [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
       end
 
       let(:template) do
@@ -405,9 +410,6 @@ module Bosh::Director::DeploymentPlan
 
       before do
         instance.configuration_hash = 'fake-desired-configuration-hash'
-
-        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
-        instance.add_network_reservation(reservation)
 
         instance.bind_unallocated_vm
         instance.bind_to_vm_model(vm_model)
@@ -693,11 +695,13 @@ module Bosh::Director::DeploymentPlan
         ip_provider.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
+        network_plans = [NetworkPlan.new(reservation: reservation)]
+        allow(job).to receive(:instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       it 'returns a valid instance template_spec' do
         network_name = network_spec['name']
-        instance.add_network_reservation(reservation)
         instance.bind_unallocated_vm
         spec = instance.template_spec
         expect(spec['deployment']).to eq('fake-deployment')
@@ -756,7 +760,6 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
-          instance.add_network_reservation(reservation)
           instance.bind_unallocated_vm
           spec = instance.template_spec
           expect(spec['deployment']).to eq('fake-deployment')
@@ -859,11 +862,13 @@ module Bosh::Director::DeploymentPlan
         ip_provider.reserve(reservation)
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
+        network_plans = [NetworkPlan.new(reservation: reservation)]
+        allow(job).to receive(:instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
       end
 
       it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
-        instance.add_network_reservation(reservation)
         instance.bind_unallocated_vm
         spec = instance.apply_spec
         expect(spec['deployment']).to eq('fake-deployment')
@@ -988,32 +993,6 @@ module Bosh::Director::DeploymentPlan
               expect(instance.cloud_properties_changed?).to be(true)
             end
           end
-        end
-      end
-    end
-
-    describe '#dns_changed?' do
-      let(:job) { Job.new(plan, logger) }
-
-      describe 'when dns is enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
-        end
-
-        describe 'when the dns records have not changed' do
-          it 'should return false' do
-            expect(instance.dns_changed?).to be(false)
-          end
-        end
-      end
-
-      describe 'when dns is not enabled' do
-        before do
-          allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
-        end
-
-        it 'should return false' do
-          expect(instance.dns_changed?).to be(false)
         end
       end
     end

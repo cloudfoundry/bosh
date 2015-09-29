@@ -38,7 +38,7 @@ module Bosh::Director
 
       attr_reader :deployment
 
-      attr_reader :existing_network_reservations, :desired_network_reservations
+      attr_reader :existing_network_reservations
 
       def self.fetch_existing(desired_instance, existing_instance_model, existing_instance_state, logger)
         logger.debug("Fetching existing instance for: #{existing_instance_model.inspect}")
@@ -77,9 +77,6 @@ module Bosh::Director
         @template_hashes = nil
         @vm = nil
         @current_state = instance_state || {}
-
-        # reservations generated from deployment manifest
-        @desired_network_reservations = InstanceNetworkReservations.new(logger)
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
@@ -184,17 +181,15 @@ module Bosh::Director
         @agent_client ||= AgentClient.with_vm(@model.vm)
       end
 
-      ##
-      # Adds a new network to this instance
-      # @param [NetworkReservation] reservation
-      def add_network_reservation(reservation)
-        @desired_network_reservations.add(reservation)
+      def desired_network_reservations
+        instance_plan = job.instance_plans.find { |instance_plan| instance_plan.instance.uuid == uuid }
+        instance_plan.network_plans.reject(&:obsolete?).map {|network_plan| network_plan.reservation }
       end
 
-      ##
-      # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
-        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_network_reservations, @current_state, availability_zone, @index, @uuid)
+        instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
+        desired_reservations = instance_plan.network_plans.reject(&:obsolete?).map {|network_plan| network_plan.reservation }
+        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid)
       end
 
       ##

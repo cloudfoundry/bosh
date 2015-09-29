@@ -39,10 +39,9 @@ module Bosh::Director
       end
 
       let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
+      let(:job) { instance_double(DeploymentPlan::Job, name: 'fake-job-name', deployment: deployment_plan) }
+      let(:deployment_plan) { instance_double(DeploymentPlan::Planner, ip_provider: ip_provider, model: deployment_model) }
       let(:instance) do
-        deployment_plan = instance_double(DeploymentPlan::Planner, ip_provider: ip_provider, model: deployment_model)
-        job = instance_double(DeploymentPlan::Job, name: 'fake-job-name', deployment: deployment_plan)
-
         az = DeploymentPlan::AvailabilityZone.new('az', {})
         instance = DeploymentPlan::Instance.new(job, 5, {}, deployment_plan, 'started', az, true, logger)
         instance.bind_existing_instance_model(Models::Instance.make(vm: vm.model, deployment: deployment_model, uuid: 'uuid-1'))
@@ -52,7 +51,9 @@ module Bosh::Director
 
       let(:stopper) { instance_double(Stopper) }
       before do
-        instance.add_network_reservation(reservation)
+        network_plan = DeploymentPlan::NetworkPlan.new(reservation: reservation)
+        instance_plan = DeploymentPlan::InstancePlan.new(instance: instance, network_plans: [network_plan], existing_instance: nil, desired_instance: nil)
+        allow(job).to receive(:instance_plans).and_return([instance_plan])
 
         allow(Stopper).to receive(:new).with(
             instance_of(DeploymentPlan::InstancePlan),

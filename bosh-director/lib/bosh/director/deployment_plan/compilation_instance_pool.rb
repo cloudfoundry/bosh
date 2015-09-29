@@ -13,9 +13,9 @@ module Bosh::Director
         begin
           instance = @instance_reuser.get_instance(stemcell)
           if instance.nil?
-            instance = create_instance(stemcell)
-            configure_instance(instance)
-            @instance_reuser.add_in_use_instance(instance, stemcell)
+            instance_plan, instance = create_instance_plan(stemcell)
+            configure_instance_plan(instance_plan)
+            @instance_reuser.add_in_use_instance(instance_plan.instance, stemcell)
           else
             @logger.info("Reusing compilation VM `#{instance.vm.model.cid}' for stemcell `#{stemcell.model.desc}'")
           end
@@ -34,8 +34,8 @@ module Bosh::Director
 
       def with_single_use_vm(stemcell)
         begin
-          instance = create_instance(stemcell)
-          configure_instance(instance)
+          instance_plan, instance = create_instance_plan(stemcell)
+          configure_instance_plan(instance_plan)
           yield instance
         ensure
           delete_instance(instance) unless instance.nil?
@@ -59,26 +59,35 @@ module Bosh::Director
         @instance_deleter.delete_instance(instance, EventLog::NullStage.new)
       end
 
-      def create_instance(stemcell)
+      def create_instance_plan(stemcell)
         resource_pool = CompilationResourcePool.new(
           stemcell,
           @deployment_plan.compilation.cloud_properties,
           @deployment_plan.compilation.env
         )
-        compile_job = CompilationJob.new(resource_pool, @deployment_plan)
+        @compile_job = CompilationJob.new(resource_pool, @deployment_plan)
         availability_zone = @deployment_plan.compilation.availability_zone
-        Instance.new(compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
-      end
-
-      def configure_instance(instance)
-        instance.bind_unallocated_vm
+        instance = Instance.new(@compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
         reservation = DesiredNetworkReservation.new_dynamic(instance, compilation_network)
-        instance.add_network_reservation(reservation)
-        @deployment_plan.ip_provider.reserve(reservation)
+        desired_instance = DeploymentPlan::DesiredInstance.new(nil, {}, nil)
+        instance_plan = DeploymentPlan::InstancePlan.new(
+          existing_instance: instance.model,
+          instance: instance,
+          desired_instance: desired_instance,
+          network_plans: [DeploymentPlan::NetworkPlan.new(reservation: reservation)]
+        )
 
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
+        @compile_job.instance_plans << instance_plan
+
+        return instance_plan, instance
+      end
+
+      def configure_instance_plan(instance_plan)
+        instance_plan.instance.bind_unallocated_vm
+
+        @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
         @vm_creator.create_for_instance_plan(instance_plan, [])
       end
     end
@@ -101,12 +110,14 @@ module Bosh::Director
 
     class CompilationJob
       attr_reader :resource_pool, :name, :deployment
+      attr_accessor :instance_plans
 
       def initialize(resource_pool,deployment)
         @resource_pool = resource_pool
         @network = deployment.compilation.network_name
         @name = "compilation-#{SecureRandom.uuid}"
         @deployment = deployment
+        @instance_plans = []
       end
 
       def default_network

@@ -38,7 +38,10 @@ describe Bosh::Director::VmCreator do
     allow(instance).to receive(:apply_spec).and_return({})
     instance
   end
-  let(:instance_plan) { BD::DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, logger) }
+  let(:instance_plan) do
+    desired_instance = BD::DeploymentPlan::DesiredInstance.new(nil, {}, nil)
+    BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [])
+  end
 
   let(:job) do
     instance_double(Bosh::Director::DeploymentPlan::Job,

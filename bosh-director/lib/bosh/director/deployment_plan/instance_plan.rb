@@ -16,9 +16,9 @@ module Bosh
           instance_plan = new(
             existing_instance: instance.model,
             instance: instance,
-            desired_instance: desired_instance
+            desired_instance: desired_instance,
+            network_plans: network_plans
           )
-          instance_plan.network_plans = network_plans
           instance_plan
         end
 
@@ -26,7 +26,7 @@ module Bosh
           @existing_instance = attrs.fetch(:existing_instance)
           @desired_instance = attrs.fetch(:desired_instance)
           @instance = attrs.fetch(:instance)
-          @network_plans = []
+          @network_plans = attrs.fetch(:network_plans, [])
           @logger = Config.logger
         end
 
@@ -128,13 +128,17 @@ module Bosh
         end
 
         def network_settings
+          desired_reservations = network_plans
+                                   .reject(&:obsolete?)
+                                   .map{ |network_plan| network_plan.reservation }
+
           if @instance.respond_to?(:job)
             DeploymentPlan::NetworkSettings.new(
               @instance.job.name,
               @instance.job.can_run_as_errand?,
               @instance.job.deployment.name,
               @instance.job.default_network,
-              @instance.desired_network_reservations,
+              desired_reservations,
               @instance.current_state,
               @instance.availability_zone,
               @instance.index,

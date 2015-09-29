@@ -68,7 +68,9 @@ module Bosh::Director::DeploymentPlan
       network_addresses = {}
       to_hash.each do |network_name, network|
         network_addresses[network_name] = {
-          'address' => network['type'] == 'dynamic' ? dns_record_name(@instance_id, network_name) : network['ip']
+          'address' => network['type'] == 'dynamic' ?
+            dns_record_name(@instance_id, network_name) :
+            network['ip']
         }
       end
       network_addresses

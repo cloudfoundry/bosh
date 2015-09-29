@@ -41,13 +41,12 @@ module Bosh::Director::DeploymentPlan
           @logger.debug("For desired reservation #{desired_reservation} found existing reservation on the same network #{existing_reservation}")
 
           if both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
-            both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
-            existing_network_plans << NetworkPlan.new(reservation: existing_reservation, existing: true)
+                both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
+
             @logger.debug("Reusing existing reservation #{existing_reservation} for '#{desired_reservation}'")
+            existing_network_plans << NetworkPlan.new(reservation: existing_reservation, existing: true)
             unplaced_existing_reservations.delete(existing_reservation)
             desired_network_plans.delete_if { |plan| plan.reservation == desired_reservation }
-            desired_reservation.resolve_ip(existing_reservation.ip) if desired_reservation.dynamic?
-            desired_reservation.mark_reserved
           else
             @logger.debug("Can't reuse reservation #{existing_reservation} for #{desired_reservation}")
           end
