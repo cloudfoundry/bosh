@@ -335,6 +335,18 @@ module Bosh::Cli::Command::Release
               command.upload(release_location)
             end
           end
+
+          context 'with --name and --version' do
+            let(:director_releases) { [{"name" => "goobers_release", "release_versions" => [{"version" => "1"}]}] }
+            it 'should not upload a release if one exists already' do
+              expect(director).to receive(:list_releases).and_return(director_releases)
+              expect(director).to_not receive(:upload_remote_release)
+
+              command.add_option(:name, "goobers_release")
+              command.add_option(:version, "1")
+              command.upload(release_location)
+            end
+          end
         end
       end
     end

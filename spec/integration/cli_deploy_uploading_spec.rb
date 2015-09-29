@@ -28,6 +28,22 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
+    it 'does not upload the same release twice' do
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha, "1"))
+
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+      expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+
+      expect(bosh_runner.run('deploy')).not_to match /Release uploaded/
+      expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
     it 'fails when the sha1 does not match' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'abcd1234'))
