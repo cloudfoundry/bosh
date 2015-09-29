@@ -41,6 +41,21 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         }.to raise_error(BD::ValidationMissingField)
       end
     end
+
+    context 'stemcell with latest version' do
+      let(:valid_spec) do
+        {
+          "name" => "stemcell-name",
+          "version" => "latest"
+        }
+      end
+
+      it 'should return string latest version' do
+        sc = make(valid_spec)
+        expect(sc.version).to eq('latest')
+      end
+    end
+
   end
 
   it "returns stemcell spec as Hash" do
@@ -59,6 +74,23 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
       expect(sc.model).to eq(stemcell)
       expect(stemcell.deployments).to eq([deployment])
+    end
+
+
+    it "should bind to latest stemcell model" do
+      deployment = make_deployment("mycloud")
+      plan = make_plan(deployment)
+
+      make_stemcell("stemcell-name", "0.5.0")
+      stemcell1 = make_stemcell("stemcell-name", "0.5.2")
+
+      sc = make({
+          "name" => "stemcell-name",
+          "version" => "latest"})
+      sc.bind_model(plan)
+
+      expect(sc.model).to eq(stemcell1)
+      expect(stemcell1.deployments).to eq([deployment])
     end
 
     it "should fail if stemcell doesn't exist" do

@@ -38,6 +38,10 @@ module Bosh::Director
         @model = nil
       end
 
+      def is_using_latest_version?
+        @version == 'latest'
+      end
+
       # Looks up the stemcell matching provided spec
       # @return [void]
       def bind_model(deployment_plan)
@@ -46,7 +50,12 @@ module Bosh::Director
           raise DirectorError, "Deployment not bound in the deployment plan"
         end
 
-        @model = @manager.find_by_name_and_version(@name, @version)
+        if is_using_latest_version?
+          @model = @manager.latest_by_name(@name)
+          @version = @model.version
+        else
+          @model = @manager.find_by_name_and_version(@name, @version)
+        end
 
         unless @model.deployments.include?(deployment_model)
           @model.add_deployment(deployment_model)

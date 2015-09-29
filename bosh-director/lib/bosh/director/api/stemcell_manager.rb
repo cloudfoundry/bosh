@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'common/version/stemcell_version_list'
 
 module Bosh::Director
   module Api
@@ -12,6 +13,26 @@ module Bosh::Director
                 "Stemcell `#{name}/#{version}' doesn't exist"
         end
         stemcell
+      end
+
+      def latest_by_name(name)
+        stemcells = Bosh::Director::Models::Stemcell.where(:name => name)
+
+        if stemcells.nil? || stemcells.empty?
+          raise StemcellNotFound,
+            "Stemcell `#{name}' doesn't exist"
+        end
+
+        versions = stemcells.map(&:version)
+
+        latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
+
+        latest_stemcell = stemcells.find do |stemcell|
+          parsed_version = Bosh::Common::Version::StemcellVersion.parse(stemcell.version).to_s
+          parsed_version == latest_version
+        end
+
+        latest_stemcell
       end
 
       def find_by_os_and_version(os, version)
