@@ -123,7 +123,8 @@ module Bosh::Cli::Command
               run_nested_command "upload", "stemcell", parsed_uri.path
             when 'http', 'https'
               err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
-              run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'], "--skip-if-exists"
+              run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'],
+                "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'], "--skip-if-exists"
             else
               err("Invalid URL format for stemcell `#{resource_pool['stemcell']['name']}' with URL `#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
             end
