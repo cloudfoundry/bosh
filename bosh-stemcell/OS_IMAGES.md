@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `7xLESQCJHkDBRAUr5A6zush.6fZwQ1Dp`
+  - update kernel for USN-2751-1
+
 * `Z2u8KpEbHMXu1sYd1lI1VC_RPZGGSYoz`
    - add package for growpart command
 
