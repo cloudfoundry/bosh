@@ -106,7 +106,7 @@ module Bosh::Cli::Command
             when 'http', 'https'
               err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
               err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
-              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1']
+              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1'], "--name", release['name'], "--version", release['version']
             else
               err("Invalid URL format for release `#{release['name']}' with URL `#{release['url']}'. Supported schemes: file, http, https.")
             end
