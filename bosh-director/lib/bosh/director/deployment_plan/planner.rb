@@ -108,6 +108,7 @@ module Bosh::Director
         :availability_zones,
         :resource_pools,
         :resource_pool,
+        :vm_types,
         :add_resource_pool,
         :disk_types,
         :disk_type,

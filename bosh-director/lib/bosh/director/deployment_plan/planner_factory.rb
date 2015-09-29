@@ -84,6 +84,8 @@ module Bosh
 
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver)
           DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
+          DeploymentValidator.new.validate(deployment)
+          deployment
         end
       end
     end

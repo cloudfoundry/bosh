@@ -209,6 +209,7 @@ module Bosh::Director
   DeploymentInvalidLink = err(190016)
   DeploymentDuplicateAvailabilityZoneName = err(190017)
   DeploymentInvalidMigratedFromJob = err(190018)
+  DeploymentInvalidResourceSpecification = err(190019)
 
   DiskTypeInvalidDiskSize = err(200001)
 
