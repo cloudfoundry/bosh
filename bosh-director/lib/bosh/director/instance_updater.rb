@@ -33,6 +33,7 @@ module Bosh::Director
       if dns_change_only?(instance_plan)
         @logger.debug('Only change is DNS configuration')
         update_dns(instance_plan)
+        update_model(instance_plan)
         return
       end
 
@@ -47,6 +48,7 @@ module Bosh::Director
         @vm_deleter.delete_for_instance_plan(instance_plan)
         instance_plan.release_obsolete_ips
         instance.update_state
+        update_model(instance_plan)
         return
       end
 
@@ -57,6 +59,7 @@ module Bosh::Director
       instance_plan.release_obsolete_ips
 
       update_dns(instance_plan)
+      update_model(instance_plan)
       update_persistent_disk(instance)
 
       if only_trusted_certs_changed
@@ -177,6 +180,17 @@ module Bosh::Director
       end
 
       disk.destroy
+    end
+
+    def update_model(instance_plan)
+      instance = instance_plan.instance
+      desired_instance = instance_plan.desired_instance
+      instance.model.update(
+        job: desired_instance.job.name,
+        bootstrap: desired_instance.bootstrap?,
+        index: desired_instance.index,
+        availability_zone: desired_instance.availability_zone
+      )
     end
 
     def update_dns(instance_plan)

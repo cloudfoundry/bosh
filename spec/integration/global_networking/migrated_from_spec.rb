@@ -114,7 +114,7 @@ describe 'migrated from', type: :integration do
         Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
       end
 
-      it 'keeps VM, disk and IPs' do
+      it 'keeps VM, disk and IPs and updates AZs' do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
@@ -122,6 +122,7 @@ describe 'migrated from', type: :integration do
 
         expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
         expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
+        expect(new_vms.map(&:availability_zone)).to match_array(['my-az-1', 'my-az-2'])
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
@@ -139,7 +140,7 @@ describe 'migrated from', type: :integration do
         Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
       end
 
-      it 'keeps VM, disk and IPs' do
+      it 'keeps VM, disk and IPs and updates AZs' do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
@@ -147,6 +148,7 @@ describe 'migrated from', type: :integration do
 
         expect(new_vms.map(&:ips)).to match_array(original_vms.map(&:ips))
         expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
+        expect(new_vms.map(&:availability_zone)).to match_array(['my-az-1', 'my-az-2'])
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
@@ -323,6 +325,7 @@ describe 'migrated from', type: :integration do
         original_vms = director.vms
         expect(original_vms.size).to eq(1)
         expect(original_vms.map(&:job_name)).to match_array(['etcd_z1'])
+        expect(original_vms.map(&:availability_zone)).to match_array(['my-az-1'])
         original_disks = current_sandbox.cpi.disk_cids
 
         new_manifest_hash = original_manifest_with_azs
@@ -336,6 +339,7 @@ describe 'migrated from', type: :integration do
         new_vms = director.vms
         expect(new_vms.size).to eq(1)
         expect(new_vms.map(&:job_name)).to match_array(['etcd_z2'])
+        expect(new_vms.map(&:availability_zone)).to match_array(['my-az-2'])
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to_not match_array(original_disks)
       end
