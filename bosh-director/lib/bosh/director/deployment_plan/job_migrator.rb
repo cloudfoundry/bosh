@@ -54,11 +54,6 @@ module Bosh::Director
           end
         end
 
-        if migrated_from_job_instances.empty?
-          raise DeploymentInvalidMigratedFromJob,
-            "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', unknown job '#{migrated_from_job.name}'"
-        end
-
         @logger.debug("Migrating job '#{migrated_from_job.name}' to '#{desired_job_name}'")
 
         migrated_from_instances += migrated_from_job_instances
