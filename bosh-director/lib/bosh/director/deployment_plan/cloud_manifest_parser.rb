@@ -14,6 +14,7 @@ module Bosh::Director
         default_network = default_network(global_network_resolver)
         compilation_config = parse_compilation(cloud_manifest, networks, az_list)
         resource_pools = parse_resource_pools(cloud_manifest)
+        vm_types = parse_vm_types(cloud_manifest)
         disk_types = parse_disk_types(cloud_manifest)
 
         CloudPlanner.new({
@@ -22,6 +23,7 @@ module Bosh::Director
           default_network: default_network,
           compilation: compilation_config,
           resource_pools: resource_pools,
+          vm_types: vm_types,
           disk_types: disk_types,
         })
       end
@@ -111,6 +113,21 @@ module Bosh::Director
         end
 
         parsed_resource_pools
+      end
+
+      def parse_vm_types(cloud_manifest)
+        vm_types = safe_property(cloud_manifest, 'vm_types', :class => Array, :optional => true, :default => [])
+
+        parsed_vm_types = vm_types.map do |vmt_spec|
+          VmType.new(vmt_spec, @logger)
+        end
+
+        duplicates = detect_duplicates(parsed_vm_types) { |vmt| vmt.name }
+        unless duplicates.empty?
+          raise DeploymentDuplicateVmTypeName, "Duplicate vm type name `#{duplicates.first.name}'"
+        end
+
+        parsed_vm_types
       end
 
 

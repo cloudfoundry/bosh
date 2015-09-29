@@ -337,6 +337,50 @@ module Bosh::Director
         end
       end
 
+      describe 'vm_types' do
+        context 'when there is at least one vm_type' do
+          context 'when each vm type has a unique name' do
+            before do
+              cloud_manifest['vm_types'] = [
+                Bosh::Spec::Deployments.vm_type.merge({'name' => 'vm1-name'}),
+                Bosh::Spec::Deployments.vm_type.merge({'name' => 'vm2-name'})
+              ]
+            end
+
+            it 'creates VmTypes for each entry' do
+              expect(parsed_cloud_planner.vm_types.map(&:class)).to eq([DeploymentPlan::VmType, DeploymentPlan::VmType])
+              expect(parsed_cloud_planner.vm_types.map(&:name)).to eq(['vm1-name', 'vm2-name'])
+            end
+
+            it 'allows to look up vm_type by name' do
+              expect(parsed_cloud_planner.vm_type('vm1-name').name).to eq('vm1-name')
+              expect(parsed_cloud_planner.vm_type('vm2-name').name).to eq('vm2-name')
+            end
+          end
+
+          context 'when more than one vm type have same name' do
+            before do
+              cloud_manifest['vm_types'] = [
+                Bosh::Spec::Deployments.vm_type.merge({'name' => 'same-name'}),
+                Bosh::Spec::Deployments.vm_type.merge({'name' => 'same-name'})
+              ]
+            end
+
+            it 'raises an error' do
+              expect {
+                parsed_cloud_planner
+              }.to raise_error(
+                  DeploymentDuplicateVmTypeName,
+                  "Duplicate vm type name `same-name'",
+                )
+            end
+          end
+          context 'when vm types is not specified' do
+            it 'raises an error'
+          end
+        end
+      end
+
       describe 'disk_pools' do
         context 'when there is at least one disk_pool' do
           context 'when each resource pool has a unique name' do

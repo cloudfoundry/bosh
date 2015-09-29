@@ -311,6 +311,7 @@ module Bosh::Director
         @networks = self.class.index_by_name(options.fetch(:networks))
         @default_network = options.fetch(:default_network)
         @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
+        @vm_types = self.class.index_by_name(options.fetch(:vm_types, {}))
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
@@ -334,6 +335,14 @@ module Bosh::Director
 
       def resource_pool(name)
         @resource_pools[name]
+      end
+
+      def vm_types
+        @vm_types.values
+      end
+
+      def vm_type(name)
+        @vm_types[name]
       end
 
       def add_resource_pool(resource_pool)

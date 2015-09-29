@@ -20,7 +20,6 @@ module Bosh::Spec
     def self.simple_cloud_config
       minimal_cloud_config.merge({
           'networks' => [network],
-
           'resource_pools' => [resource_pool]
         })
     end
@@ -53,6 +52,13 @@ module Bosh::Spec
           'name' => 'ubuntu-stemcell',
           'version' => '1',
         },
+      }
+    end
+
+    def self.vm_type
+      {
+        'name' => 'b',
+        'cloud_properties' => {},
       }
     end
 
