@@ -2,6 +2,7 @@
 groups:
   - name: bosh-global-net
     jobs:
+    - start-job
     - unit-1.9
     - unit-2.1
     - integration-1.9-postgres
@@ -10,12 +11,23 @@ groups:
     - load-tests
 
 jobs:
+  - name: start-job
+    public: true
+    serial: true
+    plan:
+      - { get: interval-trigger, trigger: true }
+      - { get: bosh-src, trigger: true }
+
   - name: unit-1.9
     public: true
     serial: true
     plan:
+    - get: interval-trigger
+      trigger: true
+      passed: [start-job]
     - get: bosh-src
       trigger: true
+      passed: [start-job]
     - task: test
       file: bosh-src/ci/tasks/test-unit.yml
       config:
@@ -26,20 +38,28 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        trigger: true
-      - task: test
-        file: bosh-src/ci/tasks/test-unit.yml
-        config:
-          params:
-            RUBY_VERSION: 2.1.7
+    - get: interval-trigger
+      trigger: true
+      passed: [start-job]
+    - get: bosh-src
+      trigger: true
+      passed: [start-job]
+    - task: test
+      file: bosh-src/ci/tasks/test-unit.yml
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
 
   - name: integration-1.9-postgres
     public: true
     serial: true
     plan:
+    - get: interval-trigger
+      trigger: true
+      passed: [start-job]
     - get: bosh-src
       trigger: true
+      passed: [start-job]
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
@@ -54,8 +74,12 @@ jobs:
     public: true
     serial: true
     plan:
+    - get: interval-trigger
+      trigger: true
+      passed: [start-job]
     - get: bosh-src
       trigger: true
+      passed: [start-job]
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
@@ -70,8 +94,12 @@ jobs:
     public: true
     serial: true
     plan:
+    - get: interval-trigger
+      trigger: true
+      passed: [start-job]
     - get: bosh-src
       trigger: true
+      passed: [start-job]
     - task: test
       privileged: true
       file: bosh-src/ci/tasks/test-integration.yml
@@ -86,7 +114,16 @@ jobs:
     public: true
     serial: true
     plan:
+    - get: interval-trigger
+      trigger: true
+      passed:
+      - unit-1.9
+      - unit-2.1
+      - integration-2.1-postgres
+      - integration-2.1-mysql
+      - integration-1.9-postgres
     - get: bosh-src
+      trigger: true
       passed:
       - unit-1.9
       - unit-2.1
@@ -113,3 +150,9 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests
       branch: master
+  - name: interval-trigger
+    type: time
+    source:
+      start: 18:00 -0800
+      stop: 8:00 -0800
+      interval: 1h
