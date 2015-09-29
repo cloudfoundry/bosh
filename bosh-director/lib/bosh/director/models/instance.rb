@@ -21,10 +21,6 @@ module Bosh::Director::Models
       self.persistent_disks.find { |disk| disk.active }
     end
 
-    def mark_as_bootstrap
-      self.update(bootstrap: true)
-    end
-
     def persistent_disk_cid
       disk = persistent_disk
       return disk.disk_cid if disk

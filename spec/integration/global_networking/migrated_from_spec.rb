@@ -442,4 +442,28 @@ describe 'migrated from', type: :integration do
       expect(new_vms.map(&:cid)).to_not match_array(original_vms.map(&:cid))
     end
   end
+
+  describe 'bootstrap' do
+    context 'when migrated_from has several bootstrap instances' do
+      it 'picks only one bootstrap instance' do
+        original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
+        job_spec_1 = etcd_z1_job
+        job_spec_1['availability_zones'] = ['my-az-1']
+        job_spec_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        job_spec_2 = etcd_z2_job
+        job_spec_2['availability_zones'] = ['my-az-2']
+        job_spec_2['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        original_manifest_with_azs['jobs'] = [job_spec_1, job_spec_2]
+
+        deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
+        original_instances = director.instances
+        expect(original_instances.select(&:is_bootstrap).size).to eq(2)
+
+        deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+        new_instances = director.instances
+        expect(new_instances.select(&:is_bootstrap).size).to eq(1)
+      end
+    end
+  end
 end

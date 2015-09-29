@@ -27,6 +27,10 @@ module Bosh
           self.bootstrap = true
         end
 
+        def unmark_as_bootstrap
+          self.bootstrap = false
+        end
+
         def availability_zone
           self.az.name unless self.az.nil?
         end

@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
         expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
         expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
         expect(existing_instance_plan.desired_instance.is_existing).to eq(expected_desired_instance.is_existing)
-        expect(existing_instance_plan.desired_instance.bootstrap?).to eq(false)
+        expect(existing_instance_plan.desired_instance.bootstrap?).to eq(true)
 
         expect(existing_instance_plan.instance).to eq(tracer_instance)
         expect(existing_instance_plan.existing_instance).to eq(existing_instance_model)
@@ -128,7 +128,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
       expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
       expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
       expect(existing_instance_plan.desired_instance.is_existing).to eq(expected_desired_instance.is_existing)
-      expect(existing_instance_plan.desired_instance.bootstrap?).to eq(false)
+      expect(existing_instance_plan.desired_instance.bootstrap?).to eq(true)
 
       expect(existing_instance_plan.instance).to eq(tracer_instance)
       expect(existing_instance_plan.existing_instance).to eq(existing_instance_model)
@@ -251,8 +251,34 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
           expect(obsolete_instance_plan.obsolete?).to be_truthy
           expect(desired_existing_instance_plan.instance).to eq(existing_tracer_instance)
-          expect(desired_existing_instance_plan.existing_instance.bootstrap).to be_truthy
+          expect(desired_existing_instance_plan.desired_instance.bootstrap?).to be_truthy
           expect(desired_new_instance_plan.desired_instance.bootstrap?).to be_falsey
+        end
+      end
+
+      context 'when several existing instances are marked as bootstrap' do
+        it 'picks the lowest indexed instance as new bootstrap instance' do
+          existing_instance_model_1 = Bosh::Director::Models::Instance.make(job: 'foo-job-z1', index: 0, bootstrap: true)
+          existing_instance_1 = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model_1, az.name)
+          desired_instance_1 = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, true, 0)
+          existing_instance_model_2 = Bosh::Director::Models::Instance.make(job: 'foo-job-z2', index: 0, bootstrap: true)
+          existing_instance_2 = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model_2, az.name)
+          desired_instance_2 = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, true, 1)
+          existing_instances = [existing_instance_1, existing_instance_2]
+          existing_instance_state = {}
+          states_by_existing_instance = {existing_instance_model_1 => existing_instance_state, existing_instance_model_2 => existing_instance_state}
+
+          existing_tracer_instance_1 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 0)
+          existing_tracer_instance_2 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1)
+          allow(instance_repo).to receive(:fetch_existing).with(desired_instance_1, existing_instance_model_1, existing_instance_state, logger) { existing_tracer_instance_1 }
+          allow(instance_repo).to receive(:fetch_existing).with(desired_instance_2, existing_instance_model_2, existing_instance_state, logger) { existing_tracer_instance_2 }
+
+          instance_plans = instance_planner.plan_job_instances(job, [desired_instance_1, desired_instance_2], existing_instances, states_by_existing_instance)
+
+          expect(instance_plans.count).to eq(2)
+          bootstrap_instance_plans = instance_plans.select { |ip| ip.desired_instance.bootstrap? }
+          expect(bootstrap_instance_plans.size).to eq(1)
+          expect(bootstrap_instance_plans.first.desired_instance.index).to eq(0)
         end
       end
 
