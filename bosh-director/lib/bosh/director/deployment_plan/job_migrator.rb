@@ -49,6 +49,18 @@ module Bosh::Director
 
         @deployment_plan.existing_instances.each do |instance|
           if instance.job == migrated_from_job.name
+            if instance.availability_zone.nil? && migrated_from_job.az.nil?
+              raise DeploymentInvalidMigratedFromJob,
+                "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', availability zone of '#{migrated_from_job.name}' is not specified"
+            end
+
+            if !migrated_from_job.az.nil? && !instance.availability_zone.nil?
+              if migrated_from_job.az != instance.availability_zone
+                raise DeploymentInvalidMigratedFromJob,
+                  "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', '#{migrated_from_job.name}' belongs to availability zone '#{instance.availability_zone}' and manifest specifies '#{migrated_from_job.az}'"
+              end
+            end
+
             az = migrated_from_job.az || instance.availability_zone
             migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, az)
           end
