@@ -34,6 +34,7 @@ module Bosh::Director::DeploymentPlan
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)
+      job.instance_plans = [instance_plan]
     end
 
     context 'when there have been changes on the instance' do
