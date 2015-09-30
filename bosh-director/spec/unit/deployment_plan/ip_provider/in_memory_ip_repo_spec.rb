@@ -6,7 +6,7 @@ module Bosh::Director::DeploymentPlan
     let(:static_ips) { [] }
     let(:ip_repo) { InMemoryIpRepo.new(logger) }
     let(:ip_address) { NetAddr::CIDR.create('192.168.1.5') }
-    let(:subnet) { ManualNetworkSubnet.new(network.name, network_spec['subnets'].first, availability_zones, []) }
+    let(:subnet) { ManualNetworkSubnet.parse(network.name, network_spec['subnets'].first, availability_zones, []) }
     let(:network) do
       BD::DeploymentPlan::ManualNetwork.parse(
         network_spec,
@@ -150,7 +150,7 @@ module Bosh::Director::DeploymentPlan
         reservation.resolve_ip(subnet_2_ip_2)
         ip_repo.add(reservation)
 
-        second_subnet = ManualNetworkSubnet.new(network.name, network_spec['subnets'][1], availability_zones, [])
+        second_subnet = ManualNetworkSubnet.parse(network.name, network_spec['subnets'][1], availability_zones, [])
 
         # Release allocated IPs in random order
         ip_repo.delete(subnet_2_ip_1, network_name)

@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:subnet) do
-      ManualNetworkSubnet.new(
+      ManualNetworkSubnet.parse(
         network.name,
         network_spec['subnets'].first,
         availability_zones,

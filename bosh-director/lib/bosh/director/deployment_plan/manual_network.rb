@@ -16,7 +16,7 @@ module Bosh::Director
         subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
         subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.new(name, subnet_spec, availability_zones, reserved_ranges)
+          new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, reserved_ranges)
           subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
