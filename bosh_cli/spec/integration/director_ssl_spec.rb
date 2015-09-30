@@ -41,7 +41,7 @@ describe 'Director client', vcr: {cassette_name: 'director-https'} do
         it 'works' do
           expect {
             director.get('/info')
-          }.to raise_error 'Invalid SSL Cert'
+          }.to raise_error 'Invalid SSL Cert for \'https://127.0.0.1:8081/info\': PEM lib'
         end
       end
 

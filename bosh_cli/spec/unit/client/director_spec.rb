@@ -900,6 +900,17 @@ describe Bosh::Cli::Client::Director do
         end
       end
 
+      context 'when connection to director uses invalid SSL Cerificate' do
+        it 'raises CliError error because Invalid SSL certificate was used' do
+          error_message = '*** certificate verify failed ***'
+          uri = '/stuff/app/zb'
+          expect(http_client).to receive(:request).and_raise(OpenSSL::SSL::SSLError, error_message)
+          expect {
+            @director.send(:perform_http_request, :get, uri, 'payload', {})
+          }.to raise_error(Bosh::Cli::CliError, "Invalid SSL Cert for '#{uri}': #{error_message}")
+        end
+      end
+
       context 'when performing request fails with unknown error' do
         it 'raises CliError error' do
           expect(http_client).to receive(:request).and_raise(RuntimeError, 'fake-error')

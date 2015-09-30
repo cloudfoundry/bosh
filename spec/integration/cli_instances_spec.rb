@@ -71,20 +71,6 @@ describe 'cli: deployment process', type: :integration do
 (*) Bootstrap node
 INSTANCES
 
-    output = bosh_runner.run('instances --vitals')
-
-    output = scrub_random_ids(output)
-    expect(output).to include('Load')
-    expect(output).to include('User')
-    expect(output).to include('Sys')
-    expect(output).to include('Wait')
-    expect(output).to include('Memory Usage')
-    expect(output).to include('Swap Usage')
-    expect(output).to include('System')
-    expect(output).to include('Disk Usage')
-    expect(output).to include('Ephemeral')
-    expect(output).to include('Persistent')
-
     output = bosh_runner.run('instances')
     expect(scrub_random_ids(output)).to include(<<INSTANCES)
 +--------------------------------------------------+---------+--------+---------------+-------------+
@@ -98,5 +84,36 @@ INSTANCES
 (*) Bootstrap node
 INSTANCES
 
+  end
+
+  it 'should return instances --vitals' do
+    deploy_from_scratch
+
+    all_vitals = director.instances_vitals
+    vitals = all_vitals[0]
+
+    expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
+
+    expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+    expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+
+    expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
+    expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+
+    # persistent disk was not deployed
+    expect(vitals[:persistent_disk_usage]).to match /n\/a/
+  end
+
+  it 'should return instances --ps' do
+    deploy_from_scratch
+    instances_ps = director.instances_ps
+
+    expect(instances_ps[0][:instance]).to match /foobar\/0/
+    expect(instances_ps[1][:instance]).to match /process-1/
+    expect(instances_ps[1][:state]).to match /running/
+    expect(instances_ps[2][:instance]).to match /process-2/
+    expect(instances_ps[2][:state]).to match /running/
   end
 end

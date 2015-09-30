@@ -19,6 +19,7 @@ describe 'create release', type: :integration do
           './jobs/fails_with_too_much_output.tgz',
           './jobs/foobar.tgz',
           './jobs/foobar_without_packages.tgz',
+          './jobs/has_drain_script.tgz',
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/job_1_with_pre_start_script.tgz',
           './jobs/job_2_with_pre_start_script.tgz',
@@ -88,7 +89,7 @@ describe 'create release', type: :integration do
     it 'creates a release manifest' do
       Dir.chdir(ClientSandbox.test_release_dir) do
         release_manifest = YAML.load_file(latest_release_manifest)
-        expect(release_manifest).to match(
+           expect(release_manifest).to match(
             'packages' => a_collection_containing_exactly(
               package_desc('a', ['b']),
               package_desc('b', ['c']),
@@ -105,6 +106,7 @@ describe 'create release', type: :integration do
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
               job_desc('foobar_without_packages'),
+              job_desc('has_drain_script'),
               job_desc('job_with_blocking_compilation'),
               job_desc('job_1_with_pre_start_script'),
               job_desc('job_2_with_pre_start_script'),

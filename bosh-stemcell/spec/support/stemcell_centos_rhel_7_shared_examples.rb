@@ -1,5 +1,9 @@
 shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
 
+  describe command('ls -1 /lib/modules | wc -l') do
+    its(:stdout) {should eq "1\n"}
+  end
+
   context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/etc/fstab') do
       it { should be_file }

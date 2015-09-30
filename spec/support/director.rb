@@ -71,7 +71,15 @@ module Bosh::Spec
     end
 
     def vms_vitals
-      parse_table(@runner.run('vms --vitals'))
+      parse_vms(@runner.run('vms --vitals'))
+    end
+
+    def instances_vitals(options = {})
+      parse_table(@runner.run('instances --vitals', options))
+    end
+
+    def instances_ps(options = {})
+      parse_table(@runner.run('instances --ps', options))
     end
 
     def start_recording_nats
@@ -115,10 +123,10 @@ module Bosh::Spec
     private
 
     def vms_details(deployment_name, options = {})
-      parse_table(@runner.run("vms #{deployment_name} --details",options))
+      parse_vms(@runner.run("vms #{deployment_name} --details", options))
     end
 
-    def parse_table(output, table_type=:vm)
+    def parse_table(output)
       rows = []
       current_row = -1
 
@@ -147,7 +155,11 @@ module Bosh::Spec
 
       headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
-      vms = values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+    end
+
+    def parse_vms(output, table_type=:vm)
+      vms = parse_table(output)
 
       job_name_match_index = 1
       index_match_index = 2

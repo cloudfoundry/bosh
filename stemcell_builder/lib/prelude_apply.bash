@@ -51,7 +51,6 @@ function pkg_mgr {
     run_in_chroot $chroot "apt-get clean"
   elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photon' ]
   then
-    run_in_chroot $chroot "yum update --assumeyes"
     run_in_chroot $chroot "yum --verbose --assumeyes $*"
     run_in_chroot $chroot "yum clean all"
   else

@@ -61,6 +61,7 @@ fi
 echo ${stemcell_operating_system_version} >${chroot}/etc/yum/vars/releasevernum
 cp $(dirname $0)/assets/rsyslog.repo ${chroot}/etc/yum.repos.d/
 pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+run_in_chroot $chroot "yum update --assumeyes"
 
 exclusions="mlocate firewalld"
 pkg_mgr erase $exclusions

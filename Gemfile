@@ -59,6 +59,9 @@ group :development, :test do
   gem 'vcr'
   gem 'pry'
 
+  # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
+  gem 'eventmachine', '1.0.3'
+
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way
   # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`

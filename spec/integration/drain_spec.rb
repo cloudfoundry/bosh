@@ -90,7 +90,7 @@ describe 'drain', type: :integration do
       expect(File).not_to exist(drain_file)
     end
 
-    context 'with multiple jobs' do
+    context 'with multiple deployment jobs' do
       let(:manifest_with_drain) do
         manifest_hash = Bosh::Spec::Deployments.simple_manifest
         manifest_hash['jobs'][0]['instances'] = 1
@@ -108,7 +108,7 @@ describe 'drain', type: :integration do
         expect(File.read(foobar_drain_file)).to include('drained')
       end
 
-      it 'runs drain for all jobs' do
+      it 'skips drain for all jobs' do
         foobar_drain_file = director.vm('foobar', '0').file_path('drain-test.log')
         second_drain_file = director.vm('second', '0').file_path('drain-test.log')
 
@@ -116,6 +116,43 @@ describe 'drain', type: :integration do
         expect(File).not_to exist(foobar_drain_file)
         expect(File).not_to exist(second_drain_file)
       end
+    end
+  end
+
+  context 'with one deployment job having colocated job templates, some of which have drain scripts' do
+    let(:manifest_with_colocated_drainable_release_jobs) do
+      Bosh::Spec::Deployments.test_release_manifest.merge(
+          'jobs' => [
+              Bosh::Spec::Deployments.job_with_many_templates(
+                  name: 'colocated',
+                  templates: [
+                      {'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release'},
+                      {'name' => 'foobar', 'release' => 'bosh-release'},
+                      {'name' => 'has_drain_script', 'release' => 'bosh-release'},
+                  ],
+                  instances: 1,
+              )
+          ],
+          'properties' => {
+              'test_property' => 'multi-drain',
+              'drain_type' => 'static',
+          }
+      )
+    end
+
+    it 'runs drain for job templates that have drain script' do
+      deploy_from_scratch(manifest_hash: manifest_with_colocated_drainable_release_jobs)
+
+      foobar_drain_log = director.vm('colocated/0').file_path('drain-test.log')
+      second_drain_log = director.vm('colocated/0').file_path('has_drain_script_drain.log')
+
+      deploy_simple_manifest(manifest_hash: manifest_with_colocated_drainable_release_jobs, recreate: true)
+
+      expect(File).to exist(foobar_drain_log)
+      expect(File.read(foobar_drain_log)).to include('multi-drain')
+
+      expect(File).to exist(second_drain_log)
+      expect(File.read(second_drain_log)).to include('multi-drain')
     end
   end
 end

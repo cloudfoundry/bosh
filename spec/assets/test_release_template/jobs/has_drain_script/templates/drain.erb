@@ -1,0 +1,48 @@
+#!/bin/sh
+
+DRAIN_TYPE=<%= p('drain_type') %>
+DYNAMIC_DRAIN_WAIT1=<%= p('dynamic_drain_wait1') %>
+DYNAMIC_DRAIN_WAIT2=<%= p('dynamic_drain_wait2') %>
+
+# Save off job state
+env | grep BOSH > has_drain_script_job_state.log
+
+DRAIN_OUTPUT=has_drain_script_drain.log
+
+case $DRAIN_TYPE in
+
+  static)
+    (
+      echo "$@"
+      echo <%= p('test_property') %>
+    ) > $DRAIN_OUTPUT
+
+    echo 0
+  ;;
+
+  dynamic)
+    # echo timestamp (in seconds) to FLAG. When deployment finishes, we ssh to get
+    # the contents of FLAG and test if the difference between the 3 timestamps
+    # equals dynamic_drain_wait1 and dynamic_drain_wait2.
+    case $1 in
+
+      job_unchanged)
+        touch $DRAIN_OUTPUT
+        echo $(date +%s) > $DRAIN_OUTPUT
+        echo $DYNAMIC_DRAIN_WAIT1
+        ;;
+
+      job_check_status)
+        echo $(date +%s) >> $DRAIN_OUTPUT
+        lines=$(wc -l < $DRAIN_OUTPUT | tr -d ' ')
+        if [ $lines -gt 2 ] ; then
+          echo "0"
+        else
+          echo $DYNAMIC_DRAIN_WAIT2
+        fi
+        ;;
+
+    esac
+    ;;
+
+esac
