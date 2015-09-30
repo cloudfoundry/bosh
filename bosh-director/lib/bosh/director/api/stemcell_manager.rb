@@ -31,16 +31,17 @@ module Bosh::Director
         false
       end
 
-      def create_stemcell_from_url(username, stemcell_url)
-        JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_url, { remote: true }])
+      def create_stemcell_from_url(username, stemcell_url, options)
+        options[:remote] = true
+        JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_url, options])
       end
 
-      def create_stemcell_from_file_path(username, stemcell_path)
+      def create_stemcell_from_file_path(username, stemcell_path, options)
         unless File.exists?(stemcell_path)
           raise DirectorError, "Failed to create stemcell: file not found - #{stemcell_path}"
         end
 
-        JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_path])
+        JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_path, options])
       end
 
       def delete_stemcell(username, stemcell, options={})
