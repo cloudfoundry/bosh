@@ -753,8 +753,8 @@ module Bosh
             begin
               cert_store = OpenSSL::X509::Store.new
               cert_store.add_file(@ca_cert)
-            rescue OpenSSL::X509::StoreError
-              err('Invalid SSL Cert')
+            rescue OpenSSL::X509::StoreError => e
+              err("Invalid SSL Cert for '#{uri}': #{e.message}")
             end
             http_client.ssl_config.cert_store = cert_store
           end
@@ -780,7 +780,7 @@ module Bosh
                OpenSSL::X509::StoreError => e
 
           if e.is_a?(OpenSSL::SSL::SSLError) && e.message.include?('certificate verify failed')
-            err('Invalid SSL Cert')
+            err("Invalid SSL Cert for '#{uri}': #{e.message}")
           end
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
