@@ -60,6 +60,14 @@ module Bosh::Spec
       parse_table(@runner.run('vms --details', options))
     end
 
+    def instances_vitals(options = {})
+      parse_table(@runner.run('instances --vitals', options))
+    end
+
+    def instances_ps(options = {})
+      parse_table(@runner.run('instances --ps', options))
+    end
+
     def start_recording_nats
       # have to read NATS port on main thread, or the new thread hangs on startup (?!)
       nats_uri = "nats://localhost:#{@director_nats_port}"

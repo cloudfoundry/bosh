@@ -26,7 +26,7 @@ describe Bosh::Cli::Command::Instances do
 
       let(:manifest_file) do
         manifest = {
-            'name' => 'dep2'
+          'name' => 'dep2'
         }
 
         manifest_file = Tempfile.new('manifest')
@@ -86,38 +86,47 @@ describe Bosh::Cli::Command::Instances do
 
       let(:vm_state) {
         {
-            'job_name' => 'job1',
-            'index' => 0,
-            'ips' => %w{192.168.0.1 192.168.0.2},
-            'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
-            'vitals' => 'vitals',
-            'job_state' => 'awesome',
-            'resource_pool' => 'rp1',
-            'vm_cid' => 'vm-cid1',
-            'disk_cid' => 'disk-cid1',
-            'agent_id' => 'agent1',
-            'vitals' => {
-                'load' => [1, 2, 3],
-                'cpu' => {
-                    'user' => 4,
-                    'sys' => 5,
-                    'wait' => 6,
-                },
-                'mem' => {
-                    'percent' => 7,
-                    'kb' => 8,
-                },
-                'swap' => {
-                    'percent' => 9,
-                    'kb' => 10,
-                },
-                'disk' => {
-                    'system' => {'percent' => 11},
-                    'ephemeral' => {'percent' => 12},
-                    'persistent' => {'percent' => 13},
-                },
+          'job_name' => 'job1',
+          'index' => 0,
+          'ips' => %w{192.168.0.1 192.168.0.2},
+          'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
+          'vitals' => 'vitals',
+          'job_state' => 'awesome',
+          'resource_pool' => 'rp1',
+          'vm_cid' => 'vm-cid1',
+          'disk_cid' => 'disk-cid1',
+          'agent_id' => 'agent1',
+          'vitals' => {
+            'load' => [1, 2, 3],
+            'cpu' => {
+              'user' => 4,
+              'sys' => 5,
+              'wait' => 6,
             },
-            'resurrection_paused' => true,
+            'mem' => {
+              'percent' => 7,
+              'kb' => 8,
+            },
+            'swap' => {
+              'percent' => 9,
+              'kb' => 10,
+            },
+            'disk' => {
+              'system' => {'percent' => 11},
+              'ephemeral' => {'percent' => 12},
+              'persistent' => {'percent' => 13},
+            },
+          },
+          'processes' => [
+            {
+              'name' => 'process-1',
+              'state' => 'running',
+            },{
+              'name' => 'process-2',
+              'state' => 'running'
+            },
+          ],
+          'resurrection_paused' => true,
         }
       }
 
@@ -250,6 +259,24 @@ describe Bosh::Cli::Command::Instances do
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to_not include '12%'
             expect(s.to_s).to_not include '13%'
+          end
+          expect(command).to receive(:say).with('Instances total: 1')
+          perform
+        end
+      end
+
+      context 'with ps' do
+        before { options[:ps] = true }
+
+        it 'shows the details of each instance\'s processes' do
+          expect(command).to receive(:say) do |s|
+            expect(s.to_s).to include 'Instance'
+            expect(s.to_s).to include 'State'
+            expect(s.to_s).to include 'Resource Pool'
+            expect(s.to_s).to include 'IPs'
+            expect(s.to_s).to include 'process-1'
+            expect(s.to_s).to include 'process-2'
+            expect(s.to_s).to include 'running'
           end
           expect(command).to receive(:say).with('Instances total: 1')
           perform
