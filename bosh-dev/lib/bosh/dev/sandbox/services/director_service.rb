@@ -70,6 +70,11 @@ module Bosh::Dev::Sandbox
       @process.stop
     end
 
+    def resque_is_done?
+      info = Resque.info
+      info[:pending] == 0 && info[:working] == 0
+    end
+
     private
 
     def migrate_database
@@ -150,11 +155,6 @@ module Bosh::Dev::Sandbox
     def resque_is_ready?
       info = Resque.info
       info[:workers] == @worker_processes.size
-    end
-
-    def resque_is_done?
-      info = Resque.info
-      info[:pending] == 0 && info[:working] == 0
     end
 
     DEBUG_HEADER = '*' * 20
