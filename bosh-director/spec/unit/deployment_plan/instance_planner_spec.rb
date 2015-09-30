@@ -161,7 +161,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
       desired_existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(desired_existing_instance_model, az.name)
       desired_existing_instance_state = {'bar' => 'baz'}
 
-      desired_instances = [desired_instance, Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, desired_existing_instance_model, out_of_typical_range_index)]
+      desired_instances = [desired_instance, Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, true, out_of_typical_range_index)]
 
       undesired_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: auto_picked_index)
       undesired_existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(undesired_existing_instance_model, undesired_az.name)
@@ -174,7 +174,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
 
       existing_instances = [undesired_existing_instance, desired_existing_instance]
-      expected_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, desired_existing_instance_model, out_of_typical_range_index)
+      expected_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, true, out_of_typical_range_index)
       allow(instance_repo).to receive(:fetch_existing).with(desired_instance, desired_existing_instance_model, desired_existing_instance_state, logger) do
         instance_double(Bosh::Director::DeploymentPlan::Instance, index: out_of_typical_range_index)
       end
@@ -220,6 +220,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
           expect(existing_instance_plan.new?).to be_falsey
           expect(existing_instance_plan.obsolete?).to be_falsey
           expect(existing_instance_plan.instance).to eq(existing_tracer_instance)
+          expect(existing_instance_plan.desired_instance.bootstrap?).to be_truthy
         end
       end
 

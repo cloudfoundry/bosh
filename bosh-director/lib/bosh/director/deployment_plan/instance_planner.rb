@@ -14,7 +14,7 @@ module Bosh
           instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances)
 
           new_desired_instances = instances_by_type[:desired_new]
-          desired_existing_instances = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:desired_instance] }
+          desired_existing_instances = instances_by_type[:desired_existing]
           existing_instance_models = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
           obsolete_instance_models = instances_by_type[:obsolete]
 
@@ -30,8 +30,7 @@ module Bosh
             @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
           end
 
-          all_desired_instances = new_desired_instances + desired_existing_instances
-          elect_bootstrap_instance(all_desired_instances, existing_instance_models)
+          elect_bootstrap_instance(new_desired_instances, desired_existing_instances)
 
           desired_new_instance_plans = desired_new_instance_plans(new_desired_instances)
           desired_existing_instance_plans = desired_existing_instance_plans(instances_by_type[:desired_existing], states_by_existing_instance)
@@ -54,13 +53,20 @@ module Bosh
 
         private
 
-        def elect_bootstrap_instance(all_desired_instances, existing_instance_models)
-          bootstrap_instances = existing_instance_models.select(&:bootstrap)
+        def elect_bootstrap_instance(new_desired_instances, desired_existing_instances)
+          bootstrap_instances = desired_existing_instances.select { |i| i[:existing_instance_model].bootstrap }
 
           if bootstrap_instances.size == 1
             bootstrap_instance = bootstrap_instances.first
-            @logger.info("Found existing bootstrap instance: #{bootstrap_instance.job}/#{bootstrap_instance.index} in az: #{bootstrap_instance.availability_zone}")
-          elsif !all_desired_instances.empty?
+            bootstrap_instance_model = bootstrap_instance[:existing_instance_model]
+            bootstrap_desired_instance = bootstrap_instance[:desired_instance]
+
+            @logger.info("Found existing bootstrap instance: #{bootstrap_instance_model.job}/#{bootstrap_instance_model.index} in az: #{bootstrap_instance_model.availability_zone}")
+            bootstrap_desired_instance.mark_as_bootstrap
+          else
+            all_desired_instances = new_desired_instances + desired_existing_instances.map { |i| i[:desired_instance] }
+            return if all_desired_instances.empty?
+
             if bootstrap_instances.size > 1
               @logger.info('Found multiple existing bootstrap instances. Going to pick a new bootstrap instance.')
             else
@@ -75,8 +81,6 @@ module Bosh
               if instance == lowest_indexed_desired_instance
                 @logger.info("Marking new bootstrap instance: #{instance.job}/#{instance.index} in az #{instance.availability_zone}")
                 instance.mark_as_bootstrap
-              else
-                instance.unmark_as_bootstrap
               end
             end
           end

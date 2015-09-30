@@ -55,7 +55,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
-    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, instance_model, 1, true)}
+    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, true, 1)}
 
     describe '#network_settings' do
       let(:job) do
@@ -1079,8 +1079,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#create' do
       it 'should persist an instance with attributes from the desired_instance' do
-        existing_instance = Bosh::Director::Models::Instance.make
-        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance, 1, true)
+        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, true, 1)
 
         instance = Instance.create(desired_instance, 1, logger)
 
@@ -1092,7 +1091,6 @@ module Bosh::Director::DeploymentPlan
         expect(persisted_instance.compilation).to eq(job.compilation?)
         expect(persisted_instance.uuid).to eq('uuid-1')
         expect(persisted_instance.availability_zone).to eq(availability_zone.name)
-        expect(persisted_instance.bootstrap).to be_truthy
       end
     end
 
@@ -1109,7 +1107,7 @@ module Bosh::Director::DeploymentPlan
           availability_zone: availability_zone.name,
           bootstrap: false,
         )
-        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, existing_instance)
+        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, true)
         instance = Instance.fetch_existing(desired_instance, existing_instance, current_state, logger)
         persisted_instance = BD::Models::Instance.first
         expect(BD::Models::Instance.count).to eq(1)

@@ -1,14 +1,14 @@
 module Bosh
   module Director
     module DeploymentPlan
-      class DesiredInstance < Struct.new(:job, :virtual_state, :deployment, :az, :is_existing, :index, :bootstrap)
+      class DesiredInstance < Struct.new(:job, :virtual_state, :deployment, :az, :is_existing, :index)
 
         def inspect
           "<az=#{self.az} index=#{self.index}>"
         end
 
         def bootstrap?
-          !!self.bootstrap
+          !!@bootstrap
         end
 
         def state
@@ -24,11 +24,7 @@ module Bosh
         end
 
         def mark_as_bootstrap
-          self.bootstrap = true
-        end
-
-        def unmark_as_bootstrap
-          self.bootstrap = false
+          @bootstrap = true
         end
 
         def availability_zone
