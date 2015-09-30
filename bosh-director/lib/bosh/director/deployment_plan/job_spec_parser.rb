@@ -293,7 +293,7 @@ module Bosh::Director
           name = safe_property(migrated_from_job_spec, 'name', class: String)
           az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
           unless az.nil?
-            unless @job.availability_zones.map(&:name).include?(az)
+            unless @job.availability_zones.to_a.map(&:name).include?(az)
               raise DeploymentInvalidMigratedFromJob,
               "Migrating job '#{name}' refers to availability_zone '#{az}' that is not in the list of availability_zones of '#{@job.name}' job"
             end
