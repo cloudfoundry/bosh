@@ -10,13 +10,13 @@ module Bosh::Director
         @properties_that_require_defaults = properties_that_require_defaults
       end
 
-      def parse(job_spec, job, deployment)
-        networks = parse_networks(job_spec, job.name, deployment)
+      def parse(job_spec, job_name, deployment)
+        networks = parse_networks(job_spec, job_name, deployment)
         networks.each do |network|
-          validate_default_properties(network, job.name)
+          validate_default_properties(network, job_name)
         end
 
-        validate_default_networks(networks, job.name)
+        validate_default_networks(networks, job_name)
 
         networks
       end

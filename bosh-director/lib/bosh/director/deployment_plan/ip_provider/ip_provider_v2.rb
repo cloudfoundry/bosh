@@ -60,7 +60,7 @@ module Bosh::Director
 
           if subnet
             if subnet.restricted_ips.include?(reservation.ip.to_i)
-              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network.name}': IP belongs to reserved range"
+              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
             end

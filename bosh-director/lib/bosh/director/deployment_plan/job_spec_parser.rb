@@ -39,7 +39,7 @@ module Bosh::Director
         parse_resource_pool
         parse_update_config
 
-        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
+        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment)
         @job.networks = networks
         assign_default_networks(networks)
 

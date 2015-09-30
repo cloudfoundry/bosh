@@ -4,7 +4,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
 
   def make_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.new(@network, properties, availability_zones, reserved_ranges)
+    BD::DeploymentPlan::ManualNetworkSubnet.new(@network.name, properties, availability_zones, reserved_ranges)
   end
 
   let(:reserved_ranges) { [] }

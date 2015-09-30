@@ -57,7 +57,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-          DynamicNetwork.new('net_a', 'net_a', subnets, logger)
+          DynamicNetwork.new('net_a', subnets, logger)
         end
 
         let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, dynamic_network) }

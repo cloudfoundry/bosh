@@ -73,8 +73,8 @@ module Bosh::Director
             }
           }
           cloud_planner = CloudPlanner.new({
-              networks: [Network.new({'name' => 'default'}, logger)],
-              default_network: Network.new({'name' => 'default'}, logger),
+              networks: [Network.new('default', logger)],
+              default_network: Network.new('default', logger),
               disk_types: [],
               availability_zones_list: [],
               vm_type: nil,

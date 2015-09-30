@@ -16,21 +16,12 @@ module Bosh::Director
       # @param [DeploymentPlan::GlobalNetworkResolver] global_network_resolver
       # @param [Logger] logger
       def initialize(network_spec, availability_zones, global_network_resolver, logger)
-        super(network_spec, logger)
+        super(safe_property(network_spec, "name", :class => String), logger)
 
         reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
         subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
 
-        @subnets = []
-        subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.new(self, subnet_spec, availability_zones, reserved_ranges)
-          @subnets.each do |subnet|
-            if subnet.overlaps?(new_subnet)
-              raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
-            end
-          end
-          @subnets << new_subnet
-        end
+        @subnets = parse_subnets(availability_zones, reserved_ranges, subnet_specs, name)
 
         @default_subnet = ManualNetworkSubnet.new(
           self,
@@ -38,8 +29,21 @@ module Bosh::Director
           [],
           []
         )
-
         @logger = TaggedLogger.new(logger, 'network-configuration')
+      end
+
+      def parse_subnets(availability_zones, reserved_ranges, subnet_specs, network_name)
+        subnets = []
+        subnet_specs.each do |subnet_spec|
+          new_subnet = ManualNetworkSubnet.new(network_name, subnet_spec, availability_zones, reserved_ranges)
+          subnets.each do |subnet|
+            if subnet.overlaps?(new_subnet)
+              raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
+            end
+          end
+          subnets << new_subnet
+        end
+        subnets
       end
 
       ##

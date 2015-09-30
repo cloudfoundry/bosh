@@ -333,7 +333,7 @@ module Bosh::Director::DeploymentPlan
       describe :reserve_existing_ips do
         context 'when dynamic network' do
           let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2') }
-          let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', 'canonical-name', [], logger) }
+          let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], logger) }
 
           it 'does not reserve IPs' do
             ip_provider.reserve_existing_ips(existing_network_reservation)

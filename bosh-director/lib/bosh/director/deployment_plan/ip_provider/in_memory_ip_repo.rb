@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan
 
       if item.nil?
         entry = @recently_released_ips.find do |entry|
-          entry[:network_name] == subnet.network.name && subnet.range.contains?(entry[:ip])
+          entry[:network_name] == subnet.network_name && subnet.range.contains?(entry[:ip])
         end
 
         ip = ip_to_netaddr(entry[:ip]) unless entry.nil?
@@ -36,7 +36,7 @@ module Bosh::Director::DeploymentPlan
         ip = subnet.range[item]
       end
 
-      add_ip(ip, subnet.network.name) unless ip.nil?
+      add_ip(ip, subnet.network_name) unless ip.nil?
 
       ip
     end
@@ -61,8 +61,8 @@ module Bosh::Director::DeploymentPlan
       return false unless subnet.range.contains?(ip)
       return false if subnet.static_ips.include?(ip.to_i)
       return false if subnet.restricted_ips.include?(ip.to_i)
-      return false if @recently_released_ips.include?({ip: ip.to_i, network_name: subnet.network.name})
-      return false if @ips.include?({ip: ip.to_i, network_name: subnet.network.name})
+      return false if @recently_released_ips.include?({ip: ip.to_i, network_name: subnet.network_name})
+      return false if @ips.include?({ip: ip.to_i, network_name: subnet.network_name})
       true
     end
   end
