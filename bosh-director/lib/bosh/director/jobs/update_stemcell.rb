@@ -7,7 +7,7 @@ module Bosh::Director
       include DownloadHelper
 
       UPDATE_STEPS = 5
-      
+
       @queue = :normal
 
       def self.job_type
@@ -98,7 +98,7 @@ module Bosh::Director
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_path) if @stemcell_path
       end
-      
+
       private
 
       def download_remote_stemcell

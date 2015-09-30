@@ -68,7 +68,7 @@ Note that --skip-if-exists and --fix can not be used together."
         stemcell_location = stemcell.stemcell_file
 
         nl
-        say('Uploading stemcell.. .')
+        say('Uploading stemcell...')
         nl
       else
         nl
