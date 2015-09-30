@@ -28,8 +28,8 @@ describe 'simultaneous deploys', type: :integration do
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
       second_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
 
-      Bosh::Spec::DeployHelper.wait_for_deploy_to_succeed(first_task_id)
-      Bosh::Spec::DeployHelper.wait_for_deploy_to_succeed(second_task_id)
+      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(first_task_id)
+      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(second_task_id)
 
       first_deployment_ips = director.vms('first').map(&:ips).flatten
       second_deployment_ips = director.vms('second').map(&:ips).flatten
@@ -62,8 +62,8 @@ describe 'simultaneous deploys', type: :integration do
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
       second_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
 
-      first_output, first_success = Bosh::Spec::DeployHelper.wait_for_deploy(first_task_id)
-      second_output, second_success = Bosh::Spec::DeployHelper.wait_for_deploy(second_task_id)
+      first_output, first_success = Bosh::Spec::DeployHelper.wait_for_task(first_task_id)
+      second_output, second_success = Bosh::Spec::DeployHelper.wait_for_task(second_task_id)
 
       expect([first_success, second_success]).to match_array([true, false])
       expect(first_output + second_output).to include('no more available')
@@ -81,7 +81,7 @@ describe 'simultaneous deploys', type: :integration do
 
       deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
       run_errand('errand_job', manifest_hash: manifest_with_errand)
-      Bosh::Spec::DeployHelper.wait_for_deploy_to_succeed(deploy_task_id)
+      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(deploy_task_id)
 
       job_deployment_ips = director.vms('second').map(&:ips).flatten
       expect(job_deployment_ips.count).to eq(1)
@@ -98,7 +98,7 @@ describe 'simultaneous deploys', type: :integration do
 
       deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
       errand_output, errand_success = run_errand('errand_job', manifest_hash: manifest_with_errand)
-      deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_deploy(deploy_task_id)
+      deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_task(deploy_task_id)
 
       expect([deploy_success, errand_success]).to match_array([true, false]), "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n"
       expect(deploy_output + errand_output).to include('no more available')

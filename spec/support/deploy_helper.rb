@@ -10,11 +10,11 @@ module Bosh::Spec
       return Bosh::Spec::OutputParser.new(output).task_id('running')
     end
 
-    def self.wait_for_deploy(task_id)
+    def self.wait_for_task(task_id)
       output, success = director.task(task_id)
     end
 
-    def self.wait_for_deploy_to_succeed(task_id)
+    def self.wait_for_task_to_succeed(task_id)
       output, success = director.task(task_id)
       raise "task failed: #{output}" unless success
       output

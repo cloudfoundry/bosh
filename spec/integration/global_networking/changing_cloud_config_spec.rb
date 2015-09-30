@@ -19,7 +19,7 @@ describe 'Changing cloud config', type: :integration do
 
       upload_a_different_cloud_config
 
-      Bosh::Spec::DeployHelper.wait_for_deploy_to_succeed(task_id)
+      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(task_id)
     end
 
     it 'should continue to use the original cloud config when running an errand' do

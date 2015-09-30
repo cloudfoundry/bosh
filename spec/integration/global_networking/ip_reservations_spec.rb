@@ -99,18 +99,22 @@ describe 'global networking', type: :integration do
       expect(first_deployment_vms.first.ips).to eq('192.168.1.10')
 
       current_sandbox.cpi.commands.pause_delete_vms
-      bosh_runner.run('--no-track delete deployment simple')
+      output = bosh_runner.run('--no-track delete deployment simple')
+      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('running')
       current_sandbox.cpi.commands.wait_for_delete_vms
 
-      # IP should be still reserved until vm is deleted
-      _, exit_code = deploy_with_ip(
-        second_deployment_manifest,
-        '192.168.1.10',
-        {failure_expected: true, return_exit_code: true}
-      )
-      expect(exit_code).to_not eq(0)
-
-      current_sandbox.cpi.commands.unpause_delete_vms
+      begin
+        # IP should be still reserved until vm is deleted
+        _, exit_code = deploy_with_ip(
+          second_deployment_manifest,
+          '192.168.1.10',
+          {failure_expected: true, return_exit_code: true}
+        )
+        expect(exit_code).to_not eq(0)
+      ensure
+        current_sandbox.cpi.commands.unpause_delete_vms
+        Bosh::Spec::DeployHelper.wait_for_task(delete_deployment_task)
+      end
     end
 
     it 'IPs released by one deployment via scaling down can be used by another deployment' do

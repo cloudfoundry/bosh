@@ -22,7 +22,7 @@ module Bosh::Spec
         compilation_vm.unblock_package
 
         unless options[:skip_task_wait]
-          _, first_success = Bosh::Spec::DeployHelper.wait_for_deploy(task_id)
+          _, first_success = Bosh::Spec::DeployHelper.wait_for_task(task_id)
           expect(first_success).to eq(true)
         end
       end
