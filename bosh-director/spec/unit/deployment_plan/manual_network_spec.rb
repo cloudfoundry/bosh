@@ -17,7 +17,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   subject(:manual_network) do
-     BD::DeploymentPlan::ManualNetwork.new(
+     BD::DeploymentPlan::ManualNetwork.parse(
        network_spec,
        [
          BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),

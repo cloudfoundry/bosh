@@ -3,39 +3,20 @@ module Bosh::Director
     ##
     # Represents a explicitly configured network.
     class ManualNetwork < NetworkWithSubnets
+      extend ValidationHelper
       include IpUtil
       include DnsHelper
-      include ValidationHelper
 
       attr_reader :subnets
 
-      ##
-      # Creates a new network.
-      #
-      # @param [Hash] network_spec parsed deployment manifest network section
-      # @param [DeploymentPlan::GlobalNetworkResolver] global_network_resolver
-      # @param [Logger] logger
-      def initialize(network_spec, availability_zones, global_network_resolver, logger)
-        super(safe_property(network_spec, "name", :class => String), logger)
+      def self.parse(network_spec, availability_zones, global_network_resolver, logger)
+        name = safe_property(network_spec, "name", :class => String)
 
-        reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
+        reserved_ranges = global_network_resolver.reserved_legacy_ranges(name)
         subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
-
-        @subnets = parse_subnets(availability_zones, reserved_ranges, subnet_specs, name)
-
-        @default_subnet = ManualNetworkSubnet.new(
-          self,
-          {'range' => '0.0.0.0/0', 'gateway' => '0.0.0.1'},
-          [],
-          []
-        )
-        @logger = TaggedLogger.new(logger, 'network-configuration')
-      end
-
-      def parse_subnets(availability_zones, reserved_ranges, subnet_specs, network_name)
         subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.new(network_name, subnet_spec, availability_zones, reserved_ranges)
+          new_subnet = ManualNetworkSubnet.new(name, subnet_spec, availability_zones, reserved_ranges)
           subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets, "Network `#{name}' has overlapping subnets"
@@ -43,7 +24,12 @@ module Bosh::Director
           end
           subnets << new_subnet
         end
-        subnets
+        new(name, subnets, logger)
+      end
+
+      def initialize(name, subnets, logger)
+        super(name, TaggedLogger.new(logger, 'network-configuration'))
+        @subnets = subnets
       end
 
       ##

@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
       }
     }
     let(:manual_network) do
-      ManualNetwork.new(
+      ManualNetwork.parse(
         manual_network_spec,
         [
           BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),

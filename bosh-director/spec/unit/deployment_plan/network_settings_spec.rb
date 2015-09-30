@@ -26,7 +26,7 @@ module Bosh::Director::DeploymentPlan
       reservation
     }
     let(:manual_network) {
-      ManualNetwork.new({
+      ManualNetwork.parse({
           'name' => 'net_a',
           'dns' => ['1.2.3.4'],
           'subnets' => [{

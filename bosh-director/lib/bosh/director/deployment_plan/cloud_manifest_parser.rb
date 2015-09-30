@@ -55,7 +55,7 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ManualNetwork.new(network_spec, availability_zones, global_network_resolver, @logger)
+              ManualNetwork.parse(network_spec, availability_zones, global_network_resolver, @logger)
             when 'dynamic'
               DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'
@@ -76,7 +76,7 @@ module Bosh::Director
 
       def default_network(global_network_resolver)
         # name does not matter, default network is used separately
-        ManualNetwork.new(
+        ManualNetwork.parse(
           {'subnets' => [], 'name' => 'default'},
           [],
           global_network_resolver,

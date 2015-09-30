@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:ip_address) { NetAddr::CIDR.create('192.168.1.5') }
     let(:subnet) { ManualNetworkSubnet.new(network.name, network_spec['subnets'].first, availability_zones, []) }
     let(:network) do
-      BD::DeploymentPlan::ManualNetwork.new(
+      BD::DeploymentPlan::ManualNetwork.parse(
         network_spec,
         availability_zones,
         global_network_resolver,
