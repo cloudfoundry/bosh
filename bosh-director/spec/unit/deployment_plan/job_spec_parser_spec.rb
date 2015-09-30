@@ -44,7 +44,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         'resource_pool' => 'fake-resource-pool-name',
         'instances' => 1,
         'networks'  => [{'name' => 'fake-network-name'}],
-        'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}]
       }
     end
 
@@ -843,12 +842,45 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'migrated_from' do
+      let(:job_spec) do
+        {
+          'name'      => 'fake-job-name',
+          'templates' => [],
+          'release'   => 'fake-release-name',
+          'resource_pool' => 'fake-resource-pool-name',
+          'instances' => 1,
+          'networks'  => [{'name' => 'fake-network-name'}],
+          'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}],
+          'availability_zones' => ['z1', 'z2']
+        }
+      end
+      before do
+        allow(network).to receive(:validate_has_job!)
+        allow(deployment_plan).to receive(:availability_zone).with('z1') { Bosh::Director::DeploymentPlan::AvailabilityZone.new('z1', {}) }
+        allow(deployment_plan).to receive(:availability_zone).with('z2') { Bosh::Director::DeploymentPlan::AvailabilityZone.new('z2', {}) }
+      end
+
       it 'sets migrated_from on a job' do
         job = parser.parse(job_spec)
         expect(job.migrated_from[0].name).to eq('job-1')
         expect(job.migrated_from[0].az).to eq('z1')
         expect(job.migrated_from[1].name).to eq('job-2')
         expect(job.migrated_from[1].az).to eq('z2')
+      end
+
+      context 'when az is specified' do
+        context 'when migrated job refers to az that is not in the list of availaibility_zones key' do
+          it 'raises an error' do
+            job_spec['migrated_from'] = [{'name' => 'job-1', 'az' => 'unknown_az'}]
+
+            expect {
+              parser.parse(job_spec)
+            }.to raise_error(
+                Bosh::Director::DeploymentInvalidMigratedFromJob,
+                "Migrating job 'job-1' refers to availability_zone 'unknown_az' that is not in the list of availability_zones of 'fake-job-name' job"
+              )
+          end
+        end
       end
     end
 

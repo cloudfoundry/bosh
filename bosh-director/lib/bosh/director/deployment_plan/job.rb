@@ -107,6 +107,7 @@ module Bosh::Director
         @link_paths = {}
         @resolved_links = {}
         @migrated_from = []
+        @availability_zones = []
       end
 
       def self.is_legacy_spec?(job_spec)

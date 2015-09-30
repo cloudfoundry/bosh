@@ -38,7 +38,6 @@ module Bosh::Director
         parse_properties
         parse_resource_pool
         parse_update_config
-        parse_migrated_from
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job, @deployment)
         @job.networks = networks
@@ -46,6 +45,8 @@ module Bosh::Director
 
         availability_zones = JobAvailabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
         @job.availability_zones = availability_zones
+
+        parse_migrated_from
 
         desired_instances = parse_desired_instances(availability_zones, networks)
         @job.desired_instances = desired_instances
@@ -291,6 +292,12 @@ module Bosh::Director
         migrated_from.each do |migrated_from_job_spec|
           name = safe_property(migrated_from_job_spec, 'name', class: String)
           az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
+          unless az.nil?
+            unless @job.availability_zones.map(&:name).include?(az)
+              raise DeploymentInvalidMigratedFromJob,
+              "Migrating job '#{name}' refers to availability_zone '#{az}' that is not in the list of availability_zones of '#{@job.name}' job"
+            end
+          end
           @job.migrated_from << MigratedFromJob.new(name, az)
         end
       end
