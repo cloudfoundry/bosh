@@ -19,10 +19,8 @@ describe Bosh::Cli::Command::Misc do
     allow(Bosh::Cli::Release).to receive(:new).and_return(release)
   end
 
-  before do
-    @config_file = File.join(Dir.mktmpdir, 'bosh_config')
-    command.add_option(:config, @config_file)
-  end
+  before { @config = Support::TestConfig.new(command) }
+  after { @config.clean }
 
   describe 'status' do
     it 'should show current status' do
@@ -163,7 +161,7 @@ describe Bosh::Cli::Command::Misc do
     context 'target is set' do
       context 'without arguments' do
         before do
-          File.open(@config_file, 'w+') do |f|
+          File.open(@config.path, 'w+') do |f|
             f.write(<<EOS)
 ---
 target: #{target}
@@ -220,29 +218,43 @@ EOS
         command.set_target
       end
 
-      it 'saves ca-cert' do
-        command.add_option(:ca_cert, '/fake-ca-cert')
-        command.set_target 'https://fake-target:1234'
-        config = YAML.load(File.read(@config_file))
-        expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/fake-ca-cert'})
-      end
-
-      context 'when new certificate is different from old certificate' do
-        it 'prints update message' do
+      context 'when ca-cert is passed in' do
+        before do
           command.add_option(:ca_cert, '/fake-ca-cert')
-          allow(command).to receive(:say)
-          expect(command).to receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
+        end
+
+        it 'saves ca-cert' do
+          command.set_target 'https://fake-target:1234'
+          config = @config.read
+          expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/fake-ca-cert'})
+        end
+
+        it 'connects to director using ca cert' do
+          expect(Bosh::Cli::Client::Director).to receive(:new).with(
+              'https://fake-target:1234',
+              nil,
+              ca_cert: '/fake-ca-cert'
+            ).and_return(director)
           command.set_target 'https://fake-target:1234'
         end
-      end
 
-      context 'when new certificate is the same as old certificate' do
-        it 'prints update message' do
-          command.add_option(:ca_cert, '/fake-ca-cert')
-          command.set_target 'https://fake-target:1234'
+        context 'when new certificate is different from old certificate' do
+          it 'prints update message' do
+            command.add_option(:ca_cert, '/fake-ca-cert')
+            allow(command).to receive(:say)
+            expect(command).to receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
+            command.set_target 'https://fake-target:1234'
+          end
+        end
 
-          expect(command).to_not receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
-          command.set_target 'https://fake-target:1234'
+        context 'when new certificate is the same as old certificate' do
+          it 'prints update message' do
+            command.add_option(:ca_cert, '/fake-ca-cert')
+            command.set_target 'https://fake-target:1234'
+
+            expect(command).to_not receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
+            command.set_target 'https://fake-target:1234'
+          end
         end
       end
 
@@ -250,12 +262,12 @@ EOS
         it 'updates ca cert path' do
           command.add_option(:ca_cert, '/fake-ca-cert')
           command.set_target 'https://fake-target:1234'
-          config = YAML.load(File.read(@config_file))
+          config = YAML.load(File.read(@config.path))
           expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/fake-ca-cert'})
 
           command.add_option(:ca_cert, '/another-ca-cert')
           command.set_target 'https://fake-target:1234'
-          config = YAML.load(File.read(@config_file))
+          config = YAML.load(File.read(@config.path))
           expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/another-ca-cert'})
         end
       end

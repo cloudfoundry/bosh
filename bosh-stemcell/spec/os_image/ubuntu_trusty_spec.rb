@@ -95,56 +95,57 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by base_ubuntu_packages' do
     %w(
-      libssl-dev
-      lsof
-      strace
-      bind9-host
-      dnsutils
-      tcpdump
-      iputils-arping
       anacron
+      apparmor-utils
+      bind9-host
+      bison
+      cloud-guest-utils
+      cmake
       curl
-      wget
+      debhelper
+      dnsutils
+      flex
+      gdb
+      htop
+      iptables
+      iputils-arping
+      libaio1
+      libbz2-dev
+      libcap-dev
+      libcap2-bin
       libcurl3
       libcurl4-openssl-dev
-      bison
+      libgcrypt11-dev
+      libncurses5-dev
       libreadline6-dev
+      libssl-dev
       libxml2
       libxml2-dev
-      libxslt1.1
       libxslt1-dev
-      zip
-      unzip
+      libxslt1.1
+      lsof
+      mg
+      module-assistant
       nfs-common
-      flex
+      openssh-server
       psmisc
-      apparmor-utils
-      iptables
-      sysstat
+      quota
       rsync
       rsyslog
-      rsyslog-relp
       rsyslog-gnutls
       rsyslog-mmjsonparse
-      openssh-server
-      traceroute
-      libncurses5-dev
-      quota
-      libaio1
-      gdb
-      libcap2-bin
-      libcap-dev
-      libbz2-dev
-      cmake
-      scsitools
-      mg
-      htop
-      module-assistant
-      debhelper
+      rsyslog-relp
       runit
+      scsitools
+      strace
       sudo
+      sysstat
+      tcpdump
+      traceroute
+      unzip
       uuid-dev
-      libgcrypt11-dev
+      wget
+      zip
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }

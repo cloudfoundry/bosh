@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'net/ssh/gateway'
+require 'cli/ssh_session'
 
 describe Bosh::Cli::Command::Ssh do
   include FakeFS::SpecHelpers
@@ -8,6 +9,7 @@ describe Bosh::Cli::Command::Ssh do
   let(:net_ssh) { double('ssh') }
   let(:director) { double(Bosh::Cli::Client::Director, uuid: 'director-uuid') }
   let(:deployment) { 'mycloud' }
+  let(:ssh_session) {instance_double(Bosh::Cli::SSHSession)}
 
   let(:manifest) do
     {
@@ -24,14 +26,21 @@ describe Bosh::Cli::Command::Ssh do
   end
 
   before do
-    allow(command).to receive_messages(director: director, public_key: 'PUBKEY', show_current_state: nil)
+    allow(command).to receive_messages(director: director, public_key: 'public_key', show_current_state: nil)
     File.open('fake-deployment', 'w') { |f| f.write(manifest.to_yaml) }
     allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
 
-    allow(command).to receive(:random_ssh_username).and_return('testable_user')
     allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
     command.add_option(:default_password, 'password')
+
+    allow(Bosh::Cli::SSHSession).to receive(:new).and_return(ssh_session)
+    allow(ssh_session).to receive(:public_key).and_return("public_key")
+    allow(ssh_session).to receive(:user).and_return("testable_user")
+    allow(ssh_session).to receive(:set_host_session)
+    allow(ssh_session).to receive(:cleanup)
+    allow(ssh_session).to receive(:ssh_private_key_option).and_return("-i/tmp/.bosh/tmp/random_uuid_key")
+    allow(ssh_session).to receive(:ssh_known_host_option).and_return("")
   end
 
   context 'shell' do
@@ -146,8 +155,11 @@ describe Bosh::Cli::Command::Ssh do
         allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         allow(director).to receive(:cleanup_ssh)
         expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', 'encrypted_password').
+          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
+
+        expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
+        expect(ssh_session).to receive(:ssh_private_key_path)
 
         command.shell('dea/0', 'ls -l')
       end
@@ -165,15 +177,18 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should setup ssh' do
-        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=yes")
+        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', '-i/tmp/.bosh/tmp/random_uuid_key', '-o StrictHostKeyChecking=yes', '')
 
         expect(director).to receive(:setup_ssh).and_return([:done, 42])
         expect(director).to receive(:get_task_result_log).with(42).
             and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+        expect(ssh_session).to receive(:set_host_session).with({'status' => 'success', 'ip' => '127.0.0.1'})
         expect(director).to receive(:cleanup_ssh)
+        expect(ssh_session).to receive(:cleanup)
 
         command.shell('dea/0')
       end
+
 
       context 'when strict host key checking is overriden to false' do
         before do
@@ -181,7 +196,7 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should disable strict host key checking' do
-          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-o StrictHostKeyChecking=no")
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=no", "")
 
           allow(director).to receive(:setup_ssh).and_return([:done, 42])
           allow(director).to receive(:get_task_result_log).with(42).
@@ -203,12 +218,13 @@ describe Bosh::Cli::Command::Ssh do
         it 'should setup ssh with gateway host' do
           expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
           expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=yes", "")
 
           expect(director).to receive(:setup_ssh).and_return([:done, 42])
           expect(director).to receive(:get_task_result_log).with(42).
               and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
           expect(director).to receive(:cleanup_ssh)
+          expect(ssh_session).to receive(:cleanup)
 
           expect(net_ssh).to receive(:close)
           expect(net_ssh).to receive(:shutdown!)
@@ -226,12 +242,13 @@ describe Bosh::Cli::Command::Ssh do
           it 'should setup ssh with gateway host and user' do
             expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
             expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=yes", "")
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
+            expect(ssh_session).to receive(:cleanup)
 
             expect(net_ssh).to receive(:close)
             expect(net_ssh).to receive(:shutdown!)
@@ -242,12 +259,13 @@ describe Bosh::Cli::Command::Ssh do
           it 'should setup ssh with gateway host and user and identity file' do
             expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {keys: ['/tmp/private_file']}).and_return(net_ssh)
             expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=yes")
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=yes", "")
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
+            expect(ssh_session).to receive(:cleanup)
 
             expect(net_ssh).to receive(:close)
             expect(net_ssh).to receive(:shutdown!)
@@ -263,6 +281,7 @@ describe Bosh::Cli::Command::Ssh do
             expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
+            expect(ssh_session).to receive(:cleanup)
 
             expect {
               command.shell('dea/0')
@@ -270,27 +289,45 @@ describe Bosh::Cli::Command::Ssh do
                              "Authentication failed with gateway #{gateway_host} and user #{gateway_user}.")
           end
 
-          context 'when strict host key checking is overriden to false' do
+          context 'when ssh gateway is setup' do
             before do
-              command.add_option(:strict_host_key_checking, 'false')
-            end
-
-            it 'should disable strict host key checking' do
               allow(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
               allow(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
-              expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', "-o StrictHostKeyChecking=no")
-
               allow(director).to receive(:setup_ssh).and_return([:done, 42])
-              allow(director).to receive(:get_task_result_log).with(42).
-                                      and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
               allow(director).to receive(:cleanup_ssh)
-
               allow(net_ssh).to receive(:close)
               allow(net_ssh).to receive(:shutdown!)
-
-              command.shell('dea/0')
             end
-          end
+
+            context 'when strict host key checking is overriden to false' do
+              before do
+                command.add_option(:strict_host_key_checking, 'false')
+              end
+
+              it 'should disable strict host key checking' do
+                expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=no", "")
+                allow(director).to receive(:get_task_result_log).with(42).
+                                        and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+                command.shell('dea/0')
+              end
+            end
+
+            context 'when host returns a host_public_key' do
+              before do
+                allow(ssh_session).to receive(:ssh_known_host_option).and_return("-o UserKnownHostsFile=/tmp/.bosh/tmp/random_uuid_known_hosts")
+                allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1', 'host_public_key' => 'fake_public_key'}]))
+              end
+
+              after do
+                allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+              end
+
+              it 'should call ssh with bosh known hosts path' do
+                expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost','-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', '-o StrictHostKeyChecking=yes', "-o UserKnownHostsFile=/tmp/.bosh/tmp/random_uuid_known_hosts")
+                command.shell('dea/0')
+              end
+            end
+        end
         end
       end
     end
@@ -326,11 +363,15 @@ describe Bosh::Cli::Command::Ssh do
       allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
       allow(director).to receive(:cleanup_ssh)
       expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', 'encrypted_password').
+          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
 
       command.add_option(:upload, false)
       allow(command).to receive(:job_exists_in_deployment?).and_return(true)
+
+      expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
+      expect(ssh_session).to receive(:ssh_private_key_path)
+
       command.scp('dea', '0', 'test', 'test')
     end
   end

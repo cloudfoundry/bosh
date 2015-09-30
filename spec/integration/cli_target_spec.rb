@@ -26,6 +26,12 @@ describe 'cli: target', type: :integration do
     end
   end
 
+  it 'uses correct certificate' do
+    expect_output("target --ca-cert #{current_sandbox.certificate_path} #{current_sandbox.director_url}", <<-OUT)
+      Target set to `Test Director'
+    OUT
+  end
+
   it 'does not let user use deployment with target anymore (needs uuid)', no_reset: true do
     out = bosh_runner.run('deployment vmforce', failure_expected: true)
     expect(out).to match(regexp('Please upgrade your deployment manifest'))

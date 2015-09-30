@@ -5,7 +5,7 @@ require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/archive'
 require 'bosh/dev/openstack/micro_bosh_deployment_cleaner'
 require 'bosh/dev/openstack/micro_bosh_deployment_manifest'
-require 'bosh/dev/openstack/bat_deployment_manifest'
+require 'bosh/dev/bat/deployment_manifest'
 require 'bosh/dev/bat/runner'
 
 module Bosh::Dev::Openstack
@@ -25,11 +25,10 @@ module Bosh::Dev::Openstack
       bat_deployment_spec_path = env['BOSH_OPENSTACK_BAT_DEPLOYMENT_SPEC']
       raise 'Missing env var: BOSH_OPENSTACK_BAT_DEPLOYMENT_SPEC' unless bat_deployment_spec_path
 
-      bat_deployment_manifest = BatDeploymentManifest.load_from_file(bat_deployment_spec_path)
+      bat_deployment_manifest = Bosh::Dev::Bat::DeploymentManifest.load_from_file(bat_deployment_spec_path)
       bat_deployment_manifest.net_type = net_type
       bat_deployment_manifest.director_uuid = director_uuid
       bat_deployment_manifest.stemcell = stemcell_archive
-      bat_deployment_manifest.validate
 
       microbosh_deployment_cleaner = MicroBoshDeploymentCleaner.new(microbosh_deployment_manifest)
 

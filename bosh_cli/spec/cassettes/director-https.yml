@@ -1,0 +1,82 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://127.0.0.1:8081/info
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      User-Agent:
+      - HTTPClient/1.0 (2.4.0, ruby 1.9.3 (2014-11-13))
+      Accept:
+      - ! '*/*'
+      Date:
+      - Tue, 22 Sep 2015 18:40:09 GMT
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.4.5
+      Date:
+      - Tue, 22 Sep 2015 18:40:09 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '349'
+      Connection:
+      - keep-alive
+      X-Content-Type-Options:
+      - nosniff
+    body:
+      encoding: US-ASCII
+      string: ! '{"name":"Local Director","uuid":"24a64a39-6e68-42bc-8c9b-53fdd6cd6d16","version":"1.3074.0
+        (00000000)","user":null,"cpi":"vsphere","user_authentication":{"type":"basic","options":{}},"features":{"dns":{"status":false,"extras":{"domain_name":"bosh"}},"compiled_package_cache":{"status":false,"extras":{"provider":null}},"snapshots":{"status":false}}}'
+    http_version: 
+  recorded_at: Tue, 22 Sep 2015 18:40:09 GMT
+- request:
+    method: get
+    uri: http://127.0.0.1:8080/info
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      User-Agent:
+      - HTTPClient/1.0 (2.4.0, ruby 1.9.3 (2014-11-13))
+      Accept:
+      - ! '*/*'
+      Date:
+      - Tue, 22 Sep 2015 18:40:09 GMT
+  response:
+    status:
+      code: 200
+      message: !binary |-
+        T0s=
+    headers:
+      !binary "Q29udGVudC1UeXBl":
+      - !binary |-
+        YXBwbGljYXRpb24vanNvbg==
+      !binary "RGF0ZQ==":
+      - !binary |-
+        VHVlLCAyMiBTZXAgMjAxNSAxMTo0MDowOSAtMDcwMA==
+      !binary "Q29udGVudC1MZW5ndGg=":
+      - !binary |-
+        MzQ5
+      !binary "WC1Db250ZW50LVR5cGUtT3B0aW9ucw==":
+      - !binary |-
+        bm9zbmlmZg==
+      !binary "Q29ubmVjdGlvbg==":
+      - !binary |-
+        a2VlcC1hbGl2ZQ==
+      !binary "U2VydmVy":
+      - !binary |-
+        dGhpbiAxLjUuMSBjb2RlbmFtZSBTdHJhaWdodCBSYXpvcg==
+    body:
+      encoding: US-ASCII
+      string: ! '{"name":"Local Director","uuid":"24a64a39-6e68-42bc-8c9b-53fdd6cd6d16","version":"1.3074.0
+        (00000000)","user":null,"cpi":"vsphere","user_authentication":{"type":"basic","options":{}},"features":{"dns":{"status":false,"extras":{"domain_name":"bosh"}},"compiled_package_cache":{"status":false,"extras":{"provider":null}},"snapshots":{"status":false}}}'
+    http_version: 
+  recorded_at: Tue, 22 Sep 2015 18:40:09 GMT
+recorded_with: VCR 2.9.3

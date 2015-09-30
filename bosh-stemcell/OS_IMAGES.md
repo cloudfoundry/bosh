@@ -7,6 +7,12 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `7xLESQCJHkDBRAUr5A6zush.6fZwQ1Dp`
+  - update kernel for USN-2751-1
+
+* `Z2u8KpEbHMXu1sYd1lI1VC_RPZGGSYoz`
+   - add package for growpart command
+
 * `07SVLfhlpQJWWKphcELs9MV2pwgs1n3y`
   - update ubuntu for FreeType vulnerabilities for USN-2739-1
 
@@ -250,6 +256,12 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `43zhprNWRQoYBhDBVkJm6uAocH0IBgLw`
+   - add package for growpart command
+
+* `upXZonWLgbjXkN1VKg5W560cFsQ.D3J9`
+  - symlink /var/run to /run
 
 * `7usDt2skfd6jEm_0EK7NXRMmSG0BYz7r`
   - bump kernel

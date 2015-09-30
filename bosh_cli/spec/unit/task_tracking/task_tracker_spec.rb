@@ -97,4 +97,33 @@ describe Bosh::Cli::TaskTracking::TaskTracker do
     tracker = make_tracker("42", {:renderer => "I'm a renderer"})
     expect(tracker.renderer).to eq("I'm a renderer")
   end
+
+  it 'should set default success state to done' do
+    tracker = make_tracker("42", { :log_type => "foobar"})
+    expect(@director).to receive(:get_task_state).with("42").
+                             and_return("done")
+
+    expect(@director).to receive(:get_task_output).with("42", 0, "foobar").
+                             and_return(["", nil])
+
+    expect(tracker).to receive(:sleep).never
+
+    expect(tracker.track).to eq(:done)
+  end
+
+  it 'should use task success state when set in options' do
+    tracker = make_tracker("42", { :log_type => "foobar", :task_success_state => :queued })
+
+    expect(@director).to receive(:get_task_state).with("42").
+                             and_return("queued")
+
+    expect(@director).to receive(:get_task_output).with("42", 0, "foobar").
+                             and_return(["", nil])
+
+    expect(tracker).to receive(:sleep).never
+
+    expect(tracker.track).to eq(:queued)
+  end
+
+
 end

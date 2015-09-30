@@ -57,6 +57,7 @@ module Bosh::Stemcell
           expect(stage_collection.operating_system_stages).to eq(
             [
               :base_centos,
+              :base_runsvdir,
               :base_centos_packages,
               :base_file_permission,
               :base_ssh,
@@ -84,6 +85,7 @@ module Bosh::Stemcell
           expect(stage_collection.operating_system_stages).to eq(
             [
               :base_rhel,
+              :base_runsvdir,
               :base_centos_packages,
               :base_file_permission,
               :base_ssh,
@@ -144,6 +146,7 @@ module Bosh::Stemcell
             :bosh_disable_password_authentication,
             :bosh_aws_agent_settings,
             :disable_blank_passwords,
+            :bosh_clean_ssh,
             :image_create,
             :image_install_grub,
             :image_aws_update_grub,
@@ -193,6 +196,7 @@ module Bosh::Stemcell
                 :bosh_disable_password_authentication,
                 :bosh_openstack_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list
@@ -221,6 +225,7 @@ module Bosh::Stemcell
                 :bosh_disable_password_authentication,
                 :bosh_openstack_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list
@@ -252,6 +257,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list
@@ -275,6 +281,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list
@@ -302,6 +309,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list,
@@ -325,6 +333,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
                 :disable_blank_passwords,
+                :bosh_clean_ssh,
                 :image_create,
                 :image_install_grub,
                 :bosh_package_list,

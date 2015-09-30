@@ -29,7 +29,7 @@ describe 'create bosh release', type: :integration do
       tempdir=/tmp/bosh-src.#{SecureRandom.hex(4)}
       mkdir $tempdir
       cd #{source}
-      cp -R . $tempdir
+      cp -Rf . $tempdir
       cd $tempdir
       rm -rf $(cat .gitignore | sed 's/^\///g')
       mv $tempdir #{target}

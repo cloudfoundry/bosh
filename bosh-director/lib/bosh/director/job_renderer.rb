@@ -24,6 +24,11 @@ module Bosh::Director
       archive_model = instance.model.latest_rendered_templates_archive
 
       if archive_model && archive_model.content_sha1 == configuration_hash
+        unless @blobstore.exists?(archive_model.blobstore_id)
+          # If rendered template file in blobstore crashed, we re-upload it and update database with new blobstore_id
+          rendered_templates_archive = rendered_job_instance.persist(@blobstore)
+          archive_model.update({:blobstore_id => rendered_templates_archive.blobstore_id, :sha1 => rendered_templates_archive.sha1})
+        end
         rendered_templates_archive = Core::Templates::RenderedTemplatesArchive.new(
           archive_model.blobstore_id,
           archive_model.sha1,

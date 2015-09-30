@@ -39,8 +39,14 @@ module Bosh::Cli
       end
 
       def director
-        @director ||= Bosh::Cli::Client::Director.new(
-          target, credentials, @options.select { |k, _| k == :no_track })
+        return @director if @director
+
+        director_client_options = [:no_track, :ca_cert]
+        @director = Bosh::Cli::Client::Director.new(
+          target,
+          credentials,
+          @options.select { |k, _| director_client_options.include?(k) }
+        )
       end
 
       def release
@@ -134,8 +140,9 @@ module Bosh::Cli
 
     def auth_info
       @auth_info ||= begin
-        director_client = Client::Director.new(target)
-        Client::Uaa::AuthInfo.new(director_client, ENV, config.ca_cert(target))
+        ca_cert = config.ca_cert(target)
+        director_client = Client::Director.new(target, nil, ca_cert: ca_cert)
+        Client::Uaa::AuthInfo.new(director_client, ENV, ca_cert)
       end
     end
 

@@ -85,6 +85,7 @@ module Bosh::Stemcell
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -101,6 +102,7 @@ module Bosh::Stemcell
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -125,6 +127,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -140,6 +143,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -158,6 +162,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
         ]
@@ -173,6 +178,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_vsphere_agent_settings,
           :disable_blank_passwords,
+          :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -192,6 +198,7 @@ module Bosh::Stemcell
         :bosh_disable_password_authentication,
         :bosh_aws_agent_settings,
         :disable_blank_passwords,
+        :bosh_clean_ssh,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -206,6 +213,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
+        :bosh_clean_ssh,
         # only used for spec test
         :image_create,
       ]
@@ -214,6 +222,7 @@ module Bosh::Stemcell
     def centos_os_stages
      [
         :base_centos,
+        :base_runsvdir,
         :base_centos_packages,
         :base_file_permission,
         :base_ssh,
@@ -231,6 +240,7 @@ module Bosh::Stemcell
     def rhel_os_stages
       [
         :base_rhel,
+        :base_runsvdir,
         :base_centos_packages,
         :base_file_permission,
         :base_ssh,
@@ -282,11 +292,11 @@ module Bosh::Stemcell
 
     def bosh_steps
       [
-          :bosh_sysctl,
-          :bosh_users,
-          :bosh_monit,
-          :bosh_ntpdate,
-          :bosh_sudoers,
+        :bosh_sysctl,
+        :bosh_users,
+        :bosh_monit,
+        :bosh_ntpdate,
+        :bosh_sudoers,
       ]
     end
 

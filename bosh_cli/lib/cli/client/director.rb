@@ -35,6 +35,7 @@ module Bosh
           @track_tasks         = !options.delete(:no_track)
           @num_retries         = options.fetch(:num_retries, 5)
           @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
+          @ca_cert             = options[:ca_cert]
         end
 
         def uuid
@@ -292,6 +293,7 @@ module Bosh
 
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
+          options[:task_success_state] = :queued
 
           request_and_track(:post, url, options)
         end
@@ -728,8 +730,34 @@ module Bosh
           http_client.receive_timeout = API_TIMEOUT
           http_client.connect_timeout = CONNECT_TIMEOUT
 
-          http_client.ssl_config.verify_mode     = OpenSSL::SSL::VERIFY_NONE
-          http_client.ssl_config.verify_callback = Proc.new {}
+          if @ca_cert.nil?
+            http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+            http_client.ssl_config.verify_callback = Proc.new {}
+          else
+            unless File.exists?(@ca_cert)
+              err('Invalid ca certificate path')
+            end
+
+            parsed_url = nil
+            begin
+              parsed_url = URI.parse(uri)
+            rescue => e
+              err("Failed to parse director URL: #{e.message}")
+            end
+
+            unless parsed_url.instance_of?(URI::HTTPS)
+              err('CA certificate cannot be used with HTTP protocol')
+            end
+
+            # pass in client certificate
+            begin
+              cert_store = OpenSSL::X509::Store.new
+              cert_store.add_file(@ca_cert)
+            rescue OpenSSL::X509::StoreError
+              err('Invalid SSL Cert')
+            end
+            http_client.ssl_config.cert_store = cert_store
+          end
 
           if @credentials
             headers['Authorization'] = @credentials.authorization_header
@@ -750,6 +778,10 @@ module Bosh
                HTTPClient::KeepAliveDisconnected,
                OpenSSL::SSL::SSLError,
                OpenSSL::X509::StoreError => e
+
+          if e.is_a?(OpenSSL::SSL::SSLError) && e.message.include?('certificate verify failed')
+            err('Invalid SSL Cert')
+          end
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e

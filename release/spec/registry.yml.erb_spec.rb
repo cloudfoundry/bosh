@@ -60,6 +60,7 @@ describe 'registry.yml.erb' do
   context 'aws' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
+        'credentials_source' => 'static',
         'access_key_id' => 'key',
         'secret_access_key' => 'secret',
         'region' => 'region',
@@ -82,6 +83,7 @@ describe 'registry.yml.erb' do
 
     it 'renders aws properties' do
       expect(parsed_yaml['cloud']['aws']).to eq({
+        'credentials_source' => 'static',
         'access_key_id' => 'key',
         'secret_access_key' => 'secret',
         'region' => 'region',
@@ -97,6 +99,7 @@ describe 'registry.yml.erb' do
     context 'when deployment manifest contains special characters' do
       before do
         deployment_manifest_fragment['properties']['aws'] = {
+          'credentials_source' => 'static',
           'access_key_id' => '!key',
           'secret_access_key' => '!secret',
           'region' => '!region',
@@ -111,6 +114,7 @@ describe 'registry.yml.erb' do
 
       it 'renders aws properties' do
         expect(parsed_yaml['cloud']['aws']).to eq({
+          'credentials_source' => 'static',
           'access_key_id' => '!key',
           'secret_access_key' => '!secret',
           'region' => '!region',

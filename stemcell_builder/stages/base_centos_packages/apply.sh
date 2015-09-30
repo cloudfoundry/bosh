@@ -32,7 +32,7 @@ zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb libcap2-bin libcap-devel bzip2-devel \
-cmake sudo libuuid-devel parted NetworkManager e2fsprogs"
+cmake sudo libuuid-devel parted NetworkManager e2fsprogs cloud-utils-growpart"
 pkg_mgr install ${packages} ${version_specific_packages}
 
 # Install runit

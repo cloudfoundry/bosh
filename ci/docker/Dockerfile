@@ -36,6 +36,11 @@ RUN apt-get install -y mercurial; apt-get clean
 RUN apt-get install -y lsof; apt-get clean
 RUN apt-get install -y unzip; apt-get clean
 
+# UAA dependencies
+RUN mkdir -p /tmp/integration-uaa/cloudfoundry-identity-uaa-2.0.3
+RUN curl -L https://s3.amazonaws.com/bosh-dependencies/apache-tomcat-8.0.21.tar.gz | (cd /tmp/integration-uaa/cloudfoundry-identity-uaa-2.0.3 && tar xfz -)
+RUN curl --output /tmp/integration-uaa/cloudfoundry-identity-uaa-2.0.3/apache-tomcat-8.0.21/webapps/uaa.war -L https://s3.amazonaws.com/bosh-dependencies/cloudfoundry-identity-uaa-2.0.3.war
+
 ADD install-ruby.sh /tmp/install-ruby.sh
 RUN chmod a+x /tmp/install-ruby.sh
 RUN cd /tmp; ./install-ruby.sh; rm install-ruby.sh

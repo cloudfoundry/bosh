@@ -218,10 +218,11 @@ module Bosh::Cli
     end
 
 
-    def save_ca_cert_path(cert_path)
+    def save_ca_cert_path(cert_path, for_target=nil)
       expanded_path = cert_path ? File.expand_path(cert_path) : nil
+      cert_target = for_target || target
       @config_file['ca_cert'] ||= {}
-      @config_file['ca_cert'][target] = expanded_path
+      @config_file['ca_cert'][cert_target] = expanded_path
 
       expanded_path
     end

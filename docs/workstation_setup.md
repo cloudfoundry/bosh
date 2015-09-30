@@ -53,6 +53,11 @@
     * `go get code.google.com/p/go.tools/cmd/vet`
     * `go get -u github.com/golang/lint/golint`
 
+    Optional: Install direnv to keep your GOPATH correct when working with the bosh-agent submodule
+    * `brew install direnv`
+    * `cd <<bosh base dir>>`
+    * direnv allow
+
 8. Install Bundler gem
 
     `gem install bundler`
