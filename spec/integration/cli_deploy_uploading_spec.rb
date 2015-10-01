@@ -30,7 +30,7 @@ describe 'cli: deploy uploading', type: :integration do
 
     it 'does not upload the same release twice' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha, "1"))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha, 1))
 
       target_and_login
       bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")

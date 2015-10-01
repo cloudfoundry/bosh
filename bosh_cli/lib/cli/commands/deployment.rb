@@ -91,7 +91,11 @@ module Bosh::Cli::Command
       manifest = build_manifest
       if manifest.hash['releases']
         manifest.hash['releases'].each do |release|
-          unless release['url'].blank?
+          if release['url'].blank?
+            if release['version'] == 'create'
+              err("Expected URL when specifying release version `create'")
+            end
+          else
             parsed_uri = URI.parse(release['url'])
             case parsed_uri.scheme
             when 'file'
@@ -106,7 +110,7 @@ module Bosh::Cli::Command
             when 'http', 'https'
               err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
               err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
-              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1'], "--name", release['name'], "--version", release['version']
+              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1'], "--name", release['name'], "--version", release['version'].to_s
             else
               err("Invalid URL format for release `#{release['name']}' with URL `#{release['url']}'. Supported schemes: file, http, https.")
             end
@@ -124,7 +128,7 @@ module Bosh::Cli::Command
             when 'http', 'https'
               err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
               run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'],
-                "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'], "--skip-if-exists"
+                "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
             else
               err("Invalid URL format for stemcell `#{resource_pool['stemcell']['name']}' with URL `#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
             end

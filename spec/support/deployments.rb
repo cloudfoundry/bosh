@@ -63,7 +63,7 @@ module Bosh::Spec
           'network' => 'a',
           'stemcell' => {
             'name' => 'ubuntu-stemcell',
-            'version' => '1',
+            'version' => 1,
             'url' => stemcell_url,
             'sha1' => stemcell_sha1,
           },

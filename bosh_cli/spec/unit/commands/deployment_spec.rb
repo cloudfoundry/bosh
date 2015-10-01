@@ -144,4 +144,26 @@ describe Bosh::Cli::Command::Deployment do
       end
     end
   end
+
+  describe 'deploy' do
+    it 'returns error when release has version create but no url' do
+      manifest = {
+        'name' => 'example',
+        'releases' => [
+          {
+            'name' => 'sample-release',
+            'version' => 'create'
+          }
+        ],
+        'jobs' => [],
+        'properties' => {}
+      }
+
+      allow(cmd).to receive(:build_manifest).and_return(double(:manifest, hash: manifest))
+
+      expect {
+        cmd.perform
+      }.to raise_error(Bosh::Cli::CliError, /Expected URL.*version.*create/)
+    end
+  end
 end
