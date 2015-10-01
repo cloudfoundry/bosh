@@ -4,10 +4,7 @@ describe 'health_monitor with legacy manifest', type: :integration do
   context 'if fix_stateful_nodes director option is not set' do
     with_reset_sandbox_before_each(director_fix_stateful_nodes: false)
     before { current_sandbox.health_monitor_process.start }
-    after do
-      current_sandbox.health_monitor_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.health_monitor_process.stop }
 
     it 'resurrects stateless nodes' do
       deploy_from_scratch({legacy: true, manifest_hash: Bosh::Spec::Deployments.legacy_manifest})

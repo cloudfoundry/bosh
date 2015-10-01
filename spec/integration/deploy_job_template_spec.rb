@@ -52,10 +52,7 @@ describe 'deploy job template', type: :integration do
 
   context 'health monitor' do
     before { current_sandbox.health_monitor_process.start }
-    after do
-      current_sandbox.health_monitor_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.health_monitor_process.stop }
 
     it 'creates alerts to mark the start and end of an update deployment' do
       deploy_from_scratch

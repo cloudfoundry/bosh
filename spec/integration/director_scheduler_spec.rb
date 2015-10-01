@@ -33,10 +33,7 @@ describe 'director_scheduler', type: :integration do
 
   describe 'scheduled disk snapshots' do
     before { current_sandbox.scheduler_process.start }
-    after do
-      current_sandbox.scheduler_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.scheduler_process.stop }
 
     it 'snapshots a disk' do
       waiter.wait(600) { expect(snapshots).to_not be_empty }
@@ -57,10 +54,7 @@ describe 'director_scheduler', type: :integration do
     pending_for_travis_mysql!
 
     before { current_sandbox.scheduler_process.start }
-    after do
-      current_sandbox.scheduler_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.scheduler_process.stop }
 
     it 'backs up BOSH artifacts' do
       waiter.wait(600) { expect(backups).to_not be_empty }

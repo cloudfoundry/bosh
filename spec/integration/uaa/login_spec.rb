@@ -163,10 +163,7 @@ CERT
 
     describe 'health monitor' do
       before { current_sandbox.health_monitor_process.start }
-      after do
-        current_sandbox.health_monitor_process.stop
-        current_sandbox.director_service.wait_for_tasks_to_finish
-      end
+      after { current_sandbox.health_monitor_process.stop }
 
       it 'resurrects vm' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}

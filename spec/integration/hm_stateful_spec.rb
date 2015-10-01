@@ -4,10 +4,7 @@ describe 'health_monitor: 2', type: :integration do
   context 'if fix_stateful_nodes director option is not set' do
     with_reset_sandbox_before_each(director_fix_stateful_nodes: false)
     before { current_sandbox.health_monitor_process.start }
-    after do
-      current_sandbox.health_monitor_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.health_monitor_process.stop }
 
     # ~6m
     it 'does not resurrect stateful nodes' do
@@ -26,10 +23,7 @@ describe 'health_monitor: 2', type: :integration do
   context 'if fix_stateful_nodes director option is set' do
     with_reset_sandbox_before_each(director_fix_stateful_nodes: true)
     before { current_sandbox.health_monitor_process.start }
-    after do
-      current_sandbox.health_monitor_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.health_monitor_process.stop }
 
     it 'resurrects stateful nodes ' do
       deployment_hash = Bosh::Spec::Deployments.simple_manifest

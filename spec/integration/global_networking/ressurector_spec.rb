@@ -11,10 +11,7 @@ describe 'global networking', type: :integration do
     upload_stemcell
   end
 
-  after do
-    current_sandbox.health_monitor_process.stop
-    current_sandbox.director_service.wait_for_tasks_to_finish
-  end
+  after { current_sandbox.health_monitor_process.stop }
 
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

@@ -46,10 +46,7 @@ describe 'Changing cloud config', type: :integration do
 
   describe 'changing the cloud config with health monitor running' do
     before { current_sandbox.health_monitor_process.start }
-    after do
-      current_sandbox.health_monitor_process.stop
-      current_sandbox.director_service.wait_for_tasks_to_finish
-    end
+    after { current_sandbox.health_monitor_process.stop }
 
     it 'resurrects vm with original cloud config and IP' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)

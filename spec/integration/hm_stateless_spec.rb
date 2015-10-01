@@ -4,10 +4,7 @@ describe 'health_monitor: 1', type: :integration do
   with_reset_sandbox_before_each
 
   before { current_sandbox.health_monitor_process.start }
-  after do
-    current_sandbox.health_monitor_process.stop
-    current_sandbox.director_service.wait_for_tasks_to_finish
-  end
+  after { current_sandbox.health_monitor_process.stop }
 
   # ~1m20s
   it 'resurrects stateless nodes' do
