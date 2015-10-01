@@ -122,7 +122,9 @@ module Bosh::Cli::Command
             instance['processes'].each do |process|
               name = process['name']
               state = process['state']
-              t << ["  #{name}", "#{state}",  '', '']
+              process_row = ["  #{name}", "#{state}"]
+              (headings.size - 2).times { process_row << '' }
+              t << process_row
             end
             t << :separator if s > 0
           end
