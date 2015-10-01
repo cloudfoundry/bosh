@@ -143,8 +143,8 @@ describe 'drain', type: :integration do
     it 'runs drain for job templates that have drain script' do
       deploy_from_scratch(manifest_hash: manifest_with_colocated_drainable_release_jobs)
 
-      foobar_drain_log = director.vm('colocated/0').file_path('drain-test.log')
-      second_drain_log = director.vm('colocated/0').file_path('has_drain_script_drain.log')
+      foobar_drain_log = director.vm('colocated', '0').file_path('drain-test.log')
+      second_drain_log = director.vm('colocated', '0').file_path('has_drain_script_drain.log')
 
       deploy_simple_manifest(manifest_hash: manifest_with_colocated_drainable_release_jobs, recreate: true)
 
