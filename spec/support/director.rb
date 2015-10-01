@@ -33,7 +33,7 @@ module Bosh::Spec
 
     def instances(deployment_name = '', options={})
       instances_output = @runner.run("instances #{deployment_name}", options)
-      instances = parse_table(instances_output, :instance)
+      instances = parse_table_with_ips(instances_output, :instance)
 
       instances.map do |instance_data|
         Bosh::Spec::Instance.new(
@@ -71,7 +71,7 @@ module Bosh::Spec
     end
 
     def vms_vitals
-      parse_vms(@runner.run('vms --vitals'))
+      parse_table_with_ips(@runner.run('vms --vitals'))
     end
 
     def instances_vitals(options = {})
@@ -123,7 +123,7 @@ module Bosh::Spec
     private
 
     def vms_details(deployment_name, options = {})
-      parse_vms(@runner.run("vms #{deployment_name} --details", options))
+      parse_table_with_ips(@runner.run("vms #{deployment_name} --details", options))
     end
 
     def parse_table(output)
@@ -158,7 +158,7 @@ module Bosh::Spec
       values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
     end
 
-    def parse_vms(output, table_type=:vm)
+    def parse_table_with_ips(output, table_type=:vm)
       vms = parse_table(output)
 
       job_name_match_index = 1
