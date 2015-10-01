@@ -16,6 +16,11 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should contain ' cgroup_enable=memory swapaccount=1' }
       it { should contain ' console=tty0 console=ttyS0,115200n8' }
       its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
+
+      it('should set the grub menu password (stig: V-38585)') { should contain /^password --md5 $1$.*/ }
+      it('should be of mode 600 (stig: V-38583)') { should be_mode('600') }
+      it('should be owned by root (stig: V-38579)') { should be_owned_by('root') }
+      it('should be grouped into root (stig: V-38581)') { should be_grouped_into('root') }
     end
 
     describe file('/boot/grub/menu.lst') do
