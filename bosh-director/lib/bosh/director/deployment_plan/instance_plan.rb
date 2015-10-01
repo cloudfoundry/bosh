@@ -2,26 +2,6 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlan
-
-        # FIXME: This is pretty sad. But it should go away when we move away from using
-        # Instance and just become part of making an InstancePlan
-        def self.create_from_deployment_plan_instance(instance, logger)
-          # no one currently cares if this DesiredInstance is real, we just want to have one for now
-          # so our InstancePlan doesn't think it's obsolete
-          desired_instance = DeploymentPlan::DesiredInstance.new(nil, {}, nil)
-
-          network_plans = NetworkPlanner.new(logger)
-                            .plan_ips(instance.desired_network_reservations, instance.existing_network_reservations)
-
-          instance_plan = new(
-            existing_instance: instance.model,
-            instance: instance,
-            desired_instance: desired_instance,
-            network_plans: network_plans
-          )
-          instance_plan
-        end
-
         def initialize(attrs)
           @existing_instance = attrs.fetch(:existing_instance)
           @desired_instance = attrs.fetch(:desired_instance)

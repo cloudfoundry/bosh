@@ -138,12 +138,16 @@ module Bosh::Director
 
       attr_accessor :instance_plans, :desired_instances
 
+      def obsolete_instance_plans
+        instance_plans.select(&:obsolete?)
+      end
+
       def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
         instance_plans.reject(&:obsolete?).map(&:instance)
       end
 
       def unneeded_instances
-        instance_plans.select(&:obsolete?).map(&:instance)
+        obsolete_instance_plans.map(&:instance)
       end
 
       # Returns job spec as a Hash. To be used by all instances of the job to
@@ -325,16 +329,8 @@ module Bosh::Director
             end
 
             @logger.debug("Requesting #{reservation.desc} for '#{reservation.instance}' on network '#{reservation.network.name}' based on deployment manifest")
-            # old_reservation = instance_plan.network_plans.find { |np| np.reservation.network == reservation.network }
-
-            # if old_reservation
-            #   raise NetworkReservationAlreadyExists,
-            #     "Failed to add #{reservation.desc} for instance '#{reservation.instance}' on network '#{reservation.network.name}', " +
-            #       "instance already has #{old_reservation.desc} on the same network"
-            # else
-              network_plan = NetworkPlan.new(reservation: reservation)
-              instance_plan.network_plans << network_plan
-            # end
+            network_plan = NetworkPlan.new(reservation: reservation)
+            instance_plan.network_plans << network_plan
           end
         end
         # TODO: loop above should go away when we get rid of reservations

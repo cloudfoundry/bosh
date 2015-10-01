@@ -17,7 +17,7 @@ module Bosh::Director
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
       let(:instances_to_delete) do
         instances = []
-        5.times { instances << instance_double(DeploymentPlan::Instance) }
+        5.times { instances << instance_double(DeploymentPlan::Instance, model: nil) }
         instances
       end
 
@@ -91,6 +91,7 @@ module Bosh::Director
         5.times do |index|
           expect(deleter).to receive(:delete_instance).with(
               instances_to_delete[index],
+              instance_of(DeploymentPlan::InstancePlan),
               event_log_stage
             )
         end
@@ -105,7 +106,7 @@ module Bosh::Director
 
         5.times do |index|
           expect(deleter).to receive(:delete_instance).with(
-              instances_to_delete[index], event_log_stage)
+              instances_to_delete[index], instance_of(DeploymentPlan::InstancePlan), event_log_stage)
         end
         deleter.delete_instances(instances_to_delete, event_log_stage, max_threads: 2)
       end

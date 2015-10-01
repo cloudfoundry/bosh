@@ -24,9 +24,9 @@ module Bosh::Director
 
           @instance_reuser.release_instance(instance)
         rescue => e
-          unless instance.nil?
+          unless instance.nil? || instance_plan.nil?
             @instance_reuser.remove_instance(instance)
-            delete_instance(instance)
+            delete_instance(instance_plan)
           end
           raise e
         end
@@ -38,7 +38,7 @@ module Bosh::Director
           configure_instance_plan(instance_plan)
           yield instance
         ensure
-          delete_instance(instance) unless instance.nil?
+          delete_instance(instance_plan) unless instance.nil?
         end
       end
 
@@ -47,7 +47,13 @@ module Bosh::Director
            @instance_reuser.each do |instance|
             pool.process do
               @instance_reuser.remove_instance(instance)
-              delete_instance(instance)
+              instance_plan = DeploymentPlan::InstancePlan.new(
+                existing_instance: instance.model,
+                instance: instance,
+                desired_instance: DeploymentPlan::DesiredInstance.new,
+                network_plans: []
+              )
+              delete_instance(instance_plan)
             end
           end
         end
@@ -55,8 +61,8 @@ module Bosh::Director
 
       private
 
-      def delete_instance(instance)
-        @instance_deleter.delete_instance(instance, EventLog::NullStage.new)
+      def delete_instance(instance_plan)
+        @instance_deleter.delete_instance(instance_plan.instance, instance_plan, EventLog::NullStage.new)
       end
 
       def create_instance_plan(stemcell)

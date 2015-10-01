@@ -181,11 +181,6 @@ module Bosh::Director
         @agent_client ||= AgentClient.with_vm(@model.vm)
       end
 
-      def desired_network_reservations
-        instance_plan = job.instance_plans.find { |instance_plan| instance_plan.instance.uuid == uuid }
-        instance_plan.network_plans.reject(&:obsolete?).map {|network_plan| network_plan.reservation }
-      end
-
       def network_settings
         instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
         desired_reservations = instance_plan.network_plans.reject(&:obsolete?).map {|network_plan| network_plan.reservation }

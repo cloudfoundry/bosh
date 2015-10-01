@@ -189,7 +189,6 @@ module Bosh::Director
           'Bosh::Director::DeploymentPlan::Instance',
           vm: vm,
           model: Models::Instance.make,
-          desired_network_reservations: [],
           existing_network_reservations: []
         )
         expect(instance).to receive(:bind_unallocated_vm)

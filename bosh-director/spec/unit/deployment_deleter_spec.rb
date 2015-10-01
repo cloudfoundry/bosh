@@ -43,7 +43,7 @@ module Bosh::Director
 
       it 'deletes deployment instances' do
         expect(instance_deleter).to receive(:delete_instances) do |instances, stage, options|
-          expect(instances.map(&:model)).to eq(deployment_model.instances)
+          expect(instances).to eq(deployment_model.instances)
           expect(stage).to be_instance_of(EventLog::Stage)
           expect(options).to eq(max_threads: 3)
         end

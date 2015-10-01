@@ -15,11 +15,16 @@ module Bosh::Director
       @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
-    def delete_instance(instance, event_log_stage)
-      @logger.info("Deleting instance '#{instance}'")
+    def delete_instance_plan(instance_plan, event_log_stage)
+      delete_instance(instance_plan.instance, instance_plan, event_log_stage)
+
+      instance_plan.release_all_ips
+    end
+
+    def delete_instance(instance, instance_plan, event_log_stage)
+      @logger.info("Deleting instance '#{instance.inspect}'")
 
       event_log_stage.advance_and_track(instance.to_s) do
-        instance_plan = DeploymentPlan::InstancePlan.create_from_deployment_plan_instance(instance, @logger)
 
         error_ignorer.with_force_check do
           stop(instance_plan)
@@ -55,7 +60,37 @@ module Bosh::Director
       max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
         instances.each do |instance|
-          pool.process { delete_instance(instance, event_log_stage) }
+          pool.process do
+            # FIXME: We should not be relying on type checking. Can we do some of this logic in the caller?
+            if instance.is_a?(DeploymentPlan::Instance)
+              instance_plan = instance.job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == instance.uuid}
+            elsif instance.is_a?(Models::Instance)
+              instance_plan = DeploymentPlan::InstancePlan.new(
+                existing_instance: instance,
+                instance: DeploymentPlan::InstanceFromDatabase.create_from_model(instance, @logger),
+                desired_instance: DeploymentPlan::DesiredInstance.new,
+                network_plans: []
+              )
+              instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance, @logger)
+             else
+              instance_plan = DeploymentPlan::InstancePlan.new(
+                existing_instance: instance.model,
+                instance: instance,
+                desired_instance: DeploymentPlan::DesiredInstance.new,
+                network_plans: []
+              )
+            end
+            delete_instance(instance, instance_plan, event_log_stage)
+          end
+        end
+      end
+    end
+
+    def delete_instance_plans(instance_plans, event_log_stage, options = {})
+      max_threads = options[:max_threads] || Config.max_threads
+      ThreadPool.new(:max_threads => max_threads).wrap do |pool|
+        instance_plans.each do |instance_plan|
+          pool.process { delete_instance_plan(instance_plan, event_log_stage) }
         end
       end
     end

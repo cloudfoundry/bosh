@@ -49,6 +49,7 @@ module Bosh::Director
       event_log_stage = @event_log.begin_stage('Deleting errand instances', instances.size, [@job.name])
       dns_manager = DnsManager.new(@logger)
       instance_deleter = InstanceDeleter.new(@deployment.ip_provider, @deployment.skip_drain, dns_manager)
+      #instances: DeploymentPlan::Instance
       instance_deleter.delete_instances(instances, event_log_stage)
     end
 

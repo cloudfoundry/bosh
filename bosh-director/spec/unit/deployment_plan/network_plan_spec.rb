@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe NetworkPlanner do
     describe :plan_ips do
       let(:network_planner) { NetworkPlanner.new(logger) }
-      let(:instance) { instance_double(Instance, desired_network_reservations: nil) }
+      let(:instance) { instance_double(Instance) }
       let(:network) { instance_double(ManualNetwork, name: 'my-network') }
       let(:existing_reservations) {
         [
