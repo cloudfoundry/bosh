@@ -103,10 +103,9 @@ PATH
   remote: bosh-registry
   specs:
     bosh-registry (1.3091.0)
-      aws-sdk (= 1.60.2)
+      aws-sdk
       bosh_cpi (~> 1.3091.0)
-      fog (~> 1.31.0)
-      fog-aws (<= 0.1.1)
+      fog
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
