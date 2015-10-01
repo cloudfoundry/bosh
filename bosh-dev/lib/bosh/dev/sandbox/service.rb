@@ -6,6 +6,7 @@ require 'thread'
 module Bosh::Dev::Sandbox
   class Service
     attr_reader :description
+    attr_accessor :pid
 
     def initialize(cmd_array, cmd_options, logger)
       @cmd_array = cmd_array
