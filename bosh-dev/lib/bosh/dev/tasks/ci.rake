@@ -14,7 +14,7 @@ namespace :ci do
 
     if merger.sha_does_not_include_latest_master?(candidate_sha)
       fail "Candidate #{candidate_sha} does not contain latest master"
-    end unless ENV['SKIP_SHA_VERIFICATION']
+    end unless ENV['SKIP_SHA_VERIFICATION'] == 'true'
   end
 
   desc 'Publish CI pipeline gems to S3'
