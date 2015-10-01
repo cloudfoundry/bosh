@@ -109,8 +109,16 @@ module Bosh::Blobstore
         subject.delete('foobar')
       end
 
+      it 'should raise Bosh::Blobstore::NotFound error when the file is not found in blobstore during deleting' do
+        allow(response).to receive_messages(status: 404, content: 'Not Found')
+        expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', header: {}).and_return(response)
+        expect {
+          subject.delete('foobar')
+        }.to raise_error NotFound, /Object 'foobar' is not found/
+      end
+
       it 'should raise an exception when there is an error deleting an object' do
-        allow(response).to receive_messages(status: 404, content: '')
+        allow(response).to receive_messages(status: 500, content: '')
         expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', header: {}).and_return(response)
 
         expect { subject.delete('foobar') }.to raise_error BlobstoreError, /Could not delete object/

@@ -5,7 +5,7 @@ module Bosh::Blobstore
 
     attr_reader :port, :root, :read_users_path, :write_users_path
 
-    NGINX_PATH = '/usr/local/sbin/nginx'
+    NGINX_PATH = '/usr/local/bin/nginx'
 
     def create_user_file(users)
       temp = Tempfile.new('users')
@@ -40,7 +40,11 @@ module Bosh::Blobstore
 
       @pid = Process.spawn(NGINX_PATH, '-c', @nginx_config.to_path,
                            out: $stdout, err: $stderr, in: :close)
+
       Process.detach(@pid)
+
+      # Sleep 1 second to wait for nginx process start
+      sleep(1)
     end
 
     after(:all) do
@@ -104,6 +108,10 @@ module Bosh::Blobstore
 
         it 'allows delete' do
           expect { subject.delete('test') }.to_not raise_error
+        end
+
+        it 'should raise NotFound error when deleting non-existing file' do
+          expect { subject.delete('non-exist-file') }.to raise_error Bosh::Blobstore::NotFound, /Object 'non-exist-file' is not found/
         end
 
         it 'allows checking for existance' do

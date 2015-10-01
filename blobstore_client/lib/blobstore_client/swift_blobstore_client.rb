@@ -85,6 +85,8 @@ module Bosh
         raise NotFound, "Swift object '#{object_id}' not found" if object.nil?
 
         object.destroy
+      rescue NotFound => e
+        raise e
       rescue Exception => e
         raise BlobstoreError, "Failed to delete object '#{object_id}': #{e.message}"
       end

@@ -92,8 +92,17 @@ module Bosh::Blobstore
         client.delete('some object')
       end
 
-      it 'should raise an exception when there is an error deleting an object' do
+      it 'should raise Bosh::Blobstore::NotFound error when the file is not found in blobstore during deleting' do
         allow(response).to receive_messages(status: 404, content: '')
+        expect(httpclient).to receive(:delete).
+          with('http://localhost/resources/some object', :header => {}).
+          and_return(response)
+
+        expect { client.delete('some object') }.to raise_error NotFound, /Object 'some object' is not found/
+      end
+
+      it 'should raise an exception when there is an error deleting an object' do
+        allow(response).to receive_messages(status: 500, content: '')
         expect(httpclient).to receive(:delete).
           with('http://localhost/resources/some object', :header => {}).
           and_return(response)

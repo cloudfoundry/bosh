@@ -122,7 +122,7 @@ module Bosh::Director
       describe 'deleting job templates' do
         let(:instance) { Models::Instance.make(vm: nil) }
 
-        before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner) }
+        before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore, logger).and_return(job_templates_cleaner) }
         let(:job_templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner') }
 
         it 'deletes rendered job templates before deleting an instance' do

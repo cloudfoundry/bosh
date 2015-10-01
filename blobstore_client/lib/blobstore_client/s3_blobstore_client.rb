@@ -114,9 +114,8 @@ module Bosh
         raise BlobstoreError, 'unsupported action' if @simple
         object_id = full_oid_path(object_id)
         object = get_object_from_s3(object_id)
-        unless object.exists?
-          raise BlobstoreError, "no such object: #{object_id}"
-        end
+        raise NotFound, "Object '#{object_id}' is not found" unless object.exists?
+
         object.delete
       rescue AWS::Errors::Base => e
         raise BlobstoreError, "Failed to delete object '#{object_id}', S3 response error: #{e.message}"

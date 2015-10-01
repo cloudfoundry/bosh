@@ -123,7 +123,7 @@ module Bosh::Director
       before { allow(InstanceUpdater::Preparer).to receive(:new).with(instance, agent_client, Config.logger).and_return(preparer) }
       let(:preparer) { instance_double('Bosh::Director::InstanceUpdater::Preparer', prepare: nil) }
 
-      before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance_model, blobstore).and_return(templates_cleaner) }
+      before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance_model, blobstore, logger).and_return(templates_cleaner) }
       let(:templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner', clean: nil) }
 
       context 'when instance is not detached' do

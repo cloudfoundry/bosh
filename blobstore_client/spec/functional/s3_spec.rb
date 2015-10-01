@@ -58,31 +58,23 @@ module Bosh::Blobstore
       end
 
       describe 'unencrypted' do
-        describe 'list objects' do
-          it 'lists objects in the bucket' do
-            expect(s3.list).to eq ['public']
-          end
-        end
-
         describe 'store object' do
           it 'should upload a file' do
             Tempfile.new('foo') do |file|
-              @oid = s3.create(file)
-              @oid.should_not be_nil
+              expect(s3.create(file)).to_not be_nil
             end
           end
 
           it 'should upload a string' do
-            @oid = s3.create('foobar')
-            @oid.should_not be_nil
+            expect(s3.create('foobar')).to_not be_nil
           end
 
           it 'should handle uploading the same object twice' do
             @oid = s3.create('foobar')
-            @oid.should_not be_nil
+            expect(@oid).to_not be_nil
             @oid2 = s3.create('foobar')
-            @oid2.should_not be_nil
-            @oid.should_not == @oid2
+            expect(@oid2).to_not be_nil
+            expect(@oid).to_not eq @oid2
           end
         end
 
@@ -92,13 +84,13 @@ module Bosh::Blobstore
             file = Tempfile.new('contents')
             s3.get(@oid, file)
             file.rewind
-            file.read.should == 'foobar'
+            expect(file.read).to eq 'foobar'
           end
 
           it 'should return the contents' do
             @oid = s3.create('foobar')
 
-            s3.get(@oid).should == 'foobar'
+            expect(s3.get(@oid)).to eq 'foobar'
           end
 
           it 'should raise an error when the object is missing' do
@@ -118,7 +110,7 @@ module Bosh::Blobstore
           end
 
           it "should raise an error when object doesn't exist" do
-            expect { s3.delete('foobar') }.to raise_error BlobstoreError
+            expect { s3.delete('foobar') }.to raise_error Bosh::Blobstore::NotFound, /Object 'foobar' is not found/
           end
         end
       end
@@ -135,14 +127,14 @@ module Bosh::Blobstore
         describe 'backwards compatibility' do
           it 'should work when a blob was uploaded by blobstore_client 0.5.0' do
             @oid = unencrypted_s3.create(File.read(asset('encrypted_blob_from_blobstore_client_0.5.0')))
-            encrypted_s3.get(@oid).should == 'skadim vadar'
+            expect(encrypted_s3.get(@oid)).to eq 'skadim vadar'
           end
         end
 
         describe 'create object' do
           it 'should be encrypted' do
             @oid = encrypted_s3.create('foobar')
-            encrypted_s3.get(@oid).should == 'foobar'
+            expect(encrypted_s3.get(@oid)).to eq 'foobar'
           end
         end
       end
@@ -166,11 +158,11 @@ module Bosh::Blobstore
           file = Tempfile.new('contents')
           s3.get('public', file)
           file.rewind
-          file.read.should == contents
+          expect(file.read).to eq contents
         end
 
         it 'should return the contents' do
-          s3.get('public').should == contents
+          expect(s3.get('public')).to eq contents
         end
 
         it 'should raise an error when the object is missing' do
