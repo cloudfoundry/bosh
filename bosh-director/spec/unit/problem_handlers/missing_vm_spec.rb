@@ -24,12 +24,12 @@ module Bosh::Director
     describe 'Resolutions:' do
       let(:spec) do
         {
-          'resource_pool' => {
-            'stemcell' => {
+          'vm_type' => {
+            'cloud_properties' => { 'foo' => 'bar' },
+          },
+          'stemcell' => {
               'name' => 'stemcell-name',
               'version' => '3.0.2'
-            },
-            'cloud_properties' => { 'foo' => 'bar' },
           },
           'networks' => ['A', 'B', 'C']
         }

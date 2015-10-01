@@ -4,8 +4,8 @@ module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
-    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
+    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
+    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
@@ -25,8 +25,8 @@ module Bosh::Director
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
     let(:another_vm_model) { Models::Vm.make }
-    let(:cloud_properties) { {cloud: 'properties'} }
-    let(:compilation_env) { {compilation: 'environment'} }
+    let(:cloud_properties) { { 'cloud' => 'properties'} }
+    let(:compilation_env) { { 'compilation' => 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { {'network name' => 'network settings'} }
@@ -106,7 +106,9 @@ module Bosh::Director
           'networks' => {
             'network name' => 'network settings'
           },
-          'resource_pool' => {},
+          'vm_type' => {},
+          'stemcell' => {'name' => 'stemcell-name'},
+          'env' => { 'compilation' => 'environment'},
           'packages' => {},
           'configuration_hash' => nil,
           'dns_domain_name' => nil,

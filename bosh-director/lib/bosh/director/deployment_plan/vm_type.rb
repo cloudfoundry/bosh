@@ -7,8 +7,7 @@ module Bosh::Director
 
       attr_reader :cloud_properties
 
-      def initialize(spec, logger)
-        @logger = logger
+      def initialize(spec)
 
         @name = safe_property(spec, "name", class: String)
 

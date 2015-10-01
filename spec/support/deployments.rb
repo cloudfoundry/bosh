@@ -55,9 +55,17 @@ module Bosh::Spec
       }
     end
 
+    def self.stemcell
+      {
+        'alias' => 'default',
+        'os' => 'toronto-os',
+        'version' => '1',
+      }
+    end
+
     def self.vm_type
       {
-        'name' => 'b',
+        'name' => 'vm-type-name',
         'cloud_properties' => {},
       }
     end

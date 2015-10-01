@@ -131,10 +131,18 @@ module Bosh::Director
         end
       end
 
-      def resource_pool
-        @job.resource_pool
+      def vm_type
+        @job.vm_type
       end
 
+      def stemcell
+        @job.stemcell
+      end
+
+      def env
+        @job.env.spec
+      end
+      
       def deployment_model
         @deployment.model
       end
@@ -164,9 +172,7 @@ module Bosh::Director
         @model.vm.update(:apply_spec => state)
         agent_client.apply(state)
 
-        # Agent will potentially return modified version of state
-        # with resolved dynamic networks information
-        @current_state = agent_client.get_state
+        @current_state = state
       end
 
       def update_trusted_certs
@@ -232,11 +238,15 @@ module Bosh::Director
           return true
         end
 
-        if @job.resource_pool.spec != @current_state['resource_pool']
-          log_changes(__method__, @current_state['resource_pool'], @job.resource_pool.spec)
+        if @job.vm_type.spec != @current_state['vm_type']
+          log_changes(__method__, @current_state['vm_type'], @job.vm_type.spec)
           return true
         end
 
+        if @job.stemcell.spec != @current_state['stemcell']
+          log_changes(__method__, @current_state['stemcell'], @job.stemcell.spec)
+          return true
+        end
         # env is not a part of a resource pool spec but rather gets persisted
         # in director DB, hence the check below
         # NOTE: we only update VMs that have env persisted to avoid recreating
@@ -244,9 +254,9 @@ module Bosh::Director
         # doesn't persist VM env to the version that does, there needs to
         # be at least one deployment that recreates all VMs before the following
         # code path gets exercised.
-        changed = @model && @model.vm && @model.vm.env && @job.resource_pool.env != @model.vm.env
+        changed = @model && @model.vm && @model.vm.env && @job.env.spec != @model.vm.env
         if changed
-          log_changes(__method__, @model.vm.env, @job.resource_pool.env)
+          log_changes(__method__, @model.vm.env, @job.env.spec)
           return true
         end
         false
@@ -334,11 +344,16 @@ module Bosh::Director
           'index' => index,
           'id' => uuid,
           'networks' => network_settings.to_hash,
-          'resource_pool' => job.resource_pool.spec,
+          'vm_type' => job.vm_type.spec,
+          'stemcell' => job.stemcell.spec,
           'packages' => job.package_spec,
           'configuration_hash' => configuration_hash,
           'dns_domain_name' => dns_domain_name,
         }
+
+        if job.env
+          spec['env'] = job.env.spec
+        end
 
         if job.persistent_disk_type
           spec['persistent_disk'] = job.persistent_disk_type.disk_size
@@ -366,7 +381,9 @@ module Bosh::Director
           'id' => uuid,
           'availability_zone' => availability_zone_name,
           'networks' => network_settings.to_hash,
-          'resource_pool' => job.resource_pool.spec,
+          'vm_type' => job.vm_type.spec,
+          'stemcell' => job.stemcell.spec,
+          'env' => job.env.spec,
           'packages' => job.package_spec,
           'properties' => job.properties,
           'dns_domain_name' => dns_domain_name,
@@ -415,9 +432,9 @@ module Bosh::Director
 
       def cloud_properties
         if @availability_zone.nil?
-          resource_pool.cloud_properties
+          vm_type.cloud_properties
         else
-          @availability_zone.cloud_properties.merge(resource_pool.cloud_properties)
+          @availability_zone.cloud_properties.merge(vm_type.cloud_properties)
         end
       end
 

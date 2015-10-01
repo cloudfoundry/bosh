@@ -103,9 +103,8 @@ module Bosh::Director
       @p_router = make_package('p_router', %w(ruby common))
       @p_deps_ruby = make_package('needs_ruby', %w(ruby))
 
-      rp_large = double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'large', stemcell: @stemcell_a)
-
-      rp_small = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'small', stemcell: @stemcell_b)
+      vm_type_large = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'large')
+      vm_type_small = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'small')
 
       @t_dea = instance_double('Bosh::Director::DeploymentPlan::Template', release: @release, package_models: [@p_dea, @p_nginx, @p_syslog], name: 'dea')
 
@@ -121,18 +120,25 @@ module Bosh::Director
         name: 'dea',
         release: @release,
         templates: [@t_dea, @t_warden],
-        resource_pool: rp_large)
+        vm_type: vm_type_large,
+        stemcell: @stemcell_a
+      )
+
       @j_router = instance_double('Bosh::Director::DeploymentPlan::Job',
         name: 'router',
         release: @release,
         templates: [@t_nginx, @t_router, @t_warden],
-        resource_pool: rp_small)
+        vm_type: vm_type_small,
+        stemcell: @stemcell_b
+      )
 
       @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job',
-                                     name: 'needs_ruby',
-                                     release: @release,
-                                     templates: [@t_deps_ruby],
-                                     resource_pool: rp_small)
+        name: 'needs_ruby',
+        release: @release,
+        templates: [@t_deps_ruby],
+        vm_type: vm_type_small,
+        stemcell: @stemcell_b
+      )
 
       @package_set_a = [@p_dea, @p_nginx, @p_syslog, @p_warden, @p_common, @p_ruby]
 
@@ -286,7 +292,8 @@ module Bosh::Director
 
         initial_state = {
             'deployment' => 'mycloud',
-            'resource_pool' => {},
+            'vm_type' => {},
+            'stemcell' => {},
             'networks' => net
         }
 
@@ -365,8 +372,7 @@ module Bosh::Director
         release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell = make_stemcell
-        resource_pool = double('resource_pool', stemcell: stemcell)
-        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', resource_pool: resource_pool)
+        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', stemcell: stemcell)
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
           fingerprint: 'deadbeef')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
@@ -391,7 +397,9 @@ module Bosh::Director
           'index' => 0,
           'id' => 'deadbeef',
           'networks' => {'default' => 'network settings'},
-          'resource_pool' => {},
+          'vm_type' => {},
+          'stemcell' => @stemcell_a.spec,
+          'env' =>{},
           'packages' => {},
           'configuration_hash' => nil,
           'dns_domain_name' => nil,
@@ -503,7 +511,6 @@ module Bosh::Director
       let(:job) do
         release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, name: 'release')
         stemcell = make_stemcell
-        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
         package = make_package('common')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release, package_models: [package], name: 'fake_template')
@@ -513,7 +520,8 @@ module Bosh::Director
           name: 'job-with-one-package',
           release: release,
           templates: [template],
-          resource_pool: resource_pool,
+          vm_type: {},
+          stemcell: stemcell,
         )
       end
 

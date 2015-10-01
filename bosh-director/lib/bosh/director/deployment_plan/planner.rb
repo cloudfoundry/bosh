@@ -109,6 +109,7 @@ module Bosh::Director
         :resource_pools,
         :resource_pool,
         :vm_types,
+        :vm_type,
         :add_resource_pool,
         :disk_types,
         :disk_type,
@@ -182,6 +183,10 @@ module Bosh::Director
 
       def add_stemcell(stemcell)
         @stemcells[stemcell.alias] = stemcell
+      end
+
+      def stemcell(name)
+        @stemcells[name]
       end
 
       # Adds a release by name
@@ -296,7 +301,7 @@ module Bosh::Director
             release_model = release_manager.find_by_name(template.release.name)
             release_version_model = release_manager.find_version(release_model, template.release.version)
 
-            validator.validate(release_version_model, job.resource_pool.stemcell.model)
+            validator.validate(release_version_model, job.stemcell.model)
           end
         end
         validator.handle_faults

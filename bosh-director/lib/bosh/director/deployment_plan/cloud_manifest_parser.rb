@@ -98,13 +98,18 @@ module Bosh::Director
       end
 
       def parse_resource_pools(cloud_manifest)
-        resource_pools = safe_property(cloud_manifest, 'resource_pools', :class => Array)
+        resource_pools = safe_property(cloud_manifest, 'resource_pools', :class => Array, optional: true)
+
+        if resource_pools.nil?
+          return {}
+        end
+
         if resource_pools.empty?
           raise DeploymentNoResourcePools, 'No resource_pools specified'
         end
 
         parsed_resource_pools = resource_pools.map do |rp_spec|
-          ResourcePool.new(rp_spec, @logger)
+          ResourcePool.new(rp_spec)
         end
 
         duplicates = detect_duplicates(parsed_resource_pools) { |rp| rp.name }
@@ -119,7 +124,7 @@ module Bosh::Director
         vm_types = safe_property(cloud_manifest, 'vm_types', :class => Array, :optional => true, :default => [])
 
         parsed_vm_types = vm_types.map do |vmt_spec|
-          VmType.new(vmt_spec, @logger)
+          VmType.new(vmt_spec)
         end
 
         duplicates = detect_duplicates(parsed_vm_types) { |vmt| vmt.name }

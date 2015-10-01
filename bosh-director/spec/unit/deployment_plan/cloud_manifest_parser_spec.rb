@@ -327,12 +327,23 @@ module Bosh::Director
           end
 
           it 'raises an error' do
+
             expect {
               parsed_cloud_planner
             }.to raise_error(
                 DeploymentNoResourcePools,
                 "No resource_pools specified",
               )
+          end
+        end
+
+        context 'when there are no resource pools' do
+          before do
+            cloud_manifest.delete('resource_pools')
+          end
+
+          it 'does not raise an error' do
+            expect { parsed_cloud_planner }.not_to raise_error
           end
         end
       end
@@ -374,9 +385,6 @@ module Bosh::Director
                   "Duplicate vm type name `same-name'",
                 )
             end
-          end
-          context 'when vm types is not specified' do
-            it 'raises an error'
           end
         end
       end

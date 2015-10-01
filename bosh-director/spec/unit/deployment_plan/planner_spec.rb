@@ -63,7 +63,7 @@ module Bosh::Director
 
         before do
           deployment_model.add_stemcell(stemcell_model)
-          stemcell_spec = {
+          resource_pool_spec = {
             'name' => 'default',
             'cloud_properties' => {},
             'network' => 'default',
@@ -77,7 +77,8 @@ module Bosh::Director
               default_network: Network.new({'name' => 'default'}, logger),
               disk_types: [],
               availability_zones_list: [],
-              resource_pools: [ResourcePool.new(stemcell_spec, logger)],
+              vm_type: nil,
+              resource_pools: [ResourcePool.new(resource_pool_spec)],
               compilation: nil,
             })
           planner.cloud_planner = cloud_planner

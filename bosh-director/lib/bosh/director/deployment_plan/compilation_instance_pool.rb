@@ -65,13 +65,11 @@ module Bosh::Director
         @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
       end
 
-      def create_instance_plan(stemcell)
-        resource_pool = CompilationResourcePool.new(
-          stemcell,
-          @deployment_plan.compilation.cloud_properties,
-          @deployment_plan.compilation.env
-        )
-        @compile_job = CompilationJob.new(resource_pool, @deployment_plan)
+      def create_instance(stemcell)
+        vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        env = Env.new(@deployment_plan.compilation.env)
+
+        @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan)
         availability_zone = @deployment_plan.compilation.availability_zone
         instance = Instance.new(@compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
 
@@ -100,13 +98,11 @@ module Bosh::Director
 
     private
 
-    class CompilationResourcePool
-      attr_reader :stemcell, :cloud_properties, :env
+    class CompilationVmType
+      attr_reader :cloud_properties
 
-      def initialize(stemcell, cloud_properties, env)
-        @stemcell = stemcell
+      def initialize(cloud_properties)
         @cloud_properties = cloud_properties
-        @env = env
       end
 
       def spec
@@ -115,11 +111,13 @@ module Bosh::Director
     end
 
     class CompilationJob
-      attr_reader :resource_pool, :name, :deployment
+      attr_reader :vm_type, :stemcell, :env, :name, :deployment
       attr_reader :sorted_instance_plans
 
-      def initialize(resource_pool,deployment)
-        @resource_pool = resource_pool
+      def initialize(vm_type, stemcell, env, deployment)
+        @vm_type = vm_type
+        @stemcell = stemcell
+        @env = env
         @network = deployment.compilation.network_name
         @name = "compilation-#{SecureRandom.uuid}"
         @deployment = deployment

@@ -34,7 +34,9 @@ module Bosh::Director::DeploymentPlan
     let(:network_resolver) { GlobalNetworkResolver.new(plan) }
     let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::Job',
-        resource_pool: resource_pool,
+        vm_type: vm_type,
+        stemcell: stemcell,
+        env: env,
         deployment: plan,
         name: 'fake-job',
         persistent_disk_type: disk_type,
@@ -55,7 +57,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
-    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, true, 1)}
+    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, true, 1) }
 
     describe '#packages_changed?' do
       let(:job) { Job.new(plan, logger) }
@@ -180,7 +182,8 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(job).to receive(:instance_state).with(2).and_return('started')
-        allow(job).to receive(:resource_pool).and_return(resource_pool)
+        allow(job).to receive(:vm_type).and_return(vm_type)
+        allow(job).to receive(:stemcell).and_return(stemcell)
       end
 
       it 'creates a new VM and binds it the instance' do
@@ -209,12 +212,6 @@ module Bosh::Director::DeploymentPlan
     describe '#bind_existing_instance_model' do
       let(:job) { Job.new(plan, logger) }
 
-      before { job.resource_pool = resource_pool }
-      let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
-            name: 'fake-resource-pool',
-          })
-      end
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
       end
@@ -271,14 +268,13 @@ module Bosh::Director::DeploymentPlan
           })
       end
 
-      before { job.resource_pool = resource_pool }
-      let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
-            name: 'fake-resource-pool',
-            spec: 'fake-resource-pool-spec',
-          })
-      end
+      let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
+      let(:stemcell) { Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'}) }
 
+      before do
+        job.vm_type = vm_type
+        job.stemcell = stemcell
+      end
       before { allow(job).to receive(:spec).with(no_args).and_return('fake-job-spec') }
 
       let(:network) do
@@ -309,8 +305,9 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'networks' => {'fake-network' => {'fake-network-settings' =>{}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test_domain'}},
-            'resource_pool' => 'fake-resource-pool-spec',
+            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test_domain'}},
+            'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}},
+            'stemcell' => {'name' => 'fake-stemcell-name', 'version' => '1.0'},
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test_domain',
@@ -358,12 +355,6 @@ module Bosh::Director::DeploymentPlan
         }
       end
 
-      before { job.resource_pool = resource_pool }
-      let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
-            name: 'fake-resource-pool',
-          })
-      end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
       let(:vm) { Vm.new }
 
@@ -397,30 +388,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#resource_pool_changed?' do
-      let(:resource_pool) { ResourcePool.new(resource_pool_manifest, logger) }
 
-      let(:resource_pool_manifest) do
-        {
-          'name' => 'fake-resource-pool',
-          'env' => {'key' => 'value'},
-          'cloud_properties' => {},
-          'stemcell' => {
-            'name' => 'fake-stemcell',
-            'version' => '1.0.0',
-          },
-        }
-      end
-
-      let(:resource_pool_spec) do
-        {
-          'name' => 'fake-resource-pool',
-          'cloud_properties' => {},
-          'stemcell' => {
-            'name' => 'fake-stemcell',
-            'version' => '1.0.0',
-          },
-        }
-      end
 
       let(:job) { Job.new(plan, logger) }
 
@@ -429,21 +397,23 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(job).to receive(:instance_state).with(0).and_return('started')
-        job.resource_pool = resource_pool
+        job.vm_type = vm_type
+        job.stemcell = stemcell
+        job.env = env
       end
-
-      let(:current_state) { {'resource_pool' => resource_pool_spec} }
+      let(:current_state) { {'vm_type' => vm_type.spec, 'stemcell' => stemcell.spec} }
 
       describe 'when nothing changes' do
         it 'should return false' do
-          expect(instance.resource_pool_changed?).to_not be(true)
+          expect(instance.resource_pool_changed?).to_not eq(true)
         end
       end
 
-      describe 'when the resource pool spec does not match the existing state' do
-        before do
-          resource_pool_spec['cloud_properties'] = {'bar' => 'baz'}
-        end
+      describe 'when the vm types spec does not match the existing state' do
+        let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {'bar' => 'baz'}} }
+
+        let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '1.0'} }
+        let(:current_state) { {'vm_type' => vm_type_spec, 'stemcell' => stemcell_spec} }
 
         it 'should return changed' do
           expect(instance.resource_pool_changed?).to be(true)
@@ -451,9 +421,29 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: ' +
-                '{"name"=>"fake-resource-pool", "cloud_properties"=>{"bar"=>"baz"}, "stemcell"=>{"name"=>"fake-stemcell", "version"=>"1.0.0"}} ' +
+                '{"name"=>"fake-vm-type", "cloud_properties"=>{"bar"=>"baz"}} ' +
                 'TO: ' +
-                '{"name"=>"fake-resource-pool", "cloud_properties"=>{}, "stemcell"=>{"name"=>"fake-stemcell", "version"=>"1.0.0"}}')
+                '{"name"=>"fake-vm-type", "cloud_properties"=>{}}')
+          instance.resource_pool_changed?
+        end
+      end
+
+      describe 'when the stemcell spec does not match the existing state' do
+        let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {}} }
+
+        let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '2.0'} }
+        let(:current_state) { {'vm_type' => vm_type_spec, 'stemcell' => stemcell_spec} }
+
+
+        it 'should return changed' do
+          expect(instance.resource_pool_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: ' +
+                '{"name"=>"fake-stemcell-name", "version"=>"2.0"} ' +
+                'TO: ' +
+                '{"name"=>"fake-stemcell-name", "version"=>"1.0"}')
           instance.resource_pool_changed?
         end
       end
@@ -555,7 +545,10 @@ module Bosh::Director::DeploymentPlan
       let(:properties) { {'key' => 'value'} }
       let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
-      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
+      let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: vm_type_spec) }
+      let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {}} }
+      let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: stemcell_spec) }
+      let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '1.0'} }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
       let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
       let(:job) {
@@ -567,7 +560,9 @@ module Bosh::Director::DeploymentPlan
           instances: ['instance0'],
           release: release,
           default_network: {},
-          resource_pool: resource_pool,
+          vm_type: vm_type,
+          stemcell: stemcell,
+          env: env,
           package_spec: packages,
           persistent_disk_type: disk_pool,
           can_run_as_errand?: false,
@@ -603,7 +598,9 @@ module Bosh::Director::DeploymentPlan
             'dns_record_name' => expect_dns_name
           )
 
-        expect(spec['resource_pool']).to eq(resource_pool_spec)
+        expect(spec['vm_type']).to eq(vm_type.spec)
+        expect(spec['stemcell']).to eq(stemcell.spec)
+        expect(spec['env']).to eq(env.spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
@@ -634,7 +631,9 @@ module Bosh::Director::DeploymentPlan
             instances: ['instance0'],
             release: release,
             default_network: {},
-            resource_pool: resource_pool,
+            vm_type: vm_type,
+            stemcell: stemcell,
+            env: env,
             package_spec: packages,
             persistent_disk_type: disk_type,
             can_run_as_errand?: false,
@@ -662,7 +661,9 @@ module Bosh::Director::DeploymentPlan
               'dns_record_name' => expect_dns_name
             )
 
-          expect(spec['resource_pool']).to eq(resource_pool_spec)
+          expect(spec['vm_type']).to eq(vm_type.spec)
+          expect(spec['stemcell']).to eq(stemcell.spec)
+          expect(spec['env']).to eq(env.spec)
           expect(spec['packages']).to eq(packages)
           expect(spec['persistent_disk']).to eq(0)
           expect(spec['persistent_disk_type']).to eq(disk_type_spec)
@@ -734,7 +735,9 @@ module Bosh::Director::DeploymentPlan
           instances: ['instance0'],
           release: release,
           default_network: {},
-          resource_pool: resource_pool,
+          vm_type: vm_type,
+          stemcell: stemcell,
+          env: env,
           package_spec: packages,
           persistent_disk_type: disk_type,
           can_run_as_errand?: false,
@@ -770,7 +773,9 @@ module Bosh::Director::DeploymentPlan
             'dns_record_name' => expect_dns_name
           )
 
-        expect(spec['resource_pool']).to eq(resource_pool_spec)
+        expect(spec['vm_type']).to eq(vm_type.spec)
+        expect(spec['stemcell']).to eq(stemcell.spec)
+        expect(spec['env']).to eq(env.spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['configuration_hash']).to be_nil
@@ -804,13 +809,15 @@ module Bosh::Director::DeploymentPlan
     describe '#cloud_properties_changed?' do
       let(:instance_model) {
         model = Bosh::Director::Models::Instance.make(deployment: deployment)
-        model.cloud_properties_hash = { 'a' => 'b' }
+        model.cloud_properties_hash = {'a' => 'b'}
         model
       }
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
-          resource_pool: resource_pool)
+          vm_type: vm_type,
+          stemcell: stemcell,
+        )
       }
 
       before do
@@ -828,7 +835,7 @@ module Bosh::Director::DeploymentPlan
         describe 'logging' do
           before do
             availability_zone.cloud_properties['baz'] = 'bang'
-            resource_pool.cloud_properties['abcd'] = 'wera'
+            vm_type.cloud_properties['abcd'] = 'wera'
           end
 
           it 'should log the change' do
@@ -849,7 +856,7 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the resource pool cloud properties change' do
           before do
-            resource_pool.cloud_properties['abcd'] = 'wera'
+            vm_type.cloud_properties['abcd'] = 'wera'
           end
 
           it 'should return true' do
@@ -858,10 +865,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe 'when there is no availability zone' do
-          let(:availability_zone) {nil}
+          let(:availability_zone) { nil }
           let(:instance_model) {
             model = Bosh::Director::Models::Instance.make(deployment: deployment)
-            model.cloud_properties_hash = { }
+            model.cloud_properties_hash = {}
             model
           }
 
@@ -873,7 +880,7 @@ module Bosh::Director::DeploymentPlan
 
           describe 'when there is no availability zone and resource pool cloud properties change' do
             before do
-              resource_pool.cloud_properties['abcd'] = 'wera'
+              vm_type.cloud_properties['abcd'] = 'wera'
             end
 
             it 'should return true' do
@@ -902,7 +909,7 @@ module Bosh::Director::DeploymentPlan
         it 'merges the resource pool cloud properties into the availability zone cloud properties' do
           availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
-          allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
           instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
 
@@ -914,7 +921,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the instance does not have an availability zone' do
         it 'uses just the resource pool cloud properties' do
-          allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+          allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
           instance = Instance.new(job, index, state, plan, current_state, nil, false, logger)
 
@@ -929,7 +936,7 @@ module Bosh::Director::DeploymentPlan
       it 'saves the cloud properties' do
         availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
-        allow(resource_pool).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+        allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
         instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
         instance.bind_existing_instance_model(instance_model)
@@ -1009,7 +1016,7 @@ module Bosh::Director::DeploymentPlan
       context 'when instance does not have reservations in database' do
         context 'when binding reservations with state' do
           it 'creates reservations from state' do
-            instance.bind_existing_reservations({'networks'=> {'fake-network' => {'ip' => 345}}})
+            instance.bind_existing_reservations({'networks' => {'fake-network' => {'ip' => 345}}})
             expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
           end
         end

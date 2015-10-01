@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class InstanceFromDatabase
-      attr_reader :model, :vm, :apply_spec
+      attr_reader :model, :vm, :apply_spec, :env
 
       def self.create_from_model(instance_model, logger)
         new(instance_model, logger)
@@ -55,9 +55,24 @@ module Bosh::Director
         @model.cloud_properties_hash
       end
 
-      def resource_pool
-        resource_pool_spec = @apply_spec.fetch('resource_pool', {})
-        ExistingResourcePool.new(resource_pool_spec, @env)
+
+      def vm_type
+        vm_type_spec = @apply_spec.fetch('vm_type', {})
+        VmType.new(vm_type_spec)
+      end
+
+      def stemcell
+        stemcell_spec = @apply_spec.fetch('stemcell', {})
+
+        name = stemcell_spec['name']
+        version = stemcell_spec['version']
+
+        unless name && version
+          raise 'Unknown stemcell name and/or version'
+        end
+
+        stemcell_manager = Api::StemcellManager.new
+        stemcell_manager.find_by_name_and_version(name, version)
       end
 
       def update_trusted_certs
@@ -92,33 +107,6 @@ module Bosh::Director
 
       def agent_client
         @agent_client ||= AgentClient.with_vm(@model.vm)
-      end
-
-      class ExistingResourcePool
-        attr_reader :env
-
-        def initialize(spec, env)
-          @spec = spec
-          @env = env
-        end
-
-        def stemcell
-          stemcell_spec = @spec.fetch('stemcell', {})
-
-          name = stemcell_spec['name']
-          version = stemcell_spec['version']
-
-          unless name && version
-            raise 'Unknown stemcell name and/or version'
-          end
-
-          stemcell_manager = Api::StemcellManager.new
-          stemcell_manager.find_by_name_and_version(name, version)
-        end
-
-        def cloud_properties
-          @spec.fetch('cloud_properties', {})
-        end
       end
     end
   end

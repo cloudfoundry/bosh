@@ -114,7 +114,7 @@ module Bosh::Director
           'network' => network_name,
           'stemcell' => {'name' => @stemcell.name, 'version' => @stemcell.version}
         }
-        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, @logger)
+        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest)
       end
 
       def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)

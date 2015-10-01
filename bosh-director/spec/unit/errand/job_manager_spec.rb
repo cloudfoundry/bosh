@@ -61,7 +61,8 @@ module Bosh::Director
       let(:instance1_vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid-1') }
       let(:instance2_vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid-2') }
 
-      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
+      let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
+      let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
 
       let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
       let(:vm2) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
@@ -76,7 +77,8 @@ module Bosh::Director
         allow(instance_deleter).to receive(:delete_instance_plans)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
 
-        allow(job).to receive(:resource_pool).and_return(resource_pool)
+        allow(job).to receive(:vm_type).and_return(vm_type)
+        allow(job).to receive(:stemcell).and_return(stemcell)
       end
 
       it 'creates an event log stage' do

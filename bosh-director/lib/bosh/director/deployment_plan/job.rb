@@ -34,9 +34,14 @@ module Bosh::Director
       # @return [DeploymentPlan::ReleaseVersion] Release this job belongs to
       attr_accessor :release
 
-      # @return [DeploymentPlan::ResourcePool] Resource pool this job should
-      #   be run in
-      attr_accessor :resource_pool
+      # @return [DeploymentPlan::Stemcell]
+      attr_accessor :stemcell
+
+      # @return [DeploymentPlan::VmType]
+      attr_accessor :vm_type
+
+      # @return [DeploymentPlan::Env]
+      attr_accessor :env
 
       # @return [DeploymentPlan::Network] Job default network
       attr_accessor :default_network

@@ -163,18 +163,25 @@ module Bosh::Director
       end
     end
 
-    # Binds stemcell model for each stemcell spec in each resource pool in
+    # Binds stemcell model for each stemcell spec in
     # the deployment plan
     # @return [void]
     def bind_stemcells
-      @deployment_plan.resource_pools.each do |resource_pool|
-        stemcell = resource_pool.stemcell
+      if @deployment_plan.resource_pools && @deployment_plan.resource_pools.any?
+        @deployment_plan.resource_pools.each do |resource_pool|
+          stemcell = resource_pool.stemcell
 
-        if stemcell.nil?
-          raise DirectorError,
-                "Stemcell not bound for resource pool `#{resource_pool.name}'"
+          if stemcell.nil?
+            raise DirectorError,
+              "Stemcell not bound for resource pool `#{resource_pool.name}'"
+          end
+
+          stemcell.bind_model(@deployment_plan)
         end
+        return
+      end
 
+      @deployment_plan.stemcells.each do |_, stemcell|
         stemcell.bind_model(@deployment_plan)
       end
     end

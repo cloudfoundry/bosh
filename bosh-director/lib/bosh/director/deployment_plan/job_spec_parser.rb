@@ -229,12 +229,33 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String)
-        @job.resource_pool = @deployment.resource_pool(resource_pool_name)
-        if @job.resource_pool.nil?
-          raise JobUnknownResourcePool,
-                "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
+        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
+        if resource_pool_name
+          resource_pool = @deployment.resource_pool(resource_pool_name)
+          if resource_pool.nil?
+            raise JobUnknownResourcePool,
+              "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
+          end
+
+          @job.vm_type = VmType.new({
+              'name' => resource_pool.name,
+              'cloud_properties' => resource_pool.cloud_properties
+            })
+
+          @job.stemcell = resource_pool.stemcell
+
+          @job.env = Env.new(resource_pool.env)
+
+          return
         end
+
+        vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
+        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
+        env = safe_property(@job_spec, 'env', class: Hash, :default => {})
+
+        @job.vm_type = @deployment.vm_type(vm_type_name)
+        @job.stemcell = @deployment.stemcell(stemcell_name)
+        @job.env = Env.new(env)
       end
 
       def parse_update_config

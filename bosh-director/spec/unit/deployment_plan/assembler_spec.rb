@@ -20,7 +20,8 @@ module Bosh::Director
         allow(deployment_plan).to receive(:existing_instances).and_return([])
         allow(deployment_plan).to receive(:candidate_existing_instances).and_return([])
         allow(deployment_plan).to receive(:vm_models).and_return([])
-        allow(deployment_plan).to receive(:resource_pools).and_return([])
+        allow(deployment_plan).to receive(:resource_pools).and_return(nil)
+        allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
 
@@ -80,10 +81,7 @@ module Bosh::Director
         sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
         sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
 
-        rp1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', :stemcell => sc1)
-        rp2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', :stemcell => sc2)
-
-        expect(deployment_plan).to receive(:resource_pools).and_return([rp1, rp2])
+        expect(deployment_plan).to receive(:stemcells).and_return({ 'sc1' => sc1, 'sc2' => sc2})
 
         expect(sc1).to receive(:bind_model)
         expect(sc2).to receive(:bind_model)

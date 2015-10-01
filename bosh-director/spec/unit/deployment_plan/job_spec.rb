@@ -13,7 +13,10 @@ describe Bosh::Director::DeploymentPlan::Job do
       ip_provider: fake_ip_provider,
     )
   end
-  let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
+  let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
+  let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
+  let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
+
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
   let(:foo_properties) do
@@ -48,7 +51,8 @@ describe Bosh::Director::DeploymentPlan::Job do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
     allow(plan).to receive(:network).and_return(network)
-    allow(plan).to receive(:resource_pool).with('dea').and_return resource_pool
+    allow(plan).to receive(:vm_type).with('dea').and_return vm_type
+    allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
 
     allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
@@ -61,7 +65,9 @@ describe Bosh::Director::DeploymentPlan::Job do
         'name' => 'foobar',
         'template' => 'foo',
         'release' => 'appcloud',
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'instances' => 1,
         'networks'  => [{'name' => 'fake-network-name'}],
         'properties' => props,
@@ -159,7 +165,9 @@ describe Bosh::Director::DeploymentPlan::Job do
         'name' => 'foobar',
         'template' => 'foo',
         'release' => 'appcloud',
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'instances' => 1,
         'networks' => [{'name' => 'fake-network-name'}],
         'properties' => props,
@@ -205,7 +213,9 @@ describe Bosh::Director::DeploymentPlan::Job do
             { 'name' => 'foo', 'release' => 'release1' },
             { 'name' => 'bar', 'release' => 'release1' },
           ],
-          'resource_pool' => 'dea',
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'env' => {'key' => 'value'},
           'instances' => 1,
           'networks' => [{ 'name' => 'fake-network-name' }],
         }
@@ -231,7 +241,9 @@ describe Bosh::Director::DeploymentPlan::Job do
             { 'name' => 'foo', 'release' => 'release1' },
             { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'x.y.z.zz'}},
           ],
-          'resource_pool' => 'dea',
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'env' => {'key' => 'value'},
           'instances' => 1,
           'networks' => [{'name' => 'fake-network-name'}],
         }
@@ -284,7 +296,9 @@ describe Bosh::Director::DeploymentPlan::Job do
         'template' => 'foo',
         'release' => 'release1',
         'instances' => 1,
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'networks'  => [{'name' => 'fake-network-name'}],
       }
     end

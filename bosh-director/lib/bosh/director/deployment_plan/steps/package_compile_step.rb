@@ -128,7 +128,7 @@ module Bosh::Director
 
           @event_log.track('Finding packages to compile') do
             @jobs_to_compile.each do |job|
-              stemcell = job.resource_pool.stemcell
+              stemcell = job.stemcell
 
               template_descs = job.templates.map do |t|
                 # we purposefully did NOT inline those because

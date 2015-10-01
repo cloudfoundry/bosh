@@ -22,7 +22,10 @@ describe Bosh::Director::VmCreator do
   let(:availability_zone) do
     instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
   end
-  let(:resource_pool) { instance_double(Bosh::Director::DeploymentPlan::ResourcePool, env: {}, spec: {}, cloud_properties: {'ram' => '2gb'}) }
+  let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
+  let(:stemcell) { Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id') }
+  let(:env) { Bosh::Director::DeploymentPlan::Env.new({}) }
+
   let(:instance) do
     instance = Bosh::Director::DeploymentPlan::Instance.new(
       job,
@@ -46,7 +49,9 @@ describe Bosh::Director::VmCreator do
   let(:job) do
     instance_double(Bosh::Director::DeploymentPlan::Job,
       name: 'fake-job',
-      resource_pool: resource_pool,
+      vm_type: vm_type,
+      stemcell: stemcell,
+      env: env,
       default_network: {},
       can_run_as_errand?: false,
       deployment: deployment_plan
@@ -58,9 +63,6 @@ describe Bosh::Director::VmCreator do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
     allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
-
-    stemcell = Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id')
-    allow(resource_pool).to receive(:stemcell).and_return(stemcell)
   end
 
   it 'should create a vm' do

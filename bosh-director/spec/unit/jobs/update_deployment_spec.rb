@@ -41,7 +41,7 @@ module Bosh::Director::Jobs
           )
         end
         let(:planner) do
-          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', resource_pools: [])
+          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name')
         end
 
         before do

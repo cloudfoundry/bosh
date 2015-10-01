@@ -105,14 +105,15 @@ module Bosh::Director
       describe 'actually recreating the VM' do
         let(:spec) do
           {
-              'resource_pool' => {
-                  'stemcell' => {
-                      'name' => 'stemcell-name',
-                      'version' => '3.0.2'
-                  },
-                  'cloud_properties' => {'foo' => 'bar'},
-              },
-              'networks' => ['A', 'B', 'C']
+            'vm_type' => {
+              'name' => 'vm-type',
+              'cloud_properties' => {'foo' => 'bar'},
+            },
+            'stemcell' => {
+              'name' => 'stemcell-name',
+              'version' => '3.0.2'
+            },
+            'networks' => ['A', 'B', 'C']
           }
         end
         let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
@@ -127,16 +128,16 @@ module Bosh::Director
 
           expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan, options|
             expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance_plan.instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
-            expect(instance_plan.instance.resource_pool.env).to eq({'key1' => 'value1'})
+            expect(instance_plan.instance.vm_type.cloud_properties).to eq({'foo' => 'bar'})
+            expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
 
             expect(options).to eq({skip_disks: true})
           end
 
           expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
             expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance_plan.instance.resource_pool.cloud_properties).to eq({'foo' => 'bar'})
-            expect(instance_plan.instance.resource_pool.env).to eq({'key1' => 'value1'})
+            expect(instance_plan.instance.vm_type.cloud_properties).to eq({'foo' => 'bar'})
+            expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
 
             vm
           end

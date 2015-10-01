@@ -26,7 +26,7 @@ module Bosh::Director::DeploymentPlan
 
       let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
       let(:vm_model) { Bosh::Director::Models::Vm.make(deployment: deployment) }
-      let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version') }
+      let(:stemcell) { Bosh::Director::Models::Stemcell.make({ 'name' => 'fake-stemcell', 'version' => 'fake-stemcell-version'}) }
 
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         before do
@@ -152,6 +152,7 @@ module Bosh::Director::DeploymentPlan
           before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
+
             expect(cloud).to receive(:delete_vm).with(vm_model.cid).ordered
             expect(cloud).to receive(:create_vm).with(anything, stemcell.cid, anything, { 'fake-network' => hash_including('ip' => '127.0.0.1') }, anything, anything).ordered
 

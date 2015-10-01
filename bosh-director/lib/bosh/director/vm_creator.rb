@@ -39,11 +39,11 @@ module Bosh::Director
 
       vm_model = create(
         instance.deployment_model,
-        instance.resource_pool.stemcell,
+        instance.stemcell,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
         disks,
-        instance.resource_pool.env,
+        instance.env,
       )
 
       begin

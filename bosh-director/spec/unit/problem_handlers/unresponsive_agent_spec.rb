@@ -98,12 +98,13 @@ module Bosh::Director
       context 'when no errors' do
         let(:spec) do
           {
-            'resource_pool' => {
-              'stemcell' => {
-                'name' => 'stemcell-name',
-                'version' => '3.0.2'
-              },
+            'vm_type' => {
+              'name' => 'fake-vm-type',
               'cloud_properties' => { 'foo' => 'bar' },
+            },
+            'stemcell' => {
+              'name' => 'stemcell-name',
+              'version' => '3.0.2'
             },
             'networks' => ['A', 'B', 'C']
           }

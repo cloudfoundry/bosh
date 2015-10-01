@@ -16,9 +16,19 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
   end
 
   describe '#parse' do
-    before { allow(deployment_plan).to receive(:resource_pool).and_return(resource_pool) }
+    before do
+      allow(deployment_plan).to receive(:resource_pool).and_return(resource_pool)
+      allow(resource_pool).to receive(:name).and_return('fake-vm-type')
+      allow(resource_pool).to receive(:cloud_properties).and_return({})
+      allow(resource_pool).to receive(:stemcell).and_return(
+          Bosh::Director::DeploymentPlan::Stemcell.new({
+              'name' => 'fake-stemcell-name',
+              'version' => 1
+            })
+        )
+    end
     let(:resource_pool) do
-      instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+      instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: {'key' => 'value'})
     end
     let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType') }
     before { allow(deployment_plan).to receive(:disk_type).and_return(disk_type) }
@@ -643,6 +653,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           )
       end
     end
+
     describe 'resource_pool key' do
       it 'parses resource pool' do
         expect(deployment_plan).to receive(:resource_pool)
@@ -650,7 +661,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           .and_return(resource_pool)
 
         job = parser.parse(job_spec)
-        expect(job.resource_pool).to eq(resource_pool)
+        expect(job.vm_type.name).to eq('fake-vm-type')
+        expect(job.vm_type.cloud_properties).to eq({})
+        expect(job.stemcell.name).to eq('fake-stemcell-name')
+        expect(job.stemcell.version).to eq('1')
+        expect(job.env.spec).to eq({'key' => 'value'})
       end
 
       it 'complains about unknown resource pool' do
@@ -665,6 +680,48 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           Bosh::Director::JobUnknownResourcePool,
           "Job `fake-job-name' references an unknown resource pool `unknown-resource-pool'"
         )
+      end
+    end
+
+    describe 'vm type and stemcell key' do
+      before do
+        allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
+            Bosh::Director::DeploymentPlan::VmType.new({
+                'name' => 'fake-vm-type',
+                'cloud_properties' => {}
+              })
+          )
+        allow(deployment_plan).to receive(:stemcell).with('fake-stemcell').and_return(
+            Bosh::Director::DeploymentPlan::Stemcell.new({
+                'alias' => 'fake-stemcell',
+                'os' => 'fake-os',
+                'version' => 1
+              })
+          )
+      end
+
+      let(:job_spec) do
+        {
+          'name'      => 'fake-job-name',
+          'templates' => [],
+          'release'   => 'fake-release-name',
+          'vm_type' => 'fake-vm-type',
+          'stemcell' => 'fake-stemcell',
+          'env' => {'key' => 'value'},
+          'instances' => 1,
+          'networks'  => [{'name' => 'fake-network-name'}],
+          'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}]
+        }
+      end
+
+      it 'parses vm type and stemcell' do
+        job = parser.parse(job_spec)
+        expect(job.vm_type.name).to eq('fake-vm-type')
+        expect(job.vm_type.cloud_properties).to eq({})
+        expect(job.stemcell.alias).to eq('fake-stemcell')
+        expect(job.stemcell.version).to eq('1')
+        expect(job.env.spec).to eq({'key' => 'value'})
+
       end
     end
 

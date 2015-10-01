@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe VmType do
-    subject(:vm_type) { VmType.new(valid_spec, logger) }
+    subject(:vm_type) { VmType.new(valid_spec) }
     let(:max_size) { 2 }
 
     let(:valid_spec) do
@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
         before { valid_spec.delete('name') }
 
         it 'raises an error' do
-          expect { VmType.new(valid_spec, logger) }.to raise_error(BD::ValidationMissingField)
+          expect { VmType.new(valid_spec) }.to raise_error(BD::ValidationMissingField)
         end
       end
 
@@ -41,7 +41,7 @@ module Bosh::Director::DeploymentPlan
           before { valid_spec.delete(key) }
 
           it 'does not raise an error' do
-            expect { VmType.new(valid_spec, logger) }.to_not raise_error
+            expect { VmType.new(valid_spec) }.to_not raise_error
           end
         end
       end

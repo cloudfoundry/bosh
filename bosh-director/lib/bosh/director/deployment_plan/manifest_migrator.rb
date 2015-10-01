@@ -18,6 +18,7 @@ module Bosh
         private
 
         CLOUD_MANIFEST_KEYS = ['resource_pools','compilation','disk_pools','networks']
+
         def cloud_manifest_from_deployment_manifest(deployment_manifest)
           cloud_manifest = {}
           CLOUD_MANIFEST_KEYS.each do |key|

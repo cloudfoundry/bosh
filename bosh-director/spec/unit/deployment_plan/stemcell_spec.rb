@@ -55,7 +55,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         expect(sc.version).to eq('latest')
       end
     end
-
   end
 
   it "returns stemcell spec as Hash" do
