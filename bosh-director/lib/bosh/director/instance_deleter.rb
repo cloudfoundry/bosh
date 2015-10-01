@@ -62,9 +62,7 @@ module Bosh::Director
         instances.each do |instance|
           pool.process do
             # FIXME: We should not be relying on type checking. Can we do some of this logic in the caller?
-            if instance.is_a?(DeploymentPlan::Instance)
-              instance_plan = instance.job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == instance.uuid}
-            elsif instance.is_a?(Models::Instance)
+            if instance.is_a?(Models::Instance)
               instance_plan = DeploymentPlan::InstancePlan.new(
                 existing_instance: instance,
                 instance: DeploymentPlan::InstanceFromDatabase.create_from_model(instance, @logger),

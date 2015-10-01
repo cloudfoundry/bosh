@@ -24,9 +24,10 @@ module Bosh::Director
     end
 
     describe '#update' do
-      before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+      before { allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2]) }
+      let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
+      let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
+
 
       it 'binds vms to instances, creates jobs configurations and updates dns' do
         dns_binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
@@ -65,11 +66,14 @@ module Bosh::Director
       let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
       let(:vm2) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
 
+      let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
+      let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance2) }
+
       before do
-        allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2])
+        allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
 
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)
-        allow(instance_deleter).to receive(:delete_instances)
+        allow(instance_deleter).to receive(:delete_instance_plans)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
 
         allow(job).to receive(:resource_pool).and_return(resource_pool)
@@ -82,8 +86,8 @@ module Bosh::Director
 
       it 'deletes all job instances' do
         expect(InstanceDeleter).to receive(:new).with(ip_provider, skip_drain, instance_of(DnsManager))
-        expect(instance_deleter).to receive(:delete_instances).
-          with([instance1, instance2], event_log_stage)
+        expect(instance_deleter).to receive(:delete_instance_plans).
+          with([instance_plan1, instance_plan2], event_log_stage)
 
         subject.delete_instances
       end
@@ -99,7 +103,7 @@ module Bosh::Director
         end
 
         it 'does not delete instances' do
-          expect(instance_deleter).not_to receive(:delete_instances)
+          expect(instance_deleter).not_to receive(:delete_instance_plans)
 
           subject.delete_instances
         end

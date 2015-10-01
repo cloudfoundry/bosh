@@ -39,22 +39,24 @@ module Bosh::Director
     # Deletes all errand job instances
     # @return [void]
     def delete_instances
-      instances = bound_instances
-      if bound_instances.empty?
+      instance_plans = bound_instance_plans
+      if instance_plans.empty?
         @logger.info('No errand instances to delete')
         return
       end
 
       @logger.info('Deleting errand instances')
-      event_log_stage = @event_log.begin_stage('Deleting errand instances', instances.size, [@job.name])
+      event_log_stage = @event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
       dns_manager = DnsManager.new(@logger)
       instance_deleter = InstanceDeleter.new(@deployment.ip_provider, @deployment.skip_drain, dns_manager)
       #instances: DeploymentPlan::Instance
-      instance_deleter.delete_instances(instances, event_log_stage)
+      instance_deleter.delete_instance_plans(instance_plans, event_log_stage)
     end
 
-    def bound_instances
-      @job.instances.select { |i| !i.model.nil? }
+    private
+
+    def bound_instance_plans
+      @job.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
     end
   end
 end

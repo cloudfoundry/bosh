@@ -143,7 +143,11 @@ module Bosh::Director
       end
 
       def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
-        instance_plans.reject(&:obsolete?).map(&:instance)
+        needed_instance_plans.map(&:instance)
+      end
+
+      def needed_instance_plans
+        instance_plans.reject(&:obsolete?)
       end
 
       def unneeded_instances
