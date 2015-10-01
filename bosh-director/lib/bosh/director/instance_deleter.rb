@@ -56,28 +56,18 @@ module Bosh::Director
       end
     end
 
+    #FIXME: This is a deprecated method. We should use delete_instance_plans instead.
     def delete_instances(instances, event_log_stage, options = {})
       max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
         instances.each do |instance|
           pool.process do
-            # FIXME: We should not be relying on type checking. Can we do some of this logic in the caller?
-            if instance.is_a?(Models::Instance)
-              instance_plan = DeploymentPlan::InstancePlan.new(
-                existing_instance: instance,
-                instance: DeploymentPlan::InstanceFromDatabase.create_from_model(instance, @logger),
-                desired_instance: DeploymentPlan::DesiredInstance.new,
-                network_plans: []
-              )
-              instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance, @logger)
-             else
-              instance_plan = DeploymentPlan::InstancePlan.new(
-                existing_instance: instance.model,
-                instance: instance,
-                desired_instance: DeploymentPlan::DesiredInstance.new,
-                network_plans: []
-              )
-            end
+            instance_plan = DeploymentPlan::InstancePlan.new(
+              existing_instance: instance.model,
+              instance: instance,
+              desired_instance: DeploymentPlan::DesiredInstance.new,
+              network_plans: []
+            )
             delete_instance(instance, instance_plan, event_log_stage)
           end
         end

@@ -9,9 +9,10 @@ module Bosh::Director
     end
 
     def delete(deployment_model, instance_deleter, vm_deleter)
-      instances = deployment_model.instances
+      instances = deployment_model.instances.map do |instance_model|
+        DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
+      end
       event_log_stage = @event_log.begin_stage('Deleting instances', instances.size)
-      #instances: Actually Models::Instance
       instance_deleter.delete_instances(instances, event_log_stage, max_threads: @max_threads)
 
       # For backwards compatibility for VMs that did not have instances
@@ -65,6 +66,5 @@ module Bosh::Director
         end
       end
     end
-
   end
 end
