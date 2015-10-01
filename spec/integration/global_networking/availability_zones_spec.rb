@@ -195,6 +195,59 @@ describe 'availability zones', type: :integration do
       expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)).to eq({'az_name' => 'my-az2', 'a' => 'rp_value_for_a', 'e' => 'rp_value_for_e'})
     end
 
+    context 'when a job has availability zones and static ips' do
+      it 'places the instances in the availability zone of the subnet where the static ip is' do
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az'
+            }
+          },
+          {
+            'name' => 'my-az2',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az2',
+            }
+          },
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'static' => ['192.168.1.51', '192.168.1.52'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          },
+          {
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az2'
+          }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.1.52']
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        vms = director.vms
+        expect(vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        expect(vms[0].ips).to eq('192.168.1.51')
+        expect(vms[1].ips).to eq('192.168.1.52')
+      end
+    end
+
     context 'when adding azs to jobs with persistent disks' do
       it 'keeps all jobs in the same az when job count stays the same' do
         cloud_config_hash['availability_zones'] = [

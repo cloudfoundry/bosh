@@ -1,10 +1,9 @@
 module Bosh
   module Director
     module DeploymentPlan
-      class DesiredInstance < Struct.new(:job, :virtual_state, :deployment, :az, :is_existing, :index)
-
+      class DesiredInstance < Struct.new(:job, :virtual_state, :deployment, :az, :index)
         def inspect
-          "<az=#{self.az} index=#{self.index}>"
+          "<DesiredInstance az=#{self.az} index=#{self.index}>"
         end
 
         def bootstrap?

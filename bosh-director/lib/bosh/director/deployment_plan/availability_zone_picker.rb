@@ -2,6 +2,37 @@ module Bosh
   module Director
     module DeploymentPlan
       class AvailabilityZonePicker
+        class IndexAssigner
+          def assign_indexes(results)
+            desired_existing_instances = results[:desired_existing]
+            desired_new = results[:desired_new]
+            obsolete = results[:obsolete]
+            count = desired_new.count + desired_existing_instances.count + obsolete.count
+            candidate_indexes = (0..count).to_a
+
+            obsolete.each do |instance_model|
+              candidate_indexes.delete(instance_model.index)
+            end
+
+            existing_indexes = []
+            desired_existing_instances.each do |desired_existing_instance|
+              existing_instance_model = desired_existing_instance[:existing_instance_model]
+              desired_instance = desired_existing_instance[:desired_instance]
+              candidate_indexes.delete(existing_instance_model.index)
+              if existing_indexes.include?(existing_instance_model.index)
+                desired_instance.index = candidate_indexes.shift
+              else
+                desired_instance.index = existing_instance_model.index
+              end
+              existing_indexes << existing_instance_model.index
+            end
+
+            desired_new.each do |desired_instance|
+              desired_instance.index = candidate_indexes.shift
+            end
+          end
+        end
+
         def place_and_match_in(desired_azs, desired_instances, existing_instances_with_azs)
           unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances_with_azs)
           desired_azs = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
@@ -11,13 +42,18 @@ module Bosh
           balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
           obsolete = unplaced_existing_instances.unclaimed_instance_models
-          assign_indexes(placed_instances.existing, placed_instances.new, obsolete)
 
-          {
-            desired_new: placed_instances.new,
+          # TODO:
+          # - Consider making this a AvailabilityZonePlacementPlan class
+          # - Consider moving index assignment into the PlacementPlan class
+          placement_plan = {
+            desired_new: placed_instances.absent,
             desired_existing: placed_instances.existing,
             obsolete: obsolete,
           }
+
+          IndexAssigner.new.assign_indexes(placement_plan)
+          placement_plan
         end
 
         private
@@ -42,32 +78,6 @@ module Bosh
             az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
             existing_instance = unplaced_existing_instances.claim_instance_for_az(az)
             placed_instances.record_placement(az, desired_instance, existing_instance)
-          end
-        end
-
-        def assign_indexes(desired_existing_instances, desired_new, obsolete)
-          count = desired_new.count + desired_existing_instances.count + obsolete.count
-          candidate_indexes = (0..count).to_a
-
-          obsolete.each do |instance_model|
-            candidate_indexes.delete(instance_model.index)
-          end
-
-          existing_indexes = []
-          desired_existing_instances.each do |desired_existing_instance|
-            existing_instance_model = desired_existing_instance[:existing_instance_model]
-            desired_instance = desired_existing_instance[:desired_instance]
-            candidate_indexes.delete(existing_instance_model.index)
-            if existing_indexes.include?(existing_instance_model.index)
-              desired_instance.index = candidate_indexes.shift
-            else
-              desired_instance.index = existing_instance_model.index
-            end
-            existing_indexes << existing_instance_model.index
-          end
-
-          desired_new.each do |desired_instance|
-            desired_instance.index = candidate_indexes.shift
           end
         end
 
@@ -118,30 +128,29 @@ module Bosh
         end
 
         class PlacedDesiredInstances
-          attr_reader :new, :existing
+          attr_reader :absent, :existing
+
           def initialize(azs)
             @placed = {}
             (azs || []).each do |az|
               @placed[az] = []
             end
 
-            @new = []
+            @absent = []
             @existing = []
           end
 
           def record_placement(az, desired_instance, existing_instance)
             desired_instance.az = az
-            desired_instance.is_existing = existing_instance ? !existing_instance.model.nil? : false
-            az_desired_instances = @placed.fetch(az, [])
-            az_desired_instances << desired_instance
-            @placed[az] = az_desired_instances
-            if desired_instance.is_existing
+            @placed[az] = @placed.fetch(az, []) << desired_instance
+
+            if existing_instance && !existing_instance.model.nil?
               existing << {
                 desired_instance: desired_instance,
                 existing_instance_model: existing_instance.model
               }
             else
-              new << desired_instance
+              absent << desired_instance
             end
           end
 

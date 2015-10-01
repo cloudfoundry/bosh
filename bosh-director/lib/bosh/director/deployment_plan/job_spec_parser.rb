@@ -1,7 +1,4 @@
 require 'bosh/template/property_helper'
-require 'bosh/director/deployment_plan/job_network_parser'
-require 'bosh/director/deployment_plan/job_availability_zone_parser'
-require 'bosh/director/deployment_plan/availability_zone_picker'
 
 module Bosh::Director
   module DeploymentPlan

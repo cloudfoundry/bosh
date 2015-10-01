@@ -59,7 +59,7 @@ module Bosh::Director::DeploymentPlan
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
-    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, true, 1) }
+    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
     describe '#packages_changed?' do
       let(:job) { Job.new(plan, logger) }

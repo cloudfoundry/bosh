@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:plan) do
-    network = BD::DeploymentPlan::DynamicNetwork.new('name-7', 'name-7', [], logger)
+    network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
     vip_repo = BD::DeploymentPlan::VipRepo.new(logger)
     ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, vip_repo, true, logger)

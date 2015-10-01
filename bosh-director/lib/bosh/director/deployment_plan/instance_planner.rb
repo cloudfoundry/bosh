@@ -5,18 +5,24 @@ module Bosh
         def initialize(logger, instance_factory)
           @logger = logger
           @instance_repo = instance_factory
-          @availability_zone_picker = AvailabilityZonePicker.new
         end
 
         def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
           availability_zones = job.availability_zones
 
-          instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances_with_azs)
+          placement_plan = begin
+            # TODO: add test coverage (currently always false in specs)
+            if job.has_static_ips?
+              StaticIpsAvailabilityZonePicker.new.place_and_match_in(availability_zones, job.networks, desired_instances, existing_instances_with_azs)
+            else
+              AvailabilityZonePicker.new.place_and_match_in(availability_zones, desired_instances, existing_instances_with_azs)
+            end
+          end
 
-          new_desired_instances = instances_by_type[:desired_new]
-          desired_existing_instances = instances_by_type[:desired_existing]
-          existing_instance_models = instances_by_type[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
-          obsolete_instance_models = instances_by_type[:obsolete]
+          new_desired_instances = placement_plan[:desired_new]
+          desired_existing_instances = placement_plan[:desired_existing]
+          existing_instance_models = placement_plan[:desired_existing].map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
+          obsolete_instance_models = placement_plan[:obsolete]
 
           new_desired_instances.each do |desired_instance|
             @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_instance(desired_instance)}")
@@ -33,7 +39,7 @@ module Bosh
           elect_bootstrap_instance(new_desired_instances, desired_existing_instances)
 
           desired_new_instance_plans = desired_new_instance_plans(new_desired_instances)
-          desired_existing_instance_plans = desired_existing_instance_plans(instances_by_type[:desired_existing], states_by_existing_instance)
+          desired_existing_instance_plans = desired_existing_instance_plans(placement_plan[:desired_existing], states_by_existing_instance)
           obsolete_instance_plans = obsolete_instance_plans(obsolete_instance_models)
 
           desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
