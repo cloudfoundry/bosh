@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'bosh-core',             "~>#{version}"
   spec.add_dependency 'bosh_cli',              "~>#{version}"
-  spec.add_dependency 'bosh_aws_cpi',          "~>2.0.0"
+  spec.add_dependency 'bosh_aws_cpi',          "=2.1.0"
   spec.add_dependency 'bosh_cli_plugin_micro', "~>#{version}"
   spec.add_dependency 'bosh-stemcell',         "~>#{version}"
 
