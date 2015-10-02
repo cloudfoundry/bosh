@@ -62,7 +62,7 @@ module Bosh::Director
       private
 
       def delete_instance(instance_plan)
-        @instance_deleter.delete_instance(instance_plan.instance, instance_plan, EventLog::NullStage.new)
+        @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
       end
 
       def create_instance_plan(stemcell)

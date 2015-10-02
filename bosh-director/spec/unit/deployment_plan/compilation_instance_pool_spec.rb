@@ -68,7 +68,7 @@ module Bosh::Director
       allow(another_agent_client).to receive(:apply)
       allow(ThreadPool).to receive_messages(new: thread_pool)
       allow(deployment_plan).to receive(:network).with('network name').and_return(network)
-      allow(instance_deleter).to receive(:delete_instance)
+      allow(instance_deleter).to receive(:delete_instance_plan)
     end
     let(:availability_zone) { nil }
 
@@ -126,7 +126,7 @@ module Bosh::Director
 
         it 'deletes the instance' do
           expect { action_that_raises }.to raise_error(create_instance_error)
-          expect(instance_deleter).to have_received(:delete_instance)
+          expect(instance_deleter).to have_received(:delete_instance_plan)
         end
       end
     end
@@ -221,7 +221,7 @@ module Bosh::Director
 
         it 'deletes the instance' do
           compilation_instance_pool.delete_instances(number_of_workers)
-          expect(instance_deleter).to have_received(:delete_instance).exactly(2).times
+          expect(instance_deleter).to have_received(:delete_instance_plan).exactly(2).times
         end
       end
     end

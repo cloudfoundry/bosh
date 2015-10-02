@@ -193,7 +193,7 @@ describe Bosh::Director::JobUpdater do
       before { allow(job).to receive(:unneeded_instances).and_return([]) }
 
       it 'should not delete instances if there are not any unneeded instances' do
-        expect(instance_deleter).to_not receive(:delete_instances)
+        expect(instance_deleter).to_not receive(:delete_instance_plans)
         job_updater.update
       end
     end

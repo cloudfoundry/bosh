@@ -37,7 +37,7 @@ module Bosh::Director
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
 
-      allow(instance_deleter).to receive(:delete_instance)
+      allow(instance_deleter).to receive(:delete_instance_plan)
 
       allow(Config).to receive_messages(redis: double('fake-redis'))
 
@@ -254,7 +254,7 @@ module Bosh::Director
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
         expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
-        expect(instance_deleter).to receive(:delete_instance).exactly(11).times
+        expect(instance_deleter).to receive(:delete_instance_plan).exactly(11).times
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -433,7 +433,7 @@ module Bosh::Director
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
-        expect(instance_deleter).to receive(:delete_instance)
+        expect(instance_deleter).to receive(:delete_instance_plan)
 
         expect(@director_job).to receive(:task_checkpoint).once
 
@@ -662,7 +662,7 @@ module Bosh::Director
           allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
-          expect(instance_deleter).to receive(:delete_instance).ordered
+          expect(instance_deleter).to receive(:delete_instance_plan).ordered
           allow(network).to receive(:release)
 
           expect {

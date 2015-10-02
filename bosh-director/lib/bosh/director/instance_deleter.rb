@@ -16,12 +16,7 @@ module Bosh::Director
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
-      delete_instance(instance_plan.instance, instance_plan, event_log_stage)
-
-      instance_plan.release_all_ips
-    end
-
-    def delete_instance(instance, instance_plan, event_log_stage)
+      instance = instance_plan.instance
       @logger.info("Deleting instance '#{instance.inspect}'")
 
       event_log_stage.advance_and_track(instance.to_s) do
@@ -53,24 +48,6 @@ module Bosh::Director
         instance_plan.release_all_ips
 
         instance.model.destroy
-      end
-    end
-
-    #FIXME: This is a deprecated method. We should use delete_instance_plans instead.
-    def delete_instances(instances, event_log_stage, options = {})
-      max_threads = options[:max_threads] || Config.max_threads
-      ThreadPool.new(:max_threads => max_threads).wrap do |pool|
-        instances.each do |instance|
-          pool.process do
-            instance_plan = DeploymentPlan::InstancePlan.new(
-              existing_instance: instance.model,
-              instance: instance,
-              desired_instance: DeploymentPlan::DesiredInstance.new,
-              network_plans: []
-            )
-            delete_instance(instance, instance_plan, event_log_stage)
-          end
-        end
       end
     end
 
