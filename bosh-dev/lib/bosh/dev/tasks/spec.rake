@@ -106,7 +106,7 @@ namespace :spec do
   end
 
   namespace :unit do
-    desc 'Run unit tests for each BOSH component gem in parallel'
+    desc 'Run all unit tests for ruby components'
     task ruby: %w(rubocop) do
       trap('INT') { exit }
       log_dir = Dir.mktmpdir
@@ -126,7 +126,7 @@ namespace :spec do
     end
 
     (unit_builds - cpi_builds).each do |build|
-      desc 'Run unit tests for each BOSH component gem in parallel'
+      desc "Run unit tests for the #{build} component"
       task build.sub(/^bosh[_-]/, '').intern do
         trap('INT') { exit }
         unit_exec(build)
@@ -139,6 +139,7 @@ namespace :spec do
     end
   end
 
+  desc "Run all unit tests"
   task :unit => %w(spec:unit:ruby spec:unit:agent)
 
   namespace :external do
