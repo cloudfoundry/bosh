@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe StaticIpsAvailabilityZonePicker do
-    subject(:zone_picker) { StaticIpsAvailabilityZonePicker.new }
+  describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
+    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new }
 
     let(:cloud_config_hash) do
       {
