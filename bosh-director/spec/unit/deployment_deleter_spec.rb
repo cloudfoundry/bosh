@@ -36,14 +36,14 @@ module Bosh::Director
         deployment_model.add_release_version(deployment_release_version)
         deployment_model.add_property(Models::DeploymentProperty.make)
 
-        allow(instance_deleter).to receive(:delete_instances)
+        allow(instance_deleter).to receive(:delete_instance_plans)
         allow(vm_deleter).to receive(:delete_vm).with(orphaned_vm)
         allow(deployment_model).to receive(:destroy)
       end
 
       it 'deletes deployment instances' do
-        expect(instance_deleter).to receive(:delete_instances) do |instances, stage, options|
-          expect(instances.map(&:model)).to eq(deployment_model.instances)
+        expect(instance_deleter).to receive(:delete_instance_plans) do |instance_plans, stage, options|
+          expect(instance_plans.map(&:existing_instance)).to eq(deployment_model.instances)
           expect(stage).to be_instance_of(EventLog::Stage)
           expect(options).to eq(max_threads: 3)
         end
