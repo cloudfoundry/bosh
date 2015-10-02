@@ -34,7 +34,7 @@ module Bosh::Director::DeploymentPlan
         else
           @sorted_instance_plans << sort_in_az(instance_plans_in_current_az)
           current_az = instance_plan.instance.availability_zone_name
-          instance_plans_in_current_az = []
+          instance_plans_in_current_az = [instance_plan]
         end
       end
       @sorted_instance_plans << sort_in_az(instance_plans_in_current_az)

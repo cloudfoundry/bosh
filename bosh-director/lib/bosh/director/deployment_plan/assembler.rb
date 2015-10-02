@@ -32,7 +32,7 @@ module Bosh::Director
           desired_instances = desired_job.desired_instances
           existing_instances_with_azs = job_migrator.find_existing_instances_with_azs(desired_job)
           instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
-          desired_job.instance_plans = instance_plans
+          desired_job.add_instance_plans(instance_plans)
         end
 
         desired_jobs.each do |desired_job|

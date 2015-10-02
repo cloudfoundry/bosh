@@ -121,6 +121,7 @@ module Bosh::Director
             availability_zone: availability_zone_name,
             bootstrap: bootstrap?
           })
+        @uuid = @model.uuid
       end
 
       def ensure_vm_allocated
@@ -182,7 +183,7 @@ module Bosh::Director
       end
 
       def network_settings
-        instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
+        instance_plan = job.sorted_instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
         desired_reservations = instance_plan.network_plans.reject(&:obsolete?).map {|network_plan| network_plan.reservation }
         NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid)
       end

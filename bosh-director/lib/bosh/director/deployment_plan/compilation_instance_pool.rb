@@ -85,7 +85,7 @@ module Bosh::Director
           network_plans: [DeploymentPlan::NetworkPlan.new(reservation: reservation)]
         )
 
-        @compile_job.instance_plans << instance_plan
+        @compile_job.add_instance_plans([instance_plan])
 
         return instance_plan, instance
       end
@@ -116,14 +116,14 @@ module Bosh::Director
 
     class CompilationJob
       attr_reader :resource_pool, :name, :deployment
-      attr_accessor :instance_plans
+      attr_reader :sorted_instance_plans
 
       def initialize(resource_pool,deployment)
         @resource_pool = resource_pool
         @network = deployment.compilation.network_name
         @name = "compilation-#{SecureRandom.uuid}"
         @deployment = deployment
-        @instance_plans = []
+        @sorted_instance_plans = []
       end
 
       def default_network
@@ -135,6 +135,10 @@ module Bosh::Director
 
       def availability_zones
         nil
+      end
+
+      def add_instance_plans(instance_plans)
+        @sorted_instance_plans = instance_plans
       end
 
       def spec

@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => job_spec } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { Instance.new(job, 1, 'started', deployment_plan, current_state, availability_zone, false, logger) }
+    let(:instance) { Instance.new(job, 1, 'started', deployment_plan, current_state, availability_zone, true, logger) }
     let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance) }
     let(:existing_instance) { instance_model }
 
@@ -34,7 +34,7 @@ module Bosh::Director::DeploymentPlan
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)
-      job.instance_plans = [instance_plan]
+      job.add_instance_plans([instance_plan])
     end
 
     context 'when there have been changes on the instance' do

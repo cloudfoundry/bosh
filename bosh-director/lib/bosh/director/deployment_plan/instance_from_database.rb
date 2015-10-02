@@ -23,6 +23,10 @@ module Bosh::Director
         end
       end
 
+      def bootstrap?
+        !!@model.bootstrap
+      end
+
       def job_name
         @model.job
       end

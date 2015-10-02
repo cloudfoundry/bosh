@@ -108,10 +108,16 @@ module Bosh::Director
         @resolved_links = {}
         @migrated_from = []
         @availability_zones = []
+
+        @sorted_instance_plans = []
       end
 
       def self.is_legacy_spec?(job_spec)
         !job_spec.has_key?("templates")
+      end
+
+      def add_instance_plans(instance_plans)
+        @sorted_instance_plans = InstancePlanSorter.new(@logger).sort(instance_plans)
       end
 
       # Takes in a job spec and returns a job spec in the new format, if it
@@ -136,10 +142,12 @@ module Bosh::Director
         deployment.instance_models.select { |model| model.job == name }
       end
 
-      attr_accessor :instance_plans, :desired_instances
+      attr_accessor :desired_instances
+
+      attr_reader :sorted_instance_plans
 
       def obsolete_instance_plans
-        instance_plans.select(&:obsolete?)
+        sorted_instance_plans.select(&:obsolete?)
       end
 
       def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
@@ -147,7 +155,7 @@ module Bosh::Director
       end
 
       def needed_instance_plans
-        instance_plans.reject(&:obsolete?)
+        sorted_instance_plans.reject(&:obsolete?)
       end
 
       def unneeded_instances
@@ -270,7 +278,7 @@ module Bosh::Director
       end
 
       def bind_instance_networks
-        instance_plans
+        sorted_instance_plans
           .reject(&:obsolete?)
           .flat_map(&:network_plans)
           .reject(&:obsolete?)
@@ -298,7 +306,7 @@ module Bosh::Director
 
       #FIXME: there has to be a better way to do this
       def instance_plans_with_missing_vms
-        instance_plans.reject { |instance_plan| instance_plan.obsolete? || instance_plan.instance.vm_created? }
+        sorted_instance_plans.reject { |instance_plan| instance_plan.obsolete? || instance_plan.instance.vm_created? }
       end
 
       def add_resolved_link(link_name, link_spec)
@@ -324,7 +332,7 @@ module Bosh::Director
 
       def reserve_ips
         networks.each do |network|
-          instance_plans.each_with_index do |instance_plan, index|
+          sorted_instance_plans.each_with_index do |instance_plan, index|
             static_ips = network.static_ips
             if static_ips
               reservation = DesiredNetworkReservation.new_static(instance_plan.instance, network.deployment_network, static_ips[index])
@@ -340,7 +348,7 @@ module Bosh::Director
         # TODO: loop above should go away when we get rid of reservations
         # something similar will maybe happen in JobSpecParser to figure out desired IPs or something?
 
-        instance_plans.each do |instance_plan|
+        sorted_instance_plans.each do |instance_plan|
           desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(

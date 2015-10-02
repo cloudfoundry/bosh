@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, false, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, true, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
@@ -117,7 +117,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:default_network).and_return({})
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
         network_plans = [NetworkPlan.new(reservation: reservation)]
-        allow(job).to receive(:instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
+        allow(job).to receive(:sorted_instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
@@ -330,7 +330,7 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#bind_existing_instance' do
+    describe '#bind_existing_instance_model' do
       let(:job) { Job.new(plan, logger) }
 
       before { job.resource_pool = resource_pool }
@@ -360,6 +360,17 @@ module Bosh::Director::DeploymentPlan
         expect(instance.vm.model).to be(instance_model.vm)
         expect(instance.vm.bound_instance).to be(instance)
       end
+      end
+
+    describe '#bind_new_instance_model' do
+      it 'sets the instance model and uuid' do
+        expect(instance.model).to be_nil
+        expect(instance.uuid).to be_nil
+
+        instance.bind_new_instance_model
+        expect(instance.model).not_to be_nil
+        expect(instance.uuid).not_to be_nil
+      end
     end
 
     describe '#apply_vm_state' do
@@ -371,7 +382,7 @@ module Bosh::Director::DeploymentPlan
         job.default_network = {}
         reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance, network, '10.0.0.6')
         network_plans = [NetworkPlan.new(reservation: reservation)]
-        job.instance_plans = [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
+        job.add_instance_plans([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       let(:template) do
@@ -697,7 +708,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
         network_plans = [NetworkPlan.new(reservation: reservation)]
-        allow(job).to receive(:instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
+        allow(job).to receive(:sorted_instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       it 'returns a valid instance template_spec' do
@@ -726,7 +737,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
         expect(spec['availability_zone']).to eq('foo-az')
-        expect(spec['bootstrap']).to eq(false)
+        expect(spec['bootstrap']).to eq(true)
       end
 
       it 'does not require persistent_disk_pool' do
@@ -785,7 +796,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['links']).to eq('fake-link')
           expect(spec['id']).to eq('uuid-1')
           expect(spec['availability_zone']).to eq('foo-az')
-          expect(spec['bootstrap']).to eq(false)
+          expect(spec['bootstrap']).to eq(true)
         end
 
         it 'does not require persistent_disk_type' do
@@ -864,7 +875,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
         network_plans = [NetworkPlan.new(reservation: reservation)]
-        allow(job).to receive(:instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
+        allow(job).to receive(:sorted_instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
       end
 
       it 'returns a valid instance apply_spec' do

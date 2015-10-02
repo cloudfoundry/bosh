@@ -12,7 +12,7 @@ module Bosh::Director
 
       def spec
         {
-          'nodes' => @source.instance_plans.map do |instance_plan|
+          'nodes' => @source.sorted_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
