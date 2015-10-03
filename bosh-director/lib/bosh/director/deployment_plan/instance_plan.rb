@@ -37,7 +37,7 @@ module Bosh
           @changes << :configuration if instance.configuration_changed?
           @changes << :job if instance.job_changed?
           @changes << :state if state_changed?
-          @changes << :dns if instance.dns_changed?
+          @changes << :dns if dns_changed?
           @changes << :bootstrap if bootstrap_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
           @changes
@@ -75,6 +75,18 @@ module Bosh
           end
 
           false
+        end
+
+        def dns_changed?
+          if Config.dns_enabled?
+            network_settings.dns_record_info.any? do |name, ip|
+              not_found = Models::Dns::Record.find(:name => name, :type => 'A', :content => ip).nil?
+              @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+              not_found
+            end
+          else
+            false
+          end
         end
 
         def mark_desired_network_plans_as_existing
@@ -124,7 +136,19 @@ module Bosh
               @instance.index,
               @instance.uuid)
           else
-            raise NotImplementedError, "network_settings requires job and deployment info. You likely have an 'InstanceFromDatabase'"
+            # CAUTION: This is a safety guard in case @instance is an InstanceFromDatabase.
+            # This should be removed when InstanceFromDatabase is removed.
+
+            DeploymentPlan::NetworkSettings.new(
+              @instance.job_name,
+              false,
+              @instance.deployment_model.name,
+              {},
+              [],
+              {},
+              AvailabilityZone.new(@instance.availability_zone_name, @instance.cloud_properties),
+              @instance.index,
+              @instance.uuid)
           end
         end
 

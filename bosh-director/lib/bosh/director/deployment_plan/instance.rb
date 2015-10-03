@@ -307,21 +307,6 @@ module Bosh::Director
         changed
       end
 
-      ##
-      # @return [Boolean] returns true if the DNS records configured for the
-      #   instance differ from the ones configured on the DNS server
-      def dns_changed?
-        if Config.dns_enabled?
-          network_settings.dns_record_info.any? do |name, ip|
-            not_found = Models::Dns::Record.find(:name => name, :type => 'A', :content => ip).nil?
-            @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
-            not_found
-          end
-        else
-          false
-        end
-      end
-
       def current_job_state
         @current_state['job_state']
       end

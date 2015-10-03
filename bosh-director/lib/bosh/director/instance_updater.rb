@@ -196,7 +196,7 @@ module Bosh::Director
     def update_dns(instance_plan)
       instance = instance_plan.instance
 
-      return unless instance.dns_changed?
+      return unless instance_plan.dns_changed?
 
       domain = deployment_plan(instance).dns_domain
       instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
