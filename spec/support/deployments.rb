@@ -47,7 +47,6 @@ module Bosh::Spec
         'name' => 'a',
         'size' => 3,
         'cloud_properties' => {},
-        'network' => 'a',
         'stemcell' => {
           'name' => 'ubuntu-stemcell',
           'version' => '1',

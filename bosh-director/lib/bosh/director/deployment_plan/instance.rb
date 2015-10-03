@@ -171,8 +171,14 @@ module Bosh::Director
         state = apply_spec
         @model.vm.update(:apply_spec => state)
         agent_client.apply(state)
-
+        agent_state = agent_client.get_state
         @current_state = state
+        unless agent_state.nil?
+          @current_state['configuration_hash'] = agent_state['configuration_hash']
+
+          #director needs the Vm's IP for dynamic network
+          @current_state['networks'] = agent_state['networks']
+        end
       end
 
       def update_trusted_certs
@@ -230,7 +236,23 @@ module Bosh::Director
         changed
       end
 
-      ##
+      def vm_type_changed?
+        if @job.vm_type.spec != @current_state['vm_type']
+          log_changes(__method__, @current_state['vm_type'], @job.vm_type.spec)
+          return true
+        else
+          return false
+        end
+      end
+
+      def stemcell_changed?
+        if @job.stemcell.spec != @vm.model.apply_spec['stemcell']
+          log_changes(__method__, @vm.model.apply_spec['stemcell'], @job.stemcell.spec)
+          return true
+        end
+        false
+      end
+
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
         if @job.deployment.recreate
@@ -238,15 +260,6 @@ module Bosh::Director
           return true
         end
 
-        if @job.vm_type.spec != @current_state['vm_type']
-          log_changes(__method__, @current_state['vm_type'], @job.vm_type.spec)
-          return true
-        end
-
-        if @job.stemcell.spec != @current_state['stemcell']
-          log_changes(__method__, @current_state['stemcell'], @job.stemcell.spec)
-          return true
-        end
         # env is not a part of a resource pool spec but rather gets persisted
         # in director DB, hence the check below
         # NOTE: we only update VMs that have env persisted to avoid recreating

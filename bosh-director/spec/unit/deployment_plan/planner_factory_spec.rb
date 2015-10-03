@@ -66,7 +66,7 @@ Migrated deployment manifest:
 LOGMESSAGE
             expected_cloud_manifest_log = <<LOGMESSAGE
 Migrated cloud config manifest:
-{"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "resource_pools"=>[{"name"=>"a", "size"=>3, "cloud_properties"=>{}, "network"=>"a", "stemcell"=>{"name"=>"ubuntu-stemcell", "version"=>"1"}}]}
+{"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "resource_pools"=>[{"name"=>"a", "size"=>3, "cloud_properties"=>{}, "stemcell"=>{"name"=>"ubuntu-stemcell", "version"=>"1"}}]}
 LOGMESSAGE
 # rubocop:enable LineLength
             expect(logger_io.string).to include(expected_deployment_manifest_log)

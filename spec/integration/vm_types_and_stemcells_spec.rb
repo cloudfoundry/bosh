@@ -23,8 +23,6 @@ describe 'vm_types and stemcells', type: :integration do
       'properties' => {},
     }]
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-
-    # output = bosh_runner.run('vms')
   end
 
 end

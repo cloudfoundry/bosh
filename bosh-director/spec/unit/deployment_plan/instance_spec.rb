@@ -387,6 +387,49 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#vm_type_changed?' do
+      describe 'when the vm types spec does not match the existing state' do
+        let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {'bar' => 'baz'}} }
+
+        let(:current_state) { {'vm_type' => vm_type_spec} }
+
+        it 'should return changed' do
+          expect(instance.vm_type_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
+                '{"name"=>"fake-vm-type", "cloud_properties"=>{"bar"=>"baz"}} ' +
+                'TO: ' +
+                '{"name"=>"fake-vm-type", "cloud_properties"=>{}}')
+          instance.vm_type_changed?
+        end
+      end
+    end
+
+    describe '#stemcell_changed?' do
+      before do
+      vm_model.apply_spec=({'stemcell' => { 'name' => 'fake-stemcell-name', 'version' => '2.0'}})
+        instance.bind_unallocated_vm
+        instance.bind_to_vm_model(vm_model)
+      end
+
+      describe 'when the stemcell spec does not match the existing state' do
+
+        it 'should return changed' do
+          expect(instance.stemcell_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
+                '{"name"=>"fake-stemcell-name", "version"=>"2.0"} ' +
+                'TO: ' +
+                '{"name"=>"fake-stemcell-name", "version"=>"1.0"}')
+          instance.stemcell_changed?
+        end
+      end
+    end
+
     describe '#resource_pool_changed?' do
 
 
@@ -406,45 +449,6 @@ module Bosh::Director::DeploymentPlan
       describe 'when nothing changes' do
         it 'should return false' do
           expect(instance.resource_pool_changed?).to_not eq(true)
-        end
-      end
-
-      describe 'when the vm types spec does not match the existing state' do
-        let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {'bar' => 'baz'}} }
-
-        let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '1.0'} }
-        let(:current_state) { {'vm_type' => vm_type_spec, 'stemcell' => stemcell_spec} }
-
-        it 'should return changed' do
-          expect(instance.resource_pool_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: ' +
-                '{"name"=>"fake-vm-type", "cloud_properties"=>{"bar"=>"baz"}} ' +
-                'TO: ' +
-                '{"name"=>"fake-vm-type", "cloud_properties"=>{}}')
-          instance.resource_pool_changed?
-        end
-      end
-
-      describe 'when the stemcell spec does not match the existing state' do
-        let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {}} }
-
-        let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '2.0'} }
-        let(:current_state) { {'vm_type' => vm_type_spec, 'stemcell' => stemcell_spec} }
-
-
-        it 'should return changed' do
-          expect(instance.resource_pool_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: ' +
-                '{"name"=>"fake-stemcell-name", "version"=>"2.0"} ' +
-                'TO: ' +
-                '{"name"=>"fake-stemcell-name", "version"=>"1.0"}')
-          instance.resource_pool_changed?
         end
       end
 
