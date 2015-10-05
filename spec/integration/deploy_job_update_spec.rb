@@ -11,9 +11,14 @@ describe 'deploy job update', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash)
 
     times = start_and_finish_times_for_job_updates('last')
-    expect(times['foobar/1']['started']).to be >= times['foobar/0']['started']
-    expect(times['foobar/1']['started']).to be <= times['foobar/0']['finished']
-    expect(times['foobar/2']['started']).to be >= [times['foobar/0']['finished'], times['foobar/1']['finished']].min
+
+    bootstrap_node_started_at = times['foobar/0']['started']
+    jobs_started_in_parallel = times.values.select{ |value| value['started'] == bootstrap_node_started_at}
+    remaining_job = (times.values - jobs_started_in_parallel).first
+
+    minimum_finish_time = [jobs_started_in_parallel.first['finished'], jobs_started_in_parallel.last['finished']].min
+    expect(jobs_started_in_parallel.count).to eq(2)
+    expect(remaining_job['started']).to be >= minimum_finish_time
   end
 
   describe 'Displaying manifest diffs' do
