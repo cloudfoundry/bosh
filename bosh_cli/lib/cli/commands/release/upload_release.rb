@@ -42,6 +42,16 @@ module Bosh::Cli::Command
           end
         end
 
+        if options[:name] && options[:version]
+          director.list_releases.each do |release|
+            if release['name'] == options[:name]
+              release['release_versions'].each do |version|
+                return if version['version'] == options[:version]
+              end
+            end
+          end
+        end
+
         if release_file =~ /^#{URI::regexp}$/
           upload_remote_release(release_file, upload_options)
         else
@@ -150,17 +160,6 @@ module Bosh::Cli::Command
       end
 
       def upload_remote_release(release_location, upload_options = {})
-        if options[:name] && options[:version]
-          director.list_releases.each do |release|
-            if release['name'] == options[:name]
-              release['release_versions'].each do |version|
-                return if version['version'] == options[:version]
-              end
-            end
-          end
-        end
-
-        nl
         if upload_options[:rebase]
           say("Using remote release `#{release_location}' (#{'will be rebased'.make_yellow})")
           report = 'Release rebased'
