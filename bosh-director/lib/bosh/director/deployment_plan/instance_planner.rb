@@ -8,30 +8,18 @@ module Bosh
         end
 
         def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
-          availability_zones = job.availability_zones
           placement_plan = PlacementPlanner::Plan.new(desired_instances, existing_instances_with_azs, job.networks, job.availability_zones)
 
           new_desired_instances = placement_plan.needed
           desired_existing_instances = placement_plan.existing
-          existing_instance_models = placement_plan.existing.map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
           obsolete_instance_models = placement_plan.obsolete
 
-          new_desired_instances.each do |desired_instance|
-            @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_instance(desired_instance)}")
-          end
-
-          existing_instance_models.each do |existing_instance_model|
-            @logger.info("Existing desired instance: #{existing_instance_model.job}/#{existing_instance_model.index} in az: #{az_name_for_instance(existing_instance_model)}")
-          end
-
-          obsolete_instance_models.each do |instance|
-            @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
-          end
+          log_outcome(placement_plan)
 
           elect_bootstrap_instance(new_desired_instances, desired_existing_instances)
 
           desired_new_instance_plans = desired_new_instance_plans(new_desired_instances)
-          desired_existing_instance_plans = desired_existing_instance_plans(placement_plan.existing, states_by_existing_instance)
+          desired_existing_instance_plans = desired_existing_instance_plans(desired_existing_instances, states_by_existing_instance)
           obsolete_instance_plans = obsolete_instance_plans(obsolete_instance_models)
 
           desired_existing_instance_plans + desired_new_instance_plans + obsolete_instance_plans
@@ -112,6 +100,24 @@ module Bosh
           end
         end
 
+        def log_outcome(placement_plan)
+          new_desired_instances = placement_plan.needed
+          desired_existing_instances = placement_plan.existing
+          existing_instance_models = desired_existing_instances.map{ |instance_and_deployment| instance_and_deployment[:existing_instance_model] }
+          obsolete_instance_models = placement_plan.obsolete
+
+          new_desired_instances.each do |desired_instance|
+            @logger.info("New desired instance: #{desired_instance.job.name} in az: #{az_name_for_instance(desired_instance)}")
+          end
+
+          existing_instance_models.each do |existing_instance_model|
+            @logger.info("Existing desired instance: #{existing_instance_model.job}/#{existing_instance_model.index} in az: #{az_name_for_instance(existing_instance_model)}")
+          end
+
+          obsolete_instance_models.each do |instance|
+            @logger.info("Obsolete instance: #{instance.job}/#{instance.index} in az: #{instance.availability_zone}")
+          end
+        end
       end
     end
   end
