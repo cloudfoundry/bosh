@@ -3,10 +3,10 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class IndexAssigner
-          def assign_indexes(results)
-            desired_existing_instances = results[:desired_existing]
-            desired_new = results[:desired_new]
-            obsolete = results[:obsolete]
+          def assign_indexes(zoned_instances)
+            desired_existing_instances = zoned_instances[:desired_existing]
+            desired_new = zoned_instances[:desired_new]
+            obsolete = zoned_instances[:obsolete]
             count = desired_new.count + desired_existing_instances.count + obsolete.count
             candidate_indexes = (0..count).to_a
 

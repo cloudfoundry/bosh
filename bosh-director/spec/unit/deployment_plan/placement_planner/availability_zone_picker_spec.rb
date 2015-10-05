@@ -6,11 +6,11 @@ module Bosh::Director::DeploymentPlan
     let(:az1) { AvailabilityZone.new('1', {}) }
     let(:az2) { AvailabilityZone.new('2', {}) }
     let(:az3) { AvailabilityZone.new('3', {}) }
-    let(:deployment) { instance_double(Planner) }
-    let(:job) { instance_double(Job, name: 'foo-job') }
+    let(:deployment) { nil }
+    let(:job) { nil }
 
     def desired_instance
-      DesiredInstance.new(job, 'started', deployment)
+      DesiredInstance.new(job, 'started')
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
@@ -90,29 +90,6 @@ module Bosh::Director::DeploymentPlan
           expect(results[:desired_new]).to eq([])
 
           expect(results[:obsolete]).to eq([existing_1.model])
-        end
-      end
-
-      describe 'indexes' do
-        context 'when several existing instances have same index (migration)' do
-          it 're-assignes indexes properly' do
-            unmatched_desired_instances = [desired_instance, desired_instance]
-            existing_0 = existing_instance_with_az(1, nil)
-            existing_1 = existing_instance_with_az(1, nil)
-            unmatched_existing_instances = [existing_1, existing_0]
-
-            azs = []
-            results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
-
-            new_indexes = []
-            new_indexes << results[:desired_existing][0][:desired_instance].index
-            new_indexes << results[:desired_existing][1][:desired_instance].index
-            expect(new_indexes).to match_array([0, 1])
-
-            expect(results[:desired_new]).to eq([])
-
-            expect(results[:obsolete]).to eq([])
-          end
         end
       end
 
