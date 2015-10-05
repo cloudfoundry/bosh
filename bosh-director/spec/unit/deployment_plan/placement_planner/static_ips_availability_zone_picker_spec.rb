@@ -128,16 +128,10 @@ module Bosh::Director::DeploymentPlan
           results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
           desired_new = results[:desired_new]
 
-
-          # expect(results.to_h).to eq({})
-
           expect(desired_new.count).to eq(3)
           expect(results[:desired_existing]).to eq([])
           expect(results[:obsolete]).to eq([])
-          desired_new.each_with_index do |result, index|
-            expect(result.index).to eq(index) # TODO: add this to the other examples too.
-            expect(result.az.name).to eq('zone1')
-          end
+          desired_new.each { |result| expect(result.az.name).to eq('zone1') }
         end
       end
 

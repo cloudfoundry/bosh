@@ -26,14 +26,15 @@ module Bosh
 
           def results
             @results ||= begin
-              if has_static_ips?
+              results = if has_static_ips?
                 StaticIpsAvailabilityZonePicker.new.place_and_match_in(@availability_zones, @networks, @desired, @existing)
               else
                 AvailabilityZonePicker.new.place_and_match_in(@availability_zones, @desired, @existing)
               end
-            end
 
-            # assign indexes to @results
+              IndexAssigner.new.assign_indexes(results)
+              results
+            end
           end
 
           def has_static_ips?

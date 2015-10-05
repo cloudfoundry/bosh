@@ -13,18 +13,11 @@ module Bosh
 
             obsolete = unplaced_existing_instances.unclaimed_instance_models
 
-            # TODO:
-            # - Consider making this a AvailabilityZonePlacementPlan class
-            # - Consider moving index assignment into the PlacementPlan class
-            zoned_instances = {
+            {
               desired_new: placed_instances.absent,
               desired_existing: placed_instances.existing,
               obsolete: obsolete,
             }
-
-            # TODO: move this call to PlacementPlanner::Plan
-            IndexAssigner.new.assign_indexes(zoned_instances)
-            zoned_instances
           end
 
           private

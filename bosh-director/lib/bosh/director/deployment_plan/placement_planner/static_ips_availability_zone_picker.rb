@@ -31,19 +31,12 @@ module Bosh
               placed_instances.record_placement(static_ip_azs.shift, desired_instance, nil)
             end
 
-            zoned_instances = {
+            {
               desired_new: placed_instances.absent,
               desired_existing: placed_instances.existing, # note this will always be []
               obsolete: [],
             }
-
-            # TODO: move this call to PlacementPlanner::Plan
-            IndexAssigner.new.assign_indexes(zoned_instances)
-            zoned_instances
           end
-
-          private
-
         end
       end
     end

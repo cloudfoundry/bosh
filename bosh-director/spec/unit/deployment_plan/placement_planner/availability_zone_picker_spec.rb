@@ -6,11 +6,13 @@ module Bosh::Director::DeploymentPlan
     let(:az1) { AvailabilityZone.new('1', {}) }
     let(:az2) { AvailabilityZone.new('2', {}) }
     let(:az3) { AvailabilityZone.new('3', {}) }
+
     let(:deployment) { nil }
+    let(:state) { 'started' }
     let(:job) { nil }
 
-    def desired_instance
-      DesiredInstance.new(job, 'started')
+    def desired_instance(zone = nil)
+      DesiredInstance.new(job, state, deployment, zone)
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
@@ -34,8 +36,7 @@ module Bosh::Director::DeploymentPlan
               {existing_instance_model: existing_1.model, desired_instance: unmatched_desired_instances[1]}
             ])
 
-        expect(results[:desired_new]).to match_array([DesiredInstance.new(job, 'started', deployment, nil, 2)])
-
+        expect(results[:desired_new]).to match_array([desired_instance])
         expect(results[:obsolete]).to eq([])
       end
 
@@ -53,8 +54,7 @@ module Bosh::Director::DeploymentPlan
               {existing_instance_model: existing_1.model, desired_instance: unmatched_desired_instances[1]}
         ])
 
-        expect(results[:desired_new]).to match_array([DesiredInstance.new(job, 'started', deployment, nil, 2)])
-
+        expect(results[:desired_new]).to match_array([desired_instance])
         expect(results[:obsolete]).to eq([])
       end
 
@@ -67,9 +67,9 @@ module Bosh::Director::DeploymentPlan
 
         expect(results[:desired_existing]).to match_array([])
         expect(results[:desired_new]).to match_array([
-              DesiredInstance.new(job, 'started', deployment, az1, 0),
-              DesiredInstance.new(job, 'started', deployment, az2, 1),
-              DesiredInstance.new(job, 'started', deployment, az1, 2)])
+              desired_instance(az1),
+              desired_instance(az2),
+              desired_instance(az1)])
         expect(results[:obsolete]).to eq([])
       end
 
@@ -88,7 +88,6 @@ module Bosh::Director::DeploymentPlan
               ])
 
           expect(results[:desired_new]).to eq([])
-
           expect(results[:obsolete]).to eq([existing_1.model])
         end
       end
@@ -114,9 +113,7 @@ module Bosh::Director::DeploymentPlan
                 {existing_instance_model: existing_zone1_2.model, desired_instance: unmatched_desired_instances[1]}
                 ])
 
-          expect(results[:desired_new]).to match_array([
-                DesiredInstance.new(job, 'started', deployment, az1, 3)])
-
+          expect(results[:desired_new]).to match_array([desired_instance(az1)])
           expect(results[:obsolete]).to match_array([existing_zone2_1.model])
         end
       end
@@ -149,9 +146,7 @@ module Bosh::Director::DeploymentPlan
                 existing_zone2_4.model
               )
 
-          expect(results[:desired_new]).to match_array([
-                DesiredInstance.new(job, 'started', deployment, az3, 5)])
-
+          expect(results[:desired_new]).to match_array([desired_instance(az3)])
           expect(results[:obsolete]).to match_array([existing_zone1_2.model])
         end
       end
@@ -180,8 +175,7 @@ module Bosh::Director::DeploymentPlan
                 existing_zone2_2.model
               ])
 
-          expect(results[:desired_new]).to match_array([
-                DesiredInstance.new(job, 'started', deployment, az3, 3)])
+          expect(results[:desired_new]).to match_array([desired_instance(az3)])
           expect(results[:obsolete]).to match_array([])
         end
       end
@@ -196,8 +190,7 @@ module Bosh::Director::DeploymentPlan
             expect(results[:desired_existing]).to match_array([
                   {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]}
                 ])
-            expect(results[:desired_new]).to match_array([
-                  DesiredInstance.new(job, 'started', deployment, nil, 1)])
+            expect(results[:desired_new]).to match_array([desired_instance])
             expect(results[:obsolete]).to match_array([])
           end
         end
@@ -207,16 +200,12 @@ module Bosh::Director::DeploymentPlan
             existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make])
             existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make])
 
-            unmatched_desired_instances = [desired_instance, desired_instance]
-            results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
-
-            expected_desired_zone1_0 = unmatched_desired_instances[0]
-            expected_desired_zone1_1 = unmatched_desired_instances[1]
-            expected_desired_zone1_1.index = 1
+            desired_instances = [desired_instance, desired_instance]
+            results = zone_picker.place_and_match_in([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_0.model, desired_instance: expected_desired_zone1_0},
-                  {existing_instance_model: existing_zone1_1.model, desired_instance: expected_desired_zone1_1}
+                  {existing_instance_model: existing_zone1_0.model, desired_instance: desired_instances[0]},
+                  {existing_instance_model: existing_zone1_1.model, desired_instance: desired_instances[1]}
                 ])
 
             expect(results[:desired_new]).to match_array([])
@@ -238,11 +227,8 @@ module Bosh::Director::DeploymentPlan
             expect(results[:desired_existing]).to match_array([
                   {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[1]}
                 ])
-            expect(results[:desired_new]).to match_array([
-                  DesiredInstance.new(job, 'started', deployment, az2, 2)
-                ])
+            expect(results[:desired_new]).to match_array([desired_instance(az2)])
             expect(results[:obsolete]).to match_array([existing_zone66_1.model])
-
           end
         end
 
@@ -262,7 +248,6 @@ module Bosh::Director::DeploymentPlan
 
             expected_desired_zone1_0 = unmatched_desired_instances[0]
             expected_desired_zone1_1 = unmatched_desired_instances[1]
-            expected_desired_zone1_1.index = 1
 
             expect(results[:desired_existing]).to match_array([
                   {existing_instance_model: existing_zone1_0.model, desired_instance: expected_desired_zone1_0},
@@ -284,8 +269,7 @@ module Bosh::Director::DeploymentPlan
 
             expect(results[:desired_existing]).to match_array([
                   {existing_instance_model: existing_zone1_1.model, desired_instance: unmatched_desired_instances[1]}])
-            expect(results[:desired_new]).to match_array([
-                  DesiredInstance.new(job, 'started', deployment, az2, 2)])
+            expect(results[:desired_new]).to match_array([desired_instance(az2)])
             expect(results[:obsolete]).to match_array([existing_zone1_0.model])
           end
         end
@@ -305,7 +289,6 @@ module Bosh::Director::DeploymentPlan
                   ])
             expect(results[:desired_new]).to match_array([])
             expect(results[:obsolete]).to match_array([existing_zone1_1.model])
-
           end
         end
 
@@ -328,8 +311,8 @@ module Bosh::Director::DeploymentPlan
                   existing_zone2_2.model,
                   existing_zone2_3.model ])
             expect(results[:desired_new]).to match_array([
-                  DesiredInstance.new(job, 'started', deployment, az1, 6),
-                  DesiredInstance.new(job, 'started', deployment, az2, 7),
+                  desired_instance(az1),
+                  desired_instance(az2),
                 ])
             expect(results[:obsolete]).to match_array([existing_zone3_4.model, existing_zone3_5.model])
           end
@@ -349,9 +332,7 @@ module Bosh::Director::DeploymentPlan
             expect(results[:desired_existing].map{ |i| i[:existing_instance_model] }).to match_array([
                   existing_zone1_0.model,
                   existing_zone1_1.model ])
-            expect(results[:desired_new]).to match_array([
-                  DesiredInstance.new(job, 'started', deployment, az2, 2)
-                ])
+            expect(results[:desired_new]).to match_array([desired_instance(az2)])
             expect(results[:obsolete]).to match_array([])
           end
         end
