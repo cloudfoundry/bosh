@@ -103,6 +103,41 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
     end
 
+    context 'when name and version are specified' do
+      let(:release2_path) { spec_asset("compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz") }
+
+      it 'does not upload the same release twice' do
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("file://" + release_path, 1))
+
+        target_and_login
+        bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+        bosh_runner.run("deployment #{deployment_manifest.path}")
+        bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+
+        expect(bosh_runner.run('deploy')).not_to match /Release uploaded/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+      end
+
+      it 'ignores the tarball if the director has the same name and version' do
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest("file://" + release2_path, 1))
+
+        target_and_login
+        bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+        bosh_runner.run("deployment #{deployment_manifest.path}")
+        bosh_runner.run("upload stemcell #{stemcell_filename}")
+        bosh_runner.run("upload release #{release_path}")
+
+        expect(bosh_runner.run('deploy')).not_to match /Release uploaded/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+      end
+
+    end
+
     it 'fails to deploy when the url is invalid' do
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('goobers'))
@@ -267,6 +302,39 @@ describe 'cli: deploy uploading', type: :integration do
 
       expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
       expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+    end
+
+    context 'when name and version are specified' do
+      let(:stemcell2_filename) { spec_asset('valid_stemcell_2.tgz') }
+
+      it 'uploads the stemcell from the local path in the manifest' do
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("file://" + stemcell_filename))
+
+        target_and_login
+        bosh_runner.run("deployment #{deployment_manifest.path}")
+        bosh_runner.run("upload release #{release_filename}")
+
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+
+        expect(bosh_runner.run('deploy')).not_to match /Started update stemcell/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+      end
+
+      it 'ignores the tarball if the director has the same name and version' do
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("file://" + stemcell2_filename))
+
+        target_and_login
+        bosh_runner.run("deployment #{deployment_manifest.path}")
+        bosh_runner.run("upload release #{release_filename}")
+        bosh_runner.run("upload stemcell #{stemcell_filename}")
+
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+
+        expect(bosh_runner.run('deploy')).not_to match /Started update stemcell/
+        expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
+      end
     end
 
     it 'fails to deploy when the path is not a stemcell' do

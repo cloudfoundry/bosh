@@ -105,7 +105,7 @@ module Bosh::Cli::Command
                 release['version'] = info[:generated_version]
                 run_nested_command "upload", "release", "--dir", parsed_uri.path, info[:generated_manifest_path]
               else
-                run_nested_command "upload", "release", parsed_uri.path
+                run_nested_command "upload", "release", parsed_uri.path, '--name', release['name'], '--version', release['version'].to_s
               end
             when 'http', 'https'
               err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
@@ -124,7 +124,7 @@ module Bosh::Cli::Command
             parsed_uri = URI.parse(resource_pool['stemcell']['url'])
             case parsed_uri.scheme
             when 'file'
-              run_nested_command "upload", "stemcell", parsed_uri.path
+              run_nested_command "upload", "stemcell", parsed_uri.path, "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
             when 'http', 'https'
               err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
               run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'],
