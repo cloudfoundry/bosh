@@ -11,8 +11,7 @@ PATH
     blobstore_client (1.3093.0)
       aws-sdk (= 1.60.2)
       bosh_common (~> 1.3093.0)
-      fog (~> 1.31.0)
-      fog-aws (<= 0.1.1)
+      fog
       httpclient (= 2.4.0)
       multi_json (~> 1.1)
 
@@ -51,13 +50,12 @@ PATH
       bosh_aws_cpi (= 2.1.0)
       bosh_common (~> 1.3093.0)
       bosh_cpi (~> 1.3093.0)
-      bosh_openstack_cpi (= 2.0.0)
+      bosh_openstack_cpi (= 2.1.0)
       bosh_vcloud_cpi (= 0.11.0)
       bosh_vsphere_cpi (= 2.1.0)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
-      fog (~> 1.31.0)
-      fog-aws (<= 0.1.1)
+      fog
       httpclient (= 2.4.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
@@ -179,7 +177,7 @@ PATH
       bosh_cli (~> 1.3093.0)
       bosh_common (~> 1.3093.0)
       bosh_cpi (~> 1.3093.0)
-      bosh_openstack_cpi (= 2.0.0)
+      bosh_openstack_cpi (= 2.1.0)
       bosh_vcloud_cpi (= 0.11.0)
       bosh_vsphere_cpi (= 2.1.0)
       mono_logger (~> 1.1.0)
@@ -210,7 +208,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    CFPropertyList (2.3.1)
+    CFPropertyList (2.3.2)
     addressable (2.3.7)
     ast (2.0.0)
     aws-sdk (1.60.2)
@@ -229,12 +227,11 @@ GEM
       bosh_cpi
       httpclient (= 2.4.0)
       yajl-ruby (>= 0.8.2)
-    bosh_openstack_cpi (2.0.0)
+    bosh_openstack_cpi (2.1.0)
       bosh-registry
       bosh_common
       bosh_cpi
-      fog (~> 1.31.0)
-      fog-aws (<= 0.1.1)
+      fog (~> 1.34.0)
       httpclient (= 2.4.0)
       membrane (~> 1.1.0)
       yajl-ruby (>= 0.8.2)
@@ -279,12 +276,13 @@ GEM
     ffi (1.9.10)
     fission (0.5.0)
       CFPropertyList (~> 2.2)
-    fog (1.31.0)
+    fog (1.34.0)
       fog-atmos
-      fog-aws (~> 0.0)
+      fog-aws (>= 0.6.0)
       fog-brightbox (~> 0.4)
-      fog-core (~> 1.30)
-      fog-ecloud
+      fog-core (~> 1.32)
+      fog-dynect (~> 0.0.2)
+      fog-ecloud (~> 0.1)
       fog-google (>= 0.0.2)
       fog-json
       fog-local
@@ -305,7 +303,7 @@ GEM
     fog-atmos (0.1.0)
       fog-core
       fog-xml
-    fog-aws (0.1.1)
+    fog-aws (0.7.6)
       fog-core (~> 1.27)
       fog-json (~> 1.0)
       fog-xml (~> 0.1)
@@ -321,10 +319,14 @@ GEM
       mime-types
       net-scp (~> 1.1)
       net-ssh (>= 2.1.3)
+    fog-dynect (0.0.2)
+      fog-core
+      fog-json
+      fog-xml
     fog-ecloud (0.3.0)
       fog-core
       fog-xml
-    fog-google (0.0.7)
+    fog-google (0.1.1)
       fog-core
       fog-json
       fog-xml
@@ -349,7 +351,7 @@ GEM
       fog-core
       fog-json
       fog-xml
-    fog-sakuracloud (1.3.2)
+    fog-sakuracloud (1.3.3)
       fog-core
       fog-json
     fog-serverlove (0.1.2)
