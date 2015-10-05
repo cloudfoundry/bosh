@@ -462,4 +462,41 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:can_run_as_errand?) { should be(false) }
     end
   end
+
+  describe '#add_instance_plans' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'resource_pool' => 'dea',
+        'instances' => 1,
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => {},
+        'template' => %w(foo bar),
+      }
+    end
+
+    it 'should sort instance plans on adding them' do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
+
+      instance1 = BD::DeploymentPlan::Instance.new(job, 1, 'started', plan, {}, nil, true, logger)
+      instance1.bind_new_instance_model
+      instance2 = BD::DeploymentPlan::Instance.new(job, 2, 'started', plan, {}, nil, false, logger)
+      instance2.bind_new_instance_model
+      instance3 = BD::DeploymentPlan::Instance.new(job, 3, 'started', plan, {}, nil, false, logger)
+      instance3.bind_new_instance_model
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: nil)
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: nil)
+      instance_plan3 = BD::DeploymentPlan::InstancePlan.new(instance: instance3, existing_instance: nil, desired_instance: nil)
+
+      unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
+      job.add_instance_plans(unsorted_plans)
+
+      sorted_instance_plans = [instance_plan1, instance_plan2, instance_plan3]
+      expect(job.sorted_instance_plans).to eq(sorted_instance_plans)
+    end
+  end
 end
