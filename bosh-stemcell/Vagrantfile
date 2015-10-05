@@ -97,7 +97,7 @@ EOS
   # todo can we install golang with a shell provisioner?
   config.vm.provision :chef_solo do |chef|
     chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
-    chef.json = { go: { version: '1.4.2' } }
+    chef.json = { go: { version: '1.5.1' } }
   end
 
   config.vm.synced_folder '../.', '/bosh', rsync__args: ["--verbose", "--archive", "--delete", "-z"]
