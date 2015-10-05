@@ -65,7 +65,7 @@ module Bosh::Director
         @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
       end
 
-      def create_instance(stemcell)
+      def create_instance_plan(stemcell)
         vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
         env = Env.new(@deployment_plan.compilation.env)
 

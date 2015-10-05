@@ -31,6 +31,7 @@ module Bosh
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
           @changes << :resource_pool if instance.resource_pool_changed?
+          @changes << :vm_type if instance.vm_type_changed?
           @changes << :stemcell if instance.stemcell_changed?
           @changes << :network if networks_changed?
           @changes << :packages if instance.packages_changed?

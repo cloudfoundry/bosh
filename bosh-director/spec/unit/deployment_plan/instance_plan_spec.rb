@@ -19,7 +19,11 @@ module Bosh::Director::DeploymentPlan
     let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: [network_plan]) }
     let(:existing_instance) { instance_model }
 
-    let(:job_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
+    let(:job_spec) do
+      job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+      job['vm_type'] = 'fake-vm-type'
+      job
+    end
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
     let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
@@ -42,6 +46,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
+      instance_model.vm.apply_spec=({'vm_type' => 'name'})
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end

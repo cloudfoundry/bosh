@@ -237,12 +237,11 @@ module Bosh::Director
       end
 
       def vm_type_changed?
-        if @job.vm_type.spec != @current_state['vm_type']
-          log_changes(__method__, @current_state['vm_type'], @job.vm_type.spec)
+        if @job.vm_type.spec != @vm.model.apply_spec['vm_type']
+          log_changes(__method__, @vm.model.apply_spec['vm_type'], @job.vm_type.spec)
           return true
-        else
-          return false
         end
+        false
       end
 
       def stemcell_changed?

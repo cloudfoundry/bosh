@@ -74,7 +74,13 @@ module Bosh::Cli::Command
             row << az
           end
 
-          row += [vm['resource_pool'], ips]
+          if vm['resource_pool']
+            row << vm['resource_pool']
+          else
+            row << vm['vm_type']
+          end
+
+          row << ips
 
           if options[:details]
             row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']

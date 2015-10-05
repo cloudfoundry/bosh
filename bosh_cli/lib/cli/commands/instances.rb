@@ -104,8 +104,13 @@ module Bosh::Cli::Command
             row << az
           end
 
-          row += [instance['resource_pool'], ips]
+          if instance['resource_pool']
+            row << instance['resource_pool']
+          else
+            row << instance['vm_type']
+          end
 
+          row << ips
 
           if options[:details]
             if has_disk_cid

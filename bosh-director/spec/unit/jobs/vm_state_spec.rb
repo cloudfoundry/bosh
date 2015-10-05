@@ -25,6 +25,11 @@ module Bosh::Director
         )
     end
 
+    def set_vm_apply_spec(vm, options=nil)
+      vm.apply_spec=(options || {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
+      vm.save
+    end
+
     before do
       @deployment = Models::Deployment.make
       @result_file = double('result_file')
@@ -249,6 +254,31 @@ module Bosh::Director
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
           expect(status['instance_id']).to eq('blarg')
+        end
+
+        job.perform
+      end
+
+      it 'should return vm_type' do
+        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+        set_vm_apply_spec(vm)
+
+        Models::Instance.create(
+          deployment: @deployment,
+          job: 'dea',
+          index: '0',
+          state: 'started',
+          resurrection_paused: true,
+          vm: vm,
+          uuid: 'blarg'
+        )
+        stub_agent_get_state_to_return_state_with_vitals
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['vm_type']).to eq('fake-vm-type')
         end
 
         job.perform

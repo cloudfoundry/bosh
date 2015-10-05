@@ -250,11 +250,20 @@ module Bosh::Director
         end
 
         vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
-        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
-        env = safe_property(@job_spec, 'env', class: Hash, :default => {})
-
         @job.vm_type = @deployment.vm_type(vm_type_name)
+        if @job.vm_type.nil?
+          raise JobUnknownVmType,
+            "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
+        end
+
+        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
         @job.stemcell = @deployment.stemcell(stemcell_name)
+        if @job.stemcell.nil?
+          raise JobUnknownStemcell,
+            "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
+        end
+
+        env = safe_property(@job_spec, 'env', class: Hash, :default => {})
         @job.env = Env.new(env)
       end
 

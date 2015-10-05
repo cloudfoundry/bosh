@@ -72,6 +72,8 @@ module Bosh::Director
           dns_records.sort_by! { |name| -name.split('.').first.length }
         end
 
+        vm_apply_spec = vm.apply_spec
+
         {
           :vm_cid => vm.cid,
           :disk_cid => vm.instance ? vm.instance.persistent_disk_cid : nil,
@@ -82,9 +84,10 @@ module Bosh::Director
           :index => job_index,
           :job_state => job_state,
           :resource_pool => resource_pool,
+          :vm_type => vm_apply_spec && vm_apply_spec['vm_type'] ? vm_apply_spec['vm_type']['name'] : nil,
           :vitals => job_vitals,
           :processes => processes,
-          :resurrection_paused => vm.instance ? vm.instance.resurrection_paused  : nil,
+          :resurrection_paused => vm.instance ? vm.instance.resurrection_paused : nil,
           :availability_zone => vm.instance ? vm.instance.availability_zone : nil,
           :instance_id => vm.instance ? vm.instance.uuid : nil,
           :is_bootstrap => vm.instance ? vm.instance.bootstrap : false

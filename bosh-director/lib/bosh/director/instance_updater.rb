@@ -308,6 +308,11 @@ module Bosh::Director
         return false
       end
 
+      if instance.vm_type_changed?
+        @logger.debug("VM Type has changed. Can't update VM in place")
+        return false
+      end
+
       if instance.stemcell_changed?
         @logger.debug("Stemcell has changed. Can't update VM in place")
         return false
