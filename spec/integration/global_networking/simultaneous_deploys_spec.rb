@@ -18,11 +18,11 @@ describe 'simultaneous deploys', type: :integration do
     upload_stemcell
   end
 
-  context 'when there are enough IPs for two deployments with compilation' do
+  context 'when there are enough IPs for two deployments' do
     it 'allocates different IP to another deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 6)
-      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'foobar_without_packages')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
