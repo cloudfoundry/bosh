@@ -959,52 +959,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#create' do
-      it 'should persist an instance with attributes from the desired_instance' do
-        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, true, 1)
-
-        instance = Instance.create(desired_instance, 1, logger)
-
-        persisted_instance = BD::Models::Instance.find(uuid: 'uuid-1')
-        expect(persisted_instance.deployment_id).to eq(plan.model.id)
-        expect(persisted_instance.job).to eq(job.name)
-        expect(persisted_instance.index).to eq(1)
-        expect(persisted_instance.state).to eq('started')
-        expect(persisted_instance.compilation).to eq(job.compilation?)
-        expect(persisted_instance.uuid).to eq('uuid-1')
-        expect(persisted_instance.availability_zone).to eq(availability_zone.name)
-      end
-    end
-
-    describe '#fetch_existing' do
-      it 'ensures persisted existing instance has the same state as in-memory existing instance' do
-        allow(plan).to receive(:jobs).and_return([job])
-        existing_instance = Bosh::Director::Models::Instance.make(
-          deployment_id: plan.model.id,
-          job: job.name,
-          index: 1,
-          state: 'started',
-          compilation: job.compilation?,
-          uuid: SecureRandom.uuid,
-          availability_zone: availability_zone.name,
-          bootstrap: false,
-        )
-        desired_instance = DesiredInstance.new(job, current_state, plan, availability_zone, true)
-        instance = Instance.fetch_existing(desired_instance, existing_instance, current_state, logger)
-        persisted_instance = BD::Models::Instance.first
-        expect(BD::Models::Instance.count).to eq(1)
-
-        expect(persisted_instance.deployment_id).to eq(existing_instance.deployment_id)
-        expect(persisted_instance.job).to eq(existing_instance.job)
-        expect(persisted_instance.index).to eq(existing_instance.index)
-        expect(persisted_instance.state).to eq(existing_instance.state)
-        expect(persisted_instance.compilation).to eq(existing_instance.compilation)
-        expect(persisted_instance.uuid).to eq(existing_instance.uuid)
-        expect(persisted_instance.availability_zone).to eq(existing_instance.availability_zone)
-        expect(persisted_instance.bootstrap).to eq(false)
-      end
-    end
-
     describe '#bind_existing_reservations' do
       before do
         instance.bind_existing_instance_model(instance_model)

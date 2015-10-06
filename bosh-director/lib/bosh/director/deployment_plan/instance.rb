@@ -40,27 +40,6 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
-      def self.fetch_existing(desired_instance, existing_instance_model, existing_instance_state, logger)
-        logger.debug("Fetching existing instance for: #{existing_instance_model.inspect}")
-        # if state was not specified in manifest, use saved state
-        job_state = desired_instance.state || existing_instance_model.state
-        instance = new(desired_instance.job, desired_instance.index, job_state, desired_instance.deployment, existing_instance_state, desired_instance.az, desired_instance.bootstrap?, logger)
-        instance.bind_existing_instance_model(existing_instance_model)
-        instance.bind_existing_reservations(existing_instance_state)
-        instance
-      end
-
-      def self.create(desired_instance, index, logger)
-        job_state = desired_instance.state || 'started'
-        instance = new(desired_instance.job, index, job_state, desired_instance.deployment, nil, desired_instance.az, desired_instance.bootstrap?, logger)
-        instance.bind_new_instance_model
-        instance
-      end
-
-      def self.fetch_obsolete(existing_instance, logger)
-        InstanceFromDatabase.create_from_model(existing_instance, logger)
-      end
-
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
@@ -115,7 +94,7 @@ module Bosh::Director
             deployment_id: deployment.model.id,
             job: job.name,
             index: index,
-            state: 'started',
+            state: @state,
             compilation: job.compilation?,
             uuid: SecureRandom.uuid,
             availability_zone: availability_zone_name,

@@ -21,7 +21,7 @@ module Bosh::Director
       track_and_log('Binding existing deployment') do
         bind_job_renames
 
-        instance_repo = Bosh::Director::DeploymentPlan::Instance
+        instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
         instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo)
         desired_jobs = @deployment_plan.jobs
 

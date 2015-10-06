@@ -46,7 +46,7 @@ module Bosh
             desired_job_names.include?(existing_instance_model.job) ||
             migrating_job_names.include?(existing_instance_model.job)
           end.map do |existing_instance|
-            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
+            instance = @instance_repo.fetch_obsolete(existing_instance)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
         end
@@ -92,7 +92,7 @@ module Bosh
 
         def obsolete_instance_plans(obsolete_desired_instances)
           obsolete_desired_instances.map do |existing_instance|
-            instance = @instance_repo.fetch_obsolete(existing_instance, @logger)
+            instance = @instance_repo.fetch_obsolete(existing_instance)
             InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
           end
         end
@@ -102,14 +102,14 @@ module Bosh
             existing_instance_model = existing_instance_and_deployment[:existing_instance_model]
             desired_instance = existing_instance_and_deployment[:desired_instance]
             existing_instance_state = states_by_existing_instance[existing_instance_model]
-            instance = @instance_repo.fetch_existing(desired_instance, existing_instance_model, existing_instance_state, @logger)
+            instance = @instance_repo.fetch_existing(desired_instance, existing_instance_model, existing_instance_state)
             InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance_model, instance: instance)
           end
         end
 
         def desired_new_instance_plans(new_desired_instances)
           new_desired_instances.map do |desired_instance|
-            instance = @instance_repo.create(desired_instance, desired_instance.index, @logger)
+            instance = @instance_repo.create(desired_instance, desired_instance.index)
             InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
           end
         end
