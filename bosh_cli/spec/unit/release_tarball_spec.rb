@@ -96,4 +96,16 @@ foo: bar
       expect(new_tarball.manifest).to match release_tarball.manifest
     end
   end
+
+  describe 'upload a release' do
+    it 'can untar manifest only if uploading the same release a 2nd time' do
+      tarball_path = spec_asset('test_release.tgz')
+      release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+      expect(release_tarball).to_not receive(:unpack)
+      expect(release_tarball).to_not receive(:validate)
+
+      release_tarball.validate_manifest
+      expect(release_tarball).to be_valid
+    end
+  end
 end
