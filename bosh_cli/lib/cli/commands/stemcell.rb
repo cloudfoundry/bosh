@@ -44,6 +44,10 @@ Note that --skip-if-exists and --fix can not be used together."
 
       stemcell_type = stemcell_location =~ /^#{URI::regexp}$/ ? 'remote' : 'local'
 
+      if options[:name] && options[:version]
+        return if exists?(options[:name], options[:version])
+      end
+
       if stemcell_type == 'local'
         stemcell = Bosh::Cli::Stemcell.new(stemcell_location)
 
@@ -74,11 +78,6 @@ Note that --skip-if-exists and --fix can not be used together."
         say('Uploading stemcell...')
         nl
       else
-        if options[:name] && options[:version]
-          director.list_stemcells.each do |stemcell|
-            return if stemcell['name'] == options[:name] && stemcell['version'] == options[:version]
-          end
-        end
         nl
         say("Using remote stemcell `#{stemcell_location}'")
       end
