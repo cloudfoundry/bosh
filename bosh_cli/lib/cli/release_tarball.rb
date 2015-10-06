@@ -19,6 +19,38 @@ module Bosh::Cli
       end
     end
 
+    def unpack_manifest
+      return @unpacked_manifest unless @unpacked_manifest.nil?
+      exit_success = fast_unpack('./release.MF')
+      @unpacked_manifest = !!exit_success
+    end
+
+    def unpack_jobs
+      return @unpacked_jobs unless @unpacked_jobs.nil?
+      exit_success = fast_unpack('./jobs/')
+      @unpacked_jobs = !!exit_success
+    end
+
+    def unpack_license
+      return @unpacked_license unless @unpacked_license.nil?
+      exit_success = fast_unpack('./license.tgz')
+      @unpacked_license = !!exit_success
+    end
+
+    def fast_unpack(target)
+      if RUBY_PLATFORM =~ /linux/
+        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
+      elsif RUBY_PLATFORM =~ /darwin/
+        if target[-1, 1] == "/"
+          system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+        else
+          system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+        end
+      else
+        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+      end
+    end
+
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
     def unpack
       return @unpacked unless @unpacked.nil?
@@ -38,13 +70,19 @@ module Bosh::Cli
 
     def manifest
       return nil unless valid?
-      unpack
+      unpack_manifest
       File.read(File.join(@unpack_dir, "release.MF"))
     end
 
+    def manifest_yaml
+      return @manifest_yaml unless @manifest_yaml.nil?
+      unpack_manifest
+      manifest_file = File.expand_path("release.MF", @unpack_dir)
+      @manifest_yaml = load_yaml_file(manifest_file)
+    end
+
     def compiled_release?
-      unpack
-      File.exists?(File.expand_path("compiled_packages", @unpack_dir))
+      manifest_yaml.has_key?('compiled_packages')
     end
 
     def replace_manifest(hash)
@@ -91,11 +129,16 @@ module Bosh::Cli
       end
     end
 
+    def upload_packages?(package_matches = [])
+      return true if package_matches.nil?
+      package_matches.size != manifest_yaml[@packages_folder].size
+    end
+
     # Repacks tarball according to the structure of remote release
     # Return path to repackaged tarball or nil if repack has failed
     def repack(package_matches = [])
       return nil unless valid?
-      unpack
+      unpack if upload_packages?(package_matches)
 
       tmpdir = Dir.mktmpdir
       repacked_path = File.join(tmpdir, "release-repack.tgz")
@@ -116,7 +159,7 @@ module Bosh::Cli
               package_matches.include?(package["fingerprint"]))
             say("SKIP".make_green)
             @skipped += 1
-            FileUtils.rm_rf(File.join("packages", "#{package["name"]}.tgz"))
+            FileUtils.rm_rf(File.join(@packages_folder, "#{package["name"]}.tgz"))
           else
             say("UPLOAD".make_red)
           end
@@ -137,42 +180,50 @@ module Bosh::Cli
     # and packages in place when we do validation. However for jobs and packages
     # that are present we still need to validate checksums
     def perform_validation(options = {})
-      allow_sparse = options.fetch(:allow_sparse, false)
-      should_print_release_info = options.fetch(:print_release_info, true)
-
-      step("File exists and readable",
-           "Cannot find release file #{@tarball_path}", :fatal) do
+      step("File exists and readable", "Cannot find release file #{@tarball_path}", :fatal) do
         exists?
       end
 
-      step("Extract tarball",
-           "Cannot extract tarball #{@tarball_path}", :fatal) do
-        unpack
+      validate_manifest if options.fetch(:validate_manifest, true)
+      validate_packages(options)
+      validate_jobs(options)
+
+      print_manifest if options.fetch(:print_release_info, true)
+    end
+
+    def validate_manifest
+      step("Extract manifest",
+           "Cannot extract manifest #{@tarball_path}", :fatal) do
+        unpack_manifest
       end
 
       manifest_file = File.expand_path("release.MF", @unpack_dir)
-
       step("Manifest exists", "Cannot find release manifest", :fatal) do
         File.exists?(manifest_file)
       end
 
-      manifest = load_yaml_file(manifest_file)
+      @manifest_yaml = nil
 
       step("Release name/version",
            "Manifest doesn't contain release name and/or version") do
-        manifest.is_a?(Hash) &&
-            manifest.has_key?("name") &&
-            manifest.has_key?("version")
+        manifest_yaml.is_a?(Hash) &&
+            manifest_yaml.has_key?("name") &&
+            manifest_yaml.has_key?("version")
       end
 
-      @release_name = manifest["name"]
-      @version = manifest["version"].to_s
+      @release_name = manifest_yaml["name"]
+      @version = manifest_yaml["version"].to_s
+      @validated = true
+    end
 
-      # Check packages
-      total_packages = manifest[@packages_folder].size
-      available_packages = {}
+    def validate_packages(options = {})
+      allow_sparse = options.fetch(:allow_sparse, false)
+      unpack
 
-      manifest[@packages_folder].each_with_index do |package, i|
+      total_packages = manifest_yaml[@packages_folder].size
+      @available_packages = {}
+
+      manifest_yaml[@packages_folder].each_with_index do |package, i|
         @packages << package
         name, version = package['name'], package['version']
 
@@ -185,7 +236,7 @@ module Bosh::Cli
         end
 
         if package_exists
-          available_packages[name] = true
+          @available_packages[name] = true
           step("Package '#{name}' checksum",
                "Incorrect checksum for package '#{name}'") do
             Digest::SHA1.file(package_file).hexdigest == package["sha1"]
@@ -201,8 +252,8 @@ module Bosh::Cli
         step("Package dependencies",
              "Package dependencies couldn't be resolved") do
           begin
-            tsort_packages(manifest[@packages_folder].inject({}) { |h, p|
-              h[p["name"]] = p["dependencies"] || []; h })
+            tsort_packages(manifest_yaml[@packages_folder].inject({}) { |h, p|
+                             h[p["name"]] = p["dependencies"] || []; h })
             true
           rescue Bosh::Cli::CircularDependency,
               Bosh::Cli::MissingDependency => e
@@ -211,26 +262,30 @@ module Bosh::Cli
           end
         end
       end
+    end
 
-      # Check jobs
-      total_jobs = manifest["jobs"].size
+    def validate_jobs(options = {})
+      allow_sparse = options.fetch(:allow_sparse, false)
+      unpack_jobs
+      unpack_license
+
+      total_jobs = manifest_yaml["jobs"].size
 
       step("Checking jobs format",
-           "Jobs are not versioned, please re-create release " +
-               "with current CLI version (or any CLI >= 0.4.4)", :fatal) do
-        total_jobs > 0 && manifest["jobs"][0].is_a?(Hash)
+           "Jobs are not versioned, please re-create release with current CLI version (or any CLI >= 0.4.4)", :fatal) do
+        total_jobs > 0 && manifest_yaml["jobs"][0].is_a?(Hash)
       end
 
-      manifest["jobs"].each_with_index do |job, i|
+      manifest_yaml["jobs"].each_with_index do |job, i|
         @jobs << job
+
         name    = job["name"]
         version = job["version"]
 
         job_file   = File.expand_path(name + ".tgz", @unpack_dir + "/jobs")
         job_exists = File.exists?(job_file)
 
-        step("Read job '%s' (%d of %d), version %s" % [name, i+1, total_jobs,
-                                                       version],
+        step("Read job '%s' (%d of %d), version %s" % [name, i+1, total_jobs, version],
              "Job '#{name}' not found") do
           job_exists || allow_sparse
         end
@@ -265,32 +320,29 @@ module Bosh::Cli
               job_manifest["templates"].each_key do |template|
                 step("Check template '#{template}' for '#{name}'",
                      "No template named '#{template}' for '#{name}'") do
-                  File.exists?(File.expand_path(template,
-                                                job_tmp_dir + "/templates"))
+                  File.exists?(File.expand_path(template, job_tmp_dir + "/templates"))
                 end
               end
             end
 
-            if job_manifest_valid && job_manifest["packages"]
+            validate_job_packages = options.fetch(:validate_job_packages, true)
+
+            if validate_job_packages && job_manifest_valid && job_manifest["packages"]
               job_manifest["packages"].each do |package_name|
                 step("Job '#{name}' needs '#{package_name}' package",
-                     "Job '#{name}' references missing package " +
-                         "'#{package_name}'") do
-                  available_packages[package_name] || allow_sparse
+                     "Job '#{name}' references missing package '#{package_name}'") do
+                  @available_packages[package_name] || allow_sparse
                 end
               end
             end
 
             step("Monit file for '#{name}'",
                  "Monit script missing for job '#{name}'") do
-              File.exists?(File.expand_path("monit", job_tmp_dir)) ||
-                  Dir.glob("#{job_tmp_dir}/*.monit").size > 0
+              File.exists?(File.expand_path("monit", job_tmp_dir)) || Dir.glob("#{job_tmp_dir}/*.monit").size > 0
             end
           end
         end
       end
-
-      print_info(manifest) if should_print_release_info
     end
 
     class TarballArtifact
@@ -330,7 +382,8 @@ module Bosh::Cli
       []
     end
 
-    def print_info(manifest)
+    def print_manifest
+      manifest = manifest_yaml
       say("\nRelease info")
       say("------------")
 
@@ -363,6 +416,7 @@ module Bosh::Cli
       else
         say("  - license (#{manifest["license"]["version"]})")
       end
+      nl
     end
   end
 end
