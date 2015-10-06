@@ -6,7 +6,6 @@ module Bosh
           def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_az_tuples)
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_az_tuples)
             placed_instances = PlacedDesiredInstances.new(desired_azs)
-
             azs_from_static_ips = az_list_from_static_ips(desired_azs, job_networks)
 
             desired_instances.each do |desired_instance|
@@ -39,7 +38,7 @@ module Bosh
             static_ips.each do |static_ip|
               subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
               unless subnet_for_ip.availability_zone_names.nil?
-                zone_name = subnet_for_ip.availability_zone_names.first # first ???
+                zone_name = subnet_for_ip.availability_zone_names.first
                 static_ips_to_az_names[static_ip] = zone_name
               end
             end

@@ -44,10 +44,10 @@ module Bosh::Director::DeploymentPlan
         unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
         existing_0 = existing_instance_with_az(0, nil, ['disk-blah'])
         existing_1 = existing_instance_with_az(1, nil)
-        unmatched_existing_instanaces = [existing_0, existing_1]
+        unmatched_existing_instances = [existing_0, existing_1]
 
         azs = nil
-        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instanaces)
+        results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
               {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]},
@@ -103,8 +103,6 @@ module Bosh::Director::DeploymentPlan
 
           azs = [az1]
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
-
-          expected_desired_zone1_2 = unmatched_desired_instances[1]
 
           expect(results[:desired_existing]).to match_array([
                 {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
@@ -227,12 +225,6 @@ module Bosh::Director::DeploymentPlan
                 ])
             expect(results[:desired_new]).to match_array([desired_instance(az2)])
             expect(results[:obsolete]).to match_array([existing_zone66_1.model])
-          end
-        end
-
-        describe 'when existing instances have persistent disk, no az, and are assigned an az' do
-          xit 'should talk to dmitiry' do
-            #not clear what should happen here. We're going to defer a decision until the 'migrated_jobs' story set.
           end
         end
 

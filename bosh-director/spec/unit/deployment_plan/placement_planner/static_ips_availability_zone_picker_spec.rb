@@ -98,6 +98,12 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
 
+    let(:results) {zone_picker.place_and_match_in(availability_zones, job.networks, desired_instances, existing_instances)}
+    let(:availability_zones) { job.availability_zones }
+    let(:needed) {results[:desired_new]}
+    let(:existing) {results[:desired_existing]}
+    let(:obsolete) {results[:obsolete]}
+
     before do
       allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
     end
@@ -119,7 +125,7 @@ module Bosh::Director::DeploymentPlan
           it 'does not assign AZs' do
             results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
 
-            expect(results[:desired_new].map(&:az)).to eq([nil, nil, nil])
+            expect(needed.map(&:az)).to eq([nil, nil, nil])
           end
         end
 
@@ -127,13 +133,10 @@ module Bosh::Director::DeploymentPlan
           let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
 
           it 'assigns instances to the AZ' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            desired_new = results[:desired_new]
-
-            expect(desired_new.count).to eq(3)
-            expect(results[:desired_existing]).to eq([])
-            expect(results[:obsolete]).to eq([])
-            desired_new.each { |result| expect(result.az.name).to eq('zone1') }
+            expect(needed.count).to eq(3)
+            expect(existing).to eq([])
+            expect(obsolete).to eq([])
+            needed.each { |result| expect(result.az.name).to eq('zone1') }
           end
         end
 
@@ -141,16 +144,13 @@ module Bosh::Director::DeploymentPlan
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
 
           it 'assigns instances to the AZs' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            desired_new = results[:desired_new]
+            expect(needed.count).to eq(3)
+            expect(existing).to eq([])
+            expect(obsolete).to eq([])
 
-            expect(desired_new.count).to eq(3)
-            expect(results[:desired_existing]).to eq([])
-            expect(results[:obsolete]).to eq([])
-
-            expect(desired_new[0].az.name).to eq('zone1')
-            expect(desired_new[1].az.name).to eq('zone1')
-            expect(desired_new[2].az.name).to eq('zone2')
+            expect(needed[0].az.name).to eq('zone1')
+            expect(needed[1].az.name).to eq('zone1')
+            expect(needed[2].az.name).to eq('zone2')
           end
         end
 
@@ -164,15 +164,12 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'assigns instances to the AZ' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            desired_new = results[:desired_new]
+            expect(needed.count).to eq(2)
+            expect(existing).to eq([])
+            expect(obsolete).to eq([])
 
-            expect(desired_new.count).to eq(2)
-            expect(results[:desired_existing]).to eq([])
-            expect(results[:obsolete]).to eq([])
-
-            expect(desired_new[0].az.name).to eq('zone1')
-            expect(desired_new[1].az.name).to eq('zone1')
+            expect(needed[0].az.name).to eq('zone1')
+            expect(needed[1].az.name).to eq('zone1')
           end
         end
       end
@@ -193,13 +190,9 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'does not assign AZs' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            needed = results[:desired_new]
-            existing = results[:desired_existing]
-            obsolete = results[:obsolete]
-
             expect(needed.map { |need| need.az }).to eq([nil])
 
+            expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az).to eq(nil)
             expect(existing[0][:existing_instance_model]).to be(existing_instances[0].model)
             expect(existing[1][:desired_instance].az).to eq(nil)
@@ -217,13 +210,9 @@ module Bosh::Director::DeploymentPlan
           ] }
 
           it 'assigns instances to the AZ' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            needed = results[:desired_new]
-            existing = results[:desired_existing]
-            obsolete = results[:obsolete]
-
             expect(needed.map { |need| need.az.name }).to eq(['zone1', 'zone1'])
 
+            expect(existing.count).to eq(1)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
             expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
 
@@ -239,13 +228,9 @@ module Bosh::Director::DeploymentPlan
           ] }
 
           it 'assigns instances to the AZs' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            needed = results[:desired_new]
-            existing = results[:desired_existing]
-            obsolete = results[:obsolete]
-
             expect(needed.map { |need| need.az.name }).to eq(['zone1'])
 
+            expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
             expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
             expect(existing[1][:desired_instance].az.name).to eq('zone2')
@@ -269,13 +254,9 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'assigns instances to the AZ' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
-            needed = results[:desired_new]
-            existing = results[:desired_existing]
-            obsolete = results[:obsolete]
-
             expect(needed.map { |need| need.az.name }).to eq(['zone1'])
 
+            expect(existing.count).to eq(1)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
             expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
 
@@ -283,22 +264,25 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        # ---
+        context 'and the job is non-AZ legacy' do
+          let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
+          let(:existing_instances) { [
+            existing_instance_with_az(1, nil),
+            existing_instance_with_az(2, nil),
+          ] }
+          let(:availability_zones) { [] }
 
-        context 'and the job is being migrated from a non-AZ legacy' do
+          it 'does not assign AZs' do
+            expect(needed.map { |need| need.az }).to eq([nil])
 
-        end
+            expect(existing.count).to eq(2)
+            expect(existing[0][:desired_instance].az).to eq(nil)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[0].model)
+            expect(existing[1][:desired_instance].az).to eq(nil)
+            expect(existing[1][:existing_instance_model]).to be(existing_instances[1].model)
 
-        context 'some of which have static IPs and AZ assignments' do
-
-        end
-
-        context 'some of which have static IPs, but no AZ assignments' do
-
-        end
-
-        context 'none of which have static IPs' do
-
+            expect(obsolete).to eq([])
+          end
         end
       end
     end
@@ -307,10 +291,8 @@ module Bosh::Director::DeploymentPlan
       DesiredInstance.new(job, 'started', planner)
     end
 
-    def existing_instance_with_az(index, az, persistent_disks = [])
-      instance_model = Bosh::Director::Models::Instance.make(index: index)
-      # allow(instance_model).to receive(:persistent_disks).and_return(persistent_disks)
-      InstanceWithAZ.new(instance_model, az)
+    def existing_instance_with_az(index, az)
+      InstanceWithAZ.new(Bosh::Director::Models::Instance.make(index: index), az)
     end
   end
 end

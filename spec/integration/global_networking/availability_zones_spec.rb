@@ -245,6 +245,19 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
         expect(vms[0].ips).to eq('192.168.1.51')
         expect(vms[1].ips).to eq('192.168.1.52')
+
+        cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.51', '192.168.2.52']
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        vms = director.vms
+        expect(vms.count).to eq(2)
+        expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
+        expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az2')
+        expect(vms[0].ips).to eq('192.168.1.51')
+        expect(vms[1].ips).to eq('192.168.2.52')
       end
     end
 
