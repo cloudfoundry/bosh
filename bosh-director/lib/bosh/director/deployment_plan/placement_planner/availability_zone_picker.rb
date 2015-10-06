@@ -3,12 +3,12 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class AvailabilityZonePicker
-          def place_and_match_in(desired_azs, desired_instances, existing_instances_with_azs)
-            unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instances_with_azs)
-            desired_azs = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
-            placed_instances = PlacedDesiredInstances.new(desired_azs)
+          def place_and_match_in(desired_azs, desired_instances, existing_instance_az_tuples)
+            unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_az_tuples)
+            desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
+            placed_instances = PlacedDesiredInstances.new(desired_azs_sorted)
 
-            remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs, desired_instances, placed_instances, unplaced_existing_instances)
+            remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs_sorted, desired_instances, placed_instances, unplaced_existing_instances)
             balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
             obsolete = unplaced_existing_instances.unclaimed_instance_models

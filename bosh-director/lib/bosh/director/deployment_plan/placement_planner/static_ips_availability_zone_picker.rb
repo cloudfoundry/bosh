@@ -3,9 +3,28 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class StaticIpsAvailabilityZonePicker
-          def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instances_with_azs)
+          def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_az_tuples)
+            unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_az_tuples)
             placed_instances = PlacedDesiredInstances.new(desired_azs)
 
+            azs_from_static_ips = az_list_from_static_ips(desired_azs, job_networks)
+
+            desired_instances.each do |desired_instance|
+              az = azs_from_static_ips.shift
+              existing = unplaced_existing_instances.claim_instance_for_az(az)
+              placed_instances.record_placement(az, desired_instance, existing)
+            end
+
+            {
+              desired_new: placed_instances.absent,
+              desired_existing: placed_instances.existing,
+              obsolete: unplaced_existing_instances.unclaimed_instance_models,
+            }
+          end
+
+          private
+
+          def az_list_from_static_ips(desired_azs, job_networks)
             static_ips = []
             deployment_networks = []
 
@@ -25,17 +44,7 @@ module Bosh
               end
             end
 
-            static_ip_azs = static_ips_to_az_names.values.map{|az_name| desired_azs.find {|az| az.name == az_name}}
-
-            desired_instances.each do |desired_instance|
-              placed_instances.record_placement(static_ip_azs.shift, desired_instance, nil)
-            end
-
-            {
-              desired_new: placed_instances.absent,
-              desired_existing: placed_instances.existing, # note this will always be []
-              obsolete: [],
-            }
+            static_ips_to_az_names.values.map { |az_name| desired_azs.find { |az| az.name == az_name } }
           end
         end
       end

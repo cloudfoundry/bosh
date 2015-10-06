@@ -38,7 +38,7 @@ module Bosh::Director::DeploymentPlan
     ] }
     let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
 
-    xcontext 'when job networks include static IPs' do
+    context 'when job networks include static IPs' do
       let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '192.168.1.12']}
 
       it 'assigns indexes to the instances' do

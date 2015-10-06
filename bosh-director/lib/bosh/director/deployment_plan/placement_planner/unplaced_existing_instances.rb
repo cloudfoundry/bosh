@@ -3,8 +3,8 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class UnplacedExistingInstances
-          def initialize(existing_instances_with_azs)
-            @instances = existing_instances_with_azs.sort_by { |instance| instance.model.index }
+          def initialize(existing_instance_az_tuples)
+            @instances = existing_instance_az_tuples.sort_by { |instance| instance.model.index }
             @az_name_to_existing_instances  = initialize_azs_to_instances
           end
 
