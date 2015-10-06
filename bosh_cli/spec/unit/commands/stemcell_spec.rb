@@ -101,6 +101,20 @@ module Bosh::Cli
               }.to raise_error(Bosh::Cli::CliError, /Option '--skip-if-exists' and option '--fix' should not be used together/)
             end
           end
+
+          context 'with --name and --version' do
+            let(:director_stemcells) { [{"name" => "ubuntu", "version" => "1" }]}
+            it 'should not upload a stemcell if one exists already' do
+                expect(director).to receive(:list_stemcells).and_return(director_stemcells)
+
+                expect(director).not_to receive(:upload_stemcell)
+                expect {
+                  command.add_option(:name, "ubuntu")
+                  command.add_option(:version, "1")
+                  command.upload(stemcell_archive)
+                }.not_to raise_error()
+              end
+          end
         end
 
         context 'remote stemcell' do

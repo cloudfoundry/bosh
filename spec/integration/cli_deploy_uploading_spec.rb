@@ -329,10 +329,10 @@ describe 'cli: deploy uploading', type: :integration do
         bosh_runner.run("upload release #{release_filename}")
         bosh_runner.run("upload stemcell #{stemcell_filename}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+        expect(bosh_runner.run('deploy')).not_to match /Uploading stemcell/
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
 
-        expect(bosh_runner.run('deploy')).not_to match /Started update stemcell/
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
         expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
       end
     end
