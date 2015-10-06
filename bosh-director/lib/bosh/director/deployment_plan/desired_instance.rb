@@ -3,7 +3,7 @@ module Bosh
     module DeploymentPlan
       class DesiredInstance < Struct.new(:job, :virtual_state, :deployment, :az, :index)
         def inspect
-          "<DesiredInstance az=#{self.az} index=#{self.index}>"
+          "<DesiredInstance az=#{self.az ? self.az.name : nil} index=#{self.index}>"
         end
 
         def bootstrap?

@@ -104,9 +104,7 @@ module Bosh::Director::DeploymentPlan
           azs = [az1]
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
-          expected_desired_zone1_0 = unmatched_desired_instances[0]
           expected_desired_zone1_2 = unmatched_desired_instances[1]
-          expected_desired_zone1_2.index = 2
 
           expect(results[:desired_existing]).to match_array([
                 {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
