@@ -933,7 +933,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           'resource_pool' => 'fake-resource-pool-name',
           'instances' => 1,
           'networks'  => [{'name' => 'fake-network-name'}],
-          'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}],
+          'migrated_from' => [{'name' => 'job-1', 'availability_zone' => 'z1'}, {'name' => 'job-2', 'availability_zone' => 'z2'}],
           'availability_zones' => ['z1', 'z2']
         }
       end
@@ -946,15 +946,15 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       it 'sets migrated_from on a job' do
         job = parser.parse(job_spec)
         expect(job.migrated_from[0].name).to eq('job-1')
-        expect(job.migrated_from[0].az).to eq('z1')
+        expect(job.migrated_from[0].availability_zone).to eq('z1')
         expect(job.migrated_from[1].name).to eq('job-2')
-        expect(job.migrated_from[1].az).to eq('z2')
+        expect(job.migrated_from[1].availability_zone).to eq('z2')
       end
 
       context 'when az is specified' do
         context 'when migrated job refers to az that is not in the list of availaibility_zones key' do
           it 'raises an error' do
-            job_spec['migrated_from'] = [{'name' => 'job-1', 'az' => 'unknown_az'}]
+            job_spec['migrated_from'] = [{'name' => 'job-1', 'availability_zone' => 'unknown_az'}]
 
             expect {
               parser.parse(job_spec)

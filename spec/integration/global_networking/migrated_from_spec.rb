@@ -56,7 +56,7 @@ describe 'migrated from', type: :integration do
     job_spec = etcd_job
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     job_spec['availability_zones'] = ['my-az-1', 'my-az-2']
-    job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'az' => 'my-az-1'},{'name' => 'etcd_z2', 'az' => 'my-az-2'}]
+    job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'availability_zone' => 'my-az-1'},{'name' => 'etcd_z2', 'availability_zone' => 'my-az-2'}]
     manifest_hash['jobs'] = [job_spec]
     manifest_hash
   end
@@ -298,7 +298,7 @@ describe 'migrated from', type: :integration do
         job_spec = etcd_job
         job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         job_spec['availability_zones'] = ['my-az-1', 'my-az-2']
-        job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'az' => 'my-az-1'}]
+        job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'availability_zone' => 'my-az-1'}]
         new_manifest_hash['jobs'] = [job_spec]
 
         deploy_simple_manifest(manifest_hash: new_manifest_hash)

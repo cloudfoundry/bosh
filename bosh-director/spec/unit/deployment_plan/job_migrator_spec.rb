@@ -77,8 +77,8 @@ module Bosh::Director
           job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
           job['availability_zones'] = ['z1', 'z2']
           job['migrated_from'] = [
-            {'name' => 'etcd_z1', 'az' => 'z1'},
-            {'name' => 'etcd_z2', 'az' => 'z2'},
+            {'name' => 'etcd_z1', 'availability_zone' => 'z1'},
+            {'name' => 'etcd_z2', 'availability_zone' => 'z2'},
           ]
           job
         end
@@ -187,7 +187,7 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section contains az and instance has different az' do
+        context 'when migrated from section contains availability zone and instance has different az' do
           before do
             Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: 'z10')
           end
@@ -202,7 +202,7 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section does not contain az and instance does not have az' do
+        context 'when migrated from section does not contain availability zone and instance does not have az' do
           let(:etcd_job_spec) do
             job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
             job['migrated_from'] = [
@@ -248,7 +248,7 @@ end
 
 RSpec::Matchers.define :be_a_migrated_instance do |model, az|
   match do |actual|
-    actual.model == model && actual.az == az
+    actual.model == model && actual.availability_zone == az
   end
 end
 

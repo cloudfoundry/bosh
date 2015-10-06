@@ -1,6 +1,6 @@
 module Bosh::Director
-  class DeploymentPlan::MigratedFromJob < Struct.new(:name, :az); end
-  class DeploymentPlan::InstanceWithAZ < Struct.new(:model, :az); end
+  class DeploymentPlan::MigratedFromJob < Struct.new(:name, :availability_zone); end
+  class DeploymentPlan::InstanceWithAZ < Struct.new(:model, :availability_zone); end
 
   class DeploymentPlan::JobMigrator
     def initialize(deployment_plan, logger)
@@ -49,19 +49,19 @@ module Bosh::Director
 
         @deployment_plan.existing_instances.each do |instance|
           if instance.job == migrated_from_job.name
-            if instance.availability_zone.nil? && migrated_from_job.az.nil?
+            if instance.availability_zone.nil? && migrated_from_job.availability_zone.nil?
               raise DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', availability zone of '#{migrated_from_job.name}' is not specified"
             end
 
-            if !migrated_from_job.az.nil? && !instance.availability_zone.nil?
-              if migrated_from_job.az != instance.availability_zone
+            if !migrated_from_job.availability_zone.nil? && !instance.availability_zone.nil?
+              if migrated_from_job.availability_zone != instance.availability_zone
                 raise DeploymentInvalidMigratedFromJob,
-                  "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', '#{migrated_from_job.name}' belongs to availability zone '#{instance.availability_zone}' and manifest specifies '#{migrated_from_job.az}'"
+                  "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', '#{migrated_from_job.name}' belongs to availability zone '#{instance.availability_zone}' and manifest specifies '#{migrated_from_job.availability_zone}'"
               end
             end
 
-            az = migrated_from_job.az || instance.availability_zone
+            az = migrated_from_job.availability_zone || instance.availability_zone
             migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, az)
           end
         end

@@ -27,7 +27,7 @@ module Bosh
           return desired_instances if desired_azs.nil?
           unplaced_existing_instances.instances_with_persistent_disk.each do |existing_instance|
             break if desired_instances.empty?
-            az = desired_azs.find { |az| az.name == existing_instance.az }
+            az = desired_azs.find { |az| az.name == existing_instance.availability_zone }
             next if az.nil?
             desired_instance = desired_instances.pop
             unplaced_existing_instances.claim_instance(existing_instance)
@@ -89,7 +89,7 @@ module Bosh
           end
 
           def claim_instance(existing_instance)
-            @az_name_to_existing_instances[existing_instance.az].delete(existing_instance)
+            @az_name_to_existing_instances[existing_instance.availability_zone].delete(existing_instance)
           end
 
           def claim_instance_for_az(az)
@@ -109,9 +109,9 @@ module Bosh
           def initialize_azs_to_instances
             az_name_to_existing_instances = {}
             @instances.each do |instance|
-              instances = az_name_to_existing_instances.fetch(instance.az, [])
+              instances = az_name_to_existing_instances.fetch(instance.availability_zone, [])
               instances << instance
-              az_name_to_existing_instances[instance.az] = instances
+              az_name_to_existing_instances[instance.availability_zone] = instances
             end
             az_name_to_existing_instances
           end
