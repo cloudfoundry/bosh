@@ -17,7 +17,7 @@ module Bosh::Director
       unless desired_job.migrated_from.to_a.empty?
         migrated_from_instances = all_migrated_from_instances(
           desired_job.migrated_from,
-          desired_job.name
+          desired_job
         )
 
         instances += migrated_from_instances
@@ -26,7 +26,10 @@ module Bosh::Director
       instances
     end
 
-    def all_migrated_from_instances(migrated_from_jobs, desired_job_name)
+    private
+
+    def all_migrated_from_instances(migrated_from_jobs, desired_job)
+      desired_job_name = desired_job.name
       migrated_from_instances = []
 
       migrated_from_jobs.each do |migrated_from_job|
@@ -63,10 +66,10 @@ module Bosh::Director
 
             az = migrated_from_job.availability_zone || instance.availability_zone
             migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, az)
+
+            @logger.debug("Migrating job '#{migrated_from_job.name}/#{instance.uuid} (#{instance.index})' to '#{desired_job.name}/#{instance.uuid} (#{instance.index})'")
           end
         end
-
-        @logger.debug("Migrating job '#{migrated_from_job.name}' to '#{desired_job_name}'")
 
         migrated_from_instances += migrated_from_job_instances
       end

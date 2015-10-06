@@ -8,10 +8,10 @@ module Bosh
           @availability_zone_picker = AvailabilityZonePicker.new
         end
 
-        def plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
+        def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
           availability_zones = job.availability_zones
 
-          instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances)
+          instances_by_type = @availability_zone_picker.place_and_match_in(availability_zones, desired_instances, existing_instances_with_azs)
 
           new_desired_instances = instances_by_type[:desired_new]
           desired_existing_instances = instances_by_type[:desired_existing]
