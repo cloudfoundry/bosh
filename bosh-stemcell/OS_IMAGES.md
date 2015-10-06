@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `HU9BVWuGxWwoxJ2jOJYKqDRTjwh419Ig`
+  - update kernel for USN-2765-1
+
 * `k74zFOTewcP.k8apaBVH5jS5t87c.IaJ`
   - update rpcbind to 0.2.1-2ubuntu2.2 for USN-2756-1
 
