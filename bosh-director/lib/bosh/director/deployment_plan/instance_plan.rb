@@ -8,6 +8,7 @@ module Bosh
           @instance = attrs.fetch(:instance)
           @network_plans = attrs.fetch(:network_plans, [])
           @logger = Config.logger
+          @dns_manager = DnsManager.new(@logger)
         end
 
         attr_reader :desired_instance, :existing_instance, :instance
@@ -158,7 +159,9 @@ module Bosh
               @instance.current_state,
               @instance.availability_zone,
               @instance.index,
-              @instance.uuid)
+              @instance.uuid,
+              @dns_manager
+            )
           else
             # CAUTION: This is a safety guard in case @instance is an InstanceFromDatabase.
             # This should be removed when InstanceFromDatabase is removed.
@@ -172,7 +175,9 @@ module Bosh
               {},
               AvailabilityZone.new(@instance.availability_zone_name, @instance.cloud_properties),
               @instance.index,
-              @instance.uuid)
+              @instance.uuid,
+              @dns_manager
+            )
           end
         end
 

@@ -5,62 +5,6 @@ module Bosh::Director
     include Bosh::Director::ValidationHelper
     include Bosh::Director::DnsHelper
 
-    describe '#canonical' do
-      it 'should be lowercase' do
-        expect(canonical('HelloWorld')).to eq('helloworld')
-      end
-
-      it 'should convert underscores to hyphens' do
-        expect(canonical('hello_world')).to eq('hello-world')
-      end
-
-      it 'should strip any non alpha numeric characters' do
-        expect(canonical('hello^world')).to eq('helloworld')
-      end
-
-      it "should reject strings that don't start with a letter or end with a letter/number" do
-        expect {
-          canonical('-helloworld')
-        }.to raise_error(
-          DnsInvalidCanonicalName,
-          "Invalid DNS canonical name `-helloworld', must begin with a letter",
-        )
-
-        expect {
-          canonical('helloworld-')
-        }.to raise_error(
-          DnsInvalidCanonicalName,
-          "Invalid DNS canonical name `helloworld-', can't end with a hyphen",
-        )
-      end
-    end
-
-    describe '#dns_servers' do
-      it 'should return nil when there are no DNS servers' do
-        expect(dns_servers('network', {})).to be_nil
-      end
-
-      it 'should return an array of DNS servers' do
-        expect(dns_servers('network', {'dns' => %w[1.2.3.4 5.6.7.8]})).to eq(%w[1.2.3.4 5.6.7.8])
-      end
-
-      it 'should add default dns server to an array of DNS servers' do
-        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
-        expect(dns_servers('network', {'dns' => %w[1.2.3.4 5.6.7.8]})).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
-      end
-
-      it 'should not add default dns server to an array of DNS servers' do
-        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
-        expect(dns_servers('network', {'dns' => %w[1.2.3.4 5.6.7.8]}, false)).to eq(%w[1.2.3.4 5.6.7.8])
-      end
-
-      it "should raise an error if a DNS server isn't specified with as an IP" do
-        expect {
-          dns_servers('network', {'dns' => %w[1.2.3.4 foo.bar]})
-        }.to raise_error
-      end
-    end
-
     describe '#default_dns_server' do
       it 'should return nil when there are no default DNS server' do
         expect(default_dns_server).to be_nil
@@ -274,6 +218,36 @@ module Bosh::Director
       allow(Config).to receive(:dns_domain_name).and_return(domain.name)
     end
 
+    describe '#canonical' do
+      it 'should be lowercase' do
+        expect(dns_manager.canonical('HelloWorld')).to eq('helloworld')
+      end
+
+      it 'should convert underscores to hyphens' do
+        expect(dns_manager.canonical('hello_world')).to eq('hello-world')
+      end
+
+      it 'should strip any non alpha numeric characters' do
+        expect(dns_manager.canonical('hello^world')).to eq('helloworld')
+      end
+
+      it "should reject strings that don't start with a letter or end with a letter/number" do
+        expect {
+          dns_manager.canonical('-helloworld')
+        }.to raise_error(
+            DnsInvalidCanonicalName,
+            "Invalid DNS canonical name `-helloworld', must begin with a letter",
+          )
+
+        expect {
+          dns_manager.canonical('helloworld-')
+        }.to raise_error(
+            DnsInvalidCanonicalName,
+            "Invalid DNS canonical name `helloworld-', can't end with a hyphen",
+          )
+      end
+    end
+
     describe '#delete_dns_for_instance' do
       let(:deployment_model) { Models::Deployment.make(name:'deployment-name') }
       let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 5, job: 'fake-job-name', deployment: deployment_model) }
@@ -282,6 +256,32 @@ module Bosh::Director
         expect(dns_manager).to receive(:delete_dns_records).with('fake-uuid.fake-job-name.%.deployment-name.bosh', domain.id)
         expect(dns_manager).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
         dns_manager.delete_dns_for_instance(instance_model)
+      end
+    end
+
+    describe '#dns_servers' do
+      it 'should return nil when there are no DNS servers' do
+        expect(dns_manager.dns_servers('network', nil)).to be_nil
+      end
+
+      it 'should return an array of DNS servers' do
+        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8])
+      end
+
+      it 'should add default dns server to an array of DNS servers' do
+        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
+        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
+      end
+
+      it 'should not add default dns server to an array of DNS servers' do
+        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
+        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8], false)).to eq(%w[1.2.3.4 5.6.7.8])
+      end
+
+      it "should raise an error if a DNS server isn't specified with as an IP" do
+        expect {
+          dns_manager.dns_servers('network', %w[1.2.3.4 foo.bar])
+        }.to raise_error
       end
     end
   end

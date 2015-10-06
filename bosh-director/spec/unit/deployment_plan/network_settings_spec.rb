@@ -14,7 +14,8 @@ module Bosh::Director::DeploymentPlan
         },
         az,
         3,
-        'uuid-1'
+        'uuid-1',
+        Bosh::Director::DnsManager.new(logger)
       )
     end
 

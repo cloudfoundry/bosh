@@ -4,9 +4,9 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger) }
-        let(:deployment_repo) { DeploymentRepo.new(canonicalizer) }
-        let(:canonicalizer) { Class.new { include Bosh::Director::DnsHelper }.new }
+        subject { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, event_log, logger) }
+        let(:deployment_repo) { DeploymentRepo.new(dns_manager) }
+        let(:dns_manager) { Bosh::Director::DnsManager.new(logger) }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }

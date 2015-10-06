@@ -1,15 +1,16 @@
 module Bosh::Director
   module DeploymentPlan
     class ManualNetworkSubnet
-      extend DnsHelper
-      extend IpUtil
-      extend ValidationHelper
+      include ValidationHelper
+      include IpUtil
 
       attr_reader :network_name, :range, :gateway, :dns, :cloud_properties,
         :netmask, :availability_zone_names, :restricted_ips, :static_ips
 
       def self.parse(network_name, subnet_spec, availability_zones, legacy_reserved_ranges)
-        Config.logger.debug("reserved ranges #{legacy_reserved_ranges.inspect}")
+        @logger = Config.logger
+
+        @logger.debug("reserved ranges #{legacy_reserved_ranges.inspect}")
         range_property = safe_property(subnet_spec, "range", :class => String)
         range = NetAddr::CIDR.create(range_property)
 
@@ -41,7 +42,9 @@ module Bosh::Director
           end
         end
 
-        dns = dns_servers(network_name, subnet_spec)
+        dns_manager = DnsManager.new(@logger)
+        dns_spec = safe_property(subnet_spec, 'dns', :class => Array, :optional => true)
+        @dns = dns_manager.dns_servers(network_name, dns_spec)
 
         availability_zone_names = parse_availability_zones(subnet_spec, network_name, availability_zones)
 

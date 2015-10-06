@@ -5,7 +5,6 @@ module Bosh::Director
     ##
     # Represents a logical deployment network.
     class Network
-      include DnsHelper
       include ValidationHelper
 
       VALID_DEFAULTS = %w(dns gateway).sort
@@ -23,7 +22,7 @@ module Bosh::Director
       # @param [Hash] network_spec parsed deployment manifest network section
       def initialize(name, logger)
         @name = name
-        @canonical_name = canonical(@name)
+        @canonical_name = DnsManager.new(logger).canonical(@name)
         @logger = logger
       end
 

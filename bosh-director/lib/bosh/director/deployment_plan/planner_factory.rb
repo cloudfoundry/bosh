@@ -14,11 +14,10 @@ module Bosh
       class PlannerFactory
         def self.create(event_log, logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
-          canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
-          deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(canonicalizer)
+          dns_manager = Bosh::Director::DnsManager.new(logger)
+          deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(dns_manager)
 
           new(
-            canonicalizer,
             deployment_manifest_migrator,
             deployment_repo,
             event_log,
@@ -26,8 +25,7 @@ module Bosh
           )
         end
 
-        def initialize(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger)
-          @canonicalizer = canonicalizer
+        def initialize(deployment_manifest_migrator, deployment_repo, event_log, logger)
           @deployment_manifest_migrator = deployment_manifest_migrator
           @deployment_repo = deployment_repo
           @event_log = event_log

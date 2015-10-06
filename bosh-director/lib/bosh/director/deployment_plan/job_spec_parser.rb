@@ -3,7 +3,6 @@ require 'bosh/template/property_helper'
 module Bosh::Director
   module DeploymentPlan
     class JobSpecParser
-      include DnsHelper
       include ValidationHelper
       include Bosh::Template::PropertyHelper
       include IpUtil
@@ -55,7 +54,7 @@ module Bosh::Director
 
       def parse_name
         @job.name = safe_property(@job_spec, "name", :class => String)
-        @job.canonical_name = canonical(@job.name)
+        @job.canonical_name = DnsManager.new(@logger).canonical(@job.name)
       end
 
       def parse_lifecycle

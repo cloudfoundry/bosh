@@ -14,7 +14,7 @@ describe Bosh::Director::VmCreator do
       get_state: nil
     )
   end
-  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, false, 'deployment_name', {}, [], {}, nil, 5, 'uuid-1').to_hash }
+  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, false, 'deployment_name', {}, [], {}, nil, 5, 'uuid-1', BD::DnsManager.new(logger)).to_hash }
   let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
     instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name')

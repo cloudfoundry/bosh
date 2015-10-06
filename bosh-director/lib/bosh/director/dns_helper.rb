@@ -6,40 +6,13 @@ module Bosh::Director
     TTL_5M = 300
     TTL_4H = 3600 * 4
 
-    # @param [String] ip IP address
-    # @return [String] reverse dns domain name for an IP
-    def reverse_domain(ip)
-      reverse(ip, 2)
-    end
-
-    # @param [String] ip IP address
-    # @return [String] reverse dns name for an IP used for a PTR record
-    def reverse_host(ip)
-      reverse(ip, 3)
-    end
-
-    def canonical(string)
-      # a-z, 0-9, -, case insensitive, and must start with a letter
-      string = string.downcase.gsub(/_/, "-").gsub(/[^a-z0-9-]/, "")
-      if string =~ /^(\d|-)/
-        raise DnsInvalidCanonicalName,
-              "Invalid DNS canonical name `#{string}', must begin with a letter"
-      end
-      if string =~ /-$/
-        raise DnsInvalidCanonicalName,
-              "Invalid DNS canonical name `#{string}', can't end with a hyphen"
-      end
-      string
-    end
-
     # build a list of dns servers to use
-    def dns_servers(network, spec, add_default_dns = true)
+    def dns_servers(network, dns_spec, add_default_dns = true)
       servers = nil
-      dns_property = safe_property(spec, "dns",
-                                   :class => Array, :optional => true)
-      if dns_property
+
+      if dns_spec
         servers = []
-        dns_property.each do |dns|
+        dns_spec.each do |dns|
           dns = NetAddr::CIDR.create(dns)
           unless dns.size == 1
             invalid_dns(network, "must be a single IP")
@@ -215,6 +188,18 @@ module Bosh::Director
 
     private
 
+    # @param [String] ip IP address
+    # @return [String] reverse dns name for an IP used for a PTR record
+    def reverse_host(ip)
+      reverse(ip, 3)
+    end
+
+    # @param [String] ip IP address
+    # @return [String] reverse dns domain name for an IP
+    def reverse_domain(ip)
+      reverse(ip, 2)
+    end
+
     def reverse(ip, n)
       octets = ip.split(/\./)
       "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
@@ -226,6 +211,20 @@ module Bosh::Director
 
     def initialize(logger)
       @logger = logger
+    end
+
+    def canonical(string)
+      # a-z, 0-9, -, case insensitive, and must start with a letter
+      string = string.downcase.gsub(/_/, "-").gsub(/[^a-z0-9-]/, "")
+      if string =~ /^(\d|-)/
+        raise DnsInvalidCanonicalName,
+          "Invalid DNS canonical name `#{string}', must begin with a letter"
+      end
+      if string =~ /-$/
+        raise DnsInvalidCanonicalName,
+          "Invalid DNS canonical name `#{string}', can't end with a hyphen"
+      end
+      string
     end
 
     def delete_dns_for_deployment(name)

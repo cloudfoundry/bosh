@@ -59,6 +59,7 @@ module Bosh::Director
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
+        @dns_manager = DnsManager.new(logger)
 
         @state = state
       end
@@ -121,7 +122,7 @@ module Bosh::Director
       def env
         @job.env.spec
       end
-      
+
       def deployment_model
         @deployment.model
       end
@@ -200,7 +201,7 @@ module Bosh::Director
       ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
+        [hostname, job.canonical_name, @dns_manager.canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
       end
 
       ##
@@ -423,7 +424,7 @@ module Bosh::Director
         desired_reservations = instance_plan.network_plans
                                  .reject(&:obsolete?)
                                  .map { |network_plan| network_plan.reservation }
-        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid)
+        NetworkSettings.new(job.name, job.can_run_as_errand?, job.deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid, @dns_manager)
       end
 
       # Looks up instance model in DB

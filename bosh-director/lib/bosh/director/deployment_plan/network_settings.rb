@@ -1,8 +1,6 @@
 module Bosh::Director::DeploymentPlan
   class NetworkSettings
-    include Bosh::Director::DnsHelper
-
-    def initialize(job_name, is_errand, deployment_name, default_network, desired_reservations, state, availability_zone, instance_index, instance_id)
+    def initialize(job_name, is_errand, deployment_name, default_network, desired_reservations, state, availability_zone, instance_index, instance_id, dns_manager)
       @job_name = job_name
       @is_errand = is_errand
       @desired_reservations = desired_reservations
@@ -12,6 +10,7 @@ module Bosh::Director::DeploymentPlan
       @availability_zone = availability_zone
       @instance_index = instance_index
       @instance_id = instance_id
+      @dns_manager = dns_manager
     end
 
     def to_hash
@@ -79,7 +78,13 @@ module Bosh::Director::DeploymentPlan
     private
 
     def dns_record_name(hostname, network_name)
-      [hostname, canonical(@job_name), canonical(network_name), canonical(@deployment_name), dns_domain_name].join('.')
+      [
+        hostname,
+        @dns_manager.canonical(@job_name),
+        @dns_manager.canonical(network_name),
+        @dns_manager.canonical(@deployment_name),
+        @dns_manager.dns_domain_name
+      ].join('.')
     end
   end
 end

@@ -1,13 +1,13 @@
 module Bosh::Director
   module DeploymentPlan
     class DynamicNetwork < NetworkWithSubnets
-      include DnsHelper
       include Bosh::Director::IpUtil
-      extend DnsHelper
       extend ValidationHelper
 
       def self.parse(network_spec, availability_zones, logger)
         name = safe_property(network_spec, 'name', :class => String)
+        dns_manager = DnsManager.new(logger)
+        canonical_name = dns_manager.canonical(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
 
         if network_spec.has_key?('subnets')
@@ -24,14 +24,16 @@ module Bosh::Director
           end
 
           subnets = network_spec['subnets'].map do |subnet_properties|
-            dns = dns_servers(subnet_properties['name'], subnet_properties)
+            dns_spec = safe_property(subnet_properties, 'dns', :class => Array, :optional => true)
+            dns = dns_manager.dns_servers(subnet_properties['name'], dns_spec)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
             DynamicNetworkSubnet.new(dns, cloud_properties, subnet_availability_zones)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-          dns = dns_servers(network_spec['name'], network_spec)
+          dns_spec = safe_property(network_spec, 'dns', :class => Array, :optional => true)
+          dns = dns_manager.dns_servers(network_spec['name'], dns_spec)
           network_availability_zones = parse_availability_zones(network_spec, availability_zones, name)
           subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, network_availability_zones)]
         end

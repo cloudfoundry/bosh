@@ -8,8 +8,6 @@ module Bosh::Director
 
   class Config
     class << self
-      include DnsHelper
-
       attr_accessor(
         :base_dir,
         :cloud_options,
@@ -147,7 +145,8 @@ module Bosh::Director
             Bosh::Director::Models::Dns::Record.class
             Bosh::Director::Models::Dns::Domain.class
           end
-          @dns_domain_name = canonical(@dns['domain_name']) if @dns['domain_name']
+          dns_manager = Bosh::Director::DnsManager.new(@logger)
+          @dns_domain_name = dns_manager.canonical(@dns['domain_name']) if @dns['domain_name']
         end
 
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)

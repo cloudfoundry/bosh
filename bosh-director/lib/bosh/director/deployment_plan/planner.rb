@@ -10,7 +10,6 @@ module Bosh::Director
   module DeploymentPlan
     class Planner
       include LockHelper
-      include DnsHelper
       include ValidationHelper
       extend Forwardable
 
@@ -98,6 +97,8 @@ module Bosh::Director
           @ip_repo = InMemoryIpRepo.new(@logger)
         end
         @ip_provider = IpProviderV2.new(@ip_repo, vip_repo, using_global_networking?, @logger)
+
+        @dns_manager = DnsManager.new(@logger)
       end
 
       def_delegators :@cloud_planner,
@@ -116,7 +117,7 @@ module Bosh::Director
         :compilation
 
       def canonical_name
-        canonical(@name)
+        @dns_manager.canonical(@name)
       end
 
       def bind_models
