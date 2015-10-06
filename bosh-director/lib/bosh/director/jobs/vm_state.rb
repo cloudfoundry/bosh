@@ -49,6 +49,9 @@ module Bosh::Director
             ips << network["ip"]
           end
 
+          job_index = get_index(agent_state)
+
+          job_name = agent_state["job"]["name"] if agent_state["job"]
           job_state = agent_state["job_state"]
           if agent_state["resource_pool"]
             resource_pool = agent_state["resource_pool"]["name"]
@@ -77,8 +80,8 @@ module Bosh::Director
           :ips => ips,
           :dns => dns_records,
           :agent_id => vm.agent_id,
-          :job_name => vm.instance ? vm.instance.job : nil,
-          :index => vm.instance ? vm.instance.index : nil,
+          :job_name => job_name,
+          :index => job_index,
           :job_state => job_state,
           :resource_pool => resource_pool,
           :vm_type => vm_apply_spec && vm_apply_spec['vm_type'] ? vm_apply_spec['vm_type']['name'] : nil,

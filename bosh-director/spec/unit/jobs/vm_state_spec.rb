@@ -7,6 +7,8 @@ module Bosh::Director
           'vm_cid' => 'fake-vm-cid',
           'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
           'job_state' => 'running',
           'resource_pool' => { 'name' => 'test_resource_pool' },
           'processes' => [
@@ -143,15 +145,7 @@ module Bosh::Director
       end
 
       it 'should handle unresponsive agents' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-        Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '50',
-          state: 'started',
-          resurrection_paused: true,
-          vm: vm,
-        )
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
         expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
 
@@ -160,9 +154,7 @@ module Bosh::Director
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['agent_id']).to eq('fake-agent-id')
           expect(status['job_state']).to eq('unresponsive agent')
-          expect(status['resurrection_paused']).to be_truthy
-          expect(status['job_name']).to eq('dea')
-          expect(status['index']).to eq(50)
+          expect(status['resurrection_paused']).to be_nil
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -390,6 +382,32 @@ module Bosh::Director
 
         job.perform
 
+      end
+    end
+
+    describe '#process_vm' do
+      before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
+      let(:agent) { instance_double('Bosh::Director::AgentClient') }
+
+      context 'when job index returned as part of get_state agent response is an empty string' do
+        let(:vm) { Models::Vm.make(agent_id: 'fake-agent-id', cid: 'fake-vm-cid', deployment: @deployment) }
+
+        # This test only makes sense for Postgres DB because it used to raise following error:
+        #   #<Sequel::DatabaseError: PG::Error: ERROR:  invalid input syntax for integer: ""
+        #   LINE 1: ..._id" = 8) AND ("job" = 'fake job') AND ("index" = '')) LIMIT...
+        it 'does not raise Sequel::DatabaseError' do
+          expect(agent).to receive(:get_state).with('full').and_return(
+            'vm_cid' => 'fake vm',
+            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+            'agent_id' => 'fake-agent-id',
+            'index' => '',
+            'job' => { 'name' => 'fake job' },
+          )
+
+          job = Jobs::VmState.new(@deployment.id, 'full')
+
+          expect { job.process_vm(vm) }.to_not raise_error
+        end
       end
     end
   end
