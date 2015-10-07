@@ -318,7 +318,7 @@ module Bosh::Director
         return false
       end
 
-      if instance.resource_pool_changed?
+      if instance_plan.resource_pool_changed?
         @logger.debug("Resource pool has changed. Can't update VM in place")
         return false
       end

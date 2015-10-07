@@ -436,64 +436,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#resource_pool_changed?' do
-
-
-      let(:job) { Job.new(plan, logger) }
-
-      before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-
-      before do
-        allow(job).to receive(:instance_state).with(0).and_return('started')
-        job.vm_type = vm_type
-        job.stemcell = stemcell
-        job.env = env
-      end
-      let(:current_state) { {'vm_type' => vm_type.spec, 'stemcell' => stemcell.spec} }
-
-      describe 'when nothing changes' do
-        it 'should return false' do
-          expect(instance.resource_pool_changed?).to_not eq(true)
-        end
-      end
-
-      describe "when the job's deployment is configured for recreate" do
-        let(:plan_recreate) { true }
-
-        it 'should return changed' do
-          expect(plan.recreate).to be(true)
-          expect(instance.resource_pool_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('resource_pool_changed? job deployment is configured with "recreate" state')
-          instance.resource_pool_changed?
-        end
-      end
-
-      describe 'when the resource pool env changes' do
-        it 'detects resource pool change when instance VM env changes' do
-          instance_model = Bosh::Director::Models::Instance.make
-          instance.bind_existing_instance_model(instance_model)
-
-          instance_model.vm.update(env: {'key' => 'value2'})
-          expect(instance.resource_pool_changed?).to be(true)
-        end
-
-        it 'should log the diff when the resource pool env changes' do
-          instance_model = Bosh::Director::Models::Instance.make
-
-          # set up in-memory domain model state
-          instance.bind_existing_instance_model(instance_model)
-
-          instance_model.vm.update(env: {'key' => 'previous_value'})
-          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: {"key"=>"previous_value"} TO: {"key"=>"value"}')
-          instance.resource_pool_changed?
-        end
-      end
-    end
-
     describe '#persistent_disk_changed?' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment) }
 

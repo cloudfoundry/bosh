@@ -30,7 +30,7 @@ module Bosh
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
-          @changes << :resource_pool if instance.resource_pool_changed?
+          @changes << :resource_pool if resource_pool_changed?
           @changes << :vm_type if instance.vm_type_changed?
           @changes << :stemcell if instance.stemcell_changed?
           @changes << :network if networks_changed?
@@ -43,6 +43,28 @@ module Bosh
           @changes << :bootstrap if bootstrap_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
           @changes
+        end
+
+        def resource_pool_changed?
+          job = @instance.job
+          if job.deployment.recreate
+            @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
+            return true
+          end
+
+          # env is not a part of a resource pool spec but rather gets persisted
+          # in director DB, hence the check below
+          # NOTE: we only update VMs that have env persisted to avoid recreating
+          # everything, so if the director gets updated from the version that
+          # doesn't persist VM env to the version that does, there needs to
+          # be at least one deployment that recreates all VMs before the following
+          # code path gets exercised.
+          changed = @existing_instance && @existing_instance.vm && @existing_instance.vm.env && job.env.spec != @existing_instance.vm.env
+          if changed
+            log_changes(__method__, @existing_instance.vm.env, job.env.spec)
+            return true
+          end
+          false
         end
 
         def needs_restart?
@@ -164,6 +186,12 @@ module Bosh
 
         def network_addresses
           network_settings.network_addresses
+        end
+
+        private
+
+        def log_changes(method_sym, old_state, new_state)
+          @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state}")
         end
       end
     end

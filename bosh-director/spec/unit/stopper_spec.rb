@@ -8,12 +8,11 @@ module Bosh::Director
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
         apply_spec: 'fake-spec',
-        resource_pool_changed?: false,
         persistent_disk_changed?: false,
         model: instance_model
       })
     end
-    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, networks_changed?: false, needs_recreate?: false) }
+    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, networks_changed?: false, needs_recreate?: false, resource_pool_changed?: false) }
     let(:instance_model) { Models::Instance.make }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
@@ -129,7 +128,7 @@ module Bosh::Director
 
     describe '#shutting_down?' do
       context 'when the resource pool has changed' do
-        before { allow(instance).to receive(:resource_pool_changed?).and_return(true) }
+        before { allow(instance_plan).to receive(:resource_pool_changed?).and_return(true) }
         its(:shutting_down?) { should be(true) }
       end
 

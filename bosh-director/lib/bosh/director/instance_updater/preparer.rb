@@ -10,7 +10,7 @@ module Bosh::Director
       instance = @instance_plan.instance
       # If resource pool has changed or instance will be recreated/detached
       # there is no point in preparing current VM for future since it will be destroyed.
-      unless instance.resource_pool_changed? ||
+      unless @instance_plan.resource_pool_changed? ||
         @instance_plan.needs_recreate? ||
         instance.state == 'detached'
 

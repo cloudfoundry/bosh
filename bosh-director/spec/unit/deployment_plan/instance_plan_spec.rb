@@ -51,6 +51,53 @@ module Bosh::Director::DeploymentPlan
       job.add_instance_plans([instance_plan])
     end
 
+    describe '#resource_pool_changed?' do
+      describe 'when nothing changes' do
+        it 'should return false' do
+          expect(instance_plan.resource_pool_changed?).to_not eq(true)
+        end
+      end
+
+      describe "when the job's deployment is configured for recreate" do
+        let(:deployment_plan) do
+          planner_factory = PlannerFactory.create(BD::Config.event_log, logger)
+          manifest = Psych.load(deployment_model.manifest)
+          plan = planner_factory.create_from_manifest(manifest, deployment_model.cloud_config, {'recreate' => true})
+          plan.bind_models
+          plan
+        end
+        it 'should return changed' do
+          expect(instance_plan.resource_pool_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('resource_pool_changed? job deployment is configured with "recreate" state')
+          instance_plan.resource_pool_changed?
+        end
+      end
+
+      describe 'when the resource pool env changes' do
+        let(:cloud_config_manifest) do
+          cloud_manifest = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value'}
+          cloud_manifest
+        end
+
+        it 'detects resource pool changes when instance VM env changes' do
+          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
+
+          expect(instance_plan.resource_pool_changed?).to be(true)
+        end
+
+        it 'should log the diff when the resource pool env changes' do
+          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
+
+          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}')
+          instance_plan.resource_pool_changed?
+        end
+      end
+    end
+
     context 'when there have been changes on the instance' do
       context '#bootstrap_changed?' do
         context 'when bootstrap node changes' do

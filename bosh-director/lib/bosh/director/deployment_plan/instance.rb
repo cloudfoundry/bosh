@@ -232,26 +232,7 @@ module Bosh::Director
       end
 
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
-      def resource_pool_changed?
-        if @job.deployment.recreate
-          @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
-          return true
-        end
 
-        # env is not a part of a resource pool spec but rather gets persisted
-        # in director DB, hence the check below
-        # NOTE: we only update VMs that have env persisted to avoid recreating
-        # everything, so if the director gets updated from the version that
-        # doesn't persist VM env to the version that does, there needs to
-        # be at least one deployment that recreates all VMs before the following
-        # code path gets exercised.
-        changed = @model && @model.vm && @model.vm.env && @job.env.spec != @model.vm.env
-        if changed
-          log_changes(__method__, @model.vm.env, @job.env.spec)
-          return true
-        end
-        false
-      end
 
       ##
       # @return [Boolean] returns true if the expected configuration hash

@@ -18,7 +18,7 @@ module Bosh::Director
       end
 
       context "when instance's resource pool has not changed" do
-        before { allow(instance).to receive(:resource_pool_changed?).with(no_args).and_return(false) }
+        before { allow(instance_plan).to receive(:resource_pool_changed?).with(no_args).and_return(false) }
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
@@ -74,7 +74,7 @@ module Bosh::Director
       end
 
       context "when instance's resource pool has changed" do
-        before { allow(instance).to receive(:resource_pool_changed?).with(no_args).and_return(true) }
+        before { allow(instance_plan).to receive(:resource_pool_changed?).with(no_args).and_return(true) }
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
