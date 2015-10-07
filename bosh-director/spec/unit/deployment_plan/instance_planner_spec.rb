@@ -23,7 +23,6 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
   describe '#plan_job_instances' do
     before do
-      allow(job).to receive(:has_static_ips?).and_return(false)
       allow(job).to receive(:networks).and_return([])
     end
 
