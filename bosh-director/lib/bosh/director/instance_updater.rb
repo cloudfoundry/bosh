@@ -199,8 +199,7 @@ module Bosh::Director
       domain = deployment_plan(instance).dns_domain
       instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        @dns_manager.update_dns_a_record(domain, record_name, ip_address)
-        @dns_manager.update_dns_ptr_record(record_name, ip_address)
+        @dns_manager.update_dns_record(domain.name, record_name, ip_address)
       end
 
       if instance_plan.existing_instance &&

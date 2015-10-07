@@ -1,11 +1,5 @@
 module Bosh::Director
   class DnsManager
-
-    # primary_ns contact serial refresh retry expire minimum
-    SOA = "localhost hostmaster@localhost 0 10800 604800 30"
-    TTL_5M = 300
-    TTL_4H = 3600 * 4
-
     def initialize(logger)
       @logger = logger
     end
@@ -34,18 +28,9 @@ module Bosh::Director
       string
     end
 
-    # create/update DNS A record
-    def update_dns_a_record(domain, name, ip_address)
-      record = Models::Dns::Record.find(:domain_id => domain.id,
-        :name => name)
-      if record.nil?
-        record = Models::Dns::Record.new(:domain_id => domain.id,
-          :name => name, :type => "A",
-          :ttl => TTL_5M)
-      end
-      record.content = ip_address
-      record.change_date = Time.now.to_i
-      record.save
+    def update_dns_record(domain_name, record_name, ip_address)
+      dns_provider = PowerDns.new(domain_name, @logger)
+      dns_provider.create_or_update(record_name, ip_address)
     end
 
     def delete_dns_for_deployment(name)
@@ -54,15 +39,14 @@ module Bosh::Director
     end
 
     def delete_dns_for_instance(instance_model)
-      if Config.dns_enabled?
-        dns_domain = Models::Dns::Domain.find(
-          :name => dns_domain_name,
-          :type => 'NATIVE',
-        )
-        dns_domain_id = dns_domain.nil? ? nil : dns_domain.id
-        delete_dns_records(record_pattern(instance_model.index, instance_model.job, instance_model.deployment.name), dns_domain_id)
-        delete_dns_records(record_pattern(instance_model.uuid, instance_model.job, instance_model.deployment.name), dns_domain_id)
-      end
+      return unless Config.dns_enabled?
+
+      dns_provider = PowerDns.new(dns_domain_name, @logger)
+      index_record_pattern = record_pattern(instance_model.index, instance_model.job, instance_model.deployment.name)
+      dns_provider.delete(index_record_pattern)
+
+      uuid_record_pattern = record_pattern(instance_model.uuid, instance_model.job, instance_model.deployment.name)
+      dns_provider.delete(uuid_record_pattern)
     end
 
     # build a list of dns servers to use
@@ -84,47 +68,6 @@ module Bosh::Director
       return servers unless add_default_dns
 
       add_default_dns_server(servers)
-    end
-
-    # create/update DNS PTR records (for reverse lookups)
-    def update_dns_ptr_record(name, ip_address)
-      reverse_domain = reverse_domain(ip_address)
-      reverse_host = reverse_host(ip_address)
-
-      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse_domain,
-        :type => "NATIVE")
-      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-        :name => reverse_domain,
-        :type =>'SOA', :content => SOA,
-        :ttl => TTL_4H)
-
-      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-        :name => reverse_domain,
-        :type =>'NS', :ttl => TTL_4H,
-        :content => dns_ns_record)
-
-      record = Models::Dns::Record.find(:content => name, :type =>'PTR')
-
-      # delete the record if the IP address changed
-      if record && record.name != reverse_host
-        id = record.domain_id
-        record.destroy
-        record = nil
-
-        # delete the domain if the domain id changed and it's empty
-        if id != rdomain.id
-          delete_empty_domain(Models::Dns::Domain[id])
-        end
-      end
-
-      unless record
-        record = Models::Dns::Record.new(:domain_id => rdomain.id,
-          :name => reverse_host,
-          :type =>'PTR', :ttl => TTL_5M)
-      end
-      record.content = name
-      record.change_date = Time.now.to_i
-      record.save
     end
 
     # Purge cached DNS records
