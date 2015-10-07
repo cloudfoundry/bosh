@@ -137,11 +137,7 @@ module Bosh
           network_plans.delete_if(&:obsolete?)
         end
 
-        def release_all_ips
-          network_plans.each do |network_plan|
-            reservation = network_plan.reservation
-            @instance.job.deployment.ip_provider.release(reservation) if reservation.reserved?
-          end
+        def release_all_network_plans
           network_plans.clear
         end
 

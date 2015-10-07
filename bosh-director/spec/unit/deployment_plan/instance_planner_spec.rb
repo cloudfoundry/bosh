@@ -78,8 +78,6 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
         desired_instances = [desired_instance]
         expected_new_instance_index = 2
         allow(instance_repo).to receive(:create).with(desired_instances[0], expected_new_instance_index) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
-        allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { tracer_instance }
-        allow(instance_repo).to receive(:fetch_obsolete).with(another_existing_instance_model) { tracer_instance }
 
         instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
 
@@ -174,13 +172,11 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
 
       existing_instances = [undesired_existing_instance, desired_existing_instance]
-      expected_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, out_of_typical_range_index)
       allow(instance_repo).to receive(:fetch_existing).with(desired_instance, desired_existing_instance_model, desired_existing_instance_state) do
         instance_double(Bosh::Director::DeploymentPlan::Instance, index: out_of_typical_range_index)
       end
 
       allow(instance_repo).to receive(:create).with(desired_instances[1], 1) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
-      allow(instance_repo).to receive(:fetch_obsolete).with(undesired_existing_instance_model) { tracer_instance }
 
       instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances, states_by_existing_instance)
       expect(instance_plans.count).to eq(3)
@@ -198,7 +194,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
       expect(obsolete_instance_plan.obsolete?).to eq(true)
       expect(obsolete_instance_plan.desired_instance).to be_nil
       expect(obsolete_instance_plan.existing_instance).to eq(undesired_existing_instance_model)
-      expect(obsolete_instance_plan.instance).to eq(tracer_instance)
+      expect(obsolete_instance_plan.instance).to be_nil
     end
 
     context 'resolving bootstrap nodes' do
@@ -234,9 +230,6 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
           existing_instances = [existing_instance, another_existing_instance]
           existing_instance_state = {'foo' => 'bar'}
           states_by_existing_instance = {existing_instance_model => existing_instance_state, another_existing_instance_model => existing_instance_state}
-
-          obsolete_instance = instance_double(BD::DeploymentPlan::InstanceFromDatabase)
-          allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { obsolete_instance }
 
           tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance)
           existing_tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1, bootstrap?: true)
@@ -315,9 +308,6 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
           existing_instance_state = {'foo' => 'bar'}
           states_by_existing_instance = {existing_instance_model => existing_instance_state}
 
-          obsolete_instance = instance_double(BD::DeploymentPlan::InstanceFromDatabase)
-          allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { obsolete_instance }
-
           instance_plans = instance_planner.plan_job_instances(job, [], existing_instances, states_by_existing_instance)
 
           expect(instance_plans.count).to eq(1)
@@ -334,16 +324,13 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
     existing_instance_thats_desired = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0)
     existing_instance_thats_obsolete = Bosh::Director::Models::Instance.make(job: 'bar-job', index: 1)
 
-    allow(instance_repo).to receive(:fetch_obsolete).
-        with(existing_instance_thats_obsolete) { tracer_instance }
-
     existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
     instance_plans = instance_planner.plan_obsolete_jobs([job], existing_instances)
 
     expect(instance_plans.count).to eq(1)
 
     obsolete_instance_plan = instance_plans.first
-    expect(obsolete_instance_plan.instance).to eq(tracer_instance)
+    expect(obsolete_instance_plan.instance).to be_nil
     expect(obsolete_instance_plan.desired_instance).to be_nil
     expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
     expect(obsolete_instance_plan).to be_obsolete

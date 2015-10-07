@@ -188,21 +188,6 @@ module Bosh::Director
       end
     end
 
-    def make_instances(num)
-      (0..num-1).map do
-        vm = instance_double('Bosh::Director::DeploymentPlan::Vm', model: Models::Vm.make)
-        instance = instance_double(
-          'Bosh::Director::DeploymentPlan::Instance',
-          vm: vm,
-          model: Models::Instance.make,
-          existing_network_reservations: []
-        )
-        expect(instance).to receive(:bind_unallocated_vm)
-
-        instance
-      end
-    end
-
     context 'when none of the packages are compiled' do
       it 'compiles all packages' do
         prepare_samples
@@ -217,19 +202,16 @@ module Bosh::Director
         )
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
-        instances = make_instances(11)
-        expect(Bosh::Director::DeploymentPlan::Instance).to receive(:new).exactly(11).times.and_return(*instances)
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
+
         allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
         expect(vm_metadata_updater).to receive(:update).with(anything, {compiling: 'common'})
         expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
-        instances.each do |instance|
           agent_client = instance_double('Bosh::Director::AgentClient')
-          expect(instance).to receive(:agent_client).and_return(agent_client)
-
-          expect(agent_client).to receive(:compile_package) do |*args|
+          allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
+          expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
             name = args[2]
             dot = args[3].rindex('.')
             version, build = args[3][0..dot-1], args[3][dot+1..-1]
@@ -247,7 +229,6 @@ module Bosh::Director
               }
             }
           end
-        end
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -408,35 +389,37 @@ module Bosh::Director
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
+      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter) }
+
       it 'reuses compilation VMs' do
         prepare_samples
         allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
 
-        instances = make_instances(1)
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times
-        expect(Bosh::Director::DeploymentPlan::Instance).to receive(:new).exactly(1).times.and_return(*instances)
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan, _|
+          vm_model = Models::Vm.make
+          instance_plan.instance.bind_to_vm_model(vm_model)
+        end
 
-        instances.each do |instance|
-          agent_client = instance_double('Bosh::Director::AgentClient')
-          expect(instance).to receive(:agent_client).and_return(agent_client).exactly(6).times
-          expect(agent_client).to receive(:compile_package).at_most(6).times do |*args|
-            name = args[2]
-            dot = args[3].rindex('.')
-            version, _ = args[3][0..dot-1], args[3][dot+1..-1]
+        agent_client = instance_double('BD::AgentClient')
+        allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
 
-            package = Models::Package.find(name: name, version: version)
-            expect(args[0]).to eq(package.blobstore_id)
-            expect(args[1]).to eq(package.sha1)
+        expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
+          name = args[2]
+          dot = args[3].rindex('.')
+          version, _ = args[3][0..dot-1], args[3][dot+1..-1]
 
-            expect(args[4]).to be_a(Hash)
+          package = Models::Package.find(name: name, version: version)
+          expect(args[0]).to eq(package.blobstore_id)
+          expect(args[1]).to eq(package.sha1)
 
-            {
-              'result' => {
-                'sha1' => "compiled #{package.id}",
-                'blobstore_id' => "blob #{package.id}"
-              }
+          expect(args[4]).to be_a(Hash)
+
+          {
+            'result' => {
+              'sha1' => "compiled #{package.id}",
+              'blobstore_id' => "blob #{package.id}"
             }
-          end
+          }
         end
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times

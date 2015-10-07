@@ -20,9 +20,5 @@ module Bosh::Director::DeploymentPlan
       instance.bind_new_instance_model
       instance
     end
-
-    def fetch_obsolete(existing_instance)
-      InstanceFromDatabase.create_from_model(existing_instance, @logger)
-    end
   end
 end

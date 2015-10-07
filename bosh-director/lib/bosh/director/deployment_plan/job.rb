@@ -115,6 +115,7 @@ module Bosh::Director
         @availability_zones = []
 
         @sorted_instance_plans = []
+        @instance_plans = []
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -122,7 +123,9 @@ module Bosh::Director
       end
 
       def add_instance_plans(instance_plans)
-        @sorted_instance_plans = InstancePlanSorter.new(@logger).sort(instance_plans)
+        @instance_plans = instance_plans
+        @sorted_instance_plans = InstancePlanSorter.new(@logger)
+                                   .sort(instance_plans.reject(&:obsolete?))
       end
 
       # Takes in a job spec and returns a job spec in the new format, if it
@@ -150,7 +153,7 @@ module Bosh::Director
       attr_accessor :desired_instances
 
       def obsolete_instance_plans
-        @sorted_instance_plans.select(&:obsolete?)
+        @instance_plans.select(&:obsolete?)
       end
 
       def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
@@ -158,7 +161,7 @@ module Bosh::Director
       end
 
       def needed_instance_plans
-        @sorted_instance_plans.reject(&:obsolete?)
+        @sorted_instance_plans
       end
 
       def unneeded_instances
@@ -350,7 +353,7 @@ module Bosh::Director
         # TODO: loop above should go away when we get rid of reservations
         # something similar will maybe happen in JobSpecParser to figure out desired IPs or something?
 
-        @sorted_instance_plans.each do |instance_plan|
+        needed_instance_plans.each do |instance_plan|
           desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(

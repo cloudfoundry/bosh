@@ -32,8 +32,7 @@ module Bosh
             desired_job_names.include?(existing_instance_model.job) ||
             migrating_job_names.include?(existing_instance_model.job)
           end.map do |existing_instance|
-            instance = @instance_repo.fetch_obsolete(existing_instance)
-            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
+            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: nil)
           end
         end
 
@@ -78,8 +77,7 @@ module Bosh
 
         def obsolete_instance_plans(obsolete_desired_instances)
           obsolete_desired_instances.map do |existing_instance|
-            instance = @instance_repo.fetch_obsolete(existing_instance)
-            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: instance)
+            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: nil)
           end
         end
 

@@ -59,6 +59,10 @@ module Bosh::Director::Models
     def dns_record_names=(list)
       self.dns_records = JSON.dump(list)
     end
+
+    def to_s
+      "#{self.job}/#{self.index}"
+    end
   end
 
   Instance.plugin :association_dependencies
