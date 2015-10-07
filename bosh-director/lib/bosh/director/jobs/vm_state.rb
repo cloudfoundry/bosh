@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       def perform
-        @domain = Models::Dns::Domain.find(name: Config.dns_domain_name, type: "NATIVE") if Config.dns_enabled?
+        @domain = Models::Dns::Domain.find(name: dns_manager.dns_domain_name, type: "NATIVE") if Config.dns_enabled?
 
         vms = Models::Vm.filter(:deployment_id => @deployment_id)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
@@ -35,11 +35,9 @@ module Bosh::Director
       def process_vm(vm)
         ips = []
         dns_records = []
-        job_name = nil
         job_state = nil
         resource_pool = nil
         job_vitals = nil
-        job_index = nil
         processes = []
 
         begin

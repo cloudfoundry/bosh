@@ -24,6 +24,10 @@ module Bosh::Director
         @result_file ||= Config.result
       end
 
+      def dns_manager
+        @dns_manager ||= DnsManager.new(logger)
+      end
+
       # @return [Boolean] Has task been cancelled?
       def task_cancelled?
         return false if task_id.nil?

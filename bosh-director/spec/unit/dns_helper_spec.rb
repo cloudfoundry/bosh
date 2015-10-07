@@ -5,57 +5,6 @@ module Bosh::Director
     include Bosh::Director::ValidationHelper
     include Bosh::Director::DnsHelper
 
-    describe '#default_dns_server' do
-      it 'should return nil when there are no default DNS server' do
-        expect(default_dns_server).to be_nil
-      end
-
-      it 'should return the default DNS server when is set' do
-        allow(Config).to receive(:dns).and_return({'server' => '1.2.3.4'})
-        expect(default_dns_server).to eq('1.2.3.4')
-      end
-    end
-
-    describe '#add_default_dns_server' do
-      before { allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'}) }
-
-      it 'should add default dns server when there are no DNS servers' do
-        expect(add_default_dns_server([])).to eq(%w[9.10.11.12])
-      end
-
-      it 'should add default dns server to an array of DNS servers' do
-        expect(add_default_dns_server(%w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
-      end
-
-      it 'should not add default dns server if already set' do
-        expect(add_default_dns_server(%w[1.2.3.4 9.10.11.12])).to eq(%w[1.2.3.4 9.10.11.12])
-      end
-
-      it 'should not add default dns server if it is 127.0.0.1' do
-        allow(Config).to receive(:dns).and_return({'server' => '127.0.0.1'})
-        expect(add_default_dns_server(%w[1.2.3.4])).to eq(%w[1.2.3.4])
-      end
-
-      it 'should not add default dns server when dns is not enabled' do
-        allow(Config).to receive(:dns_enabled?).and_return(false)
-        expect(add_default_dns_server(%w[1.2.3.4])).to eq(%w[1.2.3.4])
-      end
-    end
-
-    describe '#dns_domain_name' do
-      it 'should return the DNS domain name' do
-        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
-        expect(dns_domain_name).to eq('test_domain')
-      end
-    end
-
-    describe '#dns_ns_record' do
-      it 'should return the DNS name server' do
-        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
-        expect(dns_ns_record).to eq('ns.test_domain')
-      end
-    end
-
     describe '#update_dns_a_record' do
       it 'should create new record' do
         domain = Models::Dns::Domain.make
@@ -71,41 +20,6 @@ module Bosh::Director
         update_dns_a_record(domain, '0.foo.default.bosh', '5.6.7.8')
         record = Models::Dns::Record.find(domain_id: domain.id, name: '0.foo.default.bosh')
         expect(record.content).to eq('5.6.7.8')
-      end
-    end
-
-    describe '#update_dns_ptr_record' do
-      before { @logger = logger }
-
-      it 'should create new record' do
-        update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
-        record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
-        expect(record.content).to eq('0.foo.default.bosh')
-        expect(record.type).to eq('PTR')
-        expect(Models::Dns::Domain.all.size).to eq(1)
-        expect(Models::Dns::Record.all.size).to eq(3)
-      end
-
-      it 'should update existing record on a different subnet' do
-        update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
-        update_dns_ptr_record('0.foo.default.bosh', '5.6.7.8')
-        old_record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
-        expect(old_record).to be_nil
-        new_record = Models::Dns::Record.find(name: '8.7.6.5.in-addr.arpa')
-        expect(new_record.content).to eq('0.foo.default.bosh')
-        expect(Models::Dns::Domain.all.size).to eq(1)
-        expect(Models::Dns::Record.all.size).to eq(3)
-      end
-
-      it 'should update existing record on the same subnet' do
-        update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
-        update_dns_ptr_record('0.foo.default.bosh', '1.2.3.5')
-        old_record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
-        expect(old_record).to be_nil
-        new_record = Models::Dns::Record.find(name: '5.3.2.1.in-addr.arpa')
-        expect(new_record.content).to eq('0.foo.default.bosh')
-        expect(Models::Dns::Domain.all.size).to eq(1)
-        expect(Models::Dns::Record.all.size).to eq(3)
       end
     end
 
@@ -212,7 +126,7 @@ module Bosh::Director
 
   describe DnsManager do
     let(:dns_manager) { described_class.new(logger) }
-    let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
+    let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
 
     before do
       allow(Config).to receive(:dns_domain_name).and_return(domain.name)
@@ -268,20 +182,100 @@ module Bosh::Director
         expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8])
       end
 
-      it 'should add default dns server to an array of DNS servers' do
-        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
-        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
-      end
-
-      it 'should not add default dns server to an array of DNS servers' do
-        allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'})
-        expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8], false)).to eq(%w[1.2.3.4 5.6.7.8])
-      end
-
       it "should raise an error if a DNS server isn't specified with as an IP" do
         expect {
           dns_manager.dns_servers('network', %w[1.2.3.4 foo.bar])
         }.to raise_error
+      end
+
+      context 'when there is a default server' do
+        before { allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'}) }
+
+        it 'should add default dns server when there are no DNS servers' do
+          expect(dns_manager.dns_servers('network', [])).to eq(%w[9.10.11.12])
+        end
+
+        it 'should add default dns server to an array of DNS servers' do
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
+        end
+
+        it 'should not add default dns server to an array of DNS servers' do
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8], false)).to eq(%w[1.2.3.4 5.6.7.8])
+        end
+
+        it 'should add default dns server to an array of DNS servers' do
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4 5.6.7.8])).to eq(%w[1.2.3.4 5.6.7.8 9.10.11.12])
+        end
+
+        it 'should not add default dns server if already set' do
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4 9.10.11.12])).to eq(%w[1.2.3.4 9.10.11.12])
+        end
+
+        it 'should not add default dns server if it is 127.0.0.1' do
+          allow(Config).to receive(:dns).and_return({'server' => '127.0.0.1'})
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+        end
+
+        it 'should not add default dns server when dns is not enabled' do
+          allow(Config).to receive(:dns_enabled?).and_return(false)
+          expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+        end
+      end
+    end
+
+    describe '#dns_domain_name' do
+      it 'should return the DNS domain name' do
+        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
+        expect(dns_manager.dns_domain_name).to eq('test_domain')
+      end
+    end
+
+    describe '#dns_ns_record' do
+      it 'should return the DNS name server' do
+        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
+        expect(dns_manager.dns_ns_record).to eq('ns.test_domain')
+      end
+    end
+
+    describe '#update_dns_ptr_record' do
+      before { @logger = logger }
+
+      it 'should create new record' do
+        expect {
+          dns_manager.update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
+        }.to change { Models::Dns::Domain.all.size }.by(1)
+        record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
+        expect(record.content).to eq('0.foo.default.bosh')
+        expect(record.type).to eq('PTR')
+        expect(Models::Dns::Record.all.size).to eq(3)
+      end
+
+      it 'should update existing record on a different subnet' do
+        expect {
+          dns_manager.update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
+        }.to change { Models::Dns::Domain.all.size }.by(1)
+        expect {
+          dns_manager.update_dns_ptr_record('0.foo.default.bosh', '5.6.7.8')
+        }.to_not change { Models::Dns::Domain.all.size }
+        old_record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
+        expect(old_record).to be_nil
+        new_record = Models::Dns::Record.find(name: '8.7.6.5.in-addr.arpa')
+        expect(new_record.content).to eq('0.foo.default.bosh')
+        expect(Models::Dns::Record.all.size).to eq(3)
+      end
+
+      it 'should update existing record on the same subnet' do
+        expect {
+          dns_manager.update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
+        }.to change { Models::Dns::Domain.all.size }.by(1)
+        expect {
+          dns_manager.update_dns_ptr_record('0.foo.default.bosh', '1.2.3.5')
+        }.to_not change { Models::Dns::Domain.all.size }
+        old_record = Models::Dns::Record.find(name: '4.3.2.1.in-addr.arpa')
+        expect(old_record).to be_nil
+        new_record = Models::Dns::Record.find(name: '5.3.2.1.in-addr.arpa')
+        expect(new_record.content).to eq('0.foo.default.bosh')
+        expect(Models::Dns::Record.all.size).to eq(3)
       end
     end
   end

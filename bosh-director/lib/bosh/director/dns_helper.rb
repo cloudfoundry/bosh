@@ -6,55 +6,6 @@ module Bosh::Director
     TTL_5M = 300
     TTL_4H = 3600 * 4
 
-    # build a list of dns servers to use
-    def dns_servers(network, dns_spec, add_default_dns = true)
-      servers = nil
-
-      if dns_spec
-        servers = []
-        dns_spec.each do |dns|
-          dns = NetAddr::CIDR.create(dns)
-          unless dns.size == 1
-            invalid_dns(network, "must be a single IP")
-          end
-
-          servers << dns.ip
-        end
-      end
-
-      return servers unless add_default_dns
-
-      add_default_dns_server(servers)
-    end
-
-    # returns the default DNS server
-    def default_dns_server
-      Config.dns["server"] if Config.dns
-    end
-
-    # add default dns server to an array of dns servers
-    def add_default_dns_server(servers)
-      return servers unless Config.dns_enabled?
-
-      default_server = default_dns_server
-      if default_server && default_server != "127.0.0.1"
-        (servers ||= []) << default_server
-        servers.uniq!
-      end
-
-      servers
-    end
-
-    # returns the DNS domain name
-    def dns_domain_name
-      Config.dns_domain_name
-    end
-
-    # returns the DNS name server record
-    def dns_ns_record
-      "ns.#{dns_domain_name}"
-    end
-
     # create/update DNS A record
     def update_dns_a_record(domain, name, ip_address)
       record = Models::Dns::Record.find(:domain_id => domain.id,
@@ -65,47 +16,6 @@ module Bosh::Director
                                          :ttl => TTL_5M)
       end
       record.content = ip_address
-      record.change_date = Time.now.to_i
-      record.save
-    end
-
-    # create/update DNS PTR records (for reverse lookups)
-    def update_dns_ptr_record(name, ip_address)
-      reverse_domain = reverse_domain(ip_address)
-      reverse_host = reverse_host(ip_address)
-
-      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse_domain,
-                                                        :type => "NATIVE")
-      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-                                         :name => reverse_domain,
-                                         :type =>'SOA', :content => SOA,
-                                         :ttl => TTL_4H)
-
-      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
-                                         :name => reverse_domain,
-                                         :type =>'NS', :ttl => TTL_4H,
-                                         :content => dns_ns_record)
-
-      record = Models::Dns::Record.find(:content => name, :type =>'PTR')
-
-      # delete the record if the IP address changed
-      if record && record.name != reverse_host
-        id = record.domain_id
-        record.destroy
-        record = nil
-
-        # delete the domain if the domain id changed and it's empty
-        if id != rdomain.id
-          delete_empty_domain(Models::Dns::Domain[id])
-        end
-      end
-
-      unless record
-        record = Models::Dns::Record.new(:domain_id => rdomain.id,
-                                         :name => reverse_host,
-                                         :type =>'PTR', :ttl => TTL_5M)
-      end
-      record.content = name
       record.change_date = Time.now.to_i
       record.save
     end
@@ -144,24 +54,6 @@ module Bosh::Director
         rdomain.each do |domain|
           delete_empty_domain(domain)
         end
-      end
-    end
-
-    def delete_empty_domain(domain)
-      # If the count is 2, it means we only have the NS & SOA record
-      # and the domain is "empty" and can be deleted
-      if domain.records.size == 2
-        @logger.info("Deleting empty reverse domain #{domain.name}")
-
-        # Since DNS domain can be deleted by multiple threads
-        # it's possible for database to return 0 rows modified result.
-        # In this specific case that's a valid return value
-        # but Sequel usually considers that an error.
-        # ('Attempt to delete object did not result in a single row modification')
-        domain.require_modification = false
-
-        # Cascaded - all records are removed
-        domain.destroy
       end
     end
 
@@ -204,6 +96,24 @@ module Bosh::Director
       octets = ip.split(/\./)
       "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
     end
+
+    def delete_empty_domain(domain)
+      # If the count is 2, it means we only have the NS & SOA record
+      # and the domain is "empty" and can be deleted
+      if domain.records.size == 2
+        @logger.info("Deleting empty reverse domain #{domain.name}")
+
+        # Since DNS domain can be deleted by multiple threads
+        # it's possible for database to return 0 rows modified result.
+        # In this specific case that's a valid return value
+        # but Sequel usually considers that an error.
+        # ('Attempt to delete object did not result in a single row modification')
+        domain.require_modification = false
+
+        # Cascaded - all records are removed
+        domain.destroy
+      end
+    end
   end
 
   class DnsManager
@@ -211,6 +121,16 @@ module Bosh::Director
 
     def initialize(logger)
       @logger = logger
+    end
+
+    # returns the DNS domain name
+    def dns_domain_name
+      Config.dns_domain_name
+    end
+
+    # returns the DNS name server record
+    def dns_ns_record
+      "ns.#{dns_domain_name}"
     end
 
     def canonical(string)
@@ -244,6 +164,70 @@ module Bosh::Director
       end
     end
 
+    # build a list of dns servers to use
+    def dns_servers(network, dns_spec, add_default_dns = true)
+      servers = nil
+
+      if dns_spec
+        servers = []
+        dns_spec.each do |dns|
+          dns = NetAddr::CIDR.create(dns)
+          unless dns.size == 1
+            invalid_dns(network, "must be a single IP")
+          end
+
+          servers << dns.ip
+        end
+      end
+
+      return servers unless add_default_dns
+
+      add_default_dns_server(servers)
+    end
+
+    # create/update DNS PTR records (for reverse lookups)
+    def update_dns_ptr_record(name, ip_address)
+      reverse_domain = reverse_domain(ip_address)
+      reverse_host = reverse_host(ip_address)
+
+      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse_domain,
+        :type => "NATIVE")
+      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
+        :name => reverse_domain,
+        :type =>'SOA', :content => SOA,
+        :ttl => TTL_4H)
+
+      Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
+        :name => reverse_domain,
+        :type =>'NS', :ttl => TTL_4H,
+        :content => dns_ns_record)
+
+      record = Models::Dns::Record.find(:content => name, :type =>'PTR')
+
+      # delete the record if the IP address changed
+      if record && record.name != reverse_host
+        id = record.domain_id
+        record.destroy
+        record = nil
+
+        # delete the domain if the domain id changed and it's empty
+        if id != rdomain.id
+          delete_empty_domain(Models::Dns::Domain[id])
+        end
+      end
+
+      unless record
+        record = Models::Dns::Record.new(:domain_id => rdomain.id,
+          :name => reverse_host,
+          :type =>'PTR', :ttl => TTL_5M)
+      end
+      record.content = name
+      record.change_date = Time.now.to_i
+      record.save
+    end
+
+    private
+
     def record_pattern(hostname, job_name, deployment_name)
       [ hostname,
         canonical(job_name),
@@ -251,6 +235,24 @@ module Bosh::Director
         canonical(deployment_name),
         dns_domain_name
       ].join(".")
+    end
+
+    # returns the default DNS server
+    def default_dns_server
+      Config.dns["server"] if Config.dns
+    end
+
+    # add default dns server to an array of dns servers
+    def add_default_dns_server(servers)
+      return servers unless Config.dns_enabled?
+
+      default_server = default_dns_server
+      if default_server && default_server != "127.0.0.1"
+        (servers ||= []) << default_server
+        servers.uniq!
+      end
+
+      servers
     end
   end
 end

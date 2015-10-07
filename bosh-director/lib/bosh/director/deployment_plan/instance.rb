@@ -201,7 +201,7 @@ module Bosh::Director
       ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, @dns_manager.canonical(network_name), job.deployment.canonical_name, dns_domain_name].join('.')
+        [hostname, job.canonical_name, @dns_manager.canonical(network_name), job.deployment.canonical_name, @dns_manager.dns_domain_name].join('.')
       end
 
       ##
@@ -321,7 +321,7 @@ module Bosh::Director
           'stemcell' => job.stemcell.spec,
           'packages' => job.package_spec,
           'configuration_hash' => configuration_hash,
-          'dns_domain_name' => dns_domain_name,
+          'dns_domain_name' => @dns_manager.dns_domain_name,
         }
 
         if job.env
@@ -359,7 +359,7 @@ module Bosh::Director
           'env' => job.env.spec,
           'packages' => job.package_spec,
           'properties' => job.properties,
-          'dns_domain_name' => dns_domain_name,
+          'dns_domain_name' => @dns_manager.dns_domain_name,
           'links' => job.link_spec,
         }
 

@@ -4,6 +4,7 @@ module Bosh::Director
 
     def initialize(deployment)
       @deployment = deployment
+      @dns_manager = DnsManager.new(Config.logger)
       @config = Config
     end
 
@@ -11,14 +12,14 @@ module Bosh::Director
       return unless @config.dns_enabled?
 
       domain = Models::Dns::Domain.find_or_create(
-        :name => dns_domain_name,
+        :name => @dns_manager.dns_domain_name,
         :type => 'NATIVE',
       )
       @deployment.dns_domain = domain
 
       soa_record = Models::Dns::Record.find_or_create(
         :domain_id => domain.id,
-        :name => dns_domain_name,
+        :name => @dns_manager.dns_domain_name,
         :type => 'SOA',
       )
       soa_record.content = SOA
@@ -28,15 +29,15 @@ module Bosh::Director
       # add NS record
       Models::Dns::Record.find_or_create(
         :domain_id => domain.id,
-        :name => dns_domain_name,
+        :name => @dns_manager.dns_domain_name,
         :type =>'NS', :ttl => TTL_4H,
-        :content => dns_ns_record,
+        :content => @dns_manager.dns_ns_record,
       )
 
       # add A record for name server
       Models::Dns::Record.find_or_create(
         :domain_id => domain.id,
-        :name => dns_ns_record,
+        :name => @dns_manager.dns_ns_record,
         :type =>'A', :ttl => TTL_4H,
         :content => @config.dns['address'],
       )

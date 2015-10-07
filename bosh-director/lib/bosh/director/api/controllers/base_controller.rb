@@ -4,7 +4,6 @@ module Bosh::Director
       class BaseController < Sinatra::Base
         include ApiHelper
         include Http
-        include DnsHelper
 
         def initialize(config)
           super()
@@ -22,6 +21,7 @@ module Bosh::Director
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
           @logger = Config.logger
+          @dns_manager = DnsManager.new(@logger)
         end
 
         register Bosh::Director::Api::Extensions::Scoping
