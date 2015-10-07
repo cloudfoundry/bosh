@@ -149,10 +149,8 @@ module Bosh::Director
 
       attr_accessor :desired_instances
 
-      attr_reader :sorted_instance_plans
-
       def obsolete_instance_plans
-        sorted_instance_plans.select(&:obsolete?)
+        @sorted_instance_plans.select(&:obsolete?)
       end
 
       def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
@@ -160,7 +158,7 @@ module Bosh::Director
       end
 
       def needed_instance_plans
-        sorted_instance_plans.reject(&:obsolete?)
+        @sorted_instance_plans.reject(&:obsolete?)
       end
 
       def unneeded_instances
@@ -283,8 +281,7 @@ module Bosh::Director
       end
 
       def bind_instance_networks
-        sorted_instance_plans
-          .reject(&:obsolete?)
+        needed_instance_plans
           .flat_map(&:network_plans)
           .reject(&:obsolete?)
           .reject(&:existing?)
@@ -311,7 +308,7 @@ module Bosh::Director
 
       #FIXME: there has to be a better way to do this
       def instance_plans_with_missing_vms
-        sorted_instance_plans.reject { |instance_plan| instance_plan.obsolete? || instance_plan.instance.vm_created? }
+        needed_instance_plans.reject { |instance_plan| instance_plan.instance.vm_created? }
       end
 
       def add_resolved_link(link_name, link_spec)
@@ -337,7 +334,7 @@ module Bosh::Director
 
       def reserve_ips
         networks.each do |network|
-          sorted_instance_plans.each_with_index do |instance_plan, index|
+          needed_instance_plans.each_with_index do |instance_plan, index|
             static_ips = network.static_ips
             if static_ips
               reservation = DesiredNetworkReservation.new_static(instance_plan.instance, network.deployment_network, static_ips[index])
@@ -353,7 +350,7 @@ module Bosh::Director
         # TODO: loop above should go away when we get rid of reservations
         # something similar will maybe happen in JobSpecParser to figure out desired IPs or something?
 
-        sorted_instance_plans.each do |instance_plan|
+        @sorted_instance_plans.each do |instance_plan|
           desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
           network_plans = NetworkPlanner.new(@logger)
                             .plan_ips(

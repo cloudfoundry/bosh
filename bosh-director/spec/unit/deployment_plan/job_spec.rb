@@ -503,15 +503,19 @@ describe Bosh::Director::DeploymentPlan::Job do
       instance2.bind_new_instance_model
       instance3 = BD::DeploymentPlan::Instance.new(job, 3, 'started', plan, {}, nil, false, logger)
       instance3.bind_new_instance_model
-      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: nil)
-      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: nil)
+
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
       instance_plan3 = BD::DeploymentPlan::InstancePlan.new(instance: instance3, existing_instance: nil, desired_instance: nil)
 
       unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
       job.add_instance_plans(unsorted_plans)
 
-      sorted_instance_plans = [instance_plan1, instance_plan2, instance_plan3]
-      expect(job.sorted_instance_plans).to eq(sorted_instance_plans)
+      needed_instance_plans = [instance_plan1, instance_plan2]
+
+      expect(job.needed_instance_plans).to eq(needed_instance_plans)
+      expect(job.obsolete_instance_plans).to eq([instance_plan3])
     end
   end
 end

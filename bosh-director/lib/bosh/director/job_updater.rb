@@ -19,8 +19,7 @@ module Bosh::Director
 
       @job_renderer.render_job_instances
 
-      instance_plans = @job.sorted_instance_plans
-                         .reject(&:obsolete?)
+      instance_plans = @job.needed_instance_plans
                          .select do |instance_plan|
         instance_plan.changed?
       end

@@ -31,8 +31,8 @@ describe Bosh::Director::JobUpdater do
   end
 
   describe 'update' do
-    let(:sorted_instance_plans) { [] }
-    before { allow(job).to receive(:sorted_instance_plans).and_return(sorted_instance_plans) }
+    let(:needed_instance_plans) { [] }
+    before { allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans) }
     before { allow(job_renderer).to receive(:render_job_instances) }
     before { allow(links_resolver).to receive(:resolve) }
 
@@ -42,7 +42,7 @@ describe Bosh::Director::JobUpdater do
     before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
     context 'when job is up to date' do
-      let(:sorted_instance_plans) do
+      let(:needed_instance_plans) do
         instance_plan = BD::DeploymentPlan::InstancePlan.new(
           instance: instance_double(BD::DeploymentPlan::Instance),
           desired_instance: BD::DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
@@ -104,7 +104,7 @@ describe Bosh::Director::JobUpdater do
         plan
       end
 
-      let(:sorted_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
+      let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
       let(:canary_updater) { instance_double('Bosh::Director::InstanceUpdater') }
       let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
