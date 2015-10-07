@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
     class ManualNetworkSubnet
-      include ValidationHelper
-      include IpUtil
+      extend ValidationHelper
+      extend IpUtil
 
       attr_reader :network_name, :range, :gateway, :dns, :cloud_properties,
         :netmask, :availability_zone_names, :restricted_ips, :static_ips
@@ -44,7 +44,7 @@ module Bosh::Director
 
         dns_manager = DnsManager.new(@logger)
         dns_spec = safe_property(subnet_spec, 'dns', :class => Array, :optional => true)
-        @dns = dns_manager.dns_servers(network_name, dns_spec)
+        dns = dns_manager.dns_servers(network_name, dns_spec)
 
         availability_zone_names = parse_availability_zones(subnet_spec, network_name, availability_zones)
 

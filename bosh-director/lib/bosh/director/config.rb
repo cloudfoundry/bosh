@@ -1,6 +1,5 @@
 require 'fileutils'
 require 'logging'
-require 'bosh/director/dns_helper'
 
 module Bosh::Director
 

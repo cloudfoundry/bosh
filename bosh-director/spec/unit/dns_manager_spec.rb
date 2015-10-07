@@ -1,104 +1,24 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DnsHelper do
-    include Bosh::Director::ValidationHelper
-    include Bosh::Director::DnsHelper
+  describe DnsManager do
+    let(:dns_manager) { described_class.new(logger) }
+    let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
 
-    describe '#update_dns_a_record' do
-      it 'should create new record' do
-        domain = Models::Dns::Domain.make
-        update_dns_a_record(domain, '0.foo.default.bosh', '1.2.3.4')
-        record = Models::Dns::Record.find(domain_id: domain.id, name: '0.foo.default.bosh')
-        expect(record.content).to eq('1.2.3.4')
-        expect(record.type).to eq('A')
-      end
-
-      it 'should update existing record' do
-        domain = Models::Dns::Domain.make
-        update_dns_a_record(domain, '0.foo.default.bosh', '1.2.3.4')
-        update_dns_a_record(domain, '0.foo.default.bosh', '5.6.7.8')
-        record = Models::Dns::Record.find(domain_id: domain.id, name: '0.foo.default.bosh')
-        expect(record.content).to eq('5.6.7.8')
-      end
-    end
-
-    describe '#delete_dns_records' do
-      before { @logger = logger }
-
-      it 'only deletes records that match the deployment, job, and index' do
-        domain = Models::Dns::Domain.make
-
-        {
-          '0.job-a.network-a.dep.bosh' => '1.1.1.1',
-          '1.job-a.network-a.dep.bosh' => '1.1.1.2',
-          '0.job-b.network-b.dep.bosh' => '1.1.2.1',
-          '0.job-a.network-a.dep-b.bosh' => '1.2.1.1'
-        }.each do |key, value|
-          Models::Dns::Record.make(domain: domain, name: key, content: value)
-        end
-
-        {
-          '1.1.1.1.in-addr.arpa' => '0.job-a.network-a.dep.bosh',
-          '2.1.1.1.in-addr.arpa' => '1.job-a.network-a.dep.bosh',
-          '1.2.1.1.in-addr.arpa' => '0.job-b.network-b.dep.bosh',
-          '1.1.2.1.in-addr.arpa' => '0.job-a.network-a.dep-b.bosh'
-        }.each do |key, value|
-          Models::Dns::Record.make(:PTR, domain: domain, name: key, content: value)
-        end
-
-        delete_dns_records('0.job-a.%.dep.bosh', domain.id)
-
-        expect(Models::Dns::Record.map(&:name)).to match_array(%w[
-          1.job-a.network-a.dep.bosh
-          0.job-b.network-b.dep.bosh
-          0.job-a.network-a.dep-b.bosh
-          2.1.1.1.in-addr.arpa
-          1.2.1.1.in-addr.arpa
-          1.1.2.1.in-addr.arpa
-        ])
-      end
-
-      it 'allows to delete DNS domains in parallel threads' do
-        domain = Models::Dns::Domain.make
-        Models::Dns::Record.make(
-          domain: domain,
-          name: '0.job-a.network-a.dep.bosh',
-          content: '1.1.1.1',
-        )
-
-        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
-        Models::Dns::Record.make(domain: rdomain)
-        Models::Dns::Record.make(domain: rdomain)
-
-        expect_any_instance_of(Models::Dns::Domain).to receive(:require_modification=).with(false)
-        delete_dns_records('0.job-a.%.dep.bosh', domain.id)
-      end
-
-      it 'deletes the reverse domain if it is empty' do
-        domain = Models::Dns::Domain.make
-        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
-        Models::Dns::Record.make(domain: rdomain, type: 'SOA')
-        Models::Dns::Record.make(domain: rdomain, type: 'NS')
-
-        Models::Dns::Record.make(domain: domain, name: '0.job-a.network-a.dep.bosh', content: '1.1.1.1')
-        Models::Dns::Record.make(:PTR, domain: rdomain, name: '1.1.1.1.in-addr.arpa', content: '0.job-a.network-a.dep.bosh')
-
-        delete_dns_records('0.job-a.%.dep.bosh', domain.id)
-        expect(Models::Dns::Record.all).to be_empty
-      end
+    before do
+      allow(Config).to receive(:dns_domain_name).and_return(domain.name)
+      allow(Config).to receive(:dns_enabled?).and_return(true)
     end
 
     describe '#flush_dns_cache' do
-      before { @logger = double(:logger) }
       before { allow(Config).to receive(:dns).and_return({'flush_command' => flush_command}) }
 
       context 'when flush command is present' do
         let(:flush_command) { "echo \"7\" && exit 0" }
 
         it 'logs success' do
-          expect(@logger).to receive(:debug).with("Flushed 7 records from DNS cache")
-          flush_dns_cache
+          expect(logger).to receive(:debug).with("Flushed 7 records from DNS cache")
+          dns_manager.flush_dns_cache
         end
       end
 
@@ -106,8 +26,8 @@ module Bosh::Director
         let(:flush_command) { "echo fake failure >&2 && exit 1" }
 
         it 'logs an error' do
-          expect(@logger).to receive(:warn).with("Failed to flush DNS cache: fake failure")
-          flush_dns_cache
+          expect(logger).to receive(:warn).with("Failed to flush DNS cache: fake failure")
+          dns_manager.flush_dns_cache
         end
       end
 
@@ -117,19 +37,10 @@ module Bosh::Director
         it 'does not do anything' do
           expect(Open3).to_not receive(:capture3)
           expect {
-            flush_dns_cache
+            dns_manager.flush_dns_cache
           }.to_not raise_error
         end
       end
-    end
-  end
-
-  describe DnsManager do
-    let(:dns_manager) { described_class.new(logger) }
-    let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
-
-    before do
-      allow(Config).to receive(:dns_domain_name).and_return(domain.name)
     end
 
     describe '#canonical' do
@@ -163,13 +74,66 @@ module Bosh::Director
     end
 
     describe '#delete_dns_for_instance' do
-      let(:deployment_model) { Models::Deployment.make(name:'deployment-name') }
-      let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 5, job: 'fake-job-name', deployment: deployment_model) }
+      let(:deployment_model) { Models::Deployment.make(name:'dep') }
+      let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
 
-      it 'deletes dns records for instance index and uuid' do
-        expect(dns_manager).to receive(:delete_dns_records).with('fake-uuid.fake-job-name.%.deployment-name.bosh', domain.id)
-        expect(dns_manager).to receive(:delete_dns_records).with('5.fake-job-name.%.deployment-name.bosh', domain.id)
+      it 'only deletes records that match the deployment, job, and index/uuid' do
+        {
+          '0.job-a.network-a.dep.bosh' => '1.1.1.1',
+          'fake-uuid.job-a.network-a.dep.bosh' => '1.1.1.1',
+          '1.job-a.network-a.dep.bosh' => '1.1.1.2',
+          '0.job-b.network-b.dep.bosh' => '1.1.2.1',
+          '0.job-a.network-a.dep-b.bosh' => '1.2.1.1'
+        }.each do |key, value|
+          Models::Dns::Record.make(domain: domain, name: key, content: value)
+        end
+
+        {
+          '1.1.1.1.in-addr.arpa' => '0.job-a.network-a.dep.bosh',
+          '2.1.1.1.in-addr.arpa' => '1.job-a.network-a.dep.bosh',
+          '1.2.1.1.in-addr.arpa' => '0.job-b.network-b.dep.bosh',
+          '1.1.2.1.in-addr.arpa' => '0.job-a.network-a.dep-b.bosh'
+        }.each do |key, value|
+          Models::Dns::Record.make(:PTR, domain: domain, name: key, content: value)
+        end
+
         dns_manager.delete_dns_for_instance(instance_model)
+
+        expect(Models::Dns::Record.map(&:name)).to match_array(%w[
+          1.job-a.network-a.dep.bosh
+          0.job-b.network-b.dep.bosh
+          0.job-a.network-a.dep-b.bosh
+          2.1.1.1.in-addr.arpa
+          1.2.1.1.in-addr.arpa
+          1.1.2.1.in-addr.arpa
+        ])
+      end
+
+      it 'allows to delete DNS domains in parallel threads' do
+        Models::Dns::Record.make(
+          domain: domain,
+          name: '0.job-a.network-a.dep.bosh',
+          content: '1.1.1.1',
+        )
+
+        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
+        Models::Dns::Record.make(domain: rdomain)
+        Models::Dns::Record.make(domain: rdomain)
+
+        expect_any_instance_of(Models::Dns::Domain).to receive(:require_modification=).with(false)
+        dns_manager.delete_dns_for_instance(instance_model)
+      end
+
+      it 'deletes the reverse domain if it is empty' do
+        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
+        Models::Dns::Record.make(domain: rdomain, type: 'SOA')
+        Models::Dns::Record.make(domain: rdomain, type: 'NS')
+
+        Models::Dns::Record.make(domain: domain, name: '0.job-a.network-a.dep.bosh', content: '1.1.1.1')
+        Models::Dns::Record.make(:PTR, domain: rdomain, name: '1.1.1.1.in-addr.arpa', content: '0.job-a.network-a.dep.bosh')
+
+        dns_manager.delete_dns_for_instance(instance_model)
+        expect(Models::Dns::Record.all).to be_empty
       end
     end
 
@@ -276,6 +240,24 @@ module Bosh::Director
         new_record = Models::Dns::Record.find(name: '5.3.2.1.in-addr.arpa')
         expect(new_record.content).to eq('0.foo.default.bosh')
         expect(Models::Dns::Record.all.size).to eq(3)
+      end
+    end
+
+    describe '#update_dns_a_record' do
+      it 'should create new record' do
+        domain = Models::Dns::Domain.make
+        dns_manager.update_dns_a_record(domain, '0.foo.default.bosh', '1.2.3.4')
+        record = Models::Dns::Record.find(domain_id: domain.id, name: '0.foo.default.bosh')
+        expect(record.content).to eq('1.2.3.4')
+        expect(record.type).to eq('A')
+      end
+
+      it 'should update existing record' do
+        domain = Models::Dns::Domain.make
+        dns_manager.update_dns_a_record(domain, '0.foo.default.bosh', '1.2.3.4')
+        dns_manager.update_dns_a_record(domain, '0.foo.default.bosh', '5.6.7.8')
+        record = Models::Dns::Record.find(domain_id: domain.id, name: '0.foo.default.bosh')
+        expect(record.content).to eq('5.6.7.8')
       end
     end
   end

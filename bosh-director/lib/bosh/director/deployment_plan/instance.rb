@@ -4,7 +4,6 @@ module Bosh::Director
   module DeploymentPlan
     # Represents a single job instance.
     class Instance
-      include DnsHelper
 
       # @return [DeploymentPlan::Job] Associated job
       attr_reader :job

@@ -5,7 +5,6 @@ module Bosh::Director
     class ManualNetwork < NetworkWithSubnets
       extend ValidationHelper
       include IpUtil
-      include DnsHelper
 
       attr_reader :subnets
 

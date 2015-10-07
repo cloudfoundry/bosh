@@ -1,6 +1,5 @@
 module Bosh::Director
   class DeploymentPlan::DnsBinder
-    include DnsHelper
 
     def initialize(deployment)
       @deployment = deployment
@@ -22,7 +21,7 @@ module Bosh::Director
         :name => @dns_manager.dns_domain_name,
         :type => 'SOA',
       )
-      soa_record.content = SOA
+      soa_record.content = DnsManager::SOA
       soa_record.ttl = 300
       soa_record.save
 
@@ -30,7 +29,7 @@ module Bosh::Director
       Models::Dns::Record.find_or_create(
         :domain_id => domain.id,
         :name => @dns_manager.dns_domain_name,
-        :type =>'NS', :ttl => TTL_4H,
+        :type =>'NS', :ttl => DnsManager::TTL_4H,
         :content => @dns_manager.dns_ns_record,
       )
 
@@ -38,7 +37,7 @@ module Bosh::Director
       Models::Dns::Record.find_or_create(
         :domain_id => domain.id,
         :name => @dns_manager.dns_ns_record,
-        :type =>'A', :ttl => TTL_4H,
+        :type =>'A', :ttl => DnsManager::TTL_4H,
         :content => @config.dns['address'],
       )
     end

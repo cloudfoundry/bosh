@@ -86,10 +86,10 @@ module Bosh::Director::DeploymentPlan
         ]
       }
     end
-    let(:canonicalizer) { Class.new { include Bosh::Director::DnsHelper }.new }
+    let(:dns_manager) { Bosh::Director::DnsManager.new(logger) }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
-    let(:planner_factory) { PlannerFactory.new(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger) }
-    let(:deployment_repo) { DeploymentRepo.new(canonicalizer) }
+    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, event_log, logger) }
+    let(:deployment_repo) { DeploymentRepo.new(dns_manager) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
     let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {}) }

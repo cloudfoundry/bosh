@@ -1,7 +1,6 @@
 module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
-    include DnsHelper
 
     def initialize(ip_provider, skip_drain_decider, dns_manager, options={})
       @ip_provider = ip_provider

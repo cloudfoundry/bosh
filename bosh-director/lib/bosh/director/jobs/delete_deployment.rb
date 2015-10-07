@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
     class DeleteDeployment < BaseJob
-      include DnsHelper
       include LockHelper
 
       @queue = :normal

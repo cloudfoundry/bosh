@@ -1,7 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
     class DeploymentSpecParser
-      include DnsHelper
       include ValidationHelper
 
       def initialize(deployment, event_log, logger)

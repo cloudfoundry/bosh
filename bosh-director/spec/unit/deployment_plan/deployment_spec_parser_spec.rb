@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/dns_helper'
 
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do

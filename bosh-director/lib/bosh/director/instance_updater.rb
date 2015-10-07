@@ -2,8 +2,6 @@ require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   class InstanceUpdater
-    include DnsHelper
-
     WATCH_INTERVALS = 10
     MAX_RECREATE_ATTEMPTS = 3
 
@@ -201,7 +199,7 @@ module Bosh::Director
       domain = deployment_plan(instance).dns_domain
       instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        update_dns_a_record(domain, record_name, ip_address)
+        @dns_manager.update_dns_a_record(domain, record_name, ip_address)
         @dns_manager.update_dns_ptr_record(record_name, ip_address)
       end
 
@@ -210,7 +208,7 @@ module Bosh::Director
         @dns_manager.delete_dns_for_instance(instance_plan.existing_instance)
       end
 
-      flush_dns_cache
+      @dns_manager.flush_dns_cache
     end
 
     # Synchronizes persistent_disks with the agent.
