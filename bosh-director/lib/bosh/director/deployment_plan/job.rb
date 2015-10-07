@@ -361,10 +361,6 @@ module Bosh::Director
         end
       end
 
-      def has_static_ips?
-        !networks.nil? && networks.any? { |network| !! network.static_ips }
-      end
-
       private
 
       # @param [Hash] collection All properties collection
