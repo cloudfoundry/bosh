@@ -98,6 +98,74 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#persistent_disk_changed?' do
+      let(:cloud_config_manifest) do
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config['disk_types'] = [{
+          'name' => 'disk_a',
+          'disk_size' => 24,
+          'cloud_properties' => {
+            'new' => 'properties'
+          }
+        }]
+        cloud_config
+      end
+
+      let(:job_spec) do
+        job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+        job['vm_type'] = 'fake-vm-type'
+        job['persistent_disk_pool'] = 'disk_a'
+        job
+      end
+
+      context 'when disk size changes' do
+        before do
+          persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: {'new' => 'properties'})
+          instance_plan.instance.model.add_persistent_disk(persistent_disk)
+        end
+
+        it 'should return true' do
+          expect(instance_plan.persistent_disk_changed?).to be(true)
+        end
+
+        it 'should log' do
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: disk size: 42 TO: disk size: 24')
+          instance_plan.persistent_disk_changed?
+        end
+      end
+
+      context 'when disk pool size is greater than 0 and disk properties changed' do
+        it 'should log the disk properties change' do
+          persistent_disk = BD::Models::PersistentDisk.make(size: 24, cloud_properties: {'old' => 'properties'})
+          instance_plan.instance.model.add_persistent_disk(persistent_disk)
+
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {"old"=>"properties"} TO: {"new"=>"properties"}')
+          instance_plan.persistent_disk_changed?
+        end
+      end
+
+      context 'when disk pool with size 0 is used' do
+        let(:cloud_config_manifest) do
+          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config['disk_types'] = [{
+              'name' => 'disk_a',
+              'disk_size' => 0,
+              'cloud_properties' => {
+                'new' => 'properties'
+              }
+            }]
+          cloud_config
+        end
+
+        context 'when disk_size is still 0' do
+          it 'returns false' do
+            expect(instance_plan.persistent_disk_changed?).to be(false)
+          end
+        end
+      end
+    end
+
+
     context 'when there have been changes on the instance' do
       context '#bootstrap_changed?' do
         context 'when bootstrap node changes' do

@@ -109,70 +109,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#disk_size' do
-      context 'when instance does not have bound model' do
-        it 'raises an error' do
-          expect {
-            instance.disk_size
-          }.to raise_error Bosh::Director::DirectorError
-        end
-      end
-
-      context 'when instance has bound model' do
-        before { instance.bind_unallocated_vm }
-
-        context 'when model has persistent disk' do
-          before do
-            persistent_disk = Bosh::Director::Models::PersistentDisk.make(size: 1024)
-            instance.model.persistent_disks << persistent_disk
-          end
-
-          it 'returns its size' do
-            expect(instance.disk_size).to eq(1024)
-          end
-        end
-
-        context 'when model has no persistent disk' do
-          it 'returns 0' do
-            expect(instance.disk_size).to eq(0)
-          end
-        end
-      end
-    end
-
-    describe '#disk_cloud_properties' do
-      context 'when instance does not have bound model' do
-        it 'raises an error' do
-          expect {
-            instance.disk_cloud_properties
-          }.to raise_error Bosh::Director::DirectorError
-        end
-      end
-
-      context 'when instance has bound model' do
-        before { instance.bind_unallocated_vm }
-
-        context 'when model has persistent disk' do
-          let(:disk_cloud_properties) { {'fake-disk-key' => 'fake-disk-value'} }
-
-          before do
-            persistent_disk = Bosh::Director::Models::PersistentDisk.make(size: 1024, cloud_properties: disk_cloud_properties)
-            instance.model.persistent_disks << persistent_disk
-          end
-
-          it 'returns its cloud properties' do
-            expect(instance.disk_cloud_properties).to eq(disk_cloud_properties)
-          end
-        end
-
-        context 'when model has no persistent disk' do
-          it 'returns empty hash' do
-            expect(instance.disk_cloud_properties).to eq({})
-          end
-        end
-      end
-    end
-
     describe '#bind_unallocated_vm' do
       let(:index) { 2 }
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', compilation?: false) }
@@ -432,59 +368,6 @@ module Bosh::Director::DeploymentPlan
                 'TO: ' +
                 '{"name"=>"fake-stemcell-name", "version"=>"1.0"}')
           instance.stemcell_changed?
-        end
-      end
-    end
-
-    describe '#persistent_disk_changed?' do
-      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment) }
-
-      before { allow(instance_model).to receive(:uuid).and_return('123') }
-
-      let(:disk_type) do
-        Bosh::Director::DeploymentPlan::DiskType.parse(
-          {
-            'name' => 'fake-name',
-            'disk_size' => disk_size,
-            'cloud_properties' => {'type' => 'fake-type'},
-          }
-        )
-      end
-
-      before { instance.bind_existing_instance_model(instance_model) }
-
-      context 'changed' do
-        let(:disk_size) { 42 }
-        it 'should return true' do
-          expect(instance.persistent_disk_changed?).to be(true)
-        end
-
-        it 'should log' do
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: disk size: 0 TO: disk size: 42')
-          instance.persistent_disk_changed?
-        end
-      end
-
-      context 'when disk pool size is greater than 0 and disk properties changed' do
-        let(:disk_size) { 42 }
-        let(:persistent_disk) { Bosh::Director::Models::PersistentDisk.make(active: true, size: disk_size, cloud_properties: {'old' => 'properties'}) }
-        before do
-          instance_model.add_persistent_disk(persistent_disk)
-        end
-
-        it 'should log the disk properties change' do
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {"old"=>"properties"} TO: {"type"=>"fake-type"}')
-          instance.persistent_disk_changed?
-        end
-      end
-
-      context 'when disk pool with size 0 is used' do
-        let(:disk_size) { 0 }
-
-        context 'when disk_size is still 0' do
-          it 'returns false' do
-            expect(instance.persistent_disk_changed?).to be(false)
-          end
         end
       end
     end

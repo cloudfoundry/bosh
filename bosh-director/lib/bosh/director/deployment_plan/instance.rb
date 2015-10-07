@@ -174,30 +174,6 @@ module Bosh::Director
       end
 
       ##
-      # @return [Integer] persistent disk size
-      def disk_size
-        check_model_bound
-
-        if @model.persistent_disk
-          @model.persistent_disk.size
-        else
-          0
-        end
-      end
-
-      ##
-      # @return [Hash] persistent disk cloud properties
-      def disk_cloud_properties
-        check_model_bound
-
-        if @model.persistent_disk
-          @model.persistent_disk.cloud_properties
-        else
-          {}
-        end
-      end
-
-      ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
         [hostname, job.canonical_name, @dns_manager.canonical(network_name), job.deployment.canonical_name, @dns_manager.dns_domain_name].join('.')
@@ -265,21 +241,6 @@ module Bosh::Director
       def packages_changed?
         changed = @job.package_spec != @current_state['packages']
         log_changes(__method__, @current_state['packages'], @job.package_spec) if changed
-        changed
-      end
-
-      ##
-      # @return [Boolean] returns true if the expected persistent disk or cloud_properties differs
-      #   from the state currently configured on the VM
-      def persistent_disk_changed?
-        new_disk_size = @job.persistent_disk_type ? @job.persistent_disk_type.disk_size : 0
-        new_disk_cloud_properties = @job.persistent_disk_type ? @job.persistent_disk_type.cloud_properties : {}
-        changed = new_disk_size != disk_size
-        log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}") if changed
-        return true if changed
-
-        changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
-        log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties) if changed
         changed
       end
 

@@ -36,7 +36,7 @@ module Bosh
           @changes << :stemcell if instance.stemcell_changed?
           @changes << :network if networks_changed?
           @changes << :packages if instance.packages_changed?
-          @changes << :persistent_disk if instance.persistent_disk_changed?
+          @changes << :persistent_disk if persistent_disk_changed?
           @changes << :configuration if instance.configuration_changed?
           @changes << :job if instance.job_changed?
           @changes << :state if state_changed?
@@ -67,6 +67,20 @@ module Bosh
           end
           false
         end
+
+        def persistent_disk_changed?
+          job = @instance.job
+          new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
+          new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
+          changed = new_disk_size != disk_size
+          log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}") if changed
+          return true if changed
+
+          changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
+          log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties) if changed
+          changed
+        end
+
 
         def needs_restart?
           @desired_instance.virtual_state == 'restart'
@@ -197,6 +211,30 @@ module Bosh
 
         def log_changes(method_sym, old_state, new_state)
           @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state}")
+        end
+
+        def disk_size
+          if @instance.model.nil?
+            raise DirectorError, "Instance `#{@instance}' model is not bound"
+          end
+
+          if @instance.model.persistent_disk
+            @instance.model.persistent_disk.size
+          else
+            0
+          end
+        end
+
+        def disk_cloud_properties
+          if @instance.model.nil?
+            raise DirectorError, "Instance `#{@instance}' model is not bound"
+          end
+
+          if @instance.model.persistent_disk
+            @instance.model.persistent_disk.cloud_properties
+          else
+            {}
+          end
         end
       end
     end

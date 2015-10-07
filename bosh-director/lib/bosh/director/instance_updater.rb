@@ -58,7 +58,7 @@ module Bosh::Director
 
       update_dns(instance_plan)
       update_model(instance_plan)
-      update_persistent_disk(instance)
+      update_persistent_disk(instance_plan)
 
       if only_trusted_certs_changed
         @logger.debug('Skipping apply, trusted certs change only')
@@ -335,12 +335,14 @@ module Bosh::Director
       true
     end
 
-    def update_persistent_disk(instance)
+    def update_persistent_disk(instance_plan)
+      instance = instance_plan.instance
+
       @vm_creator.attach_disks_for(instance) unless instance.disk_currently_attached?
       check_persistent_disk(instance)
 
       disk = nil
-      return unless instance.persistent_disk_changed?
+      return unless instance_plan.persistent_disk_changed?
 
       old_disk = instance.model.persistent_disk
 

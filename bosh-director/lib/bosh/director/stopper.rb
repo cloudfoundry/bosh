@@ -47,7 +47,7 @@ module Bosh::Director
         @target_state == 'detached' ||
         @instance_plan.resource_pool_changed? ||
         @instance_plan.needs_recreate? ||
-        @instance.persistent_disk_changed? ||
+        @instance_plan.persistent_disk_changed? ||
         @instance_plan.networks_changed?
     end
 
