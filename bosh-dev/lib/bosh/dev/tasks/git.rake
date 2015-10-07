@@ -27,6 +27,6 @@ namespace :git do
 
   desc 'Add Git commit message hook to append Tracker URL to messages with Tracker story number'
   task :add_tracker_commit_hook do
-    sh('cp bosh-dev/assets/commit-msg.bash .git/hooks/commit-msg')
+    sh('ln -Fs ../../bosh-dev/assets/commit-msg.rb .git/hooks/commit-msg')
   end
 end
