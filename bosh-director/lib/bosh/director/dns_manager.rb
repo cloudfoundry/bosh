@@ -191,18 +191,18 @@ module Bosh::Director
     # @param [String] ip IP address
     # @return [String] reverse dns name for an IP used for a PTR record
     def reverse_host(ip)
-      reverse(ip, 3)
+      reverse(ip, 4)
     end
 
     # @param [String] ip IP address
     # @return [String] reverse dns domain name for an IP
     def reverse_domain(ip)
-      reverse(ip, 2)
+      reverse(ip, 3)
     end
 
     def reverse(ip, n)
       octets = ip.split(/\./)
-      "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
+      "#{octets[0..(n-1)].reverse.join(".")}.in-addr.arpa"
     end
 
     def delete_empty_domain(domain)
