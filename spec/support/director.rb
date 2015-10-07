@@ -56,7 +56,7 @@ module Bosh::Spec
     def wait_for_vm(job_name, index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index }
+        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.last_known_state == 'running' }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
