@@ -13,6 +13,7 @@
 *.iml.new
 .pt
 .stemcell_builds/public_stemcell_config.yml
+.tags
 .vagrant
 .yardoc
 
