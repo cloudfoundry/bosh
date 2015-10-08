@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentDeleter do
-    subject(:deleter) { described_class.new(Config.event_log, logger, dns_manager, 3, dns_enabled) }
+    subject(:deleter) { described_class.new(Config.event_log, logger, dns_manager, 3) }
     before do
       allow(Config).to receive(:cloud).and_return(cloud)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -39,6 +39,7 @@ module Bosh::Director
         allow(instance_deleter).to receive(:delete_instance_plans)
         allow(vm_deleter).to receive(:delete_vm).with(orphaned_vm)
         allow(deployment_model).to receive(:destroy)
+        allow(dns_manager).to receive(:delete_dns_for_deployment)
       end
 
       it 'deletes deployment instances' do
@@ -73,22 +74,9 @@ module Bosh::Director
         expect(Models::DeploymentProperty.all.size).to eq(0)
       end
 
-      context 'when dns is enabled' do
-        let(:dns_enabled) { true }
-
-        it 'deletes dns' do
-          expect(dns_manager).to receive(:delete_dns_for_deployment).with('fake-deployment')
-          deleter.delete(deployment_model, instance_deleter, vm_deleter)
-        end
-      end
-
-      context 'when dns is not enabled' do
-        let(:dns_enabled) { false }
-
-        it 'deletes dns' do
-          expect(dns_manager).to_not receive(:delete_dns_for_deployment)
-          deleter.delete(deployment_model, instance_deleter, vm_deleter)
-        end
+      it 'deletes dns' do
+        expect(dns_manager).to receive(:delete_dns_for_deployment).with('fake-deployment')
+        deleter.delete(deployment_model, instance_deleter, vm_deleter)
       end
 
       it 'destroys deployment model' do

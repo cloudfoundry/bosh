@@ -16,8 +16,6 @@ module Bosh::Director
       end
 
       def perform
-        @domain = Models::Dns::Domain.find(name: dns_manager.dns_domain_name, type: "NATIVE") if Config.dns_enabled?
-
         vms = Models::Vm.filter(:deployment_id => @deployment_id)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           vms.each do |vm|
@@ -59,12 +57,15 @@ module Bosh::Director
           job_state = "unresponsive agent"
         end
 
-        if @domain
-          ips.each do |ip|
-            records = Models::Dns::Record.filter(domain_id: @domain.id, type: "A", content: ip)
-            records.each { |record| dns_records << record.name } unless records.empty?
+        if dns_manager.dns_enabled?
+          domain = Models::Dns::Domain.find(name: dns_manager.dns_domain_name, type: "NATIVE")
+          if domain
+            ips.each do |ip|
+              records = Models::Dns::Record.filter(domain_id: domain.id, type: "A", content: ip)
+              records.each { |record| dns_records << record.name } unless records.empty?
+            end
+            dns_records.sort_by! { |name| -name.split('.').first.length }
           end
-          dns_records.sort_by! { |name| -name.split('.').first.length }
         end
 
         vm_apply_spec = vm.apply_spec

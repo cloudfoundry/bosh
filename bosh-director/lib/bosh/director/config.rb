@@ -127,9 +127,8 @@ module Bosh::Director
         @db_config = config['db']
         @db = configure_db(config['db'])
         @dns = config['dns']
-        @dns_domain_name = 'bosh'
-        if @dns
-          @dns_db = configure_db(@dns['db']) if @dns['db']
+        if @dns && @dns['db']
+          @dns_db = configure_db(@dns['db'])
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
@@ -144,10 +143,9 @@ module Bosh::Director
             Bosh::Director::Models::Dns::Record.class
             Bosh::Director::Models::Dns::Domain.class
           end
-          dns_manager = Bosh::Director::DnsManager.new(@logger)
-          @dns_domain_name = dns_manager.canonical(@dns['domain_name']) if @dns['domain_name']
         end
 
+        @dns_manager = DnsManager.create
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
@@ -288,10 +286,6 @@ module Bosh::Director
 
       def redis?
         !threaded[:redis].nil?
-      end
-
-      def dns_enabled?
-        !@dns_db.nil?
       end
 
       def encryption?

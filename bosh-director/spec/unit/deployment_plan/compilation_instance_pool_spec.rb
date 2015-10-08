@@ -111,7 +111,7 @@ module Bosh::Director
           'env' => { 'compilation' => 'environment'},
           'packages' => {},
           'configuration_hash' => nil,
-          'dns_domain_name' => nil,
+          'dns_domain_name' => 'bosh',
           'persistent_disk' => 0,
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)

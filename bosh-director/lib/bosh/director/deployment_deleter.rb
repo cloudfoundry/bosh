@@ -1,11 +1,10 @@
 module Bosh::Director
   class DeploymentDeleter
-    def initialize(event_log, logger, dns_manager, max_threads, dns_enabled)
+    def initialize(event_log, logger, dns_manager, max_threads)
       @event_log = event_log
       @logger = logger
       @dns_manager = dns_manager
       @max_threads = max_threads
-      @dns_enabled = dns_enabled
     end
 
     def delete(deployment_model, instance_deleter, vm_deleter)
@@ -47,7 +46,7 @@ module Bosh::Director
 
       @event_log.track('Deleting DNS records') do
         @logger.info('Deleting DNS records')
-        @dns_manager.delete_dns_for_deployment(deployment_model.name) if @dns_enabled
+        @dns_manager.delete_dns_for_deployment(deployment_model.name)
       end
 
       @event_log.track('Destroying deployment') do

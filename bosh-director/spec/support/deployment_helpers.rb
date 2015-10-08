@@ -12,7 +12,6 @@ module Support
       )
 
       allow(Bosh::Director::Config).to receive(:cloud).and_return(nil)
-      allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return('fake-dns')
       Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
 
       release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])

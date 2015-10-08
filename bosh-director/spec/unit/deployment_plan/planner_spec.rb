@@ -82,10 +82,7 @@ module Bosh::Director
               compilation: nil,
             })
           planner.cloud_planner = cloud_planner
-
-          dns_binder = instance_double(DeploymentPlan::DnsBinder)
-          allow(DeploymentPlan::DnsBinder).to receive(:new).and_return(dns_binder)
-          allow(dns_binder).to receive(:bind_deployment)
+          allow(Config).to receive(:dns_enabled?).and_return(false)
         end
 
         it 'should parse recreate' do

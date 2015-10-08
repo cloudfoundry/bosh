@@ -7,21 +7,21 @@ module Bosh::Director
       context 'when dns record does not exist' do
         it 'creates domain and ptr domain' do
           expect {
-            power_dns.create_or_update('1.foobar.network.dep.bosh', '1.2.3.4')
+            power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
           }.to change{ Models::Dns::Domain.count }.from(0).to(2)
 
           expect(Models::Dns::Domain.all.map(&:name)).to contain_exactly('bosh', '3.2.1.in-addr.arpa')
         end
 
         it 'creates new A record' do
-          power_dns.create_or_update('1.foobar.network.dep.bosh', '1.2.3.4')
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
           record = Models::Dns::Record.find(type: 'A')
           expect(record.name).to eq('1.foobar.network.dep.bosh')
           expect(record.content).to eq('1.2.3.4')
         end
 
         it 'creates new ptr records' do
-          power_dns.create_or_update('1.foobar.network.dep.bosh', '1.2.3.4')
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
           ns_record = Models::Dns::Record.find(type: 'NS')
           expect(ns_record.name).to eq('3.2.1.in-addr.arpa')
           expect(ns_record.content).to eq('ns.bosh')
@@ -38,12 +38,12 @@ module Bosh::Director
 
       context 'when dns record exists' do
         before do
-          power_dns.create_or_update('1.foobar.network.dep.bosh', '1.2.3.4')
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
         end
 
         it 'updates ip address on A record' do
           expect {
-            power_dns.create_or_update('1.foobar.network.dep.bosh', '5.6.7.8')
+            power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
           }.to_not change { Models::Dns::Domain.count }
 
           record = Models::Dns::Record.find(type: 'A')
@@ -52,7 +52,7 @@ module Bosh::Director
         end
 
         it 'updates ptr records' do
-          power_dns.create_or_update('1.foobar.network.dep.bosh', '5.6.7.8')
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
           ns_record = Models::Dns::Record.find(type: 'NS')
           expect(ns_record.name).to eq('7.6.5.in-addr.arpa')
           expect(ns_record.content).to eq('ns.bosh')
@@ -70,8 +70,9 @@ module Bosh::Director
 
     describe '#delete' do
       before do
-        power_dns.create_or_update('1.foobar.network-a.dep.bosh', '1.2.3.4')
-        power_dns.create_or_update('1.foobar.network-b.dep.bosh', '1.2.3.4')
+        power_dns.create_or_update_dns_records('1.foobar.network-a.dep.bosh', '1.2.3.4')
+        power_dns.create_or_update_dns_records('1.foobar.network-b.dep.bosh', '1.2.3.4')
+
       end
 
       it 'deletes dns record' do

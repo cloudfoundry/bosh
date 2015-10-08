@@ -58,7 +58,7 @@ module Bosh::Director
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
-        @dns_manager = DnsManager.new(logger)
+        @dns_manager = DnsManager.create
 
         @state = state
       end
@@ -176,7 +176,7 @@ module Bosh::Director
       ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, @dns_manager.canonical(network_name), job.deployment.canonical_name, @dns_manager.dns_domain_name].join('.')
+        [hostname, job.canonical_name, DnsManager.canonical(network_name), job.deployment.canonical_name, @dns_manager.dns_domain_name].join('.')
       end
 
       ##

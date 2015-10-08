@@ -46,8 +46,6 @@ module Bosh::Director
       # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms
 
-      attr_accessor :dns_domain
-
       attr_reader :job_rename
 
       # @return [Boolean] Indicates whether VMs should be recreated
@@ -78,7 +76,6 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
-        @dns_domain = nil
 
         @job_rename = safe_property(options, 'job_rename',
           :class => Hash, :default => {})
@@ -97,8 +94,6 @@ module Bosh::Director
           @ip_repo = InMemoryIpRepo.new(@logger)
         end
         @ip_provider = IpProviderV2.new(@ip_repo, vip_repo, using_global_networking?, @logger)
-
-        @dns_manager = DnsManager.new(@logger)
       end
 
       def_delegators :@cloud_planner,
@@ -117,14 +112,16 @@ module Bosh::Director
         :compilation
 
       def canonical_name
-        @dns_manager.canonical(@name)
+        DnsManager.canonical(@name)
       end
 
       def bind_models
         stemcell_manager = Api::StemcellManager.new
+        dns_manager = DnsManager.create
         assembler = DeploymentPlan::Assembler.new(
           self,
           stemcell_manager,
+          dns_manager,
           Config.cloud,
           @logger,
           Config.event_log
@@ -138,7 +135,7 @@ module Bosh::Director
 
         vm_deleter = VmDeleter.new(Config.cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
-        dns_manager = DnsManager.new(@logger)
+        dns_manager = DnsManager.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, skip_drain, dns_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(

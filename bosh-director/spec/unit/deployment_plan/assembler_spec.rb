@@ -2,9 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, cloud, logger, event_log) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, cloud, logger, event_log) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple') }
     let(:stemcell_manager) { nil }
+    let(:dns_manager) { DnsManager.create }
     let(:event_log) { Config.event_log }
 
     let(:cloud) { instance_double('Bosh::Cloud') }
@@ -14,6 +15,7 @@ module Bosh::Director
       let(:job) { instance_double(DeploymentPlan::Job) }
 
       before do
+        allow(Config).to receive(:dns_enabled?).and_return(false)
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
         allow(deployment_plan).to receive(:jobs).and_return([])
@@ -24,10 +26,6 @@ module Bosh::Director
         allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
-
-        binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
-        allow(DeploymentPlan::DnsBinder).to receive(:new).with(deployment_plan).and_return(binder)
-        allow(binder).to receive(:bind_deployment)
       end
 
       it 'should bind releases and their templates' do
@@ -144,10 +142,8 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      it 'uses DnsBinder to create dns records for deployment' do
-        binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
-        allow(DeploymentPlan::DnsBinder).to receive(:new).with(deployment_plan).and_return(binder)
-        expect(binder).to receive(:bind_deployment).with(no_args)
+      it 'configures dns' do
+        expect(dns_manager).to receive(:configure_nameserver)
         assembler.bind_models
       end
     end

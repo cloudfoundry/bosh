@@ -2,16 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsManager do
-    let(:dns_manager) { described_class.new(logger) }
+    let(:dns_manager) { described_class.new(dns_config, dns_enabled, logger) }
+    let(:dns_config) { {'domain_name' => domain.name} }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
-
-    before do
-      allow(Config).to receive(:dns_domain_name).and_return(domain.name)
-      allow(Config).to receive(:dns_enabled?).and_return(true)
-    end
+    let(:dns_enabled) { true }
 
     describe '#flush_dns_cache' do
-      before { allow(Config).to receive(:dns).and_return({'flush_command' => flush_command}) }
+      let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
 
       context 'when flush command is present' do
         let(:flush_command) { "echo \"7\" && exit 0" }
@@ -45,27 +42,27 @@ module Bosh::Director
 
     describe '#canonical' do
       it 'should be lowercase' do
-        expect(dns_manager.canonical('HelloWorld')).to eq('helloworld')
+        expect(DnsManager.canonical('HelloWorld')).to eq('helloworld')
       end
 
       it 'should convert underscores to hyphens' do
-        expect(dns_manager.canonical('hello_world')).to eq('hello-world')
+        expect(DnsManager.canonical('hello_world')).to eq('hello-world')
       end
 
       it 'should strip any non alpha numeric characters' do
-        expect(dns_manager.canonical('hello^world')).to eq('helloworld')
+        expect(DnsManager.canonical('hello^world')).to eq('helloworld')
       end
 
       it "should reject strings that don't start with a letter or end with a letter/number" do
         expect {
-          dns_manager.canonical('-helloworld')
+          DnsManager.canonical('-helloworld')
         }.to raise_error(
             DnsInvalidCanonicalName,
             "Invalid DNS canonical name `-helloworld', must begin with a letter",
           )
 
         expect {
-          dns_manager.canonical('helloworld-')
+          DnsManager.canonical('helloworld-')
         }.to raise_error(
             DnsInvalidCanonicalName,
             "Invalid DNS canonical name `helloworld-', can't end with a hyphen",
@@ -136,6 +133,36 @@ module Bosh::Director
         expect(Models::Dns::Record.all).to be_empty
       end
     end
+    describe '#configure_nameserver' do
+      context 'dns is enabled' do
+        let(:dns_config) { {'domain_name' => domain.name, 'address' => '1.2.3.4'} }
+        it 'creates name server records' do
+          dns_manager.configure_nameserver
+          ns_record = Models::Dns::Record.find(name: 'bosh', type: 'NS')
+          a_record = Models::Dns::Record.find(type: 'A')
+          soa_record = Models::Dns::Record.find(name: 'bosh', type: 'SOA')
+          domain = Models::Dns::Domain.find(name: 'bosh', type: 'NATIVE')
+          expect(ns_record.content).to eq('ns.bosh')
+          expect(a_record.content).to eq('1.2.3.4')
+          expect(soa_record.content).to eq(PowerDns::SOA)
+          expect(domain).to_not eq(nil)
+        end
+      end
+
+      context 'dns is disabled' do
+        let(:dns_enabled) { false }
+        it 'creates nothing' do
+          dns_manager.configure_nameserver
+          ns_record = Models::Dns::Record.find(name: domain.name, type: 'NS')
+          a_record = Models::Dns::Record.find(type: 'A')
+          soa_record = Models::Dns::Record.find(name: domain.name, type: 'SOA')
+          expect(ns_record).to eq(nil)
+          expect(a_record).to eq(nil)
+          expect(soa_record).to eq(nil)
+        end
+      end
+
+    end
 
     describe '#dns_servers' do
       it 'should return nil when there are no DNS servers' do
@@ -153,7 +180,7 @@ module Bosh::Director
       end
 
       context 'when there is a default server' do
-        before { allow(Config).to receive(:dns).and_return({'server' => '9.10.11.12'}) }
+        let(:dns_config) { {'domain_name' => domain.name, 'server' => '9.10.11.12'} }
 
         it 'should add default dns server when there are no DNS servers' do
           expect(dns_manager.dns_servers('network', [])).to eq(%w[9.10.11.12])
@@ -175,29 +202,21 @@ module Bosh::Director
           expect(dns_manager.dns_servers('network', %w[1.2.3.4 9.10.11.12])).to eq(%w[1.2.3.4 9.10.11.12])
         end
 
-        it 'should not add default dns server if it is 127.0.0.1' do
-          allow(Config).to receive(:dns).and_return({'server' => '127.0.0.1'})
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+        context 'when dns server is 127.0.0.1' do
+          let(:dns_config) { {'domain_name' => domain.name, 'server' => '127.0.0.1'} }
+
+          it 'should not add default dns server if it is 127.0.0.1' do
+            expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+          end
         end
 
-        it 'should not add default dns server when dns is not enabled' do
-          allow(Config).to receive(:dns_enabled?).and_return(false)
-          expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+        context 'when dns is disabled' do
+          let(:dns_enabled) { false }
+
+          it 'should not add default dns server when dns is not enabled' do
+            expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
+          end
         end
-      end
-    end
-
-    describe '#dns_domain_name' do
-      it 'should return the DNS domain name' do
-        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
-        expect(dns_manager.dns_domain_name).to eq('test_domain')
-      end
-    end
-
-    describe '#dns_ns_record' do
-      it 'should return the DNS name server' do
-        allow(Config).to receive(:dns_domain_name).and_return('test_domain')
-        expect(dns_manager.dns_ns_record).to eq('ns.test_domain')
       end
     end
   end

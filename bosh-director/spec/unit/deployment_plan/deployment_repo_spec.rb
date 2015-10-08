@@ -3,8 +3,7 @@ require 'spec_helper'
 module Bosh
   module Director
     describe DeploymentPlan::DeploymentRepo do
-      subject { DeploymentPlan::DeploymentRepo.new(dns_manager) }
-      let(:dns_manager) { Bosh::Director::DnsManager.new(logger) }
+      subject { DeploymentPlan::DeploymentRepo.new }
 
       describe '.find_or_create_by_name' do
         it 'all happens in a transaction' do

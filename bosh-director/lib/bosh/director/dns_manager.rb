@@ -1,20 +1,15 @@
 module Bosh::Director
   class DnsManager
-    def initialize(logger)
-      @logger = logger
+    attr_reader :dns_domain_name
+
+    def self.create
+      dns_config = Config.dns || {}
+      dns_enabled = !!Config.dns_db # to be consistent with current behavior
+      logger = Config.logger
+      new(dns_config, dns_enabled, logger)
     end
 
-    # returns the DNS domain name
-    def dns_domain_name
-      Config.dns_domain_name
-    end
-
-    # returns the DNS name server record
-    def dns_ns_record
-      "ns.#{dns_domain_name}"
-    end
-
-    def canonical(string)
+    def self.canonical(string)
       # a-z, 0-9, -, case insensitive, and must start with a letter
       string = string.downcase.gsub(/_/, "-").gsub(/[^a-z0-9-]/, "")
       if string =~ /^(\d|-)/
@@ -28,25 +23,45 @@ module Bosh::Director
       string
     end
 
-    def update_dns_record(domain_name, record_name, ip_address)
-      dns_provider = PowerDns.new(domain_name, @logger)
-      dns_provider.create_or_update(record_name, ip_address)
+    def initialize(dns_config, dns_enabled, logger)
+      @dns_domain_name = DnsManager.canonical(dns_config.fetch('domain_name', 'bosh'))
+      @dns_provider = PowerDns.new(@dns_domain_name, logger)
+      @dns_enabled = dns_enabled
+      @default_server = dns_config['server']
+      @flush_command = dns_config['flush_command']
+      @ip_address = dns_config['address']
+      @logger = logger
+    end
+
+    def dns_enabled?
+      @dns_enabled
+    end
+
+    def configure_nameserver
+      return unless dns_enabled?
+
+      @dns_provider.create_or_update_nameserver(@ip_address)
+    end
+
+    def update_dns_record_for_instance(record_name, ip_address)
+      @dns_provider.create_or_update_dns_records(record_name, ip_address)
     end
 
     def delete_dns_for_deployment(name)
-      record_pattern = ['%', canonical(name), dns_domain_name].join('.')
-      delete_dns_records(record_pattern)
+      return unless dns_enabled?
+
+      record_pattern = ['%', canonical(name), @dns_domain_name].join('.')
+      @dns_provider.delete_dns_records(record_pattern)
     end
 
     def delete_dns_for_instance(instance_model)
-      return unless Config.dns_enabled?
+      return unless dns_enabled?
 
-      dns_provider = PowerDns.new(dns_domain_name, @logger)
       index_record_pattern = record_pattern(instance_model.index, instance_model.job, instance_model.deployment.name)
-      dns_provider.delete(index_record_pattern)
+      @dns_provider.delete(index_record_pattern)
 
       uuid_record_pattern = record_pattern(instance_model.uuid, instance_model.job, instance_model.deployment.name)
-      dns_provider.delete(uuid_record_pattern)
+      @dns_provider.delete(uuid_record_pattern)
     end
 
     # build a list of dns servers to use
@@ -66,15 +81,13 @@ module Bosh::Director
       end
 
       return servers unless add_default_dns
-
       add_default_dns_server(servers)
     end
 
     # Purge cached DNS records
     def flush_dns_cache
-      flush_command = Config.dns['flush_command']
-      if flush_command && !flush_command.empty?
-        stdout, stderr, status = Open3.capture3(flush_command)
+      if @flush_command && !@flush_command.empty?
+        stdout, stderr, status = Open3.capture3(@flush_command)
         if status == 0
           @logger.debug("Flushed #{stdout.chomp} records from DNS cache")
         else
@@ -87,11 +100,11 @@ module Bosh::Director
 
     def record_pattern(hostname, job_name, deployment_name)
       [ hostname,
-        canonical(job_name),
-        "%",
-        canonical(deployment_name),
-        dns_domain_name
-      ].join(".")
+        DnsManager.canonical(job_name),
+        '%',
+        DnsManager.canonical(deployment_name),
+        @dns_domain_name
+      ].join('.')
     end
 
     # deletes all DNS records matching the pattern
@@ -145,7 +158,7 @@ module Bosh::Director
 
     def reverse(ip, n)
       octets = ip.split(/\./)
-      "#{octets[0..(n-1)].reverse.join(".")}.in-addr.arpa"
+      "#{octets[0..(n-1)].reverse.join('.')}.in-addr.arpa"
     end
 
     def delete_empty_domain(domain)
@@ -174,18 +187,12 @@ module Bosh::Director
         "Invalid DNS for network `#{network}': #{reason}"
     end
 
-    # returns the default DNS server
-    def default_dns_server
-      Config.dns["server"] if Config.dns
-    end
-
     # add default dns server to an array of dns servers
     def add_default_dns_server(servers)
-      return servers unless Config.dns_enabled?
+      return servers unless dns_enabled?
 
-      default_server = default_dns_server
-      if default_server && default_server != "127.0.0.1"
-        (servers ||= []) << default_server
+      unless @default_server.to_s.empty? || @default_server == '127.0.0.1'
+        (servers ||= []) << @default_server
         servers.uniq!
       end
 

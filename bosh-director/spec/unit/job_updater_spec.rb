@@ -111,7 +111,7 @@ describe Bosh::Director::JobUpdater do
       let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
 
       before do
-        allow(Bosh::Director::InstanceUpdater).to receive(:new)
+        allow(Bosh::Director::InstanceUpdater).to receive(:create)
                                                     .with(job_renderer)
                                                     .and_return(canary_updater, changed_updater, unchanged_updater)
       end

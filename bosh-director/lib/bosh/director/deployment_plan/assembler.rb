@@ -5,12 +5,13 @@ module Bosh::Director
     include LockHelper
     include IpUtil
 
-    def initialize(deployment_plan, stemcell_manager, cloud, logger, event_log)
+    def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger, event_log)
       @deployment_plan = deployment_plan
       @cloud = cloud
       @logger = logger
       @event_log = event_log
       @stemcell_manager = stemcell_manager
+      @dns_manager = dns_manager
     end
 
     def bind_models
@@ -187,8 +188,7 @@ module Bosh::Director
     end
 
     def bind_dns
-      binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
-      binder.bind_deployment
+      @dns_manager.configure_nameserver
     end
 
     def bind_job_renames

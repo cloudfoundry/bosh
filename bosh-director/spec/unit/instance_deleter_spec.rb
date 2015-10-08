@@ -93,7 +93,6 @@ module Bosh::Director
         end
 
         before do
-          allow(Config).to receive(:dns_domain_name).and_return(domain.name)
           persistent_disks.each { |disk| instance.model.persistent_disks << disk }
         end
 

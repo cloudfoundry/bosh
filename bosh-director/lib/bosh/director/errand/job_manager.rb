@@ -27,9 +27,6 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      dns_binder = DeploymentPlan::DnsBinder.new(@deployment)
-      dns_binder.bind_deployment
-
       job_renderer = JobRenderer.new(@job, @blobstore)
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
       job_updater = JobUpdater.new(@deployment, @job, job_renderer, links_resolver)
@@ -47,7 +44,7 @@ module Bosh::Director
 
       @logger.info('Deleting errand instances')
       event_log_stage = @event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
-      dns_manager = DnsManager.new(@logger)
+      dns_manager = DnsManager.create
       instance_deleter = InstanceDeleter.new(@deployment.ip_provider, @deployment.skip_drain, dns_manager)
       #instances: DeploymentPlan::Instance
       instance_deleter.delete_instance_plans(instance_plans, event_log_stage)

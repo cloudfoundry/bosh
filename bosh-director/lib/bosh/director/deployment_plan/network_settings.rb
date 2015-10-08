@@ -80,9 +80,9 @@ module Bosh::Director::DeploymentPlan
     def dns_record_name(hostname, network_name)
       [
         hostname,
-        @dns_manager.canonical(@job_name),
-        @dns_manager.canonical(network_name),
-        @dns_manager.canonical(@deployment_name),
+        Bosh::Director::DnsManager.canonical(@job_name),
+        Bosh::Director::DnsManager.canonical(network_name),
+        Bosh::Director::DnsManager.canonical(@deployment_name),
         @dns_manager.dns_domain_name
       ].join('.')
     end

@@ -11,8 +11,7 @@ module Bosh::Director::DeploymentPlan
     let(:vip_repo) { VipRepo.new(logger) }
     let(:ip_provider) { IpProviderV2.new(in_memory_ip_repo, vip_repo, false, logger) }
 
-    before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
-    let(:domain_name) { 'test_domain' }
+    before { allow(Bosh::Director::Config).to receive(:dns).and_return({'domain_name' => 'test_domain'}) }
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
@@ -246,12 +245,12 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test_domain'}},
+            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}},
             'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}},
             'stemcell' => {'name' => 'fake-stemcell-name', 'version' => '1.0'},
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
-            'dns_domain_name' => 'test_domain',
+            'dns_domain_name' => 'test-domain',
             'persistent_disk' => 0
           }
 
@@ -446,7 +445,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
+        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.test-domain"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
             'cloud_properties' => network_spec['cloud_properties'],
@@ -461,7 +460,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
         expect(spec['properties']).to eq(properties)
-        expect(spec['dns_domain_name']).to eq(domain_name)
+        expect(spec['dns_domain_name']).to eq('test-domain')
         expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
         expect(spec['availability_zone']).to eq('foo-az')
@@ -508,7 +507,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['index']).to eq(index)
           expect(spec['networks']).to include(network_name)
 
-          expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
+          expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.test-domain"
 
           expect(spec['networks'][network_name]).to include(
               'type' => 'dynamic',
@@ -524,7 +523,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['persistent_disk_type']).to eq(disk_type_spec)
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
-          expect(spec['dns_domain_name']).to eq(domain_name)
+          expect(spec['dns_domain_name']).to eq('test-domain')
           expect(spec['links']).to eq('fake-link')
           expect(spec['id']).to eq('uuid-1')
           expect(spec['availability_zone']).to eq('foo-az')
@@ -621,7 +620,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.#{domain_name}"
+        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.test-domain"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
             'cloud_properties' => network_spec['cloud_properties'],
@@ -634,7 +633,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['configuration_hash']).to be_nil
-        expect(spec['dns_domain_name']).to eq(domain_name)
+        expect(spec['dns_domain_name']).to eq('test-domain')
         expect(spec['id']).to eq('uuid-1')
       end
 

@@ -14,8 +14,7 @@ module Bosh
       class PlannerFactory
         def self.create(event_log, logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
-          dns_manager = Bosh::Director::DnsManager.new(logger)
-          deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(dns_manager)
+          deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new
 
           new(
             deployment_manifest_migrator,

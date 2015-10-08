@@ -32,7 +32,7 @@ module Bosh::Director
       @deployment = Models::Deployment.make
       @result_file = double('result_file')
       allow(Config).to receive(:result).and_return(@result_file)
-      allow(Config).to receive(:dns_domain_name).and_return('microbosh')
+      allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
     end
 
     describe 'Resque job class expectations' do

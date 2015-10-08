@@ -1,29 +1,25 @@
 module Bosh::Director
   class PowerDns
-    # primary_ns contact serial refresh retry expire minimum
     SOA = 'localhost hostmaster@localhost 0 10800 604800 30'
     TTL_5M = 300
     TTL_4H = 3600 * 4
+    TTL_5H = 3600 * 5
 
     def initialize(domain_name, logger)
       @domain_name = domain_name
       @logger = logger
-      @logger.debug("Domain name: #{domain_name}")
     end
 
-    def create_or_update(dns_record_name, ip_address)
-      record = Models::Dns::Record.find(name: dns_record_name)
-      if record.nil?
-        domain = Models::Dns::Domain.safe_find_or_create(name: @domain_name, type: 'NATIVE')
-        record = Models::Dns::Record.new(domain_id: domain.id,
-          name: dns_record_name, type: 'A',
-          ttl: TTL_5M)
-      end
-      record.content = ip_address
-      record.change_date = Time.now.to_i
-      record.save
+    def create_or_update_nameserver(ip_address)
+      create_or_update_domain
+      create_or_update_record(@domain_name, SOA, TTL_5M, 'SOA')
+      create_or_update_record(@domain_name, "ns.#{@domain_name}", TTL_4H, 'NS')
+      create_or_update_record("ns.#{@domain_name}", ip_address, TTL_5H, 'A')
+    end
 
-      update_dns_ptr_record(dns_record_name, ip_address)
+    def create_or_update_dns_records(dns_record_name, ip_address)
+      create_or_update_record(dns_record_name, ip_address, TTL_5M, 'A')
+      update_ptr_record(dns_record_name, ip_address)
     end
 
     def delete(record_pattern)
@@ -60,16 +56,25 @@ module Bosh::Director
 
     private
 
-    def find_domain_id
-      dns_domain = Models::Dns::Domain.find(
-        :name => @domain_name,
-        :type => 'NATIVE',
-      )
-      dns_domain.nil? ? nil : dns_domain.id
+    def create_or_update_domain
+      Models::Dns::Domain.safe_find_or_create(name: @domain_name, type: 'NATIVE')
+    end
+
+    def create_or_update_record(dns_record_name, ip_address, ttl, type)
+      record = Models::Dns::Record.find(name: dns_record_name, type: type)
+      if record.nil?
+        domain = create_or_update_domain
+        record = Models::Dns::Record.new(domain_id: domain.id,
+          name: dns_record_name, type: type,
+          ttl: ttl)
+      end
+      record.content = ip_address
+      record.change_date = Time.now.to_i
+      record.save
     end
 
     # create/update DNS PTR records (for reverse lookups)
-    def update_dns_ptr_record(record_name, ip_address)
+    def update_ptr_record(record_name, ip_address)
       reverse_domain = reverse_domain(ip_address)
       reverse_host = reverse_host(ip_address)
 
@@ -107,6 +112,14 @@ module Bosh::Director
       record.content = record_name
       record.change_date = Time.now.to_i
       record.save
+    end
+
+    def find_domain_id
+      dns_domain = Models::Dns::Domain.find(
+        :name => @domain_name,
+        :type => 'NATIVE',
+      )
+      dns_domain.nil? ? nil : dns_domain.id
     end
 
     # @param [String] ip IP address

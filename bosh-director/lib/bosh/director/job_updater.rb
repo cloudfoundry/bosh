@@ -62,7 +62,7 @@ module Bosh::Director
       return if unneeded_instances.empty?
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
-      dns_manager = DnsManager.new(@logger)
+      dns_manager = DnsManager.create
       deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @deployment_plan.skip_drain, dns_manager)
       # deleter.delete_instances(unneeded_instances, event_log_stage, max_threads: @job.update.max_in_flight)
       deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight)
@@ -83,7 +83,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{desc} (canary)") do
         with_thread_name("canary_update(#{desc})") do
           begin
-            InstanceUpdater.new(@job_renderer).update(instance_plan, :canary => true)
+            InstanceUpdater.create(@job_renderer).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -103,7 +103,7 @@ module Bosh::Director
       event_log_stage.advance_and_track(desc) do
         with_thread_name("instance_update(#{desc})") do
           begin
-            InstanceUpdater.new(@job_renderer).update(instance_plan)
+            InstanceUpdater.create(@job_renderer).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

@@ -7,16 +7,42 @@ module Bosh::Director
 
     attr_reader :current_state
 
-    def initialize(job_renderer)
+    def self.create(job_renderer)
+      cloud = Config.cloud
+      logger = Config.logger
+
+      vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
+      vm_creator = Director::VmCreator.new(cloud, logger, vm_deleter)
+      dns_manager = DnsManager.create
+      new(
+        job_renderer,
+        App.instance.blobstores.blobstore,
+        vm_deleter,
+        vm_creator,
+        dns_manager,
+        cloud,
+        logger
+      )
+    end
+
+    def initialize(
+      job_renderer,
+      blobstore,
+      vm_deleter,
+      vm_creator,
+      dns_manager,
+      cloud,
+      logger
+    )
       @job_renderer = job_renderer
 
-      @cloud = Config.cloud
-      @logger = Config.logger
-      @blobstore = App.instance.blobstores.blobstore
+      @cloud = cloud
+      @logger = logger
+      @blobstore = blobstore
 
-      @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
-      @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
-      @dns_manager = DnsManager.new(@logger)
+      @vm_deleter = vm_deleter
+      @vm_creator = vm_creator
+      @dns_manager = dns_manager
 
       @current_state = {}
     end
@@ -196,10 +222,9 @@ module Bosh::Director
 
       return unless instance_plan.dns_changed?
 
-      domain = deployment_plan(instance).dns_domain
       instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        @dns_manager.update_dns_record(domain.name, record_name, ip_address)
+        @dns_manager.update_dns_record_for_instance(record_name, ip_address)
       end
 
       if instance_plan.existing_instance &&

@@ -213,14 +213,14 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.fake-dns' and ip '192.168.1.3' was not found in the db.")
+            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
             instance_plan.dns_changed?
           end
         end
 
         describe 'when the id dns record for the instance is not found' do
           before do
-            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.fake-dns', :type => 'A', :content => '192.168.1.3')
+            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return true' do
@@ -228,15 +228,15 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.foobar.a.simple.fake-dns' and ip '192.168.1.3' was not found in the db.")
+            expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name 'uuid-1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
             instance_plan.dns_changed?
           end
         end
 
         describe 'when the dns records for the instance are found' do
           before do
-            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.fake-dns', :type => 'A', :content => '192.168.1.3')
-            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.fake-dns", :type => 'A', :content => '192.168.1.3')
+            BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
+            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return false' do

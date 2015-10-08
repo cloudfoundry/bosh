@@ -17,7 +17,7 @@ module Bosh::Director
           'user_authentication' => @config.identity_provider.client_info,
           'features' => {
             'dns' => {
-              'status' => Config.dns_enabled?,
+              'status' => @dns_manager.dns_enabled?,
               'extras' => {'domain_name' => @dns_manager.dns_domain_name}
             },
             'compiled_package_cache' => {

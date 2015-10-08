@@ -20,8 +20,8 @@ module Bosh::Director
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
+          @dns_manager = DnsManager.create
           @logger = Config.logger
-          @dns_manager = DnsManager.new(@logger)
         end
 
         register Bosh::Director::Api::Extensions::Scoping

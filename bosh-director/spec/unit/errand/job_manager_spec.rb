@@ -30,10 +30,6 @@ module Bosh::Director
 
 
       it 'binds vms to instances, creates jobs configurations and updates dns' do
-        dns_binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
-        expect(DeploymentPlan::DnsBinder).to receive(:new).with(deployment).and_return(dns_binder)
-        expect(dns_binder).to receive(:bind_deployment).with(no_args)
-
         job_renderer = instance_double('Bosh::Director::JobRenderer')
         expect(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
 

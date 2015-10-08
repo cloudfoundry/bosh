@@ -54,7 +54,7 @@ module Bosh::Director
 
       def parse_name
         @job.name = safe_property(@job_spec, "name", :class => String)
-        @job.canonical_name = DnsManager.new(@logger).canonical(@job.name)
+        @job.canonical_name = DnsManager.canonical(@job.name)
       end
 
       def parse_lifecycle

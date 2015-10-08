@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
         az,
         3,
         'uuid-1',
-        Bosh::Director::DnsManager.new(logger)
+        Bosh::Director::DnsManager.create
       )
     end
 
@@ -44,7 +44,6 @@ module Bosh::Director::DeploymentPlan
     }
     let(:is_errand) { false }
     let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
-    before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return('test_domain') }
 
     describe '#network_settings' do
       let(:job) do
@@ -71,7 +70,7 @@ module Bosh::Director::DeploymentPlan
                     'foo' => 'bar'
                   },
                   'dns' => ['1.2.3.4'],
-                  'dns_record_name' => '3.fake-job.net-a.fake-deployment.test_domain',
+                  'dns_record_name' => '3.fake-job.net-a.fake-deployment.bosh',
                   'ip' => '10.0.0.6',
                   'netmask' => '255.255.255.0',
                   'gateway' => '10.0.0.1'}
@@ -81,7 +80,7 @@ module Bosh::Director::DeploymentPlan
         describe '#network_addresses' do
           it 'returns the id based dns record address for the instance' do
             expect(network_settings.network_addresses).to eq({
-                  'net_a' => {'address' => 'uuid-1.fake-job.net-a.fake-deployment.test_domain'}
+                  'net_a' => {'address' => 'uuid-1.fake-job.net-a.fake-deployment.bosh'}
                 })
           end
         end
@@ -102,7 +101,7 @@ module Bosh::Director::DeploymentPlan
           it 'includes index based dns_record_name' do
             #retaining the index based dns name so as not to cause vm recreation
             #at some point the apply spec will not diff based on this record name, and we can recreate it.
-            expect(network_settings.to_hash['net_a']['dns_record_name']).to eq('3.fake-job.net-a.fake-deployment.test_domain')
+            expect(network_settings.to_hash['net_a']['dns_record_name']).to eq('3.fake-job.net-a.fake-deployment.bosh')
           end
         end
 
