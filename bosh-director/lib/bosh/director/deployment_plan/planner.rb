@@ -112,7 +112,7 @@ module Bosh::Director
         :compilation
 
       def canonical_name
-        DnsManager.canonical(@name)
+        Canonicalizer.canonicalize(@name)
       end
 
       def bind_models

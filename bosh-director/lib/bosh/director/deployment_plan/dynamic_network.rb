@@ -6,7 +6,7 @@ module Bosh::Director
 
       def self.parse(network_spec, availability_zones, logger)
         name = safe_property(network_spec, 'name', :class => String)
-        DnsManager.canonical(name)
+        Canonicalizer.canonicalize(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
         dns_manager = DnsManager.create
 

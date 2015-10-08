@@ -9,22 +9,8 @@ module Bosh::Director
       new(dns_config, dns_enabled, logger)
     end
 
-    def self.canonical(string)
-      # a-z, 0-9, -, case insensitive, and must start with a letter
-      string = string.downcase.gsub(/_/, "-").gsub(/[^a-z0-9-]/, "")
-      if string =~ /^(\d|-)/
-        raise DnsInvalidCanonicalName,
-          "Invalid DNS canonical name `#{string}', must begin with a letter"
-      end
-      if string =~ /-$/
-        raise DnsInvalidCanonicalName,
-          "Invalid DNS canonical name `#{string}', can't end with a hyphen"
-      end
-      string
-    end
-
     def initialize(dns_config, dns_enabled, logger)
-      @dns_domain_name = DnsManager.canonical(dns_config.fetch('domain_name', 'bosh'))
+      @dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'))
       @dns_provider = PowerDns.new(@dns_domain_name, logger)
       @dns_enabled = dns_enabled
       @default_server = dns_config['server']
@@ -58,7 +44,7 @@ module Bosh::Director
     def delete_dns_for_deployment(name)
       return unless dns_enabled?
 
-      record_pattern = ['%', DnsManager.canonical(name), @dns_domain_name].join('.')
+      record_pattern = ['%', Canonicalizer.canonicalize(name), @dns_domain_name].join('.')
       @dns_provider.delete(record_pattern)
     end
 
@@ -106,12 +92,12 @@ module Bosh::Director
     end
 
     def dns_record_name(hostname, job_name, network_name, deployment_name)
-      network_name = DnsManager.canonical(network_name) unless network_name == '%'
+      network_name = Canonicalizer.canonicalize(network_name) unless network_name == '%'
 
       [ hostname,
-        DnsManager.canonical(job_name),
+        Canonicalizer.canonicalize(job_name),
         network_name,
-        DnsManager.canonical(deployment_name),
+        Canonicalizer.canonicalize(deployment_name),
         @dns_domain_name
       ].join('.')
     end

@@ -6,10 +6,10 @@ module Bosh
           deployment = Models::Deployment.find(name: name)
           return deployment if deployment
 
-          canonical_name = DnsManager.canonical(name)
+          canonical_name = Canonicalizer.canonicalize(name)
           Models::Deployment.db.transaction do
             Models::Deployment.each do |other|
-              if DnsManager.canonical(other.name) == canonical_name
+              if Canonicalizer.canonicalize(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,
                   "Invalid deployment name `#{name}', canonical name already taken (`#{canonical_name}')"
               end

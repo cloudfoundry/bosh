@@ -40,36 +40,6 @@ module Bosh::Director
       end
     end
 
-    describe '#canonical' do
-      it 'should be lowercase' do
-        expect(DnsManager.canonical('HelloWorld')).to eq('helloworld')
-      end
-
-      it 'should convert underscores to hyphens' do
-        expect(DnsManager.canonical('hello_world')).to eq('hello-world')
-      end
-
-      it 'should strip any non alpha numeric characters' do
-        expect(DnsManager.canonical('hello^world')).to eq('helloworld')
-      end
-
-      it "should reject strings that don't start with a letter or end with a letter/number" do
-        expect {
-          DnsManager.canonical('-helloworld')
-        }.to raise_error(
-            DnsInvalidCanonicalName,
-            "Invalid DNS canonical name `-helloworld', must begin with a letter",
-          )
-
-        expect {
-          DnsManager.canonical('helloworld-')
-        }.to raise_error(
-            DnsInvalidCanonicalName,
-            "Invalid DNS canonical name `helloworld-', can't end with a hyphen",
-          )
-      end
-    end
-
     describe '#delete_dns_for_instance' do
       let(:deployment_model) { Models::Deployment.make(name:'dep') }
       let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }

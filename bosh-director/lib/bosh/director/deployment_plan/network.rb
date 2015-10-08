@@ -22,7 +22,7 @@ module Bosh::Director
       # @param [Hash] network_spec parsed deployment manifest network section
       def initialize(name, logger)
         @name = name
-        @canonical_name = DnsManager.canonical(@name)
+        @canonical_name = Canonicalizer.canonicalize(@name)
         @logger = logger
       end
 
