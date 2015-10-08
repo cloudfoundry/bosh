@@ -84,9 +84,13 @@ module Bosh::Cli::Command
         repack = upload_options[:repack]
         rebase = upload_options[:rebase]
 
-        say("\nVerifying manifest...")
-        tarball.validate_manifest
+        say("\nVerifying release...")
+        tarball.validate(:allow_sparse => true)
         nl
+
+        unless tarball.valid?
+          err('Release is invalid, please fix, verify and upload again')
+        end
 
         if should_convert_to_old_format?(tarball.version)
           msg = "You are using CLI > 1.2579.0 with a director that doesn't support " +
@@ -106,16 +110,6 @@ module Bosh::Cli::Command
               package_matches = match_remote_compiled_packages(tarball.manifest)
             else
               package_matches = match_remote_packages(tarball.manifest)
-            end
-
-            # if the director is an older version that doesn't support optimized unpack we
-            # have to upload everything
-            if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack?
-              tarball.validate(:allow_sparse => true, :validate_manifest => false)
-              err('Release is invalid, please fix, verify and upload again') unless tarball.valid?
-            else
-              tarball.validate_jobs(:allow_sparse => true, :validate_job_packages => false)
-              tarball.print_manifest
             end
 
             say('Checking if can repack release for faster upload...')
@@ -221,13 +215,6 @@ module Bosh::Cli::Command
         new_format_director_version = '1.2580.0'
         Bosh::Common::Version::BoshVersion.parse(director_version) >=
           Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
-      end
-
-      def director_supports_fast_unpack?
-        director_version = director.get_status['version']
-        new_format_director_version = '1.3094.0'
-        Bosh::Common::Version::BoshVersion.parse(director_version) >
-            Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
       end
     end
   end
