@@ -1,7 +1,7 @@
 module Support
   module StemcellHelpers
-    def make_stemcell
-      model = Bosh::Director::Models::Stemcell.make
+    def make_stemcell(options = {})
+      model = Bosh::Director::Models::Stemcell.make(options)
       deployment = Bosh::Director::Models::Deployment.make
       plan = double(:plan, model: deployment)
       stemcell = Bosh::Director::DeploymentPlan::Stemcell.new(

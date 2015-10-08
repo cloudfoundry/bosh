@@ -56,12 +56,15 @@ module Bosh::Director
 
         if is_using_latest_version?
           @model = is_using_os? ? @manager.latest_by_os(@os) : @manager.latest_by_name(@name)
-          @version = @model.version
         else
           @model = is_using_os? ?
             @manager.find_by_os_and_version(@os, @version) :
             @manager.find_by_name_and_version(@name, @version)
         end
+
+        @name = @model.name
+        @os = @model.operating_system
+        @version = @model.version
 
         unless @model.deployments.include?(deployment_model)
           @model.add_deployment(deployment_model)

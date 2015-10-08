@@ -69,7 +69,7 @@ describe 'deploy', type: :integration do
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['jobs'].first['instances'] = 1
-      deploy_simple_manifest(manifest_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method("create_vm")
       expect(create_vm_invocations.count).to be > 0
@@ -94,7 +94,7 @@ describe 'deploy', type: :integration do
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['jobs'].first['instances'] = 1
-      deploy_simple_manifest(manifest_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method("create_vm")
       expect(create_vm_invocations.count).to be > 0

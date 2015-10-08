@@ -25,6 +25,41 @@ describe 'vm_types and stemcells', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
   end
 
+  context 'when instance is deployed originally with stemcell specified with name' do
+    it 'should not re-deploy if the stemcell is the same one' do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      deploy_from_scratch(manifest_hash: manifest_hash)
+
+      create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+      expect(create_vm_invocations.count).to be > 0
+
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      vm_type1 = Bosh::Spec::Deployments.vm_type
+      vm_type1['name'] = 'a'
+      cloud_config_hash['vm_types'] = [vm_type1]
+      cloud_config_hash.delete('resource_pools')
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash.delete('resource_pools')
+      manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+
+      manifest_hash['jobs'] = [{
+        'name' => 'foobar',
+        'templates' => ['name' => 'foobar'],
+        'vm_type' => 'a',
+        'stemcell' => 'default',
+        'instances' => 3,
+        'networks' => [{ 'name' => 'a' }],
+        'properties' => {},
+      }]
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+      expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
+    end
+  end
+
   it 're-creates instance when with vm_type changes' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash.delete('resource_pools')

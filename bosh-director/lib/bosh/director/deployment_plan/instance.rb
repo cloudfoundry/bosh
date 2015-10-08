@@ -200,10 +200,16 @@ module Bosh::Director
       end
 
       def stemcell_changed?
-        if @job.stemcell.spec != @vm.model.apply_spec['stemcell']
-          log_changes(__method__, @vm.model.apply_spec['stemcell'], @job.stemcell.spec)
+        if @job.stemcell.model.name != @vm.model.apply_spec['stemcell']['name']
+          log_changes(__method__, @vm.model.apply_spec['stemcell']['name'], @job.stemcell.model.name)
           return true
         end
+
+        if @job.stemcell.model.version != @vm.model.apply_spec['stemcell']['version']
+          log_changes(__method__, "version: #{@vm.model.apply_spec['stemcell']['version']}", "version: #{@job.stemcell.model.version}")
+          return true
+        end
+
         false
       end
 

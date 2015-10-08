@@ -46,7 +46,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
-      instance_model.vm.apply_spec=({'vm_type' => 'name'})
+      instance_model.vm.apply_spec=({'vm_type' => 'name', 'stemcell' => {'name' => 's1', 'version' => '1.0'}})
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end

@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
+    include Support::StemcellHelpers
+
     subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, true, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
@@ -45,7 +47,7 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
-    let(:stemcell) { Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'}) }
+    let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
     let(:env) { Env.new({'key' => 'value'}) }
     let(:disk_type) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
@@ -350,13 +352,31 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#stemcell_changed?' do
-      before do
-      vm_model.apply_spec=({'stemcell' => { 'name' => 'fake-stemcell-name', 'version' => '2.0'}})
-        instance.bind_unallocated_vm
-        instance.bind_to_vm_model(vm_model)
+      describe 'when there is no change in stemcell' do
+        before do
+          vm_model.apply_spec=({
+            'stemcell' => { 'name' => 'fake-stemcell-name', 'version' => '1.0'},
+            'vm_type' => { 'name' => 'fake-vm-type2', 'cloud_properties' => {'bar' => 'baz'}}
+          })
+          instance.bind_unallocated_vm
+          instance.bind_to_vm_model(vm_model)
+        end
+
+        it 'should return no change' do
+          expect(instance.stemcell_changed?).to be(false)
+        end
       end
 
+
       describe 'when the stemcell spec does not match the existing state' do
+        before do
+          vm_model.apply_spec=({
+            'stemcell' => { 'name' => 'fake-stemcell-name', 'version' => '2.0'},
+            'vm_type' => { 'name' => 'fake-vm-type2', 'cloud_properties' => {'bar' => 'baz'}}
+          })
+          instance.bind_unallocated_vm
+          instance.bind_to_vm_model(vm_model)
+        end
 
         it 'should return changed' do
           expect(instance.stemcell_changed?).to be(true)
@@ -364,9 +384,9 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
-                '{"name"=>"fake-stemcell-name", "version"=>"2.0"} ' +
+                'version: 2.0 ' +
                 'TO: ' +
-                '{"name"=>"fake-stemcell-name", "version"=>"1.0"}')
+                'version: 1.0')
           instance.stemcell_changed?
         end
       end
@@ -382,7 +402,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
       let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: vm_type_spec) }
       let(:vm_type_spec) { {'name' => 'fake-vm-type', 'cloud_properties' => {}} }
-      let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: stemcell_spec) }
+      let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell', spec: stemcell_spec) }
       let(:stemcell_spec) { {'name' => 'fake-stemcell-name', 'version' => '1.0'} }
       let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
       let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
