@@ -10,6 +10,17 @@ module Bosh::Director
       @logger = logger
     end
 
+    def find_dns_record(dns_record_name, ip_address)
+      Models::Dns::Record.find(name: dns_record_name, type: 'A', content: ip_address)
+    end
+
+    def find_dns_records_by_ip(ip_address)
+      domain_id = find_domain_id
+      return [] unless domain_id
+
+      Models::Dns::Record.filter(domain_id: domain_id, type: 'A', content: ip_address)
+    end
+
     def create_or_update_nameserver(ip_address)
       create_or_update_domain
       create_or_update_record(@domain_name, SOA, TTL_5M, 'SOA')

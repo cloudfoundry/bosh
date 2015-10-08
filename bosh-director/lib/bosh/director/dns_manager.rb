@@ -43,6 +43,14 @@ module Bosh::Director
       @dns_provider.create_or_update_nameserver(@ip_address)
     end
 
+    def find_dns_record(dns_record_name, ip_address)
+      @dns_provider.find_dns_record(dns_record_name, ip_address)
+    end
+
+    def find_dns_records_by_ip(ip_address)
+      @dns_provider.find_dns_records_by_ip(ip_address)
+    end
+
     def update_dns_record_for_instance(record_name, ip_address)
       @dns_provider.create_or_update_dns_records(record_name, ip_address)
     end

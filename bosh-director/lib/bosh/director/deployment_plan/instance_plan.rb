@@ -114,14 +114,12 @@ module Bosh
         end
 
         def dns_changed?
-          if @dns_manager.dns_enabled?
-            network_settings.dns_record_info.any? do |name, ip|
-              not_found = Models::Dns::Record.find(:name => name, :type => 'A', :content => ip).nil?
-              @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
-              not_found
-            end
-          else
-            false
+          return false unless @dns_manager.dns_enabled?
+
+          network_settings.dns_record_info.any? do |name, ip|
+            not_found = @dns_manager.find_dns_record(name, ip).nil?
+            @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+            not_found
           end
         end
 

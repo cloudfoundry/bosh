@@ -58,14 +58,11 @@ module Bosh::Director
         end
 
         if dns_manager.dns_enabled?
-          domain = Models::Dns::Domain.find(name: dns_manager.dns_domain_name, type: "NATIVE")
-          if domain
-            ips.each do |ip|
-              records = Models::Dns::Record.filter(domain_id: domain.id, type: "A", content: ip)
-              records.each { |record| dns_records << record.name } unless records.empty?
-            end
-            dns_records.sort_by! { |name| -name.split('.').first.length }
+          ips.each do |ip|
+            dns_records << dns_manager.find_dns_records_by_ip(ip).map(&:name)
           end
+          dns_records.flatten!
+          dns_records.sort_by! { |name| -name.split('.').first.length }
         end
 
         vm_apply_spec = vm.apply_spec
