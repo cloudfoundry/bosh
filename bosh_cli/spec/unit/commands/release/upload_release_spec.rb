@@ -55,8 +55,6 @@ module Bosh::Cli::Command::Release
             before {
               allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
               allow(tarball).to receive(:compiled_release?).and_return(false)
-              allow(tarball).to receive(:upload_packages?).and_return(true)
-              allow(tarball).to receive(:validate_manifest)
 
               allow(director).to receive(:upload_release)
               allow(director).to receive(:get_status).and_return({'version' => director_version})
@@ -268,7 +266,6 @@ module Bosh::Cli::Command::Release
               allow(director).to receive(:upload_release)
               allow(director).to receive(:match_compiled_packages)
               expect(command).to_not receive(:check_if_release_dir)
-              expect(command).to receive(:upload_tarball)
               command.upload(tarball_path)
             end
           end
@@ -305,72 +302,6 @@ module Bosh::Cli::Command::Release
                 expect(director).to receive(:upload_release)
                 command.upload(tarball_path)
               end
-            end
-
-            context 'when the director does not support fast unpack' do
-              let(:director_version) { '1.3094.0' }
-
-              let(:tarball_path) { spec_asset('test_release.tgz') }
-              let!(:tarball) do
-                instance_double(
-                    'Bosh::Cli::ReleaseTarball',
-                    validate: nil,
-                    valid?: true,
-                    release_name: 'fake-release-name',
-                    version: '8.1',
-                    manifest: nil,
-                    repack: nil
-                )
-              end
-
-              it 'does upload release with full unpack' do
-                allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
-                allow(tarball).to receive(:compiled_release?).and_return(false)
-                allow(tarball).to receive(:upload_packages?).and_return(true)
-                expect(director).to receive(:upload_release)
-                expect(tarball).to receive(:validate_manifest)
-                expect(tarball).to receive(:validate)
-                expect(tarball).to_not receive(:validate_jobs)
-                command.upload(tarball_path)
-              end
-            end
-          end
-
-          context 'when the same release is already uploaded' do
-            let(:director_version) { '1.3095.0' }
-            let(:tarball_path) { spec_asset('test_release.tgz') }
-            let!(:tarball) do
-              instance_double(
-                  'Bosh::Cli::ReleaseTarball',
-                  validate: nil,
-                  valid?: true,
-                  release_name: 'fake-release-name',
-                  version: '8.1',
-                  manifest: nil,
-                  repack: nil
-              )
-            end
-
-            before {
-              allow(director).to receive(:get_status).and_return({'version' => director_version})
-              allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
-              allow(tarball).to receive(:compiled_release?).and_return(false)
-            }
-
-            it 'should not untar packages' do
-              expect(director).to receive(:upload_release).twice
-
-              expect(tarball).to receive(:validate_manifest)
-              expect(tarball).to receive(:validate)
-              allow(tarball).to receive(:upload_packages?).and_return(true)
-              command.upload(tarball_path)
-
-              expect(tarball).to receive(:validate_manifest)
-              expect(tarball).to_not receive(:validate)
-              expect(tarball).to receive(:validate_jobs)
-              expect(tarball).to receive(:print_manifest)
-              allow(tarball).to receive(:upload_packages?).and_return(false)
-              command.upload(tarball_path)
             end
           end
         end
