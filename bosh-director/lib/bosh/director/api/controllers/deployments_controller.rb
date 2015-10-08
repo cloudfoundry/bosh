@@ -64,8 +64,8 @@ module Bosh::Director
               },
             }
           },
-          'skip_drain' => params[:job]
         }
+        options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = (request.content_length.nil?  || request.content_length == 0) ? StringIO.new(deployment.manifest) : request.body

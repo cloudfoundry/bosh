@@ -58,6 +58,33 @@ describe 'drain', type: :integration do
     end
   end
 
+  context 'when skip-drain flag is not provided' do
+    before do
+      deploy_from_scratch
+      expect(File).to_not exist(drain_file)
+    end
+
+    def drain_file
+      director.vm('foobar/0').file_path('drain-test.log')
+    end
+
+    it 'runs drain script for recreate' do
+      drain_path_before_recreate = drain_file
+      bosh_runner.run('recreate foobar 0')
+      expect(File).to exist(drain_path_before_recreate)
+    end
+
+    it 'runs drain script for stop' do
+      bosh_runner.run('stop foobar 0')
+      expect(File).to exist(drain_file)
+    end
+
+    it 'runs drain script for restart' do
+      bosh_runner.run('restart foobar 0')
+      expect(File).to exist(drain_file)
+    end
+  end
+
   context 'when skip-drain flag is provided' do
     let(:manifest_with_drain) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
