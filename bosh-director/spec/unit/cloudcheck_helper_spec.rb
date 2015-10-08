@@ -113,12 +113,18 @@ module Bosh::Director
               'name' => 'stemcell-name',
               'version' => '3.0.2'
             },
-            'networks' => ['A', 'B', 'C']
+            'env' => {
+              'key1' => 'value1'
+            },
+            'networks' => {
+              'ip' => '192.1.3.4'
+            }
           }
         end
         let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
         before do
+          BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           vm.update(apply_spec: spec, env: {'key1' => 'value1'})
           allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
         end
@@ -127,16 +133,16 @@ module Bosh::Director
           fake_job_context
 
           expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan, options|
-            expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance_plan.instance.vm_type.cloud_properties).to eq({'foo' => 'bar'})
-            expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
+            expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
+            expect(instance_plan.existing_instance.cloud_properties_hash).to eq({'foo' => 'bar'})
+            expect(instance_plan.existing_instance.env).to eq({'key1' => 'value1'})
 
             expect(options).to eq({skip_disks: true})
           end
 
           expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
-            expect(instance_plan.instance.network_settings).to eq(['A', 'B', 'C'])
-            expect(instance_plan.instance.vm_type.cloud_properties).to eq({'foo' => 'bar'})
+            expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
+            expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
             expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
 
             vm

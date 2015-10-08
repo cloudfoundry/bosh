@@ -18,8 +18,8 @@ module Bosh::Director
       end
       before do
         allow(instance_plan).to receive(:recreate_deployment?).with(no_args).and_return(false)
-        allow(instance).to receive(:vm_type_changed?).with(no_args).and_return(false)
-        allow(instance).to receive(:stemcell_changed?).with(no_args).and_return(false)
+        allow(instance_plan).to receive(:vm_type_changed?).with(no_args).and_return(false)
+        allow(instance_plan).to receive(:stemcell_changed?).with(no_args).and_return(false)
         allow(instance_plan).to receive(:env_changed?).with(no_args).and_return(false)
       end
 
@@ -78,7 +78,7 @@ module Bosh::Director
       end
 
       context "when instance's vm type has changed" do
-        before { allow(instance).to receive(:vm_type_changed?).with(no_args).and_return(true) }
+        before { allow(instance_plan).to receive(:vm_type_changed?).with(no_args).and_return(true) }
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
@@ -92,7 +92,7 @@ module Bosh::Director
       end
 
       context "when instance's stemcell type has changed" do
-        before { allow(instance).to receive(:stemcell_changed?).with(no_args).and_return(true) }
+        before { allow(instance_plan).to receive(:stemcell_changed?).with(no_args).and_return(true) }
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }

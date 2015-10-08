@@ -32,8 +32,8 @@ module Bosh
           @changes << :recreate if needs_recreate?
           @changes << :recreate_deployment if recreate_deployment?
           @changes << :cloud_properties if instance.cloud_properties_changed?
-          @changes << :vm_type if instance.vm_type_changed?
-          @changes << :stemcell if instance.stemcell_changed?
+          @changes << :vm_type if vm_type_changed?
+          @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
           @changes << :network if networks_changed?
           @changes << :packages if instance.packages_changed?
@@ -48,6 +48,8 @@ module Bosh
         end
 
         def recreate_deployment?
+          return false if obsolete?
+
           job = @instance.job
           if job.deployment.recreate
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
@@ -58,7 +60,8 @@ module Bosh
 
         def env_changed?
           job = @instance.job
-          if @existing_instance && @existing_instance.vm && @existing_instance.vm.env && job.env.spec != @existing_instance.vm.env
+
+          if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
             log_changes(__method__, @existing_instance.vm.env, job.env.spec)
             return true
           end
@@ -66,6 +69,10 @@ module Bosh
         end
 
         def persistent_disk_changed?
+          if @existing_instance && obsolete?
+            return !@existing_instance.persistent_disk.nil?
+          end
+
           job = @instance.job
           new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
           new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
@@ -84,6 +91,8 @@ module Bosh
         end
 
         def needs_recreate?
+          return false if obsolete?
+
           @desired_instance.virtual_state == 'recreate'
         end
 
@@ -107,6 +116,32 @@ module Bosh
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
               instance.state == 'started' && instance.current_job_state != 'running'
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
+            return true
+          end
+
+          false
+        end
+
+        def vm_type_changed?
+          return true if obsolete?
+
+          if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
+            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec)
+            return true
+          end
+          false
+        end
+
+        def stemcell_changed?
+          return true if obsolete?
+
+          if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
+            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name)
+            return true
+          end
+
+          if @existing_instance && @instance.stemcell.version != @existing_instance.apply_spec['stemcell']['version']
+            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}")
             return true
           end
 
@@ -158,7 +193,7 @@ module Bosh
             DeploymentPlan::NetworkSettings.new(
               @instance.job.name,
               @instance.job.can_run_as_errand?,
-              @instance.job.deployment.name,
+              @instance.model.deployment.name,
               @instance.job.default_network,
               desired_reservations,
               @instance.current_state,
@@ -187,10 +222,10 @@ module Bosh
         end
 
         def network_settings_hash
-          if @instance.respond_to?(:job)
-            network_settings.to_hash
+          if obsolete? || network_settings.to_hash.empty?
+            @existing_instance.apply_spec['networks']
           else
-            @instance.apply_spec['networks']
+            network_settings.to_hash
           end
         end
 

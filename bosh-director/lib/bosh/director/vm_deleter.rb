@@ -9,12 +9,12 @@ module Bosh::Director
     end
 
     def delete_for_instance_plan(instance_plan, options={})
-      existing_instance = instance_plan.existing_instance
+      instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
 
-      detach_disks_for(existing_instance) unless options.fetch(:skip_disks, false)
+      detach_disks_for(instance_model) unless options.fetch(:skip_disks, false)
 
-      if existing_instance.vm
-        delete_vm(existing_instance.vm)
+      if instance_model.vm
+        delete_vm(instance_model.vm)
       end
     end
 
@@ -26,11 +26,11 @@ module Bosh::Director
 
     private
 
-    def detach_disks_for(existing_instance)
-      disk_cid = existing_instance.persistent_disk_cid
+    def detach_disks_for(instance_model)
+      disk_cid = instance_model.persistent_disk_cid
       return @logger.info('Skipping disk detaching') if disk_cid.nil?
       @logger.info("Detaching Disk #{disk_cid}")
-      vm_model = existing_instance.vm
+      vm_model = instance_model.vm
       AgentClient.with_vm(vm_model).unmount_disk(disk_cid)
       @cloud.detach_disk(vm_model.cid, disk_cid)
     end

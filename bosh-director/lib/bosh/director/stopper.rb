@@ -2,7 +2,7 @@ module Bosh::Director
   class Stopper
     def initialize(instance_plan, target_state, skip_drain, config, logger)
       @instance_plan = instance_plan
-      @instance = instance_plan.instance
+      @instance_model = @instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
       @target_state = target_state
       @skip_drain = skip_drain
       @config = config
@@ -10,10 +10,10 @@ module Bosh::Director
     end
 
     def stop
-      return if @instance.model.compilation || @instance.model.vm.nil?
+      return if @instance_model.compilation || @instance_model.vm.nil?
 
       if @skip_drain
-        @logger.info("Skipping drain for '#{@instance}'")
+        @logger.info("Skipping drain for '#{@instance_model.to_s}'")
       else
         perform_drain
       end
@@ -24,7 +24,7 @@ module Bosh::Director
     private
 
     def agent_client
-      @agent_client ||= AgentClient.with_vm(@instance.model.vm)
+      @agent_client ||= AgentClient.with_vm(@instance_model.vm)
     end
 
     def perform_drain
@@ -33,7 +33,8 @@ module Bosh::Director
       # Apply spec might change after shutdown drain (unlike update drain)
       # because instance's VM could be reconfigured.
       # Drain script can still capture intent from non-final apply spec.
-      drain_time = agent_client.drain(drain_type, @instance.apply_spec)
+      drain_apply_spec = @instance_plan.obsolete? ? {} : @instance_plan.instance.apply_spec
+      drain_time = agent_client.drain(drain_type, drain_apply_spec)
 
       if drain_time > 0
         sleep(drain_time)
@@ -46,8 +47,8 @@ module Bosh::Director
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
         @instance_plan.recreate_deployment? ||
-        @instance.vm_type_changed? ||
-        @instance.stemcell_changed? ||
+        @instance_plan.vm_type_changed? ||
+        @instance_plan.stemcell_changed? ||
         @instance_plan.env_changed? ||
         @instance_plan.needs_recreate? ||
         @instance_plan.persistent_disk_changed? ||
@@ -63,7 +64,7 @@ module Bosh::Director
 
         wait_time = drain_time.abs
         if wait_time > 0
-          @logger.info("`#{@instance}' is draining: checking back in #{wait_time}s")
+          @logger.info("`#{@instance_model.to_s}' is draining: checking back in #{wait_time}s")
           sleep(wait_time)
         end
 

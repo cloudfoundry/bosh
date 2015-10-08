@@ -191,28 +191,6 @@ module Bosh::Director
         changed
       end
 
-      def vm_type_changed?
-        if @job.vm_type.spec != @vm.model.apply_spec['vm_type']
-          log_changes(__method__, @vm.model.apply_spec['vm_type'], @job.vm_type.spec)
-          return true
-        end
-        false
-      end
-
-      def stemcell_changed?
-        if @job.stemcell.model.name != @vm.model.apply_spec['stemcell']['name']
-          log_changes(__method__, @vm.model.apply_spec['stemcell']['name'], @job.stemcell.model.name)
-          return true
-        end
-
-        if @job.stemcell.model.version != @vm.model.apply_spec['stemcell']['version']
-          log_changes(__method__, "version: #{@vm.model.apply_spec['stemcell']['version']}", "version: #{@job.stemcell.model.version}")
-          return true
-        end
-
-        false
-      end
-
       ##
       # @return [Boolean] returns true if the expected configuration hash
       #   differs from the one provided by the VM

@@ -11,11 +11,12 @@ module Bosh::Director
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
     let(:deployment_plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner',
+      instance_double(Bosh::Director::DeploymentPlan::Planner,
         compilation: compilation_config,
         model: deployment_model,
         name: 'mycloud',
         ip_provider: ip_provider,
+        recreate: false
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}

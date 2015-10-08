@@ -80,9 +80,9 @@ module Bosh::Director
           instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @deployment_plan.skip_drain, dns_manager)
           unneeded_instance_plans = unneeded_instances.map do |instance|
             DeploymentPlan::InstancePlan.new(
-              existing_instance: instance.model,
-              instance: instance,
-              desired_instance: DeploymentPlan::DesiredInstance.new,
+              existing_instance: instance,
+              instance: nil,
+              desired_instance: nil,
               network_plans: []
             )
           end

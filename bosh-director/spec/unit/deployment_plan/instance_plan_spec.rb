@@ -46,7 +46,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
-      instance_model.vm.apply_spec=({'vm_type' => 'name', 'stemcell' => {'name' => 's1', 'version' => '1.0'}})
+      instance_model.vm.apply_spec=({'vm_type' => 'name', 'networks' => { 'obsolete' => 'network'}, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end
@@ -68,12 +68,61 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return changed' do
-          expect(instance_plan.recreate_deployment?).to be(true)
+          expect(instance_plan.recreate_deployment?).to be_truthy
         end
 
         it 'should log the change reason' do
           expect(logger).to receive(:debug).with('recreate_deployment? job deployment is configured with "recreate" state')
           instance_plan.recreate_deployment?
+        end
+      end
+    end
+
+    describe '#vm_type_changed?' do
+      before do
+        instance_plan.existing_instance.vm.update(apply_spec: {'vm_type' => { 'name' => 'fake-vm-type2', 'cloud_properties' => {'bar' => 'baz'}}})
+      end
+
+      describe 'when the vm types spec does not match the existing state' do
+        it 'should return changed' do
+          expect(instance_plan.vm_type_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
+                '{"name"=>"fake-vm-type2", "cloud_properties"=>{"bar"=>"baz"}} ' +
+                'TO: ' +
+                '{"name"=>"a", "cloud_properties"=>{}}')
+          instance_plan.vm_type_changed?
+        end
+      end
+    end
+
+    describe '#stemcell_changed?' do
+      describe 'when there is no change in stemcell' do
+        it 'should return no change' do
+          expect(instance_plan.stemcell_changed?).to be(false)
+        end
+      end
+
+
+      describe 'when the stemcell spec does not match the existing state' do
+        before do
+          instance_plan.existing_instance.vm.update(apply_spec: {
+            'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
+          })
+        end
+
+        it 'should return changed' do
+          expect(instance_plan.stemcell_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
+                'version: 2 ' +
+                'TO: ' +
+                'version: 1')
+          instance_plan.stemcell_changed?
         end
       end
     end
@@ -103,6 +152,32 @@ module Bosh::Director::DeploymentPlan
 
           expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}')
           instance_plan.env_changed?
+        end
+      end
+    end
+
+    describe '#needs_recreate?' do
+      context 'when instance is obsolete' do
+        it 'should return false' do
+          obsolete_instance_plan = InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil)
+
+          expect(obsolete_instance_plan.needs_recreate?).to be_falsey
+        end
+      end
+
+      context 'when instance is being recreated' do
+        let(:desired_instance) { DesiredInstance.new(job, 'recreate') }
+
+        it 'should return true when desired instance is in "recreate" state' do
+          expect(instance_plan.needs_recreate?).to be_truthy
+        end
+      end
+
+      context 'when instance is not being recreated' do
+        let(:desired_instance) { DesiredInstance.new(job, 'stopped') }
+
+        it 'should return false when desired instance is in any another state' do
+          expect(instance_plan.needs_recreate?).to be_falsey
         end
       end
     end
@@ -172,8 +247,57 @@ module Bosh::Director::DeploymentPlan
           end
         end
       end
+
+      context 'when instance is obsolete' do
+        let(:obsolete_instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil) }
+
+        it 'should return true if instance had a persistent disk' do
+          persistent_disk = BD::Models::PersistentDisk.make
+          obsolete_instance_plan.existing_instance.add_persistent_disk(persistent_disk)
+
+          expect(obsolete_instance_plan.persistent_disk_changed?).to be_truthy
+        end
+
+        it 'should return false if instance had no persistent disk' do
+          expect(obsolete_instance_plan.existing_instance.persistent_disk).to be_nil
+
+          expect(obsolete_instance_plan.persistent_disk_changed?).to be_falsey
+        end
+      end
     end
 
+    describe '#network_settings_hash' do
+      context 'when instance plan is obsolete' do
+        it 'gets the network settings from the existing instance spec (because its the last known instance state)' do
+         obsolete_instance_plan = InstancePlan.new(existing_instance: existing_instance, instance: nil, desired_instance: nil)
+
+          expect(obsolete_instance_plan.network_settings_hash).to eq({'obsolete' => 'network'})
+        end
+      end
+
+      context 'when instance plan is not obsolete' do
+        it 'generates network settings from the job and desired reservations' do
+          expect(instance_plan.network_settings_hash).to eq({
+              'a' => {
+                'ip' => '192.168.1.3',
+                'netmask' => '255.255.255.0',
+                'cloud_properties' =>{},
+                'dns' =>['192.168.1.1', '192.168.1.2'],
+                'gateway' => '192.168.1.1',
+                'dns_record_name' => '1.foobar.a.simple.bosh'}
+              }
+            )
+        end
+
+        context 'when instance has no desired reservations' do
+          it 'gets the network settings from the existing instance spec (because its the last known instance state)' do
+            instance_plan.network_plans = []
+
+            expect(instance_plan.network_settings_hash).to eq({'obsolete' => 'network'})
+          end
+        end
+      end
+    end
 
     context 'when there have been changes on the instance' do
       context '#bootstrap_changed?' do

@@ -42,7 +42,7 @@ module Bosh::Director
         end
 
         instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-        instance_plans_for_obsolete_jobs.map(&:instance).each { |instance| @deployment_plan.mark_instance_for_deletion(instance) }
+        instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
 
         mark_unknown_vms_for_deletion
       end

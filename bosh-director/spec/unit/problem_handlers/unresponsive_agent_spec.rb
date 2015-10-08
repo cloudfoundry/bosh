@@ -9,7 +9,7 @@ module Bosh::Director
       end
     end
 
-    def make_handler(vm, cloud, agent, data = {})
+    def make_handler(vm, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
       allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id), anything).and_return(@agent)
@@ -23,8 +23,9 @@ module Bosh::Director
       allow(Config).to receive(:cloud).and_return(@cloud)
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
-      @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
+
+      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model, apply_spec: {'networks' => ['A', 'B', 'C']})
+      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm: @vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
     end
 
     let :handler do

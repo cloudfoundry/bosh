@@ -41,7 +41,7 @@ module Bosh::Director
       attr_reader :stemcells
 
       # Job instances from the old manifest that are not in the new manifest
-      attr_accessor :unneeded_instances
+      attr_reader :unneeded_instances
 
       # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms

@@ -54,6 +54,14 @@ module Bosh::Director
           raise DirectorError, "Deployment not bound in the deployment plan"
         end
 
+        add_stemcell_model
+
+        unless @model.deployments.include?(deployment_model)
+          @model.add_deployment(deployment_model)
+        end
+      end
+
+      def add_stemcell_model
         if is_using_latest_version?
           @model = is_using_os? ? @manager.latest_by_os(@os) : @manager.latest_by_name(@name)
         else
@@ -65,10 +73,6 @@ module Bosh::Director
         @name = @model.name
         @os = @model.operating_system
         @version = @model.version
-
-        unless @model.deployments.include?(deployment_model)
-          @model.add_deployment(deployment_model)
-        end
       end
 
       def desc

@@ -52,7 +52,7 @@ module Bosh::Director
       resolution = @resolutions[problem.id.to_s] || handler.auto_resolution
       problem_summary = "#{problem.type} #{problem.resource_id}"
       resolution_summary = handler.resolution_plan(resolution)
-      resolution_summary ||= "no resolution"
+      resolution_summary ||= 'no resolution'
 
       begin
         track_and_log("#{problem_summary}: #{resolution_summary}") do
@@ -62,7 +62,7 @@ module Bosh::Director
         log_resolution_error(problem, e)
       end
 
-      problem.state = "resolved"
+      problem.state = 'resolved'
       problem.save
       @resolved_count += 1
 

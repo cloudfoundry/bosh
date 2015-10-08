@@ -41,9 +41,11 @@ module Bosh::Director::Models
     end
 
     def cloud_properties_hash
-      return nil if cloud_properties.nil?
-
-      JSON.parse(cloud_properties)
+      if cloud_properties.nil?
+        apply_spec['vm_type']['cloud_properties']
+      else
+        JSON.parse(cloud_properties)
+      end
     end
 
     def cloud_properties_hash=(hash)
@@ -62,6 +64,28 @@ module Bosh::Director::Models
 
     def to_s
       "#{self.job}/#{self.index}"
+    end
+
+    def apply_spec
+      if vm
+        @apply_spec = vm.apply_spec
+      else
+        @apply_spec = {}
+      end
+      @apply_spec
+    end
+
+    def bind_to_vm_model(vm)
+      self.vm = vm
+    end
+
+    def env
+      if vm
+        @env = vm.env
+      else
+        @env = {}
+      end
+      @env
     end
   end
 

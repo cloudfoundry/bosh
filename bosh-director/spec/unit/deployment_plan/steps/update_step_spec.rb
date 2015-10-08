@@ -54,10 +54,8 @@ module Bosh::Director
       end
 
       def it_deletes_unneeded_instances
-        instance = Models::Instance.make
-        instance_from_database = DeploymentPlan::InstanceFromDatabase.create_from_model(instance, logger)
-
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance_from_database])
+        existing_instance = Models::Instance.make
+        allow(deployment_plan).to receive(:unneeded_instances).and_return([existing_instance])
 
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         expect(event_log).to receive(:begin_stage)
@@ -69,8 +67,8 @@ module Bosh::Director
                                      .with(ip_provider, skip_drain, instance_of(DnsManager))
                                      .and_return(instance_deleter)
 
-        expect(instance_deleter).to receive(:delete_instance_plans) do |instance_plans, event_log, options|
-          expect(instance_plans.map(&:instance)).to eq([instance_from_database])
+        expect(instance_deleter).to receive(:delete_instance_plans) do |instance_plans, event_log, _|
+          expect(instance_plans.map(&:existing_instance)).to eq([existing_instance])
           expect(event_log).to eq(event_log_stage)
         end
       end

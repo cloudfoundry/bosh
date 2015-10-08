@@ -15,10 +15,11 @@ module Bosh::Director
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
-      existing_instance = instance_plan.existing_instance
-      @logger.info("Deleting instance '#{existing_instance.inspect}'")
+      instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
 
-      event_log_stage.advance_and_track(existing_instance.to_s) do
+      @logger.info("Deleting instance '#{instance_model.to_s}'")
+
+      event_log_stage.advance_and_track(instance_model.to_s) do
 
         error_ignorer.with_force_check do
           stop(instance_plan)
@@ -26,21 +27,21 @@ module Bosh::Director
 
         vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
 
-        unless existing_instance.compilation
+        unless instance_model.compilation
           error_ignorer.with_force_check do
-            delete_snapshots(existing_instance)
+            delete_snapshots(instance_model)
           end
 
           error_ignorer.with_force_check do
-            delete_persistent_disks(existing_instance.persistent_disks)
+            delete_persistent_disks(instance_model.persistent_disks)
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.delete_dns_for_instance(existing_instance)
+            @dns_manager.delete_dns_for_instance(instance_model)
           end
 
           error_ignorer.with_force_check do
-            RenderedJobTemplatesCleaner.new(existing_instance, @blobstore).clean_all
+            RenderedJobTemplatesCleaner.new(instance_model, @blobstore).clean_all
           end
         end
 
@@ -50,7 +51,7 @@ module Bosh::Director
         end
         instance_plan.release_all_network_plans
 
-        existing_instance.destroy
+        instance_model.destroy
       end
     end
 
@@ -66,7 +67,12 @@ module Bosh::Director
     private
 
     def stop(instance_plan)
-      skip_drain = @skip_drain_decider.for_job(instance_plan.existing_instance.job) # FIXME: can we do something better?
+      if instance_plan.new?
+        skip_drain = @skip_drain_decider.for_job(instance_plan.instance.job_name) # FIXME: can we do something better?
+      else
+        skip_drain = @skip_drain_decider.for_job(instance_plan.existing_instance.job) # FIXME: can we do something better?
+      end
+
       stopper = Stopper.new(instance_plan, 'stopped', skip_drain, Config, @logger)
       stopper.stop
     end

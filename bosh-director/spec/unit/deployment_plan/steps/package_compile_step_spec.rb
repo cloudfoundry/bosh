@@ -16,7 +16,8 @@ module Bosh::Director
         compilation: compilation_config,
         model: deployment,
         name: 'mycloud',
-        ip_provider: ip_provider
+        ip_provider: ip_provider,
+        recreate: false
       )
     end
     let(:instance_reuser) { InstanceReuser.new }

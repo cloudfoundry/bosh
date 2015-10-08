@@ -35,6 +35,8 @@ module Bosh::Director
 
     def create_for_instance_plan(instance_plan, disks)
       instance = instance_plan.instance
+      existing_apply_spec = instance_plan.existing_instance.nil? ? {} : instance_plan.existing_instance.apply_spec
+
       @logger.info('Creating VM')
 
       vm_model = create(
@@ -62,7 +64,13 @@ module Bosh::Director
 
       attach_disks_for(instance)
 
-      instance.apply_vm_state
+      if instance_plan.existing_instance && instance_plan.recreate_deployment?
+        instance_plan.existing_instance.vm.update(apply_spec: existing_apply_spec)
+        agent_client.apply(existing_apply_spec)
+      else
+        instance.apply_vm_state
+      end
+
       instance_plan.mark_desired_network_plans_as_existing
       instance_plan.release_obsolete_ips
     end

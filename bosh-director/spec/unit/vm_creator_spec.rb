@@ -14,13 +14,13 @@ describe Bosh::Director::VmCreator do
       get_state: nil
     )
   end
-  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, false, 'deployment_name', {}, [], {}, nil, 5, 'uuid-1', BD::DnsManager.create).to_hash }
+  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, false, 'deployment_name', {}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManager.create).to_hash }
   let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
-    instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name')
+    instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
   end
   let(:availability_zone) do
-    instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+    BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
   end
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
   let(:stemcell) { Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id') }
@@ -41,9 +41,15 @@ describe Bosh::Director::VmCreator do
     allow(instance).to receive(:apply_spec).and_return({})
     instance
   end
+  let(:reservation) do
+    subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', {'ram' => '2gb'}, ['az-1'])
+    network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
+    reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+  end
   let(:instance_plan) do
     desired_instance = BD::DeploymentPlan::DesiredInstance.new(nil, {}, nil)
-    BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [])
+    network_plan = BD::DeploymentPlan::NetworkPlan.new(reservation: reservation)
+    BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
   end
 
   let(:job) do
@@ -57,7 +63,8 @@ describe Bosh::Director::VmCreator do
       deployment: deployment_plan
     )
   end
-  let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, vm: nil, index: 5, job: 'fake-job') }
+  let(:vm) { nil }
+  let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, vm: vm, index: 5, job: 'fake-job', deployment: deployment) }
 
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)

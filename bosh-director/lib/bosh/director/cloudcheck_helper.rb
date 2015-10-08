@@ -78,23 +78,23 @@ module Bosh::Director
         handler_error('VM does not have an associated instance')
       end
       instance_model = vm.instance
+      vm_apply_spec = vm.apply_spec
+      vm_env = vm.env
 
       handler_error("VM doesn't belong to any deployment") unless vm.deployment
 
       validate_spec(vm.apply_spec)
       validate_env(vm.env)
 
-      instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
-
-      instance_plan = DeploymentPlan::InstancePlan.new(
-        existing_instance: instance.model,
-        instance: instance,
-        desired_instance: DeploymentPlan::DesiredInstance.new(nil, {}, nil),
+      instance_plan_to_delete = DeploymentPlan::InstancePlan.new(
+        existing_instance: instance_model,
+        instance: nil,
+        desired_instance: nil,
         network_plans: []
       )
 
       begin
-        vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
+        vm_deleter.delete_for_instance_plan(instance_plan_to_delete, skip_disks: true)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
@@ -105,14 +105,52 @@ module Bosh::Director
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
+      instance_model.bind_to_vm_model(vm)
+      deployment_model = instance_model.deployment
+      deployment_plan_from_model = DeploymentPlan::Planner.new(
+        {name: deployment_model.name, properties: deployment_model.properties},
+        deployment_model.manifest,
+        deployment_model.cloud_config,
+        deployment_model,
+        {'recreate' => true})
+
+      job_from_instance_model = DeploymentPlan::Job.new(deployment_plan_from_model, @logger)
+      job_from_instance_model.name = instance_model.job
+      job_from_instance_model.vm_type = DeploymentPlan::VmType.new(vm_apply_spec['vm_type'])
+      job_from_instance_model.env = DeploymentPlan::Env.new(vm_env)
+      stemcell = DeploymentPlan::Stemcell.new(vm_apply_spec['stemcell'])
+      stemcell.add_stemcell_model
+      job_from_instance_model.stemcell = stemcell
+
+      availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
+
+      instance_from_model = DeploymentPlan::Instance.new(
+        job_from_instance_model,
+        instance_model.index,
+        instance_model.state,
+        deployment_plan_from_model,
+        vm_apply_spec,
+        availability_zone,
+        instance_model.bootstrap,
+        @logger
+      )
+      instance_from_model.bind_existing_instance_model(instance_model)
+
+      instance_plan_to_create = DeploymentPlan::InstancePlan.new(
+        existing_instance: instance_model,
+        instance: instance_from_model,
+        desired_instance: DeploymentPlan::DesiredInstance.new,
+        network_plans: []
+      )
+
       vm_creator.create_for_instance_plan(
-        instance_plan,
+        instance_plan_to_create,
         Array(instance_model.persistent_disk_cid)
       )
 
       if instance_model.state == 'started'
-        agent_client(instance.vm.model).run_script('pre-start', {})
-        agent_client(instance.vm.model).start
+        agent_client(instance_model.vm).run_script('pre-start', {})
+        agent_client(instance_model.vm).start
       end
     end
 
