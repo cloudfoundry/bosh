@@ -30,10 +30,11 @@ module Bosh
           @changes = Set.new
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
+          @changes << :recreate_deployment if recreate_deployment?
           @changes << :cloud_properties if instance.cloud_properties_changed?
-          @changes << :resource_pool if resource_pool_changed?
           @changes << :vm_type if instance.vm_type_changed?
           @changes << :stemcell if instance.stemcell_changed?
+          @changes << :env if env_changed?
           @changes << :network if networks_changed?
           @changes << :packages if instance.packages_changed?
           @changes << :persistent_disk if persistent_disk_changed?
@@ -46,22 +47,18 @@ module Bosh
           @changes
         end
 
-        def resource_pool_changed?
+        def recreate_deployment?
           job = @instance.job
           if job.deployment.recreate
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             return true
           end
+          false
+        end
 
-          # env is not a part of a resource pool spec but rather gets persisted
-          # in director DB, hence the check below
-          # NOTE: we only update VMs that have env persisted to avoid recreating
-          # everything, so if the director gets updated from the version that
-          # doesn't persist VM env to the version that does, there needs to
-          # be at least one deployment that recreates all VMs before the following
-          # code path gets exercised.
-          changed = @existing_instance && @existing_instance.vm && @existing_instance.vm.env && job.env.spec != @existing_instance.vm.env
-          if changed
+        def env_changed?
+          job = @instance.job
+          if @existing_instance && @existing_instance.vm && @existing_instance.vm.env && job.env.spec != @existing_instance.vm.env
             log_changes(__method__, @existing_instance.vm.env, job.env.spec)
             return true
           end

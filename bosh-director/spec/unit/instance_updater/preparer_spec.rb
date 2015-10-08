@@ -16,10 +16,14 @@ module Bosh::Director
           preparer.prepare
         end
       end
+      before do
+        allow(instance_plan).to receive(:recreate_deployment?).with(no_args).and_return(false)
+        allow(instance).to receive(:vm_type_changed?).with(no_args).and_return(false)
+        allow(instance).to receive(:stemcell_changed?).with(no_args).and_return(false)
+        allow(instance_plan).to receive(:env_changed?).with(no_args).and_return(false)
+      end
 
-      context "when instance's resource pool has not changed" do
-        before { allow(instance_plan).to receive(:resource_pool_changed?).with(no_args).and_return(false) }
-
+      context 'when nothing has changed' do
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
           before { allow(instance).to receive_messages(apply_spec: 'fake-spec') }
@@ -73,8 +77,50 @@ module Bosh::Director
         end
       end
 
-      context "when instance's resource pool has changed" do
-        before { allow(instance_plan).to receive(:resource_pool_changed?).with(no_args).and_return(true) }
+      context "when instance's vm type has changed" do
+        before { allow(instance).to receive(:vm_type_changed?).with(no_args).and_return(true) }
+
+        context "when state of the instance is not 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
+          it_does_not_send_prepare
+        end
+
+        context "when state of the instance is 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+          it_does_not_send_prepare
+        end
+      end
+
+      context "when instance's stemcell type has changed" do
+        before { allow(instance).to receive(:stemcell_changed?).with(no_args).and_return(true) }
+
+        context "when state of the instance is not 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
+          it_does_not_send_prepare
+        end
+
+        context "when state of the instance is 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+          it_does_not_send_prepare
+        end
+      end
+
+      context "when instance's env has changed" do
+        before { allow(instance_plan).to receive(:env_changed?).with(no_args).and_return(true) }
+
+        context "when state of the instance is not 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
+          it_does_not_send_prepare
+        end
+
+        context "when state of the instance is 'detached'" do
+          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+          it_does_not_send_prepare
+        end
+      end
+
+      context "when instance's recreate deployment is set" do
+        before { allow(instance_plan).to receive(:recreate_deployment?).with(no_args).and_return(true) }
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }

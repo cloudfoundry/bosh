@@ -51,10 +51,10 @@ module Bosh::Director::DeploymentPlan
       job.add_instance_plans([instance_plan])
     end
 
-    describe '#resource_pool_changed?' do
+    describe '#recreate_deployment?' do
       describe 'when nothing changes' do
         it 'should return false' do
-          expect(instance_plan.resource_pool_changed?).to_not eq(true)
+          expect(instance_plan.recreate_deployment?).to eq(false)
         end
       end
 
@@ -66,13 +66,22 @@ module Bosh::Director::DeploymentPlan
           plan.bind_models
           plan
         end
+
         it 'should return changed' do
-          expect(instance_plan.resource_pool_changed?).to be(true)
+          expect(instance_plan.recreate_deployment?).to be(true)
         end
 
         it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('resource_pool_changed? job deployment is configured with "recreate" state')
-          instance_plan.resource_pool_changed?
+          expect(logger).to receive(:debug).with('recreate_deployment? job deployment is configured with "recreate" state')
+          instance_plan.recreate_deployment?
+        end
+      end
+    end
+
+    describe '#env_changed?' do
+      describe 'when nothing changes' do
+        it 'should return false' do
+          expect(instance_plan.env_changed?).to eq(false)
         end
       end
 
@@ -86,14 +95,14 @@ module Bosh::Director::DeploymentPlan
         it 'detects resource pool changes when instance VM env changes' do
           instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
 
-          expect(instance_plan.resource_pool_changed?).to be(true)
+          expect(instance_plan.env_changed?).to be(true)
         end
 
         it 'should log the diff when the resource pool env changes' do
           instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
 
-          expect(logger).to receive(:debug).with('resource_pool_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}')
-          instance_plan.resource_pool_changed?
+          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}')
+          instance_plan.env_changed?
         end
       end
     end

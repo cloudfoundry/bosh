@@ -45,7 +45,10 @@ module Bosh::Director
     def shutting_down?
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
-        @instance_plan.resource_pool_changed? ||
+        @instance_plan.recreate_deployment? ||
+        @instance.vm_type_changed? ||
+        @instance.stemcell_changed? ||
+        @instance_plan.env_changed? ||
         @instance_plan.needs_recreate? ||
         @instance_plan.persistent_disk_changed? ||
         @instance_plan.networks_changed?

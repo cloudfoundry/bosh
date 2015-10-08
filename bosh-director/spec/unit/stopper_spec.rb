@@ -8,6 +8,8 @@ module Bosh::Director
     let(:instance) do
       instance_double('Bosh::Director::DeploymentPlan::Instance', {
         apply_spec: 'fake-spec',
+        vm_type_changed?: false,
+        stemcell_changed?: false,
         model: instance_model
       })
     end
@@ -15,7 +17,8 @@ module Bosh::Director
       instance: instance,
       networks_changed?: false,
       needs_recreate?: false,
-      resource_pool_changed?: false,
+      env_changed?: false,
+      recreate_deployment?: false,
       persistent_disk_changed?: false
     )
     }
@@ -133,8 +136,24 @@ module Bosh::Director
     end
 
     describe '#shutting_down?' do
-      context 'when the resource pool has changed' do
-        before { allow(instance_plan).to receive(:resource_pool_changed?).and_return(true) }
+    
+      context 'when recreate deployment is set' do
+        before { allow(instance_plan).to receive(:recreate_deployment?).and_return(true) }
+        its(:shutting_down?) { should be(true) }
+      end
+
+      context 'when the vm type has changed' do
+        before { allow(instance).to receive(:vm_type_changed?).and_return(true) }
+        its(:shutting_down?) { should be(true) }
+      end
+
+      context 'when the stemcell type has changed' do
+        before { allow(instance).to receive(:stemcell_changed?).and_return(true) }
+        its(:shutting_down?) { should be(true) }
+      end
+
+      context 'when the env has changed' do
+        before { allow(instance_plan).to receive(:env_changed?).and_return(true) }
         its(:shutting_down?) { should be(true) }
       end
 

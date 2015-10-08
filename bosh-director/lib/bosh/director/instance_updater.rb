@@ -296,6 +296,11 @@ module Bosh::Director
 
     def try_to_update_in_place(instance_plan)
       instance = instance_plan.instance
+      if instance_plan.recreate_deployment?
+        @logger.debug("Recreate Deployment is set - instances will be recreated")
+        return false
+      end
+
       if instance_plan.needs_recreate?
         @logger.debug("Skipping update VM in place: instance will be recreated")
         return false
@@ -316,10 +321,11 @@ module Bosh::Director
         return false
       end
 
-      if instance_plan.resource_pool_changed?
-        @logger.debug("Resource pool has changed. Can't update VM in place")
+      if instance_plan.env_changed?
+        @logger.debug("ENV has changed. Can't update VM in place")
         return false
       end
+
       @logger.debug('Trying to update VM settings in place')
 
       network_updater = NetworkUpdater.new(instance_plan, agent(instance), @cloud, @logger)

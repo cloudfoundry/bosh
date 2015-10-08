@@ -207,9 +207,6 @@ module Bosh::Director
         false
       end
 
-      # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
-
-
       ##
       # @return [Boolean] returns true if the expected configuration hash
       #   differs from the one provided by the VM
