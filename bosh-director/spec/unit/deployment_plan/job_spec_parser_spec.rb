@@ -668,6 +668,25 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.env.spec).to eq({'key' => 'value'})
       end
 
+      context 'when env is also declared in the job spec' do
+        before do
+          job_spec['env'] = {'env1' => 'something'}
+          expect(deployment_plan).to receive(:resource_pool)
+           .with('fake-resource-pool-name')
+           .and_return(resource_pool)
+        end
+
+        it 'complains' do
+          expect {
+            parser.parse(job_spec)
+          }.to raise_error(
+              Bosh::Director::JobAmbiguousEnv,
+              "Job 'fake-job-name' and resource pool: 'fake-resource-pool-name' both declare env properties"
+            )
+        end
+      end
+
+
       it 'complains about unknown resource pool' do
         job_spec['resource_pool'] = 'unknown-resource-pool'
         expect(deployment_plan).to receive(:resource_pool)

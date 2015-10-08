@@ -169,6 +169,7 @@ module Bosh::Director
   JobInvalidAvailabilityZone = err(140016)
   JobMissingAvailabilityZones = err(140017)
   JobUnknownAvailabilityZone = err(140018)
+  JobAmbiguousEnv = err(140019)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)

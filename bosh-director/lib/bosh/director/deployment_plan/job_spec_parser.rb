@@ -225,6 +225,9 @@ module Bosh::Director
       end
 
       def parse_resource_pool
+        job_env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
+        @job.env = Env.new(job_env_hash)
+
         resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
         if resource_pool_name
           resource_pool = @deployment.resource_pool(resource_pool_name)
@@ -239,6 +242,11 @@ module Bosh::Director
             })
 
           @job.stemcell = resource_pool.stemcell
+
+          if  !job_env_hash.empty? && !resource_pool.env.empty?
+            raise JobAmbiguousEnv,
+              "Job '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
+          end
 
           @job.env = Env.new(resource_pool.env)
 
@@ -258,9 +266,6 @@ module Bosh::Director
           raise JobUnknownStemcell,
             "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
         end
-
-        env = safe_property(@job_spec, 'env', class: Hash, :default => {})
-        @job.env = Env.new(env)
       end
 
       def parse_update_config
