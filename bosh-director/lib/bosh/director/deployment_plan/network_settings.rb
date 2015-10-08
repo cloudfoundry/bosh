@@ -33,7 +33,7 @@ module Bosh::Director::DeploymentPlan
         # in network configuration that errand job might need.
         # (e.g. errand job desires static ip)
         unless @is_errand
-          network_settings[network_name]['dns_record_name'] = dns_record_name(@instance_index, network_name)
+          network_settings[network_name]['dns_record_name'] = @dns_manager.dns_record_name(@instance_index, @job_name, network_name, @deployment_name)
         end
 
         # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
@@ -55,9 +55,9 @@ module Bosh::Director::DeploymentPlan
     def dns_record_info
       dns_record_info = {}
       to_hash.each do |network_name, network|
-        index_dns_name = dns_record_name(@instance_index, network_name)
+        index_dns_name =  @dns_manager.dns_record_name(@instance_index, @job_name, network_name, @deployment_name)
         dns_record_info[index_dns_name] = network['ip']
-        id_dns_name = dns_record_name(@instance_id, network_name)
+        id_dns_name =  @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
         dns_record_info[id_dns_name] = network['ip']
       end
       dns_record_info
@@ -68,23 +68,11 @@ module Bosh::Director::DeploymentPlan
       to_hash.each do |network_name, network|
         network_addresses[network_name] = {
           'address' => network['type'] == 'dynamic' ?
-            dns_record_name(@instance_id, network_name) :
+            @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name) :
             network['ip']
         }
       end
       network_addresses
-    end
-
-    private
-
-    def dns_record_name(hostname, network_name)
-      [
-        hostname,
-        Bosh::Director::DnsManager.canonical(@job_name),
-        Bosh::Director::DnsManager.canonical(network_name),
-        Bosh::Director::DnsManager.canonical(@deployment_name),
-        @dns_manager.dns_domain_name
-      ].join('.')
     end
   end
 end
