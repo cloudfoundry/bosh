@@ -58,7 +58,7 @@ module Bosh::Director
     def delete_dns_for_deployment(name)
       return unless dns_enabled?
 
-      record_pattern = ['%', canonical(name), @dns_domain_name].join('.')
+      record_pattern = ['%', DnsManager.canonical(name), @dns_domain_name].join('.')
       @dns_provider.delete(record_pattern)
     end
 
