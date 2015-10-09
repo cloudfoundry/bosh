@@ -18,30 +18,41 @@ module Bosh::Registry
         end
 
         @openstack_options = {
-          :provider => 'OpenStack',
-          :openstack_auth_url => @openstack_properties['auth_url'],
-          :openstack_username => @openstack_properties['username'],
-          :openstack_api_key => @openstack_properties['api_key'],
-          :openstack_tenant => @openstack_properties['tenant'],
-          :openstack_domain_name => @openstack_properties['domain'],
-          :openstack_region => @openstack_properties['region'],
-          :openstack_endpoint_type => @openstack_properties['endpoint_type'],
-          :connection_options => @openstack_properties['connection_options']
+            :provider => 'OpenStack',
+            :openstack_auth_url => @openstack_properties['auth_url'],
+            :openstack_username => @openstack_properties['username'],
+            :openstack_api_key => @openstack_properties['api_key'],
+            :openstack_tenant => @openstack_properties['tenant'],
+            :openstack_project_name => @openstack_properties['project'],
+            :openstack_domain_name => @openstack_properties['domain'],
+            :openstack_region => @openstack_properties['region'],
+            :openstack_endpoint_type => @openstack_properties['endpoint_type'],
+            :connection_options => @openstack_properties['connection_options']
         }
       end
 
       def openstack
         @openstack ||= Fog::Compute.new(@openstack_options)
       end
-      
+
       def validate_options(cloud_config)
         unless cloud_config.has_key?('openstack') &&
             cloud_config['openstack'].is_a?(Hash) &&
             cloud_config['openstack']['auth_url'] &&
             cloud_config['openstack']['username'] &&
-            cloud_config['openstack']['api_key'] &&
-            cloud_config['openstack']['tenant']
+            cloud_config['openstack']['api_key']
           raise ConfigError, 'Invalid OpenStack configuration parameters'
+        end
+
+        if cloud_config['openstack']['auth_url'].match(/\/v2[\.\d]/)
+          unless cloud_config['openstack']['tenant']
+            raise ConfigError, 'Invalid OpenStack configuration parameters'
+          end
+
+        elsif cloud_config['openstack']['auth_url'].match(/\/v3[\.\d]/)
+          unless  cloud_config['openstack']['domain'] &&  cloud_config['openstack']['project']
+            raise ConfigError, 'Invalid OpenStack configuration parameters'
+          end
         end
       end
 
@@ -51,7 +62,7 @@ module Bosh::Registry
         # going renew the fog connection one time to make sure that we get a new non-expired token.
         retried = false
         begin
-          instance  = openstack.servers.find { |s| s.name == instance_id }
+          instance = openstack.servers.find { |s| s.name == instance_id }
         rescue Excon::Errors::Unauthorized => e
           unless retried
             retried = true
