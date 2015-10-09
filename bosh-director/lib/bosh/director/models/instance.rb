@@ -49,6 +49,16 @@ module Bosh::Director::Models
     def cloud_properties_hash=(hash)
       self.cloud_properties = JSON.dump(hash)
     end
+
+    def dns_record_names
+      return nil if dns_records.nil?
+
+      JSON.parse(dns_records)
+    end
+
+    def dns_record_names=(list)
+      self.dns_records = JSON.dump(list)
+    end
   end
 
   Instance.plugin :association_dependencies

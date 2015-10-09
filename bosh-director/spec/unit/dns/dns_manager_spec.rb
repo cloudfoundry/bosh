@@ -2,10 +2,15 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsManager do
-    let(:dns_manager) { described_class.new(dns_config, dns_enabled, logger) }
-    let(:dns_config) { {'domain_name' => domain.name} }
+    let(:dns_manager) { described_class.new(domain.name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger) }
+    let(:dns_provider) { PowerDns.new(domain.name, logger) }
+    let(:local_dns_repo) { LocalDnsRepo.new(logger) }
+    let(:dns_config) { {} }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
     let(:dns_enabled) { true }
+
+    let(:deployment_model) { Models::Deployment.make(name:'dep') }
+    let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
 
     describe '#flush_dns_cache' do
       let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
@@ -41,68 +46,36 @@ module Bosh::Director
     end
 
     describe '#delete_dns_for_instance' do
-      let(:deployment_model) { Models::Deployment.make(name:'dep') }
-      let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', index: 0, job: 'job-a', deployment: deployment_model) }
-
-      it 'only deletes records that match the deployment, job, and index/uuid' do
-        {
-          '0.job-a.network-a.dep.bosh' => '1.1.1.1',
-          'fake-uuid.job-a.network-a.dep.bosh' => '1.1.1.1',
-          '1.job-a.network-a.dep.bosh' => '1.1.1.2',
-          '0.job-b.network-b.dep.bosh' => '1.1.2.1',
-          '0.job-a.network-a.dep-b.bosh' => '1.2.1.1'
-        }.each do |key, value|
-          Models::Dns::Record.make(domain: domain, name: key, content: value)
-        end
-
-        {
-          '1.1.1.1.in-addr.arpa' => '0.job-a.network-a.dep.bosh',
-          '2.1.1.1.in-addr.arpa' => '1.job-a.network-a.dep.bosh',
-          '1.2.1.1.in-addr.arpa' => '0.job-b.network-b.dep.bosh',
-          '1.1.2.1.in-addr.arpa' => '0.job-a.network-a.dep-b.bosh'
-        }.each do |key, value|
-          Models::Dns::Record.make(:PTR, domain: domain, name: key, content: value)
-        end
-
-        dns_manager.delete_dns_for_instance(instance_model)
-
-        expect(Models::Dns::Record.map(&:name)).to match_array(%w[
-          1.job-a.network-a.dep.bosh
-          0.job-b.network-b.dep.bosh
-          0.job-a.network-a.dep-b.bosh
-          2.1.1.1.in-addr.arpa
-          1.2.1.1.in-addr.arpa
-          1.1.2.1.in-addr.arpa
-        ])
+      before do
+        dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
       end
 
-      it 'allows to delete DNS domains in parallel threads' do
-        Models::Dns::Record.make(
-          domain: domain,
-          name: '0.job-a.network-a.dep.bosh',
-          content: '1.1.1.1',
-        )
-
-        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
-        Models::Dns::Record.make(domain: rdomain)
-        Models::Dns::Record.make(domain: rdomain)
-
-        expect_any_instance_of(Models::Dns::Domain).to receive(:require_modification=).with(false)
+      it 'deletes dns records from dns provider' do
+        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
         dns_manager.delete_dns_for_instance(instance_model)
+        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
       end
 
-      it 'deletes the reverse domain if it is empty' do
-        rdomain = Models::Dns::Domain.make(name: '1.1.1.in-addr.arpa')
-        Models::Dns::Record.make(domain: rdomain, type: 'SOA')
-        Models::Dns::Record.make(domain: rdomain, type: 'NS')
-
-        Models::Dns::Record.make(domain: domain, name: '0.job-a.network-a.dep.bosh', content: '1.1.1.1')
-        Models::Dns::Record.make(:PTR, domain: rdomain, name: '1.1.1.1.in-addr.arpa', content: '0.job-a.network-a.dep.bosh')
-
+      it 'deletes dns records from local repo' do
+        expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
         dns_manager.delete_dns_for_instance(instance_model)
-        expect(Models::Dns::Record.all).to be_empty
+        expect(local_dns_repo.find(instance_model)).to eq([])
+      end
+
+      context 'when instance has records in dns provider but not in local repo' do
+        before do
+          dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-a.dep.bosh', '1.2.3.4')
+        end
+
+        it 'removes them from dns provider' do
+          dns_manager.delete_dns_for_instance(instance_model)
+          expect(dns_provider.find_dns_record('0.job-a.network-a.dep.bosh', '1.2.3.4')).to be_nil
+        end
       end
     end
+
     describe '#configure_nameserver' do
       context 'dns is enabled' do
         let(:dns_config) { {'domain_name' => domain.name, 'address' => '1.2.3.4'} }
@@ -187,6 +160,27 @@ module Bosh::Director
             expect(dns_manager.dns_servers('network', %w[1.2.3.4])).to eq(%w[1.2.3.4])
           end
         end
+      end
+    end
+
+    describe '#update_dns_record_for_instance' do
+      before do
+        dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-1' => '1.2.3.4','fake-dns-name-2' => '5.6.7.8'})
+      end
+
+      it 'updates dns records for instance in local repo' do
+        expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
+        dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
+        expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-3'])
+      end
+
+      it 'updates dns records in dns provider' do
+        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
+        dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
+        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-3', '9.8.7.6')).to_not be_nil
       end
     end
   end

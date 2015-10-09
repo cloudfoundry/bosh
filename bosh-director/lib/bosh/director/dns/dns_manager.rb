@@ -6,16 +6,21 @@ module Bosh::Director
       dns_config = Config.dns || {}
       dns_enabled = !!Config.dns_db # to be consistent with current behavior
       logger = Config.logger
-      new(dns_config, dns_enabled, logger)
+      local_dns_repo = LocalDnsRepo.new(logger)
+      dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'))
+      dns_provider = PowerDns.new(dns_domain_name, logger)
+
+      new(dns_domain_name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger)
     end
 
-    def initialize(dns_config, dns_enabled, logger)
-      @dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'))
-      @dns_provider = PowerDns.new(@dns_domain_name, logger)
+    def initialize(dns_domain_name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger)
+      @dns_domain_name = dns_domain_name
+      @dns_provider = dns_provider
       @dns_enabled = dns_enabled
       @default_server = dns_config['server']
       @flush_command = dns_config['flush_command']
       @ip_address = dns_config['address']
+      @local_dns_repo = local_dns_repo
       @logger = logger
     end
 
@@ -37,8 +42,24 @@ module Bosh::Director
       @dns_provider.find_dns_records_by_ip(ip_address)
     end
 
-    def update_dns_record_for_instance(record_name, ip_address)
-      @dns_provider.create_or_update_dns_records(record_name, ip_address)
+    def update_dns_record_for_instance(instance_model, dns_names_to_ip)
+      current_dns_records = @local_dns_repo.find(instance_model)
+
+      dns_names_to_ip.each do |record_name, ip_address|
+        @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
+        unless current_dns_records.include?(record_name)
+          @dns_provider.create_or_update_dns_records(record_name, ip_address)
+        end
+      end
+
+      current_dns_records.each do |record_name|
+        if dns_names_to_ip[record_name].nil?
+          @logger.info("Removing DNS for: #{record_name}")
+          @dns_provider.delete(record_name)
+        end
+      end
+
+      @local_dns_repo.create_or_update(instance_model, dns_names_to_ip.keys)
     end
 
     def delete_dns_for_deployment(name)
@@ -51,11 +72,23 @@ module Bosh::Director
     def delete_dns_for_instance(instance_model)
       return unless dns_enabled?
 
-      index_record_pattern = dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
-      @dns_provider.delete(index_record_pattern)
+      current_dns_records = @local_dns_repo.find(instance_model)
+      if current_dns_records.empty?
+        # for backwards compatibility when old instances
+        # did not have records in local repo
+        # we cannot migrate them because powerdns can be different database
+        # those instance only had index-based dns records (before global-net)
+        index_record_pattern = dns_record_name(instance_model.index, instance_model.job, '%', instance_model.deployment.name)
+        @dns_provider.delete(index_record_pattern)
+        return
+      end
 
-      uuid_record_pattern = dns_record_name(instance_model.uuid, instance_model.job, '%', instance_model.deployment.name)
-      @dns_provider.delete(uuid_record_pattern)
+      current_dns_records.each do |record_name|
+        @logger.info("Removing DNS for: #{record_name}")
+        @dns_provider.delete(record_name)
+      end
+
+      @local_dns_repo.delete(instance_model)
     end
 
     # build a list of dns servers to use

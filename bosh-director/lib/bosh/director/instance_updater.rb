@@ -221,11 +221,8 @@ module Bosh::Director
       instance = instance_plan.instance
 
       return unless instance_plan.dns_changed?
-
-      instance_plan.network_settings.dns_record_info.each do |record_name, ip_address|
-        @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        @dns_manager.update_dns_record_for_instance(record_name, ip_address)
-      end
+      
+      @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)
 
       if instance_plan.existing_instance &&
         instance_plan.existing_instance.job != instance.job_name

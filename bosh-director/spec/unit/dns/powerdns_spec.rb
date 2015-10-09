@@ -72,7 +72,6 @@ module Bosh::Director
       before do
         power_dns.create_or_update_dns_records('1.foobar.network-a.dep.bosh', '1.2.3.4')
         power_dns.create_or_update_dns_records('1.foobar.network-b.dep.bosh', '1.2.3.4')
-
       end
 
       it 'deletes dns record' do
