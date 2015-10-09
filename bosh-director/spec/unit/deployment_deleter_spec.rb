@@ -39,7 +39,6 @@ module Bosh::Director
         allow(instance_deleter).to receive(:delete_instance_plans)
         allow(vm_deleter).to receive(:delete_vm).with(orphaned_vm)
         allow(deployment_model).to receive(:destroy)
-        allow(dns_manager).to receive(:delete_dns_for_deployment)
       end
 
       it 'deletes deployment instances' do
@@ -72,11 +71,6 @@ module Bosh::Director
       it 'deletes all properties' do
         deleter.delete(deployment_model, instance_deleter, vm_deleter)
         expect(Models::DeploymentProperty.all.size).to eq(0)
-      end
-
-      it 'deletes dns' do
-        expect(dns_manager).to receive(:delete_dns_for_deployment).with('fake-deployment')
-        deleter.delete(deployment_model, instance_deleter, vm_deleter)
       end
 
       it 'destroys deployment model' do

@@ -62,13 +62,6 @@ module Bosh::Director
       @local_dns_repo.create_or_update(instance_model, dns_names_to_ip.keys)
     end
 
-    def delete_dns_for_deployment(name)
-      return unless dns_enabled?
-
-      record_pattern = ['%', Canonicalizer.canonicalize(name), @dns_domain_name].join('.')
-      @dns_provider.delete(record_pattern)
-    end
-
     def delete_dns_for_instance(instance_model)
       return unless dns_enabled?
 

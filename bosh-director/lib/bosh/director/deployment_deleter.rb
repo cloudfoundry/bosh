@@ -44,11 +44,6 @@ module Bosh::Director
         end
       end
 
-      @event_log.track('Deleting DNS records') do
-        @logger.info('Deleting DNS records')
-        @dns_manager.delete_dns_for_deployment(deployment_model.name)
-      end
-
       @event_log.track('Destroying deployment') do
         @logger.info('Destroying deployment')
         deployment_model.destroy
