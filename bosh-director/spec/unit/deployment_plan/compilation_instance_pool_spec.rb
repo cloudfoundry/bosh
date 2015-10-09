@@ -7,7 +7,8 @@ module Bosh::Director
     let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
     let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager) }
+    let(:disk_manager) {InstanceUpdater::DiskManager.new(cloud, logger)}
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
     let(:deployment_plan) do

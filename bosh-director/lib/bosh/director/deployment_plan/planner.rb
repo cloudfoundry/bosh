@@ -133,8 +133,10 @@ module Bosh::Director
       def compile_packages
         validate_packages
 
-        vm_deleter = VmDeleter.new(Config.cloud, @logger)
-        vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
+        cloud = Config.cloud
+        vm_deleter = VmDeleter.new(cloud, @logger)
+        disk_manager = InstanceUpdater::DiskManager.new(cloud, @logger)
+        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager)
         dns_manager = DnsManager.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)

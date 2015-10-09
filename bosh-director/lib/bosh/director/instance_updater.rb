@@ -7,37 +7,36 @@ module Bosh::Director
 
     attr_reader :current_state
 
-    def self.create(job_renderer, ip_provider)
-      cloud = Config.cloud
+    def self.new_instance_updater(job_renderer, ip_provider)
       logger = Config.logger
-
+      cloud = Config.cloud
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
-      vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter)
+      disk_manager = InstanceUpdater::DiskManager.new(cloud, logger)
+      vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)
       dns_manager = DnsManager.create
       new(
         job_renderer,
+        cloud,
+        logger,
+        ip_provider,
         App.instance.blobstores.blobstore,
         vm_deleter,
         vm_creator,
         dns_manager,
-        cloud,
-        ip_provider,
-        logger
+        disk_manager
       )
     end
 
-    def initialize(job_renderer, blobstore, vm_deleter, vm_creator, dns_manager, cloud, ip_provider, logger)
+    def initialize(job_renderer, cloud, logger, ip_provider, blobstore, vm_deleter, vm_creator, dns_manager, disk_manager)
       @job_renderer = job_renderer
-
       @cloud = cloud
       @logger = logger
       @blobstore = blobstore
-
       @vm_deleter = vm_deleter
       @vm_creator = vm_creator
       @dns_manager = dns_manager
+      @disk_manager = disk_manager
       @ip_provider = ip_provider
-
       @current_state = {}
     end
 
@@ -76,7 +75,7 @@ module Bosh::Director
       release_obsolete_ips(instance_plan)
 
       update_dns(instance_plan)
-      update_persistent_disk(instance_plan)
+      @disk_manager.update_persistent_disk(instance_plan)
 
       if only_trusted_certs_changed
         @logger.debug('Skipping apply, trusted certs change only')
@@ -161,10 +160,6 @@ module Bosh::Director
       @disk_list ||= agent(instance).list_disk
     end
 
-    def delete_unused_disk(disk)
-      @cloud.delete_disk(disk.disk_cid)
-      disk.destroy
-    end
 
     def delete_mounted_disk(instance, disk)
       disk_cid = disk.disk_cid
@@ -207,27 +202,6 @@ module Bosh::Director
 
       @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)
       @dns_manager.flush_dns_cache
-    end
-
-    # Synchronizes persistent_disks with the agent.
-    # (Currently assumes that we only have 1 persistent disk.)
-    # @return [void]
-    def check_persistent_disk(instance)
-      return if instance.model.persistent_disks.empty?
-      agent_disk_cid = disk_info(instance).first
-
-      if agent_disk_cid != instance.model.persistent_disk_cid
-        raise AgentDiskOutOfSync,
-          "`#{instance}' has invalid disks: agent reports " +
-            "`#{agent_disk_cid}' while director record shows " +
-            "`#{instance.model.persistent_disk_cid}'"
-      end
-
-      instance.model.persistent_disks.each do |disk|
-        unless disk.active
-          @logger.warn("`#{instance}' has inactive disk #{disk.disk_cid}")
-        end
-      end
     end
 
     def update_settings(instance)
@@ -320,31 +294,6 @@ module Bosh::Director
       true
     end
 
-    def update_persistent_disk(instance_plan)
-      instance = instance_plan.instance
-
-      @vm_creator.attach_disks_for(instance) unless instance.disk_currently_attached?
-      check_persistent_disk(instance)
-
-      disk = nil
-      return unless instance_plan.persistent_disk_changed?
-
-      old_disk = instance.model.persistent_disk
-
-      if instance.job.persistent_disk_type && instance.job.persistent_disk_type.disk_size > 0
-        disk = create_disk(instance)
-        attach_disk(instance, disk)
-        mount_and_migrate_disk(instance, disk, old_disk)
-      end
-
-      instance.model.db.transaction do
-        old_disk.update(:active => false) if old_disk
-        disk.update(:active => true) if disk
-      end
-
-      delete_mounted_disk(instance, old_disk) if old_disk
-    end
-
     def recreate_vm(instance_plan, new_disk_cid)
       @vm_deleter.delete_for_instance_plan(instance_plan)
       disks = [instance_plan.instance.model.persistent_disk_cid, new_disk_cid].compact
@@ -357,50 +306,6 @@ module Bosh::Director
       #      result in a different instance.template_spec.  Ideally, we clean up the @agent interaction
       #      so that we only have to do this once.
       @job_renderer.render_job_instance(instance_plan.instance)
-    end
-
-    def create_disk(instance)
-      disk_size = instance.job.persistent_disk_type.disk_size
-      cloud_properties = instance.job.persistent_disk_type.cloud_properties
-
-      disk = nil
-      instance.model.db.transaction do
-        disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance.model.vm.cid)
-        disk = Models::PersistentDisk.create(
-          disk_cid: disk_cid,
-          active: false,
-          instance_id: instance.model.id,
-          size: disk_size,
-          cloud_properties: cloud_properties,
-        )
-      end
-      disk
-    end
-
-    def attach_disk(instance, disk)
-      @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
-    rescue Bosh::Clouds::NoDiskSpace => e
-      if e.ok_to_retry
-        @logger.warn('Retrying attach disk operation after persistent disk update failed')
-        recreate_vm(instance, disk.disk_cid)
-        begin
-          @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
-        rescue
-          delete_unused_disk(disk)
-          raise
-        end
-      else
-        delete_unused_disk(disk)
-        raise
-      end
-    end
-
-    def mount_and_migrate_disk(instance, new_disk, old_disk)
-      agent(instance).mount_disk(new_disk.disk_cid)
-      agent(instance).migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
-    rescue
-      delete_mounted_disk(instance, new_disk)
-      raise
     end
 
     def agent(instance)

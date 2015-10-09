@@ -11,7 +11,8 @@ module Bosh::Director
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
           @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
-          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
+          disk_manager = InstanceUpdater::DiskManager.new(@cloud, @logger)
+          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, disk_manager)
         end
 
         def perform

@@ -13,7 +13,8 @@ module Bosh::Director
       @event_log = event_log
       @logger = logger
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
-      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter)
+      disk_manager = InstanceUpdater::DiskManager.new(cloud, logger)
+      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)
     end
 
     def prepare

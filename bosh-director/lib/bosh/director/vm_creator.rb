@@ -5,10 +5,11 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
-    def initialize(cloud, logger, vm_deleter)
+    def initialize(cloud, logger, vm_deleter, disk_manager)
       @cloud = cloud
       @logger = logger
       @vm_deleter = vm_deleter
+      @disk_manager = disk_manager
     end
 
     def create_for_instance_plans(instance_plans, ip_provider, event_log)
@@ -70,7 +71,7 @@ module Bosh::Director
         raise e
       end
 
-      attach_disks_for(instance)
+      @disk_manager.attach_disks_for(instance)
 
       if instance_plan.existing_instance && instance_plan.needs_recreate?
         instance_plan.existing_instance.vm.update(apply_spec: existing_apply_spec)
@@ -80,19 +81,6 @@ module Bosh::Director
       end
 
       instance_plan.mark_desired_network_plans_as_existing
-    end
-
-    def attach_disks_for(instance)
-      disk_cid = instance.model.persistent_disk_cid
-      return @logger.info('Skipping disk attaching') if disk_cid.nil?
-      vm_model = instance.vm.model
-      begin
-      @cloud.attach_disk(vm_model.cid, disk_cid)
-      AgentClient.with_vm(vm_model).mount_disk(disk_cid)
-      rescue => e
-        @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
-        raise e
-      end
     end
 
     private
@@ -123,7 +111,7 @@ module Bosh::Director
         vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1
-        logger.error("failed to create VM, retrying (#{count})")
+        @logger.error("failed to create VM, retrying (#{count})")
         retry if e.ok_to_retry && count < Config.max_vm_create_tries
         raise e
       end
@@ -134,7 +122,7 @@ module Bosh::Director
       vm.save
       vm
     rescue => e
-      logger.error("error creating vm: #{e.message}")
+      @logger.error("error creating vm: #{e.message}")
       delete_vm(vm_cid) if vm_cid
       vm.destroy if vm
       raise e
@@ -143,25 +131,11 @@ module Bosh::Director
     def delete_vm(vm_cid)
       @cloud.delete_vm(vm_cid)
     rescue => e
-      logger.error("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
+      @logger.error("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
     def self.generate_agent_id
       SecureRandom.uuid
-    end
-
-    def logger
-      Config.logger
-    end
-
-    class DiskAttacher
-      def initialize(instance, vm_model, agent_client, cloud, logger)
-        @instance = instance
-        @vm_model = vm_model
-        @agent_client = agent_client
-        @cloud = cloud
-        @logger = logger
-      end
     end
   end
 end

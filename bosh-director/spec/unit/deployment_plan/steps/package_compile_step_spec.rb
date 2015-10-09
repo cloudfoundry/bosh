@@ -7,7 +7,8 @@ module Bosh::Director
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager) }
+    let(:disk_manager) {InstanceUpdater::DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }

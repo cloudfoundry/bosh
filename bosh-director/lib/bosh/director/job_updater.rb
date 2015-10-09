@@ -82,7 +82,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{desc} (canary)") do
         with_thread_name("canary_update(#{desc})") do
           begin
-            InstanceUpdater.create(@job_renderer, @deployment_plan.ip_provider).update(instance_plan, :canary => true)
+            InstanceUpdater.new_instance_updater(@job_renderer, @deployment_plan.ip_provider).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -102,7 +102,7 @@ module Bosh::Director
       event_log_stage.advance_and_track(desc) do
         with_thread_name("instance_update(#{desc})") do
           begin
-            InstanceUpdater.create(@job_renderer, @deployment_plan.ip_provider).update(instance_plan)
+            InstanceUpdater.new_instance_updater(@job_renderer, @deployment_plan.ip_provider).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
