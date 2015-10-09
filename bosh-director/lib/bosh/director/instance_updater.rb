@@ -158,14 +158,7 @@ module Bosh::Director
     # Retrieve list of mounted disks from the agent
     # @return [Array<String>] list of disk CIDs
     def disk_info(instance)
-      return @disk_list if @disk_list
-
-      begin
-        @disk_list = agent(instance).list_disk
-      rescue RuntimeError
-        # old agents don't support list_disk rpc
-        [instance.persistent_disk_cid]
-      end
+      @disk_list ||= agent(instance).list_disk
     end
 
     def delete_unused_disk(disk)

@@ -290,18 +290,6 @@ module Bosh::Director
         end
       end
 
-      context 'when agent does not support list_disk' do
-        before do
-          allow(agent).to receive(:list_disk).and_raise(RuntimeError.new('unknown command list_disk'))
-        end
-
-        it 'returns disk cid registered on vm' do
-          expect(problem_register).to_not receive(:problem_found)
-          vm_scanner.scan
-          expect(vm_scanner.agent_disks['fake-disk-cid']).to eq(['vm-cid'])
-        end
-      end
-
       context 'when list_disk times out' do
         before do
           allow(agent).to receive(:list_disk).and_raise(Bosh::Director::RpcTimeout)

@@ -69,9 +69,6 @@ module Bosh::Director
           mounted_disk_cid = disk_list.first
         rescue Bosh::Director::RpcTimeout
           mounted_disk_cid = nil
-        rescue RuntimeError
-          # For old agents that doesn't implement list_disk we assume the disk is mounted
-          @logger.info("agent.list_disk failed on agent #{vm.agent_id}")
         end
         add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 

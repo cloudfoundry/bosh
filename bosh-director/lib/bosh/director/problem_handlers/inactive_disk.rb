@@ -96,15 +96,8 @@ module Bosh::Director
 
       def disk_mounted?
         return false if @vm.nil?
-
-        begin
-          agent_timeout_guard(@vm) do |agent|
-            agent.list_disk.include?(@disk.disk_cid)
-          end
-        rescue RuntimeError
-          # old stemcells without 'list_disk' support. We need to play
-          # conservative and assume that the disk is mounted.
-          true
+        agent_timeout_guard(@vm) do |agent|
+          agent.list_disk.include?(@disk.disk_cid)
         end
       end
     end
