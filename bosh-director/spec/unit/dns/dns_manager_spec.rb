@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsManager do
-    let(:dns_manager) { described_class.new(domain.name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger) }
+    subject(:dns_manager) { described_class.new(domain.name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger) }
     let(:dns_provider) { PowerDns.new(domain.name, logger) }
     let(:local_dns_repo) { LocalDnsRepo.new(logger) }
     let(:dns_config) { {} }
@@ -181,6 +181,46 @@ module Bosh::Director
         expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to be_nil
         expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
         expect(dns_provider.find_dns_record('fake-dns-name-3', '9.8.7.6')).to_not be_nil
+      end
+    end
+
+    describe '#migrate_legacy_records' do
+      before do
+        dns_provider.create_or_update_dns_records('0.job-a.network-a.dep.bosh', '1.2.3.4')
+        dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-a.dep.bosh', '1.2.3.4')
+        dns_provider.create_or_update_dns_records('0.job-a.network-b.dep.bosh', '5.6.7.8')
+        dns_provider.create_or_update_dns_records('fake-uuid.job-a.network-b.dep.bosh', '5.6.7.8')
+      end
+
+      it 'saves instance dns records for all networks in local repo' do
+        dns_manager.migrate_legacy_records(instance_model)
+
+        expect(local_dns_repo.find(instance_model)).to match_array([
+              '0.job-a.network-a.dep.bosh',
+              'fake-uuid.job-a.network-a.dep.bosh',
+              '0.job-a.network-b.dep.bosh',
+              'fake-uuid.job-a.network-b.dep.bosh'
+            ])
+      end
+
+      context 'when dns is not enabled' do
+        let(:dns_enabled) { false }
+
+        it 'does not migrate' do
+          dns_manager.migrate_legacy_records(instance_model)
+          expect(local_dns_repo.find(instance_model)).to match_array([])
+        end
+      end
+
+      context 'when local repo has dns records' do
+        before do
+          local_dns_repo.create_or_update(instance_model, ['anything'])
+        end
+
+        it 'does not migrate' do
+          dns_manager.migrate_legacy_records(instance_model)
+          expect(local_dns_repo.find(instance_model)).to match_array(['anything'])
+        end
       end
     end
   end

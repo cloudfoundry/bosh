@@ -20,6 +20,7 @@ module Bosh::Director
       end
 
       track_and_log('Binding existing deployment') do
+        migrate_legacy_dns_records
         bind_job_renames
 
         instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
@@ -194,6 +195,12 @@ module Bosh::Director
     def bind_job_renames
       @deployment_plan.instance_models.each do |instance_model|
         update_instance_if_rename(instance_model)
+      end
+    end
+
+    def migrate_legacy_dns_records
+      @deployment_plan.instance_models.each do |instance_model|
+        @dns_manager.migrate_legacy_records(instance_model)
       end
     end
 

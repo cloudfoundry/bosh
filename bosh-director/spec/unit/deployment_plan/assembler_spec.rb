@@ -15,7 +15,6 @@ module Bosh::Director
       let(:job) { instance_double(DeploymentPlan::Job) }
 
       before do
-        allow(Config).to receive(:dns_enabled?).and_return(false)
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
         allow(deployment_plan).to receive(:jobs).and_return([])
@@ -72,6 +71,13 @@ module Bosh::Director
                 instance_model.job
               }
           end
+        end
+      end
+
+      describe 'migrate_legacy_dns_records' do
+        it 'migrates legacy dns records' do
+          expect(dns_manager).to receive(:migrate_legacy_records).with(instance_model)
+          assembler.bind_models
         end
       end
 

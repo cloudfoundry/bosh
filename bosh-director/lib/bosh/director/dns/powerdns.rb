@@ -33,9 +33,13 @@ module Bosh::Director
       update_ptr_record(dns_record_name, ip_address)
     end
 
-    def delete(record_pattern)
+    def find_dns_records_by_pattern(record_pattern)
       records = Models::Dns::Record.filter(:name.like(record_pattern))
-      records = records.filter(:domain_id => find_domain_id)
+      records.filter(:domain_id => find_domain_id).all
+    end
+
+    def delete(record_pattern)
+      records = find_dns_records_by_pattern(record_pattern)
 
       # delete A records and collect all IPs for later
       ips = []

@@ -62,6 +62,32 @@ module Bosh::Director
       @local_dns_repo.create_or_update(instance_model, dns_names_to_ip.keys)
     end
 
+    def migrate_legacy_records(instance_model)
+      return unless dns_enabled?
+
+      return if @local_dns_repo.find(instance_model).any?
+
+      index_pattern_for_all_networks = dns_record_name(
+        instance_model.index,
+        instance_model.job,
+        '%',
+        instance_model.deployment.name
+      )
+      uuid_pattern_for_all_networks = dns_record_name(
+        instance_model.uuid,
+        instance_model.job,
+        '%',
+        instance_model.deployment.name
+      )
+
+      legacy_record_names = [index_pattern_for_all_networks, uuid_pattern_for_all_networks]
+        .map { |pattern| @dns_provider.find_dns_records_by_pattern(pattern) }
+        .flatten
+        .map(&:name)
+
+      @local_dns_repo.create_or_update(instance_model, legacy_record_names)
+    end
+
     def delete_dns_for_instance(instance_model)
       return unless dns_enabled?
 

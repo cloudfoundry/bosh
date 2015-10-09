@@ -268,7 +268,7 @@ end
 
 RSpec::Matchers.define :be_a_migrated_instance do |model, az|
   match do |actual|
-    actual.model == model && actual.availability_zone == az
+    actual.model.reload == model.reload && actual.availability_zone == az
   end
 end
 
