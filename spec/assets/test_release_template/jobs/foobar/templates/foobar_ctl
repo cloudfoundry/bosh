@@ -7,6 +7,9 @@ case $1 in
   start)
     echo "test_property=<%= p('test_property') %>"
     echo "availability_zone=<%= availability_zone %>"
+    echo "job_name=<%= spec.job.name %>"
+    echo "index=<%= spec.index %>"
+    echo "bootstrap=<%= spec.bootstrap %>"
 
     <% if_p('network_name') do |net_name| %>
       echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"

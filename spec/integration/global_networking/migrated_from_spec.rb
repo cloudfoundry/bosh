@@ -79,6 +79,37 @@ describe 'migrated from', type: :integration do
     Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
   end
 
+  let(:manifest_with_etcd_z1_in_az1) do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    job_spec = etcd_z1_job
+    job_spec['availability_zones'] = ['my-az-1']
+    job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    manifest_hash['jobs'] = [job_spec]
+    manifest_hash
+  end
+
+  let(:manifest_with_etcd_z2_in_az2_migrated_from_etcd_z1) do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    job_spec = etcd_z2_job
+    job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    job_spec['availability_zones'] = ['my-az-2']
+    job_spec['migrated_from'] = [{'name' => 'etcd_z1'}]
+    manifest_hash['jobs'] = [job_spec]
+    manifest_hash
+  end
+
+  let(:manifest_with_etcd_z1_in_az1_and_etcd_z2_in_az2) do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    job_spec_1 = etcd_z1_job
+    job_spec_1['availability_zones'] = ['my-az-1']
+    job_spec_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    job_spec_2 = etcd_z2_job
+    job_spec_2['availability_zones'] = ['my-az-2']
+    job_spec_2['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+    manifest_hash['jobs'] = [job_spec_1, job_spec_2]
+    manifest_hash
+  end
+
   context 'when migrating to availability zones' do
     let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
@@ -315,27 +346,14 @@ describe 'migrated from', type: :integration do
   context 'when migrating with availability zones' do
     context 'when migrating into new job in different az' do
       it 'recreates VM and disk in new az' do
-        original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-        job_spec = etcd_z1_job
-        job_spec['availability_zones'] = ['my-az-1']
-        job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-        original_manifest_with_azs['jobs'] = [job_spec]
-
-        deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)
         original_vms = director.vms
         expect(original_vms.size).to eq(1)
         expect(original_vms.map(&:job_name)).to match_array(['etcd_z1'])
         expect(original_vms.map(&:availability_zone)).to match_array(['my-az-1'])
         original_disks = current_sandbox.cpi.disk_cids
 
-        new_manifest_hash = original_manifest_with_azs
-        job_spec = etcd_z2_job
-        job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-        job_spec['availability_zones'] = ['my-az-2']
-        job_spec['migrated_from'] = [{'name' => 'etcd_z1'}]
-        new_manifest_hash['jobs'] = [job_spec]
-
-        deploy_simple_manifest(manifest_hash: new_manifest_hash)
+        deploy_simple_manifest(manifest_hash: manifest_with_etcd_z2_in_az2_migrated_from_etcd_z1)
         new_vms = director.vms
         expect(new_vms.size).to eq(1)
         expect(new_vms.map(&:job_name)).to match_array(['etcd_z2'])
@@ -409,15 +427,6 @@ describe 'migrated from', type: :integration do
   end
 
   context 'when migrating job that does not exist in previous deployment' do
-    let(:original_manifest_with_azs) do
-      original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-      job_spec = etcd_z1_job
-      job_spec['availability_zones'] = ['my-az-1']
-      job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-      original_manifest_with_azs['jobs'] = [job_spec]
-      original_manifest_with_azs
-    end
-
     let(:manifest_with_unknown_migrated_from_job) do
       new_manifest_hash = Bosh::Spec::Deployments.simple_manifest
       job_spec = etcd_job
@@ -430,7 +439,7 @@ describe 'migrated from', type: :integration do
     end
 
     it 'successfully deploys' do
-      deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
+      deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)
       original_vms = director.vms
       expect(original_vms.size).to eq(1)
       expect(original_vms.map(&:job_name)).to match_array(['etcd_z1'])
@@ -446,16 +455,7 @@ describe 'migrated from', type: :integration do
   describe 'bootstrap' do
     context 'when migrated_from has several bootstrap instances' do
       it 'picks only one bootstrap instance' do
-        original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-        job_spec_1 = etcd_z1_job
-        job_spec_1['availability_zones'] = ['my-az-1']
-        job_spec_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-        job_spec_2 = etcd_z2_job
-        job_spec_2['availability_zones'] = ['my-az-2']
-        job_spec_2['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-        original_manifest_with_azs['jobs'] = [job_spec_1, job_spec_2]
-
-        deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1_and_etcd_z2_in_az2, cloud_config_hash: cloud_config_hash_with_azs)
         original_instances = director.instances
         expect(original_instances.select(&:is_bootstrap).size).to eq(2)
 
@@ -464,6 +464,42 @@ describe 'migrated from', type: :integration do
         new_instances = director.instances
         expect(new_instances.select(&:is_bootstrap).size).to eq(1)
       end
+    end
+  end
+
+  describe 'rendered job templates' do
+    it 'has new name, index, bootstrap and az' do
+      deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1_and_etcd_z2_in_az2, cloud_config_hash: cloud_config_hash_with_azs)
+
+      etcd_z1_vm = director.vm('etcd_z1', '0')
+      template = etcd_z1_vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('availability_zone=my-az-1')
+      expect(template).to include('job_name=etcd_z1')
+      expect(template).to include('index=0')
+      expect(template).to include('bootstrap=true')
+
+      etcd_z2_vm = director.vm('etcd_z2', '0')
+      template = etcd_z2_vm.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('availability_zone=my-az-2')
+      expect(template).to include('job_name=etcd_z2')
+      expect(template).to include('index=0')
+      expect(template).to include('bootstrap=true')
+
+      deploy_simple_manifest(manifest_hash: manifest_with_azs)
+
+      etcd_vm_1 = director.vm('etcd', '0')
+      template = etcd_vm_1.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('availability_zone=my-az-1')
+      expect(template).to include('job_name=etcd')
+      expect(template).to include('index=0')
+      expect(template).to include('bootstrap=true')
+
+      etcd_vm_2 = director.vm('etcd', '1')
+      template = etcd_vm_2.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('availability_zone=my-az-2')
+      expect(template).to include('job_name=etcd')
+      expect(template).to include('index=1')
+      expect(template).to include('bootstrap=false')
     end
   end
 end
