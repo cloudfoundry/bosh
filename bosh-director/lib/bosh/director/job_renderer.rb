@@ -7,8 +7,9 @@ module Bosh::Director
     def initialize(job, blobstore)
       @job = job
       @blobstore = blobstore
+      @logger = Config.logger
 
-      job_template_loader = Core::Templates::JobTemplateLoader.new(Config.logger)
+      job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
       @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job.templates, job_template_loader)
     end
 
@@ -17,6 +18,7 @@ module Bosh::Director
     end
 
     def render_job_instance(instance)
+      @logger.debug("Rendering templates for instance #{instance}")
       rendered_job_instance = @instance_renderer.render(instance.template_spec)
 
       configuration_hash = rendered_job_instance.configuration_hash

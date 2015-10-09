@@ -64,7 +64,7 @@ module Bosh
 
             all_desired_instances.each do |instance|
               if instance == lowest_indexed_desired_instance
-                @logger.info("Marking new bootstrap instance: #{instance.job}/#{instance.index} in az #{instance.availability_zone}")
+                @logger.info("Marking new bootstrap instance: #{instance.job.name}/#{instance.index} in az #{instance.availability_zone}")
                 instance.mark_as_bootstrap
               end
             end
