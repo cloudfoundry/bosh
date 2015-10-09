@@ -221,14 +221,8 @@ module Bosh::Director
       instance = instance_plan.instance
 
       return unless instance_plan.dns_changed?
-      
+
       @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)
-
-      if instance_plan.existing_instance &&
-        instance_plan.existing_instance.job != instance.job_name
-        @dns_manager.delete_dns_for_instance(instance_plan.existing_instance)
-      end
-
       @dns_manager.flush_dns_cache
     end
 
