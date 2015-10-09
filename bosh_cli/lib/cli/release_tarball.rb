@@ -39,7 +39,7 @@ module Bosh::Cli
 
     def fast_unpack(target)
       if RUBY_PLATFORM =~ /linux/
-        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "--wildcards", "*#{target}", "--exclude", "*_release.MF", out: "/dev/null", err: "/dev/null")
+        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "--wildcards", "*#{target}", "--exclude", "./._release.MF", out: "/dev/null", err: "/dev/null")
       elsif RUBY_PLATFORM =~ /darwin/
         if target[-1, 1] == "/"
           system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
