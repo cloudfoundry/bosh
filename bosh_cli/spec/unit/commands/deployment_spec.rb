@@ -53,6 +53,36 @@ describe Bosh::Cli::Command::Deployment do
     before { @config = Support::TestConfig.new(cmd) }
     after { @config.clean }
 
+    context 'with multiple potential targets' do
+      before do
+        allow(director).to receive(:get_status).and_return({'uuid' => 'director-uuid'})
+        config = @config.load
+        config.target = 'http://127.0.0.1:8080'
+        config.set_alias('target', 'alpha', 'http://127.0.0.1:8080')
+        config.set_deployment('/path/to/alpha.yml')
+
+        config.target = 'http://127.0.0.1:8081'
+        config.set_alias('target', 'beta', 'http:/127.0.0.1:8081')
+        config.set_deployment('/path/to/beta.yml')
+        config.save
+      end
+
+      let(:director) { instance_double(Bosh::Cli::Client::Director) }
+      it 'can retrieve deployment manifest for current target' do
+        allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+        cmd.options.delete(:target) # work around the before block
+        expect(cmd).to receive(:say).with('/path/to/beta.yml')
+        cmd.set_current()
+      end
+
+      it 'can retrieve deployment manifest for an explicit target' do
+        allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+        cmd.add_option(:target, 'alpha')
+        expect(cmd).to receive(:say).with('/path/to/alpha.yml')
+        cmd.set_current()
+      end
+    end
+
     context 'when target is set' do
       before do
         allow(director).to receive(:get_status).and_return({'uuid' => 'director-uuid'})
