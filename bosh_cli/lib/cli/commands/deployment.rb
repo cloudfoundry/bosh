@@ -306,11 +306,12 @@ module Bosh::Cli::Command
 
     private
     def show_current
-      if deployment
+      config.target = target
+      if config.deployment
         if interactive?
-          say("Current deployment is `#{deployment.make_green}'")
+          say("Current deployment is `#{config.deployment.make_green}'")
         else
-          say(deployment)
+          say(config.deployment)
         end
       else
         err("Deployment not set")
