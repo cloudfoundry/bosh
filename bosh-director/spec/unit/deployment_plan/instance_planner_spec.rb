@@ -19,7 +19,7 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
   end
   let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job, name: 'foo-job', availability_zones: [az], migrated_from: []) }
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(job, 'started', deployment) }
-  let(:tracer_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+  let(:tracer_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, update_description: nil) }
 
   describe '#plan_job_instances' do
     before do
@@ -33,13 +33,12 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
       it 'creates instance plans for new instances with no az' do
         existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0)
-        existing_instances = [Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, nil)]
         existing_instance_state = {'foo' => 'bar'}
         states_by_existing_instance = {existing_instance_model => existing_instance_state}
 
         allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, existing_instance_state) { tracer_instance }
 
-        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], existing_instances, states_by_existing_instance)
+        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], states_by_existing_instance)
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
@@ -67,12 +66,9 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
     describe 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
-        existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0)
-        another_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 1)
-        existing_instances = [
-          Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, undesired_az.name),
-          Bosh::Director::DeploymentPlan::InstanceWithAZ.new(another_existing_instance_model, undesired_az.name),
-        ]
+        existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: undesired_az.name)
+        another_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: undesired_az.name)
+        existing_instances = [existing_instance_model, another_existing_instance_model]
         states_by_existing_instance = {}
 
         desired_instances = [desired_instance]
@@ -100,14 +96,13 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
     end
 
     it 'creates instance plans for existing instances' do
-      existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0)
-      existing_instances = [Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, az.name)]
+      existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
       existing_instance_state = {'foo' => 'bar'}
       states_by_existing_instance = {existing_instance_model => existing_instance_state}
 
       allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, existing_instance_state) { tracer_instance }
 
-      instance_plans = instance_planner.plan_job_instances(job, [desired_instance], existing_instances, states_by_existing_instance)
+      instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], states_by_existing_instance)
 
       expect(instance_plans.count).to eq(1)
       existing_instance_plan = instance_plans.first
@@ -130,6 +125,14 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
       expect(existing_instance_plan.instance).to eq(tracer_instance)
       expect(existing_instance_plan.existing_instance).to eq(existing_instance_model)
+    end
+
+    it 'updates descriptions for existing instances' do
+      existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
+      allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, {}) { tracer_instance }
+      expect(tracer_instance).to receive(:update_description)
+
+      instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], {existing_instance_model => {}})
     end
 
     it 'creates instance plans for new instances' do
@@ -155,14 +158,12 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
       out_of_typical_range_index = 77
       auto_picked_index = 0
 
-      desired_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: out_of_typical_range_index)
-      desired_existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(desired_existing_instance_model, az.name)
+      desired_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: out_of_typical_range_index, availability_zone: az.name)
       desired_existing_instance_state = {'bar' => 'baz'}
 
       desired_instances = [desired_instance, Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, out_of_typical_range_index)]
 
-      undesired_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: auto_picked_index)
-      undesired_existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(undesired_existing_instance_model, undesired_az.name)
+      undesired_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: auto_picked_index, availability_zone: undesired_az.name)
       undesired_existing_instance_state = {'foo' => 'bar'}
 
       states_by_existing_instance = {
@@ -170,10 +171,9 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
         desired_existing_instance_model => desired_existing_instance_state,
       }
 
-
-      existing_instances = [undesired_existing_instance, desired_existing_instance]
+      existing_instances = [undesired_existing_instance_model, desired_existing_instance_model]
       allow(instance_repo).to receive(:fetch_existing).with(desired_instance, desired_existing_instance_model, desired_existing_instance_state) do
-        instance_double(Bosh::Director::DeploymentPlan::Instance, index: out_of_typical_range_index)
+        instance_double(Bosh::Director::DeploymentPlan::Instance, index: out_of_typical_range_index, update_description: nil)
       end
 
       allow(instance_repo).to receive(:create).with(desired_instances[1], 1) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
@@ -200,15 +200,14 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
     context 'resolving bootstrap nodes' do
       context 'when existing instance is marked as bootstrap' do
         it 'keeps bootstrap node' do
-          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true)
-          existing_instances = [Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, az.name)]
+          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name)
           existing_instance_state = {'foo' => 'bar'}
           states_by_existing_instance = {existing_instance_model => existing_instance_state}
 
-          existing_tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, bootstrap?: true)
+          existing_tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, bootstrap?: true, update_description: nil)
           allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, existing_instance_state) { existing_tracer_instance }
 
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance], existing_instances, states_by_existing_instance)
+          instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], states_by_existing_instance)
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -222,21 +221,18 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
       context 'when obsolete instance is marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true)
-          existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, undesired_az.name)
-          another_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 1)
-          another_existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(another_existing_instance_model, az.name)
+          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name)
+          another_existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name)
           another_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, 1)
-          existing_instances = [existing_instance, another_existing_instance]
           existing_instance_state = {'foo' => 'bar'}
           states_by_existing_instance = {existing_instance_model => existing_instance_state, another_existing_instance_model => existing_instance_state}
 
           tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance)
-          existing_tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1, bootstrap?: true)
+          existing_tracer_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1, bootstrap?: true, update_description: nil)
           allow(instance_repo).to receive(:fetch_existing).with(another_desired_instance, another_existing_instance_model, existing_instance_state) { existing_tracer_instance }
           allow(instance_repo).to receive(:create).with(desired_instance, 2) { tracer_instance }
 
-          instance_plans = instance_planner.plan_job_instances(job, [another_desired_instance, desired_instance], existing_instances, states_by_existing_instance)
+          instance_plans = instance_planner.plan_job_instances(job, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model], states_by_existing_instance)
 
           expect(instance_plans.count).to eq(3)
           desired_existing_instance_plan = instance_plans.first
@@ -252,22 +248,19 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
       context 'when several existing instances are marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model_1 = Bosh::Director::Models::Instance.make(job: 'foo-job-z1', index: 0, bootstrap: true)
-          existing_instance_1 = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model_1, az.name)
+          existing_instance_model_1 = Bosh::Director::Models::Instance.make(job: 'foo-job-z1', index: 0, bootstrap: true, availability_zone: az.name)
           desired_instance_1 = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, 0)
-          existing_instance_model_2 = Bosh::Director::Models::Instance.make(job: 'foo-job-z2', index: 0, bootstrap: true)
-          existing_instance_2 = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model_2, az.name)
+          existing_instance_model_2 = Bosh::Director::Models::Instance.make(job: 'foo-job-z2', index: 0, bootstrap: true, availability_zone: az.name)
           desired_instance_2 = Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, 1)
-          existing_instances = [existing_instance_1, existing_instance_2]
           existing_instance_state = {}
           states_by_existing_instance = {existing_instance_model_1 => existing_instance_state, existing_instance_model_2 => existing_instance_state}
 
-          existing_tracer_instance_1 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 0)
-          existing_tracer_instance_2 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1)
+          existing_tracer_instance_1 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 0, update_description: nil)
+          existing_tracer_instance_2 = instance_double(Bosh::Director::DeploymentPlan::Instance, index: 1, update_description: nil)
           allow(instance_repo).to receive(:fetch_existing).with(desired_instance_1, existing_instance_model_1, existing_instance_state) { existing_tracer_instance_1 }
           allow(instance_repo).to receive(:fetch_existing).with(desired_instance_2, existing_instance_model_2, existing_instance_state) { existing_tracer_instance_2 }
 
-          instance_plans = instance_planner.plan_job_instances(job, [desired_instance_1, desired_instance_2], existing_instances, states_by_existing_instance)
+          instance_plans = instance_planner.plan_job_instances(job, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2], states_by_existing_instance)
 
           expect(instance_plans.count).to eq(2)
           bootstrap_instance_plans = instance_plans.select { |ip| ip.desired_instance.bootstrap? }
@@ -302,13 +295,14 @@ describe Bosh::Director::DeploymentPlan::InstancePlanner do
 
       context 'when all instances are obsolete' do
         it 'should not mark any instance as bootstrap instance' do
-          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true)
-          existing_instance = Bosh::Director::DeploymentPlan::InstanceWithAZ.new(existing_instance_model, undesired_az.name)
-          existing_instances = [existing_instance]
+          existing_instance_model = Bosh::Director::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name)
           existing_instance_state = {'foo' => 'bar'}
           states_by_existing_instance = {existing_instance_model => existing_instance_state}
 
-          instance_plans = instance_planner.plan_job_instances(job, [], existing_instances, states_by_existing_instance)
+          obsolete_instance = instance_double(BD::DeploymentPlan::Instance, update_description: nil)
+          allow(instance_repo).to receive(:fetch_obsolete).with(existing_instance_model) { obsolete_instance }
+
+          instance_plans = instance_planner.plan_job_instances(job, [], [existing_instance_model], states_by_existing_instance)
 
           expect(instance_plans.count).to eq(1)
           obsolete_instance_plan = instance_plans.first

@@ -38,6 +38,8 @@ module Bosh::Spec
       instances.map do |instance_data|
         Bosh::Spec::Instance.new(
           instance_data[:instance_id],
+          instance_data[:job_name],
+          instance_data[:index],
           !instance_data[:bootstrap].empty?,
           instance_data[:az]
         )

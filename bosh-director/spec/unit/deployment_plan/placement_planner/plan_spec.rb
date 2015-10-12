@@ -51,10 +51,10 @@ module Bosh::Director::DeploymentPlan
         expect(plan.needed.map(&:az)).to eq([zone_1, zone_1])
 
         expect(plan.existing).to match_array([
-              {existing_instance_model: existing[0].model, desired_instance: desired[0]}
+              {existing_instance_model: existing[0], desired_instance: desired[0]}
             ])
 
-        expect(plan.obsolete).to match_array([existing[1].model, existing[2].model])
+        expect(plan.obsolete).to match_array([existing[1], existing[2]])
       end
     end
 
@@ -71,17 +71,16 @@ module Bosh::Director::DeploymentPlan
         expect(plan.needed.map(&:az)).to eq([zone_1])
 
         expect(plan.existing).to match_array([
-              {existing_instance_model: existing[0].model, desired_instance: desired[0]},
-              {existing_instance_model: existing[2].model, desired_instance: desired[1]}
+              {existing_instance_model: existing[0], desired_instance: desired[0]},
+              {existing_instance_model: existing[2], desired_instance: desired[1]}
             ])
 
-        expect(plan.obsolete).to match_array([existing[1].model])
+        expect(plan.obsolete).to match_array([existing[1]])
       end
     end
 
     def existing_instance_with_az(index, az)
-      instance_model = Bosh::Director::Models::Instance.make(index: index)
-      InstanceWithAZ.new(instance_model, az)
+      Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
     end
 
     def desired_instance(zone = nil)

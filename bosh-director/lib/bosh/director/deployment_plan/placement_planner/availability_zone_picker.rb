@@ -11,12 +11,10 @@ module Bosh
             remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs_sorted, desired_instances, placed_instances, unplaced_existing_instances)
             balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
-            obsolete = unplaced_existing_instances.unclaimed_instance_models
-
             {
               desired_new: placed_instances.absent,
               desired_existing: placed_instances.existing,
-              obsolete: obsolete,
+              obsolete: unplaced_existing_instances.unclaimed,
             }
           end
 

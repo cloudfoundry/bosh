@@ -62,7 +62,6 @@ module Bosh::Director
     let(:deployment_plan) do
       planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
       plan = planner_factory.create_from_model(deployment_model)
-      plan.bind_models
       plan
     end
 
@@ -207,7 +206,7 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section contains availability zone and instance has different az' do
+        context 'when migrated from section contains availability zone and instance models have different az' do
           before do
             Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: 'z10')
           end
@@ -222,7 +221,19 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section does not contain availability zone and instance does not have az' do
+        context 'when migrated from section contains availability zone and instance models do not have az (legacy instances)' do
+          before do
+            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+          end
+
+          it 'updates instance az' do
+            job_migrator.find_existing_instances_with_azs(etcd_job)
+            etcd_z1_instance = Models::Instance.find(job: 'etcd_z1', index: 0)
+            expect(etcd_z1_instance.availability_zone).to eq('z1')
+          end
+        end
+
+        context 'when migrated from section does not contain availability zone and instance models do not have az (legacy instances)' do
           let(:etcd_job_spec) do
             job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
             job['migrated_from'] = [
@@ -266,9 +277,9 @@ module Bosh::Director
   end
 end
 
-RSpec::Matchers.define :be_a_migrated_instance do |model, az|
+RSpec::Matchers.define :be_a_migrated_instance do |expected, az|
   match do |actual|
-    actual.model.reload == model.reload && actual.availability_zone == az
+    actual.reload == expected.reload && actual.availability_zone == az
   end
 end
 

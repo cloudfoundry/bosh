@@ -3,14 +3,14 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class UnplacedExistingInstances
-          def initialize(existing_instance_az_tuples)
-            @instances = existing_instance_az_tuples.sort_by { |instance| instance.model.index }
+          def initialize(existing_instance_models)
+            @instances = existing_instance_models.sort_by { |instance_model| instance_model.index }
             @az_name_to_existing_instances  = initialize_azs_to_instances
           end
 
           def instances_with_persistent_disk
-            @instances.select do |instance|
-              instance.model.persistent_disks && instance.model.persistent_disks.count > 0
+            @instances.select do |instance_model|
+              instance_model.persistent_disks && instance_model.persistent_disks.count > 0
             end
           end
 
@@ -31,8 +31,8 @@ module Bosh
             end
           end
 
-          def unclaimed_instance_models
-            @az_name_to_existing_instances.values.flatten.map(&:model)
+          def unclaimed
+            @az_name_to_existing_instances.values.flatten
           end
 
           private

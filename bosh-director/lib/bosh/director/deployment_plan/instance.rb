@@ -233,6 +233,10 @@ module Bosh::Director
         @model.update(state: @state)
       end
 
+      def update_description
+        @model.update(job: job_name, index: index, bootstrap: bootstrap?)
+      end
+
       ##
       # Checks if the target VM already has the same set of trusted SSL certificates
       # as the director currently wants to install on all managed VMs. This will

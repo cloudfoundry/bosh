@@ -1,6 +1,5 @@
 module Bosh::Director
   class DeploymentPlan::MigratedFromJob < Struct.new(:name, :availability_zone); end
-  class DeploymentPlan::InstanceWithAZ < Struct.new(:model, :availability_zone); end
 
   class DeploymentPlan::JobMigrator
     def initialize(deployment_plan, logger)
@@ -11,7 +10,7 @@ module Bosh::Director
     def find_existing_instances_with_azs(desired_job)
       instances = []
       desired_job.existing_instances.each do |existing_instance|
-        instances << DeploymentPlan::InstanceWithAZ.new(existing_instance, existing_instance.availability_zone)
+        instances << existing_instance
       end
 
       unless desired_job.migrated_from.to_a.empty?
@@ -64,8 +63,11 @@ module Bosh::Director
               end
             end
 
-            az = migrated_from_job.availability_zone || instance.availability_zone
-            migrated_from_job_instances << DeploymentPlan::InstanceWithAZ.new(instance, az)
+            if instance.availability_zone.nil?
+              instance.update(availability_zone: migrated_from_job.availability_zone)
+            end
+
+            migrated_from_job_instances << instance
 
             @logger.debug("Migrating job '#{migrated_from_job.name}/#{instance.uuid} (#{instance.index})' to '#{desired_job.name}/#{instance.uuid} (#{instance.index})'")
           end

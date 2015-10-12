@@ -87,6 +87,7 @@ module Bosh
             desired_instance = existing_instance_and_deployment[:desired_instance]
             existing_instance_state = states_by_existing_instance[existing_instance_model]
             instance = @instance_repo.fetch_existing(desired_instance, existing_instance_model, existing_instance_state)
+            instance.update_description
             InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance_model, instance: instance)
           end
         end

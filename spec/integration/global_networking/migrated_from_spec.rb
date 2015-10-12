@@ -3,12 +3,6 @@ require 'spec_helper'
 describe 'migrated from', type: :integration do
   with_reset_sandbox_before_each
 
-  before do
-    target_and_login
-    create_and_upload_test_release
-    upload_stemcell
-  end
-
   let(:cloud_config_hash_with_azs) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['availability_zones'] = [
@@ -341,6 +335,35 @@ describe 'migrated from', type: :integration do
         expect(original_vms.map(&:cid)).to include(vm_in_z1.cid)
       end
     end
+
+    context 'when deployment fails' do
+      it 'job instances should have migrated names, indexes, bootstrap and az' do
+        deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
+        current_sandbox.cpi.commands.make_create_vm_always_fail
+
+        manifest = manifest_with_azs
+
+        # this is done until our bosh instances will show all instances
+        # even those that don't have vms
+        failing_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'failing')
+        manifest['jobs'].unshift(failing_job_spec)
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
+        deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+
+        new_instances = director.instances
+        puts new_instances.map(&:inspect)
+        etcd_instance_1 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '0' }
+        expect(etcd_instance_1).to_not be_nil
+        expect(etcd_instance_1.is_bootstrap).to be_truthy
+        expect(etcd_instance_1.az).to eq('my-az-1')
+
+        etcd_instance_2 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '1' }
+        expect(etcd_instance_2).to_not be_nil
+        expect(etcd_instance_2.is_bootstrap).to be_falsey
+        expect(etcd_instance_2.az).to eq('my-az-2')
+      end
+    end
   end
 
   context 'when migrating with availability zones' do
@@ -487,14 +510,15 @@ describe 'migrated from', type: :integration do
 
       deploy_simple_manifest(manifest_hash: manifest_with_azs)
 
-      etcd_vm_1 = director.vm('etcd', '0')
+      new_vms = director.vms
+      etcd_vm_1 = new_vms.find { |vm| vm.job_name == 'etcd' && vm.index == '0' }
       template = etcd_vm_1.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('availability_zone=my-az-1')
       expect(template).to include('job_name=etcd')
       expect(template).to include('index=0')
       expect(template).to include('bootstrap=true')
 
-      etcd_vm_2 = director.vm('etcd', '1')
+      etcd_vm_2 = new_vms.find { |vm| vm.job_name == 'etcd' && vm.index == '1' }
       template = etcd_vm_2.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('availability_zone=my-az-2')
       expect(template).to include('job_name=etcd')

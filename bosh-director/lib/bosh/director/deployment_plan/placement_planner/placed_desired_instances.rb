@@ -15,14 +15,14 @@ module Bosh
             @existing = []
           end
 
-          def record_placement(az, desired_instance, existing_instance)
+          def record_placement(az, desired_instance, existing_instance_model)
             desired_instance.az = az
             @placed[az] = @placed.fetch(az, []) << desired_instance
 
-            if existing_instance && !existing_instance.model.nil?
+            if existing_instance_model
               existing << {
                 desired_instance: desired_instance,
-                existing_instance_model: existing_instance.model
+                existing_instance_model: existing_instance_model
               }
             else
               absent << desired_instance

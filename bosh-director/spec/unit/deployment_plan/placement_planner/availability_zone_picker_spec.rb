@@ -16,9 +16,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
-      instance_model = Bosh::Director::Models::Instance.make(index: index)
+      instance_model = Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
       allow(instance_model).to receive(:persistent_disks).and_return(persistent_disks)
-      InstanceWithAZ.new(instance_model, az)
+      instance_model
     end
 
     describe 'placing and matching' do
@@ -32,8 +32,8 @@ module Bosh::Director::DeploymentPlan
         results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
-              {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]},
-              {existing_instance_model: existing_1.model, desired_instance: unmatched_desired_instances[1]}
+              {existing_instance_model: existing_0, desired_instance: unmatched_desired_instances[0]},
+              {existing_instance_model: existing_1, desired_instance: unmatched_desired_instances[1]}
             ])
 
         expect(results[:desired_new]).to match_array([desired_instance])
@@ -50,8 +50,8 @@ module Bosh::Director::DeploymentPlan
         results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
         expect(results[:desired_existing]).to match_array([
-              {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]},
-              {existing_instance_model: existing_1.model, desired_instance: unmatched_desired_instances[1]}
+              {existing_instance_model: existing_0, desired_instance: unmatched_desired_instances[0]},
+              {existing_instance_model: existing_1, desired_instance: unmatched_desired_instances[1]}
         ])
 
         expect(results[:desired_new]).to match_array([desired_instance])
@@ -84,11 +84,11 @@ module Bosh::Director::DeploymentPlan
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing]).to eq([
-                {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]},
+                {existing_instance_model: existing_0, desired_instance: unmatched_desired_instances[0]},
               ])
 
           expect(results[:desired_new]).to eq([])
-          expect(results[:obsolete]).to eq([existing_1.model])
+          expect(results[:obsolete]).to eq([existing_1])
         end
       end
 
@@ -105,12 +105,12 @@ module Bosh::Director::DeploymentPlan
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing]).to match_array([
-                {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]},
-                {existing_instance_model: existing_zone1_2.model, desired_instance: unmatched_desired_instances[1]}
+                {existing_instance_model: existing_zone1_0, desired_instance: unmatched_desired_instances[0]},
+                {existing_instance_model: existing_zone1_2, desired_instance: unmatched_desired_instances[1]}
                 ])
 
           expect(results[:desired_new]).to match_array([desired_instance(az1)])
-          expect(results[:obsolete]).to match_array([existing_zone2_1.model])
+          expect(results[:obsolete]).to match_array([existing_zone2_1])
         end
       end
 
@@ -136,14 +136,14 @@ module Bosh::Director::DeploymentPlan
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing].map{ |i| i[:existing_instance_model] }).to contain_exactly(
-                existing_zone1_0.model,
-                existing_zone1_1.model,
-                existing_zone2_3.model,
-                existing_zone2_4.model
+                existing_zone1_0,
+                existing_zone1_1,
+                existing_zone2_3,
+                existing_zone2_4
               )
 
           expect(results[:desired_new]).to match_array([desired_instance(az3)])
-          expect(results[:obsolete]).to match_array([existing_zone1_2.model])
+          expect(results[:obsolete]).to match_array([existing_zone1_2])
         end
       end
 
@@ -166,9 +166,9 @@ module Bosh::Director::DeploymentPlan
           results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
           expect(results[:desired_existing].map{ |i| i[:existing_instance_model] }).to match_array([
-                existing_zone1_0.model,
-                existing_zone2_0.model,
-                existing_zone2_2.model
+                existing_zone1_0,
+                existing_zone2_0,
+                existing_zone2_2
               ])
 
           expect(results[:desired_new]).to match_array([desired_instance(az3)])
@@ -184,7 +184,7 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in([], unmatched_desired_instances, [existing_0])
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_0.model, desired_instance: unmatched_desired_instances[0]}
+                  {existing_instance_model: existing_0, desired_instance: unmatched_desired_instances[0]}
                 ])
             expect(results[:desired_new]).to match_array([desired_instance])
             expect(results[:obsolete]).to match_array([])
@@ -200,8 +200,8 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in([az1, az2], desired_instances, [existing_zone1_0, existing_zone1_1])
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_0.model, desired_instance: desired_instances[0]},
-                  {existing_instance_model: existing_zone1_1.model, desired_instance: desired_instances[1]}
+                  {existing_instance_model: existing_zone1_0, desired_instance: desired_instances[0]},
+                  {existing_instance_model: existing_zone1_1, desired_instance: desired_instances[1]}
                 ])
 
             expect(results[:desired_new]).to match_array([])
@@ -221,10 +221,10 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[1]}
+                  {existing_instance_model: existing_zone1_0, desired_instance: unmatched_desired_instances[1]}
                 ])
             expect(results[:desired_new]).to match_array([desired_instance(az2)])
-            expect(results[:obsolete]).to match_array([existing_zone66_1.model])
+            expect(results[:obsolete]).to match_array([existing_zone66_1])
           end
         end
 
@@ -240,8 +240,8 @@ module Bosh::Director::DeploymentPlan
             expected_desired_zone1_1 = unmatched_desired_instances[1]
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_0.model, desired_instance: expected_desired_zone1_0},
-                  {existing_instance_model: existing_zone1_1.model, desired_instance: expected_desired_zone1_1}
+                  {existing_instance_model: existing_zone1_0, desired_instance: expected_desired_zone1_0},
+                  {existing_instance_model: existing_zone1_1, desired_instance: expected_desired_zone1_1}
                  ])
 
             expect(results[:desired_new]).to match_array([])
@@ -258,9 +258,9 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_1.model, desired_instance: unmatched_desired_instances[1]}])
+                  {existing_instance_model: existing_zone1_1, desired_instance: unmatched_desired_instances[1]}])
             expect(results[:desired_new]).to match_array([desired_instance(az2)])
-            expect(results[:obsolete]).to match_array([existing_zone1_0.model])
+            expect(results[:obsolete]).to match_array([existing_zone1_0])
           end
         end
 
@@ -275,10 +275,10 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in([az1], unmatched_desired_instances, unmatched_existing_instances)
 
             expect(results[:desired_existing]).to match_array([
-                  {existing_instance_model: existing_zone1_0.model, desired_instance: unmatched_desired_instances[0]}
+                  {existing_instance_model: existing_zone1_0, desired_instance: unmatched_desired_instances[0]}
                   ])
             expect(results[:desired_new]).to match_array([])
-            expect(results[:obsolete]).to match_array([existing_zone1_1.model])
+            expect(results[:obsolete]).to match_array([existing_zone1_1])
           end
         end
 
@@ -296,15 +296,15 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in([az1, az2], unmatched_desired_instances, unmatched_existing_instances)
 
             expect(results[:desired_existing].map{ |i| i[:existing_instance_model] }).to match_array([
-                  existing_zone1_0.model,
-                  existing_zone1_1.model,
-                  existing_zone2_2.model,
-                  existing_zone2_3.model ])
+                  existing_zone1_0,
+                  existing_zone1_1,
+                  existing_zone2_2,
+                  existing_zone2_3 ])
             expect(results[:desired_new]).to match_array([
                   desired_instance(az1),
                   desired_instance(az2),
                 ])
-            expect(results[:obsolete]).to match_array([existing_zone3_4.model, existing_zone3_5.model])
+            expect(results[:obsolete]).to match_array([existing_zone3_4, existing_zone3_5])
           end
         end
 
@@ -320,8 +320,8 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in(azs, unmatched_desired_instances, unmatched_existing_instances)
 
             expect(results[:desired_existing].map{ |i| i[:existing_instance_model] }).to match_array([
-                  existing_zone1_0.model,
-                  existing_zone1_1.model ])
+                  existing_zone1_0,
+                  existing_zone1_1 ])
             expect(results[:desired_new]).to match_array([desired_instance(az2)])
             expect(results[:obsolete]).to match_array([])
           end

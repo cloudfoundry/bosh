@@ -193,9 +193,9 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az).to eq(nil)
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[0].model)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[0])
             expect(existing[1][:desired_instance].az).to eq(nil)
-            expect(existing[1][:existing_instance_model]).to be(existing_instances[1].model)
+            expect(existing[1][:existing_instance_model]).to be(existing_instances[1])
 
             expect(obsolete).to eq([])
           end
@@ -213,9 +213,9 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing.count).to eq(1)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[1])
 
-            expect(obsolete).to eq([existing_instances[0].model])
+            expect(obsolete).to eq([existing_instances[0]])
           end
         end
 
@@ -231,9 +231,9 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[1])
             expect(existing[1][:desired_instance].az.name).to eq('zone2')
-            expect(existing[1][:existing_instance_model]).to be(existing_instances[0].model)
+            expect(existing[1][:existing_instance_model]).to be(existing_instances[0])
 
             expect(obsolete).to eq([])
           end
@@ -257,9 +257,9 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing.count).to eq(1)
             expect(existing[0][:desired_instance].az.name).to eq('zone1')
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[1].model)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[1])
 
-            expect(obsolete).to eq([existing_instances[0].model])
+            expect(obsolete).to eq([existing_instances[0]])
           end
         end
 
@@ -276,9 +276,9 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az).to eq(nil)
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[0].model)
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[0])
             expect(existing[1][:desired_instance].az).to eq(nil)
-            expect(existing[1][:existing_instance_model]).to be(existing_instances[1].model)
+            expect(existing[1][:existing_instance_model]).to be(existing_instances[1])
 
             expect(obsolete).to eq([])
           end
@@ -291,7 +291,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az)
-      InstanceWithAZ.new(Bosh::Director::Models::Instance.make(index: index), az)
+      Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
     end
   end
 end

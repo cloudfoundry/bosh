@@ -17,7 +17,7 @@ module Bosh
             {
               desired_new: placed_instances.absent,
               desired_existing: placed_instances.existing,
-              obsolete: unplaced_existing_instances.unclaimed_instance_models,
+              obsolete: unplaced_existing_instances.unclaimed,
             }
           end
 
