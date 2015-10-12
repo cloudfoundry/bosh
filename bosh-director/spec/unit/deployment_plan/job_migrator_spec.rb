@@ -71,7 +71,7 @@ module Bosh::Director
       allow(logger).to receive(:debug)
     end
 
-    describe 'find_existing_instances_with_azs' do
+    describe 'find_existing_instances' do
       context 'when job needs to be migrated from' do
         let(:etcd_job_spec) do
           job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
@@ -96,7 +96,7 @@ module Bosh::Director
             end
 
             it 'returns existing instances of the migrated_from jobs' do
-              migrated_instances = job_migrator.find_existing_instances_with_azs(etcd_job)
+              migrated_instances = job_migrator.find_existing_instances(etcd_job)
               expect(migrated_instances).to contain_exactly(
                 be_a_migrated_instance(migrated_job_instances[0], 'z1'),
                 be_a_migrated_instance(migrated_job_instances[1], 'z1'),
@@ -112,7 +112,7 @@ module Bosh::Director
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z1/uuid-3 (2)' to 'etcd/uuid-3 (2)'")
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             end
           end
 
@@ -137,7 +137,7 @@ module Bosh::Director
             end
 
             it 'return all existing instances from migrating_to job PLUS extra instances from migrated_from jobs' do
-              migrated_instances = job_migrator.find_existing_instances_with_azs(etcd_job)
+              migrated_instances = job_migrator.find_existing_instances(etcd_job)
               expect(migrated_instances).to contain_exactly(
                   be_a_migrated_instance(existing_job_instances[0], nil),
                   be_a_migrated_instance(existing_job_instances[1], nil),
@@ -157,7 +157,7 @@ module Bosh::Director
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
               expect(logger).to receive(:debug).with("Migrating job 'etcd_z2/uuid-6 (2)' to 'etcd/uuid-6 (2)'")
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             end
           end
         end
@@ -175,7 +175,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job 'etcd_z1' to 'etcd', deployment still contains it"
@@ -198,7 +198,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job 'etcd_z1' to 'etcd', can only be used in one job to migrate"
@@ -213,7 +213,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job 'etcd_z1' to 'etcd', 'etcd_z1' belongs to availability zone 'z10' and manifest specifies 'z1'"
@@ -227,7 +227,7 @@ module Bosh::Director
           end
 
           it 'updates instance az' do
-            job_migrator.find_existing_instances_with_azs(etcd_job)
+            job_migrator.find_existing_instances(etcd_job)
             etcd_z1_instance = Models::Instance.find(job: 'etcd_z1', index: 0)
             expect(etcd_z1_instance.availability_zone).to eq('z1')
           end
@@ -248,7 +248,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              job_migrator.find_existing_instances_with_azs(etcd_job)
+              job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job 'etcd_z1' to 'etcd', availability zone of 'etcd_z1' is not specified"
@@ -266,7 +266,7 @@ module Bosh::Director
         end
 
         it 'returns the list of existing job instances' do
-          migrated_instances = job_migrator.find_existing_instances_with_azs(etcd_job)
+          migrated_instances = job_migrator.find_existing_instances(etcd_job)
           expect(migrated_instances).to contain_exactly(
               be_a_migrated_instance(existing_job_instances[0], nil),
               be_a_migrated_instance(existing_job_instances[1], nil)

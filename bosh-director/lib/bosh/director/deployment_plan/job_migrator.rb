@@ -7,7 +7,7 @@ module Bosh::Director
       @logger = logger
     end
 
-    def find_existing_instances_with_azs(desired_job)
+    def find_existing_instances(desired_job)
       instances = []
       desired_job.existing_instances.each do |existing_instance|
         instances << existing_instance
