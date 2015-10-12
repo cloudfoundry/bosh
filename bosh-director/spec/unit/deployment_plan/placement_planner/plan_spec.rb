@@ -8,8 +8,9 @@ module Bosh::Director::DeploymentPlan
     let(:zone_1) {AvailabilityZone.new('zone_1', {})}
     let(:zone_2) {AvailabilityZone.new('zone_2', {})}
     let(:zone_3) {AvailabilityZone.new('zone_3', {})}
+    let(:job) { instance_double(Job, name: 'db') }
 
-    let(:desired) { [DesiredInstance.new, DesiredInstance.new, DesiredInstance.new] }
+    let(:desired) { [DesiredInstance.new(job), DesiredInstance.new(job), DesiredInstance.new(job)] }
     let(:existing) {
       [
         existing_instance_with_az(2, zone_1.name),
@@ -84,7 +85,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def desired_instance(zone = nil)
-      DesiredInstance.new(nil, 'started', nil, zone)
+      DesiredInstance.new(job, 'started', nil, zone)
     end
   end
 end

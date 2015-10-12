@@ -45,6 +45,21 @@ describe 'migrated from', type: :integration do
     subnet2.merge('availability_zone' => 'my-az-2')
   end
 
+  let(:subnet3) do
+    {
+      'range' => '192.168.3.0/24',
+      'gateway' => '192.168.3.1',
+      'dns' => ['192.168.3.1', '192.168.3.2'],
+      'reserved' => [],
+      'static' => ['192.168.3.10'],
+      'cloud_properties' => {},
+    }
+  end
+
+  let(:subnet_with_az3) do
+    subnet3.merge('availability_zone' => 'my-az-3')
+  end
+
   let(:manifest_with_azs) do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     job_spec = etcd_job
@@ -417,6 +432,44 @@ describe 'migrated from', type: :integration do
         expect(new_vms.map(&:job_name)).to match_array(['etcd', 'etcd'])
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
+      end
+
+      it 'assigns indexes correctly' do
+        manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
+        db1_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z1', persistent_disk_pool: 'fast_disks')
+        db1_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        db1_job_spec['instances'] = 1
+        db2_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z2', persistent_disk_pool: 'fast_disks')
+        db2_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        db2_job_spec['instances'] = 1
+        db3_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z3', persistent_disk_pool: 'fast_disks')
+        db3_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        db3_job_spec['instances'] = 2
+        db3_job_spec['availability_zones'] = ['my-az-3']
+        manifest_with_azs['jobs'] = [db1_job_spec, db2_job_spec, db3_job_spec]
+
+        cloud_config_hash = cloud_config_hash_with_azs
+        cloud_config_hash['availability_zones'] = [
+          { 'name' => 'my-az-1' },
+          { 'name' => 'my-az-2' },
+          { 'name' => 'my-az-3' }
+        ]
+        cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2, subnet_with_az3]
+
+        deploy_from_scratch(manifest_hash: manifest_with_azs, cloud_config_hash: cloud_config_hash)
+
+        new_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        db_job_spec = Bosh::Spec::Deployments.simple_job(instances: 4, name: 'db')
+        db_job_spec['instances'] = 4
+        db_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
+        db_job_spec['availability_zones'] = ['my-az-1', 'my-az-2', 'my-az-3']
+        db_job_spec['migrated_from'] = [{'name' => 'db_z2', 'availability_zone' => 'my-az-2'}, {'name' => 'db_z3', 'availability_zone' => 'my-az-3'}]
+        new_manifest_hash['jobs'] = [db1_job_spec, db_job_spec]
+
+        deploy_simple_manifest(manifest_hash: new_manifest_hash)
+
+        db_instances = director.instances.select { |i| i.job_name =='db' }
+        expect(db_instances.map(&:index)).to match_array(['0', '1', '2', '3'])
       end
     end
   end

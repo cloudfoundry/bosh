@@ -114,24 +114,53 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-
         context 'when existing instances have indexes conflicting with each other' do
-          it 'assigns indexes properly' do
+          it 'prefers indexes to keep on instances with the same job name' do
             zoned_instances = {
               :desired_new => [DesiredInstance.new, DesiredInstance.new],
-              :desired_existing => build_existing([1 ,1]),
+              :desired_existing => build_existing([1, 1, 1, 2]),
               :obsolete => [],
             }
 
             assigner.assign_indexes(zoned_instances)
 
-            indexes = zoned_instances[:desired_new].map { |desired_instance| desired_instance.index }
-            expect(indexes).to match_array([2, 3])
-
             indexes = zoned_instances[:desired_existing].map { |result| result[:desired_instance].index }
-            expect(indexes).to match_array([0,1])
+            expect(indexes).to match_array([0, 1, 2, 3])
+
+            indexes = zoned_instances[:desired_new].map { |desired_instance| desired_instance.index }
+            expect(indexes).to match_array([4, 5])
 
             expect(zoned_instances[:obsolete]).to eq([])
+          end
+
+          it 'prefers to keep indexes for instance that match desired job name' do
+            # when migrating db_z1 to db, if db has instance with index 0
+            # and db_z1 has an index 0, we want to preserve index 0 only on db
+            # and db_z1 should get next available
+
+            desired_existing_with_matching_job_name = {
+              :desired_instance => DesiredInstance.new(double(:job, name: 'db')),
+              :existing_instance_model => Bosh::Director::Models::Instance.make(index: 0, job: 'db')
+            }
+
+            desired_existing_with_non_matching_job_name = {
+              :desired_instance => DesiredInstance.new(double(:job, name: 'db')),
+              :existing_instance_model => Bosh::Director::Models::Instance.make(index: 0, job: 'db_z1')
+            }
+
+            zoned_instances = {
+              :desired_new => [],
+              :desired_existing => [
+                desired_existing_with_non_matching_job_name,
+                desired_existing_with_matching_job_name
+              ],
+              :obsolete => [],
+            }
+
+            assigner.assign_indexes(zoned_instances)
+
+            expect(desired_existing_with_non_matching_job_name[:desired_instance].index).to eq(1)
+            expect(desired_existing_with_matching_job_name[:desired_instance].index).to eq(0)
           end
         end
 
@@ -305,11 +334,15 @@ module Bosh::Director::DeploymentPlan
 
     def build_existing(indexes)
       indexes.map do |index|
-        {
-          :desired_instance => DesiredInstance.new,
-          :existing_instance_model => Bosh::Director::Models::Instance.make({:index => index})
-        }
+        desired_existing_instance(index: index)
       end
+    end
+
+    def desired_existing_instance(options)
+      {
+        :desired_instance => DesiredInstance.new(double(:job, name: 'db')),
+        :existing_instance_model => Bosh::Director::Models::Instance.make({:index => options[:index]})
+      }
     end
 
     def build_obsolete(indexes)
