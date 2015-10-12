@@ -13,7 +13,7 @@ module Bosh::Director
       return if @instance_model.compilation || @instance_model.vm.nil?
 
       if @skip_drain
-        @logger.info("Skipping drain for '#{@instance_model.to_s}'")
+        @logger.info("Skipping drain for '#{@instance_model}'")
       else
         perform_drain
       end
@@ -64,7 +64,7 @@ module Bosh::Director
 
         wait_time = drain_time.abs
         if wait_time > 0
-          @logger.info("`#{@instance_model.to_s}' is draining: checking back in #{wait_time}s")
+          @logger.info("`#{@instance_model}' is draining: checking back in #{wait_time}s")
           sleep(wait_time)
         end
 
