@@ -138,41 +138,6 @@ module Bosh::Director::DeploymentPlan
           expect(instance_plan_sorter.sort([]).count).to eq(0)
         end
       end
-
-      context 'when called with InstancePlans with InstanceFromDatabase' do
-        let(:bootstrap_instance) {
-          InstanceFromDatabase.new(
-            BD::Models::Instance.make(uuid: 'a-uuid', index: 0, job: 'job_name', availability_zone: 'bootstrap_name', bootstrap: true),
-            logger
-          )
-        }
-
-        it 'should continue to sort' do
-            instance4_az_3 = InstanceFromDatabase.new(
-              BD::Models::Instance.make(uuid: '1234-uuid2', index: 7, job: 'job_name', availability_zone: 'az3_name'),
-              logger
-            )
-            instance_plan3_az_3 = InstancePlan.new(
-              existing_instance: instance4_az_3.model,
-              desired_instance: desired_instance,
-              instance: instance4_az_3,
-              network_plans: [])
-
-            instance5_az_4 = InstanceFromDatabase.new(
-              BD::Models::Instance.make(uuid: '42341-uuid2', index: 8, job: 'job_name', availability_zone: 'az4_name'),
-              logger
-            )
-            instance_plan5_az_4 = InstancePlan.new(
-              existing_instance: instance5_az_4.model,
-              desired_instance: desired_instance,
-              instance: instance5_az_4,
-              network_plans: [])
-
-            sorted_instance_plans = instance_plan_sorter.sort([bootstrap_instance_plan, instance_plan5_az_4, instance_plan3_az_3])
-
-            expect(sorted_instance_plans).to eq([bootstrap_instance_plan, instance_plan3_az_3, instance_plan5_az_4])
-        end
-      end
     end
   end
 end

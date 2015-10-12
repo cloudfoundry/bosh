@@ -221,8 +221,6 @@ module Bosh::Director
         end
       end
 
-      # Adds instance to deletion queue
-      # @param [Bosh::Director::DeploymentPlan::InstanceFromDatabase]
       def mark_instance_for_deletion(instance)
         @unneeded_instances << instance
       end

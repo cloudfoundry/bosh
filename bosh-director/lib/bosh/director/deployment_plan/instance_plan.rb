@@ -187,38 +187,20 @@ module Bosh
         def network_settings
           desired_reservations = network_plans
                                    .reject(&:obsolete?)
-                                   .map{ |network_plan| network_plan.reservation }
+                                   .map { |network_plan| network_plan.reservation }
 
-          if @instance.respond_to?(:job)
-            DeploymentPlan::NetworkSettings.new(
-              @instance.job.name,
-              @instance.job.can_run_as_errand?,
-              @instance.model.deployment.name,
-              @instance.job.default_network,
-              desired_reservations,
-              @instance.current_state,
-              @instance.availability_zone,
-              @instance.index,
-              @instance.uuid,
-              @dns_manager
-            )
-          else
-            # CAUTION: This is a safety guard in case @instance is an InstanceFromDatabase.
-            # This should be removed when InstanceFromDatabase is removed.
-
-            DeploymentPlan::NetworkSettings.new(
-              @instance.job_name,
-              false,
-              @instance.deployment_model.name,
-              {},
-              [],
-              {},
-              AvailabilityZone.new(@instance.availability_zone_name, @instance.cloud_properties),
-              @instance.index,
-              @instance.uuid,
-              @dns_manager
-            )
-          end
+          DeploymentPlan::NetworkSettings.new(
+            @instance.job.name,
+            @instance.job.can_run_as_errand?,
+            @instance.model.deployment.name,
+            @instance.job.default_network,
+            desired_reservations,
+            @instance.current_state,
+            @instance.availability_zone,
+            @instance.index,
+            @instance.uuid,
+            @dns_manager
+          )
         end
 
         def network_settings_hash
