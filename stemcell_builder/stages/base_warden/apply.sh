@@ -55,7 +55,18 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
     "Linux": {
       "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
-      "BindMountPersistentDisk": true
+      "BindMountPersistentDisk": true,
+      "UseDirectoryAsEphemeralDisk": true
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "/var/vcap/bosh/warden-cpi-agent-env.json"
+        }
+      ]
     }
   }
 }
