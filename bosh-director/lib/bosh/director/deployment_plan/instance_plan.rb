@@ -30,7 +30,6 @@ module Bosh
           @changes = Set.new
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
-          @changes << :recreate_deployment if recreate_deployment?
           @changes << :cloud_properties if instance.cloud_properties_changed?
           @changes << :vm_type if vm_type_changed?
           @changes << :stemcell if stemcell_changed?
@@ -45,15 +44,6 @@ module Bosh
           @changes << :bootstrap if bootstrap_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
           @changes
-        end
-
-        def recreate_deployment?
-          job = @instance.job
-          if job.deployment.recreate
-            @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
-            return true
-          end
-          false
         end
 
         def env_changed?
@@ -89,7 +79,13 @@ module Bosh
         end
 
         def needs_recreate?
-          @desired_instance.virtual_state == 'recreate'
+          job = @instance.job
+          if job.deployment.recreate
+            @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
+            true
+          else
+            @desired_instance.virtual_state == 'recreate'
+          end
         end
 
         def bootstrap_changed?
@@ -104,13 +100,13 @@ module Bosh
 
         def state_changed?
           if desired_instance.state == 'detached' &&
-              existing_instance.state != desired_instance.state
+            existing_instance.state != desired_instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
-              instance.state == 'started' && instance.current_job_state != 'running'
+            instance.state == 'started' && instance.current_job_state != 'running'
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
             return true
           end
@@ -210,11 +206,10 @@ module Bosh
         def needs_shutting_down?
           return true if obsolete?
 
-          recreate_deployment? ||
-          vm_type_changed? ||
-          stemcell_changed? ||
-          env_changed? ||
-          needs_recreate?
+            vm_type_changed? ||
+            stemcell_changed? ||
+            env_changed? ||
+            needs_recreate?
         end
 
         private

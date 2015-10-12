@@ -51,33 +51,6 @@ module Bosh::Director::DeploymentPlan
       job.add_instance_plans([instance_plan])
     end
 
-    describe '#recreate_deployment?' do
-      describe 'when nothing changes' do
-        it 'should return false' do
-          expect(instance_plan.recreate_deployment?).to eq(false)
-        end
-      end
-
-      describe "when the job's deployment is configured for recreate" do
-        let(:deployment_plan) do
-          planner_factory = PlannerFactory.create(BD::Config.event_log, logger)
-          manifest = Psych.load(deployment_model.manifest)
-          plan = planner_factory.create_from_manifest(manifest, deployment_model.cloud_config, {'recreate' => true})
-          plan.bind_models
-          plan
-        end
-
-        it 'should return changed' do
-          expect(instance_plan.recreate_deployment?).to be_truthy
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('recreate_deployment? job deployment is configured with "recreate" state')
-          instance_plan.recreate_deployment?
-        end
-      end
-    end
-
     describe '#needs_shutting_down?' do
       context 'when instance_plan is obsolete' do
         let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: [network_plan]) }
@@ -202,6 +175,31 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#needs_recreate?' do
+      describe 'when nothing changes' do
+        it 'should return false' do
+          expect(instance_plan.needs_recreate?).to eq(false)
+        end
+      end
+
+      describe 'when deployment is being recreated' do
+        let(:deployment_plan) do
+          planner_factory = PlannerFactory.create(BD::Config.event_log, logger)
+          manifest = Psych.load(deployment_model.manifest)
+          plan = planner_factory.create_from_manifest(manifest, deployment_model.cloud_config, {'recreate' => true})
+          plan.bind_models
+          plan
+        end
+
+        it 'should return changed' do
+          expect(instance_plan.needs_recreate?).to be_truthy
+        end
+
+        it 'should log the change reason' do
+          expect(logger).to receive(:debug).with('needs_recreate? job deployment is configured with "recreate" state')
+          instance_plan.needs_recreate?
+        end
+      end
+
       context 'when instance is being recreated' do
         let(:desired_instance) { DesiredInstance.new(job, 'recreate') }
 

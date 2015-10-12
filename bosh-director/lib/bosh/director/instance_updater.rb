@@ -297,10 +297,6 @@ module Bosh::Director
 
     def try_to_update_in_place(instance_plan)
       instance = instance_plan.instance
-      if instance_plan.recreate_deployment?
-        @logger.debug("Recreate Deployment is set - instances will be recreated")
-        return false
-      end
 
       if instance_plan.needs_recreate?
         @logger.debug("Skipping update VM in place: instance will be recreated")
