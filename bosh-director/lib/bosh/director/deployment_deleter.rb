@@ -9,11 +9,10 @@ module Bosh::Director
 
     def delete(deployment_model, instance_deleter, vm_deleter)
       instance_plans = deployment_model.instances.map do |instance_model|
-        instance = DeploymentPlan::InstanceFromDatabase.create_from_model(instance_model, @logger)
         DeploymentPlan::InstancePlan.new(
-          existing_instance: instance.model,
-          instance: instance,
-          desired_instance: DeploymentPlan::DesiredInstance.new,
+          existing_instance: instance_model,
+          instance: nil,
+          desired_instance: nil,
           network_plans: []
         )
       end
