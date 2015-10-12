@@ -19,6 +19,10 @@ if [ "${stemcell_operating_system}" == "rhel" ]; then
     "Settings": {
       "Sources": [
         {
+          "Type": "File",
+          "SettingsPath": "/var/vcap/bosh/agent-bootstrap-env.json"
+        },
+        {
           "Type": "ConfigDrive",
           "DiskPaths": [
             "/dev/disk/by-label/CONFIG-2",
@@ -53,6 +57,10 @@ else
   "Infrastructure": {
     "Settings": {
       "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "/var/vcap/bosh/agent-bootstrap-env.json"
+        },
         {
           "Type": "ConfigDrive",
           "DiskPaths": [
