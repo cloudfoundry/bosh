@@ -51,35 +51,6 @@ describe 'deploy', type: :integration do
 
 
   context 'when stemcell is using latest version' do
-    it 'deploys with latest version of stemcell' do
-      target_and_login
-      create_and_upload_test_release
-
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['resource_pools'].first['stemcell'].delete('name')
-      cloud_config_hash['resource_pools'].first['stemcell']['os'] = 'toronto-os'
-      cloud_config_hash['resource_pools'].first['stemcell']['version'] = 'latest'
-
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
-
-      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_v2.tgz')} --skip-if-exists")
-      v2_stemcell_id = current_sandbox.cpi.all_stemcells.first[9..-1]
-
-      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      manifest_hash['jobs'].first['instances'] = 1
-      deploy_simple_manifest(manifest_hash: manifest_hash)
-
-      create_vm_invocations = current_sandbox.cpi.invocations_for_method("create_vm")
-      expect(create_vm_invocations.count).to be > 0
-
-      create_vm_invocations.each do |invocation|
-        expect(invocation['inputs']['stemcell_id']).to eq(v2_stemcell_id)
-      end
-
-    end
-
     it 'redeploys with latest version of stemcell' do
       target_and_login
       create_and_upload_test_release

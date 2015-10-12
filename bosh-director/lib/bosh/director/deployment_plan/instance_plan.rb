@@ -48,8 +48,6 @@ module Bosh
         end
 
         def recreate_deployment?
-          return false if obsolete?
-
           job = @instance.job
           if job.deployment.recreate
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
@@ -91,8 +89,6 @@ module Bosh
         end
 
         def needs_recreate?
-          return false if obsolete?
-
           @desired_instance.virtual_state == 'recreate'
         end
 
@@ -123,8 +119,6 @@ module Bosh
         end
 
         def vm_type_changed?
-          return true if obsolete?
-
           if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
             log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec)
             return true
@@ -133,8 +127,6 @@ module Bosh
         end
 
         def stemcell_changed?
-          return true if obsolete?
-
           if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
             log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name)
             return true
@@ -213,6 +205,16 @@ module Bosh
 
         def network_addresses
           network_settings.network_addresses
+        end
+
+        def needs_shutting_down?
+          return true if obsolete?
+
+          recreate_deployment? ||
+          vm_type_changed? ||
+          stemcell_changed? ||
+          env_changed? ||
+          needs_recreate?
         end
 
         private

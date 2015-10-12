@@ -28,7 +28,7 @@ module Bosh::Director
     end
 
     def perform_drain
-      drain_type = shutting_down? ? 'shutdown' : 'update'
+      drain_type = needs_drain_to_migrate_data? ? 'shutdown' : 'update'
 
       # Apply spec might change after shutdown drain (unlike update drain)
       # because instance's VM could be reconfigured.
@@ -43,14 +43,10 @@ module Bosh::Director
       end
     end
 
-    def shutting_down?
+    def needs_drain_to_migrate_data?
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
-        @instance_plan.recreate_deployment? ||
-        @instance_plan.vm_type_changed? ||
-        @instance_plan.stemcell_changed? ||
-        @instance_plan.env_changed? ||
-        @instance_plan.needs_recreate? ||
+        @instance_plan.needs_shutting_down? ||
         @instance_plan.persistent_disk_changed? ||
         @instance_plan.networks_changed?
     end

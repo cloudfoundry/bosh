@@ -17,10 +17,7 @@ module Bosh::Director
         end
       end
       before do
-        allow(instance_plan).to receive(:recreate_deployment?).with(no_args).and_return(false)
-        allow(instance_plan).to receive(:vm_type_changed?).with(no_args).and_return(false)
-        allow(instance_plan).to receive(:stemcell_changed?).with(no_args).and_return(false)
-        allow(instance_plan).to receive(:env_changed?).with(no_args).and_return(false)
+        allow(instance_plan).to receive(:needs_shutting_down?).with(no_args).and_return(false)
       end
 
       context 'when nothing has changed' do
@@ -71,64 +68,8 @@ module Bosh::Director
           it_does_not_send_prepare
         end
 
-        context "when instance needs to be recreated" do
-          before { allow(instance_plan).to receive_messages(needs_recreate?: true) }
-          it_does_not_send_prepare
-        end
-      end
-
-      context "when instance's vm type has changed" do
-        before { allow(instance_plan).to receive(:vm_type_changed?).with(no_args).and_return(true) }
-
-        context "when state of the instance is not 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          it_does_not_send_prepare
-        end
-
-        context "when state of the instance is 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
-          it_does_not_send_prepare
-        end
-      end
-
-      context "when instance's stemcell type has changed" do
-        before { allow(instance_plan).to receive(:stemcell_changed?).with(no_args).and_return(true) }
-
-        context "when state of the instance is not 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          it_does_not_send_prepare
-        end
-
-        context "when state of the instance is 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
-          it_does_not_send_prepare
-        end
-      end
-
-      context "when instance's env has changed" do
-        before { allow(instance_plan).to receive(:env_changed?).with(no_args).and_return(true) }
-
-        context "when state of the instance is not 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          it_does_not_send_prepare
-        end
-
-        context "when state of the instance is 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
-          it_does_not_send_prepare
-        end
-      end
-
-      context "when instance's recreate deployment is set" do
-        before { allow(instance_plan).to receive(:recreate_deployment?).with(no_args).and_return(true) }
-
-        context "when state of the instance is not 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          it_does_not_send_prepare
-        end
-
-        context "when state of the instance is 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+        context 'when instance needs to be shut down' do
+          before { allow(instance_plan).to receive_messages(needs_shutting_down?: true) }
           it_does_not_send_prepare
         end
       end

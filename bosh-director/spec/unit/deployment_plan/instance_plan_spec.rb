@@ -78,6 +78,51 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#needs_shutting_down?' do
+      context 'when instance_plan is obsolete' do
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: [network_plan]) }
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+
+      context 'when deployment is being recreated' do
+        let(:deployment) { instance_double(Planner, recreate: true) }
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+
+      context 'when the vm type has changed' do
+        let(:new_vm_type) { {'name' => 'new-vm-type', 'cloud_properties' => {'new' => 'properties'}} }
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+
+      context 'when the stemcell type has changed' do
+        let(:new_stemcell) { {'name' => 'new-stemcell-name', 'version' => '2.0.7'} }
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+
+      context 'when the env has changed' do
+        let(:new_env) { {'new' => 'env'} }
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+
+      context 'when the instance is being recreated' do
+        let(:deployment) { instance_double(Planner, recreate: true) }
+
+        it 'shuts down the instance' do
+          expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+    end
+
     describe '#vm_type_changed?' do
       before do
         instance_plan.existing_instance.vm.update(apply_spec: {'vm_type' => { 'name' => 'fake-vm-type2', 'cloud_properties' => {'bar' => 'baz'}}})
@@ -157,14 +202,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#needs_recreate?' do
-      context 'when instance is obsolete' do
-        it 'should return false' do
-          obsolete_instance_plan = InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil)
-
-          expect(obsolete_instance_plan.needs_recreate?).to be_falsey
-        end
-      end
-
       context 'when instance is being recreated' do
         let(:desired_instance) { DesiredInstance.new(job, 'recreate') }
 
