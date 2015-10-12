@@ -336,7 +336,7 @@ module Bosh::Dev::Sandbox
       else
         @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
         # all postgres connections go through this proxy (for testing automatic reconnect)
-        @database_proxy = ConnectionProxyService.new("127.0.0.1", 5432, @port_provider.get_port(:postgres), @logger)
+        @database_proxy = ConnectionProxyService.new("127.0.0.1", 5432, @port_provider.get_port(:postgres), base_log_path, @logger)
       end
     end
 
