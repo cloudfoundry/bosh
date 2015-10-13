@@ -303,6 +303,11 @@ module Bosh::Director
         return false
       end
 
+      if instance.cloud_properties_changed?
+        @logger.debug("Cloud Properties have changed. Can't update VM in place")
+        return false
+      end
+
       @logger.debug('Trying to update VM settings in place')
 
       network_updater = NetworkUpdater.new(instance_plan, agent(instance), @cloud, @logger)
