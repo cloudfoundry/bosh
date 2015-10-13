@@ -50,7 +50,7 @@ module Bosh
           job = @instance.job
 
           if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
-            log_changes(__method__, @existing_instance.vm.env, job.env.spec)
+            log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
             return true
           end
           false
@@ -65,11 +65,11 @@ module Bosh
           new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
           new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
           changed = new_disk_size != disk_size
-          log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}") if changed
+          log_changes(__method__, "disk size: #{disk_size}", "disk size: #{new_disk_size}", @existing_instance) if changed
           return true if changed
 
           changed = new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
-          log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties) if changed
+          log_changes(__method__, disk_cloud_properties, new_disk_cloud_properties, @existing_instance) if changed
           changed
         end
 
@@ -116,7 +116,7 @@ module Bosh
 
         def vm_type_changed?
           if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
-            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec)
+            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec, @existing_instance)
             return true
           end
           false
@@ -124,12 +124,12 @@ module Bosh
 
         def stemcell_changed?
           if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
-            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name)
+            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
             return true
           end
 
           if @existing_instance && @instance.stemcell.version != @existing_instance.apply_spec['stemcell']['version']
-            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}")
+            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
             return true
           end
 
@@ -214,8 +214,8 @@ module Bosh
 
         private
 
-        def log_changes(method_sym, old_state, new_state)
-          @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state}")
+        def log_changes(method_sym, old_state, new_state, instance)
+          @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state} on instance #{instance}")
         end
 
         def disk_size

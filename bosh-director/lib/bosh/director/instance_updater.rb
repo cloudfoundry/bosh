@@ -298,28 +298,8 @@ module Bosh::Director
     def try_to_update_in_place(instance_plan)
       instance = instance_plan.instance
 
-      if instance_plan.needs_recreate?
-        @logger.debug("Skipping update VM in place: instance will be recreated")
-        return false
-      end
-
-      if instance.cloud_properties_changed?
-        @logger.debug("Cloud Properties have changed. Can't update VM in place")
-        return false
-      end
-
-      if instance_plan.vm_type_changed?
-        @logger.debug("VM Type has changed. Can't update VM in place")
-        return false
-      end
-
-      if instance_plan.stemcell_changed?
-        @logger.debug("Stemcell has changed. Can't update VM in place")
-        return false
-      end
-
-      if instance_plan.env_changed?
-        @logger.debug("ENV has changed. Can't update VM in place")
+      if instance_plan.needs_shutting_down?
+        @logger.debug('Not updating VM in place. VM needs to be shutdown before it can be updated.')
         return false
       end
 

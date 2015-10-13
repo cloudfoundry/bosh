@@ -110,7 +110,9 @@ module Bosh::Director::DeploymentPlan
           expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
                 '{"name"=>"fake-vm-type2", "cloud_properties"=>{"bar"=>"baz"}} ' +
                 'TO: ' +
-                '{"name"=>"a", "cloud_properties"=>{}}')
+                '{"name"=>"a", "cloud_properties"=>{}}' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
           instance_plan.vm_type_changed?
         end
       end
@@ -139,7 +141,9 @@ module Bosh::Director::DeploymentPlan
           expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
                 'version: 2 ' +
                 'TO: ' +
-                'version: 1')
+                'version: 1' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
           instance_plan.stemcell_changed?
         end
       end
@@ -168,7 +172,8 @@ module Bosh::Director::DeploymentPlan
         it 'should log the diff when the resource pool env changes' do
           instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
 
-          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}')
+          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
+                ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.env_changed?
         end
       end
@@ -248,7 +253,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log' do
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: disk size: 42 TO: disk size: 24')
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: disk size: 42 TO: disk size: 24' +
+                ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.persistent_disk_changed?
         end
       end
@@ -258,7 +264,8 @@ module Bosh::Director::DeploymentPlan
           persistent_disk = BD::Models::PersistentDisk.make(size: 24, cloud_properties: {'old' => 'properties'})
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
 
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {"old"=>"properties"} TO: {"new"=>"properties"}')
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {"old"=>"properties"} TO: {"new"=>"properties"}' +
+                ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.persistent_disk_changed?
         end
       end
