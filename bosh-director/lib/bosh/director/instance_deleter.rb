@@ -2,9 +2,8 @@ module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
 
-    def initialize(ip_provider, skip_drain_decider, dns_manager, options={})
+    def initialize(ip_provider, dns_manager, options={})
       @ip_provider = ip_provider
-      @skip_drain_decider = skip_drain_decider
       @dns_manager = dns_manager
       @cloud = Config.cloud
       @logger = Config.logger
@@ -67,13 +66,7 @@ module Bosh::Director
     private
 
     def stop(instance_plan)
-      if instance_plan.new?
-        skip_drain = @skip_drain_decider.for_job(instance_plan.instance.job_name) # FIXME: can we do something better?
-      else
-        skip_drain = @skip_drain_decider.for_job(instance_plan.existing_instance.job) # FIXME: can we do something better?
-      end
-
-      stopper = Stopper.new(instance_plan, 'stopped', skip_drain, Config, @logger)
+      stopper = Stopper.new(instance_plan, 'stopped', Config, @logger)
       stopper.stop
     end
 

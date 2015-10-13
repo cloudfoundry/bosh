@@ -5,14 +5,13 @@ module Bosh::Director
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
-    let(:skip_drain_decider) { Bosh::Director::DeploymentPlan::AlwaysSkipDrain.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
     before { allow(Config).to receive(:cloud).and_return(cloud) }
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProviderV2) }
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
     let(:options) { {} }
-    let(:deleter) { InstanceDeleter.new(ip_provider, skip_drain_decider, dns_manager, options) }
+    let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, options) }
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlan.new(reservation: reservation) }
@@ -24,7 +23,8 @@ module Bosh::Director
           existing_instance: existing_instance,
           instance: nil,
           network_plans: [network_plan],
-          desired_instance: nil
+          desired_instance: nil,
+          skip_drain: true
         )
       end
 
@@ -69,9 +69,8 @@ module Bosh::Director
         let(:stopper) { instance_double(Stopper) }
         before do
           allow(Stopper).to receive(:new).with(
-              instance_of(DeploymentPlan::InstancePlan),
+              instance_plan,
               'stopped',
-              true,
               Config,
               logger
             ).and_return(stopper)

@@ -7,11 +7,12 @@ module Bosh
           @desired_instance = attrs.fetch(:desired_instance)
           @instance = attrs.fetch(:instance)
           @network_plans = attrs.fetch(:network_plans, [])
+          @skip_drain = attrs.fetch(:skip_drain, false)
           @logger = Config.logger
           @dns_manager = DnsManager.create
         end
 
-        attr_reader :desired_instance, :existing_instance, :instance
+        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain
 
         attr_accessor :network_plans
 

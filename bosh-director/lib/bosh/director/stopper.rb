@@ -1,10 +1,9 @@
 module Bosh::Director
   class Stopper
-    def initialize(instance_plan, target_state, skip_drain, config, logger)
+    def initialize(instance_plan, target_state, config, logger)
       @instance_plan = instance_plan
       @instance_model = @instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
       @target_state = target_state
-      @skip_drain = skip_drain
       @config = config
       @logger = logger
     end
@@ -12,7 +11,7 @@ module Bosh::Director
     def stop
       return if @instance_model.compilation || @instance_model.vm.nil?
 
-      if @skip_drain
+      if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")
       else
         perform_drain

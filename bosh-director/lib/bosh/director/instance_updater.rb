@@ -133,8 +133,7 @@ module Bosh::Director
 
     def stop(instance_plan)
       instance = instance_plan.instance
-      skip_drain = deployment_plan(instance).skip_drain_for_job?(instance.job.name)
-      stopper = Stopper.new(instance_plan, instance.state, skip_drain, Config, @logger)
+      stopper = Stopper.new(instance_plan, instance.state, Config, @logger)
       stopper.stop
     end
 
@@ -408,10 +407,6 @@ module Bosh::Director
 
     def agent(instance)
       @agent ||= AgentClient.with_vm(instance.model.vm)
-    end
-
-    def deployment_plan(instance)
-      instance.job.deployment
     end
   end
 end

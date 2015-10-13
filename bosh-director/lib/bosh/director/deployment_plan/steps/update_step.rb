@@ -77,7 +77,7 @@ module Bosh::Director
           end
           event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
           dns_manager = DnsManager.create
-          instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @deployment_plan.skip_drain, dns_manager)
+          instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager)
           unneeded_instance_plans = unneeded_instances.map do |instance|
             DeploymentPlan::InstancePlan.new(
               existing_instance: instance,

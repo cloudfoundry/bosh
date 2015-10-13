@@ -3,7 +3,7 @@ require 'bosh/director/stopper'
 
 module Bosh::Director
   describe Stopper do
-    subject(:stopper) { described_class.new(instance_plan, target_state, skip_drain, config, logger) }
+    subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
     let(:instance_model) { Models::Instance.make(vm: vm) }
     let(:vm) { Models::Vm.make(apply_spec: spec, env: {'old' => 'env'}) }
 
@@ -14,7 +14,7 @@ module Bosh::Director
     let(:skip_drain) { false }
     let(:instance) { instance_double(DeploymentPlan::Instance, model: instance_model, apply_spec: spec) }
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new }
-    let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance) }
+    let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain) }
     let(:spec) do
       {
         'vm_type' => {

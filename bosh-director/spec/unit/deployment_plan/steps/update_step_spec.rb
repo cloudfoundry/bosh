@@ -64,7 +64,7 @@ module Bosh::Director
 
         instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
         expect(InstanceDeleter).to receive(:new)
-                                     .with(ip_provider, skip_drain, instance_of(DnsManager))
+                                     .with(ip_provider, instance_of(DnsManager))
                                      .and_return(instance_deleter)
 
         expect(instance_deleter).to receive(:delete_instance_plans) do |instance_plans, event_log, _|

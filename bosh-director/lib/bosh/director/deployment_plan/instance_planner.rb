@@ -2,9 +2,10 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlanner
-        def initialize(logger, instance_factory)
+        def initialize(logger, instance_factory, skip_drain_decider)
           @logger = logger
           @instance_repo = instance_factory
+          @skip_drain_decider = skip_drain_decider
         end
 
         def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
@@ -32,7 +33,12 @@ module Bosh
             desired_job_names.include?(existing_instance_model.job) ||
             migrating_job_names.include?(existing_instance_model.job)
           end.map do |existing_instance|
-            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: nil)
+            InstancePlan.new(
+              desired_instance: nil,
+              existing_instance: existing_instance,
+              instance: nil,
+              skip_drain: @skip_drain_decider.for_job(existing_instance.job)
+            )
           end
         end
 
@@ -77,7 +83,12 @@ module Bosh
 
         def obsolete_instance_plans(obsolete_desired_instances)
           obsolete_desired_instances.map do |existing_instance|
-            InstancePlan.new(desired_instance: nil, existing_instance: existing_instance, instance: nil)
+            InstancePlan.new(
+              desired_instance: nil,
+              existing_instance: existing_instance,
+              instance: nil,
+              skip_drain: @skip_drain_decider.for_job(existing_instance.job)
+            )
           end
         end
 
@@ -88,14 +99,24 @@ module Bosh
             existing_instance_state = states_by_existing_instance[existing_instance_model]
             instance = @instance_repo.fetch_existing(desired_instance, existing_instance_model, existing_instance_state)
             instance.update_description
-            InstancePlan.new(desired_instance: desired_instance, existing_instance: existing_instance_model, instance: instance)
+            InstancePlan.new(
+              desired_instance: desired_instance,
+              existing_instance: existing_instance_model,
+              instance: instance,
+              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name)
+            )
           end
         end
 
         def desired_new_instance_plans(new_desired_instances)
           new_desired_instances.map do |desired_instance|
             instance = @instance_repo.create(desired_instance, desired_instance.index)
-            InstancePlan.new(desired_instance: desired_instance, existing_instance: nil, instance: instance)
+            InstancePlan.new(
+              desired_instance: desired_instance,
+              existing_instance: nil,
+              instance: instance,
+              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name)
+            )
           end
         end
 
