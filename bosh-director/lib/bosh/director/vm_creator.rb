@@ -11,7 +11,7 @@ module Bosh::Director
       @vm_deleter = vm_deleter
     end
 
-    def create_for_instance_plans(instance_plans, event_log)
+    def create_for_instance_plans(instance_plans, ip_provider, event_log)
       return @logger.info('No missing vms to create') if instance_plans.empty?
 
       total = instance_plans.size
@@ -26,6 +26,14 @@ module Bosh::Director
                 @logger.info('Creating missing VM')
                 disks = [instance.model.persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks)
+
+                instance_plan.network_plans
+                  .select(&:obsolete?)
+                  .each do |network_plan|
+                  reservation = network_plan.reservation
+                  ip_provider.release(reservation)
+                end
+                instance_plan.release_obsolete_network_plans
               end
             end
           end
@@ -72,7 +80,6 @@ module Bosh::Director
       end
 
       instance_plan.mark_desired_network_plans_as_existing
-      instance_plan.release_obsolete_ips
     end
 
     def attach_disks_for(instance)

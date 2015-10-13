@@ -49,7 +49,6 @@ describe 'deploy', type: :integration do
     end
   end
 
-
   context 'when stemcell is using latest version' do
     it 'redeploys with latest version of stemcell' do
       target_and_login

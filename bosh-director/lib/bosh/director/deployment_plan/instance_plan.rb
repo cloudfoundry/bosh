@@ -151,13 +151,7 @@ module Bosh
           network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
         end
 
-        def release_obsolete_ips
-          network_plans
-            .select(&:obsolete?)
-            .each do |network_plan|
-            reservation = network_plan.reservation
-            @instance.job.deployment.ip_provider.release(reservation)
-          end
+        def release_obsolete_network_plans
           network_plans.delete_if(&:obsolete?)
         end
 

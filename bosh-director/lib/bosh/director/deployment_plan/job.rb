@@ -215,9 +215,6 @@ module Bosh::Director
         result.select { |name, _| run_time_dependencies.include? name }
       end
 
-      # Returns job instance by index
-      # @param [Integer] index
-      # @return [DeploymentPlan::Instance] index-th instance
       def instance(index)
         @instances[index]
       end

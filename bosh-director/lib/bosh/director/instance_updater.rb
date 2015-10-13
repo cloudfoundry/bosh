@@ -7,7 +7,7 @@ module Bosh::Director
 
     attr_reader :current_state
 
-    def self.create(job_renderer)
+    def self.create(job_renderer, ip_provider)
       cloud = Config.cloud
       logger = Config.logger
 
@@ -21,19 +21,12 @@ module Bosh::Director
         vm_creator,
         dns_manager,
         cloud,
+        ip_provider,
         logger
       )
     end
 
-    def initialize(
-      job_renderer,
-      blobstore,
-      vm_deleter,
-      vm_creator,
-      dns_manager,
-      cloud,
-      logger
-    )
+    def initialize(job_renderer, blobstore, vm_deleter, vm_creator, dns_manager, cloud, ip_provider, logger)
       @job_renderer = job_renderer
 
       @cloud = cloud
@@ -43,6 +36,7 @@ module Bosh::Director
       @vm_deleter = vm_deleter
       @vm_creator = vm_creator
       @dns_manager = dns_manager
+      @ip_provider = ip_provider
 
       @current_state = {}
     end
@@ -69,7 +63,7 @@ module Bosh::Director
       if instance.state == 'detached'
         @logger.info("Detaching instance #{instance}")
         @vm_deleter.delete_for_instance_plan(instance_plan)
-        instance_plan.release_obsolete_ips
+        release_obsolete_ips(instance_plan)
         instance.update_state
         return
       end
@@ -78,7 +72,8 @@ module Bosh::Director
         @logger.debug('Failed to update in place. Recreating VM')
         recreate_vm(instance_plan, nil)
       end
-      instance_plan.release_obsolete_ips
+
+      release_obsolete_ips(instance_plan)
 
       update_dns(instance_plan)
       update_persistent_disk(instance_plan)
@@ -107,6 +102,16 @@ module Bosh::Director
     end
 
     private
+
+    def release_obsolete_ips(instance_plan)
+      instance_plan.network_plans
+        .select(&:obsolete?)
+        .each do |network_plan|
+        reservation = network_plan.reservation
+        @ip_provider.release(reservation)
+      end
+      instance_plan.release_obsolete_network_plans
+    end
 
     def run_pre_start_scripts(instance)
       agent(instance).run_script("pre-start", {})

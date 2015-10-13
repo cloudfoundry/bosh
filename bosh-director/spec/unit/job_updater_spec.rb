@@ -112,7 +112,7 @@ describe Bosh::Director::JobUpdater do
 
       before do
         allow(Bosh::Director::InstanceUpdater).to receive(:create)
-                                                    .with(job_renderer)
+                                                    .with(job_renderer, ip_provider)
                                                     .and_return(canary_updater, changed_updater, unchanged_updater)
       end
 
