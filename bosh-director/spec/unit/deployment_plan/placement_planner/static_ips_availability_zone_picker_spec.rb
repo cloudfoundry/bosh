@@ -97,7 +97,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
 
-    let(:results) {zone_picker.place_and_match_in(availability_zones, job.networks, desired_instances, existing_instances)}
+    let(:results) {zone_picker.place_and_match_in(availability_zones, job.networks, desired_instances, existing_instances, 'jobname')}
     let(:availability_zones) { job.availability_zones }
     let(:needed) {results[:desired_new]}
     let(:existing) {results[:desired_existing]}
@@ -122,7 +122,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'does not assign AZs' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances)
+            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances, 'jobname')
 
             expect(needed.map(&:az)).to eq([nil, nil, nil])
           end
@@ -136,6 +136,15 @@ module Bosh::Director::DeploymentPlan
             expect(existing).to eq([])
             expect(obsolete).to eq([])
             needed.each { |result| expect(result.az.name).to eq('zone1') }
+          end
+        end
+
+        context 'when a job specifies a static ip that belongs to no subnet' do
+          let(:static_ips) {['192.168.3.5']}
+          let(:desired_instance_count) { 1 }
+
+          it 'raises an exception' do
+            expect{results}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Job 'jobname' declares static ip '192.168.3.5' which belongs to no subnet")
           end
         end
 

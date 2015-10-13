@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
-    subject(:plan) { PlacementPlanner::Plan.new(desired, existing, job_networks, availability_zones) }
+    subject(:plan) { PlacementPlanner::Plan.new(desired, existing, job_networks, availability_zones, 'jobname') }
 
     let(:availability_zones) { [zone_1, zone_2] }
     let(:zone_1) {AvailabilityZone.new('zone_1', {})}

@@ -44,7 +44,9 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     before { allow(deployment_plan).to receive(:network).with('fake-network-name').and_return(network) }
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', {name: 'fake-network-name'}) }
+    let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name', subnets, logger) }
+
+    let(:subnets) { [] }
 
     let(:job_spec) do
       {

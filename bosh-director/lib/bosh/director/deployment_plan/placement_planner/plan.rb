@@ -3,11 +3,12 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class Plan
-          def initialize(desired, existing, networks, availability_zones)
+          def initialize(desired, existing, networks, availability_zones, job_name)
             @networks = networks
             @desired = desired
             @existing = existing
             @availability_zones = availability_zones
+            @job_name = job_name
           end
 
           def needed
@@ -34,7 +35,7 @@ module Bosh
 
           def assign_zones
             if has_static_ips?
-              StaticIpsAvailabilityZonePicker.new.place_and_match_in(@availability_zones, @networks, @desired, @existing)
+              StaticIpsAvailabilityZonePicker.new.place_and_match_in(@availability_zones, @networks, @desired, @existing, @job_name)
             else
               AvailabilityZonePicker.new.place_and_match_in(@availability_zones, @desired, @existing)
             end

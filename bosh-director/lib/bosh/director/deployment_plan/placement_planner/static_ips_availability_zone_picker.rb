@@ -3,10 +3,10 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class StaticIpsAvailabilityZonePicker
-          def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_az_tuples)
+          def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_az_tuples, job_name)
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_az_tuples)
             placed_instances = PlacedDesiredInstances.new(desired_azs)
-            azs_from_static_ips = az_list_from_static_ips(desired_azs, job_networks)
+            azs_from_static_ips = az_list_from_static_ips(desired_azs, job_networks, job_name)
 
             desired_instances.each do |desired_instance|
               az = azs_from_static_ips.shift
@@ -23,7 +23,7 @@ module Bosh
 
           private
 
-          def az_list_from_static_ips(desired_azs, job_networks)
+          def az_list_from_static_ips(desired_azs, job_networks, job_name)
             static_ips = []
             deployment_networks = []
 
@@ -37,6 +37,10 @@ module Bosh
             static_ips_to_az_names = {}
             static_ips.each do |static_ip|
               subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
+              if subnet_for_ip.nil?
+                formatted_ip = NetAddr::CIDR.create(static_ip).ip
+                raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{formatted_ip}' which belongs to no subnet"
+              end
               unless subnet_for_ip.availability_zone_names.nil?
                 zone_name = subnet_for_ip.availability_zone_names.first
                 static_ips_to_az_names[static_ip] = zone_name
