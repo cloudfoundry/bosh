@@ -83,7 +83,8 @@ module Bosh::Director
               existing_instance: instance,
               instance: nil,
               desired_instance: nil,
-              network_plans: []
+              network_plans: [],
+              recreate_deployment: @deployment_plan.recreate
             )
           end
           instance_deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage)

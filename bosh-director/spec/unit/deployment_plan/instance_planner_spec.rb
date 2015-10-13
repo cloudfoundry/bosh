@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe BD::DeploymentPlan::InstancePlanner do
-  subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(logger, instance_repo, skip_drain_decider) }
+  subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(logger, instance_repo, skip_drain_decider, options) }
+  let(:options) { {} }
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger) }
@@ -26,7 +27,7 @@ describe BD::DeploymentPlan::InstancePlanner do
     before do
       allow(job).to receive(:networks).and_return([])
     end
-
+    
     context 'when instance should skip running drain script' do
       let(:skip_drain_decider) { BD::DeploymentPlan::SkipDrain.new('*') }
 
@@ -37,6 +38,20 @@ describe BD::DeploymentPlan::InstancePlanner do
 
         instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], states_by_existing_instance)
         expect(instance_plans.select(&:skip_drain).count).to eq(instance_plans.count)
+      end
+    end
+
+    context 'when deployment is being recreated' do
+      let(:options) { {'recreate' => true} }
+
+      it 'should return instance plans with "recreate" option set on them' do
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
+        existing_instance_state = {'foo' => 'bar'}
+        states_by_existing_instance = {existing_instance_model => existing_instance_state}
+
+        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model], states_by_existing_instance)
+
+        expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
       end
     end
 

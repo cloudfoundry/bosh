@@ -156,7 +156,13 @@ module Bosh::Director
       let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance) }
 
       context 'when instance needs shutting down' do
-        let(:deployment) { instance_double(DeploymentPlan::Planner, recreate: true) }
+        let(:instance_plan) do
+          DeploymentPlan::InstancePlan.new(
+            existing_instance: instance_model,
+            instance: instance,
+            desired_instance: desired_instance,
+            recreate_deployment: true)
+        end
 
         its(:needs_drain_to_migrate_data?) { should be(true) }
       end

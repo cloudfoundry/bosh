@@ -3,7 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::Assembler do
     subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, cloud, logger, event_log) }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple', skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new) }
+    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
+      name: 'simple',
+      skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
+      recreate: false
+    ) }
     let(:stemcell_manager) { nil }
     let(:dns_manager) { DnsManager.create }
     let(:event_log) { Config.event_log }

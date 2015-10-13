@@ -8,11 +8,12 @@ module Bosh
           @instance = attrs.fetch(:instance)
           @network_plans = attrs.fetch(:network_plans, [])
           @skip_drain = attrs.fetch(:skip_drain, false)
+          @recreate_deployment = attrs.fetch(:recreate_deployment, false)
           @logger = Config.logger
           @dns_manager = DnsManager.create
         end
 
-        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain
+        attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment
 
         attr_accessor :network_plans
 
@@ -80,8 +81,7 @@ module Bosh
         end
 
         def needs_recreate?
-          job = @instance.job
-          if job.deployment.recreate
+          if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             true
           else

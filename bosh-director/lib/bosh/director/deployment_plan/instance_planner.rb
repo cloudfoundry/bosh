@@ -2,10 +2,11 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlanner
-        def initialize(logger, instance_factory, skip_drain_decider)
+        def initialize(logger, instance_factory, skip_drain_decider, options = {})
           @logger = logger
           @instance_repo = instance_factory
           @skip_drain_decider = skip_drain_decider
+          @recreate_deployment = options.fetch('recreate', false)
         end
 
         def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
@@ -37,7 +38,8 @@ module Bosh
               desired_instance: nil,
               existing_instance: existing_instance,
               instance: nil,
-              skip_drain: @skip_drain_decider.for_job(existing_instance.job)
+              skip_drain: @skip_drain_decider.for_job(existing_instance.job),
+              recreate_deployment: @recreate_deployment
             )
           end
         end
@@ -87,7 +89,8 @@ module Bosh
               desired_instance: nil,
               existing_instance: existing_instance,
               instance: nil,
-              skip_drain: @skip_drain_decider.for_job(existing_instance.job)
+              skip_drain: @skip_drain_decider.for_job(existing_instance.job),
+              recreate_deployment: @recreate_deployment
             )
           end
         end
@@ -103,7 +106,8 @@ module Bosh
               desired_instance: desired_instance,
               existing_instance: existing_instance_model,
               instance: instance,
-              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name)
+              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name),
+              recreate_deployment: @recreate_deployment
             )
           end
         end
@@ -115,7 +119,8 @@ module Bosh
               desired_instance: desired_instance,
               existing_instance: nil,
               instance: instance,
-              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name)
+              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name),
+              recreate_deployment: @recreate_deployment
             )
           end
         end

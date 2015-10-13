@@ -187,13 +187,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when deployment is being recreated' do
-        let(:deployment_plan) do
-          planner_factory = PlannerFactory.create(BD::Config.event_log, logger)
-          manifest = Psych.load(deployment_model.manifest)
-          plan = planner_factory.create_from_manifest(manifest, deployment_model.cloud_config, {'recreate' => true})
-          plan.bind_models
-          plan
-        end
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: [network_plan], recreate_deployment: true) }
 
         it 'should return changed' do
           expect(instance_plan.needs_recreate?).to be_truthy

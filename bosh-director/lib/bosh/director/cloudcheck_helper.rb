@@ -140,7 +140,8 @@ module Bosh::Director
         existing_instance: instance_model,
         instance: instance_from_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
-        network_plans: []
+        network_plans: [],
+        recreate_deployment: true
       )
 
       vm_creator.create_for_instance_plan(

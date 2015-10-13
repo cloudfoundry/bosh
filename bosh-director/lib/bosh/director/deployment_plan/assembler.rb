@@ -24,7 +24,7 @@ module Bosh::Director
         bind_job_renames
 
         instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
-        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo, @deployment_plan.skip_drain)
+        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo, @deployment_plan.skip_drain, {'recreate' => @deployment_plan.recreate})
         desired_jobs = @deployment_plan.jobs
 
         states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)

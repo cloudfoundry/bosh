@@ -17,7 +17,8 @@ module Bosh::Director
         jobs_starting_on_deploy: [],
         instance_plans_with_missing_vms: [],
         ip_provider: ip_provider,
-        skip_drain: skip_drain
+        skip_drain: skip_drain,
+        recreate: false
       )
     end
     let(:cloud) { instance_double('Bosh::Cloud', delete_vm: nil) }
