@@ -1,16 +1,4 @@
 ---
-postgres/postgres-9.0.3-1.amd64.tar.gz:
-  object_id: rest/objects/4e4e78bca11e122004e4e8ec64843104fbd4f219f4b7
-  sha: e47ee9c841ecde4df121f44df282aeb3c50a48d2
-  size: 16203511
-postgres/postgres-9.0.3-1.i386.tar.gz:
-  object_id: rest/objects/4e4e78bca11e122204e4e98638b76304fbd4f269d377
-  sha: b2bde31e720eb219bfdc9f1b784f985ecca2cbfb
-  size: 15111387
-postgres/postgresql-9.0.3.tar.gz:
-  object_id: rest/objects/4e4e78bca61e121004e4e7d51d950e04fbd4f2ca2d89
-  sha: c8fb5d1d7930e78211e554bb5751183a8148d0ee
-  size: 18335858
 mysql/server-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
   object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fb68b2898dd0
   sha: 2bfd575545fe78729c56bb832aa69d8d9fc8630d
@@ -87,3 +75,7 @@ ruby/rubygems-2.4.8.tgz:
   object_id: 25e5548c-2c64-4a30-9d4e-f7f7bae02578
   sha: 0db6b2f1cdd2267fe19f1f875057c2f2ce9f5696
   size: 447712
+postgres/postgresql-9.0.23.tar.gz:
+  object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
+  sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
+  size: 19776342
