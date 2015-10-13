@@ -65,7 +65,7 @@ describe 'drain', type: :integration do
     end
 
     def drain_file
-      director.vm('foobar/0').file_path('drain-test.log')
+      director.vm('foobar', '0').file_path('drain-test.log')
     end
 
     it 'runs drain script for recreate' do
