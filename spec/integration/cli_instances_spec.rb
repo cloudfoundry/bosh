@@ -84,6 +84,25 @@ INSTANCES
 (*) Bootstrap node
 INSTANCES
 
+    output = bosh_runner.run('instances --ps')
+    expect(scrub_random_ids(output)).to include(<<INSTANCES)
++--------------------------------------------------+---------+--------+---------------+-------------+
+| Instance                                         | State   | AZ     | Resource Pool | IPs         |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+|   process-1                                      | running |        |               |             |
+|   process-2                                      | running |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+|   process-1                                      | running |        |               |             |
+|   process-2                                      | running |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
+|   process-1                                      | running |        |               |             |
+|   process-2                                      | running |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+INSTANCES
+
   end
 
   it 'should return instances --vitals' do
@@ -104,28 +123,5 @@ INSTANCES
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
-  end
-
-  it 'displays instance processes' do
-    deploy_from_scratch
-    output = bosh_runner.run('instances --ps')
-    expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+-----+---------------+-------------+
-| Instance                                         | State   | AZ  | Resource Pool | IPs         |
-+--------------------------------------------------+---------+-----+---------------+-------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | n/a | a             | 192.168.1.2 |
-|   process-1                                      | running |     |               |             |
-|   process-2                                      | running |     |               |             |
-+--------------------------------------------------+---------+-----+---------------+-------------+
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | n/a | a             | 192.168.1.4 |
-|   process-1                                      | running |     |               |             |
-|   process-2                                      | running |     |               |             |
-+--------------------------------------------------+---------+-----+---------------+-------------+
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | n/a | a             | 192.168.1.3 |
-|   process-1                                      | running |     |               |             |
-|   process-2                                      | running |     |               |             |
-+--------------------------------------------------+---------+-----+---------------+-------------+
-INSTANCES
-
   end
 end
