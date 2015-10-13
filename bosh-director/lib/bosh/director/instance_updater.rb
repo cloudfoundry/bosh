@@ -10,12 +10,12 @@ module Bosh::Director
     def self.new_instance_updater(job_renderer, ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
+      vm_deleter = VmDeleter.new(cloud, logger)
       disk_manager = InstanceUpdater::DiskManager.new(cloud, logger)
-      vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)
+      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager)
+      vm_recreator = VmRecreator.new(vm_creator, vm_deleter, job_renderer)
       dns_manager = DnsManager.create
       new(
-        job_renderer,
         cloud,
         logger,
         ip_provider,
@@ -23,12 +23,12 @@ module Bosh::Director
         vm_deleter,
         vm_creator,
         dns_manager,
-        disk_manager
+        disk_manager,
+        vm_recreator
       )
     end
 
-    def initialize(job_renderer, cloud, logger, ip_provider, blobstore, vm_deleter, vm_creator, dns_manager, disk_manager)
-      @job_renderer = job_renderer
+    def initialize(cloud, logger, ip_provider, blobstore, vm_deleter, vm_creator, dns_manager, disk_manager, vm_recreator)
       @cloud = cloud
       @logger = logger
       @blobstore = blobstore
@@ -38,6 +38,7 @@ module Bosh::Director
       @disk_manager = disk_manager
       @ip_provider = ip_provider
       @current_state = {}
+      @vm_recreator = vm_recreator
     end
 
     def update(instance_plan, options = {})
@@ -69,13 +70,13 @@ module Bosh::Director
 
       unless try_to_update_in_place(instance_plan)
         @logger.debug('Failed to update in place. Recreating VM')
-        recreate_vm(instance_plan, nil)
+        @vm_recreator.recreate_vm(instance_plan, nil)
       end
 
       release_obsolete_ips(instance_plan)
 
       update_dns(instance_plan)
-      @disk_manager.update_persistent_disk(instance_plan)
+      @disk_manager.update_persistent_disk(instance_plan, @vm_recreator)
 
       if only_trusted_certs_changed
         @logger.debug('Skipping apply, trusted certs change only')
@@ -145,54 +146,9 @@ module Bosh::Director
       Api::SnapshotManager.take_snapshot(instance.model, clean: true)
     end
 
-    def delete_snapshots(disk)
-      Api::SnapshotManager.delete_snapshots(disk.snapshots)
-    end
-
     def apply_state(instance)
       instance.apply_vm_state
       RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
-    end
-
-    # Retrieve list of mounted disks from the agent
-    # @return [Array<String>] list of disk CIDs
-    def disk_info(instance)
-      @disk_list ||= agent(instance).list_disk
-    end
-
-
-    def delete_mounted_disk(instance, disk)
-      disk_cid = disk.disk_cid
-      vm_cid = instance.model.vm.cid
-
-      # Unmount the disk only if disk is known by the agent
-      if agent(instance) && disk_info(instance).include?(disk_cid)
-        agent(instance).unmount_disk(disk_cid)
-      end
-
-      begin
-        @cloud.detach_disk(vm_cid, disk_cid) if vm_cid
-      rescue Bosh::Clouds::DiskNotAttached
-        if disk.active
-          raise CloudDiskNotAttached,
-            "`#{instance}' VM should have persistent disk attached " +
-              "but it doesn't (according to CPI)"
-        end
-      end
-
-      delete_snapshots(disk)
-
-      begin
-        @cloud.delete_disk(disk_cid)
-      rescue Bosh::Clouds::DiskNotFound
-        if disk.active
-          raise CloudDiskMissing,
-            "Disk `#{disk_cid}' is missing according to CPI but marked " +
-              "as active in DB"
-        end
-      end
-
-      disk.destroy
     end
 
     def update_dns(instance_plan)
@@ -294,22 +250,8 @@ module Bosh::Director
       true
     end
 
-    def recreate_vm(instance_plan, new_disk_cid)
-      @vm_deleter.delete_for_instance_plan(instance_plan)
-      disks = [instance_plan.instance.model.persistent_disk_cid, new_disk_cid].compact
-      @vm_creator.create_for_instance_plan(instance_plan, disks)
-
-      @agent = AgentClient.with_vm(instance_plan.instance.vm.model)
-
-      #TODO: we only render the templates again because dynamic networking may have
-      #      assigned an ip address, so the state we got back from the @agent may
-      #      result in a different instance.template_spec.  Ideally, we clean up the @agent interaction
-      #      so that we only have to do this once.
-      @job_renderer.render_job_instance(instance_plan.instance)
-    end
-
     def agent(instance)
-      @agent ||= AgentClient.with_vm(instance.model.vm)
+      AgentClient.with_vm(instance.model.vm)
     end
   end
 end

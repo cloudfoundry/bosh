@@ -6,7 +6,7 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_persistent_disk(instance_plan)
+    def update_persistent_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
 
       attach_disks_for(instance) unless instance.disk_currently_attached?
@@ -19,7 +19,7 @@ module Bosh::Director
 
       if instance.job.persistent_disk_type && instance.job.persistent_disk_type.disk_size > 0
         disk = create_disk(instance)
-        attach_disk(instance, disk)
+        attach_disk(instance_plan, disk, vm_recreator)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 
@@ -56,7 +56,7 @@ module Bosh::Director
       vm_cid = instance.model.vm.cid
 
       # Unmount the disk only if disk is known by the agent
-      if agent(instance) && disk_info(instance).include?(disk_cid)
+      if disks(instance).include?(disk_cid)
         agent(instance).unmount_disk(disk_cid)
       end
 
@@ -91,7 +91,7 @@ module Bosh::Director
     # @return [void]
     def check_persistent_disk(instance)
       return if instance.model.persistent_disks.empty?
-      agent_disk_cid = disk_info(instance).first
+      agent_disk_cid = disks(instance).first
 
       if agent_disk_cid != instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
@@ -107,12 +107,22 @@ module Bosh::Director
       end
     end
 
-    def attach_disk(instance, disk)
+    def disks(instance)
+      agent(instance).list_disk
+    end
+
+    def agent(instance)
+      AgentClient.with_vm(instance.vm.model)
+    end
+
+    def attach_disk(instance_plan, disk, vm_recreator)
+      instance = instance_plan.instance
       @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
     rescue Bosh::Clouds::NoDiskSpace => e
       if e.ok_to_retry
         @logger.warn('Retrying attach disk operation after persistent disk update failed')
-        recreate_vm(instance, disk.disk_cid)
+        # Re-creating the vm may cause it to be re-created in a place with more storage
+        vm_recreator.recreate_vm(instance_plan, disk.disk_cid)
         begin
           @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
         rescue
@@ -129,7 +139,6 @@ module Bosh::Director
       agent(instance).mount_disk(new_disk.disk_cid)
       agent(instance).migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
     rescue
-      #hrm... should this be kept too?
       delete_mounted_persistent_disk(instance, new_disk)
       raise
     end
@@ -152,5 +161,8 @@ module Bosh::Director
       disk
     end
 
+    def delete_snapshots(disk)
+      Api::SnapshotManager.delete_snapshots(disk.snapshots)
+    end
   end
 end

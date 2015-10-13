@@ -289,9 +289,7 @@ module Bosh::Director
 
       # reverse compatibility: translate disk size into a disk pool
       def persistent_disk=(disk_size)
-        disk_type = DiskType.new(SecureRandom.uuid)
-        disk_type.disk_size = disk_size
-        @persistent_disk_type = disk_type
+        @persistent_disk_type = DiskType.new(SecureRandom.uuid, disk_size, {})
       end
 
       #FIXME: there has to be a better way to do this
