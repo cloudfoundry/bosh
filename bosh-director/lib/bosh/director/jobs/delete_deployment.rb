@@ -23,16 +23,12 @@ module Bosh::Director
         with_deployment_lock(@deployment_name) do
           deployment_model = @deployment_manager.find_by_name(@deployment_name)
 
-          deleter_options = {
-            force: @force,
-            keep_snapshots_in_the_cloud: @keep_snapshots
-          }
-
           # using_global_networking is always true
           ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), DeploymentPlan::VipRepo.new(logger), true, logger)
 
           dns_manager = DnsManager.create
-          instance_deleter = InstanceDeleter.new(ip_provider, dns_manager, deleter_options)
+          disk_manager = InstanceUpdater::DiskManager.new(@cloud, logger, keep_snapshots_in_the_cloud: @keep_snapshots)
+          instance_deleter = InstanceDeleter.new(ip_provider, dns_manager, disk_manager, force: @force)
           deployment_deleter = DeploymentDeleter.new(event_log, logger, dns_manager, Config.max_threads)
 
           vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, force: @force)

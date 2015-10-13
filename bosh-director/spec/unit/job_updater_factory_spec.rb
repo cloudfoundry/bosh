@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdaterFactory do
-  subject(:job_updater_factory) { described_class.new(blobstore, logger) }
+  subject(:job_updater_factory) { described_class.new(blobstore, cloud, logger) }
 
+  let(:cloud) { instance_double(Bosh::Cloud) }
   let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
   let(:logger) { double(:logger).as_null_object }
 
@@ -22,9 +23,7 @@ describe Bosh::Director::JobUpdaterFactory do
         and_return(links_resolver)
 
       job_updater = instance_double('Bosh::Director::JobUpdater')
-      expect(Bosh::Director::JobUpdater).to receive(:new).
-        with(deployment_plan, job, job_renderer, links_resolver).
-        and_return(job_updater)
+      expect(Bosh::Director::JobUpdater).to receive(:new).and_return(job_updater)
 
       expect(job_updater_factory.new_job_updater(deployment_plan, job)).to eq(job_updater)
     end

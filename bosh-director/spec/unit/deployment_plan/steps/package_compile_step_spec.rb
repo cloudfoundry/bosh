@@ -391,7 +391,8 @@ module Bosh::Director
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter) }
+      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager) }
+      let(:disk_manager) { InstanceUpdater::DiskManager.new(cloud, logger) }
 
       it 'reuses compilation VMs' do
         prepare_samples

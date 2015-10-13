@@ -37,7 +37,7 @@ module Bosh::Director
         expect(DeploymentPlan::LinksResolver).to receive(:new).with(deployment, logger).and_return(links_resolver)
 
         job_updater = instance_double('Bosh::Director::JobUpdater')
-        expect(JobUpdater).to receive(:new).with(deployment, job, job_renderer, links_resolver).and_return(job_updater)
+        expect(JobUpdater).to receive(:new).and_return(job_updater)
         expect(job_updater).to receive(:update).with(no_args)
 
         subject.update_instances
@@ -83,7 +83,6 @@ module Bosh::Director
       end
 
       it 'deletes all job instances' do
-        expect(InstanceDeleter).to receive(:new).with(ip_provider, instance_of(DnsManager))
         expect(instance_deleter).to receive(:delete_instance_plans).
           with([instance_plan1, instance_plan2], event_log_stage)
 

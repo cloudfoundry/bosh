@@ -13,8 +13,8 @@ module Bosh::Director
       @event_log = event_log
       @logger = logger
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
-      disk_manager = InstanceUpdater::DiskManager.new(cloud, logger)
-      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)
+      @disk_manager = DiskManager.new(cloud, logger)
+      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager)
     end
 
     def prepare
@@ -30,7 +30,7 @@ module Bosh::Director
     def update_instances
       job_renderer = JobRenderer.new(@job, @blobstore)
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
-      job_updater = JobUpdater.new(@deployment, @job, job_renderer, links_resolver)
+      job_updater = JobUpdater.new(@deployment, @job, job_renderer, links_resolver, @disk_manager)
       job_updater.update
     end
 
@@ -46,7 +46,7 @@ module Bosh::Director
       @logger.info('Deleting errand instances')
       event_log_stage = @event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
       dns_manager = DnsManager.create
-      instance_deleter = InstanceDeleter.new(@deployment.ip_provider, dns_manager)
+      instance_deleter = InstanceDeleter.new(@deployment.ip_provider, dns_manager, @disk_manager)
       instance_deleter.delete_instance_plans(instance_plans, event_log_stage)
     end
 

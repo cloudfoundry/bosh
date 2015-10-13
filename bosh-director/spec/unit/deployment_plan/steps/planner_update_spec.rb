@@ -70,7 +70,6 @@ module Bosh::Director::DeploymentPlan
             deployment_plan.bind_models
             deployment_plan
           end
-          let(:deployment_parser) { DeploymentSpecParser.new(event_log, logger) }
           let(:deployment_manifest) do
             {
               'name' => 'fake-deployment',

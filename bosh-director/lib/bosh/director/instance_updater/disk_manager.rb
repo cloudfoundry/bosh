@@ -1,9 +1,10 @@
 module Bosh::Director
   class InstanceUpdater::DiskManager
 
-    def initialize(cloud, logger)
+    def initialize(cloud, logger, options={})
       @cloud = cloud
       @logger = logger
+      @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
     def update_persistent_disk(instance_plan, vm_recreator)
@@ -44,12 +45,14 @@ module Bosh::Director
       end
     end
 
-    private
-
-    def delete_unused_disk(disk)
-      @cloud.delete_disk(disk.disk_cid)
-      disk.destroy
+    def delete_persistent_disks(instance_model)
+      instance_model.persistent_disks.each do |disk|
+        delete_snapshots(disk)
+        delete_disk(disk)
+      end
     end
+
+    private
 
     def delete_mounted_persistent_disk(instance, disk)
       disk_cid = disk.disk_cid
@@ -72,12 +75,19 @@ module Bosh::Director
 
       delete_snapshots(disk)
 
+      delete_disk(disk)
+    end
+
+    def delete_disk(disk)
+      @logger.info("Deleting disk: '#{disk.disk_cid}', " +
+          "#{disk.active ? "active" : "inactive"}")
+
       begin
-        @cloud.delete_disk(disk_cid)
+        @cloud.delete_disk(disk.disk_cid)
       rescue Bosh::Clouds::DiskNotFound
         if disk.active
           raise CloudDiskMissing,
-            "Disk `#{disk_cid}' is missing according to CPI but marked " +
+            "Disk `#{disk.disk_cid}' is missing according to CPI but marked " +
               "as active in DB"
         end
       end
@@ -85,6 +95,10 @@ module Bosh::Director
       disk.destroy
     end
 
+    def delete_unused_disk(disk)
+      @cloud.delete_disk(disk.disk_cid)
+      disk.destroy
+    end
 
     # Synchronizes persistent_disks with the agent.
     # (Currently assumes that we only have 1 persistent disk.)
@@ -162,7 +176,10 @@ module Bosh::Director
     end
 
     def delete_snapshots(disk)
-      Api::SnapshotManager.delete_snapshots(disk.snapshots)
+      Api::SnapshotManager.delete_snapshots(
+        disk.snapshots,
+        keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud
+      )
     end
   end
 end

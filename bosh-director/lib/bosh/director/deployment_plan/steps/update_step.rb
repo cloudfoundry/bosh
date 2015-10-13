@@ -11,8 +11,8 @@ module Bosh::Director
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
           @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
-          disk_manager = InstanceUpdater::DiskManager.new(@cloud, @logger)
-          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, disk_manager)
+          @disk_manager = DiskManager.new(@cloud, @logger)
+          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, @disk_manager)
         end
 
         def perform
@@ -78,7 +78,7 @@ module Bosh::Director
           end
           event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
           dns_manager = DnsManager.create
-          instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager)
+          instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
           unneeded_instance_plans = unneeded_instances.map do |instance|
             DeploymentPlan::InstancePlan.new(
               existing_instance: instance,

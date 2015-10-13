@@ -3,7 +3,7 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, job_renderer, links_resolver)
+    def initialize(deployment_plan, job, job_renderer, links_resolver, disk_manager)
       @deployment_plan = deployment_plan
       @job = job
       @job_renderer = job_renderer
@@ -11,6 +11,7 @@ module Bosh::Director
 
       @logger = Config.logger
       @event_log = Config.event_log
+      @disk_manager = disk_manager
     end
 
     def update
@@ -63,7 +64,7 @@ module Bosh::Director
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
       dns_manager = DnsManager.create
-      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager)
+      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
       deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight)
 
       @logger.info('Deleted no longer needed instances')

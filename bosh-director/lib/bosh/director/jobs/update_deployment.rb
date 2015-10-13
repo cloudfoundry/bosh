@@ -78,7 +78,7 @@ module Bosh::Director
 
       def multi_job_updater
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(@blobstore, logger))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(@blobstore, Config.cloud, logger))
         end
       end
     end

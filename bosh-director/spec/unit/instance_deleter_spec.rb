@@ -11,7 +11,8 @@ module Bosh::Director
     let(:ip_provider) { instance_double(DeploymentPlan::IpProviderV2) }
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
     let(:options) { {} }
-    let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, options) }
+    let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
+    let(:disk_manager) { InstanceUpdater::DiskManager.new(cloud, logger) }
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlan.new(reservation: reservation) }
@@ -125,8 +126,6 @@ module Bosh::Director
 
         it 'drains, deletes snapshots, dns records, persistent disk, releases old reservations' do
           expect(stopper).to receive(:stop)
-          expect(deleter).to receive(:delete_snapshots).with(existing_instance)
-          expect(deleter).to receive(:delete_persistent_disks).with(persistent_disks)
           expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
           expect(cloud).to receive(:delete_vm).with(vm.model.cid)
           expect(ip_provider).to receive(:release).with(reservation)
@@ -136,6 +135,7 @@ module Bosh::Director
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
           allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
           expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
+          expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
 
           deleter.delete_instance_plans([instance_plan], event_log_stage)
 
@@ -151,8 +151,7 @@ module Bosh::Director
             end
 
             it 'deletes snapshots, persistent disk, releases old reservations' do
-              expect(deleter).to receive(:delete_snapshots)
-              expect(deleter).to receive(:delete_persistent_disks)
+              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
               expect(cloud).to receive(:delete_vm).with(vm.model.cid)
               expect(ip_provider).to receive(:release).with(reservation)
@@ -176,8 +175,7 @@ module Bosh::Director
 
             it 'drains, deletes snapshots, persistent disk, releases old reservations' do
               expect(stopper).to receive(:stop)
-              expect(deleter).to receive(:delete_snapshots)
-              expect(deleter).to receive(:delete_persistent_disks)
+              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -201,7 +199,7 @@ module Bosh::Director
             it 'drains, deletes vm, persistent disk, releases old reservations' do
               expect(stopper).to receive(:stop)
               expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-              expect(deleter).to receive(:delete_persistent_disks)
+              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -247,8 +245,7 @@ module Bosh::Director
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
               expect(stopper).to receive(:stop)
               expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-              expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
-              expect(cloud).to receive(:delete_disk).exactly(2).times
+              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
@@ -269,8 +266,7 @@ module Bosh::Director
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
               expect(stopper).to receive(:stop)
               expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-              expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
-              expect(cloud).to receive(:delete_disk).exactly(2).times
+              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
@@ -282,45 +278,6 @@ module Bosh::Director
             end
           end
         end
-
-        context 'when keep_snapshots_in_cloud is passed in' do
-          let(:options) { {keep_snapshots_in_the_cloud: true} }
-
-          it 'deletes snapshots from DB keeping snapshots in cloud' do
-            expect(stopper).to receive(:stop)
-            expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-            expect(cloud).to receive(:delete_disk).exactly(2).times
-            expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
-            expect(ip_provider).to receive(:release).with(reservation)
-
-            expect(cloud).to_not receive(:delete_snapshot)
-
-            expect {
-              deleter.delete_instance_plans([instance_plan], event_log_stage)
-            }.to change { Bosh::Director::Models::Snapshot.count }.from(1).to(0)
-          end
-        end
-      end
-    end
-
-    describe :delete_persistent_disks do
-      it 'should delete the persistent disks' do
-        persistent_disks = [Models::PersistentDisk.make(active: true), Models::PersistentDisk.make(active: false)]
-        persistent_disks.each { |disk| expect(cloud).to receive(:delete_disk).with(disk.disk_cid) }
-        deleter.send(:delete_persistent_disks, persistent_disks)
-        persistent_disks.each { |disk| expect(Models::PersistentDisk[disk.id]).to eq(nil) }
-      end
-
-      it 'should ignore errors to inactive persistent disks' do
-        disk = Models::PersistentDisk.make(active: false)
-        expect(cloud).to receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
-        deleter.send(:delete_persistent_disks, [disk])
-      end
-
-      it 'should not ignore errors to active persistent disks' do
-        disk = Models::PersistentDisk.make(active: true)
-        expect(cloud).to receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
-        expect { deleter.send(:delete_persistent_disks, [disk]) }.to raise_error(Bosh::Clouds::DiskNotFound)
       end
     end
   end

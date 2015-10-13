@@ -138,7 +138,7 @@ module Bosh::Director
       let(:deployment) { instance_double(DeploymentPlan::Planner, recreate: false) }
       let(:job) { instance_double(DeploymentPlan::Job,
         name: 'fake-job',
-        persistent_disk_type: DeploymentPlan::DiskType.new('1'),
+        persistent_disk_type: DeploymentPlan::DiskType.new('1', 0, {}),
         vm_type: DeploymentPlan::VmType.new(new_vm_type),
         stemcell: DeploymentPlan::Stemcell.new(new_stemcell),
         env: DeploymentPlan::Env.new(new_env)

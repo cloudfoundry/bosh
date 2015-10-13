@@ -2,15 +2,15 @@ module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
 
-    def initialize(ip_provider, dns_manager, options={})
+    def initialize(ip_provider, dns_manager, disk_manager, options={})
       @ip_provider = ip_provider
       @dns_manager = dns_manager
+      @disk_manager = disk_manager
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
 
       @force = options.fetch(:force, false)
-      @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
@@ -28,11 +28,7 @@ module Bosh::Director
 
         unless instance_model.compilation
           error_ignorer.with_force_check do
-            delete_snapshots(instance_model)
-          end
-
-          error_ignorer.with_force_check do
-            delete_persistent_disks(instance_model.persistent_disks)
+            @disk_manager.delete_persistent_disks(instance_model)
           end
 
           error_ignorer.with_force_check do
@@ -78,25 +74,6 @@ module Bosh::Director
     # FIXME: why do we hate dependency injection?
     def vm_deleter
       @vm_deleter ||= VmDeleter.new(@cloud, @logger, {force: @force})
-    end
-
-    def delete_persistent_disks(persistent_disks)
-      persistent_disks.each do |disk|
-        @logger.info("Deleting disk: `#{disk.disk_cid}', " +
-            "#{disk.active ? "active" : "inactive"}")
-        begin
-          @cloud.delete_disk(disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound => e
-          @logger.warn("Disk not found: #{disk.disk_cid}")
-          raise if disk.active
-        end
-        disk.destroy
-      end
-    end
-
-    def delete_snapshots(instance)
-      snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
-      Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots, keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud)
     end
   end
 end
