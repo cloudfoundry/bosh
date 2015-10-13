@@ -161,7 +161,7 @@ module Bosh::Cli::Command
               state = process['state']
               process_row = ["  #{name}", "#{state}"]
               (headings.size - 2).times { process_row << '' }
-              t << process_row
+              display_table << process_row
             end
             display_table << :separator if s > 0
           end
