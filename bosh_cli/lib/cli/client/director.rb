@@ -90,7 +90,7 @@ module Bosh
           options                = options.dup
           options[:content_type] = 'application/x-compressed'
 
-          upload_and_track(:post, '/stemcells', filename, options)
+          upload_and_track(:post, stemcells_path(options), filename, options)
         end
 
         def upload_remote_stemcell(stemcell_location, options = {})
@@ -99,7 +99,7 @@ module Bosh
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
 
-          request_and_track(:post, '/stemcells', options)
+          request_and_track(:post, stemcells_path(options), options)
         end
 
         def get_version
@@ -642,6 +642,12 @@ module Bosh
           path = '/releases'
           params = [:rebase, :skip_if_exists].select { |p| options[p] }.map { |p| "#{p}=true" }
           path << "?#{params.join('&')}" unless params.empty?
+          path
+        end
+
+        def stemcells_path(options = {})
+          path = '/stemcells'
+          path << "?fix=true" if options[:fix]
           path
         end
 

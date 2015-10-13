@@ -76,5 +76,9 @@ module Bosh::Blobstore
       expect(blob_store_client.exists?(blob_id)).to be(false)
     end
 
+    it 'should raise NotFound error while deleting an existing object' do
+      expect { blob_store_client.delete('non_existing_resource') }.
+        to raise_error Bosh::Blobstore::NotFound, /Object 'non_existing_resource' is not found/
+    end
   end
 end

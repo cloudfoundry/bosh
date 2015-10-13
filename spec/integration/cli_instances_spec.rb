@@ -106,14 +106,26 @@ INSTANCES
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
   end
 
-  it 'should return instances --ps' do
+  it 'displays instance processes' do
     deploy_from_scratch
-    instances_ps = director.instances_ps
+    output = bosh_runner.run('instances --ps')
+    expect(output).to include(<<INSTANCES)
++-------------+---------+---------------+-------------+
+| Instance    | State   | Resource Pool | IPs         |
++-------------+---------+---------------+-------------+
+| foobar/0    | running | a             | 192.168.1.5 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
++-------------+---------+---------------+-------------+
+| foobar/1    | running | a             | 192.168.1.6 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
++-------------+---------+---------------+-------------+
+| foobar/2    | running | a             | 192.168.1.7 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
++-------------+---------+---------------+-------------+
+INSTANCES
 
-    expect(instances_ps[0][:instance]).to match /foobar\/0/
-    expect(instances_ps[1][:instance]).to match /process-1/
-    expect(instances_ps[1][:state]).to match /running/
-    expect(instances_ps[2][:instance]).to match /process-2/
-    expect(instances_ps[2][:state]).to match /running/
   end
 end

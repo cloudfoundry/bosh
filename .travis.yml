@@ -1,4 +1,4 @@
-script: 'bundle exec rake --trace spec:unit:ruby_gems ci:publish_coverage_report'
+script: 'bundle exec rake --trace spec:unit:ruby ci:publish_coverage_report'
 
 before_install:
   - 'sudo apt-get update'

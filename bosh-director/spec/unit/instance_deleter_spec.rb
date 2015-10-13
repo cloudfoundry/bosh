@@ -79,7 +79,7 @@ module Bosh::Director
 
         let(:job_templates_cleaner) do
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
-          allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore).and_return(job_templates_cleaner)
+          allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
           job_templates_cleaner
         end
 
@@ -135,7 +135,7 @@ module Bosh::Director
           expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
 
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
-          allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore).and_return(job_templates_cleaner)
+          allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
           expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
           deleter.delete_instance_plans([instance_plan], event_log_stage)

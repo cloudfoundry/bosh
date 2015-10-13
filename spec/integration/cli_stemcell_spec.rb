@@ -83,6 +83,49 @@ describe 'cli: stemcell', type: :integration do
           expect(exit_code).to eq(1)
         end
       end
+
+      context 'when using the --fix flag' do
+        it 'fails to execute when --skip-if-exists flag also used' do
+          output, exit_code = bosh_runner.run("upload stemcell #{local_stemcell_path} --skip-if-exists --fix", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(output).to include("Option '--skip-if-exists' and option '--fix' should not be used together")
+          expect(exit_code).to eq(1)
+        end
+
+        it 'uploads stemcell' do
+          # Check existing stemcell information
+          out = bosh_runner.run('stemcells')
+          expect(out).to match /stemcells total: 1/i
+          expect(out).to match /ubuntu-stemcell.+1/
+          expect(out).to match regexp(expected_id.to_s)
+          expect(out).to match /\| toronto-os \|/
+
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          expect(File).to be_exists(stemcell_path)
+
+          # Upload a new stemcell with same version and name as the existing one, but is of different image content
+          new_id = Digest::SHA1.hexdigest("STEMCELL_1\n")
+          new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
+          output = bosh_runner.run("upload stemcell #{new_local_stemcell_path} --fix")
+          expect(output).to match /Stemcell uploaded and created/
+
+          # Re-check the stemcell list and should return the new stemcell CID
+          out = bosh_runner.run('stemcells')
+          expect(out).to match /stemcells total: 1/i
+          expect(out).to match /ubuntu-stemcell.+1/
+          expect(out).to match regexp(new_id.to_s)
+          expect(out).to match /\| toronto-os \|/
+
+          # Check both old stemcell and new stemcll are in the storage
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          expect(File).to be_exists(stemcell_path)
+
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_id}")
+          expect(File).to be_exists(stemcell_path)
+        end
+      end
     end
 
     context 'when the stemcell is remote' do
@@ -136,6 +179,49 @@ describe 'cli: stemcell', type: :integration do
               return_exit_code: true,
             })
             expect(exit_code).to eq(1)
+          end
+        end
+
+        context 'when using the --fix flag' do
+          it 'fails to execute when --skip-if-exists flag also used' do
+            output, exit_code = bosh_runner.run("upload stemcell #{stemcell_url} --skip-if-exists --fix", {
+              failure_expected: true,
+              return_exit_code: true,
+            })
+            expect(output).to include("Option '--skip-if-exists' and option '--fix' should not be used together")
+            expect(exit_code).to eq(1)
+          end
+
+          it 'uploads stemcell' do
+            # Check existing stemcell information
+            out = bosh_runner.run('stemcells')
+            expect(out).to match /stemcells total: 1/i
+            expect(out).to match /ubuntu-stemcell.+1/
+            expect(out).to match regexp(expected_id.to_s)
+            expect(out).to match /\| toronto-os \|/
+
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+            expect(File).to be_exists(stemcell_path)
+
+            # Upload a new stemcell with same version and name as the existing one, but is of different image content
+            new_id = Digest::SHA1.hexdigest("STEMCELL_1\n")
+            new_stemcell_url = file_server.http_url("valid_stemcell_with_different_content.tgz")
+            output = bosh_runner.run("upload stemcell #{new_stemcell_url} --fix")
+            expect(output).to match /Stemcell uploaded and created/
+
+            # Re-check the stemcell list and should return the new stemcell CID
+            out = bosh_runner.run('stemcells')
+            expect(out).to match /stemcells total: 1/i
+            expect(out).to match /ubuntu-stemcell.+1/
+            expect(out).to match regexp(new_id.to_s)
+            expect(out).to match /\| toronto-os \|/
+
+            # Check both old stemcell and new stemcll are in the storage
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+            expect(File).to be_exists(stemcell_path)
+
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_id}")
+            expect(File).to be_exists(stemcell_path)
           end
         end
       end

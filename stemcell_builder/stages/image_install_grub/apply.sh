@@ -48,6 +48,9 @@ add_on_exit "umount ${image_mount_point}"
 # image_mount_point: place where loopback_dev is mounted as a filesystem
 #      eg: /mnt/stemcells/aws/xen/centos/work/work/mnt
 
+# Generate random password
+random_password=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c 16)
+
 # Install bootloader
 if [ -x ${image_mount_point}/usr/sbin/grub2-install ] # GRUB 2
 then
@@ -77,6 +80,15 @@ then
   cat >${image_mount_point}/etc/default/grub <<EOF
 GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 crashkernel=auto selinux=0 plymouth.enable=0"
 EOF
+
+  # we use a random password to prevent user from editing the boot menu
+  pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | grub2-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
+  echo "\
+
+cat << EOF
+set superusers=vcap
+password_pbkdf2 vcap $pbkdf2_password
+EOF" >> ${image_mount_point}/etc/grub.d/00_header
 
   # assemble config file that is read by grub2 at boot time
   run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
@@ -172,6 +184,22 @@ GRUB_CONF
 else
   echo "Unknown OS, exiting"
   exit 2
+fi
+
+# For grub.conf
+if [ -f ${image_mount_point}/boot/grub/grub.conf ];then
+  md5_password=`run_in_chroot ${image_mount_point} "if which grub-md5-crypt > /dev/null;then echo -e '${random_password}\n${random_password}' | grub-md5-crypt | grep -e '^\\$1\\$.*'; fi"`
+  if [ -n $md5_password ];then
+    sed -i "/timeout=/a password --md5 ${md5_password}" ${image_mount_point}/boot/grub/grub.conf
+  fi
+  chown -fLR root:root ${image_mount_point}/boot/grub/grub.conf
+  chmod 600 ${image_mount_point}/boot/grub/grub.conf
+fi
+
+# For CentOS, using grub 2, grub.cfg
+if [ -f ${image_mount_point}/boot/grub2/grub.cfg ];then
+  chown -fLR root:root ${image_mount_point}/boot/grub2/grub.cfg
+  chmod 600 ${image_mount_point}/boot/grub2/grub.cfg
 fi
 
 run_in_chroot ${image_mount_point} "rm -f /boot/grub/menu.lst"

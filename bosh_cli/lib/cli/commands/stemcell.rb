@@ -27,13 +27,20 @@ module Bosh::Cli
     end
 
     usage 'upload stemcell'
-    desc 'Upload stemcell (stemcell_location can be a local file or a remote URI)'
+    desc "Upload stemcell (stemcell_location can be a local file or a remote URI). \
+Note that --skip-if-exists and --fix can not be used together."
     option '--skip-if-exists', 'skips upload if stemcell already exists'
+    option '--fix', 'replaces the stemcell if already exists'
     def upload(stemcell_location)
       auth_required
       show_current_state
 
+      if options[:skip_if_exists] && options[:fix]
+        err("Option '--skip-if-exists' and option '--fix' should not be used together")
+      end
+
       stemcell_type = stemcell_location =~ /^#{URI::regexp}$/ ? 'remote' : 'local'
+
       if stemcell_type == 'local'
         stemcell = Bosh::Cli::Stemcell.new(stemcell_location)
 
@@ -46,19 +53,16 @@ module Bosh::Cli
           err('Stemcell is invalid, please fix, verify and upload again')
         end
 
-        say('Checking if stemcell already exists...')
         name = stemcell.manifest['name']
         version = stemcell.manifest['version']
 
-        if exists?(name, version)
+        if !options[:fix] && exists?(name, version)
           if options[:skip_if_exists]
             say("Stemcell `#{name}/#{version}' already exists. Skipping upload.")
             return
           else
             err("Stemcell `#{name}/#{version}' already exists. Increment the version if it has changed.")
           end
-        else
-          say('No')
         end
 
         stemcell_location = stemcell.stemcell_file
@@ -71,7 +75,7 @@ module Bosh::Cli
         say("Using remote stemcell `#{stemcell_location}'")
       end
 
-      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+      status, task_id = apply_upload_stemcell_strategy(stemcell_type, stemcell_location, options[:fix]?{fix: true}:{})
       success_message = 'Stemcell uploaded and created.'
 
       if status == :error && options[:skip_if_exists] && last_event(task_id)['error']['code'] == STEMCELL_EXISTS_ERROR_CODE
@@ -140,11 +144,7 @@ module Bosh::Cli
 
       force = !!options[:force]
 
-      say('Checking if stemcell exists...')
-
-      unless exists?(name, version)
-        err("Stemcell `#{name}/#{version}' does not exist")
-      end
+      err("Stemcell `#{name}/#{version}' does not exist") unless exists?(name, version)
 
       say("You are going to delete stemcell `#{name}/#{version}'".make_red)
 
@@ -168,11 +168,11 @@ module Bosh::Cli
       end
     end
 
-    def apply_upload_stemcell_strategy(stemcell_type, stemcell_location)
+    def apply_upload_stemcell_strategy(stemcell_type, stemcell_location, options={})
       if stemcell_type == 'local'
-        director.upload_stemcell(stemcell_location)
+        director.upload_stemcell(stemcell_location, options)
       else
-        director.upload_remote_stemcell(stemcell_location)
+        director.upload_remote_stemcell(stemcell_location, options)
       end
     end
 
@@ -182,10 +182,11 @@ module Bosh::Cli
     end
 
     def exists?(name, version)
+      say('Checking if stemcell already exists...')
       existing = director.list_stemcells.select do |sc|
         sc['name'] == name && sc['version'] == version
       end
-
+      existing.empty? ? say('No'):say('Yes')
       !existing.empty?
     end
 

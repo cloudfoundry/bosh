@@ -7,7 +7,7 @@ module Bosh::Director
       include DownloadHelper
 
       UPDATE_STEPS = 5
-      
+
       @queue = :normal
 
       def self.job_type
@@ -28,6 +28,7 @@ module Bosh::Director
 
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
+        @fix = options['fix']
       end
 
       def perform
@@ -69,18 +70,19 @@ module Bosh::Director
           end
         end
 
+        stemcell = nil
         track_and_log("Checking if this stemcell already exists") do
-          if @stemcell_manager.stemcell_exists?(@name, @version)
-            raise StemcellAlreadyExists,
-                  "Stemcell `#{@name}/#{@version}' already exists"
+          begin
+            stemcell = @stemcell_manager.find_by_name_and_version @name, @version
+            raise StemcellAlreadyExists, "Stemcell `#{@name}/#{@version}' already exists" unless @fix
+          rescue StemcellNotFound => e
+            stemcell = Models::Stemcell.new
+            stemcell.name = @name
+            stemcell.operating_system = @operating_system
+            stemcell.version = @version
+            stemcell.sha1 = @sha1
           end
         end
-
-        stemcell = Models::Stemcell.new
-        stemcell.name = @name
-        stemcell.operating_system = @operating_system
-        stemcell.version = @version
-        stemcell.sha1 = @sha1
 
         track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
           stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
@@ -96,7 +98,7 @@ module Bosh::Director
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_path) if @stemcell_path
       end
-      
+
       private
 
       def download_remote_stemcell

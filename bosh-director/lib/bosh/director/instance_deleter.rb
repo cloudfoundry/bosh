@@ -41,7 +41,7 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            RenderedJobTemplatesCleaner.new(instance_model, @blobstore).clean_all
+            RenderedJobTemplatesCleaner.new(instance_model, @blobstore, @logger).clean_all
           end
         end
 

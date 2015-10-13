@@ -48,14 +48,14 @@ module Bosh::Dev
           'amd64' => 'https://storage.googleapis.com/golang/go1.3.3.freebsd-amd64.tar.gz',
         },
       },
-      '1.4.2' => {
+      '1.5.1' => {
         macosx: {
-          '386' => 'https://storage.googleapis.com/golang/go1.4.2.darwin-386-osx10.8.tar.gz',
-          'amd64' => 'https://storage.googleapis.com/golang/go1.4.2.darwin-amd64-osx10.8.tar.gz',
+          '386' => 'https://storage.googleapis.com/golang/go1.5.1.darwin-386-osx10.8.tar.gz',
+          'amd64' => 'https://storage.googleapis.com/golang/go1.5.1.darwin-amd64-osx10.8.tar.gz',
         },
         linux: {
-          '386' => 'https://storage.googleapis.com/golang/go1.4.2.linux-386.tar.gz',
-          'amd64' => 'https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz',
+          '386' => 'https://storage.googleapis.com/golang/go1.5.1.linux-386.tar.gz',
+          'amd64' => 'https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz',
         }
       }
     }

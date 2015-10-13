@@ -69,42 +69,67 @@ namespace :spec do
 
   task :integration => %w(spec:integration:agent)
 
-  namespace :unit do
-    desc 'Run unit tests for each BOSH component gem in parallel'
-    task ruby_gems: %w(rubocop) do
-      trap('INT') { exit }
+  def unit_exec(build, log_file = nil)
+    command = unit_cmd(build, log_file)
 
+    # inject command name so coverage results for each component don't clobber others
+    if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file
+      puts "----- BEGIN #{build}"
+      puts "            #{command}"
+      print File.read(log_file)
+      puts "----- END   #{build}\n\n"
+    else
+      raise("#{build} failed to build unit tests: #{File.read(log_file)}") if log_file
+    end
+  end
+
+  def unit_cmd(build, log_file = nil)
+    "".tap do |cmd|
+      cmd << "rspec --tty --backtrace -c -f p #{unit_files(build)}"
+      cmd << " > #{log_file} 2>&1" if log_file
+    end
+  end
+
+  def unit_files(build)
+    cpi_builds.include?(build) ? 'spec/unit/' : 'spec/'
+  end
+
+  def unit_builds
+    @unit_builds ||= begin
       builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
       builds -= %w(bat)
+    end
+  end
 
-      cpi_builds = builds.select { |f| File.directory?(f) && f.end_with?("_cpi") }
+  def cpi_builds
+    @cpi_builds ||= unit_builds.select { |f| File.directory?(f) && f.end_with?("_cpi") }
+  end
 
-      spec_logs = Dir.mktmpdir
-
-      puts "Logging spec results in #{spec_logs}"
+  namespace :unit do
+    desc 'Run all unit tests for ruby components'
+    task ruby: %w(rubocop) do
+      trap('INT') { exit }
+      log_dir = Dir.mktmpdir
+      puts "Logging spec results in #{log_dir}"
 
       max_threads = ENV.fetch('BOSH_MAX_THREADS', 10).to_i
       null_logger = Logging::Logger.new('Ignored')
       Bosh::ThreadPool.new(max_threads: max_threads, logger: null_logger).wrap do |pool|
-        builds.each do |build|
+        unit_builds.each do |build|
           pool.process do
-            log_file    = "#{spec_logs}/#{build}.log"
-            rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
-            rspec_cmd   = "rspec --tty --backtrace -c -f p #{rspec_files}"
-
-            # inject command name so coverage results for each component don't clobber others
-            if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{rspec_cmd} > #{log_file} 2>&1")
-              puts "----- BEGIN #{build}"
-              puts "           #{rspec_cmd}"
-              print File.read(log_file)
-              puts "----- END   #{build}\n\n"
-            else
-              raise("#{build} failed to build unit tests: #{File.read(log_file)}")
-            end
+            unit_exec(build, "#{log_dir}/#{build}.log")
           end
         end
 
         pool.wait
+      end
+    end
+
+    (unit_builds - cpi_builds).each do |build|
+      desc "Run unit tests for the #{build} component"
+      task build.sub(/^bosh[_-]/, '').intern do
+        trap('INT') { exit }
+        unit_exec(build)
       end
     end
 
@@ -114,7 +139,8 @@ namespace :spec do
     end
   end
 
-  task :unit => %w(spec:unit:ruby_gems spec:unit:agent)
+  desc "Run all unit tests"
+  task :unit => %w(spec:unit:ruby spec:unit:agent)
 
   namespace :external do
     desc 'AWS bootstrap CLI can provision and destroy resources'

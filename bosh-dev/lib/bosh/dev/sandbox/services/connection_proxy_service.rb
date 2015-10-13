@@ -4,9 +4,14 @@ module Bosh::Dev::Sandbox
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
     TCP_PROXY = File.join(ASSETS_DIR, 'proxy/tcp-proxy')
 
-    def initialize(forward_to_host, forward_to_port, listen_port, logger)
+    def initialize(forward_to_host, forward_to_port, listen_port, base_log_path, logger)
       @logger = logger
-      @process = Service.new(%W[#{TCP_PROXY} #{forward_to_host} #{forward_to_port} #{listen_port}], {}, logger)
+      log_location = "#{base_log_path}.tcp_proxy.out"
+      @process = Service.new(
+        %W[#{TCP_PROXY} #{forward_to_host} #{forward_to_port} #{listen_port}],
+        { output: log_location },
+        logger
+      )
       @socket_connector = SocketConnector.new("proxy #{listen_port} -> #{forward_to_host}:#{forward_to_port}", 'localhost', listen_port, 'unknown', logger)
     end
 

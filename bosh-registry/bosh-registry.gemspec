@@ -24,9 +24,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'thin',      '~>1.5.0'
   spec.add_dependency 'yajl-ruby', '~>1.2.0'
-  spec.add_dependency 'fog-aws',   '<=0.1.1'
-  spec.add_dependency 'fog',       '~>1.31.0'
-  spec.add_dependency 'aws-sdk',   '1.60.2'
+  spec.add_dependency 'fog'
+  spec.add_dependency 'aws-sdk'
   spec.add_dependency 'bosh_cpi', "~>#{version}"
 
   spec.add_development_dependency 'rake'

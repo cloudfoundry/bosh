@@ -8,6 +8,8 @@ module Bosh::Director
     before { allow(JobQueue).to receive(:new).and_return(job_queue) }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
+    let(:options) {{fake_option: true}}
+
     describe '#create_stemcell_from_url' do
       let(:stemcell_url) { 'http://fake-domain.com/stemcell.tgz' }
 
@@ -16,10 +18,10 @@ module Bosh::Director
           username,
           Jobs::UpdateStemcell,
           'create stemcell',
-          [stemcell_url, { remote: true }],
+          [stemcell_url, {fake_option: true, remote: true}],
         ).and_return(task)
 
-        expect(subject.create_stemcell_from_url(username, stemcell_url)).to eql(task)
+        expect(subject.create_stemcell_from_url(username, stemcell_url, options)).to eql(task)
       end
     end
 
@@ -34,10 +36,10 @@ module Bosh::Director
             username,
             Jobs::UpdateStemcell,
             'create stemcell',
-            [stemcell_path],
+            [stemcell_path, {fake_option: true}],
           ).and_return(task)
 
-          expect(subject.create_stemcell_from_file_path(username, stemcell_path)).to eql(task)
+          expect(subject.create_stemcell_from_file_path(username, stemcell_path, options)).to eql(task)
         end
       end
 
@@ -48,7 +50,7 @@ module Bosh::Director
           expect(job_queue).to_not receive(:enqueue)
 
           expect {
-            expect(subject.create_stemcell_from_file_path(username, stemcell_path))
+            expect(subject.create_stemcell_from_file_path(username, stemcell_path, options))
           }.to raise_error(DirectorError, /Failed to create stemcell: file not found/)
         end
       end

@@ -148,7 +148,7 @@ module Bosh::Director
 
     def apply_state(instance)
       instance.apply_vm_state
-      RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean
+      RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
     end
 
     # Retrieve list of mounted disks from the agent

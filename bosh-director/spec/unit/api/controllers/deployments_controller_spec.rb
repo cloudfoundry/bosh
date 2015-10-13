@@ -49,6 +49,52 @@ module Bosh::Director
           end
         end
 
+        describe 'updating a deployment' do
+          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+
+          context 'without the "skip_drain" param' do
+            it 'does not skip draining' do
+              allow_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                .and_return(OpenStruct.new(:id => 1))
+              post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with the "skip_drain" param as "*"' do
+            it 'skips draining' do
+              allow_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), hash_including('skip_drain' => '*'))
+                .and_return(OpenStruct.new(:id => 1))
+              post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with the "skip_drain" param as "job_one,job_two"' do
+            it 'skips draining' do
+              allow_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
+                .and_return(OpenStruct.new(:id => 1))
+              post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+        end
+
+        describe 'deleting deployment' do
+          it 'deletes the deployment' do
+            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'}))
+
+            delete '/test_deployment'
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
         describe 'job management' do
           it 'allows putting jobs into different states' do
             Models::Deployment.
@@ -92,7 +138,7 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
-          it "doesn't like invalid indices" do
+          it 'does not like invalid indices' do
             put '/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
            expect(last_response.status).to eq(400)
           end
@@ -119,6 +165,36 @@ module Bosh::Director
           it 'should return 404 if the instance cannot be found' do
             get '/foo/jobs/nats/0', {}
             expect(last_response.status).to eq(404)
+          end
+
+          describe 'draining' do
+            let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+
+            context 'without the "skip_drain" param' do
+              it 'drains' do
+                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
+                allow_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                  .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                  .and_return(OpenStruct.new(:id => 1))
+
+                put '/test_deployment/jobs/job_name/0', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                expect(last_response).to be_redirect
+              end
+            end
+
+            context 'with the "skip_drain" as "true"' do
+              it 'skips draining' do
+                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
+                allow_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                        .with(anything(), anything(), anything(), hash_including('skip_drain' => 'job_name'))
+                        .and_return(OpenStruct.new(:id => 1))
+
+                put '/test_deployment/jobs/job_name/0?skip_drain=true', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                expect(last_response).to be_redirect
+              end
+            end
           end
         end
 
@@ -278,15 +354,6 @@ module Bosh::Director
                   'cid' => "cid-#{i}",
               )
             end
-          end
-        end
-
-        describe 'deleting deployment' do
-          it 'deletes the deployment' do
-            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'}))
-
-            delete '/test_deployment'
-            expect_redirect_to_queued_task(last_response)
           end
         end
 

@@ -82,12 +82,26 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         expect(File.exist?(@stemcell_file.path)).to be(false)
       end
 
-      it "should fail if the stemcell exists" do
-        Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5")
+      context 'when stemcell exists' do
+        before do
+          Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5", :cid=>"old-stemcell-cid")
+        end
 
-        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+        it "should fail without --fix option set" do
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+          expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
+        end
 
-        expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
+        it 'should upload stemcell and update db with --fix option set' do
+          expect(cloud).to receive(:create_stemcell).and_return "new-stemcell-cid"
+
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'fix' => true)
+          expect { update_stemcell_job.perform }.to_not raise_error
+
+          stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
+          expect(stemcell).not_to be_nil
+          expect(stemcell.cid).to eq("new-stemcell-cid")
+        end
       end
 
       it "should fail if cannot extract stemcell" do

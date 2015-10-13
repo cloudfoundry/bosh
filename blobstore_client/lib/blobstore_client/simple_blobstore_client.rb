@@ -48,10 +48,9 @@ module Bosh
 
       def delete_object(id)
         response = @client.delete(url(id), header: @headers)
-        if response.status != 204
-          raise BlobstoreError,
-                "Could not delete object, #{response.status}/#{response.content}"
-        end
+
+        raise NotFound, "Object '#{id}' is not found, #{response.status}/#{response.content}" if response.status == 404
+        raise BlobstoreError, "Could not delete object, #{response.status}/#{response.content}" if response.status != 204
       end
 
       def object_exists?(id)

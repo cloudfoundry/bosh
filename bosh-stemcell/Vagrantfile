@@ -28,7 +28,7 @@ Vagrant.configure('2') do |config|
       aws.secret_access_key = env.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
 
       aws.tags = { 'Name' => vm_box }
-      aws.keypair_name = 'bosh'
+      aws.keypair_name = env.fetch('BOSH_KEYPAIR_NAME', 'bosh')
 
       if env['BOSH_AWS_SUBNET_ID']
         aws.associate_public_ip = true
@@ -97,7 +97,7 @@ EOS
   # todo can we install golang with a shell provisioner?
   config.vm.provision :chef_solo do |chef|
     chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
-    chef.json = { go: { version: '1.4.2' } }
+    chef.json = { go: { version: '1.5.1' } }
   end
 
   config.vm.synced_folder '../.', '/bosh', rsync__args: ["--verbose", "--archive", "--delete", "-z"]

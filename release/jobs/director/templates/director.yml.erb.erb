@@ -87,22 +87,22 @@ blobstore:
 
   <% if_p('blobstore.use_ssl') do |use_ssl| %>
     use_ssl: <%= use_ssl %>
-<% end %>
-<% if_p('blobstore.s3_port') do |port| %>
+  <% end %>
+  <% if_p('blobstore.s3_port') do |port| %>
     port: <%= port %>
-<% end %>
-<% if_p('blobstore.host') do |host| %>
+  <% end %>
+  <% if_p('blobstore.host') do |host| %>
     host: <%= host %>
-<% end %>
-<% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
+  <% end %>
+  <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
     s3_force_path_style: <%= s3_force_path_style %>
-<% end %>
-<% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
+  <% end %>
+  <% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
     ssl_verify_peer: <%= ssl_verify_peer %>
-<% end %>
-<% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
+  <% end %>
+  <% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
     s3_multipart_threshold: <%= s3_multipart_threshold %>
-<% end %>
+  <% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>

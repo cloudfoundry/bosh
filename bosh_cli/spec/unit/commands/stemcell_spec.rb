@@ -27,42 +27,92 @@ module Bosh::Cli
         end
 
         context 'local stemcell' do
-          it 'should upload the stemcell' do
-            expect(stemcell).to receive(:validate)
-            expect(stemcell).to receive(:valid?).and_return(true)
-            expect(director).to receive(:list_stemcells).and_return([])
-            expect(stemcell).to receive(:stemcell_file).and_return(stemcell_archive)
-            expect(director).to receive(:upload_stemcell).with(stemcell_archive)
+          context 'with no option' do
+            it 'should upload the stemcell' do
+              expect(stemcell).to receive(:validate)
+              expect(stemcell).to receive(:valid?).and_return(true)
+              expect(director).to receive(:list_stemcells).and_return([])
+              expect(stemcell).to receive(:stemcell_file).and_return(stemcell_archive)
+              expect(director).to receive(:upload_stemcell).with(stemcell_archive, {})
 
-            command.upload(stemcell_archive)
+              command.upload(stemcell_archive)
+            end
+
+            it 'should not upload the stemcell if is invalid' do
+              expect(stemcell).to receive(:validate)
+              expect(stemcell).to receive(:valid?).and_return(false)
+              expect(director).not_to receive(:upload_stemcell)
+
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Stemcell is invalid/)
+            end
+
+            it 'should not upload the stemcell if already exist' do
+              expect(stemcell).to receive(:validate)
+              expect(stemcell).to receive(:valid?).and_return(true)
+              expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
+              expect(director).not_to receive(:upload_stemcell)
+
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /already exists/)
+            end
           end
 
-          it 'should not upload the stemcell if is invalid' do
-            expect(stemcell).to receive(:validate)
-            expect(stemcell).to receive(:valid?).and_return(false)
-            expect(director).not_to receive(:upload_stemcell)
+          context 'with --skip-if-exists option' do
+            before do
+              command.options[:skip_if_exists] = true
+            end
 
-            expect {
-              command.upload(stemcell_archive)
-            }.to raise_error(Bosh::Cli::CliError, /Stemcell is invalid/)
+            it 'should skip upload if already exists' do
+              expect(stemcell).to receive(:validate)
+              expect(stemcell).to receive(:valid?).and_return(true)
+              expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
+              expect(director).not_to receive(:upload_stemcell)
+
+              expect {
+                command.upload(stemcell_archive)
+              }.to_not raise_error
+            end
           end
 
-          it 'should not upload the stemcell if already exist' do
-            expect(stemcell).to receive(:validate)
-            expect(stemcell).to receive(:valid?).and_return(true)
-            expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
-            expect(director).not_to receive(:upload_stemcell)
+          context 'with --fix option' do
+            before do
+              command.options[:fix] = true
+              allow(stemcell).to receive(:stemcell_file).and_return('stemcell_location/stemcell.tgz')
+            end
 
-            expect {
-              command.upload(stemcell_archive)
-            }.to raise_error(Bosh::Cli::CliError, /already exists/)
+            it 'should upload stemcell' do
+              expect(stemcell).to receive(:validate)
+              expect(stemcell).to receive(:valid?).and_return(true)
+              expect(director).to receive(:upload_stemcell).with('stemcell_location/stemcell.tgz', {:fix => true})
+
+              expect {
+                command.upload(stemcell_archive)
+              }.to_not raise_error
+            end
+
+            it 'should raise error when --skip-if-exists option also provided' do
+              command.options[:skip_if_exists] = true
+
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Option '--skip-if-exists' and option '--fix' should not be used together/)
+            end
           end
         end
 
         context 'remote stemcell' do
           it 'should upload the stemcell' do
-            expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location')
+            expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {})
 
+            command.upload('http://stemcell_location')
+          end
+
+          it 'should upload the stemcell with fix option set if --fix option provided' do
+            command.options[:fix] = true
+            expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {:fix => true})
             command.upload('http://stemcell_location')
           end
         end
@@ -203,7 +253,7 @@ module Bosh::Cli
           before { allow(director).to receive_messages(list_stemcells: []) }
 
           it 'uploads stemcell and returns successfully' do
-            expect(director).to receive(:upload_stemcell).with(stemcell_archive)
+            expect(director).to receive(:upload_stemcell).with(stemcell_archive, {})
             command.upload(stemcell_archive)
           end
         end
@@ -245,7 +295,7 @@ module Bosh::Cli
             let(:remote_stemcell_location) { 'http://location/stemcell.tgz' }
             let(:task_events_json) { '{"error":{"code":50002}}' }
             before do
-              allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location).and_return([:error, 1])
+              allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location, {}).and_return([:error, 1])
               allow(director).to receive(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
             end
 
@@ -253,7 +303,7 @@ module Bosh::Cli
               before { command.add_option(:skip_if_exists, true) }
 
               it 'still uploads stemcell' do
-                expect(director).to receive(:upload_remote_stemcell)
+                expect(director).to receive(:upload_remote_stemcell).with('http://location/stemcell.tgz', {})
                 command.upload(remote_stemcell_location)
               end
 
@@ -271,7 +321,7 @@ module Bosh::Cli
 
             context 'when --skip-if-exists flag is not given' do
               it 'still uploads stemcell' do
-                expect(director).to receive(:upload_remote_stemcell)
+                expect(director).to receive(:upload_remote_stemcell).with('http://location/stemcell.tgz', {})
                 command.upload(remote_stemcell_location) rescue nil
               end
 

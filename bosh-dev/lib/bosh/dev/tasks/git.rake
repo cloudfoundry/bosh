@@ -24,4 +24,9 @@ namespace :git do
     tagger = Bosh::Dev::GitTagger.new(Logging.logger(STDERR))
     tagger.tag_and_push(args.sha, args.build_number)
   end
+
+  desc 'Add Git commit message hook to append Tracker URL to messages with Tracker story number'
+  task :add_tracker_commit_hook do
+    sh('ln -Fs ../../bosh-dev/assets/commit-msg.rb .git/hooks/commit-msg')
+  end
 end

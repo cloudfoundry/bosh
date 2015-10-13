@@ -17,7 +17,8 @@
 - [ ] 6. Upon successful completion of the Jenkins pipeline, locally...
   - [ ] `git co master && git pull`
   - [ ] `git co develop && git pull`
-  - [ ] `git merge master` (onto `develop`) # resolve any merge conflicts
+  - [ ] `git merge master` (onto `develop`) # Resolve any merge conflicts
+  - [ ] `git commit` # Accept the standard commit message
   - [ ] `git push origin develop`
   - [ ] optionally, delete the local and remote hotfix branches:
       `git branch -d hotfix-STORY_ID`
