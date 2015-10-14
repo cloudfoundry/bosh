@@ -18,7 +18,7 @@ module Bosh::Director
       # @return [DeploymentPlan::Job] Job as build from job_spec
       def parse(job_spec)
         @job_spec = job_spec
-        @job = Job.new(@deployment, @logger)
+        @job = Job.new(@logger)
 
         parse_name
         parse_lifecycle

@@ -23,7 +23,6 @@ module Bosh::Director::DeploymentPlan
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner', {
           name: 'fake-deployment',
-          canonical_name: 'mycloud',
           model: deployment,
           network: net,
           using_global_networking?: true,
@@ -38,7 +37,6 @@ module Bosh::Director::DeploymentPlan
         vm_type: vm_type,
         stemcell: stemcell,
         env: env,
-        deployment: plan,
         name: 'fake-job',
         persistent_disk_type: disk_type,
         compilation?: false,
@@ -63,7 +61,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
     describe '#packages_changed?' do
-      let(:job) { Job.new(plan, logger) }
+      let(:job) { Job.new(logger) }
 
       describe 'when packages have changed' do
         let(:current_state) { {'packages' => {'changed' => 'value'}} }
@@ -88,7 +86,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#configuration_changed?' do
-      let(:job) { Job.new(plan, logger) }
+      let(:job) { Job.new(logger) }
 
       describe 'when the configuration has changed' do
         let(:current_state) { {'configuration_hash' => {'changed' => 'value'}} }
@@ -112,7 +110,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#bind_unallocated_vm' do
       let(:index) { 2 }
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', compilation?: false) }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'dea', compilation?: false) }
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
@@ -149,7 +147,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#bind_existing_instance_model' do
-      let(:job) { Job.new(plan, logger) }
+      let(:job) { Job.new(logger) }
 
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
@@ -186,7 +184,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#apply_vm_state' do
-      let(:job) { Job.new(plan, logger) }
+      let(:job) { Job.new(logger) }
 
       before do
         job.templates = [template]
@@ -269,7 +267,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#job_changed?' do
-      let(:job) { Job.new(plan, logger) }
+      let(:job) { Job.new(logger) }
       before do
         job.templates = [template]
         job.name = state['job']['name']
@@ -344,7 +342,6 @@ module Bosh::Director::DeploymentPlan
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
-          deployment: plan,
           spec: job_spec,
           canonical_name: 'job',
           instances: ['instance0'],
@@ -415,7 +412,6 @@ module Bosh::Director::DeploymentPlan
         let(:job) {
           job = instance_double('Bosh::Director::DeploymentPlan::Job',
             name: 'fake-job',
-            deployment: plan,
             spec: job_spec,
             canonical_name: 'job',
             instances: ['instance0'],
@@ -519,7 +515,6 @@ module Bosh::Director::DeploymentPlan
       let(:job) {
         job = instance_double('Bosh::Director::DeploymentPlan::Job',
           name: 'fake-job',
-          deployment: plan,
           spec: job_spec,
           canonical_name: 'job',
           instances: ['instance0'],

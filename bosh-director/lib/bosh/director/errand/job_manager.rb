@@ -17,7 +17,7 @@ module Bosh::Director
     end
 
     def prepare
-      @job.bind_instances
+      @job.bind_instances(@deployment.ip_provider)
     end
 
     def create_missing_vms

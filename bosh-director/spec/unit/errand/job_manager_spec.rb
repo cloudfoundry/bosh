@@ -17,7 +17,7 @@ module Bosh::Director
 
     describe '#prepare' do
       it 'binds unallocated vms and instance networks for given job' do
-        expect(job).to receive(:bind_instances).with(no_args)
+        expect(job).to receive(:bind_instances).with(ip_provider)
 
         subject.prepare
       end

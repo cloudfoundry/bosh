@@ -69,7 +69,7 @@ module Bosh::Director
         vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
         env = Env.new(@deployment_plan.compilation.env)
 
-        @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan)
+        @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan.compilation.network_name)
         availability_zone = @deployment_plan.compilation.availability_zone
         instance = Instance.new(@compile_job, 0, 'started', @deployment_plan, {}, availability_zone, false, @logger)
         instance.bind_new_instance_model
@@ -112,16 +112,15 @@ module Bosh::Director
     end
 
     class CompilationJob
-      attr_reader :vm_type, :stemcell, :env, :name, :deployment
+      attr_reader :vm_type, :stemcell, :env, :name
       attr_reader :needed_instance_plans
 
-      def initialize(vm_type, stemcell, env, deployment)
+      def initialize(vm_type, stemcell, env, compilation_network_name)
         @vm_type = vm_type
         @stemcell = stemcell
         @env = env
-        @network = deployment.compilation.network_name
+        @network = compilation_network_name
         @name = "compilation-#{SecureRandom.uuid}"
-        @deployment = deployment
         @needed_instance_plans = []
       end
 

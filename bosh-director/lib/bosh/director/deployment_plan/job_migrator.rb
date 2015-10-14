@@ -9,7 +9,8 @@ module Bosh::Director
 
     def find_existing_instances(desired_job)
       instances = []
-      desired_job.existing_instances.each do |existing_instance|
+      existing_instances = @deployment_plan.instance_models.select { |model| model.job == desired_job.name }
+      existing_instances.each do |existing_instance|
         instances << existing_instance
       end
 

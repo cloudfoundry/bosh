@@ -60,7 +60,6 @@ describe Bosh::Director::VmCreator do
       env: env,
       default_network: {},
       can_run_as_errand?: false,
-      deployment: deployment_plan
     )
   end
   let(:vm) { nil }

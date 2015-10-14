@@ -99,7 +99,7 @@ module Bosh::Director
 
       context 'when there are desired jobs' do
         def make_job(template_name)
-          job = DeploymentPlan::Job.new(deployment_plan, Config.logger)
+          job = DeploymentPlan::Job.new(logger)
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)

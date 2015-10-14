@@ -379,7 +379,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_unallocated_vms' do
-    subject(:job) { described_class.new(deployment, logger) }
+    subject(:job) { described_class.new(logger) }
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
@@ -400,7 +400,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_instances' do
-    subject(:job) { described_class.new(plan, logger) }
+    subject(:job) { described_class.new(logger) }
 
     it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
@@ -440,7 +440,7 @@ describe Bosh::Director::DeploymentPlan::Job do
         expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
       end
 
-      job.bind_instances
+      job.bind_instances(fake_ip_provider)
 
       expect(fake_ip_provider).to have_received(:reserve).with(instance0_reservation)
       expect(fake_ip_provider).to have_received(:reserve).with(instance1_reservation)
@@ -450,7 +450,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#starts_on_deploy?' do
-    subject { described_class.new(plan, logger) }
+    subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
@@ -464,7 +464,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#can_run_as_errand?' do
-    subject { described_class.new(plan, logger) }
+    subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }

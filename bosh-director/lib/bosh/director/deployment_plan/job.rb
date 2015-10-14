@@ -28,9 +28,6 @@ module Bosh::Director
       # @return [DiskType] Persistent disk type (or nil)
       attr_accessor :persistent_disk_type
 
-      # @return [DeploymentPlan] Current deployment plan
-      attr_accessor :deployment
-
       # @return [DeploymentPlan::ReleaseVersion] Release this job belongs to
       attr_accessor :release
 
@@ -80,21 +77,16 @@ module Bosh::Director
 
       attr_accessor :migrated_from
 
+      attr_accessor :desired_instances
+
       attr_reader :link_paths
 
-      # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
-      # @param [Hash] job_spec Raw job spec from the deployment manifest
-      # @param [Bosh::Director::EventLog::Log] event_log Event log for recording deprecations
-      # @param [Logger] logger Log for director logging
-      # @return [Bosh::Director::DeploymentPlan::Job]
-      def self.parse(deployment, job_spec, event_log, logger)
-        parser = JobSpecParser.new(deployment, event_log, logger)
+      def self.parse(plan, job_spec, event_log, logger)
+        parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)
       end
 
-      # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
-      def initialize(deployment, logger)
-        @deployment = deployment
+      def initialize(logger)
         @logger = logger
 
         @release = nil
@@ -146,11 +138,6 @@ module Bosh::Director
         job_spec["templates"] = [template]
       end
 
-      def existing_instances
-        deployment.instance_models.select { |model| model.job == name }
-      end
-
-      attr_accessor :desired_instances
 
       def obsolete_instance_plans
         @instance_plans.select(&:obsolete?)
@@ -274,20 +261,21 @@ module Bosh::Director
         end
       end
 
-      def bind_instances
+      def bind_instances(ip_provider)
         instances.each(&:ensure_model_bound)
         bind_unallocated_vms
-        bind_instance_networks
+        bind_instance_networks(ip_provider)
       end
 
-      def bind_instance_networks
+      #TODO: Job should not be responsible for reserving IPs. Consider moving this somewhere else? Maybe in the consumer?
+      def bind_instance_networks(ip_provider)
         needed_instance_plans
           .flat_map(&:network_plans)
           .reject(&:obsolete?)
           .reject(&:existing?)
           .each do |network_plan|
           reservation = network_plan.reservation
-          deployment.ip_provider.reserve(reservation)
+          ip_provider.reserve(reservation)
         end
       end
 

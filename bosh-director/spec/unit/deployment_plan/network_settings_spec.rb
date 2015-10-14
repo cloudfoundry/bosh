@@ -48,7 +48,6 @@ module Bosh::Director::DeploymentPlan
     describe '#network_settings' do
       let(:job) do
         instance_double(Job, {
-            deployment: plan,
             name: 'fake-job',
             can_run_as_errand?: false,
           })

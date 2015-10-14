@@ -114,7 +114,7 @@ module Bosh::Director
         deployment_model,
         {'recreate' => true})
 
-      job_from_instance_model = DeploymentPlan::Job.new(deployment_plan_from_model, @logger)
+      job_from_instance_model = DeploymentPlan::Job.new(@logger)
       job_from_instance_model.name = instance_model.job
       job_from_instance_model.vm_type = DeploymentPlan::VmType.new(vm_apply_spec['vm_type'])
       job_from_instance_model.env = DeploymentPlan::Env.new(vm_env)
