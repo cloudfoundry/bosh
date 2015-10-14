@@ -48,16 +48,6 @@ module Bosh
           @changes
         end
 
-        def env_changed?
-          job = @instance.job
-
-          if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
-            log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
-            return true
-          end
-          false
-        end
-
         def persistent_disk_changed?
           if @existing_instance && obsolete?
             return !@existing_instance.persistent_disk.nil?
@@ -109,28 +99,6 @@ module Bosh
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
             instance.state == 'started' && instance.current_job_state != 'running'
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
-            return true
-          end
-
-          false
-        end
-
-        def vm_type_changed?
-          if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
-            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec, @existing_instance)
-            return true
-          end
-          false
-        end
-
-        def stemcell_changed?
-          if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
-            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
-            return true
-          end
-
-          if @existing_instance && @instance.stemcell.version != @existing_instance.apply_spec['stemcell']['version']
-            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
             return true
           end
 
@@ -208,6 +176,38 @@ module Bosh
         end
 
         private
+
+        def env_changed?
+          job = @instance.job
+
+          if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
+            log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
+            return true
+          end
+          false
+        end
+
+        def stemcell_changed?
+          if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
+            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
+            return true
+          end
+
+          if @existing_instance && @instance.stemcell.version != @existing_instance.apply_spec['stemcell']['version']
+            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
+            return true
+          end
+
+          false
+        end
+
+        def vm_type_changed?
+          if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
+            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec, @existing_instance)
+            return true
+          end
+          false
+        end
 
         def log_changes(method_sym, old_state, new_state, instance)
           @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state} on instance #{instance}")

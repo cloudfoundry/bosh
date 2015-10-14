@@ -67,23 +67,68 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the vm type has changed' do
-        let(:new_vm_type) { {'name' => 'new-vm-type', 'cloud_properties' => {'new' => 'properties'}} }
-        it 'shuts down the instance' do
-          expect(instance_plan.needs_shutting_down?).to be_truthy
+        before do
+          instance_plan.existing_instance.vm.update(apply_spec: {'vm_type' => { 'name' => 'old', 'cloud_properties' => {'old' => 'value'}}})
+        end
+
+        it 'returns true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
+        it 'logs the change reason' do
+          expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
+                '{"name"=>"old", "cloud_properties"=>{"old"=>"value"}} ' +
+                'TO: ' +
+                '{"name"=>"a", "cloud_properties"=>{}}' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
+          instance_plan.needs_shutting_down?
         end
       end
 
       context 'when the stemcell type has changed' do
-        let(:new_stemcell) { {'name' => 'new-stemcell-name', 'version' => '2.0.7'} }
-        it 'shuts down the instance' do
-          expect(instance_plan.needs_shutting_down?).to be_truthy
+        before do
+          expect(instance_plan).to receive(:vm_type_changed?).and_return(false)
+          instance_plan.existing_instance.vm.update(apply_spec: {
+              'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
+            })
+        end
+
+        it 'returns true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
+        it 'logs the change reason' do
+          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
+                'version: 2 ' +
+                'TO: ' +
+                'version: 1' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
+          instance_plan.needs_shutting_down?
         end
       end
 
       context 'when the env has changed' do
-        let(:new_env) { {'new' => 'env'} }
-        it 'shuts down the instance' do
-          expect(instance_plan.needs_shutting_down?).to be_truthy
+        let(:cloud_config_manifest) do
+          cloud_manifest = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value'}
+          cloud_manifest
+        end
+
+        before do
+          expect(instance_plan).to receive(:vm_type_changed?).and_return(false)
+          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
+        end
+
+        it 'returns true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
+        it 'log the change reason' do
+          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
+                ' on instance ' + "#{instance_plan.existing_instance}")
+          instance_plan.needs_shutting_down?
         end
       end
 
@@ -92,89 +137,6 @@ module Bosh::Director::DeploymentPlan
 
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
-        end
-      end
-    end
-
-    describe '#vm_type_changed?' do
-      before do
-        instance_plan.existing_instance.vm.update(apply_spec: {'vm_type' => { 'name' => 'fake-vm-type2', 'cloud_properties' => {'bar' => 'baz'}}})
-      end
-
-      describe 'when the vm types spec does not match the existing state' do
-        it 'should return changed' do
-          expect(instance_plan.vm_type_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
-                '{"name"=>"fake-vm-type2", "cloud_properties"=>{"bar"=>"baz"}} ' +
-                'TO: ' +
-                '{"name"=>"a", "cloud_properties"=>{}}' +
-                ' on instance ' + "#{instance_plan.existing_instance}"
-            )
-          instance_plan.vm_type_changed?
-        end
-      end
-    end
-
-    describe '#stemcell_changed?' do
-      describe 'when there is no change in stemcell' do
-        it 'should return no change' do
-          expect(instance_plan.stemcell_changed?).to be(false)
-        end
-      end
-
-
-      describe 'when the stemcell spec does not match the existing state' do
-        before do
-          instance_plan.existing_instance.vm.update(apply_spec: {
-            'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
-          })
-        end
-
-        it 'should return changed' do
-          expect(instance_plan.stemcell_changed?).to be(true)
-        end
-
-        it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
-                'version: 2 ' +
-                'TO: ' +
-                'version: 1' +
-                ' on instance ' + "#{instance_plan.existing_instance}"
-            )
-          instance_plan.stemcell_changed?
-        end
-      end
-    end
-
-    describe '#env_changed?' do
-      describe 'when nothing changes' do
-        it 'should return false' do
-          expect(instance_plan.env_changed?).to eq(false)
-        end
-      end
-
-      describe 'when the resource pool env changes' do
-        let(:cloud_config_manifest) do
-          cloud_manifest = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value'}
-          cloud_manifest
-        end
-
-        it 'detects resource pool changes when instance VM env changes' do
-          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
-
-          expect(instance_plan.env_changed?).to be(true)
-        end
-
-        it 'should log the diff when the resource pool env changes' do
-          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
-
-          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
-                ' on instance ' + "#{instance_plan.existing_instance}")
-          instance_plan.env_changed?
         end
       end
     end
@@ -336,7 +298,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when there have been changes on the instance' do
-      context '#bootstrap_changed?' do
+      describe '#bootstrap_changed?' do
         context 'when bootstrap node changes' do
           before do
             desired_instance.mark_as_bootstrap
