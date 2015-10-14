@@ -192,6 +192,7 @@ module Bosh::Director
         new_packages = []
         existing_packages = []
         registered_packages = []
+        packages_existing_from_other_releases = []
 
         @manifest[@packages_folder].each do |package_meta|
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
@@ -242,7 +243,6 @@ module Bosh::Director
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
-
             packages.each do |package|
               unless package.blobstore_id.nil?
                 package_meta["blobstore_id"] = package.blobstore_id
@@ -251,6 +251,7 @@ module Bosh::Director
               end
             end
             new_packages << package_meta
+            packages_existing_from_other_releases << package_meta
           end
         end
 
@@ -268,7 +269,7 @@ module Bosh::Director
             end
           end
           consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
-          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir, packages_existing_from_other_releases)
         else
           backfill_source_for_packages(registered_packages, release_dir)
         end
@@ -361,29 +362,43 @@ module Bosh::Director
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
-      def create_compiled_packages(all_compiled_packages, release_dir)
+      def create_compiled_packages(all_compiled_packages, release_dir, packages_existing_from_other_releases)
         return false if all_compiled_packages.nil?
 
         event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
-
         had_effect = false
+
         all_compiled_packages.each do |compiled_package_spec|
           package = compiled_package_spec[:package]
           stemcell = compiled_package_spec[:stemcell]
 
-          existing_compiled_package = Models::CompiledPackage.where(
-              :package_id => package.id,
-              :stemcell_id => stemcell.id)
-
+          existing_compiled_package = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
           if existing_compiled_package.empty?
+
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
             event_log.track(package_desc) do
-              create_compiled_package(package, stemcell, release_dir)
+              other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
+              create_compiled_package(package, stemcell, release_dir, other_compiled_package)
               had_effect = true
             end
           end
         end
+
         had_effect
+      end
+
+      def get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
+        other_compiled_package = nil
+        packages_existing_from_other_releases.each do |other_package_meta|
+          if other_package_meta["fingerprint"] == package.fingerprint
+            packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
+            packages.each do |pkg|
+              other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_id => stemcell.id).first
+              break unless other_compiled_package.nil?
+            end
+          end
+        end
+        other_compiled_package
       end
 
       def stemcells_used_by_package(package_meta)
@@ -406,14 +421,21 @@ module Bosh::Director
         stemcells
       end
 
-      def create_compiled_package(package, stemcell, release_dir)
-        tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-        validate_tgz(tgz, "#{package.name}.tgz")
+      def create_compiled_package(package, stemcell, release_dir, other_compiled_package)
+        if other_compiled_package.nil?
+          tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
+          validate_tgz(tgz, "#{package.name}.tgz")
+
+          blobstore_id = BlobUtil.create_blob(tgz)
+          sha1 = Digest::SHA1.file(tgz).hexdigest
+        else
+          blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
+          sha1 = other_compiled_package.sha1
+        end
 
         compiled_package = Models::CompiledPackage.new
-
-        compiled_package.blobstore_id = BlobUtil.create_blob(tgz)
-        compiled_package.sha1 = Digest::SHA1.file(tgz).hexdigest
+        compiled_package.blobstore_id = blobstore_id
+        compiled_package.sha1 = sha1
 
         transitive_dependencies = @release_version_model.transitive_dependencies(package)
         compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
