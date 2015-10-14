@@ -295,7 +295,12 @@ cloud:
       auth_url: <%= JSON.dump(auth_url) %>
       username: <%= JSON.dump(username) %>
       api_key: <%= JSON.dump(api_key) %>
+      <% if_p("openstack.tenant") do |tenant| %>
       tenant: <%= JSON.dump(tenant) %>
+      <% end %>
+      <% if_p("openstack.project") do |project| %>
+      project: <%= project %>
+      <% end %>
       <% if_p("openstack.domain") do |domain| %>
       domain: <%= domain %>
       <% end %>

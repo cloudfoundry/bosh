@@ -48,14 +48,19 @@
     end
   end
 
-  if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant|
+  if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key') do |auth_url, username, api_key|
     cloud_params['plugin'] = 'openstack'
     cloud_params['openstack'] = {
       'auth_url' =>  auth_url,
       'username' =>  username,
       'api_key' =>  api_key,
-      'tenant' =>  tenant,
     }
+    if_p('openstack.tenant') do |tenant|
+      cloud_params['openstack']['tenant'] = tenant
+    end
+    if_p('openstack.project') do |project|
+      cloud_params['openstack']['project'] = project
+    end
     if_p('openstack.domain') do |domain|
       cloud_params['openstack']['domain'] = domain
     end
