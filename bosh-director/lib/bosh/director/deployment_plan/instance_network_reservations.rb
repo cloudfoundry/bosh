@@ -39,19 +39,6 @@ module Bosh::Director
         @reservations.find { |r| r.network == network }
       end
 
-      def add(reservation)
-        @logger.debug("Requesting #{reservation.desc} for '#{reservation.instance}' on network '#{reservation.network.name}' based on deployment manifest")
-        old_reservation = find_for_network(reservation.network)
-
-        if old_reservation
-          raise NetworkReservationAlreadyExists,
-            "Failed to add #{reservation.desc} for instance '#{reservation.instance}' on network '#{reservation.network.name}', " +
-              "instance already has #{old_reservation.desc} on the same network"
-        end
-
-        @reservations << reservation
-      end
-
       def clean
         @reservations = []
       end
