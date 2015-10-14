@@ -105,6 +105,7 @@ module Bosh::Director
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
+      # FIXME: Try to reduce dependencies
       instance_model.bind_to_vm_model(vm)
       deployment_model = instance_model.deployment
       deployment_plan_from_model = DeploymentPlan::Planner.new(
