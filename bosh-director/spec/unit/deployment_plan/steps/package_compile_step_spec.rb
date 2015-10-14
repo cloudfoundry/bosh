@@ -8,7 +8,7 @@ module Bosh::Director
     let(:cloud) { double(:cpi) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager) }
-    let(:disk_manager) {InstanceUpdater::DiskManager.new(cloud, logger)}
+    let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
@@ -392,7 +392,7 @@ module Bosh::Director
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager) }
-      let(:disk_manager) { InstanceUpdater::DiskManager.new(cloud, logger) }
+      let(:disk_manager) { DiskManager.new(cloud, logger) }
 
       it 'reuses compilation VMs' do
         prepare_samples

@@ -1,5 +1,5 @@
 module Bosh::Director
-  class InstanceUpdater::DiskManager
+  class DiskManager
 
     def initialize(cloud, logger, options={})
       @cloud = cloud

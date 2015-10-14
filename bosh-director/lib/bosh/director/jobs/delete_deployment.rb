@@ -27,7 +27,7 @@ module Bosh::Director
           ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), DeploymentPlan::VipRepo.new(logger), true, logger)
 
           dns_manager = DnsManager.create
-          disk_manager = InstanceUpdater::DiskManager.new(@cloud, logger, keep_snapshots_in_the_cloud: @keep_snapshots)
+          disk_manager = DiskManager.new(@cloud, logger, keep_snapshots_in_the_cloud: @keep_snapshots)
           instance_deleter = InstanceDeleter.new(ip_provider, dns_manager, disk_manager, force: @force)
           deployment_deleter = DeploymentDeleter.new(event_log, logger, dns_manager, Config.max_threads)
 

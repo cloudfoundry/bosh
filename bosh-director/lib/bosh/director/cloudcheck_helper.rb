@@ -162,7 +162,7 @@ module Bosh::Director
     end
 
     def vm_creator
-      disk_manager = InstanceUpdater::DiskManager.new(cloud, @logger)
+      disk_manager = DiskManager.new(cloud, @logger)
       @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager)
     end
 

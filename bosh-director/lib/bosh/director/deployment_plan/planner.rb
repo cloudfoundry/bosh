@@ -135,7 +135,7 @@ module Bosh::Director
 
         cloud = Config.cloud
         vm_deleter = VmDeleter.new(cloud, @logger)
-        disk_manager = InstanceUpdater::DiskManager.new(cloud, @logger)
+        disk_manager = DiskManager.new(cloud, @logger)
         vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager)
         dns_manager = DnsManager.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)

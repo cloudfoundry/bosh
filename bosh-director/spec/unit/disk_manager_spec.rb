@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Bosh::Director::InstanceUpdater::DiskManager do
+  describe Bosh::Director::DiskManager do
 
-    subject(:disk_manager) { InstanceUpdater::DiskManager.new(cloud, logger, options) }
+    subject(:disk_manager) { DiskManager.new(cloud, logger, options) }
     let(:options) { {} }
     let(:vm_recreator) { instance_double(VmRecreator) }
 

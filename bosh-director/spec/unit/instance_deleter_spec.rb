@@ -12,7 +12,7 @@ module Bosh::Director
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
     let(:options) { {} }
     let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
-    let(:disk_manager) { InstanceUpdater::DiskManager.new(cloud, logger) }
+    let(:disk_manager) { DiskManager.new(cloud, logger) }
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlan.new(reservation: reservation) }

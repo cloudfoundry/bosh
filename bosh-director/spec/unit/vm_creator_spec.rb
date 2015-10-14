@@ -4,7 +4,7 @@ describe Bosh::Director::VmCreator do
 
   subject  {Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)}
 
-  let(:disk_manager) { Bosh::Director::InstanceUpdater::DiskManager.new(cloud, logger) }
+  let(:disk_manager) { Bosh::Director::DiskManager.new(cloud, logger) }
   let(:cloud) { instance_double('Bosh::Cloud') }
   let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger)}
   let(:agent_client) do
