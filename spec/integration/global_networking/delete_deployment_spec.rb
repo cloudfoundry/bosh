@@ -44,9 +44,9 @@ describe 'deleting deployment', type: :integration do
     expect(bosh_runner.run('releases')).to include('Releases total: 1')
 
     expect(current_sandbox.cpi.vm_cids.count).to eq 0
-    expect(current_sandbox.cpi.disk_cids.count).to eq 0
+    expect(current_sandbox.cpi.disk_cids.count).to eq 1
     expect(current_sandbox.cpi.all_ips.count).to eq 0
-    expect(current_sandbox.cpi.all_snapshots.count).to eq 0
+    expect(current_sandbox.cpi.all_snapshots.count).to eq 1
 
     #deployments
     expect(bosh_runner.run('deployments', failure_expected: true)).to match /No deployments/

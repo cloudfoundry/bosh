@@ -116,24 +116,20 @@ module Bosh::Director
         allow(Config).to receive(:enable_snapshots).and_return(true)
       end
 
-      describe '#delete_snapshots' do
-        it 'deletes the snapshots' do
-          expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
-          expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
-
+      describe '#orphan_snapshots' do
+        it 'deletes the snapshots from the database' do
           expect {
-            described_class.delete_snapshots(@disk.snapshots)
+            described_class.orphan_snapshots(@disk.snapshots)
           }.to change { Models::Snapshot.count }.by -2
         end
 
-        context 'when keep_snapshots_in_cloud option is passed' do
-          it 'keeps snapshots in the IaaS' do
-            expect(Config.cloud).to_not receive(:delete_snapshot)
+        it 'does not delete snapshots from the cloud' do
+          expect(Config.cloud).to_not receive(:delete_snapshot)
+          expect(Config.cloud).to_not receive(:delete_snapshot)
 
-            expect {
-              described_class.delete_snapshots(@disk.snapshots, keep_snapshots_in_the_cloud: true)
-            }.to change { Models::Snapshot.count }.by -2
-          end
+          expect {
+            described_class.orphan_snapshots(@disk.snapshots)
+          }.to change { Models::Snapshot.count }.by -2
         end
       end
 

@@ -23,7 +23,7 @@ module Bosh::Director
           snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
           if snapshots.any?
             logger.info("deleting snapshots of: #{instance.job}/#{instance.index} (#{instance.vm.cid})")
-            Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
+            Bosh::Director::Api::SnapshotManager.orphan_snapshots(snapshots)
           end
         end
 

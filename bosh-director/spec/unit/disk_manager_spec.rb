@@ -3,8 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Bosh::Director::DiskManager do
 
-    subject(:disk_manager) { DiskManager.new(cloud, logger, options) }
-    let(:options) { {} }
+    subject(:disk_manager) { DiskManager.new(cloud, logger) }
     let(:vm_recreator) { instance_double(VmRecreator) }
 
     let(:cloud) { instance_double(Bosh::Cloud) }
@@ -44,7 +43,6 @@ module Bosh::Director
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
       allow(cloud).to receive(:detach_disk)
-      allow(cloud).to receive(:delete_disk)
       allow(Config).to receive(:cloud).and_return(cloud)
     end
 
@@ -131,7 +129,6 @@ module Bosh::Director
                     end
 
                     it 'deletes the unused disk and re-raises the exception from the second attempt' do
-                      expect(cloud).to receive(:delete_disk).with('new-disk-cid')
                       expect {
                         disk_manager.update_persistent_disk(instance_plan, vm_recreator)
                       }.to raise_error nope
@@ -144,7 +141,6 @@ module Bosh::Director
                   let(:ok_to_retry) { false }
 
                   it 'deletes the disk and raises' do
-                    expect(cloud).to receive(:delete_disk).with('new-disk-cid')
                     expect {
                       disk_manager.update_persistent_disk(instance_plan, vm_recreator)
                     }.to raise_error no_space
@@ -178,7 +174,6 @@ module Bosh::Director
                 context 'when mounting and migrating disks succeeds' do
                   before do
                     allow(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                    allow(cloud).to receive(:delete_disk).with('new-disk-cid')
                     allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
                   end
 
@@ -194,11 +189,8 @@ module Bosh::Director
                     end
 
                     it 'deletes the old mounted disk' do
-                      expect(cloud).to receive(:delete_snapshot).with(snapshot.snapshot_cid)
-
                       expect(agent_client).to receive(:unmount_disk).with('disk123')
                       expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
-                      expect(cloud).to receive(:delete_disk).with('disk123')
 
                       disk_manager.update_persistent_disk(instance_plan, vm_recreator)
 
@@ -216,7 +208,6 @@ module Bosh::Director
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                    expect(cloud).to receive(:delete_disk).with('new-disk-cid')
                     expect {
                       disk_manager.update_persistent_disk(instance_plan, vm_recreator)
                     }.to raise_error disk_error
@@ -234,7 +225,6 @@ module Bosh::Director
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                    expect(cloud).to receive(:delete_disk).with('new-disk-cid')
                     expect {
                       disk_manager.update_persistent_disk(instance_plan, vm_recreator)
                     }.to raise_error disk_error
@@ -266,33 +256,22 @@ module Bosh::Director
       before { persistent_disk.add_snapshot(snapshot) }
 
       it 'deletes snapshots' do
-        expect(cloud).to receive(:delete_snapshot).with(snapshot.snapshot_cid)
-
         expect(Models::Snapshot.all.size).to eq(1)
         disk_manager.delete_persistent_disks(instance_model)
         expect(Models::Snapshot.all.size).to eq(0)
       end
 
       it 'deletes disks for instance' do
-        expect(cloud).to receive(:delete_snapshot).with(snapshot.snapshot_cid)
-
         expect(Models::PersistentDisk.all.size).to eq(1)
         disk_manager.delete_persistent_disks(instance_model)
         expect(Models::PersistentDisk.all.size).to eq(0)
       end
 
-      context 'when keep_snapshots_in_cloud is passed in' do
-        let(:options) { { keep_snapshots_in_the_cloud: true } }
+      it 'does not delete disk and snapshots from cloud' do
+        expect(cloud).to_not receive(:delete_snapshot)
+        expect(cloud).to_not receive(:delete_disk)
 
-        it 'deletes snapshots from DB keeping snapshots in cloud' do
-          expect(cloud).to_not receive(:delete_snapshot)
-
-          expect(Models::PersistentDisk.all.size).to eq(1)
-          expect(Models::Snapshot.all.size).to eq(1)
-          disk_manager.delete_persistent_disks(instance_model)
-          expect(Models::PersistentDisk.all.size).to eq(0)
-          expect(Models::Snapshot.all.size).to eq(0)
-        end
+        disk_manager.delete_persistent_disks(instance_model)
       end
     end
   end

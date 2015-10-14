@@ -51,10 +51,8 @@ module Bosh::Director
         result
       end
 
-      def self.delete_snapshots(snapshots, options={})
-        keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
+      def self.orphan_snapshots(snapshots)
         snapshots.each do |snapshot|
-          Config.cloud.delete_snapshot(snapshot.snapshot_cid) unless keep_snapshots_in_the_cloud
           snapshot.delete
         end
       end

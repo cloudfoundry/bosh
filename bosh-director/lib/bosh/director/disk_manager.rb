@@ -1,10 +1,9 @@
 module Bosh::Director
   class DiskManager
 
-    def initialize(cloud, logger, options={})
+    def initialize(cloud, logger)
       @cloud = cloud
       @logger = logger
-      @keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
     end
 
     def update_persistent_disk(instance_plan, vm_recreator)
@@ -47,8 +46,8 @@ module Bosh::Director
 
     def delete_persistent_disks(instance_model)
       instance_model.persistent_disks.each do |disk|
-        delete_snapshots(disk)
-        delete_disk(disk)
+        orphan_snapshots(disk)
+        orphan_disk(disk)
       end
     end
 
@@ -73,30 +72,14 @@ module Bosh::Director
         end
       end
 
-      delete_snapshots(disk)
-
-      delete_disk(disk)
+      orphan_snapshots(disk)
+      orphan_disk(disk)
     end
 
-    def delete_disk(disk)
-      @logger.info("Deleting disk: '#{disk.disk_cid}', " +
+    def orphan_disk(disk)
+      @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
           "#{disk.active ? "active" : "inactive"}")
 
-      begin
-        @cloud.delete_disk(disk.disk_cid)
-      rescue Bosh::Clouds::DiskNotFound
-        if disk.active
-          raise CloudDiskMissing,
-            "Disk `#{disk.disk_cid}' is missing according to CPI but marked " +
-              "as active in DB"
-        end
-      end
-
-      disk.destroy
-    end
-
-    def delete_unused_disk(disk)
-      @cloud.delete_disk(disk.disk_cid)
       disk.destroy
     end
 
@@ -140,11 +123,11 @@ module Bosh::Director
         begin
           @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
         rescue
-          delete_unused_disk(disk)
+          orphan_disk(disk)
           raise
         end
       else
-        delete_unused_disk(disk)
+        orphan_disk(disk)
         raise
       end
     end
@@ -175,11 +158,8 @@ module Bosh::Director
       disk
     end
 
-    def delete_snapshots(disk)
-      Api::SnapshotManager.delete_snapshots(
-        disk.snapshots,
-        keep_snapshots_in_the_cloud: @keep_snapshots_in_the_cloud
-      )
+    def orphan_snapshots(disk)
+      Api::SnapshotManager.orphan_snapshots(disk.snapshots)
     end
   end
 end

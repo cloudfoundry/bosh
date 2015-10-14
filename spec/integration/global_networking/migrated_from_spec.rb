@@ -287,7 +287,7 @@ describe 'migrated from', type: :integration do
         expect(original_vms.map(&:cid)).to include(*new_vms.map(&:cid))
 
         new_disks = current_sandbox.cpi.disk_cids
-        expect(new_disks.size).to eq(2)
+        expect(new_disks.size).to eq(3)
         expect(original_disks).to include(*new_disks)
       end
     end

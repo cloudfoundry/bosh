@@ -189,54 +189,6 @@ module Bosh::Director
             end
           end
 
-          context 'when deleting snapshots fails' do
-            before do
-              allow(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots).and_raise(
-                  Bosh::Clouds::CloudError.new('Failed to delete snapshots')
-                )
-            end
-
-            it 'drains, deletes vm, persistent disk, releases old reservations' do
-              expect(stopper).to receive(:stop)
-              expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-              expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
-              expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
-              expect(ip_provider).to receive(:release).with(reservation)
-
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
-
-              expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
-
-              deleter.delete_instance_plans([instance_plan], event_log_stage)
-
-              expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
-            end
-          end
-
-          context 'when deleting disks fails' do
-            before do
-              allow(cloud).to receive(:delete_disk).and_raise(
-                  Bosh::Clouds::CloudError.new('Failed to delete disk')
-                )
-            end
-
-            it 'drains, deletes vm, snapshots, releases old reservations' do
-              expect(stopper).to receive(:stop)
-              expect(cloud).to receive(:delete_vm).with(vm.model.cid)
-              expect(Bosh::Director::Api::SnapshotManager).to receive(:delete_snapshots)
-              expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
-              expect(ip_provider).to receive(:release).with(reservation)
-
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5')
-
-              expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
-
-              deleter.delete_instance_plans([instance_plan], event_log_stage)
-
-              expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
-            end
-          end
-
           context 'when deleting dns fails' do
             before do
               allow(dns_manager).to receive(:delete_dns_for_instance).and_raise('failed')

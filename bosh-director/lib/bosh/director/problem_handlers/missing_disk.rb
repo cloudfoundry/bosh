@@ -75,7 +75,7 @@ module Bosh::Director
         end
 
         @logger.debug('Deleting disk snapshots')
-        Api::SnapshotManager.delete_snapshots(@disk.snapshots)
+        Api::SnapshotManager.orphan_snapshots(@disk.snapshots)
 
         begin
           @logger.debug('Sending cpi request: delete_disk')
