@@ -95,15 +95,17 @@ These are the options for the Blobstore client when `swift_provider` is `hp`:
 
 These are the options for the Blobstore client when `swift_provider` is `openstack`:
 
-* `openstack_auth_url` (required)
+* `openstack_auth_url` (required, either API version 2 or version 3)
   URL of the OpenStack Identity endpoint to connect to
 * `openstack_username` (required)
   OpenStack user name
 * `openstack_api_key` (required)
   OpenStack API key
-* `openstack_tenant` (required)
+* `openstack_tenant` (required for API version 2)
   OpenStack tenant name
-* `openstack_domain` (optional)
+* `openstack_project_name` (required for API version 3)
+  OpenStack project name
+* `openstack_domain` (required for API version 3)
   OpenStack domain
 * `openstack_region` (optional)
   OpenStack region

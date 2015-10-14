@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Blobstore
   describe SwiftBlobstoreClient do
 
-    def swift_options(container_name, swift_provider, credentials)
+    def swift_options(container_name, swift_provider, credentials, api_version=2)
       if credentials
         options = {
           'hp' => {
@@ -13,10 +13,8 @@ module Bosh::Blobstore
             'hp_avl_zone' => 'region'
           },
           'openstack' => {
-            'openstack_auth_url' => 'auth_url',
             'openstack_username' => 'username',
             'openstack_api_key' => 'api_key',
-            'openstack_tenant' => 'tenant',
             'openstack_region' => 'region'
           },
           'rackspace' => {
@@ -25,6 +23,14 @@ module Bosh::Blobstore
             'rackspace_region' => 'region'
           }
         }
+        if api_version == 2
+          options['openstack']['openstack_auth_url'] = 'http://fake-keystone/v2.0'
+          options['openstack']['openstack_tenant'] = 'fake-tenant'
+        elsif api_version == 3
+          options['openstack']['openstack_auth_url'] = 'http://fake-keystone/v3'
+          options['openstack']['openstack_project_name'] = 'fake-project-name'
+          options['openstack']['openstack_domain'] = 'fake-domain'
+        end
       else
         options = {}
       end
@@ -123,7 +129,7 @@ module Bosh::Blobstore
             expect(container).to receive(:files).and_return(files)
             expect(files).to receive(:get).with('object_id').and_return(nil)
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error NotFound, /Swift object '#{oid}' not found/
           end
@@ -137,7 +143,7 @@ module Bosh::Blobstore
             expect(files).to receive(:get).with('object_id').and_return(object)
             expect(object).to receive(:destroy).and_raise BlobstoreError
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
           end
@@ -221,8 +227,47 @@ module Bosh::Blobstore
       let(:object) { double('object') }
 
       describe 'with credentials' do
+        let(:options) { swift_options('test-container', 'openstack', true) }
         before(:each) do
-          @client = swift_blobstore(swift_options('test-container', 'openstack', true))
+          @client = swift_blobstore(options)
+        end
+
+        describe '#validate_options' do
+
+          context 'when using keystone V2 API' do
+            context 'when openstack_tenant is not specified' do
+              let(:options) do
+                swift_options('test-container', 'openstack', true, 2).tap { |opts| opts['openstack'].delete('openstack_tenant') }
+              end
+
+              it 'throws an error' do
+                expect { @client.container }.to raise_error(RuntimeError, 'OpenStack tenant is missing')
+              end
+            end
+
+          end
+
+          context 'when using keystone V3 API' do
+            context 'when openstack_domain is not specified' do
+              let(:options) do
+                swift_options('test-container', 'openstack', true, 3).tap { |opts| opts['openstack'].delete('openstack_domain') }
+              end
+
+              it 'throws an error' do
+                expect { @client.container }.to raise_error(RuntimeError, 'OpenStack domain is missing')
+              end
+            end
+
+            context 'when openstack_project_name is not specified' do
+              let(:options) do
+                swift_options('test-container', 'openstack', true, 3).tap { |opts| opts['openstack'].delete('openstack_project_name') }
+              end
+
+              it 'throws an error' do
+                expect { @client.container }.to raise_error(RuntimeError, 'OpenStack project name is missing')
+              end
+            end
+          end
         end
 
         describe '#create_file' do
@@ -286,7 +331,7 @@ module Bosh::Blobstore
             expect(container).to receive(:files).and_return(files)
             expect(files).to receive(:get).with('object_id').and_return(nil)
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error NotFound, /Swift object '#{oid}' not found/
           end
@@ -300,7 +345,7 @@ module Bosh::Blobstore
             expect(files).to receive(:get).with('object_id').and_return(object)
             expect(object).to receive(:destroy).and_raise BlobstoreError
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
           end
@@ -319,9 +364,9 @@ module Bosh::Blobstore
 
           it "should return false if object doesn't exists" do
             allow(@swift).to receive(:directories).and_return(directories)
-           expect(directories).to receive(:get).with('test-container').and_return(container)
-           expect(container).to receive(:files).and_return(files)
-           expect(files).to receive(:head).with('object_id').and_return(nil)
+            expect(directories).to receive(:get).with('test-container').and_return(container)
+            expect(container).to receive(:files).and_return(files)
+            expect(files).to receive(:head).with('object_id').and_return(nil)
 
             oid = URI.escape(Base64.encode64(MultiJson.encode({ oid: 'object_id' })))
             expect(@client.exists?(oid)).to be(false)
@@ -449,7 +494,7 @@ module Bosh::Blobstore
             expect(container).to receive(:files).and_return(files)
             expect(files).to receive(:get).with('object_id').and_return(nil)
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error NotFound, /Swift object '#{oid}' not found/
           end
@@ -463,7 +508,7 @@ module Bosh::Blobstore
             expect(files).to receive(:get).with('object_id').and_return(object)
             expect(object).to receive(:destroy).and_raise BlobstoreError
 
-            expect{
+            expect {
               @client.delete(oid)
             }.to raise_error BlobstoreError, /Failed to delete object '#{oid}':/
           end
