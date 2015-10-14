@@ -137,11 +137,11 @@ module Bosh
             raise 'OpenStack authorization URL is missing' unless options[:openstack].has_key?(:openstack_auth_url)
             raise 'OpenStack user name is missing' unless options[:openstack].has_key?(:openstack_username)
             raise 'OpenStack API key is missing' unless options[:openstack].has_key?(:openstack_api_key)
-            if options[:openstack][:openstack_auth_url].match(/\/v3[\.\d]/)
+            if options[:openstack][:openstack_auth_url].match(/v3(\.\d+)?/)
               raise 'OpenStack project name is missing' unless options[:openstack].has_key?(:openstack_project_name)
               raise 'OpenStack domain is missing' unless options[:openstack].has_key?(:openstack_domain)
 
-            elsif options[:openstack][:openstack_auth_url].match(/\/v2[\.\d]/)
+            elsif options[:openstack][:openstack_auth_url].match(/v2(\.\d+)?/)
               raise 'OpenStack tenant is missing' unless options[:openstack].has_key?(:openstack_tenant)
 
             else

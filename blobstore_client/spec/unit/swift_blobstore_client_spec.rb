@@ -27,7 +27,7 @@ module Bosh::Blobstore
           options['openstack']['openstack_auth_url'] = 'http://fake-keystone/v2.0'
           options['openstack']['openstack_tenant'] = 'fake-tenant'
         elsif api_version == 3
-          options['openstack']['openstack_auth_url'] = 'http://fake-keystone/v3.0'
+          options['openstack']['openstack_auth_url'] = 'http://fake-keystone/v3'
           options['openstack']['openstack_project_name'] = 'fake-project-name'
           options['openstack']['openstack_domain'] = 'fake-domain'
         end

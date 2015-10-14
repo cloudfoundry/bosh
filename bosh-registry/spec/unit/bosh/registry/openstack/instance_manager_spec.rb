@@ -113,7 +113,7 @@ describe Bosh::Registry::InstanceManager do
       expect(compute).to receive(:servers).twice.and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       expect {
         expect(manager.read_settings('foo', '10.0.0.1')).to eq('bar')
-      }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
+      }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized')
     end
   end
 end
