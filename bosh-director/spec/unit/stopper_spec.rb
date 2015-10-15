@@ -103,100 +103,91 @@ module Bosh::Director
             expect(agent_client).to receive(:stop).with(no_args).ordered
             subject.stop
           end
+
+          it 'waits on the agent' do
+            allow(agent_client).to receive(:stop)
+            allow(agent_client).to receive(:drain).with('status').and_return(-1, 0)
+
+            expect(agent_client).to receive(:drain).with('update', spec).and_return(-2).ordered
+            expect(subject).to receive(:sleep).with(2).ordered
+            expect(subject).to receive(:sleep).with(1).ordered
+            subject.stop
+          end
         end
       end
-    end
 
-    describe '#wait_for_dynamic_drain' do
-      before { allow(subject).to receive(:sleep) }
-
-      it 'can be canceled' do
-        expect(Config).to receive(:task_checkpoint).and_raise(TaskCancelled)
-        expect {
-          subject.send(:wait_for_dynamic_drain, -1)
-        }.to raise_error TaskCancelled
-      end
-
-      it 'should wait until the agent says it is done draining' do
-        allow(agent_client).to receive(:drain).with("status").and_return(-2, 0)
-        expect(subject).to receive(:sleep).with(1).ordered
-        expect(subject).to receive(:sleep).with(2).ordered
-        subject.send(:wait_for_dynamic_drain, -1)
-      end
-
-      it 'should wait until the agent says it is done draining' do
-        allow(agent_client).to receive(:drain).with("status").and_return(-2, 3)
-        expect(subject).to receive(:sleep).with(1).ordered
-        expect(subject).to receive(:sleep).with(2).ordered
-        expect(subject).to receive(:sleep).with(3).ordered
-        subject.send(:wait_for_dynamic_drain, -1)
-      end
-    end
-
-    describe '#needs_drain_to_migrate_data?' do
-      let(:desired_instance) { DeploymentPlan::DesiredInstance.new }
-      let(:deployment) { instance_double(DeploymentPlan::Planner, recreate: false) }
-      let(:job) { instance_double(DeploymentPlan::Job,
-        name: 'fake-job',
-        persistent_disk_type: DeploymentPlan::DiskType.new('1', 0, {}),
-        vm_type: DeploymentPlan::VmType.new(new_vm_type),
-        stemcell: DeploymentPlan::Stemcell.new(new_stemcell),
-        env: DeploymentPlan::Env.new(new_env)
-      ) }
-      let(:new_stemcell) { {'name' => 'stemcell-name', 'version' => '2.0.6'} }
-      let(:new_env) { {'old' => 'env'} }
-      let(:new_vm_type) { {'name' => 'vm-type-name', 'cloud_properties' => {}} }
-      let(:az) { DeploymentPlan::AvailabilityZone.new('az-1', {}) }
-      let(:instance) do
-        instance = DeploymentPlan::Instance.new(job, 1, 'started', deployment, {}, az, false, logger)
-        instance.bind_existing_instance_model(instance_model)
-        instance
-      end
-      let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance) }
-
-      context 'when instance needs shutting down' do
-        let(:instance_plan) do
-          DeploymentPlan::InstancePlan.new(
-            existing_instance: instance_model,
-            instance: instance,
-            desired_instance: desired_instance,
-            recreate_deployment: true)
+      context 'when the instance needs shutting down' do
+        before do
+          allow(instance_plan).to receive(:needs_shutting_down?).and_return(true)
         end
 
-        its(:needs_drain_to_migrate_data?) { should be(true) }
+        it 'drains with shutdown' do
+          expect(agent_client).to receive(:drain).with('shutdown', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
+        end
       end
 
       context 'when the persistent disks have changed' do
         before do
+          allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+          allow(instance_plan).to receive(:persistent_disk_changed?).and_return(true)
           instance_plan.existing_instance.add_persistent_disk(Models::PersistentDisk.make)
         end
-        its(:needs_drain_to_migrate_data?) { should be(true) }
+
+        it 'drains with shutdown' do
+          expect(agent_client).to receive(:drain).with('shutdown', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
+        end
       end
 
-      context 'when the networks have changed' do
+      context 'when networks have changed' do
         before do
-          network = DeploymentPlan::DynamicNetwork.new('name', [], logger)
-          reservation = DesiredNetworkReservation.new_dynamic(instance, network)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlan.new(reservation: reservation)]
+          allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+          allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
+          instance_plan.network_plans = [DeploymentPlan::NetworkPlan.new(reservation: nil)]
         end
 
-        its(:needs_drain_to_migrate_data?) { should be(true) }
+        it 'drains with shutdown' do
+          expect(agent_client).to receive(:drain).with('shutdown', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
+        end
       end
 
-      context 'target state' do
-        context 'when the target state is detached' do
-          let(:target_state) { 'detached' }
-          its(:needs_drain_to_migrate_data?) { should be(true) }
+      context 'when "target state" is "detached"' do
+        let(:target_state) { 'detached' }
+
+        it 'drains with shutdown' do
+          expect(agent_client).to receive(:drain).with('shutdown', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
+        end
+      end
+
+      context 'when "target state" is "stopped"' do
+        let(:target_state) { 'stopped' }
+
+        it 'drains with shutdown' do
+          expect(agent_client).to receive(:drain).with('shutdown', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
+        end
+      end
+
+      context 'when "target state" is "started"' do
+        let(:target_state) { 'started' }
+
+        before do
+          allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+          allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
         end
 
-        context 'when the target state is stopped' do
-          let(:target_state) { 'stopped' }
-          its(:needs_drain_to_migrate_data?) { should be(true) }
-        end
-
-        context 'when the target state is started' do
-          let(:target_state) { 'started' }
-          its(:needs_drain_to_migrate_data?) { should be(false) }
+        it 'does not shutdown' do
+          expect(agent_client).to receive(:drain).with('update', spec).and_return(1).ordered
+          expect(agent_client).to receive(:stop).ordered
+          subject.stop
         end
       end
     end
