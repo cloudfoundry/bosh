@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe PersistentDisk do
-    subject(:persistent_disk) { described_class.make }
+  describe OrphanDisk do
+    subject(:orphan_disk) { described_class.make }
 
     describe 'cloud_properties' do
       let(:disk_cloud_properties) do
@@ -12,9 +12,9 @@ module Bosh::Director::Models
       end
 
       it 'updates cloud_properties' do
-        persistent_disk.cloud_properties = disk_cloud_properties
+        orphan_disk.cloud_properties = disk_cloud_properties
 
-        expect(persistent_disk.cloud_properties).to eq(disk_cloud_properties)
+        expect(orphan_disk.cloud_properties).to eq(disk_cloud_properties)
       end
     end
   end

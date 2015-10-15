@@ -126,6 +126,18 @@ module Bosh::Director::Models
     snapshot_cid    { Sham.snapshot_cid }
   end
 
+  OrphanDisk.blueprint do
+    deployment_name { Sham.name }
+    disk_cid        { Sham.disk_cid }
+    instance_name   { Sham.name }
+  end
+
+  OrphanSnapshot.blueprint do
+    orphan_disk     { OrphanDisk.make }
+    snapshot_cid    { Sham.snapshot_cid }
+    created_at      { Time.now }
+  end
+
   DeploymentProblem.blueprint do
     deployment  { Deployment.make }
     type        { "inactive_disk" }
