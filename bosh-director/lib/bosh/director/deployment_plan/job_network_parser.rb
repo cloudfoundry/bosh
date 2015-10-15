@@ -40,7 +40,7 @@ module Bosh::Director
       def look_up_deployment_network(deployment, job_name, network_name)
         deployment_network = deployment.network(network_name)
         if deployment_network.nil?
-          raise JobUnknownNetwork, "Job `#{job_name}' references an unknown network `#{network.name}'"
+          raise JobUnknownNetwork, "Job '#{job_name}' references an unknown network '#{network_name}'"
         end
         deployment_network
       end
