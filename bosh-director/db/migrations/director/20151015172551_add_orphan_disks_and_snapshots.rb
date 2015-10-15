@@ -4,7 +4,7 @@ Sequel.migration do
       primary_key :id
       String :disk_cid, :null => false, :unique => true
       Integer :size
-      String :az
+      String :availability_zone
       String :deployment_name, :null => false
       String :instance_name, :null => false
       String :cloud_properties_json, :text => true

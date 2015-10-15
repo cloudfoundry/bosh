@@ -274,5 +274,46 @@ module Bosh::Director
         disk_manager.delete_persistent_disks(instance_model)
       end
     end
+
+    describe '#orphan_disk' do
+      it 'orphans disks and snapshots' do
+        snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
+
+        disk_manager.orphan_disk(persistent_disk)
+        orphan_disk = Models::OrphanDisk.first
+        orphan_snapshot = Models::OrphanSnapshot.first
+
+        expect(orphan_disk.disk_cid).to eq(persistent_disk.disk_cid)
+        expect(orphan_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
+        expect(orphan_snapshot.orphan_disk).to eq(orphan_disk)
+
+        expect(Models::PersistentDisk.all.count).to eq(0)
+        expect(Models::Snapshot.all.count).to eq(0)
+      end
+
+      it 'should transactionally move orphan disks and snapshots' do
+        conflicting_orphan_disk = Models::OrphanDisk.make
+        conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
+          orphan_disk: conflicting_orphan_disk,
+          snapshot_cid: 'existing_cid',
+          created_at: 0
+        )
+
+        snapshot = Models::Snapshot.make(
+          snapshot_cid: 'existing_cid',
+          persistent_disk: persistent_disk
+        )
+
+        expect{disk_manager.orphan_disk(persistent_disk)}.to raise_error(Sequel::ValidationFailed)
+
+        conflicting_orphan_snapshot.destroy
+        conflicting_orphan_disk.destroy
+
+        expect(Models::PersistentDisk.all.count).to eq(1)
+        expect(Models::Snapshot.all.count).to eq(1)
+        expect(Models::OrphanDisk.all.count).to eq(0)
+        expect(Models::OrphanSnapshot.all.count).to eq(0)
+      end
+    end
   end
 end

@@ -4,7 +4,7 @@ module Bosh::Director::Models
 
     def validate
       validates_presence [:snapshot_cid, :created_at, :created_at]
-      validates_unique [:disk_cid]
+      validates_unique [:snapshot_cid]
     end
 
     def before_create

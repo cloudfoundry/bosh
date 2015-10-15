@@ -50,17 +50,35 @@ module Bosh::Director
     end
 
     def orphan_disk(disk)
-      orphan_snapshots(disk.snapshots)
-      @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
-          "#{disk.active ? "active" : "inactive"}")
-      disk.destroy
+      disk.db.transaction do
+        orphan_disk = Models::OrphanDisk.create(
+          disk_cid: disk.disk_cid,
+          size: disk.size,
+          availability_zone: disk.instance.availability_zone,
+          deployment_name: disk.instance.deployment.name,
+          instance_name: "#{disk.instance.job} (#{disk.instance.uuid})",
+          cloud_properties_json: disk.cloud_properties
+        )
+
+        orphan_snapshots(disk.snapshots, orphan_disk)
+        @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
+            "#{disk.active ? "active" : "inactive"}")
+
+        disk.destroy
+      end
     end
 
     private
 
-    def orphan_snapshots(snapshots)
+    def orphan_snapshots(snapshots, orphan_disk)
       snapshots.each do |snapshot|
         Config.logger.info("Orphaning snapshot: '#{snapshot.snapshot_cid}'")
+        Models::OrphanSnapshot.create(
+          orphan_disk: orphan_disk,
+          snapshot_cid: snapshot.snapshot_cid,
+          clean: snapshot.clean,
+          created_at: snapshot.created_at
+        )
         snapshot.delete
       end
     end
