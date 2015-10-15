@@ -5,6 +5,10 @@ Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
 
+  config.berkshelf.enabled = true
+  config.berkshelf.berksfile_path = "./Berksfile"
+  config.omnibus.chef_version = "11"
+
   config.vm.define :local do |local|
     local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
     local.vm.provider :virtualbox do |virtualbox|
@@ -42,8 +46,6 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-      set -e
-
 cat > /etc/apt/sources.list <<EOS
 deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
 deb-src http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
@@ -72,14 +74,13 @@ deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
 EOS
 
       rm -rf /etc/apt/sources.list.d/multiverse-trusty*
+
       apt-get -y update
     BASH
   end
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-      set -e
-
       mkdir -p /mnt/tmp
       chown -R ubuntu:ubuntu /mnt/tmp
       echo >> /home/ubuntu/.bashrc
@@ -90,12 +91,13 @@ EOS
 
       chown -R ubuntu:ubuntu /bosh
       ( cd /bosh && bundle install --local )
-
-      wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
-      echo 46eecd290d8803887dec718c691cc243f2175fe0 go*.tar.gz | sha1sum -c -
-      tar -C /usr/local -xzf go*.tar.gz
-      echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/ubuntu/.bashrc
     BASH
+  end
+
+  # todo can we install golang with a shell provisioner?
+  config.vm.provision :chef_solo do |chef|
+    chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
+    chef.json = { go: { version: '1.5.1' } }
   end
 
   config.vm.synced_folder '../.', '/bosh', rsync__args: ["--verbose", "--archive", "--delete", "-z"]
