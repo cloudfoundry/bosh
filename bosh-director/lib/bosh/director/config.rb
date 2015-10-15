@@ -34,6 +34,7 @@ module Bosh::Director
         :enable_snapshots,
         :max_vm_create_tries,
         :nats_uri,
+        :default_ssh_options
       )
 
       attr_reader(
@@ -120,6 +121,8 @@ module Bosh::Director
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
+
+        @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']
         @compiled_package_cache_options = config['compiled_package_cache']

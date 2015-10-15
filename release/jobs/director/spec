@@ -104,6 +104,13 @@ properties:
   director.user_management.local.users:
     description: 'List of users that can authenticate with director in non-Uaa mode'
 
+  # Default SSH Gateway Settings
+  director.default_ssh_options.gateway_host:
+    description: 'Default host to use as ssh gateway with bosh ssh command'
+  director.default_ssh_options.gateway_user:
+    description: 'Default user to use with bosh ssh command'
+    default: vcap
+
   redis.address:
     description: Address of the redis server
   redis.port:

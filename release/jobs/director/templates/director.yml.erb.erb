@@ -220,6 +220,13 @@ compiled_package_cache:
 backup_destination: <%= JSON.dump(backup_destination) %>
 <% end %>
 
+<% if_p('director.default_ssh_options.gateway_host',
+        'director.default_ssh_options.gateway_user') do |gateway_host, gateway_user| %>
+default_ssh_options:
+  gateway_host: <%= gateway_host %>
+  gateway_user: <%= gateway_user %>
+<% end %>
+
 cloud:
 <% if_p('director.cpi_job') do |cpi_job_name| %>
   provider:

@@ -15,6 +15,8 @@ module Bosh::Cli
              'Use default ssh password (NOT RECOMMENDED)'
       option '--strict_host_key_checking <yes/no>',
              'Can use this flag to skip host key checking (NOT RECOMMENDED)'
+      option '--no_gateway',
+             'Ignore gateway provided by the director'
 
       def shell(*args)
         if args.size > 0
@@ -46,6 +48,8 @@ module Bosh::Cli
       option '--gateway_host HOST', 'Gateway host'
       option '--gateway_user USER', 'Gateway user'
       option '--gateway_identity_file FILE', 'Gateway identity file'
+      option '--no_gateway',
+             'Ignore gateway provided by the director'
 
       def scp(*args)
         job, index, args = JobCommandArgs.new(args).to_a
@@ -138,10 +142,11 @@ module Bosh::Cli
         ssh_session.set_host_session(sessions.first)
 
         begin
-          if options[:gateway_host]
+          if options[:gateway_host] || (!options[:no_gateway] &&
+              sessions.first["gateway_host"])
             require 'net/ssh/gateway'
-            gw_host    = options[:gateway_host]
-            gw_user    = options[:gateway_user] || ENV['USER']
+            gw_host    = options[:gateway_host] || sessions.first["gateway_host"]
+            gw_user    = options[:gateway_user] || sessions.first["gateway_user"] || ENV['USER']
             gw_options = {}
             gw_options[:keys] = [options[:gateway_identity_file]] if options[:gateway_identity_file]
             begin
