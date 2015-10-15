@@ -74,9 +74,6 @@ module Bosh::Director
           end
         end
 
-        @logger.debug('Orphaning disk snapshots')
-        Api::SnapshotManager.orphan_snapshots(@disk.snapshots)
-
         DiskManager.new(cloud, @logger).orphan_disk(@disk)
 
       end

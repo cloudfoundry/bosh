@@ -46,15 +46,15 @@ module Bosh::Director
 
     def delete_persistent_disks(instance_model)
       instance_model.persistent_disks.each do |disk|
-        orphan_snapshots(disk)
         orphan_disk(disk)
       end
     end
 
     def orphan_disk(disk)
+      Api::SnapshotManager.orphan_snapshots(disk.snapshots)
+
       @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
           "#{disk.active ? "active" : "inactive"}")
-
       disk.destroy
     end
 
@@ -79,7 +79,6 @@ module Bosh::Director
         end
       end
 
-      orphan_snapshots(disk)
       orphan_disk(disk)
     end
 
@@ -156,10 +155,6 @@ module Bosh::Director
         )
       end
       disk
-    end
-
-    def orphan_snapshots(disk)
-      Api::SnapshotManager.orphan_snapshots(disk.snapshots)
     end
   end
 end

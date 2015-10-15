@@ -53,6 +53,7 @@ module Bosh::Director
 
       def self.orphan_snapshots(snapshots)
         snapshots.each do |snapshot|
+          Config.logger.info("Orphaning snapshot: '#{snapshot.snapshot_cid}'")
           snapshot.delete
         end
       end
