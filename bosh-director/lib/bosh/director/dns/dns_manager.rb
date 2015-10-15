@@ -47,9 +47,7 @@ module Bosh::Director
 
       dns_names_to_ip.each do |record_name, ip_address|
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
-        unless current_dns_records.include?(record_name)
-          @dns_provider.create_or_update_dns_records(record_name, ip_address)
-        end
+        @dns_provider.create_or_update_dns_records(record_name, ip_address)
       end
 
       current_dns_records.each do |record_name|

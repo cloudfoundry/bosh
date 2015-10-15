@@ -182,6 +182,22 @@ module Bosh::Director
         expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
         expect(dns_provider.find_dns_record('fake-dns-name-3', '9.8.7.6')).to_not be_nil
       end
+
+      context 'when the dns entry already exists' do
+        it 'updates the DNS record when the IP address has changed' do
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '9.8.7.6'})
+
+          dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
+          expect(dns_record.content).to eq('9.8.7.6')
+        end
+
+        it 'does NOT update the DNS record when the IP address is the same' do
+          dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-2' => '5.6.7.8'})
+
+          dns_record = Models::Dns::Record.find(name: 'fake-dns-name-2')
+          expect(dns_record.content).to eq('5.6.7.8')
+        end
+      end
     end
 
     describe '#migrate_legacy_records' do
