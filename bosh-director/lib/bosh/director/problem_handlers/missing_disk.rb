@@ -74,17 +74,11 @@ module Bosh::Director
           end
         end
 
-        @logger.debug('Deleting disk snapshots')
+        @logger.debug('Orphaning disk snapshots')
         Api::SnapshotManager.orphan_snapshots(@disk.snapshots)
 
-        begin
-          @logger.debug('Sending cpi request: delete_disk')
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound
-        end
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
 
-        @logger.debug('Removing disk reference from database')
-        @disk.destroy
       end
     end
   end

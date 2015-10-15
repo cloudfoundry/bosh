@@ -29,7 +29,6 @@ module Bosh::Director
       expect(agent).to receive(:list_disk).and_return([])
 
       expect(@cloud).to receive(:detach_disk).exactly(1).times
-      expect(@cloud).to receive(:delete_disk).exactly(1).times
 
       allow(AgentClient).to receive(:with_vm).and_return(agent)
 

@@ -51,6 +51,13 @@ module Bosh::Director
       end
     end
 
+    def orphan_disk(disk)
+      @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
+          "#{disk.active ? "active" : "inactive"}")
+
+      disk.destroy
+    end
+
     private
 
     def delete_mounted_persistent_disk(instance, disk)
@@ -74,13 +81,6 @@ module Bosh::Director
 
       orphan_snapshots(disk)
       orphan_disk(disk)
-    end
-
-    def orphan_disk(disk)
-      @logger.info("Orphaning disk: '#{disk.disk_cid}', " +
-          "#{disk.active ? "active" : "inactive"}")
-
-      disk.destroy
     end
 
     # Synchronizes persistent_disks with the agent.

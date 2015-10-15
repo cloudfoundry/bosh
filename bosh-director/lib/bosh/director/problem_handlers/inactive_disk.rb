@@ -82,16 +82,8 @@ module Bosh::Director
           end
         end
 
-        # FIXME: Currently there is no good way to know if delete_disk
-        # failed because of cloud error or because disk doesn't exist
-        # in vsphere_disks.
-        begin
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound, RuntimeError => e # FIXME
-          @logger.warn(e)
-        end
-
-        @disk.destroy
+        Api::SnapshotManager.orphan_snapshots(@disk.snapshots)
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
       end
 
       def disk_mounted?
