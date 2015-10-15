@@ -11,9 +11,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       model: Bosh::Director::Models::Deployment.make,
       properties: {},
       update: nil,
-      name: 'fake-deployment'
+      name: 'fake-deployment',
+      networks: [network]
     )
   end
+  let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name', [], logger) }
 
   describe '#parse' do
     before do
@@ -42,11 +44,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         template: nil,
       )
     end
-
-    before { allow(deployment_plan).to receive(:network).with('fake-network-name').and_return(network) }
-    let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name', subnets, logger) }
-
-    let(:subnets) { [] }
 
     let(:job_spec) do
       {
@@ -840,7 +837,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           job_spec['instances'] = 3
           job_spec['networks'].first['default'] = ['gateway', 'dns']
           job_spec['networks'] << job_spec['networks'].first.merge('name' => 'duped-network') # dupe it
-          allow(deployment_plan).to receive(:network).with('duped-network') { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
+          duped_network = Bosh::Director::DeploymentPlan::ManualNetwork.new('duped-network', [], logger)
+          allow(deployment_plan).to receive(:networks).and_return([duped_network, network])
 
           expect {
             parser.parse(job_spec)
@@ -918,8 +916,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             first_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'first-network',)
             second_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'second-network',)
 
-            allow(deployment_plan).to receive(:network).with('first-network') { first_network }
-            allow(deployment_plan).to receive(:network).with('second-network') { second_network }
+            allow(deployment_plan).to receive(:networks).and_return([first_network, second_network])
 
             allow(first_network).to receive(:validate_has_job!)
             allow(second_network).to receive(:validate_has_job!)

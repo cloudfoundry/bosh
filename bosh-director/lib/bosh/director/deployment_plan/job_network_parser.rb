@@ -10,8 +10,8 @@ module Bosh::Director
         @properties_that_require_defaults = properties_that_require_defaults
       end
 
-      def parse(job_spec, job_name, deployment)
-        networks = parse_networks(job_spec, job_name, deployment)
+      def parse(job_spec, job_name, manifest_networks)
+        networks = parse_networks(job_spec, job_name, manifest_networks)
         networks.each do |network|
           validate_default_properties(network, job_name)
         end
@@ -23,7 +23,7 @@ module Bosh::Director
 
       private
 
-      def parse_networks(job_spec, job_name, deployment)
+      def parse_networks(job_spec, job_name, manifest_networks)
         network_specs = safe_property(job_spec, "networks", :class => Array)
         if network_specs.empty?
           raise JobMissingNetwork, "Job `#{job_name}' must specify at least one network"
@@ -32,13 +32,13 @@ module Bosh::Director
           network_name = safe_property(network_spec, "name", :class => String)
           default_for = safe_property(network_spec, "default", :class => Array, :default => [])
           static_ips = parse_static_ips(network_spec['static_ips'])
-          deployment_network = look_up_deployment_network(deployment, job_name, network_name)
+          deployment_network = look_up_deployment_network(manifest_networks, job_name, network_name)
           JobNetwork.new(network_name, static_ips, default_for, deployment_network)
         end
       end
 
-      def look_up_deployment_network(deployment, job_name, network_name)
-        deployment_network = deployment.network(network_name)
+      def look_up_deployment_network(manifest_networks, job_name, network_name)
+        deployment_network = manifest_networks.find{ |network| network.name == network_name }
         if deployment_network.nil?
           raise JobUnknownNetwork, "Job '#{job_name}' references an unknown network '#{network_name}'"
         end

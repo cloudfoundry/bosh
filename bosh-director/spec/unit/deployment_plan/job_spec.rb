@@ -17,7 +17,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
 
-  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
+  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name') }
 
   let(:foo_properties) do
     {
@@ -50,7 +50,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
-    allow(plan).to receive(:network).and_return(network)
+    allow(plan).to receive(:networks).and_return([network])
     allow(plan).to receive(:vm_type).with('dea').and_return vm_type
     allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
