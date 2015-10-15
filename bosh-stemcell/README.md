@@ -158,6 +158,8 @@ AWS stemcells can be shipped in light format which includes a reference to a pub
 
 To build for specific region specify `BOSH_AWS_REGION` environment variable.
 
+NOTE: to build a stemcell for the AWS HVM virtualization type, you must build a light stemcell.
+
 ### When things go sideways
 
 If you find yourself debugging any of the above processes, here is what you need to know:
