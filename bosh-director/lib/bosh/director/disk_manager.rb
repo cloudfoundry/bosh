@@ -18,8 +18,7 @@ module Bosh::Director
       old_disk = instance.model.persistent_disk
 
       if instance.job.persistent_disk_type && instance.job.persistent_disk_type.disk_size > 0
-        disk = create_disk(instance)
-        attach_disk(instance_plan, disk, vm_recreator)
+        disk = create_and_attach_disk(instance_plan, vm_recreator)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 
@@ -111,9 +110,11 @@ module Bosh::Director
       AgentClient.with_vm(instance.vm.model)
     end
 
-    def attach_disk(instance_plan, disk, vm_recreator)
+    def create_and_attach_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
+      disk = create_disk(instance)
       @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
+      return disk
     rescue Bosh::Clouds::NoDiskSpace => e
       if e.ok_to_retry
         @logger.warn('Retrying attach disk operation after persistent disk update failed')
@@ -129,6 +130,7 @@ module Bosh::Director
         orphan_disk(disk)
         raise
       end
+      return disk
     end
 
     def mount_and_migrate_disk(instance, new_disk, old_disk)
