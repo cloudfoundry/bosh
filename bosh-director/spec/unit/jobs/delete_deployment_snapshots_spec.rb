@@ -31,10 +31,10 @@ module Bosh::Director
       expect(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
       expect(deployment_manager).to receive(:find_by_name).with(deployment_name).and_return(deployment)
 
-      expect(Api::SnapshotManager).to receive(:orphan_snapshots).with([snap1a, snap1b])
-      expect(Api::SnapshotManager).to receive(:orphan_snapshots).with([snap2a])
-      expect(Api::SnapshotManager).not_to receive(:orphan_snapshots).with([])
-      expect(Api::SnapshotManager).not_to receive(:orphan_snapshots).with([snap4a])
+      expect(Api::SnapshotManager).to receive(:delete_snapshots).with([snap1a, snap1b])
+      expect(Api::SnapshotManager).to receive(:delete_snapshots).with([snap2a])
+      expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([])
+      expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([snap4a])
 
       expect(subject.perform).to eq "snapshots of deployment `deployment' deleted"
     end
