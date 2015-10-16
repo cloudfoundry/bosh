@@ -8,9 +8,11 @@ module Bosh::Director
         def initialize(config)
           super()
           @config = config
+          @logger = Config.logger
           @identity_provider = config.identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
+          @disk_manager = DiskManager.new(nil, @logger)
           @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
           @problem_manager = ProblemManager.new(@deployment_manager)
@@ -21,7 +23,6 @@ module Bosh::Director
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
           @dns_manager = DnsManager.create
-          @logger = Config.logger
         end
 
         register Bosh::Director::Api::Extensions::Scoping

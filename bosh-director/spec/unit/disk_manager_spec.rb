@@ -315,5 +315,51 @@ module Bosh::Director
         expect(Models::OrphanSnapshot.all.count).to eq(0)
       end
     end
+
+    describe '#list_orphan_disk' do
+      before do
+        Models::OrphanDisk.all.each(&:destroy)
+      end
+      it 'returns an array of orphaned disks as hashes' do
+        orphaned_at = Time.now
+        other_orphaned_at = Time.now
+        Models::OrphanDisk.make(
+          disk_cid: 'random-disk-cid-1',
+          instance_name: 'fake-name-1',
+          size: 10,
+          deployment_name: 'fake-deployment',
+          orphaned_at: orphaned_at,
+        )
+        Models::OrphanDisk.make(
+          disk_cid: 'random-disk-cid-2',
+          instance_name: 'fake-name-2',
+          availability_zone: 'az2',
+          deployment_name: 'fake-deployment',
+          orphaned_at: other_orphaned_at,
+          cloud_properties: {'cloud' => 'properties'}
+        )
+
+        expect(subject.list_orphan_disks).to eq([
+              {
+                'disk_cid' => 'random-disk-cid-1',
+                'size' => 10,
+                'availability_zone' => 'n/a',
+                'deployment_name' => 'fake-deployment',
+                'instance_name' => 'fake-name-1',
+                'cloud_properties' => 'n/a',
+                'orphaned_at' => orphaned_at
+              },
+              {
+                'disk_cid' => 'random-disk-cid-2',
+                'size' => 'n/a',
+                'availability_zone' => 'az2',
+                'deployment_name' => 'fake-deployment',
+                'instance_name' => 'fake-name-2',
+                'cloud_properties' => {'cloud' => 'properties'},
+                'orphaned_at' => other_orphaned_at
+              }
+            ])
+      end
+    end
   end
 end

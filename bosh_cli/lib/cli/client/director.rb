@@ -179,6 +179,11 @@ module Bosh
           body
         end
 
+        def list_orphan_disks
+          _, body = get_json_with_status('/disks')
+          body
+        end
+
         def upload_release(filename, options = {})
           options                = options.dup
           options[:content_type] = 'application/x-compressed'

@@ -56,7 +56,7 @@ module Bosh::Director
           size: disk.size,
           availability_zone: disk.instance.availability_zone,
           deployment_name: disk.instance.deployment.name,
-          instance_name: "#{disk.instance.job} (#{disk.instance.uuid})",
+          instance_name: "#{disk.instance.job}/#{disk.instance.uuid}",
           cloud_properties_json: disk.cloud_properties
         )
 
@@ -65,6 +65,20 @@ module Bosh::Director
             "#{disk.active ? "active" : "inactive"}")
 
         disk.destroy
+      end
+    end
+
+    def list_orphan_disks
+      Models::OrphanDisk.all.map do |disk|
+        {
+          'disk_cid' => disk.disk_cid,
+          'size' => disk.size || 'n/a',
+          'availability_zone' => disk.availability_zone || 'n/a',
+          'deployment_name' => disk.deployment_name,
+          'instance_name' => disk.instance_name,
+          'cloud_properties' => disk.cloud_properties.any? ? disk.cloud_properties : 'n/a',
+          'orphaned_at' => disk.orphaned_at
+        }
       end
     end
 

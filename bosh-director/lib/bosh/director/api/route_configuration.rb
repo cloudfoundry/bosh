@@ -13,6 +13,7 @@ module Bosh
           controllers['/backups'] = Bosh::Director::Api::Controllers::BackupsController.new(@config)
           controllers['/cloud_configs'] = Bosh::Director::Api::Controllers::CloudConfigsController.new(@config)
           controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(@config)
+          controllers['/disks'] = Bosh::Director::Api::Controllers::DisksController.new(@config)
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new(@config)
           controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(@config)
           controllers['/packages'] = Bosh::Director::Api::Controllers::PackagesController.new(@config)

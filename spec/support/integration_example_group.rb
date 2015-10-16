@@ -158,6 +158,14 @@ module IntegrationExampleGroup
     bosh_output.gsub /[0-9a-f]{8}-[0-9a-f-]{27}/, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   end
 
+  def scrub_random_cids(bosh_output)
+    bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  end
+
+  def scrub_time(bosh_output)
+    bosh_output.gsub /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [-+][0-9]{4}/, '0000-00-00 00:00:00 -0000'
+  end
+
   def extract_agent_messages(nats_messages, agent_id)
     nats_messages.select { |val|
       # messages for the agent we care about
