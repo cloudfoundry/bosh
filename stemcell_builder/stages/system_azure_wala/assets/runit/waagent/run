@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+exec nice -n -10 /usr/sbin/waagent -daemon

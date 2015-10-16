@@ -259,4 +259,5 @@ EOF
       its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
     end
   end
+
 end
