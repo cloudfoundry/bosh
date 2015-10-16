@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
       reservation.resolve_ip('192.168.1.3')
       reservation
     }
-    let(:network_plan) { NetworkPlan.new(reservation: reservation) }
+    let(:network_plan) { NetworkPlanner::Plan.new(reservation: reservation) }
     let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: [network_plan]) }
     let(:existing_instance) { instance_model }
 

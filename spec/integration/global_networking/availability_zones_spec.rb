@@ -216,7 +216,7 @@ describe 'availability zones', type: :integration do
           {
             'range' => '192.168.1.0/24',
             'gateway' => '192.168.1.1',
-            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'dns' => ['8.8.8.8'],
             'static' => ['192.168.1.51', '192.168.1.52'],
             'reserved' => [],
             'cloud_properties' => {},
@@ -225,7 +225,7 @@ describe 'availability zones', type: :integration do
           {
             'range' => '192.168.2.0/24',
             'gateway' => '192.168.2.1',
-            'dns' => ['192.168.2.1', '192.168.2.2'],
+            'dns' => ['8.8.8.8'],
             'reserved' => [],
             'cloud_properties' => {},
             'availability_zone' => 'my-az2'
@@ -258,6 +258,69 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az2')
         expect(vms[0].ips).to eq('192.168.1.51')
         expect(vms[1].ips).to eq('192.168.2.52')
+      end
+    end
+
+    context 'when changing a deployed vm with an az and dynamic ip to have the same static ip' do
+      it 'succeeds and does not recreate the vm' do
+        cloud_config_hash['availability_zones'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {'availability_zone' => 'my-az'}
+          }
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['8.8.8.8'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'availability_zone' => 'my-az'
+          }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        vms = director.vms
+        expect(vms.count).to eq(1)
+        expect(vms[0].ips).to eq('192.168.1.2')
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(3)
+
+        vm_cid = vms[0].cid
+
+        cloud_config_hash['availability_zones'].push({
+            'name' => 'my-az2',
+            'cloud_properties' => {'availability_zone' => 'my-az2'}
+          })
+        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.2']
+        cloud_config_hash['networks'].first['subnets'].push({
+          'range' => '192.168.2.0/24',
+          'gateway' => '192.168.2.1',
+          'dns' => ['8.8.8.8'],
+          'reserved' => [],
+          'cloud_properties' => {},
+          'static' => ['192.168.2.51', '192.168.2.52'],
+          'availability_zone' => 'my-az2'
+        })
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        simple_manifest['jobs'].first['instances'] = 3
+        simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.51', '192.168.2.52', '192.168.1.2']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(5)
+
+        vms = director.vms
+        expect(vms.count).to eq(3)
+
+        reused_vm = vms.find { |vm| vm.cid == vm_cid }
+        expect(reused_vm.ips).to eq('192.168.1.2')
+
+        expect(vms.map(&:ips)).to match_array(['192.168.2.51', '192.168.2.52', '192.168.1.2'])
       end
     end
 

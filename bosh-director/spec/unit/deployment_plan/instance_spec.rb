@@ -191,7 +191,7 @@ module Bosh::Director::DeploymentPlan
         job.name = 'fake-job'
         job.default_network = {}
         reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance, network, '10.0.0.6')
-        network_plans = [NetworkPlan.new(reservation: reservation)]
+        network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
         desired_instance = DesiredInstance.new
         job.add_instance_plans([InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance, network_plans: network_plans)])
       end
@@ -365,7 +365,7 @@ module Bosh::Director::DeploymentPlan
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
-        network_plans = [NetworkPlan.new(reservation: reservation)]
+        network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
         allow(job).to receive(:needed_instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
@@ -538,7 +538,7 @@ module Bosh::Director::DeploymentPlan
         allow(plan).to receive(:network).and_return(network)
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
-        network_plans = [NetworkPlan.new(reservation: reservation)]
+        network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
         allow(job).to receive(:needed_instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
       end
 

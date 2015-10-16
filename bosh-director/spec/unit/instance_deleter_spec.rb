@@ -15,7 +15,7 @@ module Bosh::Director
     let(:disk_manager) { DiskManager.new(cloud, logger) }
 
     describe '#delete_instance_plans' do
-      let(:network_plan) { DeploymentPlan::NetworkPlan.new(reservation: reservation) }
+      let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }
 
       let(:existing_instance) { Models::Instance.make(vm: vm.model, deployment: deployment_model, uuid: 'uuid-1', job: 'fake-job-name', index: 5) }
 

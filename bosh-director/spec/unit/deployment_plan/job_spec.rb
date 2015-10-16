@@ -421,12 +421,12 @@ describe Bosh::Director::DeploymentPlan::Job do
           instance: instance1,
         })
       instance_plan0.network_plans = [
-        BD::DeploymentPlan::NetworkPlan.new(reservation: instance0_reservation),
-        BD::DeploymentPlan::NetworkPlan.new(reservation: instance0_obsolete_reservation, obsolete: true),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_reservation),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_obsolete_reservation, obsolete: true),
       ]
       instance_plan1.network_plans = [
-        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_reservation),
-        BD::DeploymentPlan::NetworkPlan.new(reservation: instance1_existing_reservation),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_reservation),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_existing_reservation),
       ]
 
       obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
@@ -516,6 +516,14 @@ describe Bosh::Director::DeploymentPlan::Job do
 
       expect(job.needed_instance_plans).to eq(needed_instance_plans)
       expect(job.obsolete_instance_plans).to eq([instance_plan3])
+    end
+  end
+
+  describe 'reserve_ips' do
+    context 'with existing instances' do
+      it '' do
+
+      end
     end
   end
 end

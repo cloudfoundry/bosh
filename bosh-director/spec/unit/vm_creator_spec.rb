@@ -50,7 +50,7 @@ describe Bosh::Director::VmCreator do
   end
   let(:instance_plan) do
     desired_instance = BD::DeploymentPlan::DesiredInstance.new(nil, {}, nil)
-    network_plan = BD::DeploymentPlan::NetworkPlan.new(reservation: reservation)
+    network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
     BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
   end
 

@@ -146,7 +146,7 @@ module Bosh::Director
         before do
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlan.new(reservation: nil)]
+          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: nil)]
         end
 
         it 'drains with shutdown' do

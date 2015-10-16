@@ -3,8 +3,8 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class AvailabilityZonePicker
-          def place_and_match_in(desired_azs, desired_instances, existing_instance_az_tuples)
-            unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_az_tuples)
+          def place_and_match_in(desired_azs, desired_instances, existing_instance_models)
+            unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_models)
             desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
             placed_instances = PlacedDesiredInstances.new(desired_azs_sorted)
 

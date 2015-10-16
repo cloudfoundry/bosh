@@ -9,8 +9,8 @@ module Bosh
           @recreate_deployment = options.fetch('recreate', false)
         end
 
-        def plan_job_instances(job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
-          placement_plan = PlacementPlanner::Plan.new(desired_instances, existing_instances_with_azs, job.networks, job.availability_zones, job.name)
+        def plan_job_instances(job, desired_instances, existing_instance_models, states_by_existing_instance)
+          placement_plan = PlacementPlanner::Plan.new(desired_instances, existing_instance_models, job.networks, job.availability_zones, job.name)
 
           new_desired_instances = placement_plan.needed
           desired_existing_instances = placement_plan.existing

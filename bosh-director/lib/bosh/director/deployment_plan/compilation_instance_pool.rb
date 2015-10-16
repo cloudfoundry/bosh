@@ -81,7 +81,7 @@ module Bosh::Director
           existing_instance: instance.model,
           instance: instance,
           desired_instance: desired_instance,
-          network_plans: [DeploymentPlan::NetworkPlan.new(reservation: reservation)]
+          network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         )
 
         @compile_job.add_instance_plans([instance_plan])

@@ -81,11 +81,12 @@ module Bosh::Director::DeploymentPlan
             'instances' => desired_instance_count,
             'networks' => job_networks,
             'properties' => {},
-            'availability_zones' => ['zone1', 'zone2']
+            'availability_zones' => job_availability_zones
           }
         ]
       }
     end
+    let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, event_log, logger) }
     let(:deployment_repo) { DeploymentRepo.new }
@@ -180,14 +181,45 @@ module Bosh::Director::DeploymentPlan
             expect(needed[1].az.name).to eq('zone1')
           end
         end
+
+        context 'when the job specifies a static ip that is not in the list of job desired azs' do
+          let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
+          let(:job_availability_zones) { ['zone1'] }
+
+          it 'should raise' do
+            expect{
+              results
+            }.to raise_error(
+              Bosh::Director::JobStaticIpsFromInvalidAvailabilityZone,
+              "Job 'jobname' declares static ip '192.168.2.10' which does not belong to any of the job's availability zones."
+            )
+          end
+        end
+
+        context 'when job static IP counts for each AZ in networks do not match' do
+          let(:desired_instance_count) { 2 }
+          let(:job_networks) do
+            [
+              {'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.2.10'], 'default' => ['dns', 'gateway']},
+              {'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11']}
+            ]
+          end
+
+          it 'raises an error' do
+            expect{ results }.to raise_error(
+                Bosh::Director::JobNetworkInstanceIpMismatch,
+                "Job 'jobname' networks must declare the same number of static IPs per AZ in each network"
+              )
+          end
+        end
       end
 
       context 'when there are existing instances' do
         context 'when the subnets and the jobs do not specify availability zones' do
           let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
           let(:existing_instances) { [
-            existing_instance_with_az(1, nil),
-            existing_instance_with_az(2, nil),
+            existing_instance_with_az_and_ips(nil, []),
+            existing_instance_with_az_and_ips(nil, []),
           ] }
 
           before do
@@ -203,6 +235,7 @@ module Bosh::Director::DeploymentPlan
             expect(existing.count).to eq(2)
             expect(existing[0][:desired_instance].az).to eq(nil)
             expect(existing[0][:existing_instance_model]).to be(existing_instances[0])
+
             expect(existing[1][:desired_instance].az).to eq(nil)
             expect(existing[1][:existing_instance_model]).to be(existing_instances[1])
 
@@ -210,11 +243,11 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when the job specifies a single network with all static IPs from a single AZ' do
+        context 'when the job specifies a single network with all static IPs from a single AZ with static IP that is outside of static range' do
           let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
           let(:existing_instances) { [
-            existing_instance_with_az(1, 'zone2'),
-            existing_instance_with_az(2, 'zone1'),
+            existing_instance_with_az_and_ips('zone2', []),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.123']),
           ] }
 
           it 'assigns instances to the AZ' do
@@ -228,32 +261,131 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
+        context 'when something' do
+          let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
+          let(:desired_instance_count) { 2 }
+          let(:existing_instances) { [
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.11']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
+          ] }
+
+          it 'does the thing' do
+            expect(needed.map { |need| need.az.name }).to eq(['zone2'])
+
+            expect(existing.count).to eq(1)
+            expect(existing[0][:desired_instance].az.name).to eq('zone1')
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[1])
+
+            expect(obsolete).to eq([existing_instances[0]])
+          end
+        end
+
         context 'when the job specifies a single network with static IPs spanning multiple AZs' do
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
           let(:existing_instances) { [
-            existing_instance_with_az(1, 'zone2'),
-            existing_instance_with_az(2, 'zone1'),
+            existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
           ] }
 
           it 'assigns instances to the AZs' do
             expect(needed.map { |need| need.az.name }).to eq(['zone1'])
 
             expect(existing.count).to eq(2)
-            expect(existing[0][:desired_instance].az.name).to eq('zone1')
-            expect(existing[0][:existing_instance_model]).to be(existing_instances[1])
-            expect(existing[1][:desired_instance].az.name).to eq('zone2')
-            expect(existing[1][:existing_instance_model]).to be(existing_instances[0])
+            expect(existing[0][:desired_instance].az.name).to eq('zone2')
+            expect(existing[0][:existing_instance_model]).to be(existing_instances[0])
+            expect(existing[1][:desired_instance].az.name).to eq('zone1')
+            expect(existing[1][:existing_instance_model]).to be(existing_instances[1])
 
             expect(obsolete).to eq([])
+          end
+        end
+
+        context 'when the job has existing instances with desired IPs' do
+          let(:static_ips) { ['192.168.2.10', '192.168.1.11', '192.168.1.10'] }
+          let(:existing_instances) { [
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.12']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.11'])
+          ] }
+
+          it 'only reuses instances that have desired IPs' do
+            expect(needed.map { |need| need.az.name }).to eq(['zone2'])
+
+            expect(existing.count).to eq(2)
+            expect(existing.map { |i| i[:desired_instance].az.name }).to eq(['zone1', 'zone1'])
+            expect(existing.map { |i| i[:existing_instance_model] }).to match_array([existing_instances[1], existing_instances[2]])
+
+            expect(obsolete).to eq([existing_instances[0]])
+          end
+        end
+
+        context 'when scaling down' do
+          let(:desired_instance_count) { 1 }
+
+          let(:static_ips) { ['192.168.1.11'] }
+          let(:existing_instances) { [
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.12']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.11'])
+          ] }
+
+          it 'only reuses instances that have desired IPs' do
+            expect(needed).to eq([])
+            expect(existing.map { |i| i[:desired_instance].az.name }).to eq(['zone1'])
+            expect(existing.map { |i| i[:existing_instance_model] }).to match_array([existing_instances[2]])
+            expect(obsolete).to eq([existing_instances[0], existing_instances[1]])
+          end
+        end
+
+        context 'when the job has existing instances with IPs from multiple networks' do
+          let(:desired_instance_count) { 1 }
+
+          let(:static_ips) { ['192.168.1.11'] }
+          let(:static_ips_net_b) { ['10.10.1.10'] }
+          let(:job_networks) { [
+            {'name' => 'a', 'static_ips' => static_ips, 'default' => ['dns', 'gateway']},
+            {'name' => 'b', 'static_ips' => static_ips_net_b}
+          ] }
+
+          context 'when all existing instance IPs match desired IPs' do
+            let(:existing_instances) { [
+              existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.10']),
+            ] }
+
+            it 'reuses existing instance' do
+              expect(needed.count).to eq(0)
+
+              expect(existing.count).to eq(1)
+              expect(existing[0][:desired_instance].az.name).to eq('zone1')
+              expect(existing[0][:existing_instance_model]).to eq(existing_instances[0])
+
+              expect(obsolete).to eq([])
+            end
+          end
+
+          context 'when not all existing instance IPs match desired IPs' do
+            let(:existing_instances) { [
+              existing_instance_with_az_and_ips('zone1', ['192.168.1.12', '10.10.1.10']),
+            ] }
+
+            it 'marks existing instance as obsolete' do
+              skip 'Multiple networks are not supported with availability_zones yet'
+              expect(needed.count).to eq(1)
+              expect(needed[0].az.name).to eq('zone1')
+
+              expect(existing.count).to eq(0)
+              expect(obsolete).to eq([existing_instances[0]])
+            end
           end
         end
 
         context 'when the job specifies multiple networks with static IPs from the same AZ' do
           let(:desired_instance_count) { 2 }
           let(:existing_instances) { [
-            existing_instance_with_az(1, 'zone2'),
-            existing_instance_with_az(2, 'zone1'),
+            existing_instance_with_az_and_ips('zone2', ['10.10.1.15']),
+            existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
           ] }
+
           let(:job_networks) do
             [
               {'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11'], 'default' => ['dns', 'gateway']},
@@ -275,8 +407,8 @@ module Bosh::Director::DeploymentPlan
         context 'and the job is non-AZ legacy' do
           let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
           let(:existing_instances) { [
-            existing_instance_with_az(1, nil),
-            existing_instance_with_az(2, nil),
+            existing_instance_with_az_and_ips(nil, []),
+            existing_instance_with_az_and_ips(nil, []),
           ] }
           let(:availability_zones) { [] }
 
@@ -299,8 +431,12 @@ module Bosh::Director::DeploymentPlan
       DesiredInstance.new(job, 'started', planner)
     end
 
-    def existing_instance_with_az(index, az)
-      Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
+    def existing_instance_with_az_and_ips(az, ips)
+      instance = Bosh::Director::Models::Instance.make(availability_zone: az)
+      ips.each do |ip|
+        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i))
+      end
+      instance
     end
   end
 end

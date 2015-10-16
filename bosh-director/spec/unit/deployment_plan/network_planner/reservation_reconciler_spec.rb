@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe NetworkPlanner do
-    describe :plan_ips do
-      let(:network_planner) { NetworkPlanner.new(logger) }
+  describe NetworkPlanner::ReservationReconciler do
+    describe :reconcile do
+      let(:network_planner) { NetworkPlanner::ReservationReconciler.new(logger) }
       let(:instance) { instance_double(Instance) }
       let(:network) { instance_double(ManualNetwork, name: 'my-network') }
       let(:existing_reservations) {
@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should keep existing reservation and return no desired new or obsolete network plans' do
-          network_plans = network_planner.plan_ips(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return desired network plans for the new reservations' do
-          network_plans = network_planner.plan_ips(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
@@ -75,7 +75,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return desired network plans for the new reservations' do
-          network_plans = network_planner.plan_ips(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
           existing_plans = network_plans.select(&:existing?)
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
