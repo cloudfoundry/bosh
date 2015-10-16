@@ -27,10 +27,6 @@ module Bosh::Blobstore
         it 'should pick S3 provider when S3 is used without credentials' do
           expect(Client.create('s3', bucket_name: 'foo')).to be_instance_of(S3BlobstoreClient)
         end
-
-        it 'returns swift client' do
-          expect(Client.create('swift', {})).to be_instance_of(SwiftBlobstoreClient)
-        end
       end
 
       context 'with unknown client provider' do
