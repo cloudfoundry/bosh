@@ -11,8 +11,6 @@ PATH
     blobstore_client (1.3104.0)
       aws-sdk (= 1.60.2)
       bosh_common (~> 1.3104.0)
-      fog (~> 1.34.0)
-      fog-aws (~> 0.7.6)
       httpclient (= 2.4.0)
       multi_json (~> 1.1)
 

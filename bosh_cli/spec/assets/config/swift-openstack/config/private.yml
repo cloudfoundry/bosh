@@ -1,9 +1,0 @@
----
-blobstore:
-  swift:
-    openstack:
-      openstack_auth_url: url
-      openstack_username: foo
-      openstack_api_key: bar
-      openstack_tenant: foo
-      openstack_region: reg
