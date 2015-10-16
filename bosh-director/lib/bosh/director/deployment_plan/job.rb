@@ -319,49 +319,23 @@ module Bosh::Director
       end
 
       def reserve_ips
-        network_to_static_ips = {}
-        networks.each do |network|
-          if network.static_ips
-            network_to_static_ips[network] = network.static_ips.dup
+        static_ip_repo = NetworkPlanner::StaticIpRepo.new(networks, @logger)
+        network_planner = NetworkPlanner::Planner.new(static_ip_repo, @logger)
+
+        needed_instance_plans.each do |instance_plan|
+          networks.each do |network|
+            network_plan = network_planner.try_to_create_existing_network_plan(instance_plan, network)
+            instance_plan.network_plans << network_plan if network_plan
           end
         end
 
         needed_instance_plans.each do |instance_plan|
           networks.each do |network|
-            static_ips = network.static_ips
-            if static_ips
-              existing_network_reservation = instance_plan.instance.existing_network_reservations.find_for_network(network)
-              if existing_network_reservation
-                static_ip = network_to_static_ips[network].delete(existing_network_reservation.ip)
-                if static_ip
-                  reservation = DesiredNetworkReservation.new_static(instance_plan.instance, network.deployment_network, static_ip)
-                  network_plan = NetworkPlanner::Plan.new(reservation: reservation, existing: true)
-                  instance_plan.network_plans << network_plan
-                end
-              end
-            end
-          end
-        end
-
-        needed_instance_plans.each do |instance_plan|
-          networks.each do |network|
-            unless instance_plan.network_plans.find { |plan| plan.reservation.network == network }
+            unless instance_plan.network_plan_for_network(network.deployment_network)
               if network.static_ips
-                static_ips = network_to_static_ips[network]
-
-                instance_az_name = instance_plan.desired_instance.az ? instance_plan.desired_instance.az.name : nil
-
-                static_ip = find_static_ip_for_az(instance_az_name, network, static_ips)
-
-                static_ips.delete(static_ip)
-
-                reservation = DesiredNetworkReservation.new_static(instance_plan.instance, network.deployment_network, static_ip)
-                network_plan = NetworkPlanner::Plan.new(reservation: reservation)
-                instance_plan.network_plans << network_plan
+                instance_plan.network_plans << network_planner.network_plan_with_static_reservation(instance_plan, network)
               else
-                reservation = DesiredNetworkReservation.new_dynamic(instance_plan.instance, network.deployment_network)
-                network_plan = NetworkPlanner::Plan.new(reservation: reservation)
-                instance_plan.network_plans << network_plan
+                instance_plan.network_plans << network_planner.network_plan_with_dynamic_reservation(instance_plan, network)
               end
             end
           end
@@ -379,15 +353,6 @@ module Bosh::Director
       end
 
       private
-
-      def find_static_ip_for_az(az_name, network, static_ips)
-        @logger.debug("choosing for ip in az: '#{az_name}' from list of static ips '#{static_ips.map { |ip| NetAddr::CIDR.create(ip).ip }}'")
-        static_ips.find do |ip|
-          ip_subnet = network.deployment_network.subnets.find { |subnet| subnet.static_ips.include?(ip) }
-          @logger.debug("Found subnet #{ip_subnet} for IP: #{NetAddr::CIDR.create(ip).ip}")
-          ip_subnet.availability_zone_names.to_a.first == az_name
-        end
-      end
 
       # @param [Hash] collection All properties collection
       # @return [Hash] Properties required by templates included in this job

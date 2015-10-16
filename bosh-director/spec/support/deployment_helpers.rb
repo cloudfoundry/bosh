@@ -3,9 +3,7 @@ require 'spec_helper'
 module Support
   module DeploymentHelpers
     def prepare_deploy(deployment_manifest, cloud_config_manifest)
-      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
-      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
-
+      fake_job
       Bosh::Director::Models::Stemcell.make(
         name: cloud_config_manifest['resource_pools'].first['stemcell']['name'],
         version: cloud_config_manifest['resource_pools'].first['stemcell']['version']
@@ -20,6 +18,11 @@ module Support
 
       template_model = Bosh::Director::Models::Template.make(name: deployment_manifest['jobs'].first['templates'].first['name'])
       version.add_template(template_model)
+    end
+
+    def fake_job
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
     end
   end
 end

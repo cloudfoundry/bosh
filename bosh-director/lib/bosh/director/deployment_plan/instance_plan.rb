@@ -175,6 +175,18 @@ module Bosh
             needs_recreate?
         end
 
+        def find_existing_reservation_for_network(network)
+          @instance.existing_network_reservations.find_for_network(network)
+        end
+
+        def desired_az_name
+          @desired_instance.az ? @desired_instance.az.name : nil
+        end
+
+        def network_plan_for_network(network)
+          @network_plans.find { |plan| plan.reservation.network == network }
+        end
+
         private
 
         def env_changed?
