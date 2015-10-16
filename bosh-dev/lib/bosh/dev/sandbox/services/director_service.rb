@@ -18,9 +18,9 @@ module Bosh::Dev::Sandbox
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
-      base_log_path = options[:base_log_path]
+      @base_log_path = options[:base_log_path]
 
-      log_location = "#{base_log_path}.director.out"
+      log_location = "#{@base_log_path}.director.out"
       @process = Service.new(
         %W[bosh-director -c #{@director_config}],
         {output: log_location},
@@ -32,7 +32,7 @@ module Bosh::Dev::Sandbox
       @worker_processes = 3.times.map do |index|
         Service.new(
           %W[bosh-director-worker -c #{@director_config}],
-          {output: "#{base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
+          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
           @logger,
         )
       end
@@ -86,6 +86,10 @@ module Bosh::Dev::Sandbox
       until resque_is_ready?
         if attempt > max_attempts
           @logger.error("Resque queue failed to start in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
+          @logger.error("#{DEBUG_HEADER} TCP Proxy logs #{DEBUG_HEADER}:")
+          tcp_proxy_filepath = "#{@base_log_path}.tcp_proxy.out"
+          @logger.error(File.read(tcp_proxy_filepath)) if File.exists?(tcp_proxy_filepath)
+          @logger.error("#{DEBUG_HEADER} End of TCP Proxy logs #{DEBUG_HEADER}")
           raise "Resque failed to start workers in #{timeout} seconds"
         end
 
