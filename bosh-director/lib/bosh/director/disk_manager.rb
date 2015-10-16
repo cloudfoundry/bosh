@@ -77,7 +77,7 @@ module Bosh::Director
           'deployment_name' => disk.deployment_name,
           'instance_name' => disk.instance_name,
           'cloud_properties' => disk.cloud_properties.any? ? disk.cloud_properties : 'n/a',
-          'orphaned_at' => disk.orphaned_at
+          'orphaned_at' => disk.orphaned_at.to_s
         }
       end
     end

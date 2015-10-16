@@ -317,9 +317,7 @@ module Bosh::Director
     end
 
     describe '#list_orphan_disk' do
-      before do
-        Models::OrphanDisk.all.each(&:destroy)
-      end
+
       it 'returns an array of orphaned disks as hashes' do
         orphaned_at = Time.now
         other_orphaned_at = Time.now
@@ -347,7 +345,7 @@ module Bosh::Director
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-1',
                 'cloud_properties' => 'n/a',
-                'orphaned_at' => orphaned_at
+                'orphaned_at' => orphaned_at.to_s
               },
               {
                 'disk_cid' => 'random-disk-cid-2',
@@ -356,7 +354,7 @@ module Bosh::Director
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-2',
                 'cloud_properties' => {'cloud' => 'properties'},
-                'orphaned_at' => other_orphaned_at
+                'orphaned_at' => other_orphaned_at.to_s
               }
             ])
       end
