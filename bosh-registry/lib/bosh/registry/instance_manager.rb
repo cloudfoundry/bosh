@@ -38,6 +38,15 @@ module Bosh::Registry
       get_instance(instance_id).destroy
     end
 
+    ##
+    # Get the list of IPs belonging to this instance
+    # @param [String] instance_id instance id
+    def instance_ips(instance_id)
+      raise NotImplemented, "Default implementation of InstanceManager does not support " \
+                            "IPs retrieval. Create IaaS-specific subclass and override this method " \
+                            "if IPs verfication is needed."
+    end
+
     private
 
     def check_instance_ips(ip, instance_id)
