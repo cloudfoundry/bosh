@@ -165,50 +165,6 @@ compiled_package_cache:
 <% end %>
 <% end %>
 
-<% if_p('compiled_package_cache.options.swift_provider',
-        'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
-compiled_package_cache:
-  provider: swift
-  options:
-    swift_provider: <%= swift_provider %>
-    container_name: <%= container_name %>
-    <% if_p('compiled_package_cache.options.hp_access_key',
-            'compiled_package_cache.options.hp_secret_key',
-            'compiled_package_cache.options.hp_tenant_id',
-            'compiled_package_cache.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
-    hp:
-      hp_access_key: <%= hp_access_key %>
-      hp_secret_key: <%= hp_secret_key %>
-      hp_tenant_id: <%= hp_tenant_id %>
-      hp_avl_zone: <%= hp_avl_zone %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.openstack_auth_url',
-            'compiled_package_cache.options.openstack_username',
-            'compiled_package_cache.options.openstack_api_key',
-            'compiled_package_cache.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
-    openstack:
-      openstack_auth_url: <%= openstack_auth_url %>
-      openstack_username: <%= openstack_username %>
-      openstack_api_key: <%= openstack_api_key %>
-      openstack_tenant: <%= openstack_tenant %>
-      <% if_p('compiled_package_cache.options.openstack_domain_name') do |openstack_domain_name| %>
-      openstack_domain_name: <%= openstack_domain_name %>
-      <% end %>
-      <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
-      openstack_region: <%= openstack_region %>
-      <% end %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.rackspace_username',
-            'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
-    rackspace:
-      rackspace_username: <%= rackspace_username %>
-      rackspace_api_key: <%= rackspace_api_key %>
-      <% if_p('compiled_package_cache.options.rackspace_region') do |rackspace_region| %>
-      rackspace_region: <%= rackspace_region %>
-      <% end %>
-    <% end %>
-<% end %>
-
 <% if_p('compiled_package_cache.options.blobstore_path') do |blobstore_path| %>
 compiled_package_cache:
   provider: local
