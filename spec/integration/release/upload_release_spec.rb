@@ -349,6 +349,24 @@ describe 'upload release', type: :integration do
       expect(output).to_not match(/Started creating new jobs/)
     end
 
+    it 'should use dependencies in matching for 2nd upload of a compiled release tarball' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      expect(output).to match(/^pkg.*UPLOAD$/)
+      expect(output).to match(/Uploading the whole release/)
+      expect(output).to match(/Started creating new packages/)
+      expect(output).to match(/Started creating new compiled packages/)
+      expect(output).to match(/Started creating new jobs/)
+
+      output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      expect(output).to match(/^pkg.*SKIP$/)
+      expect(output).to match(/Release repacked/)
+      expect(output).to_not match(/Uploading the whole release/)
+      expect(output).to_not match(/Started creating new packages/)
+      expect(output).to_not match(/Started creating new compiled packages/)
+      expect(output).to_not match(/Started creating new jobs/)
+    end
+
     it 'show actions in the event log' do
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
