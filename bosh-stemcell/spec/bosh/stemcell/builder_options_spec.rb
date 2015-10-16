@@ -198,6 +198,17 @@ module Bosh::Stemcell
             expect(stemcell_builder_options.default).not_to have_key('image_ovftool_path')
           end
         end
+
+        context 'when infrastruture is azure' do
+          let(:infrastructure) { Infrastructure.for('azure') }
+          let(:default_disk_size) { 3072 }
+
+          it_sets_correct_environment_variables
+
+          it 'has no "image_ovftool_path" key' do
+            expect(stemcell_builder_options.default).not_to have_key('image_ovftool_path')
+          end
+        end
       end
     end
   end

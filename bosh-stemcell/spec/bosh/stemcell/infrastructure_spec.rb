@@ -10,6 +10,7 @@ module Bosh::Stemcell
         expect(Infrastructure.for('vsphere')).to be_a(Infrastructure::Vsphere)
         expect(Infrastructure.for('warden')).to be_a(Infrastructure::Warden)
         expect(Infrastructure.for('vcloud')).to be_a(Infrastructure::Vcloud)
+        expect(Infrastructure.for('azure')).to be_a(Infrastructure::Azure)
         expect(Infrastructure.for('null')).to be_an(Infrastructure::NullInfrastructure)
       end
 
@@ -70,6 +71,7 @@ module Bosh::Stemcell
       expect(subject).to_not eq(Infrastructure.for('openstack'))
       expect(subject).to_not eq(Infrastructure.for('aws'))
       expect(subject).to_not eq(Infrastructure.for('vsphere'))
+      expect(subject).to_not eq(Infrastructure.for('azure'))
     end
 
     it 'defaults to no additional cloud properties' do
@@ -135,6 +137,20 @@ module Bosh::Stemcell
     it { should_not eq Infrastructure.for('vsphere') }
 
     it 'has vcloud specific additional cloud properties' do
+      expect(subject.additional_cloud_properties).to eq({'root_device_name' => '/dev/sda1'})
+    end
+  end
+
+  describe Infrastructure::Azure do
+    its(:name)              { should eq('azure') }
+    its(:hypervisor)        { should eq('hyperv') }
+    its(:default_disk_size) { should eq(3072) }
+    its(:disk_formats)      { should eq(['vhd']) }
+
+    it { should eq Infrastructure.for('azure') }
+    it { should_not eq Infrastructure.for('vcloud') }
+
+    it 'has azure specific additional cloud properties' do
       expect(subject.additional_cloud_properties).to eq({'root_device_name' => '/dev/sda1'})
     end
   end
