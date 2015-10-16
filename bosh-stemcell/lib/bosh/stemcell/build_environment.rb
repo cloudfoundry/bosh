@@ -167,6 +167,8 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_aws'
       when 'openstack'
         ' --tag ~exclude_on_openstack'
+      when 'azure'
+        ' --tag ~exclude_on_azure'
       else
         ''
       end

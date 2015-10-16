@@ -343,6 +343,51 @@ module Bosh::Stemcell
           end
         end
       end
+
+      context 'when using Azure' do
+        let(:infrastructure) { Infrastructure.for('azure') }
+
+        let(:azure_build_stemcell_image_stages) {
+          [
+            :system_azure_network,
+            :system_azure_wala,
+            :system_parameters,
+            :bosh_clean,
+            :bosh_harden,
+            :bosh_disable_password_authentication,
+            :bosh_azure_agent_settings,
+            :disable_blank_passwords,
+            :bosh_clean_ssh,
+            :image_create,
+            :image_install_grub,
+            :bosh_package_list
+          ]
+        }
+
+        let(:azure_package_stemcell_stages) {
+          [
+            :prepare_vhd_image_stemcell,
+          ]
+        }
+
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(azure_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('vhd')).to eq(azure_package_stemcell_stages)
+          end
+        end
+
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(azure_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('vhd')).to eq(azure_package_stemcell_stages)
+          end
+        end
+      end
     end
   end
 end
