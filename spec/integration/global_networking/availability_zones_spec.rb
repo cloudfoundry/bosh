@@ -196,7 +196,7 @@ describe 'availability zones', type: :integration do
     end
 
     context 'when a job has availability zones and static ips' do
-      it 'places the instances in the availability zone of the subnet where the static ip is' do
+      before do
         cloud_config_hash['availability_zones'] = [
           {
             'name' => 'my-az',
@@ -231,7 +231,9 @@ describe 'availability zones', type: :integration do
             'availability_zone' => 'my-az2'
           }
         ]
+      end
 
+      it 'places the instances in the availability zone of the subnet where the static ip is' do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         simple_manifest['jobs'].first['instances'] = 2
         simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.1.52']
@@ -243,6 +245,7 @@ describe 'availability zones', type: :integration do
         expect(vms.count).to eq(2)
         expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
         expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az')
+        vm_cid_that_should_be_reused = vms[0].cid
         expect(vms[0].ips).to eq('192.168.1.51')
         expect(vms[1].ips).to eq('192.168.1.52')
 
@@ -257,7 +260,90 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(vms[0].cid)['availability_zone']).to eq('my-az')
         expect(current_sandbox.cpi.read_cloud_properties(vms[1].cid)['availability_zone']).to eq('my-az2')
         expect(vms[0].ips).to eq('192.168.1.51')
+        expect(vms[0].cid).to eq(vm_cid_that_should_be_reused)
         expect(vms[1].ips).to eq('192.168.2.52')
+      end
+
+      context 'when scaling down' do
+        it 'it keeps instances with left static IP and deletes instances with removed IPs' do
+          cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          simple_manifest['jobs'].first['instances'] = 2
+          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+          vms = director.vms
+          vm_that_should_remain = vms.find { |vm| vm.ips == '192.168.2.52' }
+
+          simple_manifest['jobs'].first['instances'] = 1
+          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az2']
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+          vms = director.vms
+          expect(vms.size).to eq(1)
+          expect(vms[0].cid).to eq(vm_that_should_remain.cid)
+          expect(vms[0].ips).to eq('192.168.2.52')
+          expect(vms[0].availability_zone).to eq('my-az2')
+        end
+      end
+
+      context 'when scaling up' do
+        it 'it keeps instances with original static IPs and creates instances for new IPs' do
+          cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          simple_manifest['jobs'].first['instances'] = 1
+          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az2']
+
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+          vms = director.vms
+          vm_that_should_remain = vms[0]
+
+          simple_manifest['jobs'].first['instances'] = 2
+          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.52', '192.168.2.52']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+          vms = director.vms
+          expect(vms.size).to eq(2)
+
+          preserved_vm = vms.find { |vm| vm.cid == vm_that_should_remain.cid}
+          new_vm = vms.find { |vm| vm.cid != vm_that_should_remain.cid }
+
+          expect(preserved_vm.ips).to eq('192.168.2.52')
+          expect(preserved_vm.availability_zone).to eq('my-az2')
+
+          expect(new_vm.ips).to eq('192.168.1.52')
+          expect(new_vm.availability_zone).to eq('my-az')
+        end
+      end
+
+      context 'when static IP moves to another AZ' do
+        it 'recreates VM in new AZ' do
+          skip 'Changing subnet availability zones is not supported'
+          cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
+
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          simple_manifest['jobs'].first['instances'] = 1
+          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az2']
+
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+
+          original_vm = director.vms[0]
+          expect(original_vm.availability_zone).to eq('my-az2')
+
+          cloud_config_hash['networks'].first['subnets'][0]['availabilty_zone'] = 'my-az2'
+          cloud_config_hash['networks'].first['subnets'][1]['availabilty_zone'] = 'my-az'
+
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+
+          new_vm = director.vms[0]
+          expect(new_vm.ips).to eq('192.168.2.52')
+          expect(new_vm.availability_zone).to eq('my-az')
+          expect(new_vm.cid).to_not eq(original_vm.cid)
+        end
       end
     end
 

@@ -93,14 +93,15 @@ module Bosh::Director
       private
 
       def mark_reserved_with_reservation_type(reservation, subnet)
+        subnet_az_names = subnet.availability_zone_names.to_a.join(', ')
         if subnet.static_ips.include?(reservation.ip.to_i)
           reservation.resolve_type(:static)
           reservation.mark_reserved
-          @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
+          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
         else
           reservation.resolve_type(:dynamic)
           reservation.mark_reserved
-          @logger.debug("Found subnet for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
+          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
         end
       end
 
