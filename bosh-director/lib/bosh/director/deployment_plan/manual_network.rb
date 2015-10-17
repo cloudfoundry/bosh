@@ -23,6 +23,7 @@ module Bosh::Director
           end
           subnets << new_subnet
         end
+        validate_all_subnets_use_azs(subnets, name)
         new(name, subnets, logger)
       end
 
@@ -70,6 +71,23 @@ module Bosh::Director
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
         @subnets.find { |subnet| subnet.range.contains?(ip) }
+      end
+
+      def self.validate_all_subnets_use_azs(subnets, network_name)
+        subnets_with_azs = []
+        subnets_without_azs = []
+        subnets.each do |subnet|
+          if subnet.availability_zone_names.to_a.empty?
+            subnets_without_azs << subnet
+          else
+            subnets_with_azs << subnet
+          end
+        end
+
+        if subnets_with_azs.size > 0 && subnets_without_azs.size > 0
+          raise JobInvalidAvailabilityZone,
+            "Subnets on network '#{network_name}' must all either specify availability zone or not"
+        end
       end
     end
   end

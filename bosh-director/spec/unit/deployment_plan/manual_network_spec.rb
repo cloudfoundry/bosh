@@ -105,10 +105,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
             'availability_zone' => 'zone_2'
           },
           {
-            'range' => '10.3.0.0/24',
-            'gateway' => '10.3.0.1',
-          },
-          {
             'range' => '10.4.0.0/24',
             'gateway' => '10.4.0.1',
             'availability_zone' => 'zone_1'
@@ -153,6 +149,33 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       }.to raise_error(
           Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
           "Job 'foo-job' refers to an availability zone(s) '[\"zone_3\", \"zone_4\"]' but 'a' has no matching subnet(s)."
+        )
+    end
+  end
+
+  context 'when any subnet has AZs, then all subnets must contain AZs' do
+    let(:network_spec) do
+      Bosh::Spec::Deployments.network.merge(
+        'subnets' => [
+          {
+            'range' => '10.10.1.0/24',
+            'gateway' => '10.10.1.1',
+            'availability_zone' => 'zone_1'
+          },
+          {
+            'range' => '10.10.2.0/24',
+            'gateway' => '10.10.2.1',
+          }
+        ]
+      )
+    end
+
+    it 'raises an error' do
+      expect {
+        manual_network
+      }.to raise_error(
+          Bosh::Director::JobInvalidAvailabilityZone,
+          "Subnets on network 'a' must all either specify availability zone or not"
         )
     end
   end

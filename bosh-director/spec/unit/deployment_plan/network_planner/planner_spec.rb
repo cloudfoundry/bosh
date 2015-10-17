@@ -79,8 +79,15 @@ module Bosh::Director::DeploymentPlan
         expect(network_plan.reservation.network).to eq(manual_network)
       end
 
-      context 'when instance does not specify desired AZ' do
+      context 'when instance does not specify desired AZ and subnets do not specify AZs' do
         let(:instance_az) { nil }
+        let(:z1_subnet_spec) do
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'static' => ['192.168.1.10', '192.168.1.11'],
+          }
+        end
         let(:z2_subnet_spec) do
           {
             'range' => '192.168.2.0/24',
@@ -93,7 +100,7 @@ module Bosh::Director::DeploymentPlan
           network_plan = planner.network_plan_with_static_reservation(instance_plan, job_network)
           expect(network_plan.reservation.static?).to be_truthy
           expect(network_plan.reservation.instance).to eq(instance)
-          expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.2.10'))
+          expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.1.10'))
           expect(network_plan.reservation.network).to eq(manual_network)
         end
       end

@@ -111,10 +111,9 @@ module Bosh::Director::DeploymentPlan
     describe '#place_and_match_in' do
       context 'with no existing instances' do
         let(:existing_instances) { [] }
+        let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
 
         context 'when the subnets and the jobs do not specify availability zones' do
-          let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
-
           before do
             cloud_config_hash['networks'].each do |entry|
               entry['subnets'].each { |subnet| subnet.delete('availability_zone') }
@@ -126,6 +125,21 @@ module Bosh::Director::DeploymentPlan
             results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances, 'jobname')
 
             expect(needed.map(&:az)).to eq([nil, nil, nil])
+          end
+        end
+
+        context 'when job does not specify azs and the subnets do' do
+          before do
+            manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
+          end
+
+          it 'raises' do
+            expect {
+              results.inspect
+            }.to raise_error(
+              Bosh::Director::JobInvalidAvailabilityZone,
+              "Job 'jobname' subnets declare availability zones and the job does not"
+            )
           end
         end
 

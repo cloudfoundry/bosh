@@ -43,7 +43,7 @@ module Bosh
           private
 
           def to_az(az_name, desired_azs)
-            desired_azs.find { |az| az.name == az_name }
+            desired_azs.to_a.find { |az| az.name == az_name }
           end
 
           class StaticIPsToAZs
@@ -81,7 +81,15 @@ module Bosh
             end
 
             def validate_ips_are_in_desired_azs(desired_azs)
+              if desired_azs.nil? &&
+                @static_ips_to_azs.any? { |static_ip_to_az| !static_ip_to_az.az_name.nil? }
+
+                raise JobInvalidAvailabilityZone,
+                  "Job '#{@job_name}' subnets declare availability zones and the job does not"
+              end
+
               return if desired_azs.to_a.empty?
+
               desired_az_names = desired_azs.to_a.map(&:name)
               non_desired_ip_to_az = @static_ips_to_azs.find do |static_ip_to_az|
                 !desired_az_names.include?(static_ip_to_az.az_name)
