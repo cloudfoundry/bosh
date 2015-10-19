@@ -24,17 +24,12 @@ module Bosh::Director
         config
       end
 
+      let(:orphaned_at) { Time.now }
+
       before do
         App.new(config)
         basic_authorize 'admin', 'admin'
-      end
 
-      after { FileUtils.rm_rf(temp_dir) }
-
-
-      it 'returns a list of orphaned disks' do
-        orphaned_at = Time.now
-        other_orphaned_at = Time.now
         Models::OrphanDisk.make(
           disk_cid: 'random-disk-cid-1',
           instance_name: 'fake-name-1',
@@ -44,14 +39,17 @@ module Bosh::Director
           orphaned_at: orphaned_at,
           cloud_properties: {'cloud' => 'properties'}
         )
-
         Models::OrphanDisk.make(
           disk_cid: 'random-disk-cid-2',
           instance_name: 'fake-name-2',
           deployment_name: 'fake-deployment',
-          orphaned_at: other_orphaned_at,
+          orphaned_at: orphaned_at,
         )
+      end
 
+      after { FileUtils.rm_rf(temp_dir) }
+
+      it 'returns a list of orphaned disks' do
         get '/'
 
         expect(last_response.status).to eq(200)
@@ -70,8 +68,14 @@ module Bosh::Director
         expect(body.last['size']).to eq('n/a')
         expect(body.last['availability_zone']).to eq('n/a')
         expect(body.last['instance_name']).to eq('fake-name-2')
-        expect(body.last['orphaned_at']).to eq("#{other_orphaned_at}")
+        expect(body.last['orphaned_at']).to eq("#{orphaned_at}")
         expect(body.last['cloud_properties']).to eq('n/a')
+      end
+
+      it 'deletes an orphan disk' do
+        delete '/random-disk-cid-1'
+
+        expect_redirect_to_queued_task(last_response)
       end
     end
   end

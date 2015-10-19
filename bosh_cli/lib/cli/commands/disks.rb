@@ -5,8 +5,9 @@ module Bosh::Cli::Command
     option '--orphaned', 'Return orphaned disks'
 
     def list
+      auth_required
       unless options[:orphaned]
-        err("Only `bosh disks --orphan` is supported")
+        err('Only `bosh disks --orphan` is supported')
       end
 
       disks = sort(director.list_orphan_disks)
@@ -32,10 +33,19 @@ module Bosh::Cli::Command
         end
       end
 
-
       nl
       say(disks_table)
 
+    end
+
+    usage 'delete disk'
+    desc 'Deletes an orphaned disk'
+    def delete(orphan_disk_cid)
+      auth_required
+
+      status, result = director.delete_orphan_disk(orphan_disk_cid)
+
+      task_report(status, result, "Deleted orphan disk #{orphan_disk_cid}")
     end
 
     private

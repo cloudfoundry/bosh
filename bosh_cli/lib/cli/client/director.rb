@@ -179,6 +179,10 @@ module Bosh
           body
         end
 
+        def delete_orphan_disk(orphan_disk_cid)
+          request_and_track(:delete, "/disks/#{orphan_disk_cid}")
+        end
+
         def list_orphan_disks
           _, body = get_json_with_status('/disks')
           body

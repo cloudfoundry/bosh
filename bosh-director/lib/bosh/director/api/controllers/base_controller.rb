@@ -12,7 +12,6 @@ module Bosh::Director
           @identity_provider = config.identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
-          @disk_manager = DiskManager.new(nil, @logger)
           @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
           @problem_manager = ProblemManager.new(@deployment_manager)
