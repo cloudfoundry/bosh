@@ -15,14 +15,13 @@ jobs:
     public: true
     serial: true
     plan:
-      - { get: bosh-src, trigger: true }
+      - { get: bosh-src }
 
   - name: unit-1.9
     public: true
     serial: true
     plan:
     - get: bosh-src
-      trigger: true
       passed: [start-job]
     - task: test
       file: bosh-src/ci/tasks/test-unit.yml
@@ -35,7 +34,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      trigger: true
       passed: [start-job]
     - task: test
       file: bosh-src/ci/tasks/test-unit.yml
@@ -48,7 +46,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      trigger: true
       passed: [start-job]
     - task: test
       privileged: true
@@ -65,7 +62,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      trigger: true
       passed: [start-job]
     - task: test
       privileged: true
@@ -82,7 +78,6 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
-      trigger: true
       passed: [start-job]
     - task: test
       privileged: true
@@ -99,6 +94,7 @@ jobs:
     serial: true
     plan:
     - get: bosh-src
+      passed: [start-job]
       trigger: true
       passed: [start-job]
     - get: bosh-load-tests
