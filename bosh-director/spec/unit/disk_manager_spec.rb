@@ -304,7 +304,7 @@ module Bosh::Director
           persistent_disk: persistent_disk
         )
 
-        expect{disk_manager.orphan_disk(persistent_disk)}.to raise_error(Sequel::ValidationFailed)
+        expect { disk_manager.orphan_disk(persistent_disk) }.to raise_error(Sequel::ValidationFailed)
 
         conflicting_orphan_snapshot.destroy
         conflicting_orphan_disk.destroy
@@ -357,6 +357,44 @@ module Bosh::Director
                 'orphaned_at' => other_orphaned_at.to_s
               }
             ])
+      end
+    end
+
+    describe '#delete_orphan_disks' do
+      let(:orphan_disk_cid_1) { Models::OrphanDisk.make.disk_cid }
+      let(:orphan_disk_cid_2) { Models::OrphanDisk.make.disk_cid }
+
+      it 'deletes disks from the cloud' do
+        expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+
+        subject.delete_orphan_disk(orphan_disk_cid_1)
+
+        expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+        expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
+      end
+
+      context 'when disk is not found in the cloud' do
+        it 'raises DiskNotFound so that event logger can log it AND continues to delete the remaining disks' do
+          allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+
+          expect {
+            subject.delete_orphan_disk(orphan_disk_cid_1)
+          }.to raise_error Bosh::Clouds::DiskNotFound
+
+          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+        end
+      end
+
+      context 'when CPI is unable to delete a disk' do
+        it 'raises the error thrown by the CPI AND does NOT delete the disk from the database' do
+          allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Exception.new('Bad stuff happened!'))
+
+          expect {
+            subject.delete_orphan_disk(orphan_disk_cid_1)
+          }.to raise_error Exception, 'Bad stuff happened!'
+
+          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
+        end
       end
     end
   end
