@@ -417,6 +417,7 @@ module Bosh::Director
           end
 
           it 'scans and fixes problems' do
+            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
             expect(Resque).to receive(:enqueue).with(
                 Jobs::CloudCheck::ScanAndFix,
                 kind_of(Numeric),
@@ -426,6 +427,20 @@ module Bosh::Director
               )
             put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
             expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'when resurrection is off' do
+            it 'does not run scan_and_fix task' do
+              instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
+              instance1 = Models::Instance.make(deployment: deployment, job: 'job', index: 1, resurrection_paused: true)
+              expect(Resque).not_to receive(:enqueue).with(
+                                        Jobs::CloudCheck::ScanAndFix,
+                                        kind_of(Numeric),
+                                        'mycloud',
+                                        [['job', 0], ['job', 1]], false)
+              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1]}), {'CONTENT_TYPE' => 'application/json'}
+              expect(last_response).not_to be_redirect
+            end
           end
         end
 
