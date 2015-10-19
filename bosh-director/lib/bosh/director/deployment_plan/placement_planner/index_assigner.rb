@@ -22,7 +22,7 @@ module Bosh
               existing_instance_model = desired_existing_instance[:existing_instance_model]
               desired_instance = desired_existing_instance[:desired_instance]
               if candidate_indexes.delete(existing_instance_model.index) ||
-                existing_instance_model.index > total_number_of_instances
+                existing_instance_model.index > total_number_of_instances - 1
                 desired_instance.index = existing_instance_model.index
               else
                 desired_instance.index = candidate_indexes.shift

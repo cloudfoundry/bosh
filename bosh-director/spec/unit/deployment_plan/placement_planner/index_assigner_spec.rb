@@ -90,6 +90,21 @@ module Bosh::Director::DeploymentPlan
             expect(zoned_instances[:obsolete].map(&:index)).to eq([0,3])
           end
         end
+
+        context 'when changing instance with index 0' do
+          it 'assigns indexes properly' do
+            zoned_instances = {
+              :desired_new => [],
+              :desired_existing => build_existing([3, 2, 0]),
+              :obsolete => [],
+            }
+
+            assigner.assign_indexes(zoned_instances)
+            zoned_instances[:desired_existing].each do |desired_existing|
+              expect(desired_existing[:existing_instance_model].index).to eq(desired_existing[:desired_instance].index)
+            end
+          end
+        end
       end
 
       context 'new & existing' do
