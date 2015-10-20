@@ -348,6 +348,29 @@ describe 'global networking', type: :integration do
       expect(second_deploy_vms.first.ips).to eq('192.168.1.10')
 
       expect(second_deploy_vms.first.cid).to eq(first_deploy_vms.first.cid)
+      end
+
+    xit 'keeps IP when reservation is changed to dynamic network' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_with_ip(simple_manifest, '192.168.1.10')
+      first_deploy_vms = director.vms
+      expect(first_deploy_vms.size).to eq(1)
+      expect(first_deploy_vms.first.ips).to eq('192.168.1.10')
+
+      network = cloud_config_hash['networks'].first
+      network['subnets'] = [
+        {
+          'availability_zones' => ['my-az', 'my-az2'],
+          'cloud_properties' => {'dynamic' => 'property'}
+        }
+      ]
+      network['type'] = 'dynamic'
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+      second_deploy_vms = director.vms
+      expect(second_deploy_vms.size).to eq(1)
     end
   end
 
