@@ -12,6 +12,7 @@ shared_examples_for 'every OS image' do
   context 'installed by bosh_sudoers' do
     describe file('/etc/sudoers') do
       it { should be_file }
+      it { should contain '%bosh_sudoers ALL=(ALL) NOPASSWD: ALL' }
       it { should contain '#includedir /etc/sudoers.d' }
     end
   end
@@ -54,6 +55,10 @@ shared_examples_for 'every OS image' do
     end
 
     describe group('adm') do
+      it { should exist }
+    end
+
+    describe group('bosh_sudoers') do
       it { should exist }
     end
 

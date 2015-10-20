@@ -19,3 +19,6 @@ root    ALL=(ALL) ALL
 
 # Members of the admin group may gain root privileges
 %admin ALL=(ALL) ALL
+
+# Members of bosh_sudoers do not require password to run sudo commands
+%bosh_sudoers ALL=(ALL) NOPASSWD: ALL
