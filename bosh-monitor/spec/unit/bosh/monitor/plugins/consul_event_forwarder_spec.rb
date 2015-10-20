@@ -10,7 +10,7 @@ describe Bhm::Plugins::ConsulEventForwarder do
   let(:heartbeat_alert_uri){ URI.parse("http://fake-consul-cluster:8500/v1/event/fire/#{heartbeat_name}?") }
   let(:event_request) {{ :body => alert.to_json }}
   let(:heartbeat_request){ { :body => simplified_heartbeat.to_json } }
-  let(:heartbeat_name){ namespace + heartbeat.job }
+  let(:heartbeat_name){ namespace + heartbeat.job + "_" + heartbeat.index }
   let(:namespace){ "ns_" }
   let(:new_port){ "9500" }
   let(:new_protocol){ "https" }
@@ -23,8 +23,8 @@ describe Bhm::Plugins::ConsulEventForwarder do
   let(:register_uri_with_port){ URI.parse("http://fake-consul-cluster:#{new_port}/v1/agent/check/register?")}
   let(:register_uri_with_protocol){ URI.parse("#{new_protocol}://fake-consul-cluster:8500/v1/agent/check/register?")}
   let(:register_uri_with_params){ URI.parse("http://fake-consul-cluster:8500/v1/agent/check/register?#{new_params}")}
-  let(:register_request){ { :body => { "name" => "#{namespace}mysql_node", "notes" => "test", "ttl" => "120s"}.to_json } }
-  let(:register_request_with_namespace){ { :body => { "name" => "#{namespace}mysql_node", "notes" => "test", "ttl" => "120s"}.to_json } }
+  let(:register_request){ { :body => { "name" => "#{namespace}mysql_node_0", "notes" => "test", "ttl" => "120s"}.to_json } }
+  let(:register_request_with_namespace){ { :body => { "name" => "#{namespace}mysql_node_0", "notes" => "test", "ttl" => "120s"}.to_json } }
 
   #we send a simplified version of a heartbeat to consul when sending as an event because consul has a 512byte limit for events
   let(:simplified_heartbeat){ {
