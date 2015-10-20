@@ -8,7 +8,9 @@ describe 'cli: disks', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a')]
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+    disk_pool = Bosh::Spec::Deployments.disk_pool
+    disk_pool['cloud_properties'] = {'my' => 'property'}
+    cloud_config['disk_pools'] = [disk_pool]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
     bosh_runner.run('delete deployment simple')
 
@@ -18,14 +20,23 @@ describe 'cli: disks', type: :integration do
     result = scrub_time(result)
 
     expect(result).to include(<<DISKS)
-+----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+------------------+---------------------------+
-| Disk CID                         | Deployment Name | Instance Name                               | Disk Size | Availability Zone | Cloud Properties | Orphaned At               |
-+----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+------------------+---------------------------+
-| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | n/a              | 0000-00-00 00:00:00 -0000 |
-| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | n/a              | 0000-00-00 00:00:00 -0000 |
-| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | n/a              | 0000-00-00 00:00:00 -0000 |
-+----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+------------------+---------------------------+
++----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+---------------------------+
+| Disk CID                         | Deployment Name | Instance Name                               | Disk Size | Availability Zone | Orphaned At               |
++----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+---------------------------+
+| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | 0000-00-00 00:00:00 -0000 |
+| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | 0000-00-00 00:00:00 -0000 |
+| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | simple          | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 123       | n/a               | 0000-00-00 00:00:00 -0000 |
++----------------------------------+-----------------+---------------------------------------------+-----------+-------------------+---------------------------+
 DISKS
+  end
+
+  context 'when there are no orphaned disks' do
+    it 'should err with no orphaned disks' do
+      target_and_login
+      result = bosh_runner.run('disks --orphaned')
+
+      expect(result).to include 'No orphaned disks'
+    end
   end
 
   it 'should delete an orphaned disk' do

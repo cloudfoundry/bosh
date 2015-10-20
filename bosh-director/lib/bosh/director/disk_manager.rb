@@ -57,7 +57,7 @@ module Bosh::Director
           availability_zone: disk.instance.availability_zone,
           deployment_name: disk.instance.deployment.name,
           instance_name: "#{disk.instance.job}/#{disk.instance.uuid}",
-          cloud_properties_json: disk.cloud_properties
+          cloud_properties: disk.cloud_properties
         )
 
         orphan_snapshots(disk.snapshots, orphan_disk)
