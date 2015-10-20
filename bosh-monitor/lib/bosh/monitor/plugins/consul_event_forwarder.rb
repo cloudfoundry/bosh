@@ -94,7 +94,7 @@ module Bosh::Monitor
       def label_for_event(event)
         case event
           when Bosh::Monitor::Events::Heartbeat
-            "#{@namespace}#{event.job}"
+            label_for_ttl(event)
           when Bosh::Monitor::Events::Alert
             event_label = event.title.downcase.gsub(" ","_")
             "#{@namespace}#{event_label}"
@@ -105,7 +105,7 @@ module Bosh::Monitor
       end
 
       def label_for_ttl(event)
-        "#{@namespace}#{event.job}"
+        "#{@namespace}#{event.job}_#{event.index}"
       end
 
       # Notify consul of an event
