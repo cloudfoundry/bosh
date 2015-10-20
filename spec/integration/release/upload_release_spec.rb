@@ -486,6 +486,7 @@ describe 'upload release', type: :integration do
         inspect_release_array.each { |test_release_pkg|
           if other_name_package[:package] == test_release_pkg[:package]
             expect(other_name_package[:blobstore_id]).to_not eq(test_release_pkg[:blobstore_id])
+            break
           end
         }
       }
@@ -540,6 +541,41 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
       expect(output).to include("Release uploaded")
+    end
+  end
+
+  describe 'uploading release with --fix' do
+    it 'fixes packages in blobstore that are broken or missing' do
+      release_filename = spec_asset('test_release.tgz')
+
+      target_and_login
+      out = bosh_runner.run("upload release #{release_filename}")
+      expect(out).to match /release uploaded/i
+
+      inspect1 = bosh_runner.run('inspect release test_release/1')
+      old_pkg_inspect = Bosh::Dev::TableParser.new(inspect1.split(/\n\n/)[1]).to_a
+
+      FileUtils.rm_rf(Dir.glob(File.join(current_sandbox.blobstore_storage_dir, "*")))
+
+      out = bosh_runner.run("upload release #{release_filename} --fix")
+
+      expect(out).to match /Started fixing package \'pkg_1.*Done/
+      expect(out).to match /Started fixing package \'pkg_2.*Done/
+      expect(out).to match /Started fixing package \'pkg_3_depends_on_2.*Done/
+      expect(out).to match /Started fixing package \'pkg_4_depends_on_3.*Done/
+      expect(out).to match /Started fixing package \'pkg_5_depends_on_4_and_1.*Done/
+
+      inspect2 = bosh_runner.run('inspect release test_release/1')
+      new_pkg_inspect = Bosh::Dev::TableParser.new(inspect2.split(/\n\n/)[1]).to_a
+
+      new_pkg_inspect.each { |new_pkg|
+        old_pkg_inspect.each { |old_pkg|
+          if new_pkg[:package] == old_pkg[:package]
+            expect(new_pkg[:blobstore_id]).to_not eq(old_pkg[:blobstore_id])
+            break
+          end
+        }
+      }
     end
   end
 end

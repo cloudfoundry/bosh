@@ -641,7 +641,7 @@ module Bosh
 
         def releases_path(options = {})
           path = '/releases'
-          params = [:rebase, :skip_if_exists].select { |p| options[p] }.map { |p| "#{p}=true" }
+          params = [:rebase, :skip_if_exists, :fix].select { |p| options[p] }.map { |p| "#{p}=true" }
           params.push "sha1=#{options[:sha1]}" unless options[:sha1].blank?
           path << "?#{params.join('&')}" unless params.empty?
           path

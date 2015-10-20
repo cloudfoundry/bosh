@@ -33,6 +33,7 @@ module Bosh::Director
         @release_model, @release_version_model, @manifest, @name, @version = nil, nil, nil, nil, nil
 
         @rebase = !!options['rebase']
+        @fix = !!options['fix']
       end
 
       # Extracts release tarball, verifies release manifest and saves release in DB
@@ -328,7 +329,7 @@ module Bosh::Director
               end
             end
 
-            if source_release && package.blobstore_id.nil?
+            if source_release && (package.blobstore_id.nil? || @fix)
               save_package_source_blob(package, package_meta, release_dir)
               package.save
             end
@@ -484,24 +485,42 @@ module Bosh::Director
 
       # @return [boolean] true if a new blob was created; false otherwise
       def save_package_source_blob(package, package_meta, release_dir)
-        return false unless package.blobstore_id.nil?
-
-        name, version, existing_blob = package_meta['name'], package_meta['version'], package_meta['blobstore_id']
+        name, version, existing_blob, sha1 = package_meta['name'], package_meta['version'], package_meta['blobstore_id'], package_meta['sha1']
         desc = "package '#{name}/#{version}'"
+        package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
 
-        package.sha1 = package_meta['sha1']
+        if @fix
+          if package.blobstore_id != nil
+            logger.info("Verifying package #{desc} with blobstore_id: #{package.blobstore_id}")
+            return false if BlobUtil.verify_blob(package.blobstore_id, package.sha1)
+            validate_tgz(package_tgz, desc)
+            fix_package(package, package_tgz)
+            return true
+          end
+          package.sha1 = package_meta['sha1']
 
-        if existing_blob
-          logger.info("Creating #{desc} from existing blob #{existing_blob}")
-          package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+          if existing_blob
+            pkg = Models::Package.where(blobstore_id: existing_blob).first
+            logger.info("Verifying package #{desc} with blobstore_id: #{existing_blob}")
+            fix_package(pkg, package_tgz) unless BlobUtil.verify_blob(existing_blob, sha1)
+            package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
+            return true
+          end
 
-        elsif package
-          logger.info("Creating #{desc} from provided bits")
+        else
+          return false unless package.blobstore_id.nil?
+          package.sha1 = package_meta['sha1']
 
-          package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
-          validate_tgz(package_tgz, desc)
-          package.blobstore_id = BlobUtil.create_blob(package_tgz)
+          if existing_blob
+            logger.info("Creating #{desc} from existing blob #{existing_blob}")
+            package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+            return true
+          end
         end
+
+        logger.info("Creating #{desc} from provided bits")
+        validate_tgz(package_tgz, desc)
+        package.blobstore_id = BlobUtil.create_blob(package_tgz)
 
         true
       end
@@ -617,6 +636,13 @@ module Bosh::Director
         strings = models.map(&:version)
         list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
         list.rebase(@version)
+      end
+
+      def fix_package(package, package_tgz)
+        single_step_stage("Fixing package '#{package.name}/#{package.version}'") do
+          logger.info("Fixing package '#{package.name}/#{package.version}'")
+          package.blobstore_id = BlobUtil.replace_blob(package.blobstore_id, package_tgz)
+        end
       end
     end
   end
