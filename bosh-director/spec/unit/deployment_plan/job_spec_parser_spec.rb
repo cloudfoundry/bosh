@@ -913,13 +913,19 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               {'name' => 'second-network', 'default' => ['dns', 'gateway']}
             ]
 
-            first_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'first-network',)
-            second_network = instance_double(Bosh::Director::DeploymentPlan::ManualNetwork, name: 'second-network',)
-
+            first_network = instance_double(
+              Bosh::Director::DeploymentPlan::ManualNetwork,
+              name: 'first-network',
+              validate_has_job!: true,
+              validate_reference_from_job!: true
+            )
+            second_network = instance_double(
+              Bosh::Director::DeploymentPlan::ManualNetwork,
+              name: 'second-network',
+              validate_has_job!: true,
+              validate_reference_from_job!: true
+            )
             allow(deployment_plan).to receive(:networks).and_return([first_network, second_network])
-
-            allow(first_network).to receive(:validate_has_job!)
-            allow(second_network).to receive(:validate_has_job!)
 
             parser.parse(job_spec)
 

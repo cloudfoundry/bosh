@@ -179,6 +179,7 @@ module Bosh::Director
   JobNetworkMissingDefault = err(150005)
   JobNetworkMissingRequiredAvailabilityZone= err(150006)
   JobStaticIpsFromInvalidAvailabilityZone= err(150007)
+  JobStaticIPNotSupportedOnDynamicNetwork= err(150008)
 
   NetworkOverlappingSubnets = err(160001)
   NetworkInvalidRange = err(160002)

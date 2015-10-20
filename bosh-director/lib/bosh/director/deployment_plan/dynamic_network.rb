@@ -115,6 +115,15 @@ module Bosh::Director
         config
       end
 
+      def validate_reference_from_job!(job_network_spec)
+        if job_network_spec.has_key?('static_ips')
+          raise JobStaticIPNotSupportedOnDynamicNetwork,
+            "Job using dynamic network '#{name}' cannot specify static IP(s)"
+        else
+          true
+        end
+      end
+
       private
 
       def find_subnet_for_az(az_name)

@@ -35,6 +35,24 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    context 'when job network spec references dynamic network with static IPs' do
+      let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('a', [], logger)}
+      let(:job_spec) do
+        job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+        job['networks'] = [{
+          'name' => 'a',
+          'static_ips' => ['10.0.0.2']
+        }]
+        job
+      end
+
+      it 'raises JobStaticIPNotSupportedOnDynamicNetwork' do
+        expect {
+          job_networks_parser.parse(job_spec, 'job-name', [dynamic_network])
+        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Job using dynamic network 'a' cannot specify static IP(s)"
+      end
+    end
+
     context 'when called with a valid job spec' do
       it 'adds static ips to job networks' do
         networks = job_networks_parser.parse(job_spec, 'job-name', manifest_networks)

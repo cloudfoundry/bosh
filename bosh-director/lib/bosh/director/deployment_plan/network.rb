@@ -44,6 +44,10 @@ module Bosh::Director
       def validate_has_job!(az_names, job_name)
         raise NotImplementedError
       end
+
+      def validate_reference_from_job!(job_network_spec)
+        true
+      end
     end
 
     class NetworkWithSubnets < Network
