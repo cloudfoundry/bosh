@@ -172,15 +172,7 @@ module Bosh::Cli
       # @param [String] job Job name
       # @param [Integer] index Job index
       def setup_interactive_shell(deployment_name, job, index)
-        password = options[:default_password]
-
-        if password.nil?
-          password = ask(
-            'Enter password (use it to ' +
-              'sudo on remote host): ') { |q| q.echo = '*' }
-
-          err('Please provide ssh password') if password.blank?
-        end
+        password = options[:default_password] || ''
 
         setup_ssh(deployment_name, job, index, password) do |sessions, gateway, ssh_session|
           session = sessions.first
@@ -211,7 +203,9 @@ module Bosh::Cli
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
-        setup_ssh(deployment_name, job, index, options[:default_password]) do |sessions, gateway, ssh_session|
+        password = options[:default_password] || ''
+
+        setup_ssh(deployment_name, job, index, password) do |sessions, gateway, ssh_session|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")

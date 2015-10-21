@@ -31,8 +31,7 @@ describe Bosh::Cli::Command::Ssh do
     allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
 
-    allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
-    command.add_option(:default_password, 'password')
+    allow(command).to receive(:encrypt_password).with('').and_return('encrypted_password')
 
     allow(Bosh::Cli::SSHSession).to receive(:new).and_return(ssh_session)
     allow(ssh_session).to receive(:public_key).and_return("public_key")
