@@ -77,7 +77,8 @@ module Bosh
                 unless instance_plan.network_plan_for_network(network.deployment_network)
                   static_ip_with_azs = networks_to_static_ips.take_next_ip_for_network(network)
                   unless static_ip_with_azs
-                    # TODO: fail, cannot fulfill network plan
+                    raise Bosh::Director::NetworkReservationError,
+                      'Failed to distribute static IPs to satisfy existing instance reservations'
                   end
 
                   instance_plan.network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_with_azs.ip)

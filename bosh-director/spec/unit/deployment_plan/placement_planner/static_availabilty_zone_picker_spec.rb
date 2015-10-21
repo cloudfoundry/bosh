@@ -572,12 +572,24 @@ module Bosh::Director::DeploymentPlan
               end
 
               context 'when increasing number of instances' do
-                it 'creates new instance without taking old IP of existing instance' do
-
+                let(:desired_instance_count) { 3 }
+                let(:existing_instances) do
+                  [
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11'])
+                  ]
                 end
+                let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10'] }
+                let(:b_static_ips) { ['10.10.1.10 - 10.10.1.11', '10.10.2.10'] }
 
                 it 'creates new instances in AZ with least instances' do
-
+                  expect(new_instance_plans.size).to eq(1)
+                  expect(new_instance_plans[0].desired_instance.az.name).to eq('zone2')
+                  expect(new_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                      [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                    )
+                  expect(obsolete_instance_plans).to eq([])
+                  expect(existing_instance_plans.size).to eq(2)
                 end
               end
 
@@ -585,6 +597,26 @@ module Bosh::Director::DeploymentPlan
                 it 'deletes instances with associated static ips' do
 
                 end
+              end
+            end
+
+            context 'when existing instance uses IPs needed by new instance' do
+              let(:desired_instance_count) { 2 }
+
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11'])
+                ]
+              end
+              let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
+              let(:b_static_ips) { ['10.10.1.10', '10.10.2.10'] }
+
+              it 'raises an error' do
+                expect {
+                  instance_plans
+                }.to raise_error Bosh::Director::NetworkReservationError,
+                    'Failed to distribute static IPs to satisfy existing instance reservations'
               end
             end
           end
