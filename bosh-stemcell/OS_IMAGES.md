@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Lr3ymjhDCX5Oc5hyg.uii1WclfQzAsRF`
+  - add bosh_sudoers group
+
 * `HU9BVWuGxWwoxJ2jOJYKqDRTjwh419Ig`
   - update kernel for USN-2765-1
 
@@ -263,6 +266,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `PSeYc72JzURKT28wUkaZBuWoPGpK0QPb`
+  - add bosh_sudoers group
+  
 * `3YJSMiU5nD07NEAN8wFJ6uya5XH7WriY`
   - update centos to match ubuntu update for USN-2739-1
 
