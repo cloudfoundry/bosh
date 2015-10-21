@@ -4,7 +4,7 @@ describe 'recreate job', type: :integration do
   with_reset_sandbox_before_each
 
   def vm_cids_for_job(job_name)
-    director.vms.select { |vm| vm.job_name == job_name}.map(&:cid)
+    director.vms.select { |vm| vm.job_name == job_name }.map(&:cid)
   end
 
   it 'recreates a job' do

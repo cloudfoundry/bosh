@@ -171,16 +171,27 @@ module Bosh::Director
       it 'updates dns records for instance in local repo' do
         expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2'])
         dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
-        expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-3'])
+        expect(local_dns_repo.find(instance_model)).to eq(['fake-dns-name-1','fake-dns-name-2', 'fake-dns-name-3'])
       end
 
-      it 'updates dns records in dns provider' do
+      it 'appends the records to the model' do
+        expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
+        dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.4','another-dns-name-2' => '5.6.7.8'})
+        expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
         expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
         expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
-        dns_manager.update_dns_record_for_instance(instance_model, {'fake-dns-name-3' => '9.8.7.6'})
-        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to be_nil
-        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to be_nil
-        expect(dns_provider.find_dns_record('fake-dns-name-3', '9.8.7.6')).to_not be_nil
+        expect(dns_provider.find_dns_record('another-dns-name-1', '1.2.3.4')).to_not be_nil
+        expect(dns_provider.find_dns_record('another-dns-name-2', '5.6.7.8')).to_not be_nil
+      end
+
+      it 'it keeps old record names pointing at their original ips' do
+        expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2'])
+        dns_manager.update_dns_record_for_instance(instance_model, {'another-dns-name-1' => '1.2.3.5','another-dns-name-2' => '5.6.7.9'})
+        expect(instance_model.dns_record_names).to eq(['fake-dns-name-1', 'fake-dns-name-2', 'another-dns-name-1', 'another-dns-name-2'])
+        expect(dns_provider.find_dns_record('fake-dns-name-1', '1.2.3.4')).to_not be_nil
+        expect(dns_provider.find_dns_record('fake-dns-name-2', '5.6.7.8')).to_not be_nil
+        expect(dns_provider.find_dns_record('another-dns-name-1', '1.2.3.5')).to_not be_nil
+        expect(dns_provider.find_dns_record('another-dns-name-2', '5.6.7.9')).to_not be_nil
       end
 
       context 'when the dns entry already exists' do

@@ -40,13 +40,14 @@ module Bosh::Director
       it_behaves_like 'a Resque job'
     end
 
+    let(:vm) { Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid') }
+
     describe '#perform' do
       before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
+        vm  #trigger the let
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
           'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
@@ -71,7 +72,7 @@ module Bosh::Director
       end
 
       it 'parses agent info into vm_state WITH vitals' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+        vm  #trigger the let
         stub_agent_get_state_to_return_state_with_vitals
 
         expect(@result_file).to receive(:write) do |agent_status|
@@ -94,15 +95,8 @@ module Bosh::Director
       end
 
       it 'should return DNS A records if they exist' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-        domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
-        Models::Dns::Record.make(
-          domain: domain,
-          name: 'index.job.network.deployment.microbosh',
-          type: 'A',
-          content: '1.1.1.1',
-          ttl: 14400,
-        )
+        Models::Instance.make(vm: vm, dns_record_names: ['index.job.network.deployment.microbosh'])
+
         stub_agent_get_state_to_return_state_with_vitals
 
         expect(@result_file).to receive(:write) do |agent_status|
@@ -115,22 +109,7 @@ module Bosh::Director
       end
 
       it 'should return DNS A records ordered by instance id records first' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-        domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
-        Models::Dns::Record.make(
-          domain: domain,
-          name: '0.job.network.deployment.microbosh',
-          type: 'A',
-          content: '1.1.1.1',
-          ttl: 14400,
-        )
-        Models::Dns::Record.make(
-          domain: domain,
-          name: 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh',
-          type: 'A',
-          content: '1.1.1.1',
-          ttl: 14400,
-        )
+        Models::Instance.make(vm: vm, dns_record_names: ['0.job.network.deployment.microbosh', 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh'])
         stub_agent_get_state_to_return_state_with_vitals
 
         expect(@result_file).to receive(:write) do |agent_status|
@@ -143,7 +122,6 @@ module Bosh::Director
       end
 
       it 'should handle unresponsive agents' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -170,7 +148,6 @@ module Bosh::Director
       end
 
       it 'should get the resurrection paused status' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -191,7 +168,6 @@ module Bosh::Director
       end
 
       it 'should return disk cid info when active disks found' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         instance = Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -217,7 +193,6 @@ module Bosh::Director
       end
 
       it 'should return disk cid info when NO active disks found' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         instance = Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -245,7 +220,6 @@ module Bosh::Director
       end
 
       it 'should return instance id' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -268,7 +242,6 @@ module Bosh::Director
       end
 
       it 'should return vm_type' do
-        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
         set_vm_apply_spec(vm)
 
         Models::Instance.create(
@@ -293,8 +266,7 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
-
+        vm #trigger the let
         stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -310,7 +282,6 @@ module Bosh::Director
 
           context 'when instance is a bootstrap node' do
         it 'should return is_bootstrap as true' do
-          vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
           Models::Instance.create(
             deployment: @deployment,
             job: 'dea',
@@ -335,7 +306,6 @@ module Bosh::Director
 
       context 'when instance is NOT a bootstrap node' do
         it 'should return is_bootstrap as false' do
-          vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
           Models::Instance.create(
             deployment: @deployment,
             job: 'dea',
@@ -358,7 +328,7 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+        vm
 
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',

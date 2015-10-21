@@ -58,10 +58,7 @@ module Bosh::Director
         end
 
         if dns_manager.dns_enabled?
-          ips.each do |ip|
-            dns_records << dns_manager.find_dns_records_by_ip_and_instance(ip, vm.instance).map(&:name)
-          end
-          dns_records.flatten!
+          dns_records = dns_manager.find_dns_record_names_by_instance(vm.instance)
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 

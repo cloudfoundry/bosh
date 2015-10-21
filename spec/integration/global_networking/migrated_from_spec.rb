@@ -498,8 +498,8 @@ describe 'migrated from', type: :integration do
     output = bosh_runner.run('vms --dns')
     expect(output).to include('0.etcd.a.simple.bosh')
     expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
-    expect(output).to_not include('0.etcd-z1.a.simple.bosh')
-    expect(scrub_random_ids(output)).to_not include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
+    expect(output).to include('0.etcd-z1.a.simple.bosh')
+    expect(scrub_random_ids(output)).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
   end
 
   context 'when migrating job that does not exist in previous deployment' do

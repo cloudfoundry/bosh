@@ -38,35 +38,20 @@ module Bosh::Director
       @dns_provider.find_dns_record(dns_record_name, ip_address)
     end
 
-    def find_dns_records_by_ip_and_instance(ip_address, instance_model)
-    #this becomes instance_model.ip_addresses
-      if instance_model
-        dns_records_by_ip = @dns_provider.find_dns_records_by_ip(ip_address)
-        dns_records_by_ip.to_a.select{ |record|
-          @logger.debug("checking for record, #{record.name.inspect}, in #{instance_model.dns_record_names.inspect}")
-          instance_model.dns_record_names.include? record.name
-        }
-      else
-        @dns_provider.find_dns_records_by_ip(ip_address)
-      end
+    def find_dns_record_names_by_instance(instance_model)
+      instance_model.nil? ? [] : instance_model.dns_record_names.to_a.compact
     end
 
     def update_dns_record_for_instance(instance_model, dns_names_to_ip)
       current_dns_records = @local_dns_repo.find(instance_model)
-
+      new_dns_records = []
       dns_names_to_ip.each do |record_name, ip_address|
+        new_dns_records << record_name
         @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
         @dns_provider.create_or_update_dns_records(record_name, ip_address)
       end
-
-      current_dns_records.each do |record_name|
-        if dns_names_to_ip[record_name].nil?
-          @logger.info("Removing DNS for: #{record_name}")
-          @dns_provider.delete(record_name)
-        end
-      end
-
-      @local_dns_repo.create_or_update(instance_model, dns_names_to_ip.keys)
+      dns_records = (current_dns_records + new_dns_records).uniq
+      @local_dns_repo.create_or_update(instance_model, dns_records)
     end
 
     def migrate_legacy_records(instance_model)
