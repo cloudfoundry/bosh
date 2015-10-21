@@ -38,7 +38,7 @@ module Bosh::Director
         end
 
         desired_jobs.each do |desired_job|
-          desired_job.reserve_ips
+          desired_job.add_network_plans
         end
 
         instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)

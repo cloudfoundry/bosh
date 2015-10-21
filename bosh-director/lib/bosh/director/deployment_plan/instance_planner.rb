@@ -114,15 +114,19 @@ module Bosh
 
         def desired_new_instance_plans(new_desired_instances)
           new_desired_instances.map do |desired_instance|
-            instance = @instance_repo.create(desired_instance, desired_instance.index)
-            InstancePlan.new(
-              desired_instance: desired_instance,
-              existing_instance: nil,
-              instance: instance,
-              skip_drain: @skip_drain_decider.for_job(desired_instance.job.name),
-              recreate_deployment: @recreate_deployment
-            )
+            desired_new_instance_plan(desired_instance)
           end
+        end
+
+        def desired_new_instance_plan(desired_instance)
+          instance = @instance_repo.create(desired_instance, desired_instance.index)
+          InstancePlan.new(
+            desired_instance: desired_instance,
+            existing_instance: nil,
+            instance: instance,
+            skip_drain: @skip_drain_decider.for_job(desired_instance.job.name),
+            recreate_deployment: @recreate_deployment
+          )
         end
 
         def log_outcome(placement_plan)

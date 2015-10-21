@@ -45,88 +45,88 @@ module Bosh
           def to_az(az_name, desired_azs)
             desired_azs.to_a.find { |az| az.name == az_name }
           end
+        end
 
-          class StaticIPsToAZs
-            class StaticIPToAZ < Struct.new(:az_name, :ip, :network);
-              def inspect
-                formatted_ip = NetAddr::CIDR.create(ip).ip
-                "<StaticIPToAZ: az=#{az_name} ip=#{formatted_ip} network=#{network.name}>"
-              end
+        class StaticIPsToAZs
+          class StaticIPToAZ < Struct.new(:az_name, :ip, :network);
+            def inspect
+              formatted_ip = NetAddr::CIDR.create(ip).ip
+              "<StaticIPToAZ: az=#{az_name} ip=#{formatted_ip} network=#{network.name}>"
             end
-            include Enumerable
+          end
+          include Enumerable
 
-            def initialize(job_networks, job_name)
-              @job_name = job_name
+          def initialize(job_networks, job_name)
+            @job_name = job_name
 
-              @static_ips_to_azs = []
-              job_networks.each do |job_network|
-                static_ips = job_network.static_ips if job_network.respond_to?(:static_ips) && job_network.static_ips
-                next unless static_ips
-                subnets = job_network.deployment_network.subnets
+            @static_ips_to_azs = []
+            job_networks.each do |job_network|
+              static_ips = job_network.static_ips if job_network.respond_to?(:static_ips) && job_network.static_ips
+              next unless static_ips
+              subnets = job_network.deployment_network.subnets
 
-                static_ips.each do |static_ip|
-                  subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
-                  if subnet_for_ip.nil?
-                    formatted_ip = NetAddr::CIDR.create(static_ip).ip
-                    raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{formatted_ip}' which belongs to no subnet"
-                  end
-                  unless subnet_for_ip.availability_zone_names.nil?
-                    zone_name = subnet_for_ip.availability_zone_names.first
-                    @static_ips_to_azs << StaticIPToAZ.new(zone_name, static_ip, job_network)
-                  end
+              static_ips.each do |static_ip|
+                subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
+                if subnet_for_ip.nil?
+                  formatted_ip = NetAddr::CIDR.create(static_ip).ip
+                  raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{formatted_ip}' which belongs to no subnet"
+                end
+                unless subnet_for_ip.availability_zone_names.nil?
+                  zone_name = subnet_for_ip.availability_zone_names.first
+                  @static_ips_to_azs << StaticIPToAZ.new(zone_name, static_ip, job_network)
                 end
               end
-
-              @static_ips_to_azs
             end
 
-            def validate_ips_are_in_desired_azs(desired_azs)
-              if desired_azs.nil? &&
-                @static_ips_to_azs.any? { |static_ip_to_az| !static_ip_to_az.az_name.nil? }
+            @static_ips_to_azs
+          end
 
-                raise JobInvalidAvailabilityZone,
-                  "Job '#{@job_name}' subnets declare availability zones and the job does not"
-              end
+          def validate_ips_are_in_desired_azs(desired_azs)
+            if desired_azs.nil? &&
+              @static_ips_to_azs.any? { |static_ip_to_az| !static_ip_to_az.az_name.nil? }
 
-              return if desired_azs.to_a.empty?
-
-              desired_az_names = desired_azs.to_a.map(&:name)
-              non_desired_ip_to_az = @static_ips_to_azs.find do |static_ip_to_az|
-                !desired_az_names.include?(static_ip_to_az.az_name)
-              end
-
-              if non_desired_ip_to_az
-                formatted_ip = NetAddr::CIDR.create(non_desired_ip_to_az.ip).ip
-
-                raise JobStaticIpsFromInvalidAvailabilityZone,
-                  "Job '#{@job_name}' declares static ip '#{formatted_ip}' which does not belong to any of the job's availability zones."
-              end
+              raise JobInvalidAvailabilityZone,
+                "Job '#{@job_name}' subnets declare availability zones and the job does not"
             end
 
-            def validate_even_ip_distribution
-              hash = {}
-              @static_ips_to_azs.each do |static_ip|
-                hash[static_ip.network.name] ||= {}
-                hash[static_ip.network.name][static_ip.az_name] ||= 0
-                hash[static_ip.network.name][static_ip.az_name] += 1
-              end
-              if hash.values.uniq.size > 1
-                raise Bosh::Director::JobNetworkInstanceIpMismatch,
+            return if desired_azs.to_a.empty?
+
+            desired_az_names = desired_azs.to_a.map(&:name)
+            non_desired_ip_to_az = @static_ips_to_azs.find do |static_ip_to_az|
+              !desired_az_names.include?(static_ip_to_az.az_name)
+            end
+
+            if non_desired_ip_to_az
+              formatted_ip = NetAddr::CIDR.create(non_desired_ip_to_az.ip).ip
+
+              raise JobStaticIpsFromInvalidAvailabilityZone,
+                "Job '#{@job_name}' declares static ip '#{formatted_ip}' which does not belong to any of the job's availability zones."
+            end
+          end
+
+          def validate_even_ip_distribution
+            hash = {}
+            @static_ips_to_azs.each do |static_ip|
+              hash[static_ip.network.name] ||= {}
+              hash[static_ip.network.name][static_ip.az_name] ||= 0
+              hash[static_ip.network.name][static_ip.az_name] += 1
+            end
+            if hash.values.uniq.size > 1
+              raise Bosh::Director::JobNetworkInstanceIpMismatch,
                 "Job '#{@job_name}' networks must declare the same number of static IPs per AZ in each network"
-              end
             end
+          end
 
-            def each(&block)
-              @static_ips_to_azs.each(&block)
-            end
+          def each(&block)
+            @static_ips_to_azs.each(&block)
+          end
 
-            def claim(static_ip)
-              @static_ips_to_azs.delete(static_ip)
-            end
+          def claim(static_ip)
+            @static_ips_to_azs.delete(static_ip)
+          end
 
-            def shift
-              @static_ips_to_azs.shift
-            end
+          def shift
+            @static_ips_to_azs.shift
           end
         end
       end
