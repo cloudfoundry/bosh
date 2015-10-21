@@ -20,18 +20,18 @@ module Bosh::Cli::Command
 
       disks_table = table do |table|
         table.headings = 'Disk CID',
+          'Size (MiB)',
           'Deployment Name',
           'Instance Name',
-          'Disk Size',
-          'Availability Zone',
+          'AZ',
           'Orphaned At'
 
         disks.each do |disk|
           table << [
             disk['disk_cid'],
+            disk['size'],
             disk['deployment_name'],
             disk['instance_name'],
-            disk['size'],
             disk['availability_zone'],
             disk['orphaned_at']
           ]
@@ -49,14 +49,14 @@ module Bosh::Cli::Command
 
       status, result = director.delete_orphan_disk(orphan_disk_cid)
 
-      task_report(status, result, "Deleted orphan disk #{orphan_disk_cid}")
+      task_report(status, result, "Deleted orphaned disk #{orphan_disk_cid}")
     end
 
     private
 
     def sort(disks)
       disks.sort do |a, b|
-        a['instance_name'].to_s <=> b['instance_name'].to_s
+        Time.parse(b['orphaned_at']).to_i <=> Time.parse(a['orphaned_at']).to_i
       end
     end
   end
