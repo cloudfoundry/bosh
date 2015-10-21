@@ -7,6 +7,7 @@ module Bosh
             placed_instances = PlacedDesiredInstances.new(desired_azs)
             networks_to_static_ips = NetworksToStaticIps.create(job_networks, job_name)
             networks_to_static_ips.validate_azs_are_declared_in_job_and_subnets(desired_azs)
+            networks_to_static_ips.validate_ips_are_in_desired_azs(desired_azs)
             desired_instances = desired_instances.dup
 
             instance_plans = []

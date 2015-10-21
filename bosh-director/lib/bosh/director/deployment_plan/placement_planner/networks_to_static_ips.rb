@@ -4,6 +4,7 @@ module Bosh
       module PlacementPlanner
         class NetworksToStaticIps
           extend Bosh::Director::IpUtil
+          include Bosh::Director::IpUtil
 
           def self.create(job_networks, job_name)
             networks_to_static_ips = {}
@@ -42,21 +43,21 @@ module Bosh
             end
           end
 
-          # def validate_ips_are_in_desired_azs(desired_azs)
-          #   return if desired_azs.to_a.empty?
-          #
-          #   desired_az_names = desired_azs.to_a.map(&:name)
-          #   non_desired_ip_to_az = @static_ips_to_azs.find do |static_ip_to_az|
-          #     !desired_az_names.include?(static_ip_to_az.az_name)
-          #   end
-          #
-          #   if non_desired_ip_to_az
-          #     formatted_ip = NetAddr::CIDR.create(non_desired_ip_to_az.ip).ip
-          #
-          #     raise JobStaticIpsFromInvalidAvailabilityZone,
-          #       "Job '#{@job_name}' declares static ip '#{formatted_ip}' which does not belong to any of the job's availability zones."
-          #   end
-          # end
+          def validate_ips_are_in_desired_azs(desired_azs)
+            return if desired_azs.to_a.empty?
+
+            desired_az_names = desired_azs.to_a.map(&:name)
+            @networks_to_static_ips.each do |_, static_ips_to_az|
+              non_desired_ip_to_az = static_ips_to_az.find do |static_ip_to_az|
+                !(desired_az_names - static_ip_to_az.az_names).empty?
+              end
+
+              if non_desired_ip_to_az
+                raise JobStaticIpsFromInvalidAvailabilityZone,
+                  "Job '#{@job_name}' declares static ip '#{format_ip(non_desired_ip_to_az.ip)}' which does not belong to any of the job's availability zones."
+              end
+            end
+          end
 
           def azs_to_networks
             result = {}

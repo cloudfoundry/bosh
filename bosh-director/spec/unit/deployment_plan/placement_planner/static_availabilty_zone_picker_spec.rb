@@ -299,12 +299,12 @@ module Bosh::Director::DeploymentPlan
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
           let(:job_availability_zones) { ['zone1'] }
 
-          xit 'should raise' do
+          it 'should raise' do
             expect{
               instance_plans
             }.to raise_error(
                 Bosh::Director::JobStaticIpsFromInvalidAvailabilityZone,
-                "Job 'jobname' declares static ip '192.168.2.10' which does not belong to any of the job's availability zones."
+                "Job 'fake-job' declares static ip '192.168.2.10' which does not belong to any of the job's availability zones."
               )
           end
         end
