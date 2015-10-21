@@ -25,6 +25,7 @@ module Bosh
             existing_instance_models.each do |existing_instance_model|
               instance_plan = nil
               job_networks.each do |network|
+                next unless network.static?
                 instance_ips_on_network = existing_instance_model.ip_addresses.select { |ip_address| network.static_ips.include?(ip_address.address) }
                 network_plan = nil
                 instance_ips_on_network.each do |instance_ip|
@@ -45,6 +46,7 @@ module Bosh
                       az = to_az(az_name, desired_azs)
                       placed_instances.record_placement(az, desired_instance, existing_instance_model)
                     end
+                    instance_plans << instance_plan
                   end
 
                   if network_plan.nil? && instance_plan.desired_instance
@@ -60,7 +62,6 @@ module Bosh
                 end
                 instance_plan.network_plans << network_plan if network_plan
               end
-              instance_plans << instance_plan unless instance_plan.nil?
             end
 
             existing_instance_models.each do |existing_instance_model|
@@ -77,17 +78,21 @@ module Bosh
 
             instance_plans.reject(&:obsolete?).each do |instance_plan|
               job_networks.each do |network|
-                unless instance_plan.network_plan_for_network(network.deployment_network)
-                  static_ip_with_azs = networks_to_static_ips.take_next_ip_for_network(network)
-                  unless static_ip_with_azs
-                    raise Bosh::Director::NetworkReservationError,
-                      'Failed to distribute static IPs to satisfy existing instance reservations'
-                  end
+                if network.static?
+                  unless instance_plan.network_plan_for_network(network.deployment_network)
+                    static_ip_with_azs = networks_to_static_ips.take_next_ip_for_network(network)
+                    unless static_ip_with_azs
+                      raise Bosh::Director::NetworkReservationError,
+                        'Failed to distribute static IPs to satisfy existing instance reservations'
+                    end
 
-                  instance_plan.network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_with_azs.ip)
-                  az_name = static_ip_with_azs.az_names.first
-                  az = to_az(az_name, desired_azs)
-                  placed_instances.record_placement(az, instance_plan.desired_instance, instance_plan.existing_instance)
+                    instance_plan.network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_with_azs.ip)
+                    az_name = static_ip_with_azs.az_names.first
+                    az = to_az(az_name, desired_azs)
+                    placed_instances.record_placement(az, instance_plan.desired_instance, instance_plan.existing_instance)
+                  end
+                else
+                  instance_plan.network_plans << create_dynamic_network_plan(instance_plan, network)
                 end
               end
             end
@@ -101,24 +106,25 @@ module Bosh
 
             desired_instances.each do |desired_instance|
               instance_plan = create_new_instance_plan(desired_instance)
-              network_plans = []
               az_name = nil
 
               job_networks.each do |network|
-                if az_name.nil?
-                  static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(network)
-                  az_name = static_ip_to_azs.az_names.first
-                else
-                  static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network_and_az(network, az_name)
-                end
+                if network.static?
+                  if az_name.nil?
+                    static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(network)
+                    az_name = static_ip_to_azs.az_names.first
+                  else
+                    static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network_and_az(network, az_name)
+                  end
 
-                network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_to_azs.ip)
+                  instance_plan.network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_to_azs.ip)
+                else
+                  instance_plan.network_plans << create_dynamic_network_plan(instance_plan, network)
+                end
               end
 
               az = to_az(az_name, desired_azs)
               placed_instances.record_placement(az, desired_instance, nil)
-
-              instance_plan.network_plans = network_plans
               instance_plans << instance_plan
             end
             instance_plans
@@ -150,6 +156,11 @@ module Bosh
 
           def create_network_plan_with_ip(instance_plan, job_network, static_ip)
             reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_plan.instance, job_network.deployment_network, static_ip)
+            NetworkPlanner::Plan.new(reservation: reservation)
+          end
+
+          def create_dynamic_network_plan(instance_plan, job_network)
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_plan.instance, job_network.deployment_network)
             NetworkPlanner::Plan.new(reservation: reservation)
           end
         end

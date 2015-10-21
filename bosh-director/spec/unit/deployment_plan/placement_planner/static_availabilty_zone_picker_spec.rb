@@ -643,7 +643,6 @@ module Bosh::Director::DeploymentPlan
 
           context 'when instance IPs do not match at all' do
             let(:desired_instance_count) { 2 }
-
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.5.10', '10.10.5.10']),
@@ -668,8 +667,35 @@ module Bosh::Director::DeploymentPlan
             end
           end
 
-          context 'when some networks have static ips' do
+          context 'when some networks do not have static ips' do
+            let(:desired_instance_count) { 2 }
+            let(:job_networks) do
+              [
+                {'name' => 'a', 'static_ips' => a_static_ips, 'default' => ['dns', 'gateway']},
+                {'name' => 'b'}
+              ]
+            end
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
+              ]
+            end
+            let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11'] }
 
+            it 'creates network plans with dynamic reservations on network without static IP' do
+              expect(new_instance_plans.size).to eq(1)
+              expect(new_instance_plans[0].desired_instance.az.name).to eq('zone1')
+
+              expect(new_instance_plans[0].network_plans.map(&:reservation).find(&:static?).ip).to eq(ip_to_i('192.168.1.11'))
+              expect(new_instance_plans[0].network_plans.map(&:reservation).select(&:dynamic?).size).to eq(1)
+
+              expect(obsolete_instance_plans).to eq([])
+
+              expect(existing_instance_plans.size).to eq(1)
+              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+              expect(existing_instance_plans[0].network_plans.map(&:reservation).find(&:static?).ip).to eq(ip_to_i('192.168.1.10'))
+              expect(existing_instance_plans[0].network_plans.map(&:reservation).select(&:dynamic?).size).to eq(1)
+            end
           end
 
           context 'when subnet specifies several AZs' do

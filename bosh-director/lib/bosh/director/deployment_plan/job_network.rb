@@ -18,6 +18,10 @@ module Bosh::Director
         @default_for
       end
 
+      def static?
+        !!@static_ips
+      end
+
       def default_for?(property)
         properties_for_which_the_network_is_the_default.include?(property)
       end

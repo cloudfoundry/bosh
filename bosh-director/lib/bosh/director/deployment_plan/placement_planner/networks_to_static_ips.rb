@@ -9,11 +9,10 @@ module Bosh
             networks_to_static_ips = {}
 
             job_networks.each do |job_network|
-              static_ips = job_network.static_ips if job_network.respond_to?(:static_ips) && job_network.static_ips
-              next unless static_ips
+              next unless job_network.static?
               subnets = job_network.deployment_network.subnets
 
-              static_ips.each do |static_ip|
+              job_network.static_ips.each do |static_ip|
                 subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
                 if subnet_for_ip.nil?
                   raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{format_ip(static_ip)}' which belongs to no subnet"
