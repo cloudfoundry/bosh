@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
         {'name' => 'b',
           'subnets' => [
             make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], ['zone1']),
-            make_subnet_spec('10.10.2.0/24', ['10.10.2.10'], ['zone2']),
+            make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], ['zone2']),
           ]
         }
       ]
@@ -392,11 +392,12 @@ module Bosh::Director::DeploymentPlan
               [
                 {'name' => 'a',
                   'subnets' => [
-                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone2', 'zone1']),
+                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], new_subnet_azs),
                   ]
                 }
               ]
             end
+            let(:new_subnet_azs) { ['zone2', 'zone1'] }
             let(:static_ips) { ['192.168.1.10'] }
             let(:existing_instances) { [existing_instance_with_az_and_ips('zone1', ['192.168.1.10'])] }
 
@@ -409,38 +410,173 @@ module Bosh::Director::DeploymentPlan
             end
 
             context 'when AZ to which instance belongs is removed' do
-              it 'reuses instance with new AZ from same subnet'
+              let(:new_subnet_azs) { ['zone2'] }
+              let(:job_availability_zones) { ['zone2'] }
+
+              it 'reuses instance with new AZ from same subnet' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(1)
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              end
             end
           end
         end
 
         context 'with multiple networks' do
           context 'when all networks have static ips' do
-            context 'when all existing instances match specified static ips' do
-              it 'reuses existing instances' do
+            let(:desired_instance_count) { 4 }
+            let(:job_networks) do
+              [
+                {'name' => 'a', 'static_ips' => a_static_ips, 'default' => ['dns', 'gateway']},
+                {'name' => 'b', 'static_ips' => b_static_ips}
+              ]
+            end
+            let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10 -192.168.2.11'] }
+            let(:b_static_ips) { ['10.10.1.10 - 10.10.1.11', '10.10.2.10 - 10.10.2.11'] }
 
+            context 'when all existing instances match specified static ips' do
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
+                ]
+              end
+
+              it 'reuses existing instances' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(4)
+
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                )
+
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                )
+
+                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')]
+                )
+
+                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                )
               end
             end
 
-            context 'when some existing instances have IPs that are different from static IPs' do
-              it 'keeps instances that match static IPs, and assigns new static IPs to instances with different IPs' do
+            context 'when some existing instances have IPs that are different from job static IPs' do
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.14', '10.10.2.14']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.14', '10.10.1.14']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
+                ]
+              end
 
+              let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10 -192.168.2.11'] }
+              let(:b_static_ips) { ['10.10.1.10', '10.10.1.12', '10.10.2.10 - 10.10.2.11'] }
+
+              it 'keeps instances that match static IPs, and assigns new static IPs to instances with different IPs' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(4)
+
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  )
+
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
+                  )
+
+                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                  )
+
+                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                  )
               end
             end
 
             context 'when existing instances have static IP on different AZ' do
-              it 'keeps instances with static IPs but moves them to different AZs' do
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone2', ['192.168.1.10', '10.10.1.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.1.11', '10.10.1.11']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.2.10', '10.10.2.10']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
+                ]
+              end
 
+              it 'keeps instances with static IPs but moves them to different AZs' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(4)
+
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  )
+
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')]
+                  )
+
+                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                  )
+
+                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                  )
               end
             end
 
             context 'when existing instance static IPs no longer belong to one AZ' do
-              it 'keeps static IP in the same AZ and picks new IP from same AZ' do
+              let(:desired_instance_count) { 1 }
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10'])
+                ]
+              end
+              let(:a_static_ips) { ['192.168.1.10'] }
+              let(:b_static_ips) { ['10.10.1.10'] }
 
+              it 'keeps static IP in the same AZ and picks new IP from same AZ' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(1)
+
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                    [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  )
               end
 
               context 'when increasing number of instances' do
                 it 'creates new instance without taking old IP of existing instance' do
+
+                end
+
+                it 'creates new instances in AZ with least instances' do
 
                 end
               end
@@ -451,6 +587,10 @@ module Bosh::Director::DeploymentPlan
                 end
               end
             end
+          end
+
+          context 'when instance IPs do not match completely' do
+            it 'puts that instance in AZ with least number of instances'
           end
 
           context 'when some networks have static ips' do
