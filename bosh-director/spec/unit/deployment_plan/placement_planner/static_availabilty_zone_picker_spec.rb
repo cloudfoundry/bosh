@@ -425,14 +425,15 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'with multiple networks' do
+          let(:desired_instance_count) { 4 }
+          let(:job_networks) do
+            [
+              {'name' => 'a', 'static_ips' => a_static_ips, 'default' => ['dns', 'gateway']},
+              {'name' => 'b', 'static_ips' => b_static_ips}
+            ]
+          end
+
           context 'when all networks have static ips' do
-            let(:desired_instance_count) { 4 }
-            let(:job_networks) do
-              [
-                {'name' => 'a', 'static_ips' => a_static_ips, 'default' => ['dns', 'gateway']},
-                {'name' => 'b', 'static_ips' => b_static_ips}
-              ]
-            end
             let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10 -192.168.2.11'] }
             let(:b_static_ips) { ['10.10.1.10 - 10.10.1.11', '10.10.2.10 - 10.10.2.11'] }
 
@@ -614,6 +615,7 @@ module Bosh::Director::DeploymentPlan
                   ])
 
                   expect(obsolete_instance_plans.size).to eq(1)
+                  expect(obsolete_instance_plans.first.existing_instance).to eq(existing_instances[1])
                 end
               end
             end
@@ -639,8 +641,31 @@ module Bosh::Director::DeploymentPlan
             end
           end
 
-          context 'when instance IPs do not match completely' do
-            it 'puts that instance in AZ with least number of instances'
+          context 'when instance IPs do not match at all' do
+            let(:desired_instance_count) { 2 }
+
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['192.168.5.10', '10.10.5.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.6.10', '10.10.6.11'])
+              ]
+            end
+            let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
+            let(:b_static_ips) { ['10.10.1.10', '10.10.2.10'] }
+
+            it 'puts that instance in AZ with least number of instances' do
+              expect(new_instance_plans).to eq([])
+              expect(existing_instance_plans.size).to eq(2)
+              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+              expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                )
+
+              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+              expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
+                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                )
+            end
           end
 
           context 'when some networks have static ips' do
