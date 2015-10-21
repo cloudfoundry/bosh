@@ -6,15 +6,16 @@ module Bosh::Director::DeploymentPlan
 
     subject(:zone_picker) { PlacementPlanner::StaticAvailabilityZonePicker2.new }
     def make_subnet_spec(range, static_ips, zone_names)
-      {
+      spec = {
         'range' => range,
         'gateway' => NetAddr::CIDR.create(range)[1].ip,
         'dns' => ['8.8.8.8'],
         'static' => static_ips,
         'reserved' => [],
         'cloud_properties' => {},
-        'availability_zones' => zone_names
       }
+      spec['availability_zones'] = zone_names if zone_names
+      spec
     end
     let(:networks_spec) do
       [
@@ -101,17 +102,28 @@ module Bosh::Director::DeploymentPlan
         let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
 
         context 'when the subnets and the jobs do not specify availability zones' do
+          let(:networks_spec) do
+            [
+              {'name' => 'a',
+                'subnets' => [
+                  make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], nil),
+                  make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil),
+                ]
+              },
+              {'name' => 'b',
+                'subnets' => [
+                  make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], nil),
+                  make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil),
+                ]
+              }
+            ]
+          end
           before do
-            cloud_config_hash['networks'].each do |entry|
-              entry['subnets'].each { |subnet| subnet.delete('availability_zone') }
-            end
             manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
           end
 
-          xit 'does not assign AZs' do
-            results = zone_picker.place_and_match_in(job.availability_zones, job.networks, desired_instances, existing_instances, 'jobname')
-
-            expect(needed.map(&:az)).to eq([nil, nil, nil])
+          it 'does not assign AZs' do
+            expect(instance_plans.map(&:desired_instance).map(&:az)).to eq([nil, nil, nil])
           end
         end
 
@@ -120,12 +132,12 @@ module Bosh::Director::DeploymentPlan
             manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
           end
 
-          xit 'raises' do
+          it 'raises' do
             expect {
-              results.inspect
+              instance_plans
             }.to raise_error(
                 Bosh::Director::JobInvalidAvailabilityZone,
-                "Job 'jobname' subnets declare availability zones and the job does not"
+                "Job 'fake-job' subnets declare availability zones and the job does not"
               )
           end
         end
@@ -696,20 +708,6 @@ module Bosh::Director::DeploymentPlan
               expect(existing_instance_plans[0].network_plans.map(&:reservation).find(&:static?).ip).to eq(ip_to_i('192.168.1.10'))
               expect(existing_instance_plans[0].network_plans.map(&:reservation).select(&:dynamic?).size).to eq(1)
             end
-          end
-
-          context 'when subnet specifies several AZs' do
-
-          end
-        end
-
-        context 'when there are more existing instances than desired instances' do
-          it 'creates obsolete instance plans'
-        end
-
-        context 'when there are more desired instance than existing instances' do
-          it 'prefers AZs for desired instances that do not have existing instances' do
-
           end
         end
 

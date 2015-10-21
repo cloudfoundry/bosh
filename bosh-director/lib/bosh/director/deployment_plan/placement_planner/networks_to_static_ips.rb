@@ -17,10 +17,9 @@ module Bosh
                 if subnet_for_ip.nil?
                   raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{format_ip(static_ip)}' which belongs to no subnet"
                 end
-                unless subnet_for_ip.availability_zone_names.nil?
-                  networks_to_static_ips[job_network.name] ||= []
-                  networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, subnet_for_ip.availability_zone_names)
-                end
+                az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
+                networks_to_static_ips[job_network.name] ||= []
+                networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, az_names)
               end
             end
 
@@ -31,6 +30,33 @@ module Bosh
             @networks_to_static_ips = networks_to_static_ips
             @job_name = job_name
           end
+
+          def validate_azs_are_declared_in_job_and_subnets(desired_azs)
+            if desired_azs.nil? &&
+              @networks_to_static_ips.any? do |_, static_ips_to_az|
+                static_ips_to_az.any? { |static_ip_to_az| !static_ip_to_az.az_names.any?(&:nil?) }
+              end
+
+              raise JobInvalidAvailabilityZone,
+                "Job '#{@job_name}' subnets declare availability zones and the job does not"
+            end
+          end
+
+          # def validate_ips_are_in_desired_azs(desired_azs)
+          #   return if desired_azs.to_a.empty?
+          #
+          #   desired_az_names = desired_azs.to_a.map(&:name)
+          #   non_desired_ip_to_az = @static_ips_to_azs.find do |static_ip_to_az|
+          #     !desired_az_names.include?(static_ip_to_az.az_name)
+          #   end
+          #
+          #   if non_desired_ip_to_az
+          #     formatted_ip = NetAddr::CIDR.create(non_desired_ip_to_az.ip).ip
+          #
+          #     raise JobStaticIpsFromInvalidAvailabilityZone,
+          #       "Job '#{@job_name}' declares static ip '#{formatted_ip}' which does not belong to any of the job's availability zones."
+          #   end
+          # end
 
           def azs_to_networks
             result = {}
