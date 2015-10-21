@@ -387,16 +387,31 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when subnet specifies several AZs (static IP belongs to several AZs)' do
+            let(:desired_instance_count) { 1 }
+            let(:networks_spec) do
+              [
+                {'name' => 'a',
+                  'subnets' => [
+                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone2', 'zone1']),
+                  ]
+                }
+              ]
+            end
+            let(:static_ips) { ['192.168.1.10'] }
+            let(:existing_instances) { [existing_instance_with_az_and_ips('zone1', ['192.168.1.10'])] }
+
             it 'reuses AZ that existing instance with static IP belongs to' do
-              # switch the order of azs in static IPs
+              expect(new_instance_plans).to eq([])
+              expect(obsolete_instance_plans).to eq([])
+              expect(existing_instance_plans.size).to eq(1)
+              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+              expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
             end
 
             context 'when AZ to which instance belongs is removed' do
               it 'reuses instance with new AZ from same subnet'
             end
           end
-
-          context 'when there is a mix of static and dynamic IPs'
         end
 
         context 'with multiple networks' do
@@ -443,6 +458,16 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when subnet specifies several AZs' do
+
+          end
+        end
+
+        context 'when there are more existing instances than desired instances' do
+          it 'creates obsolete instance plans'
+        end
+
+        context 'when there are more desired instance than existing instances' do
+          it 'prefers AZs for desired instances that do not have existing instances' do
 
           end
         end

@@ -36,7 +36,12 @@ module Bosh
                       # TODO: fail, there are more static IPs on existing instances than desired instances
                     end
                     instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
-                    az_name = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names.first
+                    ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
+                    if ip_az_names.include?(existing_instance_model.availability_zone)
+                      az_name = existing_instance_model.availability_zone
+                    else
+                      az_name = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names.first
+                    end
                     az = to_az(az_name, desired_azs)
                     placed_instances.record_placement(az, desired_instance, existing_instance_model)
                   end
