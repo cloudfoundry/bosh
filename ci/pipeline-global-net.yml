@@ -100,12 +100,7 @@ jobs:
     plan:
     - get: bosh-src
       trigger: true
-      passed:
-      - unit-1.9
-      - unit-2.1
-      - integration-2.1-postgres
-      - integration-2.1-mysql
-      - integration-1.9-postgres
+      passed: [start-job]
     - get: bosh-load-tests
     - task: test
       privileged: true
