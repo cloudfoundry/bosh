@@ -37,7 +37,6 @@ module Bosh::Director
         elsif problem.deployment_id != @deployment.id
           reason = 'not a part of this deployment'
           track_and_log("Ignoring problem #{problem.id} (#{reason})")
-
         else
           apply_resolution(problem)
         end
@@ -56,20 +55,25 @@ module Bosh::Director
       resolution_summary = handler.resolution_plan(resolution)
       resolution_summary ||= "no resolution"
 
+      handler_error = nil
       begin
         track_and_log("#{problem_summary}: #{resolution_summary}") do
           handler.apply_resolution(resolution)
         end
       rescue Bosh::Director::ProblemHandlerError => e
+        handler_error = e
         log_resolution_error(problem, e)
+        raise e
       end
 
       problem.state = "resolved"
       problem.save
       @resolved_count += 1
-
     rescue => e
-      log_resolution_error(problem, e)
+      if e != handler_error
+        log_resolution_error(problem, e)
+      end
+      raise e
     end
 
     private

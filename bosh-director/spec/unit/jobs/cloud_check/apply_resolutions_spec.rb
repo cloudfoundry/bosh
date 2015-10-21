@@ -17,7 +17,7 @@ module Bosh::Director
     let(:resolutions) { {1 => 'delete_disk', 2 => 'ignore'} }
     let(:normalized_resolutions) { {'1' => 'delete_disk', '2' => 'ignore'} }
     let(:job) { described_class.new('deployment', resolutions) }
-    let(:resolver) { instance_double('Bosh::Director::ProblemResolver') }
+    let(:resolver) { Bosh::Director::ProblemResolver.new(deployment) }
     let(:deployment) { Models::Deployment[1] }
 
     it 'should normalize the problem ids' do
@@ -42,6 +42,24 @@ module Bosh::Director
       expect(resolver).to receive(:apply_resolutions).and_return(1)
 
       expect(job.perform).to eq('1 resolved')
+    end
+
+    context 'when there are exceptions handling the problems' do
+      it 'bubbles the exceptions' do
+        disk = Models::PersistentDisk.make(:active => false)
+        problem = inactive_disk(disk.id)
+
+        expect(resolver).to receive(:apply_resolution)
+          .with(instance_of(Models::DeploymentProblem)).and_raise(Bosh::Director::ProblemHandlerError)
+        expect { job.perform }.to raise_error(Bosh::Director::ProblemHandlerError)
+      end
+    end
+
+    def inactive_disk(id, deployment_id = nil)
+      Models::DeploymentProblem.make(deployment_id: deployment.id,
+                                     resource_id: id,
+                                     type: 'inactive_disk',
+                                     state: 'open')
     end
   end
 end
