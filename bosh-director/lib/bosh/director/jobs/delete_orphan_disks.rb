@@ -31,13 +31,7 @@ module Bosh::Director
           @orphan_disk_cids.each do |orphan_disk_cid|
             pool.process do
               event_log.track("Deleting orphaned disk #{orphan_disk_cid}") do
-                begin
-                  @disk_manager.delete_orphan_disk(orphan_disk_cid)
-                rescue Bosh::Clouds::DiskNotFound
-                  event_log.log_entry({
-                      message: 'Disk Not Found in IaaS'
-                    })
-                end
+                @disk_manager.delete_orphan_disk(orphan_disk_cid)
               end
             end
           end

@@ -49,27 +49,6 @@ module Bosh::Director
         end
       end
 
-      context 'when deleting a disk that has already been deleted' do
-        it 'logs the error to the event log and returns the result' do
-          allow(cloud).to receive(:delete_disk).twice.and_raise(Bosh::Clouds::DiskNotFound.new(false))
-          expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 1)
-          allow(event_log).to receive(:log_entry)
-
-          expect(event_log).to receive(:log_entry) do |entry_hash|
-            expect(entry_hash.values).to include 'Deleting orphaned disk fake-cid-1'
-          end
-
-          expect(event_log).to receive(:log_entry) do |entry_hash|
-            expect(entry_hash.values).to include 'Disk Not Found in IaaS'
-          end
-
-          delete_orphan_disks = Jobs::DeleteOrphanDisks.new(['fake-cid-1'])
-          result = delete_orphan_disks.perform
-
-          expect(result).to eq('orphaned disk(s) fake-cid-1 deleted')
-        end
-      end
-
       context 'when director was unable to delete a disk' do
         it 're-raises the error' do
           allow(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))

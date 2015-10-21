@@ -373,14 +373,21 @@ module Bosh::Director
         expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
       end
 
+      context 'when user accidentally tries to delete an non-existent disk' do
+        it 'raises DiskNotFound AND continues to delete the remaining disks' do
+          expect(logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
+
+          subject.delete_orphan_disk('non_existing_orphan_disk_cid')
+        end
+      end
+
       context 'when disk is not found in the cloud' do
-        it 'raises DiskNotFound so that event logger can log it AND continues to delete the remaining disks' do
+        it 'logs the error to the debug log AND continues to delete the remaining disks' do
           allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
 
-          expect {
-            subject.delete_orphan_disk(orphan_disk_cid_1)
-          }.to raise_error Bosh::Clouds::DiskNotFound
+          expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
 
+          subject.delete_orphan_disk(orphan_disk_cid_1)
           expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
         end
       end

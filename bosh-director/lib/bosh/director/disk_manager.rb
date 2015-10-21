@@ -89,11 +89,12 @@ module Bosh::Director
         begin
           @cloud.delete_disk(orphan_disk.disk_cid)
           orphan_disk.destroy
-        rescue Bosh::Clouds::DiskNotFound => e
-          @logger.debug("Disk not found: #{orphan_disk.disk_cid}")
+        rescue Bosh::Clouds::DiskNotFound
+          @logger.debug("Disk not found in IaaS: #{orphan_disk.disk_cid}")
           orphan_disk.destroy
-          raise e
         end
+      else
+        @logger.debug("Disk not found: #{disk_cid}")
       end
     end
 
