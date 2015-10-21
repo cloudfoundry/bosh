@@ -496,19 +496,19 @@ module Bosh::Director::DeploymentPlan
                     [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
                   )
 
-                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
+                    [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
                   )
 
-                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
                   )
 
                 expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
                   )
               end
             end
@@ -594,8 +594,26 @@ module Bosh::Director::DeploymentPlan
               end
 
               context 'when decreasing number of instances (number of static IPs is also decreased)' do
-                it 'deletes instances with associated static ips' do
+                let(:desired_instance_count) { 2 }
+                let(:existing_instances) do
+                  [
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10'])
+                  ]
+                end
+                let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
+                let(:b_static_ips) { ['10.10.1.10', '10.10.2.10'] }
 
+                it 'deletes instances with associated static ips' do
+                  expect(new_instance_plans).to eq([])
+                  expect(existing_instance_plans.size).to eq(2)
+                  expect(existing_instance_plans.map(&:existing_instance)).to match_array([
+                    existing_instances[0],
+                    existing_instances[2]
+                  ])
+
+                  expect(obsolete_instance_plans.size).to eq(1)
                 end
               end
             end

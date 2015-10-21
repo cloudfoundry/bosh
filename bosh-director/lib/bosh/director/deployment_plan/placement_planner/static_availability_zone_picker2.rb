@@ -33,20 +33,21 @@ module Bosh
                   if instance_plan.nil?
                     desired_instance = desired_instances.shift
                     if desired_instance.nil?
-                      # TODO: fail, there are more static IPs on existing instances than desired instances
-                    end
-                    instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
-                    ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
-                    if ip_az_names.include?(existing_instance_model.availability_zone)
-                      az_name = existing_instance_model.availability_zone
+                      instance_plan = create_obsolete_instance_plan(existing_instance_model)
                     else
-                      az_name = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names.first
+                      instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
+                      ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
+                      if ip_az_names.include?(existing_instance_model.availability_zone)
+                        az_name = existing_instance_model.availability_zone
+                      else
+                        az_name = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names.first
+                      end
+                      az = to_az(az_name, desired_azs)
+                      placed_instances.record_placement(az, desired_instance, existing_instance_model)
                     end
-                    az = to_az(az_name, desired_azs)
-                    placed_instances.record_placement(az, desired_instance, existing_instance_model)
                   end
 
-                  if network_plan.nil?
+                  if network_plan.nil? && instance_plan.desired_instance
                     instance_az_name = instance_plan.desired_instance.az.name
                     ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
                     if ip_az_names.include?(instance_az_name)
@@ -59,20 +60,22 @@ module Bosh
                 end
                 instance_plan.network_plans << network_plan if network_plan
               end
+              instance_plans << instance_plan unless instance_plan.nil?
+            end
 
-              if instance_plan.nil?
+            existing_instance_models.each do |existing_instance_model|
+              unless instance_plans.map(&:existing_instance).include?(existing_instance_model)
                 desired_instance = desired_instances.shift
                 if desired_instance.nil?
-                  # TODO: mark as obsolete
+                  instance_plan = create_obsolete_instance_plan(existing_instance_model)
                 else
                   instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
                 end
+                instance_plans << instance_plan
               end
-
-              instance_plans << instance_plan
             end
 
-            instance_plans.each do |instance_plan|
+            instance_plans.reject(&:obsolete?).each do |instance_plan|
               job_networks.each do |network|
                 unless instance_plan.network_plan_for_network(network.deployment_network)
                   static_ip_with_azs = networks_to_static_ips.take_next_ip_for_network(network)
@@ -125,6 +128,14 @@ module Bosh
             InstancePlan.new(
               desired_instance: desired_instance,
               existing_instance: nil,
+              instance: nil
+            )
+          end
+
+          def create_obsolete_instance_plan(existing_instance_model)
+            InstancePlan.new(
+              desired_instance: nil,
+              existing_instance: existing_instance_model,
               instance: nil
             )
           end
