@@ -147,17 +147,18 @@ module Bosh::Director
       def apply_vm_state
         @logger.info('Applying VM state')
 
-        state = apply_spec
-        @model.vm.update(:apply_spec => state)
-        agent_client.apply(state)
+        @current_state = apply_spec
+        agent_client.apply(@current_state)
         agent_state = agent_client.get_state
-        @current_state = state
+
         unless agent_state.nil?
           @current_state['configuration_hash'] = agent_state['configuration_hash']
 
-          #director needs the Vm's IP for dynamic network
+          #director needs the VM's IP for dynamic network
           @current_state['networks'] = agent_state['networks']
         end
+
+        @model.vm.update(:apply_spec => @current_state)
       end
 
       def update_trusted_certs

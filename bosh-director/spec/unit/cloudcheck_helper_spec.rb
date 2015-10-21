@@ -14,20 +14,24 @@ module Bosh::Director
         action { recreate_vm(@vm) }
       end
     end
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
+
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => "name-1") }
     let(:vm) do
       Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
     end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, vm.id, {}) }
     let(:fake_cloud) { instance_double('Bosh::Cloud') }
-    let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
-    before { allow(VmDeleter).to receive(:new).and_return(vm_deleter) }
-
-    let(:vm_creator) { instance_double(Bosh::Director::VmCreator) }
-    before { allow(VmCreator).to receive(:new).and_return(vm_creator) }
-
-    before { allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent_client) }
+    let(:vm_deleter) { Bosh::Director::VmDeleter.new(fake_cloud, logger) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(fake_cloud, logger, vm_deleter, nil) }
     let(:agent_client) { instance_double(AgentClient) }
+
+    before do
+      allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent_client)
+      allow(VmDeleter).to receive(:new).and_return(vm_deleter)
+      allow(VmCreator).to receive(:new).and_return(vm_creator)
+      allow(fake_cloud).to receive(:create_vm)
+      allow(fake_cloud).to receive(:delete_vm)
+    end
 
     def fake_job_context
       test_problem_handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
@@ -122,11 +126,13 @@ module Bosh::Director
           }
         end
         let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
-
+        let(:dns_manager) { instance_double(DnsManager) }
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           vm.update(apply_spec: spec, env: {'key1' => 'value1'})
           allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
+
+          allow(DnsManager).to receive(:create).and_return(dns_manager)
         end
 
         it 'recreates the VM' do
@@ -144,12 +150,15 @@ module Bosh::Director
             expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
             expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
             expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
-
-            vm
           end
 
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
+
+          expect(dns_manager).to receive(:dns_record_name).with(0, "mysql_node", "ip", "name-1").and_return("index.record.name")
+          expect(dns_manager).to receive(:dns_record_name).with(vm.instance.uuid, "mysql_node", "ip", "name-1").and_return("uuid.record.name")
+          expect(dns_manager).to receive(:update_dns_record_for_instance).with(vm.instance, {"index.record.name"=>nil, "uuid.record.name"=>nil})
+          expect(dns_manager).to receive(:flush_dns_cache)
 
           test_problem_handler.apply_resolution(:recreate_vm)
         end

@@ -74,8 +74,9 @@ module Bosh::Director
       @disk_manager.attach_disks_for(instance)
 
       if instance_plan.existing_instance && instance_plan.needs_recreate?
-        instance_plan.existing_instance.vm.update(apply_spec: existing_apply_spec)
         agent_client.apply(existing_apply_spec)
+        agent_state = agent_client.get_state
+        instance_plan.existing_instance.vm.update(apply_spec: agent_state)
       else
         instance.apply_vm_state
       end

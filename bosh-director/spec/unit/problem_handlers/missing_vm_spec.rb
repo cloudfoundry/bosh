@@ -16,9 +16,10 @@ module Bosh::Director
           'name' => 'stemcell-name',
           'version' => '3.0.2'
         },
-        'networks' => ['A', 'B', 'C']
+        'networks' => networks
       }
     end
+    let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
     it 'registers under missing_vm type' do
       expect(handler).to be_kind_of(described_class)
@@ -54,13 +55,14 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered
         expect(fake_new_agent).to receive(:apply).with(spec).ordered
+        expect(fake_new_agent).to receive(:get_state).and_return(spec).ordered
         expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
         expect(fake_new_agent).to receive(:start).ordered
 
         expect(fake_cloud).to receive(:delete_vm).with('vm-cid')
         expect(fake_cloud).
           to receive(:create_vm).
-          with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' }).
+          with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], { 'key1' => 'value1' }).
           and_return(vm.cid)
 
         fake_job_context

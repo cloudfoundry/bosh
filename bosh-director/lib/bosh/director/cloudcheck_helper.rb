@@ -13,38 +13,6 @@ module Bosh::Director
     # still be pretty generous interval for agent to respond.
     DEFAULT_AGENT_TIMEOUT = 10
 
-    def cloud
-      Bosh::Director::Config.cloud
-    end
-
-    def handler_error(message)
-      raise Bosh::Director::ProblemHandlerError, message
-    end
-
-    def instance_name(vm)
-      instance = vm.instance
-      return "Unknown VM" if instance.nil?
-
-      job = instance.job || "unknown job"
-      index = instance.index || "unknown index"
-      "#{job}/#{index}"
-    end
-
-    def agent_client(vm, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
-      options = {
-        :timeout => timeout,
-        :retry_methods => { :get_state => retries }
-      }
-      @clients ||= {}
-      @clients[vm.agent_id] ||= AgentClient.with_vm(vm, options)
-    end
-
-    def agent_timeout_guard(vm, &block)
-      yield agent_client(vm)
-    rescue Bosh::Director::RpcTimeout
-      handler_error("VM `#{vm.cid}' is not responding")
-    end
-
     def reboot_vm(vm)
       cloud.reboot_vm(vm.cid)
       begin
@@ -150,6 +118,20 @@ module Bosh::Director
         Array(instance_model.persistent_disk_cid)
       )
 
+      dns_manager = DnsManager.create
+      dns_names_to_ip = {}
+
+      instance_plan_to_create.existing_instance.vm.apply_spec['networks'].each do |network_name, network|
+        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, deployment_model.name)
+        dns_names_to_ip[index_dns_name] = network['ip']
+        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, deployment_model.name)
+        dns_names_to_ip[id_dns_name] = network['ip']
+      end
+
+      @logger.debug("Updating DNS record for instance: #{instance_from_model.model.inspect}; to: #{dns_names_to_ip.inspect}")
+      dns_manager.update_dns_record_for_instance(instance_from_model.model, dns_names_to_ip)
+      dns_manager.flush_dns_cache
+
       if instance_model.state == 'started'
         agent_client(instance_model.vm).run_script('pre-start', {})
         agent_client(instance_model.vm).start
@@ -157,6 +139,38 @@ module Bosh::Director
     end
 
     private
+
+    def cloud
+      Bosh::Director::Config.cloud
+    end
+
+    def handler_error(message)
+      raise Bosh::Director::ProblemHandlerError, message
+    end
+
+    def instance_name(vm)
+      instance = vm.instance
+      return "Unknown VM" if instance.nil?
+
+      job = instance.job || "unknown job"
+      index = instance.index || "unknown index"
+      "#{job}/#{index}"
+    end
+
+    def agent_client(vm, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
+      options = {
+        :timeout => timeout,
+        :retry_methods => { :get_state => retries }
+      }
+      @clients ||= {}
+      @clients[vm.agent_id] ||= AgentClient.with_vm(vm, options)
+    end
+
+    def agent_timeout_guard(vm, &block)
+      yield agent_client(vm)
+    rescue Bosh::Director::RpcTimeout
+      handler_error("VM `#{vm.cid}' is not responding")
+    end
 
     def vm_deleter
       @vm_deleter ||= VmDeleter.new(cloud, @logger)

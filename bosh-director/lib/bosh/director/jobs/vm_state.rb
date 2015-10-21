@@ -41,28 +41,28 @@ module Bosh::Director
         begin
           agent = AgentClient.with_vm(vm, :timeout => TIMEOUT)
           agent_state = agent.get_state(@format)
-          agent_state["networks"].each_value do |network|
-            ips << network["ip"]
+          agent_state['networks'].each_value do |network|
+            ips << network['ip']
           end
 
-          job_state = agent_state["job_state"]
-          if agent_state["resource_pool"]
-            resource_pool = agent_state["resource_pool"]["name"]
+          job_state = agent_state['job_state']
+          if agent_state['resource_pool']
+            resource_pool = agent_state['resource_pool']['name']
           end
-          if agent_state["vitals"]
-            job_vitals = agent_state["vitals"]
+          if agent_state['vitals']
+            job_vitals = agent_state['vitals']
           end
-          processes = agent_state["processes"] if agent_state["processes"]
+          processes = agent_state['processes'] if agent_state['processes']
         rescue Bosh::Director::RpcTimeout
-          job_state = "unresponsive agent"
+          job_state = 'unresponsive agent'
         end
 
         if dns_manager.dns_enabled?
           ips.each do |ip|
-            dns_records << dns_manager.find_dns_records_by_ip(ip).map(&:name)
+            dns_records << dns_manager.find_dns_records_by_ip_and_instance(ip, vm.instance).map(&:name)
           end
           dns_records.flatten!
-          dns_records.sort_by! { |name| -name.split('.').first.length }
+          dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
         vm_apply_spec = vm.apply_spec
@@ -90,7 +90,7 @@ module Bosh::Director
       private
 
       def get_index(agent_state)
-        index = agent_state["index"]
+        index = agent_state['index']
 
         # Postgres cannot coerce an empty string to integer, and fails on Models::Instance.find
         index = nil if index.is_a?(String) && index.empty?

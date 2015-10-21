@@ -19,14 +19,16 @@ module Bosh::Director
 
     before(:each) do
       @cloud = instance_double('Bosh::Cloud')
-      @agent = double('agent')
+      @agent = double(Bosh::Director::AgentClient)
       allow(Config).to receive(:cloud).and_return(@cloud)
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
 
-      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model, apply_spec: {'networks' => ['A', 'B', 'C']})
+      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model, apply_spec: {'networks' => networks})
       @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm: @vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
     end
+
+    let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
     let :handler do
       make_handler(@vm, @cloud, @agent)
@@ -107,7 +109,7 @@ module Bosh::Director
               'name' => 'stemcell-name',
               'version' => '3.0.2'
             },
-            'networks' => ['A', 'B', 'C']
+            'networks' => networks
           }
         end
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
@@ -125,11 +127,12 @@ module Bosh::Director
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], { 'key1' => 'value1' })
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
           expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:get_state).and_return(spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 

@@ -38,8 +38,17 @@ module Bosh::Director
       @dns_provider.find_dns_record(dns_record_name, ip_address)
     end
 
-    def find_dns_records_by_ip(ip_address)
-      @dns_provider.find_dns_records_by_ip(ip_address)
+    def find_dns_records_by_ip_and_instance(ip_address, instance_model)
+    #this becomes instance_model.ip_addresses
+      if instance_model
+        dns_records_by_ip = @dns_provider.find_dns_records_by_ip(ip_address)
+        dns_records_by_ip.to_a.select{ |record|
+          @logger.debug("checking for record, #{record.name.inspect}, in #{instance_model.dns_record_names.inspect}")
+          instance_model.dns_record_names.include? record.name
+        }
+      else
+        @dns_provider.find_dns_records_by_ip(ip_address)
+      end
     end
 
     def update_dns_record_for_instance(instance_model, dns_names_to_ip)

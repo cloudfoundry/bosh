@@ -252,11 +252,17 @@ module Bosh::Director::DeploymentPlan
             'persistent_disk' => 0
           }
 
-          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
           expect(agent_client).to receive(:apply).with(state).ordered
 
-          returned_state = state.merge('configuration_hash' => 'fake-old-configuration-hash')
-          expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
+          expected_model_state = state.merge({
+            'configuration_hash' => 'changed',
+            'networks' => {'changed' => {}},
+          })
+          get_state_hash = expected_model_state.merge({
+            'other' => 'stuff that should be ignored',
+          })
+          expect(agent_client).to receive(:get_state).and_return(get_state_hash).ordered
+          expect(vm_model).to receive(:update).with(apply_spec: expected_model_state).ordered
         end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do

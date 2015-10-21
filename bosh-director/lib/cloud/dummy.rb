@@ -62,6 +62,7 @@ module Bosh
           env: Hash,
         }
       end
+
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
         # rubocop:enable ParameterLists
