@@ -10,7 +10,7 @@ module Bosh::Director
       allow(Config).to receive(:cloud).and_return(@cloud)
     end
 
-    def make_job(deployment)
+    def make_resolver(deployment)
       ProblemResolver.new(deployment)
     end
 
@@ -39,9 +39,9 @@ module Bosh::Director
         problems << inactive_disk(disk.id)
       end
 
-      job = make_job(@deployment)
+      resolver = make_resolver(@deployment)
 
-      expect(job.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq(2)
+      expect(resolver.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq(2)
 
       expect(Models::PersistentDisk.find(id: disks[0].id)).to be_nil
       expect(Models::PersistentDisk.find(id: disks[1].id)).not_to be_nil
@@ -58,14 +58,14 @@ module Bosh::Director
         inactive_disk(disks[2].id, @other_deployment.id)
       ]
 
-      job1 = make_job(@deployment)
-      expect(job1.apply_resolutions({ problems[0].id.to_s => 'ignore', problems[1].id.to_s => 'ignore' })).to eq(2)
+      resolver1 = make_resolver(@deployment)
+      expect(resolver1.apply_resolutions({ problems[0].id.to_s => 'ignore', problems[1].id.to_s => 'ignore' })).to eq(2)
 
-      job2 = make_job(@deployment)
+      resolver2 = make_resolver(@deployment)
 
       messages = []
-      expect(job2).to receive(:track_and_log).exactly(3).times { |message| messages << message }
-      job2.apply_resolutions({
+      expect(resolver2).to receive(:track_and_log).exactly(3).times { |message| messages << message }
+      resolver2.apply_resolutions({
                                problems[0].id.to_s => 'ignore',
                                problems[1].id.to_s => 'ignore',
                                problems[2].id.to_s => 'ignore',
@@ -78,6 +78,20 @@ module Bosh::Director
         "Ignoring problem #{problems[1].id} (state is 'resolved')",
         "Ignoring problem #{problems[2].id} (not a part of this deployment)",
       ])
+    end
+
+    it 'receives error logs' do
+      backtrace = anything
+      disk = Models::PersistentDisk.make(:active => false)
+      problem = inactive_disk(disk.id)
+      resolver = make_resolver(@deployment)
+
+      expect(resolver).to receive(:track_and_log)
+        .and_raise(Bosh::Director::ProblemHandlerError)
+      expect(logger).to receive(:error).with("Error resolving problem `1': Bosh::Director::ProblemHandlerError")
+      expect(logger).to receive(:error).with(backtrace)
+
+      expect(resolver.apply_resolutions({ problem.id.to_s => 'ignore' })).to eq(1)
     end
   end
 end
