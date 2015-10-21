@@ -9,6 +9,19 @@ module Bosh
             desired_instances = desired_instances.dup
 
             instance_plans = []
+            instance_plans += place_existing_instance_plans(desired_instances, existing_instance_models, job_networks, networks_to_static_ips, placed_instances, desired_azs)
+            instance_plans += place_new_instance_plans(desired_instances, job_networks, networks_to_static_ips, placed_instances, desired_azs)
+            instance_plans
+          end
+
+          private
+
+          def to_az(az_name, desired_azs)
+            desired_azs.to_a.find { |az| az.name == az_name }
+          end
+
+          def place_existing_instance_plans(desired_instances, existing_instance_models, job_networks, networks_to_static_ips, placed_instances, desired_azs)
+            instance_plans = []
             existing_instance_models.each do |existing_instance_model|
               instance_plan = nil
               job_networks.each do |network|
@@ -66,15 +79,7 @@ module Bosh
               end
             end
 
-
-            instance_plans += place_new_instance_plans(desired_instances, job_networks, networks_to_static_ips, placed_instances, desired_azs)
             instance_plans
-          end
-
-          private
-
-          def to_az(az_name, desired_azs)
-            desired_azs.to_a.find { |az| az.name == az_name }
           end
 
           def place_new_instance_plans(desired_instances, job_networks, networks_to_static_ips, placed_instances, desired_azs)
