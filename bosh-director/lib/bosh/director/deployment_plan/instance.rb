@@ -42,13 +42,12 @@ module Bosh::Director
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, state, deployment, instance_state, availability_zone, bootstrap, logger)
+      def initialize(job, index, state, deployment, instance_state, availability_zone, logger)
         @job = job
         @index = index
         @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
-        @bootstrap = bootstrap
         @name = "#{@job.name}/#{@index}"
 
         @configuration_hash = nil
@@ -64,7 +63,7 @@ module Bosh::Director
       end
 
       def bootstrap?
-        @bootstrap
+        @model && @model.bootstrap
       end
 
       def job_name
@@ -97,8 +96,7 @@ module Bosh::Director
             state: @state,
             compilation: job.compilation?,
             uuid: SecureRandom.uuid,
-            availability_zone: availability_zone_name,
-            bootstrap: bootstrap?
+            bootstrap: false
           })
         @uuid = @model.uuid
       end
@@ -235,7 +233,20 @@ module Bosh::Director
       end
 
       def update_description
-        @model.update(job: job_name, index: index, bootstrap: bootstrap?)
+        @model.update(job: job_name, index: index)
+      end
+
+      def mark_as_bootstrap
+        @model.update(bootstrap: true)
+      end
+
+      def unmark_as_bootstrap
+        @model.update(bootstrap: false)
+      end
+
+      def assign_availability_zone(availability_zone)
+        @availability_zone = availability_zone
+        @model.update(availability_zone: availability_zone_name)
       end
 
       ##
@@ -296,7 +307,7 @@ module Bosh::Director
           'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
-          'bootstrap' => @bootstrap,
+          'bootstrap' => bootstrap?,
           'id' => uuid,
           'availability_zone' => availability_zone_name,
           'networks' => network_settings.to_hash,

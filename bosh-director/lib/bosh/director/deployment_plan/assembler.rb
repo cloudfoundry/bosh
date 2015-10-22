@@ -24,16 +24,18 @@ module Bosh::Director
         bind_job_renames
 
         instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
-        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(@logger, instance_repo, @deployment_plan.skip_drain, {'recreate' => @deployment_plan.recreate})
+        states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
+        index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new
+        instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, {'recreate' => @deployment_plan.recreate})
+        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
         desired_jobs = @deployment_plan.jobs
 
-        states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
         job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
         desired_jobs.each do |desired_job|
           desired_instances = desired_job.desired_instances
-          existing_instances_with_azs = job_migrator.find_existing_instances(desired_job)
-          instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances_with_azs, states_by_existing_instance)
+          existing_instances = job_migrator.find_existing_instances(desired_job)
+          instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
           desired_job.add_instance_plans(instance_plans)
         end
 

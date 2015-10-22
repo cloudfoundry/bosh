@@ -19,20 +19,6 @@ module Bosh::Director::DeploymentPlan
         @logger.debug("Creating new static reservation #{reservation} for instance '#{instance_plan.instance}'")
         Plan.new(reservation: reservation)
       end
-
-      def try_to_create_existing_network_plan(instance_plan, job_network)
-        return nil unless job_network.static_ips
-
-        existing_network_reservation = instance_plan.find_existing_reservation_for_network(job_network.deployment_network)
-        return nil unless existing_network_reservation
-
-        static_ip = @static_ip_repo.try_to_claim_ip(job_network, existing_network_reservation.ip)
-        return nil unless static_ip
-
-        reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_plan.instance, job_network.deployment_network, static_ip)
-        @logger.debug("Creating existing reservation #{reservation} for instance '#{instance_plan.instance}'")
-        Plan.new(reservation: reservation, existing: true)
-      end
     end
   end
 end

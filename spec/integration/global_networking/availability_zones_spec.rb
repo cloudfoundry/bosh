@@ -320,21 +320,20 @@ describe 'availability zones', type: :integration do
 
       context 'when static IP moves to another AZ' do
         it 'recreates VM in new AZ' do
-          skip 'Changing subnet availability zones is not supported'
           cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
 
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
           simple_manifest['jobs'].first['instances'] = 1
           simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
-          simple_manifest['jobs'].first['availability_zones'] = ['my-az2']
+          simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
 
           original_vm = director.vms[0]
           expect(original_vm.availability_zone).to eq('my-az2')
 
-          cloud_config_hash['networks'].first['subnets'][0]['availabilty_zone'] = 'my-az2'
-          cloud_config_hash['networks'].first['subnets'][1]['availabilty_zone'] = 'my-az'
+          cloud_config_hash['networks'].first['subnets'][0]['availability_zone'] = 'my-az2'
+          cloud_config_hash['networks'].first['subnets'][1]['availability_zone'] = 'my-az'
 
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
           deploy_simple_manifest(manifest_hash: simple_manifest)

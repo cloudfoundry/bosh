@@ -3,6 +3,10 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class StaticAvailabilityZonePicker2
+          def initialize(instance_plan_factory)
+            @instance_plan_factory = instance_plan_factory
+          end
+
           def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_models, job_name)
             networks_to_static_ips = NetworksToStaticIps.create(job_networks, job_name)
             networks_to_static_ips.validate_azs_are_declared_in_job_and_subnets(desired_azs)
@@ -17,9 +21,8 @@ module Bosh
 
           private
 
-          def assign_desired_az(az_name, desired_instance, desired_azs)
-            az = desired_azs.to_a.find { |az| az.name == az_name }
-            desired_instance.az = az
+          def to_az(az_name, desired_azs)
+            desired_azs.to_a.find { |az| az.name == az_name }
           end
 
           def place_existing_instance_plans(desired_instances, existing_instance_models, job_networks, networks_to_static_ips, desired_azs)
@@ -79,7 +82,7 @@ module Bosh
 
                     instance_plan.network_plans << create_network_plan_with_ip(instance_plan, network, static_ip_with_azs.ip)
                     az_name = static_ip_with_azs.az_names.first
-                    assign_desired_az(az_name, instance_plan.desired_instance, desired_azs)
+                    instance_plan.desired_instance.az = to_az(az_name, desired_azs)
                   end
                 else
                   instance_plan.network_plans << create_dynamic_network_plan(instance_plan, network)
@@ -113,7 +116,7 @@ module Bosh
                 end
               end
 
-              assign_desired_az(az_name, desired_instance, desired_azs)
+              desired_instance.az = to_az(az_name, desired_azs)
               instance_plans << instance_plan
             end
             instance_plans
@@ -131,32 +134,20 @@ module Bosh
             else
               az_name = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names.first
             end
-            assign_desired_az(az_name, desired_instance, desired_azs)
+            desired_instance.az = to_az(az_name, desired_azs)
             instance_plan
           end
 
           def create_new_instance_plan(desired_instance)
-            InstancePlan.new(
-              desired_instance: desired_instance,
-              existing_instance: nil,
-              instance: nil
-            )
+            @instance_plan_factory.desired_new_instance_plan(desired_instance)
           end
 
           def create_obsolete_instance_plan(existing_instance_model)
-            InstancePlan.new(
-              desired_instance: nil,
-              existing_instance: existing_instance_model,
-              instance: nil
-            )
+            @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           end
 
           def create_desired_existing_instance_plan(desired_instance, existing_instance_model)
-            InstancePlan.new(
-              desired_instance: desired_instance,
-              existing_instance: existing_instance_model,
-              instance: nil
-            )
+            @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
           end
 
           def create_network_plan_with_ip(instance_plan, job_network, static_ip)

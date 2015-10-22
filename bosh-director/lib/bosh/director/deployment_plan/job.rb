@@ -324,13 +324,6 @@ module Bosh::Director
 
         needed_instance_plans.each do |instance_plan|
           networks.each do |network|
-            network_plan = network_planner.try_to_create_existing_network_plan(instance_plan, network)
-            instance_plan.network_plans << network_plan if network_plan
-          end
-        end
-
-        needed_instance_plans.each do |instance_plan|
-          networks.each do |network|
             unless instance_plan.network_plan_for_network(network.deployment_network)
               if network.static_ips
                 instance_plan.network_plans << network_planner.network_plan_with_static_reservation(instance_plan, network)

@@ -6,10 +6,6 @@ module Bosh
           "<DesiredInstance az=#{self.az ? self.az.name : nil} index=#{self.index}>"
         end
 
-        def bootstrap?
-          !!@bootstrap
-        end
-
         def state
           # Expanding virtual states
           case virtual_state
@@ -20,10 +16,6 @@ module Bosh
             else
               virtual_state
           end
-        end
-
-        def mark_as_bootstrap
-          @bootstrap = true
         end
 
         def availability_zone

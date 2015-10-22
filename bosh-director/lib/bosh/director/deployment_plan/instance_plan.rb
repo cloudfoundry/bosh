@@ -43,7 +43,6 @@ module Bosh
           @changes << :job if instance.job_changed?
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
-          @changes << :bootstrap if bootstrap_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
           @changes
         end
@@ -77,10 +76,6 @@ module Bosh
           else
             @desired_instance.virtual_state == 'recreate'
           end
-        end
-
-        def bootstrap_changed?
-          existing_instance.nil? || desired_instance.bootstrap? != existing_instance.bootstrap
         end
 
         def networks_changed?
@@ -140,6 +135,10 @@ module Bosh
 
         def new?
           existing_instance.nil?
+        end
+
+        def existing?
+          !new? && !obsolete?
         end
 
         def network_settings
