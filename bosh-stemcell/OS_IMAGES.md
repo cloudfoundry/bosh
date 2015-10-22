@@ -10,6 +10,18 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 * `.4y0e8CHJ4a3mZ3VPpKPAFW3OKxnRmrv`
   - add bosh_sudoers group
 
+* `8LbjKPGE07yEeDNp7RkIRe6xdDI3Jre.`
+  - yanked
+
+* `7DQf.gOqy.oQcPBa19sgcbOHcvi458La`
+  - yanked
+
+* `L8DtBIngBPbziIOl9UZoyAocxGiUfpdL`
+  - yanked
+
+* `Ry5gW034s1xK65YcBEdmuL.ermC3iiE7`
+  - yanked
+
 * `t4kWs38oNti4vRrKE9xicElzLb4wCTBm`
   - update kernel for USN-2778-1
 
@@ -271,6 +283,18 @@ CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
 * `2QbANNOEHcpvZeegGUwTOTRRkZ08vHmS`
   - add bosh_sudoers group
+
+* `X7Rvv6Mnv3SsHTXXhjqJlK7PimaKgCfy`
+  - yanked
+
+* `gFr4O0SWv4cQZe8ivJ7W8pb8dC_cahOi`
+  - yanked
+
+* `1G6GOeAS0ktBhdHhcZhd3rsH3bh7yRh0`
+  - yanked
+
+* `TZTJLOEg4z4wGJXSqaHY3fEdu8yWtK.o`
+  - yanked
 
 * `60DupjHdE2ef85pZN86s7UfHhNQp1plk`
   - (periodic) bump centos to match ubuntu update
