@@ -127,21 +127,6 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when job does not specify azs and the subnets do' do
-          before do
-            manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
-          end
-
-          it 'raises' do
-            expect {
-              instance_plans
-            }.to raise_error(
-                Bosh::Director::JobInvalidAvailabilityZone,
-                "Job 'fake-job' subnets declare availability zones and the job does not"
-              )
-          end
-        end
-
         context 'when the job specifies a single network with all static IPs from a single AZ' do
           let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
 
@@ -292,20 +277,6 @@ module Bosh::Director::DeploymentPlan
             expect(network_plans['d']).to match_array(['64.8.1.10', '64.8.2.10', '64.8.3.10', '64.8.3.11'])
 
             expect(new_instance_plans.map(&:desired_instance).map(&:az).map(&:name)).to match_array(['z1', 'z2', 'z3', 'z4'])
-          end
-        end
-
-        context 'when the job specifies a static ip that is not in the list of job desired azs' do
-          let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
-          let(:job_availability_zones) { ['zone1'] }
-
-          it 'should raise' do
-            expect{
-              instance_plans
-            }.to raise_error(
-                Bosh::Director::JobStaticIpsFromInvalidAvailabilityZone,
-                "Job 'fake-job' declares static ip '192.168.2.10' which does not belong to any of the job's availability zones."
-              )
           end
         end
 

@@ -99,8 +99,6 @@ module Bosh
             @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.ip == ip }
           end
 
-          private
-
           class StaticIpToAzs < Struct.new(:ip, :az_names); end
         end
       end
