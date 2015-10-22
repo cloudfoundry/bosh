@@ -104,6 +104,13 @@ properties:
   director.user_management.local.users:
     description: 'List of users that can authenticate with director in non-Uaa mode'
 
+  # Default SSH Gateway Settings
+  director.default_ssh_options.gateway_host:
+    description: 'Default host to use as ssh gateway with bosh ssh command'
+  director.default_ssh_options.gateway_user:
+    description: 'Default user to use with bosh ssh command'
+    default: vcap
+
   redis.address:
     description: Address of the redis server
   redis.port:
@@ -270,34 +277,6 @@ properties:
   compiled_package_cache.options.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
-  compiled_package_cache.options.swift_provider:
-    description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
-  compiled_package_cache.options.container_name:
-    description: Name of the container
-  compiled_package_cache.options.hp_access_key:
-    description: HP Object Storage Access Key
-  compiled_package_cache.options.hp_secret_key:
-    description: HP Object Storage Secret Key
-  compiled_package_cache.options.hp_tenant_id:
-    description: HP Object Storage Project ID
-  compiled_package_cache.options.hp_avl_zone:
-    description: HP Object Storage Availability Zone (region-a.geo-1 or region-b.geo-1)
-  compiled_package_cache.options.openstack_auth_url:
-    description: URL of the OpenStack Identity endpoint to connect to
-  compiled_package_cache.options.openstack_username:
-    description: OpenStack user name
-  compiled_package_cache.options.openstack_api_key:
-    description: OpenStack API key
-  compiled_package_cache.options.openstack_tenant:
-    description: OpenStack tenant name
-  compiled_package_cache.options.openstack_region:
-    description: OpenStack region (optional)
-  compiled_package_cache.options.rackspace_username:
-    description: Rackspace Cloud Files Username
-  compiled_package_cache.options.rackspace_api_key:
-    description: Rackspace Cloud Files API Key
-  compiled_package_cache.options.rackspace_region:
-    description: Rackspace Cloud Files Region (optional, dfw or ord)
 
   ntp:
     description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
@@ -391,9 +370,11 @@ properties:
   openstack.api_key:
     description: OpenStack API key
   openstack.tenant:
-    description: OpenStack tenant name
+    description: OpenStack tenant name (required for Keystone API version 2)
+  openstack.project:
+    description: OpenStack project name (required for Keystone API version 3)
   openstack.domain:
-    description: OpenStack domain (optional)
+    description: OpenStack domain (required for Keystone API version 3)
   openstack.region:
     description: OpenStack region (optional)
   openstack.endpoint_type:

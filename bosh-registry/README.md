@@ -67,16 +67,18 @@ These are the credentials to connect to AWS services:
 
 These are the credentials to connect to OpenStack services:
 
-* `auth_url` (required)
+* `auth_url` (required, either API version 2 or version 3)
   URL of the OpenStack Identity endpoint to connect to
 * `username` (required)
   OpenStack user name
 * `api_key` (required)
   OpenStack API key
-* `tenant` (required)
+* `tenant` (required for API version 2)
   OpenStack tenant name
-* `domain` (optional)
-  OpenStack domain
+* `project` (required for API version 3)
+  OpenStack project name
+* `domain` (required for API version 3)
+  OpenStack domain name
 * `region` (optional)
   OpenStack region
 * `endpoint_type` (optional)

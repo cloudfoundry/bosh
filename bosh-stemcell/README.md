@@ -123,8 +123,7 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 ### Building the stemcell with published OS image
 
-Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh artifacts](http://bosh_artifacts.cfapps.io).
-The final two arguments are the S3 bucket and key for the OS image to use, which can be found by reading the OS\_IMAGES document in this project.
+Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh.io/stemcells](https://bosh.io/stemcells). The final two arguments are the S3 bucket and key for the OS image to use, which can be found by reading the OS\_IMAGES document in this project.
 
     vagrant ssh -c '
       cd /bosh
@@ -157,6 +156,8 @@ AWS stemcells can be shipped in light format which includes a reference to a pub
     ' remote
 
 To build for specific region specify `BOSH_AWS_REGION` environment variable.
+
+NOTE: to build a stemcell for the AWS HVM virtualization type, you must build a light stemcell.
 
 ### When things go sideways
 

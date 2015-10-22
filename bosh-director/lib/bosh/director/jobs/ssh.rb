@@ -45,6 +45,11 @@ module Bosh::Director
           result = agent.ssh(@command, @params)
           result["index"] = instance.index
 
+          if Config.default_ssh_options
+            result["gateway_host"] = Config.default_ssh_options["gateway_host"]
+            result["gateway_user"] = Config.default_ssh_options["gateway_user"]
+          end
+
           result
         end
 

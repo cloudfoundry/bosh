@@ -1,5 +1,10 @@
 # Steps for High-Priority, "Hotfix" Releases
 
+## Important!!!:
+
+- Do not kick off another Jenkins pipeline build (off of the `candidate` branch)
+  until the changes from the steps below have made it through the Concourse pipeline.
+
 ## If there are no code changes
 
 (only kernel and/or package updates)...
@@ -38,7 +43,6 @@
 - [ ] 4. Follow steps 3-5 above (if there are no OS changes, you can probably skip steps 3 & 4)
 - [ ] 5. Follow step 6 above, but `git rm ci/pipeline-hotfix-STORY_ID.yml` before pushing `develop`
 
-## Important!!!:
+## Edge-case: If second image was built consecutively off of `develop`
 
-- Do not kick off another Jenkins pipeline build (off of the `candidate` branch)
-  until all changes from above have made it through the Concourse pipeline.
+Once the hotfix build has made it through the pipeline and is therefore merged to `develop`, build a third image off of `develop`, wait for the relevant changes (to `OS_IMAGES.md` and `os_image_versions.json`) to go through Concourse, and finally kick off another Jenkins build.

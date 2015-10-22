@@ -45,6 +45,8 @@ module Bosh::Director
       @resolved_count
     end
 
+    private
+
     def apply_resolution(problem)
       handler = ProblemHandlers::Base.create_from_model(problem)
       handler.job = self

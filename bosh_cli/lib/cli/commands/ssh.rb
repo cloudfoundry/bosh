@@ -15,6 +15,8 @@ module Bosh::Cli
              'Use default ssh password (NOT RECOMMENDED)'
       option '--strict_host_key_checking <yes/no>',
              'Can use this flag to skip host key checking (NOT RECOMMENDED)'
+      option '--no_gateway',
+             'Ignore gateway provided by the director'
 
       def shell(*args)
         if args.size > 0
@@ -46,6 +48,8 @@ module Bosh::Cli
       option '--gateway_host HOST', 'Gateway host'
       option '--gateway_user USER', 'Gateway user'
       option '--gateway_identity_file FILE', 'Gateway identity file'
+      option '--no_gateway',
+             'Ignore gateway provided by the director'
 
       def scp(*args)
         job, index, args = JobCommandArgs.new(args).to_a
@@ -138,10 +142,11 @@ module Bosh::Cli
         ssh_session.set_host_session(sessions.first)
 
         begin
-          if options[:gateway_host]
+          if options[:gateway_host] || (!options[:no_gateway] &&
+              sessions.first["gateway_host"])
             require 'net/ssh/gateway'
-            gw_host    = options[:gateway_host]
-            gw_user    = options[:gateway_user] || ENV['USER']
+            gw_host    = options[:gateway_host] || sessions.first["gateway_host"]
+            gw_user    = options[:gateway_user] || sessions.first["gateway_user"] || ENV['USER']
             gw_options = {}
             gw_options[:keys] = [options[:gateway_identity_file]] if options[:gateway_identity_file]
             begin
@@ -167,15 +172,7 @@ module Bosh::Cli
       # @param [String] job Job name
       # @param [Integer] index Job index
       def setup_interactive_shell(deployment_name, job, index)
-        password = options[:default_password]
-
-        if password.nil?
-          password = ask(
-            'Enter password (use it to ' +
-              'sudo on remote host): ') { |q| q.echo = '*' }
-
-          err('Please provide ssh password') if password.blank?
-        end
+        password = options[:default_password] || ''
 
         setup_ssh(deployment_name, job, index, password) do |sessions, gateway, ssh_session|
           session = sessions.first
@@ -206,7 +203,9 @@ module Bosh::Cli
       end
 
       def perform_operation(operation, deployment_name, job, index, args)
-        setup_ssh(deployment_name, job, index, options[:default_password]) do |sessions, gateway, ssh_session|
+        password = options[:default_password] || ''
+
+        setup_ssh(deployment_name, job, index, password) do |sessions, gateway, ssh_session|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
