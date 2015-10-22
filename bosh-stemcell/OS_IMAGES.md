@@ -7,8 +7,8 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `Lr3ymjhDCX5Oc5hyg.uii1WclfQzAsRF`
-  - add bosh_sudoers group
+* `t4kWs38oNti4vRrKE9xicElzLb4wCTBm`
+  - update kernel for USN-2778-1
 
 * `HU9BVWuGxWwoxJ2jOJYKqDRTjwh419Ig`
   - update kernel for USN-2765-1
@@ -20,7 +20,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - update kernel for USN-2751-1
 
 * `Z2u8KpEbHMXu1sYd1lI1VC_RPZGGSYoz`
-   - add package for growpart command
+  - add package for growpart command
 
 * `07SVLfhlpQJWWKphcELs9MV2pwgs1n3y`
   - update ubuntu for FreeType vulnerabilities for USN-2739-1
@@ -75,7 +75,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - update unattended-upgrades to 0.82.1ubuntu2.3
 
 * `DRT11QyZUb3Y.tbS00W3QgAQ_lWMhVYJ`
-  update python to version python3.4 amd64 3.4.0-2ubuntu1.1
+  - update python to version python3.4 amd64 3.4.0-2ubuntu1.1
 
 * `xLfl7rZVgkXKijjY11rSOGk.AJ8KcmEV`
   - update kernel to 3.16.0-41-generic 3.16.0-41.57~14.04.1
@@ -266,14 +266,14 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
-* `PSeYc72JzURKT28wUkaZBuWoPGpK0QPb`
-  - add bosh_sudoers group
-  
+* `60DupjHdE2ef85pZN86s7UfHhNQp1plk`
+  - (periodic) bump centos to match ubuntu update
+
 * `3YJSMiU5nD07NEAN8wFJ6uya5XH7WriY`
   - update centos to match ubuntu update for USN-2739-1
 
 * `43zhprNWRQoYBhDBVkJm6uAocH0IBgLw`
-   - add package for growpart command
+  - add package for growpart command
 
 * `upXZonWLgbjXkN1VKg5W560cFsQ.D3J9`
   - symlink /var/run to /run
