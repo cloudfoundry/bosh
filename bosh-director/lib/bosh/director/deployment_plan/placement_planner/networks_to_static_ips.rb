@@ -49,7 +49,7 @@ module Bosh
             desired_az_names = desired_azs.to_a.map(&:name)
             @networks_to_static_ips.each do |_, static_ips_to_az|
               non_desired_ip_to_az = static_ips_to_az.find do |static_ip_to_az|
-                !(desired_az_names - static_ip_to_az.az_names).empty?
+                !(static_ip_to_az.az_names - desired_az_names).empty?
               end
 
               if non_desired_ip_to_az

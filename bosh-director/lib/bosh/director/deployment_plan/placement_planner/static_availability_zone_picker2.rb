@@ -52,7 +52,8 @@ module Bosh
                   end
 
                   if network_plan.nil? && instance_plan.desired_instance
-                    instance_az_name = instance_plan.desired_instance.az.name
+                    instance_az = instance_plan.desired_instance.az
+                    instance_az_name = instance_az.nil? ? nil : instance_az.name
                     ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
                     if ip_az_names.include?(instance_az_name)
                       network_plan = create_network_plan_with_ip(instance_plan, network, ip_address)

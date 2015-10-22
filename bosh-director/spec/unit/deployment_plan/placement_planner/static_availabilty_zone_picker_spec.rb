@@ -651,6 +651,58 @@ module Bosh::Director::DeploymentPlan
                     'Failed to distribute static IPs to satisfy existing instance reservations'
               end
             end
+
+            context 'when job does not specify availability_zones' do
+              let(:networks_spec) do
+                [
+                  {'name' => 'a',
+                    'subnets' => [
+                      make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], nil),
+                      make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil),
+                    ]
+                  },
+                  {'name' => 'b',
+                    'subnets' => [
+                      make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], nil),
+                      make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil),
+                    ]
+                  }
+                ]
+              end
+
+              before do
+                manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
+              end
+
+              context 'when existing instances do not have AZs' do
+                let(:desired_instance_count) { 2 }
+                let(:existing_instances) do
+                  [
+                    existing_instance_with_az_and_ips(nil, ['192.168.1.10', '10.10.1.10']),
+                    existing_instance_with_az_and_ips(nil, ['192.168.2.10', '10.10.2.11'])
+                  ]
+                end
+                let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
+                let(:b_static_ips) { ['10.10.1.10', '10.10.2.10'] }
+
+                it 'does not assign AZs' do
+                  expect(existing_instance_plans.map(&:desired_instance).map(&:az)).to eq([nil, nil])
+                end
+              end
+
+              context 'when existing instances have AZs' do
+                let(:existing_instances) do
+                  [
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11'])
+                  ]
+                end
+
+                it 'removes AZs from existing instances' do
+                  expect(existing_instance_plans.map(&:desired_instance).map(&:az)).to eq([nil, nil])
+                end
+              end
+            end
           end
 
           context 'when instance IPs do not match at all' do
@@ -709,10 +761,6 @@ module Bosh::Director::DeploymentPlan
               expect(existing_instance_plans[0].network_plans.map(&:reservation).select(&:dynamic?).size).to eq(1)
             end
           end
-        end
-
-        context 'when job does not specify availability_zones' do
-
         end
       end
     end
