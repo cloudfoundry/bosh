@@ -3,6 +3,10 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class AvailabilityZonePicker
+          def initialize(instance_plan_factory)
+            @instance_plan_factory = instance_plan_factory
+          end
+
           def place_and_match_in(desired_azs, desired_instances, existing_instance_models)
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_models)
             desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
@@ -11,11 +15,9 @@ module Bosh
             remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs_sorted, desired_instances, placed_instances, unplaced_existing_instances)
             balance_across_desired_azs(remaining_desired_instances, placed_instances, unplaced_existing_instances)
 
-            {
-              desired_new: placed_instances.absent,
-              desired_existing: placed_instances.existing,
-              obsolete: unplaced_existing_instances.unclaimed,
-            }
+            obsolete_instance_plans(unplaced_existing_instances.unclaimed) +
+              desired_existing_instance_plans(placed_instances.existing) +
+              desired_new_instance_plans(placed_instances.absent)
           end
 
           private
@@ -40,6 +42,27 @@ module Bosh
               az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
               existing_instance = unplaced_existing_instances.claim_instance_for_az(az)
               placed_instances.record_placement(az, desired_instance, existing_instance)
+            end
+          end
+
+          def obsolete_instance_plans(obsolete_instances)
+            obsolete_instances.map do |existing_instance|
+              @instance_plan_factory.obsolete_instance_plan(existing_instance)
+            end
+          end
+
+          def desired_existing_instance_plans(desired_existing_instances)
+            desired_existing_instances.map do |desired_existing_instance|
+              @instance_plan_factory.desired_existing_instance_plan(
+                desired_existing_instance[:existing_instance_model],
+                desired_existing_instance[:desired_instance]
+              )
+            end
+          end
+
+          def desired_new_instance_plans(new_desired_instances)
+            new_desired_instances.map do |desired_instance|
+              @instance_plan_factory.desired_new_instance_plan(desired_instance)
             end
           end
         end
