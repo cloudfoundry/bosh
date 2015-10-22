@@ -15,8 +15,8 @@ module Bosh::Director::DeploymentPlan
       reservation.resolve_ip('192.168.1.3')
       reservation
     }
-    let(:network_plan) { NetworkPlanner::Plan.new(reservation: reservation) }
-    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: [network_plan]) }
+    let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+    let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
     let(:existing_instance) { instance_model }
 
     let(:job_spec) do
@@ -43,17 +43,83 @@ module Bosh::Director::DeploymentPlan
       plan
     end
 
+    let(:network_settings) { { 'obsolete' => 'network'} }
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
-      instance_model.vm.apply_spec=({'vm_type' => 'name', 'networks' => { 'obsolete' => 'network'}, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
+      instance_model.vm.apply_spec=({'vm_type' => 'name', 'networks' => network_settings, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end
 
+    describe 'networks_changed?' do
+      context 'when there are instance plan has network plans' do
+        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network) }
+        let(:network_plans) {[
+         NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+         NetworkPlanner::Plan.new(reservation: reservation)
+        ]}
+        let(:network_settings) do
+          {
+            'existing-network' =>{
+              'type' => 'dynamic',
+              'cloud_properties' =>{},
+              'dns' => '10.0.0.1',
+              'dns_record_name' => '1.foobar.existing-network.simple.bosh'
+            },
+            'obsolete-network' =>{
+              'type' => 'dynamic',
+              'cloud_properties' =>{},
+              'dns' => '10.0.0.1',
+              'dns_record_name' => '1.foobar.obsolete-network.simple.bosh'
+            }
+          }
+        end
+
+        it 'should return true' do
+          expect(instance_plan.networks_changed?).to be_truthy
+        end
+
+        it 'should log the changes' do
+          new_network_settings = {
+            'existing-network' =>{
+              'type' => 'dynamic',
+              'cloud_properties' =>{},
+              'dns' => '10.0.0.1',
+              'dns_record_name' => '1.foobar.existing-network.simple.bosh'
+            },
+            'a' =>{
+              'ip' => '192.168.1.3',
+              'netmask' => '255.255.255.0',
+              'cloud_properties' =>{},
+              'dns' =>['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+              'dns_record_name' => '1.foobar.a.simple.bosh'
+            }
+          }
+
+          expect(logger).to receive(:debug).with(
+              "networks_changed? changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
+            )
+
+          instance_plan.networks_changed?
+        end
+
+        context 'when instance is being deployed for the first time' do
+          let(:existing_instance) { nil }
+
+          it 'should return true' do
+            expect(instance_plan.networks_changed?).to be_truthy
+          end
+        end
+      end
+    end
+
     describe '#needs_shutting_down?' do
       context 'when instance_plan is obsolete' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: [network_plan]) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: network_plans) }
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
         end
@@ -149,7 +215,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when deployment is being recreated' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: [network_plan], recreate_deployment: true) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return changed' do
           expect(instance_plan.needs_recreate?).to be_truthy

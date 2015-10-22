@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'logger'
-require 'bosh/director/instance_updater/preparer'
 
 module Bosh::Director
   describe InstanceUpdater::Preparer do

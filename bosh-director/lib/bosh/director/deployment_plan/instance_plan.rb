@@ -9,7 +9,7 @@ module Bosh
           @network_plans = attrs.fetch(:network_plans, [])
           @skip_drain = attrs.fetch(:skip_drain, false)
           @recreate_deployment = attrs.fetch(:recreate_deployment, false)
-          @logger = Config.logger
+          @logger = attrs.fetch(:logger, Config.logger)
           @dns_manager = DnsManager.create
         end
 
@@ -86,7 +86,14 @@ module Bosh
         def networks_changed?
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
-          obsolete_plans.any? || desired_plans.any?
+          if obsolete_plans.any? || desired_plans.any?
+            network_settings_for_previous_reservations = new? ? {} : @existing_instance.vm.apply_spec['networks']
+
+            log_changes(__method__, network_settings_for_previous_reservations, network_settings.to_hash, @existing_instance)
+            true
+          else
+            false
+          end
         end
 
         def state_changed?

@@ -12,7 +12,19 @@ module Bosh::Director
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
-    let(:instance) { instance_double(DeploymentPlan::Instance, model: instance_model, apply_spec: spec) }
+    let(:job) { instance_double(DeploymentPlan::Job,
+      name: 'fake-job-name',
+      default_network: {}
+    ) }
+    let(:instance) { instance_double(DeploymentPlan::Instance,
+      model: instance_model,
+      apply_spec: spec,
+      job: job,
+      current_state: {},
+      availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
+      index: 0,
+      uuid: SecureRandom.uuid
+    ) }
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain) }
     let(:spec) do
@@ -146,7 +158,11 @@ module Bosh::Director
         before do
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: nil)]
+
+          subnet = DeploymentPlan::DynamicNetworkSubnet.new('a.b.c.d', {}, ['az'])
+          network = DeploymentPlan::DynamicNetwork.new('dynamic', [subnet], logger)
+          reservation = DesiredNetworkReservation.new_dynamic(instance, network)
+          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         end
 
         it 'drains with shutdown' do
