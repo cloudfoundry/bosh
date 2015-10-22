@@ -45,6 +45,10 @@ module Bosh::Director
     end
 
     context 'when there are exceptions handling the problems' do
+      before do
+        expect(job).to receive(:with_deployment_lock).with(deployment).and_yield
+      end
+
       it 'bubbles the exceptions' do
         disk = Models::PersistentDisk.make(:active => false)
         problem = inactive_disk(disk.id)
