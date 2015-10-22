@@ -28,7 +28,9 @@ describe 'CPI calls', type: :integration do
             'cloud_properties' => {},
             'default' => ['dns', 'gateway'],
             'dns' => ['192.168.1.1', '192.168.1.2'],
-            'gateway' => '192.168.1.1'}
+            'gateway' => '192.168.1.1',
+            'dns_record_name' => String
+          }
         },
         'disk_cids' => [],
         'env' => {}
@@ -76,7 +78,8 @@ describe 'CPI calls', type: :integration do
             'cloud_properties' => {},
             'default' => ['dns', 'gateway'],
             'dns' => ['192.168.1.1', '192.168.1.2'],
-            'gateway' => '192.168.1.1'
+            'gateway' => '192.168.1.1',
+            'dns_record_name' => String
           }
         },
         'disk_cids' => [],

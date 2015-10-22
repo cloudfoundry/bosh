@@ -34,7 +34,9 @@ module Bosh::Director
       allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: 'network settings') }
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
+    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}, 'dns_record_name' => '0.compilation-deadbeef.default.mycloud.bosh'}} }
+
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
@@ -263,8 +265,7 @@ module Bosh::Director
     context 'compiling packages with transitive dependencies' do
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
       let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([@j_deps_ruby], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job) }
-      let(:net) { {'default' => 'network settings'} }
-      let(:vm_cid) { "vm-cid-0" }
+      let(:vm_cid) { 'vm-cid-0' }
 
       before do
         prepare_samples
@@ -308,21 +309,21 @@ module Bosh::Director
         expect(agent).to receive(:compile_package).with(
                              anything(), # source package blobstore id
                              anything(), # source package sha1
-                             "common", # package name
-                             "0.1-dev.1", # package version
+            'common', # package name
+            '0.1-dev.1', # package version
                              {}).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
                              anything(), # source package blobstore id
                              anything(), # source package sha1
-                             "ruby", # package name
-                             "0.1-dev.1", # package version
-                             {"common"=>{"name"=>"common", "version"=>"0.1-dev.1", "sha1"=>"compiled.common.sha1", "blobstore_id"=>"blob.common.id"}}).ordered # immediate dependencies
+            'ruby', # package name
+            '0.1-dev.1', # package version
+                             {'common' =>{'name' => 'common', 'version' => '0.1-dev.1', 'sha1' => 'compiled.common.sha1', 'blobstore_id' => 'blob.common.id'}}).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
                              anything(), # source package blobstore id
                              anything(), # source package sha1
-                             "needs_ruby", # package name
-                             "0.1-dev.1", # package version
-                             {"ruby"=>{"name"=>"ruby", "version"=>"0.1-dev.1", "sha1"=>"compiled.ruby.sha1", "blobstore_id"=>"blob.ruby.id"}}).ordered # immediate dependencies
+            'needs_ruby', # package name
+            '0.1-dev.1', # package version
+                             {'ruby' =>{'name' => 'ruby', 'version' => '0.1-dev.1', 'sha1' => 'compiled.ruby.sha1', 'blobstore_id' => 'blob.ruby.id'}}).ordered # immediate dependencies
 
         allow(@j_deps_ruby).to receive(:use_compiled_package)
 
@@ -370,7 +371,6 @@ module Bosh::Director
     end
 
     describe 'with reuse_compilation_vms option set' do
-      let(:net) { {'default' => 'network settings'} }
       let(:initial_state) {
         {
           'deployment' => 'mycloud',
@@ -379,7 +379,7 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'deadbeef',
-          'networks' => {'default' => 'network settings'},
+          'networks' => net,
           'vm_type' => {},
           'stemcell' => @stemcell_a.spec,
           'env' =>{},

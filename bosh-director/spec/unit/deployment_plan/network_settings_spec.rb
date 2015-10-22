@@ -5,7 +5,6 @@ module Bosh::Director::DeploymentPlan
     let(:network_settings) do
       NetworkSettings.new(
         'fake-job',
-        is_errand,
         'fake-deployment',
         {},
         [reservation],
@@ -42,7 +41,6 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     }
-    let(:is_errand) { false }
     let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
 
     describe '#network_settings' do
@@ -91,23 +89,6 @@ module Bosh::Director::DeploymentPlan
             expect(network_settings.network_addresses).to eq({
                   'net_a' => {'address' => '10.0.0.6'}
                 })
-          end
-        end
-      end
-
-      describe 'temporary errand hack' do
-        context 'when job is not an errand' do
-          it 'includes index based dns_record_name' do
-            #retaining the index based dns name so as not to cause vm recreation
-            #at some point the apply spec will not diff based on this record name, and we can recreate it.
-            expect(network_settings.to_hash['net_a']['dns_record_name']).to eq('3.fake-job.net-a.fake-deployment.bosh')
-          end
-        end
-
-        context 'when job is an errand' do
-          let(:is_errand) { true }
-          it 'does not include dns_record_name' do
-            expect(network_settings.to_hash['net_a']).to_not have_key('dns_record_name')
           end
         end
       end

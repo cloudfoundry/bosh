@@ -164,10 +164,6 @@ module Bosh::Director
       def compilation?
         true
       end
-
-      def can_run_as_errand?
-        true
-      end
     end
   end
 end

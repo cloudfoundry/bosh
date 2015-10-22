@@ -370,7 +370,7 @@ module Bosh::Director
         desired_reservations = instance_plan.network_plans
                                  .reject(&:obsolete?)
                                  .map { |network_plan| network_plan.reservation }
-        NetworkSettings.new(job.name, job.can_run_as_errand?, deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid, @dns_manager)
+        NetworkSettings.new(job.name, deployment.name, job.default_network, desired_reservations, @current_state, availability_zone, @index, @uuid, @dns_manager)
       end
 
       # Looks up instance model in DB

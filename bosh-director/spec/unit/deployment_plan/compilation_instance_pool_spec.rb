@@ -22,7 +22,7 @@ module Bosh::Director
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
     let(:network) do
-      instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'network name', subnets: [subnet])
+      instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'network_name', subnets: [subnet])
     end
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
@@ -31,7 +31,7 @@ module Bosh::Director
     let(:compilation_env) { { 'compilation' => 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:network_settings) { {'network name' => 'network settings'} }
+    let(:network_settings) { {'network_name' => {'property' => 'settings'}} }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -44,17 +44,25 @@ module Bosh::Director
     let(:ip_provider) {instance_double(DeploymentPlan::IpProviderV2, reserve: nil, release: nil)}
 
     let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
+    let(:expected_network_settings) do
+      {
+        'network_name' => {
+          'network_name' => {'property' => 'settings'},
+          'dns_record_name' => '0.compilation-deadbeef.network-name.mycloud.bosh'
+        }
+      }
+    end
 
     before do
       allow(compilation_config).to receive_messages(
-          network_name: 'network name',
+          network_name: 'network_name',
           env: compilation_env,
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false,
           availability_zone: availability_zone
         )
-      allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return('network settings')
+      allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
@@ -69,7 +77,7 @@ module Bosh::Director
       allow(another_agent_client).to receive(:get_state)
       allow(another_agent_client).to receive(:apply)
       allow(ThreadPool).to receive_messages(new: thread_pool)
-      allow(deployment_plan).to receive(:network).with('network name').and_return(network)
+      allow(deployment_plan).to receive(:network).with('network_name').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
     end
     let(:availability_zone) { nil }
@@ -85,11 +93,12 @@ module Bosh::Director
       end
 
       it 'defers to the vm creator to create a vm' do
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
         expect(vm_creator).to receive(:create).with(
             deployment_model,
             stemcell,
             cloud_properties,
-            network_settings,
+            expected_network_settings,
             [],
             compilation_env
           ).and_return(vm_model)
@@ -105,9 +114,7 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'uuid-1',
-          'networks' => {
-            'network name' => 'network settings'
-          },
+          'networks' => expected_network_settings,
           'vm_type' => {},
           'stemcell' => {'name' => 'stemcell-name'},
           'env' => { 'compilation' => 'environment'},
@@ -158,7 +165,7 @@ module Bosh::Director
       context 'when availability_zone is specified' do
         before do
           allow(compilation_config).to receive_messages(
-              network_name: 'network name',
+              network_name: 'network_name',
               env: compilation_env,
               cloud_properties: cloud_properties,
               workers: n_workers,

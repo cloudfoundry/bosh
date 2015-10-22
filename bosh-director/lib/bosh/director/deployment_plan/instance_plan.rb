@@ -142,7 +142,6 @@ module Bosh
 
           DeploymentPlan::NetworkSettings.new(
             @instance.job.name,
-            @instance.job.can_run_as_errand?,
             @instance.model.deployment.name,
             @instance.job.default_network,
             desired_reservations,
