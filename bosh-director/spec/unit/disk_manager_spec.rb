@@ -21,7 +21,7 @@ module Bosh::Director
       job.persistent_disk_type = DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'})
       job
     end
-    let(:instance) { DeploymentPlan::Instance.new(job, 1, 'started', nil, instance_state, nil, false, logger) }
+    let(:instance) { DeploymentPlan::Instance.new(job, 1, 'started', nil, instance_state, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(vm: vm_model)
       instance.add_persistent_disk(persistent_disk) if persistent_disk

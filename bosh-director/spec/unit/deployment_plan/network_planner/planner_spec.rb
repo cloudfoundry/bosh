@@ -105,51 +105,5 @@ module Bosh::Director::DeploymentPlan
         end
       end
     end
-
-    describe 'try_to_create_existing_network_plan' do
-      context 'when network has no static ips' do
-        let(:static_ips) { nil }
-        it 'returns nil' do
-          expect(planner.try_to_create_existing_network_plan(instance_plan, job_network)).to eq(nil)
-        end
-      end
-
-      context 'when instance does not have existing reservations on requested network' do
-        it 'returns nil' do
-          expect(planner.try_to_create_existing_network_plan(instance_plan, job_network)).to eq(nil)
-        end
-      end
-
-      context 'when instance has existing reservations on requested network' do
-        before do
-          ip_address = Bosh::Director::Models::IpAddress.make(
-            address: ip_to_i('192.168.2.10'),
-            network_name: network_name,
-            instance: instance_model
-          )
-          instance_model.add_ip_address(ip_address)
-        end
-
-        context 'when existing reservation IP is in the list of job static IPs' do
-          let(:static_ips) { [ip_to_i('192.168.2.10'), ip_to_i('192.168.2.11')] }
-
-          it 'returns network plan with static reservation for that IP' do
-            network_plan = planner.try_to_create_existing_network_plan(instance_plan, job_network)
-            expect(network_plan.reservation.static?).to be_truthy
-            expect(network_plan.reservation.instance).to eq(instance)
-            expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.2.10'))
-            expect(network_plan.reservation.network).to eq(manual_network)
-          end
-        end
-
-        context 'when existing reservation IP is NOT in the list of job static IPs' do
-          let(:static_ips) { [ip_to_i('192.168.2.11')] }
-
-          it 'returns nil' do
-            expect(planner.try_to_create_existing_network_plan(instance_plan, job_network)).to eq(nil)
-          end
-        end
-      end
-    end
   end
 end

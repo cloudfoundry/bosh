@@ -107,7 +107,7 @@ module Bosh::Director
           template.bind_models
           job.templates = [template]
           allow(job).to receive(:validate_package_names_do_not_collide!)
-          allow(job).to receive(:reserve_ips)
+          allow(job).to receive(:add_missing_network_plans)
           job
         end
 
@@ -123,9 +123,9 @@ module Bosh::Director
           assembler.bind_models
         end
 
-        it 'reserves ips' do
-          expect(j1).to receive(:reserve_ips).once
-          expect(j2).to receive(:reserve_ips).once
+        it 'adds missing network plans' do
+          expect(j1).to receive(:add_missing_network_plans).once
+          expect(j2).to receive(:add_missing_network_plans).once
 
           assembler.bind_models
         end

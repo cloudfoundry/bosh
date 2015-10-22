@@ -10,6 +10,7 @@ module Bosh
 
           def create_instance_plans(desired, existing, networks, availability_zones, job_name)
             instance_plans = assign_zones(desired, existing, networks, availability_zones, job_name)
+
             instance_plans.reject(&:obsolete?).each do |instance_plan|
               @logger.debug("Assigning az '#{instance_plan.desired_instance.availability_zone}' to instance '#{instance_plan.instance}'")
               instance_plan.instance.assign_availability_zone(instance_plan.desired_instance.az)

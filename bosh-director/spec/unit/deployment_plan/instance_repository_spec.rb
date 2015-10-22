@@ -75,7 +75,6 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(persisted_instance.state).to eq('started')
       expect(persisted_instance.compilation).to eq(job.compilation?)
       expect(persisted_instance.uuid).to eq('uuid-1')
-      expect(persisted_instance.availability_zone).to eq('az-name')
     end
 
     context 'when DesiredInstance has a state set on it' do

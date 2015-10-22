@@ -2,15 +2,20 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
-    subject(:plan) { PlacementPlanner::Plan.new(desired, existing, job_networks, availability_zones, 'jobname') }
-
+    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, logger) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }
+    let(:instance_plans) do
+      plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
+    end
     let(:availability_zones) { [zone_1, zone_2] }
     let(:zone_1) {AvailabilityZone.new('zone_1', {})}
     let(:zone_2) {AvailabilityZone.new('zone_2', {})}
     let(:zone_3) {AvailabilityZone.new('zone_3', {})}
-    let(:job) { instance_double(Job, name: 'db') }
+    let(:job) { instance_double(Job, name: 'db', compilation?: false) }
 
-    let(:desired) { [DesiredInstance.new(job), DesiredInstance.new(job), DesiredInstance.new(job)] }
+    let(:desired) { [DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment)] }
     let(:existing) {
       [
         existing_instance_with_az(2, zone_1.name),
@@ -18,6 +23,7 @@ module Bosh::Director::DeploymentPlan
         existing_instance_with_az(1, zone_2.name)
       ]
     }
+    let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
     let(:deployment_subnets) { [
@@ -40,43 +46,26 @@ module Bosh::Director::DeploymentPlan
     let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
 
     context 'when job networks include static IPs' do
-      let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '192.168.1.12']}
+      let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '10.10.1.10']}
 
-      it 'assigns indexes to the instances' do
-        expect(plan.needed.map(&:index)).to eq([3, 4])
-        indexes = plan.existing.map { |existing| existing[:desired_instance].index }
-        expect(indexes).to match_array([2])
-      end
-
-      it 'places the instances across the azs' do
-        expect(plan.needed.map(&:az)).to eq([zone_1, zone_1])
-
-        expect(plan.existing).to match_array([
-              {existing_instance_model: existing[0], desired_instance: desired[0]}
-            ])
-
-        expect(plan.obsolete).to match_array([existing[1], existing[2]])
+      it 'places the instances in azs there static IPs are' do
+        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_1, zone_2])
+        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[1], existing[2]])
+        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1], desired[2]])
       end
     end
 
     context 'when job networks do not include static IPs' do
       let(:job_static_ips) { nil }
 
-      it 'assigns indexes to the instances' do
-        expect(plan.needed.map(&:index)).to eq([3])
-        indexes = plan.existing.map { |existing| existing[:desired_instance].index }
-        expect(indexes).to match_array([1, 2])
-      end
-
       it 'evenly distributes the instances' do
-        expect(plan.needed.map(&:az)).to eq([zone_1])
+        expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
 
-        expect(plan.existing).to match_array([
-              {existing_instance_model: existing[0], desired_instance: desired[0]},
-              {existing_instance_model: existing[2], desired_instance: desired[1]}
-            ])
+        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
+        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
+        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_2])
 
-        expect(plan.obsolete).to match_array([existing[1]])
+        expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
       end
     end
 

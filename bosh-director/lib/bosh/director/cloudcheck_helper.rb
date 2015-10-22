@@ -100,7 +100,6 @@ module Bosh::Director
         deployment_plan_from_model,
         vm_apply_spec,
         availability_zone,
-        instance_model.bootstrap,
         @logger
       )
       instance_from_model.bind_existing_instance_model(instance_model)

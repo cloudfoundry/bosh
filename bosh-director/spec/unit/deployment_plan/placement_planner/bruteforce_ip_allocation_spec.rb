@@ -10,12 +10,12 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
       let(:networks_to_static_ips) do
         {
           'network-1' => [
-            StaticIpToAzs.new('ip-1', ['z2', 'z1']),
-            StaticIpToAzs.new('ip-2', ['z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-1', ['z2', 'z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-2', ['z2']),
           ],
           'network-2' => [
-            StaticIpToAzs.new('ip-3', ['z2']),
-            StaticIpToAzs.new('ip-4', ['z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-3', ['z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-4', ['z1']),
           ],
         }
       end
@@ -23,12 +23,12 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
       it 'returns combination of IPs to one AZ per network with even distribution of IPs per AZ' do
         expected_networks_to_static_ips = {
           'network-1' => [
-            StaticIpToAzs.new('ip-1', ['z1']),
-            StaticIpToAzs.new('ip-2', ['z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-1', ['z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-2', ['z2']),
           ],
           'network-2' => [
-            StaticIpToAzs.new('ip-3', ['z2']),
-            StaticIpToAzs.new('ip-4', ['z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-3', ['z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-4', ['z1']),
           ],
         }
 
@@ -44,19 +44,19 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
       let(:networks_to_static_ips) do
         {
           'network-1' => [
-            StaticIpToAzs.new('ip-1', ['z2', 'z1', 'z3']),
-            StaticIpToAzs.new('ip-2', ['z1', 'z2', 'z3']),
-            StaticIpToAzs.new('ip-3', ['z3', 'z2', 'z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-1', ['z2', 'z1', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-2', ['z1', 'z2', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-3', ['z3', 'z2', 'z1']),
           ],
           'network-2' => [
-            StaticIpToAzs.new('ip-4', ['z3', 'z1']),
-            StaticIpToAzs.new('ip-5', ['z2']),
-            StaticIpToAzs.new('ip-6', ['z1', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-4', ['z3', 'z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-5', ['z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-6', ['z1', 'z3']),
           ],
           'network-3' => [
-            StaticIpToAzs.new('ip-7', ['z1']),
-            StaticIpToAzs.new('ip-8', ['z2', 'z3']),
-            StaticIpToAzs.new('ip-9', ['z3', 'z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-7', ['z1']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-8', ['z2', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-9', ['z3', 'z2']),
           ],
         }
       end
@@ -142,12 +142,12 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
       let(:networks_to_static_ips) do
         {
           'network-1' => [
-            StaticIpToAzs.new('ip-1', ['z1', 'z2']),
-            StaticIpToAzs.new('ip-2', ['z2', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-1', ['z1', 'z2']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-2', ['z2', 'z3']),
           ],
           'network-2' => [
-            StaticIpToAzs.new('ip-3', ['z4']),
-            StaticIpToAzs.new('ip-4', ['z1', 'z3']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-3', ['z4']),
+            NetworksToStaticIps::StaticIpToAzs.new('ip-4', ['z1', 'z3']),
           ]
         }
       end
@@ -162,7 +162,7 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
     def ips_for_network(number_of_instances, azs)
       ips = []
       number_of_instances.times do |i|
-        ips << StaticIpToAzs.new("ip-#{i}", azs)
+        ips << NetworksToStaticIps::StaticIpToAzs.new("ip-#{i}", azs)
       end
       ips
     end

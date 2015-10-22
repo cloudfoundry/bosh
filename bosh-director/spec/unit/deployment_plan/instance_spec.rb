@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe Instance do
     include Support::StemcellHelpers
 
-    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, true, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
@@ -54,7 +54,7 @@ module Bosh::Director::DeploymentPlan
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
-    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment) }
+    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
@@ -133,11 +133,11 @@ module Bosh::Director::DeploymentPlan
 
       it 'creates a new uuid for each instance' do
         allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
-        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
+        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
         first_instance.bind_unallocated_vm
         first_uuid = first_instance.uuid
         index = 1
-        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
+        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
         second_instance.bind_unallocated_vm
         second_uuid = second_instance.uuid
         expect(first_uuid).to_not be_nil
@@ -153,7 +153,7 @@ module Bosh::Director::DeploymentPlan
         instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
       end
 
-      let(:instance_model) { Bosh::Director::Models::Instance.make }
+      let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
 
       it 'raises an error if instance already has a model' do
         instance.bind_existing_instance_model(instance_model)
@@ -187,6 +187,8 @@ module Bosh::Director::DeploymentPlan
       let(:job) { Job.new(logger) }
 
       before do
+        instance.bind_existing_instance_model(instance_model)
+
         job.templates = [template]
         job.name = 'fake-job'
         job.default_network = {}
@@ -304,7 +306,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when an instance exists (with the same job name & instance index)' do
         before do
-          instance_model = Bosh::Director::Models::Instance.make
+          instance_model = Bosh::Director::Models::Instance.make(bootstrap: true)
           instance.bind_existing_instance_model(instance_model)
         end
 
@@ -376,6 +378,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'returns a valid instance template_spec' do
+        instance.bind_existing_instance_model(instance_model)
+
         network_name = network_spec['name']
         instance.bind_unallocated_vm
         spec = instance.template_spec
@@ -437,6 +441,8 @@ module Bosh::Director::DeploymentPlan
         let(:disk_type_spec) { {'name' => 'default', 'disk_size' => 400, 'cloud_properties' => {}} }
 
         it 'returns a valid instance template_spec' do
+          instance.bind_existing_instance_model(instance_model)
+
           network_name = network_spec['name']
           instance.bind_unallocated_vm
           spec = instance.template_spec
@@ -702,7 +708,7 @@ module Bosh::Director::DeploymentPlan
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
           allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
+          instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
 
           expect(instance.cloud_properties).to eq(
               {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -714,7 +720,7 @@ module Bosh::Director::DeploymentPlan
         it 'uses just the resource pool cloud properties' do
           allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, nil, false, logger)
+          instance = Instance.new(job, index, state, plan, current_state, nil, logger)
 
           expect(instance.cloud_properties).to eq(
               {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -729,7 +735,7 @@ module Bosh::Director::DeploymentPlan
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
         allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-        instance = Instance.new(job, index, state, plan, current_state, availability_zone, false, logger)
+        instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!

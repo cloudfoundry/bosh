@@ -36,7 +36,6 @@ describe Bosh::Director::VmCreator do
       deployment_plan,
       {},
       nil,
-      false,
       logger
     )
     instance.bind_existing_instance_model(instance_model)

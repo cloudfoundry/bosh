@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
-    let(:instance) { Instance.new(job, 3, 'started', plan, {}, az, false, logger) }
+    let(:instance) { Instance.new(job, 3, 'started', plan, {}, az, logger) }
     let(:reservation) {
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, manual_network)
       reservation.resolve_ip('10.0.0.6')

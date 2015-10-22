@@ -4,7 +4,10 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
     include Bosh::Director::IpUtil
 
-    subject(:zone_picker) { PlacementPlanner::StaticAvailabilityZonePicker2.new }
+    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,

@@ -318,7 +318,7 @@ module Bosh::Director
         false
       end
 
-      def add_network_plans
+      def add_missing_network_plans
         static_ip_repo = NetworkPlanner::StaticIpRepo.new(networks, @logger)
         network_planner = NetworkPlanner::Planner.new(static_ip_repo, @logger)
 
