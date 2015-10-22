@@ -289,10 +289,10 @@ module Bosh::Director::DeploymentPlan
             ]
           end
 
-          xit 'raises an error' do
-            expect{ results }.to raise_error(
+          it 'raises an error' do
+            expect{ instance_plans }.to raise_error(
                 Bosh::Director::JobNetworkInstanceIpMismatch,
-                "Job 'jobname' networks must declare the same number of static IPs per AZ in each network"
+                "Failed to evenly distribute static IPs between zones for job 'fake-job'"
               )
           end
         end
