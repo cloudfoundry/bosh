@@ -92,16 +92,10 @@ module Bosh::Cli::Command
 
       director.list_releases.each do |release|
         name = release['name']
-        if release['release_versions']
-          # reverse compatibility with old director response format
-          versions = release['release_versions'].map { |release_version| release_version['version'] }
-          currently_deployed = release['release_versions'].
-            select { |release_version| release_version['currently_deployed'] }.
-            map{ |release_version| release_version['version'] }
-        else
-          versions = release['versions']
-          currently_deployed = release['in_use']
-        end
+        versions = release['release_versions'].map { |release_version| release_version['version'] }
+        currently_deployed = release['release_versions']
+                               .select { |release_version| release_version['currently_deployed'] }
+                               .map { |release_version| release_version['version'] }
 
         version_tuples = versions.map do |v|
           {

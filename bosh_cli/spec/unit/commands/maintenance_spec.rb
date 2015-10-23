@@ -92,65 +92,6 @@ describe Bosh::Cli::Command::Maintenance do
     end
 
     describe 'releases' do
-      context 'old releases format' do
-        let(:release) do
-          {
-              'name' => 'release-1',
-              'versions' => ['15', '2', '1', '8.1-dev', '8.2-dev', '8.3-dev'],
-              'in_use' => ['8.3-dev']
-          }
-        end
-
-        context 'when --all flag is passed' do
-          before { command.options[:all] = true }
-
-          it 'should cleanup all unused releases' do
-            allow(director).to receive(:cleanup)
-
-            allow(director).to receive(:list_releases).and_return([release])
-
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '1', quiet: true).
-                                    and_return([:done, 1])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '2', quiet: true).
-                                    and_return([:done, 2])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '8.1-dev', quiet: true).
-                                    and_return([:done, 2])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '8.2-dev', quiet: true).
-                                    and_return([:done, 2])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '15', quiet: true).
-                                    and_return([:done, 2])
-
-            command.cleanup
-          end
-        end
-
-        context 'when no flag is passed' do
-          it 'should cleanup unused releases, making sure to leave the two most recent' do
-            allow(director).to receive(:list_releases).and_return([release])
-
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '1', quiet: true).
-                                    and_return([:done, 1])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '2', quiet: true).
-                                    and_return([:done, 2])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '8.1-dev', quiet: true).
-                                    and_return([:done, 2])
-            expect(director).to receive(:delete_release).
-                                    with('release-1', force: false, version: '8.2-dev', quiet: true).
-                                    and_return([:done, 2])
-
-            command.cleanup
-          end
-        end
-      end
-
       context 'new releases format' do
         let(:release) do
           {
