@@ -50,8 +50,6 @@ module Bosh
                   result = try_combination(candidate_networks_to_static_ips, AllocatedIps.new)
                   next if result.nil?
                   return result
-
-                  candidate_networks_to_static_ips = nil
                 end
               end
             end
