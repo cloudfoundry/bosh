@@ -197,7 +197,7 @@ module Bosh::Cli
       if @final
         # Drop pre-release and post-release segments, and increment the release segment
         if @timestamp_version
-          raise ReleaseVersionError.new('Release version cannot be set to a timestamp')
+          raise ReleaseVersionError.new('Release version cannot be set to a timestamp for a final release')
         end
 
         latest_final_version.increment_release

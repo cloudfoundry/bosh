@@ -38,7 +38,7 @@ module Bosh::Spec
     def self.remote_stemcell_manifest(stemcell_url, stemcell_sha1)
       minimal_manifest.merge(
       {
-      'networks' => [{
+        'networks' => [{
           'name' => 'a',
           'subnets' => [{
               'range' => '192.168.1.0/24',
@@ -74,7 +74,7 @@ module Bosh::Spec
     def self.local_stemcell_manifest(stemcell_path)
       minimal_manifest.merge(
       {
-      'networks' => [{
+        'networks' => [{
           'name' => 'a',
           'subnets' => [{
               'range' => '192.168.1.0/24',

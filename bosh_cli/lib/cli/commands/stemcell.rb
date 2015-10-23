@@ -28,18 +28,23 @@ module Bosh::Cli
 
     usage 'upload stemcell'
     desc "Upload stemcell (stemcell_location can be a local file or a remote URI). \
-Note that --skip-if-exists and --fix can not be used together."
+Note that --skip-if-exists and --fix can not be used together. \
+If --name & --version are provided, they will be used for checking if stemcell exists & upload will be skipped if it exists (for both local and remote)"
     option '--skip-if-exists', 'skips upload if stemcell already exists'
     option '--fix', 'replaces the stemcell if already exists'
     option '--sha1 SHA1', 'SHA1 of the remote stemcell'
-    option '--name NAME', 'name of the remote stemcell'
-    option '--version VERSION', 'version of the remote stemcell'
+    option '--name NAME', 'name of the stemcell'
+    option '--version VERSION', 'version of the stemcell'
     def upload(stemcell_location)
       auth_required
       show_current_state
 
       if options[:skip_if_exists] && options[:fix]
         err("Option '--skip-if-exists' and option '--fix' should not be used together")
+      end
+
+      if options[:fix] && (options[:name] || options[:version])
+        err("Options '--name' and '--version' should not be used together with option '--fix'")
       end
 
       stemcell_type = stemcell_location =~ /^#{URI::regexp}$/ ? 'remote' : 'local'
@@ -49,6 +54,8 @@ Note that --skip-if-exists and --fix can not be used together."
       end
 
       if stemcell_type == 'local'
+        err("Option '--sha1' is not supported for uploading local stemcell") unless options[:sha1].nil?
+
         stemcell = Bosh::Cli::Stemcell.new(stemcell_location)
 
         nl

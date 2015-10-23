@@ -38,6 +38,13 @@ module Bosh::Cli::Command::Release
           before { allow(director).to receive(:get_release).and_raise(Bosh::Cli::ResourceNotFound) }
           before { allow(director).to receive(:match_packages).and_return([]) }
 
+          it 'should error if --sha1 option is used' do
+            command.add_option(:sha1, 'shawesome')
+            expect {
+              command.upload(release_archive)
+            }.to raise_error(Bosh::Cli::CliError, /Option '--sha1' is not supported for uploading local release/)
+          end
+
           describe 'converting to old format' do
             let!(:tarball) do
               instance_double(

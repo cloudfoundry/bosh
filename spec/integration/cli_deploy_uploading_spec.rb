@@ -307,7 +307,7 @@ describe 'cli: deploy uploading', type: :integration do
     context 'when name and version are specified' do
       let(:stemcell2_filename) { spec_asset('valid_stemcell_2.tgz') }
 
-      it 'uploads the stemcell from the local path in the manifest' do
+      it 'uploads the stemcell from the local path in the manifest and does not upload the same stemcell twice' do
         deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_stemcell_manifest("file://" + stemcell_filename))
 
         target_and_login

@@ -251,7 +251,7 @@ module Bosh::Cli
       context 'and a final release is being created' do
         it 'raises error when trying to obtain the version' do
           builder = new_builder({ final: true, timestamp_version: true })
-          expect { builder.version }.to raise_error(ReleaseVersionError, 'Release version cannot be set to a timestamp')
+          expect { builder.version }.to raise_error(ReleaseVersionError, 'Release version cannot be set to a timestamp for a final release')
         end
       end
 

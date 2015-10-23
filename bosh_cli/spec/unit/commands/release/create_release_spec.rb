@@ -278,14 +278,14 @@ module Bosh::Cli::Command::Release
           end
         end
 
-          it 'reurns an error if both --timestamp-version and --version are provided' do
-            command.options[:'version'] = '1.0.1'
-            command.options[:'timestamp_version'] = true
+        it 'returns an error if both --timestamp-version and --version are provided' do
+          command.options[:'version'] = '1.0.1'
+          command.options[:'timestamp_version'] = true
 
-            expect{
-              command.create
-            }.to raise_error(Bosh::Cli::CliError, 'Cannot specify both timestamp-version and version when creating a release.')
-          end
+          expect{
+            command.create
+          }.to raise_error(Bosh::Cli::CliError, 'Cannot specify both timestamp-version and version when creating a release.')
+        end
 
         context 'dev release' do
           context 'interactive' do
@@ -341,13 +341,12 @@ module Bosh::Cli::Command::Release
                 expect(command.info[:generated_version]).to eq('0+dev.1')
               end
 
-              it 'sets the version on the info hash' do
+              it 'sets the manifest path on the info hash' do
                 expect(release).to receive(:dev_name).and_return(nil)
                 allow(release).to receive(:final_name).and_return(nil)
                 expect(release).to receive(:dev_name=).with('bosh-release')
 
                 command.create
-                puts release_source.path
                 expect(command.info[:generated_manifest_path]).to eq("#{release_source.path}/dev_releases/a-release/a-release-0+dev.1.yml")
               end
             end

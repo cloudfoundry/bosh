@@ -11,7 +11,7 @@ module Bosh::Director
       @compiled_release = false
 
       attr_accessor :release_model
-      attr_reader :release_path, :release_url, :sha1, :name
+      attr_reader :release_path, :release_url, :sha1
 
       def self.job_type
         :update_release

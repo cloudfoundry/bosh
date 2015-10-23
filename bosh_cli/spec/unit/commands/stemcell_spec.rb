@@ -60,6 +60,13 @@ module Bosh::Cli
             end
           end
 
+          it 'should raise error when --sha1 is provided' do
+            command.add_option(:sha1, "shawesome")
+            expect {
+              command.upload(stemcell_archive)
+            }.to raise_error(Bosh::Cli::CliError, /Option '--sha1' is not supported for uploading local stemcell/)
+          end
+
           context 'with --skip-if-exists option' do
             before do
               command.options[:skip_if_exists] = true
@@ -100,6 +107,28 @@ module Bosh::Cli
                 command.upload(stemcell_archive)
               }.to raise_error(Bosh::Cli::CliError, /Option '--skip-if-exists' and option '--fix' should not be used together/)
             end
+
+            it 'should raise error when --name also provided' do
+              command.add_option(:name, "ubuntu")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
+
+            it 'should raise error when --version also provided' do
+              command.add_option(:version, "1")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
+
+            it 'should raise error when --name and --version also provided' do
+              command.add_option(:name, "ubuntu")
+              command.add_option(:version, "1")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
           end
 
           context 'with --name and --version' do
@@ -118,9 +147,9 @@ module Bosh::Cli
         end
 
         context 'remote stemcell' do
+
           it 'should upload the stemcell' do
             expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {})
-
             command.upload('http://stemcell_location')
           end
 
