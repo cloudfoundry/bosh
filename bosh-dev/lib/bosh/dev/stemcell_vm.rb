@@ -5,6 +5,8 @@ module Bosh::Dev
     end
 
     def run(cmd)
+      Rake::FileUtilsExt.verbose(false)
+
       run_cmd = <<-BASH
         set -e
 
@@ -12,9 +14,9 @@ module Bosh::Dev
         vagrant ssh -c "bash -l -c '#{cmd}'" #{vm_name}
         popd
       BASH
-      Rake::FileUtilsExt.sh('bash', '-c', vagrant_up_cmd + run_cmd, nowrite: true)
+      Rake::FileUtilsExt.sh('bash', '-c', vagrant_up_cmd + run_cmd)
     ensure
-      Rake::FileUtilsExt.sh('bash', '-c', vagrant_destroy_cmd, nowrite: true)
+      Rake::FileUtilsExt.sh('bash', '-c', vagrant_destroy_cmd)
     end
 
     private
