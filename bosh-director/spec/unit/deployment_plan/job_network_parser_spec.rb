@@ -2,11 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe JobNetworksParser do
+    include Bosh::Director::IpUtil
+
     let(:job_networks_parser) { JobNetworksParser.new(Network::VALID_DEFAULTS) }
     let(:job_spec) do
       job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
       job_network = job['networks'].first
-      job_network['static_ips'] = ['192.168.1.1']
+      job_network['static_ips'] = ['192.168.1.1', '192.168.1.2']
       job
     end
     let(:manifest_networks) { [ManualNetwork.new('a', [], logger)] }
@@ -54,13 +56,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when called with a valid job spec' do
-      it 'adds static ips to job networks' do
+      it 'adds static ips to job networks in order as they are in manifest' do
         networks = job_networks_parser.parse(job_spec, 'job-name', manifest_networks)
 
         expect(networks.count).to eq(1)
         expect(networks.first).to be_a_job_network(
-            JobNetwork.new('a', ['192.168.1.1'], ['dns', 'gateway'], manifest_networks.first)
+            JobNetwork.new('a', ['192.168.1.1', '192.168.1.2'], ['dns', 'gateway'], manifest_networks.first)
           )
+        expect(networks.first.static_ips).to eq([ip_to_i('192.168.1.1'), ip_to_i('192.168.1.2')])
       end
     end
 

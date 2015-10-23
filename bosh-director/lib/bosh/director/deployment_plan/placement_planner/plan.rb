@@ -9,7 +9,8 @@ module Bosh
           end
 
           def create_instance_plans(desired, existing, networks, availability_zones, job_name)
-            instance_plans = assign_zones(desired, existing, networks, availability_zones, job_name)
+            sorted_existing = existing.sort_by(&:index)
+            instance_plans = assign_zones(desired, sorted_existing, networks, availability_zones, job_name)
 
             instance_plans.reject(&:obsolete?).each do |instance_plan|
               @logger.debug("Assigning az '#{instance_plan.desired_instance.availability_zone}' to instance '#{instance_plan.instance}'")
@@ -23,7 +24,7 @@ module Bosh
           def assign_zones(desired, existing, networks, availability_zones, job_name)
             if has_static_ips?(networks)
               @logger.debug("Job '#{job_name}' has networks with static IPs, placing instances based on static IP distribution")
-              StaticIpsAvailabilityZonePicker.new(@instance_plan_factory).place_and_match_in(availability_zones, networks, desired, existing, job_name)
+              StaticIpsAvailabilityZonePicker.new(@instance_plan_factory, @logger).place_and_match_in(availability_zones, networks, desired, existing, job_name)
             else
               @logger.debug("Job '#{job_name}' does not have networks with static IPs, placing instances based on persistent disk allocation")
               AvailabilityZonePicker.new(@instance_plan_factory).place_and_match_in(availability_zones, desired, existing)

@@ -75,6 +75,30 @@ module Bosh::Director::DeploymentPlan
           }.to_not raise_error
         end
       end
+
+      describe '#take_next_ip_for_network' do
+        let(:deployment_subnets) do
+          [
+            ManualNetworkSubnet.new(
+              'network_A',
+              NetAddr::CIDR.create('192.168.1.0/24'),
+              nil, nil, nil, nil, ['zone_1'], [],
+              ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14'])
+          ]
+        end
+        let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
+
+        let(:job_networks) { [JobNetwork.new('network_A', ['192.168.1.10', '192.168.1.11'], [], deployment_network)] }
+
+        it 'prefers first IPs' do
+          networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, 'fake-job')
+          static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+          expect(static_ip_to_azs.ip).to eq('192.168.1.10')
+
+          static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+          expect(static_ip_to_azs.ip).to eq('192.168.1.11')
+        end
+      end
     end
   end
 end

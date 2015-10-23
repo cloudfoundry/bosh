@@ -54,7 +54,7 @@ module Bosh::Director
         if static_ips_raw
           static_ips = []
           each_ip(static_ips_raw) do |ip|
-            static_ips << ip
+            static_ips.push(ip)
           end
         end
         static_ips

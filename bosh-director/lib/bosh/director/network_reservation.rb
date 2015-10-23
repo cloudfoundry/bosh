@@ -45,7 +45,7 @@ module Bosh::Director
     end
 
     def desc
-      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}'"}"
+      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}' for instance #{@instance}"}"
     end
 
     def to_s
@@ -83,7 +83,7 @@ module Bosh::Director
     end
 
     def desc
-      "#{type} reservation with IP '#{formatted_ip}'"
+      "#{type} reservation with IP '#{formatted_ip}' for instance #{@instance}"
     end
 
     def to_s

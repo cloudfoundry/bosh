@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
     subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, logger) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
-    let(:index_assigner) { PlacementPlanner::IndexAssigner.new }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }
     let(:instance_plans) do
       plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
@@ -23,7 +23,8 @@ module Bosh::Director::DeploymentPlan
         existing_instance_with_az(1, zone_2.name)
       ]
     }
-    let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
+    let(:deployment) { instance_double(Planner, model: deployment_model) }
+    let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
     let(:deployment_subnets) { [
@@ -48,9 +49,9 @@ module Bosh::Director::DeploymentPlan
     context 'when job networks include static IPs' do
       let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '10.10.1.10']}
 
-      it 'places the instances in azs there static IPs are' do
+      it 'places the instances in azs there static IPs are in order of their indexes' do
         expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_1, zone_2])
-        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[1], existing[2]])
+        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to eq([existing[1], existing[2], existing[0]])
         expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1], desired[2]])
       end
     end

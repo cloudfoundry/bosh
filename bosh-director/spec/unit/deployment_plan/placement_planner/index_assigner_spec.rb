@@ -2,22 +2,23 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::IndexAssigner do
-    subject(:assigner) { PlacementPlanner::IndexAssigner.new }
+    subject(:assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
 
     describe 'assign_index' do
       context 'when existing instance model is passed in' do
         context 'when existing instance has same job name' do
           it 'returns index of existing instance' do
-            existing_instance_model = Bosh::Director::Models::Instance.make(job: 'fake-job', index: 5)
+            existing_instance_model = Bosh::Director::Models::Instance.make(job: 'fake-job', index: 5, deployment: deployment_model)
             expect(assigner.assign_index('fake-job', existing_instance_model)).to eq(5)
           end
         end
 
         context 'when existing instance has different job name' do
           before do
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0)
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 1)
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0, deployment: deployment_model)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment_model)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment_model)
           end
 
           it 'returns next index' do
@@ -30,9 +31,9 @@ module Bosh::Director::DeploymentPlan
       context 'when existing instance model is not passed in' do
         context 'when there are existing instances on that job without gaps' do
           before do
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0)
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 1)
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0, deployment: deployment_model)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 1, deployment: deployment_model)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment_model)
           end
 
           it 'returns next index' do
@@ -42,8 +43,8 @@ module Bosh::Director::DeploymentPlan
 
         context 'when there are existing instances on that job with gaps' do
           before do
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0)
-            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 0, deployment: deployment_model)
+            Bosh::Director::Models::Instance.make(job: 'fake-job', index: 2, deployment: deployment_model)
           end
 
           it 'returns unused index' do

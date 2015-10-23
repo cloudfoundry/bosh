@@ -6,7 +6,8 @@ module Bosh::Director
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
       skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
-      recreate: false
+      recreate: false,
+      model: BD::Models::Deployment.make
     ) }
     let(:stemcell_manager) { nil }
     let(:dns_manager) { DnsManager.create }

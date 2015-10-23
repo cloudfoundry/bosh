@@ -3,12 +3,13 @@ require 'spec_helper'
 describe BD::DeploymentPlan::InstancePlanner do
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
   let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, options) }
-  let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new }
+  let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
   let(:options) { {} }
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger) }
-  let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: BD::Models::Deployment.make) }
+  let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model) }
+  let(:deployment_model) { BD::Models::Deployment.make }
   let(:az) do
     BD::DeploymentPlan::AvailabilityZone.new(
       'foo-az',
@@ -30,6 +31,12 @@ describe BD::DeploymentPlan::InstancePlanner do
   def make_instance(idx=0)
     instance = BD::DeploymentPlan::Instance.new(job, idx, 'started', deployment, {}, az, logger)
     instance.bind_new_instance_model
+    instance
+  end
+
+  def make_instance_with_existing_model(existing_instance_model)
+    instance = BD::DeploymentPlan::Instance.new(job, existing_instance_model.index, 'started', deployment, {}, az, logger)
+    instance.bind_existing_instance_model(existing_instance_model)
     instance
   end
 
@@ -98,13 +105,13 @@ describe BD::DeploymentPlan::InstancePlanner do
 
     describe 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: undesired_az.name)
-        another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: undesired_az.name)
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: undesired_az.name, deployment: deployment_model)
+        another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: undesired_az.name, deployment: deployment_model)
         existing_instances = [existing_instance_model, another_existing_instance_model]
 
         desired_instances = [desired_instance]
         expected_new_instance_index = 2
-        allow(instance_repo).to receive(:create).with(desired_instances[0], expected_new_instance_index) { tracer_instance }
+        allow(instance_repo).to receive(:create).with(desired_instances[0], expected_new_instance_index) { make_instance(2) }
 
         instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances)
 
@@ -188,7 +195,7 @@ describe BD::DeploymentPlan::InstancePlanner do
         make_instance(out_of_typical_range_index)
       end
 
-      allow(instance_repo).to receive(:create).with(desired_instances[1], 1) { make_instance(auto_picked_index) }
+      allow(instance_repo).to receive(:create).with(desired_instances[1], 0) { make_instance(auto_picked_index) }
 
       instance_plans = instance_planner.plan_job_instances(job, desired_instances, existing_instances)
       expect(instance_plans.count).to eq(3)
@@ -231,13 +238,13 @@ describe BD::DeploymentPlan::InstancePlanner do
 
       context 'when obsolete instance is marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name)
-          another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name)
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: undesired_az.name, deployment: deployment_model)
+          another_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, deployment: deployment_model)
           another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, deployment, az, 1)
 
-          existing_tracer_instance = make_instance(1)
+          existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
           allow(instance_repo).to receive(:fetch_existing).with(another_desired_instance, another_existing_instance_model, nil) { existing_tracer_instance }
-          allow(instance_repo).to receive(:create).with(desired_instance, 2) { tracer_instance }
+          allow(instance_repo).to receive(:create).with(desired_instance, 2) { make_instance(2) }
 
           instance_plans = instance_planner.plan_job_instances(job, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model])
 

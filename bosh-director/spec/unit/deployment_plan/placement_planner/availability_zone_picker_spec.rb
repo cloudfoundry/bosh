@@ -4,7 +4,8 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
-    let(:index_assigner) { PlacementPlanner::IndexAssigner.new }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
 
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
@@ -26,7 +27,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
-      instance_model = Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
+      instance_model = Bosh::Director::Models::Instance.make(index: index, availability_zone: az, deployment: deployment_model)
       allow(instance_model).to receive(:persistent_disks).and_return(persistent_disks)
       instance_model
     end

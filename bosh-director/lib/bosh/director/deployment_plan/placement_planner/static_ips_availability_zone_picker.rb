@@ -3,8 +3,11 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class StaticIpsAvailabilityZonePicker
-          def initialize(instance_plan_factory)
+          include IpUtil
+
+          def initialize(instance_plan_factory, logger)
             @instance_plan_factory = instance_plan_factory
+            @logger = logger
           end
 
           def place_and_match_in(desired_azs, job_networks, desired_instances, existing_instance_models, job_name)

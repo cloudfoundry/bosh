@@ -4,9 +4,10 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
     include Bosh::Director::IpUtil
 
-    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory) }
+    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, logger) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
-    let(:index_assigner) { PlacementPlanner::IndexAssigner.new }
+    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
@@ -744,7 +745,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az_and_ips(az, ips)
-      instance = Bosh::Director::Models::Instance.make(availability_zone: az)
+      instance = Bosh::Director::Models::Instance.make(availability_zone: az, deployment: deployment_model, job: job.name)
       ips.each do |ip|
         instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i))
       end

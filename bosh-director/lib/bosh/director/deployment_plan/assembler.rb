@@ -25,7 +25,7 @@ module Bosh::Director
 
         instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
         states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
-        index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new
+        index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
         instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, {'recreate' => @deployment_plan.recreate})
         instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
         desired_jobs = @deployment_plan.jobs
