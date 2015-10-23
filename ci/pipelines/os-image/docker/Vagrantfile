@@ -5,12 +5,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = 'ubuntu/trusty64'
 
   config.vm.provider(:virtualbox) do |v|
-    v.name = 'bosh-docker-builder'
+    v.name = 'bosh.os-image.builder'
     v.customize ['modifyvm', :id, '--cpus', '4']
     v.customize ['modifyvm', :id, '--memory', '4096']
   end
 
-  config.vm.synced_folder('../../', '/opt/bosh', owner: 'root', group: 'root')
+  config.vm.synced_folder('../../../..', '/opt/bosh', owner: 'root', group: 'root')
 
   if Vagrant.has_plugin?("vagrant-proxyconf")
     if ENV["http_proxy"]

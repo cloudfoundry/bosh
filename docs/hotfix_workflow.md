@@ -46,3 +46,16 @@
 ## Edge-case: If second image was built consecutively off of `develop`
 
 Once the hotfix build has made it through the pipeline and is therefore merged to `develop`, build a third image off of `develop`, wait for the relevant changes (to `OS_IMAGES.md` and `os_image_versions.json`) to go through Concourse, and finally kick off another Jenkins build.
+
+## Debugging/Acceptance
+
+To download the OS image:
+
+``` bash
+IMAGE_FILE="..."  # From the end of the build output.
+                  # e.g, bosh-ubuntu-trusty-os-image.tgz
+VERSION_ID="..."  # From the end of the build output.
+                  # A 32 character alpha-numeric string
+wget "http://s3.amazonaws.com/bosh-os-images/${IMAGE_FILE}?versionId=${VERSION_ID}" \
+  -O "${IMAGE_FILE}"
+```
