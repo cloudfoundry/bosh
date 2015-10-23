@@ -8,13 +8,11 @@ resources:
 
 jobs:
   - name: start-job
-    public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: false }
 
   - name: build-centos
-    public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
@@ -31,7 +29,6 @@ jobs:
             OS_IMAGE_S3_KEY:            bosh-centos-7-os-image.tgz
 
   - name: build-ubuntu
-    public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
