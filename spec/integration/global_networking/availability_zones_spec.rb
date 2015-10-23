@@ -317,33 +317,6 @@ describe 'availability zones', type: :integration do
           expect(new_vm.availability_zone).to eq('my-az')
         end
       end
-
-      context 'when static IP moves to another AZ' do
-        it 'recreates VM in new AZ' do
-          cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
-
-          upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          simple_manifest['jobs'].first['instances'] = 1
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
-          simple_manifest['jobs'].first['availability_zones'] = ['my-az', 'my-az2']
-
-          deploy_simple_manifest(manifest_hash: simple_manifest)
-
-          original_vm = director.vms[0]
-          expect(original_vm.availability_zone).to eq('my-az2')
-
-          cloud_config_hash['networks'].first['subnets'][0]['availability_zone'] = 'my-az2'
-          cloud_config_hash['networks'].first['subnets'][1]['availability_zone'] = 'my-az'
-
-          upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          deploy_simple_manifest(manifest_hash: simple_manifest)
-
-          new_vm = director.vms[0]
-          expect(new_vm.ips).to eq('192.168.2.52')
-          expect(new_vm.availability_zone).to eq('my-az')
-          expect(new_vm.cid).to_not eq(original_vm.cid)
-        end
-      end
     end
 
     context 'when changing a deployed vm with an az and dynamic ip to have the same static ip' do

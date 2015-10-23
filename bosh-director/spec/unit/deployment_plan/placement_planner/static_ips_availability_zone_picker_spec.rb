@@ -341,15 +341,14 @@ module Bosh::Director::DeploymentPlan
               cloud_config_hash['networks'].first['subnets'][1]['availability_zones'] = ['zone1']
             end
 
-            it 'reuses instances with new AZ' do
-              expect(new_instance_plans).to eq([])
-              expect(obsolete_instance_plans).to eq([])
-              expect(existing_instance_plans.size).to eq(2)
-              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
-              expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
-              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
-              expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.10')])
-            end
+              it 'raises an error' do
+                expect {
+                  new_instance_plans
+                }.to raise_error(
+                    Bosh::Director::NetworkReservationError,
+                    "Existing instance 'fake-job/#{existing_instances[1].index}' is using IP '192.168.2.10' in availability zone 'zone2'"
+                )
+              end
           end
 
           context 'when existing instance static IP is no longer in the list of job static ips' do
@@ -401,12 +400,13 @@ module Bosh::Director::DeploymentPlan
               let(:new_subnet_azs) { ['zone2'] }
               let(:job_availability_zones) { ['zone2'] }
 
-              it 'reuses instance with new AZ from same subnet' do
-                expect(new_instance_plans).to eq([])
-                expect(obsolete_instance_plans).to eq([])
-                expect(existing_instance_plans.size).to eq(1)
-                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone2')
-                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              it 'raises an error' do
+                expect {
+                  new_instance_plans
+                }.to raise_error(
+                    Bosh::Director::NetworkReservationError,
+                    "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'"
+                  )
               end
             end
           end
@@ -498,43 +498,6 @@ module Bosh::Director::DeploymentPlan
                 expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
                     [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
-                  )
-              end
-            end
-
-            context 'when existing instances have static IP on different AZ' do
-              let(:existing_instances) do
-                [
-                  existing_instance_with_az_and_ips('zone2', ['192.168.1.10', '10.10.1.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.1.11', '10.10.1.11']),
-                  existing_instance_with_az_and_ips('zone1', ['192.168.2.10', '10.10.2.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
-                ]
-              end
-
-              it 'keeps instances with static IPs but moves them to different AZs' do
-                expect(new_instance_plans).to eq([])
-                expect(obsolete_instance_plans).to eq([])
-                expect(existing_instance_plans.size).to eq(4)
-
-                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
-                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
-                  )
-
-                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
-                expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')]
-                  )
-
-                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
-                expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
-                  )
-
-                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
-                expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
                   )
               end
             end
@@ -674,8 +637,13 @@ module Bosh::Director::DeploymentPlan
                   ]
                 end
 
-                it 'removes AZs from existing instances' do
-                  expect(existing_instance_plans.map(&:desired_instance).map(&:az)).to eq([nil, nil])
+                it 'raises an error' do
+                  expect {
+                    new_instance_plans
+                  }.to raise_error(
+                      Bosh::Director::NetworkReservationError,
+                      "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'"
+                    )
                 end
               end
             end

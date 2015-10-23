@@ -160,8 +160,8 @@ module Bosh
               az_name = existing_instance_model.availability_zone
               @logger.debug("Instance '#{instance_name(existing_instance_model)}' belongs to az '#{az_name}' that is in subnet az list, reusing instance az.")
             else
-              az_name = ip_az_names.first
-              @logger.debug("Instance '#{instance_name(existing_instance_model)}' belongs to az that is no longer in subnet az list, using az '#{az_name}'")
+              raise Bosh::Director::NetworkReservationError,
+                "Existing instance '#{instance_name(existing_instance_model)}' is using IP '#{format_ip(ip_address)}' in availability zone '#{existing_instance_model.availability_zone}'"
             end
             desired_instance.az = to_az(az_name)
           end
