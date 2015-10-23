@@ -8,7 +8,8 @@ module Bosh
         end
 
         def plan_job_instances(job, desired_instances, existing_instance_models)
-          placement_plan = PlacementPlanner::Plan.new(@instance_plan_factory, @logger)
+          network_planner = NetworkPlanner::Planner.new(@logger)
+          placement_plan = PlacementPlanner::Plan.new(@instance_plan_factory, network_planner, @logger)
           instance_plans = placement_plan.create_instance_plans(desired_instances, existing_instance_models, job.networks, job.availability_zones, job.name)
 
           new_desired_instance_plans = instance_plans.select(&:new?)

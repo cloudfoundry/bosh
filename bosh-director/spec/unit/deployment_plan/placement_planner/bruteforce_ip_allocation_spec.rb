@@ -72,7 +72,7 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
     context 'when a lot of instances' do
 
       let(:networks_to_static_ips) do
-        number_of_instances = 33
+        number_of_instances = 12
         azs = ['z1', 'z2', 'z3']
         {
           'network-1' => ips_for_network(number_of_instances, azs),
@@ -99,9 +99,9 @@ module Bosh::Director::DeploymentPlan::PlacementPlanner
           end.size
         end
 
-        expect(z1_ips).to eq(33)
-        expect(z2_ips).to eq(33)
-        expect(z3_ips).to eq(33)
+        expect(z1_ips).to eq(12)
+        expect(z2_ips).to eq(12)
+        expect(z3_ips).to eq(12)
       end
     end
 

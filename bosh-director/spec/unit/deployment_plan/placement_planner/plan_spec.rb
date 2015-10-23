@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
-    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, logger) }
+    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, logger) }
+    let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }

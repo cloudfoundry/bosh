@@ -87,7 +87,6 @@ module Bosh::Director::DeploymentPlan
           ]
         end
         let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-
         let(:job_networks) { [JobNetwork.new('network_A', ['192.168.1.10', '192.168.1.11'], [], deployment_network)] }
 
         it 'prefers first IPs' do

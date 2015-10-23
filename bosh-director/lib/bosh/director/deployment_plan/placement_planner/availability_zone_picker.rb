@@ -3,13 +3,16 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class AvailabilityZonePicker
-          def initialize(instance_plan_factory)
+          def initialize(instance_plan_factory, network_planner, networks, desired_azs)
             @instance_plan_factory = instance_plan_factory
+            @network_planner = network_planner
+            @networks = networks
+            @desired_azs = desired_azs
           end
 
-          def place_and_match_in(desired_azs, desired_instances, existing_instance_models)
+          def place_and_match_in(desired_instances, existing_instance_models)
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_models)
-            desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(desired_azs)
+            desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(@desired_azs)
             placed_instances = PlacedDesiredInstances.new(desired_azs_sorted)
 
             remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs_sorted, desired_instances, placed_instances, unplaced_existing_instances)
@@ -53,16 +56,26 @@ module Bosh
 
           def desired_existing_instance_plans(desired_existing_instances)
             desired_existing_instances.map do |desired_existing_instance|
-              @instance_plan_factory.desired_existing_instance_plan(
+              instance_plan = @instance_plan_factory.desired_existing_instance_plan(
                 desired_existing_instance[:existing_instance_model],
                 desired_existing_instance[:desired_instance]
               )
+              populate_network_plans(instance_plan)
+              instance_plan
             end
           end
 
           def desired_new_instance_plans(new_desired_instances)
             new_desired_instances.map do |desired_instance|
-              @instance_plan_factory.desired_new_instance_plan(desired_instance)
+              instance_plan = @instance_plan_factory.desired_new_instance_plan(desired_instance)
+              populate_network_plans(instance_plan)
+              instance_plan
+            end
+          end
+
+          def populate_network_plans(instance_plan)
+            @networks.each do |network|
+              instance_plan.network_plans << @network_planner.network_plan_with_dynamic_reservation(instance_plan, network)
             end
           end
         end

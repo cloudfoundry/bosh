@@ -318,22 +318,7 @@ module Bosh::Director
         false
       end
 
-      def add_missing_network_plans
-        static_ip_repo = NetworkPlanner::StaticIpRepo.new(networks, @logger)
-        network_planner = NetworkPlanner::Planner.new(static_ip_repo, @logger)
-
-        needed_instance_plans.each do |instance_plan|
-          networks.each do |network|
-            unless instance_plan.network_plan_for_network(network.deployment_network)
-              if network.static_ips
-                instance_plan.network_plans << network_planner.network_plan_with_static_reservation(instance_plan, network)
-              else
-                instance_plan.network_plans << network_planner.network_plan_with_dynamic_reservation(instance_plan, network)
-              end
-            end
-          end
-        end
-
+      def reconcile_network_plans
         needed_instance_plans.each do |instance_plan|
           desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
           network_plans = NetworkPlanner::ReservationReconciler.new(@logger)

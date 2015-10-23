@@ -4,7 +4,8 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
     include Bosh::Director::IpUtil
 
-    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, logger) }
+    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
+    let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
@@ -90,7 +91,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
 
-    let(:instance_plans) { zone_picker.place_and_match_in(availability_zones, job.networks, desired_instances, existing_instances, 'fake-job')}
+    let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances)}
     let(:availability_zones) { job.availability_zones }
     let(:new_instance_plans) { instance_plans.select(&:new?) }
     let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }
