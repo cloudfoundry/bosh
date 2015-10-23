@@ -59,10 +59,19 @@ describe Bosh::Cli::Command::Maintenance do
         before { command.options[:all] = true }
 
         it 'removes all unused stemcells and properly pick out stemcells to delete' do
+          allow(director).to receive(:cleanup)
+
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '1471.2', quiet: true)
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '2579', quiet: true)
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '2578', quiet: true)
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-centos', '3578', quiet: true)
+          command.cleanup
+        end
+
+        it 'removes all orphaned disks' do
+          allow(director).to receive(:delete_stemcell)
+
+          expect(director).to receive(:cleanup)
           command.cleanup
         end
       end
@@ -70,6 +79,13 @@ describe Bosh::Cli::Command::Maintenance do
       context 'when no flags are passed' do
         it 'removes stemcells excepts last 2 and the used one' do
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '1471.2', quiet: true)
+          command.cleanup
+        end
+
+        it 'does not delete orphaned disks' do
+          allow(director).to receive(:delete_stemcell)
+
+          expect(director).not_to receive(:cleanup)
           command.cleanup
         end
       end
@@ -89,6 +105,8 @@ describe Bosh::Cli::Command::Maintenance do
           before { command.options[:all] = true }
 
           it 'should cleanup all unused releases' do
+            allow(director).to receive(:cleanup)
+
             allow(director).to receive(:list_releases).and_return([release])
 
             expect(director).to receive(:delete_release).

@@ -625,6 +625,10 @@ module Bosh
           status == 201
         end
 
+        def cleanup
+          request_and_track(:post, '/cleanup')
+        end
+
         def post(uri, content_type = nil, payload = nil, headers = {}, options = {})
           request(:post, uri, content_type, payload, headers, options)
         end

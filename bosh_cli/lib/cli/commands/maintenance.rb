@@ -44,12 +44,18 @@ module Bosh::Cli::Command
       cleanup_stemcells(stemcells_to_keep)
       nl
       cleanup_releases(releases_to_keep)
+      nl
+      cleanup_disks if remove_all
 
       nl
       say('Cleanup complete'.make_green)
     end
 
     private
+
+    def cleanup_disks
+      director.cleanup
+    end
 
     def cleanup_stemcells(n_to_keep)
       stemcells_by_name = director.list_stemcells.inject({}) do |h, stemcell|

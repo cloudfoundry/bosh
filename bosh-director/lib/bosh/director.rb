@@ -147,6 +147,7 @@ end
 require 'bosh/director/thread_pool'
 require 'bosh/director/api/extensions/scoping'
 require 'bosh/director/api/controllers/backups_controller'
+require 'bosh/director/api/controllers/cleanup_controller'
 require 'bosh/director/api/controllers/deployments_controller'
 require 'bosh/director/api/controllers/disks_controller'
 require 'bosh/director/api/controllers/packages_controller'
