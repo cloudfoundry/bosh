@@ -65,9 +65,9 @@ module Bosh
               unless instance_plans.map(&:existing_instance).include?(existing_instance_model)
                 desired_instance = desired_instances.shift
                 if desired_instance.nil?
-                  instance_plan = create_obsolete_instance_plan(existing_instance_model)
+                  instance_plan = @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
                 else
-                  instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
+                  instance_plan = @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
                 end
                 instance_plans << instance_plan
               end
@@ -101,7 +101,7 @@ module Bosh
             networks_to_static_ips.distribute_evenly_per_zone
 
             desired_instances.each do |desired_instance|
-              instance_plan = create_new_instance_plan(desired_instance)
+              instance_plan = @instance_plan_factory.desired_new_instance_plan(desired_instance)
               az_name = nil
 
               job_networks.each do |network|
@@ -127,10 +127,10 @@ module Bosh
 
           def create_existing_instance_plan_for_desired_instance(desired_instance, existing_instance_model, networks_to_static_ips, desired_azs, network, ip_address)
             if desired_instance.nil?
-              return create_obsolete_instance_plan(existing_instance_model)
+              return @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             end
 
-            instance_plan = create_desired_existing_instance_plan(desired_instance, existing_instance_model)
+            instance_plan = @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             ip_az_names = networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
             if ip_az_names.include?(existing_instance_model.availability_zone)
               az_name = existing_instance_model.availability_zone
@@ -139,18 +139,6 @@ module Bosh
             end
             desired_instance.az = to_az(az_name, desired_azs)
             instance_plan
-          end
-
-          def create_new_instance_plan(desired_instance)
-            @instance_plan_factory.desired_new_instance_plan(desired_instance)
-          end
-
-          def create_obsolete_instance_plan(existing_instance_model)
-            @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-          end
-
-          def create_desired_existing_instance_plan(desired_instance, existing_instance_model)
-            @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
           end
 
           def create_network_plan_with_ip(instance_plan, job_network, static_ip)
