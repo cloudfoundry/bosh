@@ -682,6 +682,22 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when instance IPs do not match at all' do
+            let(:networks_spec) do
+              [
+                  {'name' => 'a',
+                   'subnets' => [
+                       make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone1']),
+                       make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['zone1', 'zone2']),
+                   ]
+                  },
+                  {'name' => 'b',
+                   'subnets' => [
+                       make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], ['zone1']),
+                       make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], ['zone1', 'zone2']),
+                   ]
+                  }
+              ]
+            end
             let(:desired_instance_count) { 2 }
             let(:existing_instances) do
               [
