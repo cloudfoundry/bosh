@@ -10,6 +10,9 @@ module Bosh::Cli::Command
         'versions in favor of versions assigned by director)'
       option '--skip-if-exists', 'no-op; retained for backward compatibility'
       option '--dir RELEASE_DIRECTORY', 'path to release directory'
+      option '--sha1 SHA1', 'SHA1 of the remote release'
+      option '--name NAME', 'name of the remote release'
+      option '--version VERSION', 'version of the remote release'
 
       def upload(release_file = nil)
         auth_required
@@ -19,6 +22,7 @@ module Bosh::Cli::Command
         upload_options = {
           :rebase => options[:rebase],
           :repack => true,
+          :sha1 => options[:sha1]
         }
 
         #only check release_dir if not compiled release tarball
@@ -35,6 +39,16 @@ module Bosh::Cli::Command
           release_file = release.latest_release_filename
           if release_file.nil?
             err('The information about latest generated release is missing, please provide release filename')
+          end
+        end
+
+        if options[:name] && options[:version]
+          director.list_releases.each do |release|
+            if release['name'] == options[:name]
+              release['release_versions'].each do |version|
+                return if version['version'] == options[:version]
+              end
+            end
           end
         end
 
@@ -146,7 +160,6 @@ module Bosh::Cli::Command
       end
 
       def upload_remote_release(release_location, upload_options = {})
-        nl
         if upload_options[:rebase]
           say("Using remote release `#{release_location}' (#{'will be rebased'.make_yellow})")
           report = 'Release rebased'
@@ -158,6 +171,7 @@ module Bosh::Cli::Command
         status, task_id = director.upload_remote_release(
           release_location,
           rebase: upload_options[:rebase],
+          sha1: upload_options[:sha1]
         )
         task_report(status, task_id, report)
       end
