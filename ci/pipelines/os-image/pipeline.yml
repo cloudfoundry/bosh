@@ -4,7 +4,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: concourse/os-image # edit to 'hotfix-nnn' for hotfixes
+      branch: develop # edit to 'hotfix-nnn' for hotfixes
 
 jobs:
   - name: start-job

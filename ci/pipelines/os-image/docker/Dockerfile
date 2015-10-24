@@ -14,8 +14,14 @@ RUN apt-get clean
 
 # ...vagrant:
 # package manager provides Vagrant 1.4.3... too old for vagrant-aws
-RUN cd /tmp && wget -q https://dl.bintray.com/mitchellh/vagrant/vagrant_1.6.5_x86_64.deb && dpkg -i vagrant_1.6.5_x86_64.deb
-RUN apt-get install -y git curl wget tar vagrant
+ENV VAGRANT_PKG vagrant_1.6.5_x86_64.deb
+ENV VAGRANT_SHA e2c7af6d032ac551ebd6399265cb9cb64402c9fb96a12289161b7f67afada28a
+RUN cd /tmp \
+    && wget -q https://dl.bintray.com/mitchellh/vagrant/${VAGRANT_PKG} \
+    && echo "${VAGRANT_SHA} ${VAGRANT_PKG}" > sha256sum.txt \
+    && sha256sum -c sha256sum.txt && rm sha256sum.txt \
+    && dpkg -i ${VAGRANT_PKG} \
+    && rm ${VAGRANT_PKG}
 RUN vagrant plugin install vagrant-aws
 RUN apt-get clean
 
