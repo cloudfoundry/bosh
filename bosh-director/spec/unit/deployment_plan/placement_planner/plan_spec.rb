@@ -51,9 +51,13 @@ module Bosh::Director::DeploymentPlan
       let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '10.10.1.10']}
 
       it 'places the instances in azs there static IPs are in order of their indexes' do
-        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_1, zone_2])
-        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to eq([existing[1], existing[2], existing[0]])
-        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1], desired[2]])
+        expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
+
+        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to match_array([zone_1, zone_2])
+        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
+        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
+
+        expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
       end
     end
 

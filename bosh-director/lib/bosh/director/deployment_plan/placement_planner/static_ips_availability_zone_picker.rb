@@ -39,8 +39,7 @@ module Bosh
             # create the rest existing instance plans
             existing_instance_models.each do |existing_instance_model|
               unless already_has_instance_plan?(existing_instance_model, instance_plans)
-                desired_instance = desired_instances.shift
-                instance_plans << create_existing_instance_plan(desired_instance, existing_instance_model)
+                instance_plans << create_existing_instance_plan_with_az_validation(desired_instances, instance_plans, existing_instance_model)
               end
             end
 
@@ -166,10 +165,40 @@ module Bosh
             desired_instance.az = to_az(az_name)
           end
 
-          def create_existing_instance_plan(desired_instance, existing_instance_model)
-            if desired_instance.nil?
+          def create_existing_instance_plan_with_az_validation(desired_instances, instance_plans, existing_instance_model)
+            if desired_instances.empty?
               @logger.debug("Marking instance '#{instance_name(existing_instance_model)}' as obsolete")
               @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+            else
+              # we can only reuse an instance if its AZ contains enough IPs for its networks
+
+              instance_az_name = existing_instance_model.availability_zone
+              @job_networks.each do |network|
+                next unless network.static?
+                static_ip_to_azs = @networks_to_static_ips.find_by_network_and_az(network, instance_az_name)
+                if static_ip_to_azs.nil?
+                  @logger.debug("Marking instance '#{instance_name(existing_instance_model)}' as obsolete, not enough IPs in instance az")
+                  return @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+                end
+              end
+
+              # we have enough IPs to fit an instance in its AZ
+              @logger.debug("Reusing instance '#{instance_name(existing_instance_model)}' with new IPs")
+              desired_instance = desired_instances.shift
+              desired_instance.az = to_az(instance_az_name)
+              instance_plan = @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
+              @job_networks.each do |network|
+                next unless network.static?
+                instance_plan.network_plans << create_network_plan_with_az(instance_plan, network, instance_plans)
+              end
+
+              instance_plan
+            end
+          end
+
+          def create_existing_instance_plan(desired_instance, existing_instance_model)
+            if desired_instance.nil?
+              @instance_plan_factory.obsolete_instance_plan(existing_instance_model, desired_instance)
             else
               @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end

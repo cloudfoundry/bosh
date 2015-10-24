@@ -362,14 +362,33 @@ module Bosh::Director::DeploymentPlan
             end
             let(:job_availability_zones) { ['zone1', 'zone2'] }
 
-            it 'picks new IP for instance that is not used by other instances' do
-              expect(new_instance_plans).to eq([])
-              expect(obsolete_instance_plans).to eq([])
-              expect(existing_instance_plans.size).to eq(2)
-              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
-              expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.14')])
-              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
-              expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.14')])
+            context 'when AZ is the same' do
+              it 'picks new IP for instance that is not used by other instances' do
+                expect(new_instance_plans).to eq([])
+                expect(obsolete_instance_plans).to eq([])
+                expect(existing_instance_plans.size).to eq(2)
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.14')])
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.14')])
+              end
+            end
+
+            context 'when static IP and AZ were changed' do
+              let(:static_ips) { ['192.168.1.10', '192.168.1.14'] }
+
+              it 'recreates instance in new AZ with new IP' do
+                expect(new_instance_plans.size).to eq(1)
+                expect(new_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(new_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.14')])
+
+                expect(obsolete_instance_plans.size).to eq(1)
+                expect(obsolete_instance_plans.first.existing_instance).to eq(existing_instances[1])
+
+                expect(existing_instance_plans.size).to eq(1)
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              end
             end
           end
 
@@ -490,14 +509,14 @@ module Bosh::Director::DeploymentPlan
                     [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
                   )
 
-                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
+                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
                   )
 
-                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
+                expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                    [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
                   )
               end
             end
@@ -676,7 +695,7 @@ module Bosh::Director::DeploymentPlan
             let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
             let(:b_static_ips) { ['10.10.1.10', '10.10.2.10'] }
 
-            it 'puts that instance in AZ with least number of instances' do
+            it 'it reuses existing instances with new IPs in their AZs' do
               expect(new_instance_plans).to eq([])
               expect(existing_instance_plans.size).to eq(2)
               expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
@@ -684,7 +703,7 @@ module Bosh::Director::DeploymentPlan
                   [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
                 )
 
-              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
               expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
                   [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
                 )

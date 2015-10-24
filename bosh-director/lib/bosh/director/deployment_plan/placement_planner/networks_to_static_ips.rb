@@ -90,13 +90,17 @@ module Bosh
           end
 
           def take_next_ip_for_network_and_az(network, az_name)
-            static_ip_to_azs = @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.az_names.include?(az_name) }
+            static_ip_to_azs = find_by_network_and_az(network, az_name)
             @networks_to_static_ips[network.name].delete(static_ip_to_azs)
             static_ip_to_azs
           end
 
           def find_by_network_and_ip(network, ip)
             @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.ip == ip }
+          end
+
+          def find_by_network_and_az(network, az_name)
+            @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.az_names.include?(az_name) }
           end
 
           class StaticIpToAzs < Struct.new(:ip, :az_names); end
