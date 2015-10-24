@@ -33,7 +33,6 @@ module Bosh::Director
 
       it 'cleans up all orphaned disks' do
         post '/'
-        puts last_response.inspect
 
         expect_redirect_to_queued_task(last_response)
       end

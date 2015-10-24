@@ -3,10 +3,27 @@ module Bosh::Director
     class ReleaseManager
       include ApiHelper
 
-      # Finds release by name
-      # @param [String] name Release name
-      # @return [Models::Release]
-      # @raise [ReleaseNotFound]
+      def get_all_releases
+        releases = Models::Release.order_by(:name.asc).map do |release|
+          release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
+            {
+              'version' => rv.version.to_s,
+              'commit_hash' => rv.commit_hash,
+              'uncommitted_changes' => rv.uncommitted_changes,
+              'currently_deployed' => !rv.deployments.empty?,
+              'job_names' => rv.templates.map(&:name),
+            }
+          end
+
+          {
+            'name' => release.name,
+            'release_versions' => release_versions,
+          }
+        end
+
+        releases
+      end
+
       def find_by_name(name)
         release = Models::Release[:name => name]
         if release.nil?
@@ -15,10 +32,6 @@ module Bosh::Director
         release
       end
 
-      # @param [Models::Release] release Release model
-      # @param [String] version Release version
-      # @return [Models::ReleaseVersion] Release version model
-      # @raise [ReleaseVersionInvalid, ReleaseVersionNotFound]
       def find_version(release, version)
         dataset = release.versions_dataset
 
