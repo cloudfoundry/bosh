@@ -39,6 +39,10 @@ module Bosh::Director
         }
       end
 
+      def ip_type(_)
+        :static
+      end
+
       def validate_has_job!(az_names, job_name)
         # nothing to validate
       end

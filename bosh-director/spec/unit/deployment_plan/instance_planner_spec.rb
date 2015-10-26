@@ -331,8 +331,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         allow(deployment).to receive(:network).with('fake-network') { manual_network }
 
         ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-        vip_repo = BD::DeploymentPlan::VipRepo.new(logger)
-        ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, vip_repo, true, logger)
+        ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, true, logger)
         allow(deployment).to receive(:ip_provider) { ip_provider  }
         fake_job
         existing_instance.bind_existing_reservations({})
@@ -368,6 +367,25 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_plan = instance_plans.first
           expect(existing_instance_plan.network_plans.first.existing?).to be_truthy
         end
+      end
+    end
+
+    context 'when instance has vip networks' do
+      let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
+      before do
+        job_network = BD::DeploymentPlan::JobNetwork.new('fake-network', ['68.68.68.68'], [], vip_network)
+        allow(job).to receive(:networks).and_return([job_network])
+      end
+
+      it 'creates network plan for vip network' do
+        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [])
+
+        expect(instance_plans.count).to eq(1)
+        existing_instance_plan = instance_plans.first
+        expect(existing_instance_plan.network_plans.size).to eq(1)
+        vip_network_plan = existing_instance_plan.network_plans.first
+        expect(vip_network_plan.reservation.network).to eq(vip_network)
+        expect(vip_network_plan.reservation.ip).to eq(ip_to_i('68.68.68.68'))
       end
     end
   end

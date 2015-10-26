@@ -3,11 +3,10 @@ module Bosh::Director
     class IpProviderV2
       include IpUtil
 
-      def initialize(ip_repo, vip_repo, using_global_networking, logger)
+      def initialize(ip_repo, using_global_networking, logger)
         @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
         @ip_repo = ip_repo
         @using_global_networking = using_global_networking
-        @vip_repo = vip_repo
       end
 
       def release(reservation)
@@ -17,8 +16,7 @@ module Bosh::Director
           @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else
-          ip_repo = reservation.network.is_a?(VipNetwork) ? @vip_repo : @ip_repo
-          ip_repo.delete(reservation.ip, reservation.network.name)
+          @ip_repo.delete(reservation.ip, reservation.network.name)
         end
       end
 
@@ -79,6 +77,8 @@ module Bosh::Director
         # Do nothing for Dynamic Network
         return if reservation.network.is_a?(DynamicNetwork)
 
+        return reserve_vip(reservation) if reservation.network.is_a?(VipNetwork)
+
         @logger.debug('Reserving existing ips')
         subnet = find_subnet_containing(reservation)
         if subnet
@@ -106,11 +106,8 @@ module Bosh::Director
       end
 
       def reserve_vip(reservation)
-        reservation.resolve_type(:static)
-
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
-        @vip_repo.add(reservation)
-        reservation.mark_reserved
+        @ip_repo.add(reservation)
       end
 
       def filter_subnet_by_instance_az(reservation)

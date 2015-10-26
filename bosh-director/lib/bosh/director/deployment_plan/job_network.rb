@@ -22,6 +22,10 @@ module Bosh::Director
         !!@static_ips
       end
 
+      def vip?
+        deployment_network.kind_of?(VipNetwork)
+      end
+
       def default_for?(property)
         properties_for_which_the_network_is_the_default.include?(property)
       end

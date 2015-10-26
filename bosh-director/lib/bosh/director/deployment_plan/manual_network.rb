@@ -65,6 +65,11 @@ module Bosh::Director
         config
       end
 
+      def ip_type(cidr_ip)
+        static_ips = @subnets.map { |subnet| subnet.static_ips.to_a }.flatten
+        static_ips.include?(cidr_ip.to_i) ? :static : :dynamic
+      end
+
       private
 
       # @param [Integer, NetAddr::CIDR, String] ip

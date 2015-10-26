@@ -33,7 +33,6 @@ module Bosh::Director
           default_for = safe_property(network_spec, "default", :class => Array, :default => [])
           static_ips = parse_static_ips(network_spec['static_ips'])
 
-
           deployment_network = look_up_deployment_network(manifest_networks, job_name, network_name)
           if deployment_network.validate_reference_from_job!(network_spec)
             JobNetwork.new(network_name, static_ips, default_for, deployment_network)

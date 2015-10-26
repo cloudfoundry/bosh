@@ -27,15 +27,8 @@ module Bosh::Director::DeploymentPlan
     def add(reservation)
       cidr_ip = CIDRIP.new(reservation.ip)
 
-      static_ips = reservation.network.subnets
-                     .map { |subnet| subnet.static_ips.to_a }
-                     .flatten
+      reservation_type = reservation.network.ip_type(cidr_ip)
 
-      if static_ips.include?(cidr_ip.to_i)
-        reservation_type = :static
-      else
-        reservation_type = :dynamic
-      end
       reserve_with_instance_validation(
         reservation.instance,
         cidr_ip,
