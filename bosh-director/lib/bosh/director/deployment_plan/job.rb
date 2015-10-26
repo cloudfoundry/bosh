@@ -318,18 +318,6 @@ module Bosh::Director
         false
       end
 
-      def reconcile_network_plans
-        needed_instance_plans.each do |instance_plan|
-          desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
-          network_plans = NetworkPlanner::ReservationReconciler.new(@logger)
-                            .reconcile(
-                              desired_reservations,
-                              instance_plan.instance.existing_network_reservations
-                            )
-          instance_plan.network_plans = network_plans
-        end
-      end
-
       private
 
       # @param [Hash] collection All properties collection

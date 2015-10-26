@@ -18,6 +18,7 @@ module Bosh
           log_outcome(new_desired_instance_plans, desired_existing_instance_plans, obsolete_existing_instance_plans)
 
           elect_bootstrap_instance(new_desired_instance_plans, desired_existing_instance_plans)
+          reconcile_network_plans(instance_plans.reject(&:obsolete?))
 
           instance_plans
         end
@@ -66,6 +67,18 @@ module Bosh
                 instance.unmark_as_bootstrap
               end
             end
+          end
+        end
+
+        def reconcile_network_plans(instance_plans)
+          instance_plans.each do |instance_plan|
+            desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
+            network_plans = NetworkPlanner::ReservationReconciler.new(@logger)
+                              .reconcile(
+                                desired_reservations,
+                                instance_plan.instance.existing_network_reservations
+                              )
+            instance_plan.network_plans = network_plans
           end
         end
 

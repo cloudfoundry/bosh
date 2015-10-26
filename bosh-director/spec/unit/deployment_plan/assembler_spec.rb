@@ -108,7 +108,6 @@ module Bosh::Director
           template.bind_models
           job.templates = [template]
           allow(job).to receive(:validate_package_names_do_not_collide!)
-          allow(job).to receive(:reconcile_network_plans)
           job
         end
 
@@ -120,13 +119,6 @@ module Bosh::Director
         it 'validates the jobs' do
           expect(j1).to receive(:validate_package_names_do_not_collide!).once
           expect(j2).to receive(:validate_package_names_do_not_collide!).once
-
-          assembler.bind_models
-        end
-
-        it 'adds missing network plans' do
-          expect(j1).to receive(:reconcile_network_plans).once
-          expect(j2).to receive(:reconcile_network_plans).once
 
           assembler.bind_models
         end

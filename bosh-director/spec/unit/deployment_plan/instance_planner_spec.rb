@@ -1,6 +1,8 @@
 require 'spec_helper'
 
-describe BD::DeploymentPlan::InstancePlanner do
+describe 'BD::DeploymentPlan::InstancePlanner' do
+  include BD::IpUtil
+
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
   let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, options) }
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
@@ -40,7 +42,7 @@ describe BD::DeploymentPlan::InstancePlanner do
     instance
   end
 
-  describe '#plan_job_instances' do
+  describe 'plan_job_instances' do
     before do
       allow(job).to receive(:networks).and_return([])
     end
@@ -221,7 +223,7 @@ describe BD::DeploymentPlan::InstancePlanner do
         it 'keeps bootstrap node' do
           existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name)
 
-          existing_tracer_instance = instance_double(BD::DeploymentPlan::Instance, bootstrap?: true, update_description: nil, assign_availability_zone: nil)
+          existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
           allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { existing_tracer_instance }
 
           instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
@@ -313,6 +315,58 @@ describe BD::DeploymentPlan::InstancePlanner do
           obsolete_instance_plan = instance_plans.first
 
           expect(obsolete_instance_plan.obsolete?).to be_truthy
+        end
+      end
+    end
+
+    context 'reconciling network plans' do
+      let(:existing_instance) { make_instance_with_existing_model(existing_instance_model) }
+
+      let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name) }
+
+      before do
+        allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { existing_instance }
+        BD::Models::IpAddress.make(address: ip_to_i('192.168.1.5'), network_name: 'fake-network', instance: existing_instance_model)
+
+        allow(deployment).to receive(:network).with('fake-network') { manual_network }
+
+        ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
+        vip_repo = BD::DeploymentPlan::VipRepo.new(logger)
+        ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, vip_repo, true, logger)
+        allow(deployment).to receive(:ip_provider) { ip_provider  }
+        fake_job
+        existing_instance.bind_existing_reservations({})
+      end
+
+      let(:manual_network) { BD::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
+      let(:subnet) do
+        BD::DeploymentPlan::ManualNetworkSubnet.new(
+          'fake-network',
+          NetAddr::CIDR.create('192.168.1.0/24'),
+          nil, nil, nil, nil, [], [],
+          [])
+      end
+
+      it 'marks undesired existing network reservations as obsolete' do
+        instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+
+        expect(instance_plans.count).to eq(1)
+        existing_instance_plan = instance_plans.first
+        expect(existing_instance_plan.network_plans.first.obsolete?).to be_truthy
+      end
+
+      context 'when network reservation is needed' do
+        before do
+          job_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
+          allow(job).to receive(:networks).and_return([job_network])
+        end
+
+        it 'marks desired existing reservations as existing' do
+          instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+
+          expect(instance_plans.count).to eq(1)
+          existing_instance_plan = instance_plans.first
+          expect(existing_instance_plan.network_plans.first.existing?).to be_truthy
         end
       end
     end
