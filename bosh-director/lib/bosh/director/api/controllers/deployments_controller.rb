@@ -328,15 +328,11 @@ module Bosh::Director
       def deployment_has_instance_to_resurrect?(deployment)
         false if deployment.nil?
         filter = {
-            :deployment_id => deployment.id
+          deployment_id: deployment.id,
+          resurrection_paused: false
         }
         instances = @instance_manager.filter_by(filter)
-        instances.each do |instance|
-          if !instance.resurrection_paused
-            return true
-          end
-        end
-        false
+        instances.any?
       end
     end
   end
