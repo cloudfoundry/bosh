@@ -51,6 +51,8 @@ module Bosh::Stemcell
         vcloud_stages
       when Infrastructure::Warden then
         warden_stages
+      when Infrastructure::Azure then
+        azure_stages
       end
 
       stages.concat(finish_stemcell_stages)
@@ -64,6 +66,8 @@ module Bosh::Stemcell
           qcow2_package_stages
         when 'ovf' then
           ovf_package_stages
+        when 'vhd' then
+          vhd_package_stages
         when 'files' then
           files_package_stages
       end
@@ -219,8 +223,27 @@ module Bosh::Stemcell
       ]
     end
 
+    def azure_stages
+      [
+        # Misc
+        :system_azure_network,
+        :system_azure_wala,
+        :system_parameters,
+        # Finalisation,
+        :bosh_clean,
+        :bosh_harden,
+        :bosh_disable_password_authentication,
+        :bosh_azure_agent_settings,
+        :disable_blank_passwords,
+        :bosh_clean_ssh,
+        # Image/bootloader
+        :image_create,
+        :image_install_grub,
+      ]
+    end
+
     def centos_os_stages
-     [
+      [
         :base_centos,
         :base_runsvdir,
         :base_centos_packages,
@@ -317,6 +340,12 @@ module Bosh::Stemcell
         :image_ovf_vmx,
         :image_ovf_generate,
         :prepare_ovf_image_stemcell,
+      ]
+    end
+
+    def vhd_package_stages
+      [
+        :prepare_vhd_image_stemcell,
       ]
     end
 
