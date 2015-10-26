@@ -25,7 +25,7 @@ module Bosh::Registry
 
       @db = connect_db(config["db"])
 
-      if @cloud_plugin_is_provided
+      if config.has_key?("cloud")
         plugin = config["cloud"]["plugin"]
         begin
           require "bosh/registry/instance_manager/#{plugin}"
@@ -66,22 +66,16 @@ module Bosh::Registry
         raise ConfigError, "Database configuration is missing from config file"
       end
 
-      unless config.has_key?("cloud")
-        @cloud_plugin_is_provided = false
-        return
-      end
+      if config.has_key?("cloud")
+        unless config["cloud"].is_a?(Hash)
+          raise ConfigError, "Cloud configuration is missing from config file"
+        end
 
-      unless config["cloud"].is_a?(Hash)
-        raise ConfigError, "Cloud configuration is missing from config file"
+        if config["cloud"]["plugin"].nil?
+          raise ConfigError, "Cloud plugin is missing from config file"
+        end
       end
-
-      if config["cloud"]["plugin"].nil?
-        raise ConfigError, "Cloud plugin is missing from config file"
-      end
-
-      @cloud_plugin_is_provided = true
     end
 
   end
-
 end
