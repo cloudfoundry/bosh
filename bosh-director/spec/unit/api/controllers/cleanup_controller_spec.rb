@@ -31,10 +31,16 @@ module Bosh::Director
 
       after { FileUtils.rm_rf(temp_dir) }
 
-      it 'cleans up all orphaned disks' do
-        post '/'
+      context 'when request body asks to delete orphaned disks' do
+        it 'cleans up all orphaned disks' do
+          post('/', JSON.generate('config' => {
+                'orphaned_disks_to_keep' => 0,
+                'releases_to_keep' => 1,
+                'stemcells_to_keep' => 2,
+              }))
 
-        expect_redirect_to_queued_task(last_response)
+          expect_redirect_to_queued_task(last_response)
+        end
       end
     end
   end
