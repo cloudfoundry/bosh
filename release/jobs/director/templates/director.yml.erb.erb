@@ -393,31 +393,16 @@ end.else do
     }
 
     datacenters.each do |dc|
-      clusters = []
-      dc['clusters'].each do |cluster|
-
-        case cluster
-          when Hash
-            cluster.each do |cluster_name, cluster_properties|
-              cluster_properties.each do |k, v|
-                clusters[cluster_name.to_s]  << {k.to_s => v}
-              end
-            end
-          when String
-            clusters <<  cluster.to_s
-          end
-
-        plugin['properties']['vcenters'][0]['datacenters'] << {
-          name: dc['name'],
-          vm_folder: dc['vm_folder'] || "BOSH_VMs",
-          template_folder: dc['template_folder'] || "BOSH_Templates",
-          disk_path: dc['disk_path'] || "BOSH_Disks",
-          datastore_pattern: dc['datastore_pattern'],
-          persistent_datastore_pattern: dc['persistent_datastore_pattern'],
-          allow_mixed_datastores: dc.fetch('allow_mixed_datastores', true),
-          clusters: clusters
-        }
-      end
+      plugin['properties']['vcenters'][0]['datacenters'] << {
+        name: dc['name'],
+        vm_folder: dc['vm_folder'] || "BOSH_VMs",
+        template_folder: dc['template_folder'] || "BOSH_Templates",
+        disk_path: dc['disk_path'] || "BOSH_Disks",
+        datastore_pattern: dc['datastore_pattern'],
+        persistent_datastore_pattern: dc['persistent_datastore_pattern'],
+        allow_mixed_datastores: dc.fetch('allow_mixed_datastores', true),
+        clusters: dc['clusters']
+      }
     end
 
   end
