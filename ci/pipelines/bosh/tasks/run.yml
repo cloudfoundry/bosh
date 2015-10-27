@@ -7,10 +7,8 @@ inputs:
 - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/test-integration.sh
+  path: bosh-src/ci/pipelines/bosh/tasks/run.sh
 
 params:
   RUBY_VERSION: replace-me
-  DB:           replace-me
-  LOG_LEVEL:    INFO
-  NUM_GROUPS:   16
+  COMMAND: "echo command"
