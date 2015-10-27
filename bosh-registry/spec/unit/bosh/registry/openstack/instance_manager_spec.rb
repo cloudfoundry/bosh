@@ -9,7 +9,7 @@ describe Bosh::Registry::InstanceManager do
     valid_config.merge({'cloud' => {
       'plugin' => 'openstack',
       'openstack' => {
-        'auth_url' => 'http://127.0.0.1:5000/v3.0',
+        'auth_url' => 'http://127.0.0.1:5000/v3',
         'username' => 'foo',
         'api_key' => 'bar',
         'project' => 'foo',
@@ -43,7 +43,7 @@ describe Bosh::Registry::InstanceManager do
     let(:openstack_compute) {
       {
         :provider => 'OpenStack',
-        :openstack_auth_url => 'http://127.0.0.1:5000/v3.0/tokens',
+        :openstack_auth_url => 'http://127.0.0.1:5000/v3/auth/tokens',
         :openstack_username => 'foo',
         :openstack_api_key => 'bar',
         :openstack_tenant => nil,
