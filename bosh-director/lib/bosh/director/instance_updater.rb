@@ -119,17 +119,18 @@ module Bosh::Director
 
     def start!(instance)
       agent(instance).start
-    rescue RuntimeError => e
-      # FIXME: this is somewhat ghetto: we don't have a good way to
-      # negotiate on BOSH protocol between director and agent (yet),
-      # so updating from agent version that doesn't support 'start' RPC
-      # to the one that does might be hard. Right now we decided to
-      # just swallow the exception.
-      # This needs to be removed in one of the following cases:
-      # 1. BOSH protocol handshake gets implemented
-      # 2. All agents updated to support 'start' RPC
-      #    and we no longer care about backward compatibility.
-      @logger.warn("agent start raised an exception: #{e.inspect}, ignoring for compatibility")
+    end
+
+    def start!
+      agent.start
+    end
+
+    def need_start?
+      @target_state == 'started'
+    end
+
+    def dns_change_only?
+      @instance.changes.include?(:dns) && @instance.changes.size == 1
     end
 
     def trusted_certs_change_only?(instance_plan)

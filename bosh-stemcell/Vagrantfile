@@ -5,10 +5,6 @@ Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
 
-  config.berkshelf.enabled = true
-  config.berkshelf.berksfile_path = "./Berksfile"
-  config.omnibus.chef_version = "11"
-
   config.vm.define :local do |local|
     local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
     local.vm.provider :virtualbox do |virtualbox|
@@ -39,7 +35,7 @@ Vagrant.configure('2') do |config|
       end
 
       override.ssh.username = 'ubuntu'
-      override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
+      override.ssh.private_key_path = env.fetch('BOSH_VAGRANT_KEY_PATH', '~/.ssh/id_rsa_bosh')
       override.nfs.functional = false
     end
   end
@@ -83,21 +79,21 @@ EOS
     shell.inline = <<-BASH
       mkdir -p /mnt/tmp
       chown -R ubuntu:ubuntu /mnt/tmp
-      echo >> /home/ubuntu/.bashrc
-      echo 'export TMPDIR=/mnt/tmp' >> /home/ubuntu/.bashrc
+      echo >> /home/ubuntu/.profile
+      echo 'export TMPDIR=/mnt/tmp' >> /home/ubuntu/.profile
       mkdir -p /mnt/stemcells
       chown -R ubuntu:ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
 
       chown -R ubuntu:ubuntu /bosh
       ( cd /bosh && bundle install --local )
-    BASH
-  end
 
-  # todo can we install golang with a shell provisioner?
-  config.vm.provision :chef_solo do |chef|
-    chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
-    chef.json = { go: { version: '1.5.1' } }
+      wget -q https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
+      echo 46eecd290d8803887dec718c691cc243f2175fe0 go*.tar.gz | sha1sum -c -
+      tar -C /usr/local -xzf go*.tar.gz
+      rm go*.tar.gz
+      echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/ubuntu/.profile
+    BASH
   end
 
   config.vm.synced_folder '../.', '/bosh', rsync__args: ["--verbose", "--archive", "--delete", "-z"]

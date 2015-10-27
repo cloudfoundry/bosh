@@ -109,6 +109,7 @@ module Bosh::Cli::Command::Release
           '--name NAME',
           '--version VERSION',
           '--dir RELEASE_DIRECTORY',
+          '--timestamp-version'
         ])
       end
 
@@ -261,6 +262,30 @@ module Bosh::Cli::Command::Release
           end
         end
 
+        context 'when the --timestamp-version flag is provided' do
+          it 'builds a release with the timestamp version for dev releases' do
+            package_artifact = archive_builder.build(package)
+            job_artifact = archive_builder.build(job)
+            expect(archive_builder).to receive(:build).and_return(nil, package_artifact, job_artifact)
+
+            expect(Bosh::Cli::ReleaseBuilder).to receive(:new).with(
+              anything(), anything(), anything(), anything(), anything(), hash_including(timestamp_version: true))
+              .and_call_original
+
+            command.options[:'timestamp_version'] = true
+            command.options[:non_interactive] = true
+            command.create
+          end
+        end
+
+        it 'returns an error if both --timestamp-version and --version are provided' do
+          command.options[:'version'] = '1.0.1'
+          command.options[:'timestamp_version'] = true
+
+          expect{
+            command.create
+          }.to raise_error(Bosh::Cli::CliError, 'Cannot specify both timestamp-version and version when creating a release.')
+        end
 
         context 'dev release' do
           context 'interactive' do
@@ -305,6 +330,26 @@ module Bosh::Cli::Command::Release
 
           context 'non-interactive' do
             before { command.options[:non_interactive] = true }
+
+            context 'when version is not provided' do
+              it 'sets the version on the info hash' do
+                expect(release).to receive(:dev_name).and_return(nil)
+                allow(release).to receive(:final_name).and_return(nil)
+                expect(release).to receive(:dev_name=).with('bosh-release')
+
+                command.create
+                expect(command.info[:generated_version]).to eq('0+dev.1')
+              end
+
+              it 'sets the manifest path on the info hash' do
+                expect(release).to receive(:dev_name).and_return(nil)
+                allow(release).to receive(:final_name).and_return(nil)
+                expect(release).to receive(:dev_name=).with('bosh-release')
+
+                command.create
+                expect(command.info[:generated_manifest_path]).to eq("#{release_source.path}/dev_releases/a-release/a-release-0+dev.1.yml")
+              end
+            end
 
             context 'when final config does not include a final release name' do
               it 'development release name should default to bosh-release' do
@@ -388,6 +433,13 @@ module Bosh::Cli::Command::Release
             allow(File).to receive(:file?).with(manifest_file).and_return(true)
 
             expect { command.create(manifest_file) }.to raise_error(Bosh::Cli::CliError, 'Cannot specify a custom version number when creating from a manifest. The manifest already specifies a version.')
+          end
+
+          it 'does not allow the flag --timestamp-version' do
+            command.options[:'timestamp_version'] = true
+            allow(File).to receive(:file?).with(manifest_file).and_return(true)
+
+            expect { command.create(manifest_file) }.to raise_error(Bosh::Cli::CliError, 'Cannot specify timestamp-version when creating from a manifest. The manifest already specifies a version.')
           end
         end
       end

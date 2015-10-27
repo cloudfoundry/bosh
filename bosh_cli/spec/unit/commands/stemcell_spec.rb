@@ -60,6 +60,13 @@ module Bosh::Cli
             end
           end
 
+          it 'should raise error when --sha1 is provided' do
+            command.add_option(:sha1, "shawesome")
+            expect {
+              command.upload(stemcell_archive)
+            }.to raise_error(Bosh::Cli::CliError, /Option '--sha1' is not supported for uploading local stemcell/)
+          end
+
           context 'with --skip-if-exists option' do
             before do
               command.options[:skip_if_exists] = true
@@ -100,13 +107,49 @@ module Bosh::Cli
                 command.upload(stemcell_archive)
               }.to raise_error(Bosh::Cli::CliError, /Option '--skip-if-exists' and option '--fix' should not be used together/)
             end
+
+            it 'should raise error when --name also provided' do
+              command.add_option(:name, "ubuntu")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
+
+            it 'should raise error when --version also provided' do
+              command.add_option(:version, "1")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
+
+            it 'should raise error when --name and --version also provided' do
+              command.add_option(:name, "ubuntu")
+              command.add_option(:version, "1")
+              expect {
+                command.upload(stemcell_archive)
+              }.to raise_error(Bosh::Cli::CliError, /Options '--name' and '--version' should not be used together with option '--fix'/)
+            end
+          end
+
+          context 'with --name and --version' do
+            let(:director_stemcells) { [{"name" => "ubuntu", "version" => "1" }]}
+            it 'should not upload a stemcell if one exists already' do
+                expect(director).to receive(:list_stemcells).and_return(director_stemcells)
+
+                expect(director).not_to receive(:upload_stemcell)
+                expect {
+                  command.add_option(:name, "ubuntu")
+                  command.add_option(:version, "1")
+                  command.upload(stemcell_archive)
+                }.not_to raise_error()
+              end
           end
         end
 
         context 'remote stemcell' do
+
           it 'should upload the stemcell' do
             expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {})
-
             command.upload('http://stemcell_location')
           end
 
@@ -114,6 +157,18 @@ module Bosh::Cli
             command.options[:fix] = true
             expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location', {:fix => true})
             command.upload('http://stemcell_location')
+          end
+
+          context 'with --name and --version' do
+            let(:director_stemcells) { [{"name" => "ubuntu", "version" => "1" }]}
+            it 'should not upload a stemcell if one exists already' do
+              expect(director).to receive(:list_stemcells).and_return(director_stemcells)
+
+              expect(director).to_not receive(:upload_remote_release)
+              command.add_option(:name, "ubuntu")
+              command.add_option(:version, "1")
+              command.upload('http://stemcell_location')
+            end
           end
         end
       end
@@ -256,6 +311,25 @@ module Bosh::Cli
             expect(director).to receive(:upload_stemcell).with(stemcell_archive, {})
             command.upload(stemcell_archive)
           end
+
+          context 'when the stemcell is remote' do
+            let(:remote_stemcell_location) { 'http://location/stemcell.tgz' }
+
+            before do
+              allow(director).to receive(:upload_remote_stemcell)
+            end
+
+            context 'when a sha1 is provided' do
+              before do
+                command.add_option(:sha1, 'shawone')
+              end
+
+              it 'passes the sha1 up the chain' do
+                expect(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location, {:sha1=>"shawone"})
+                command.upload(remote_stemcell_location)
+              end
+            end
+          end
         end
 
         context 'when stemcell already exists' do
@@ -294,13 +368,13 @@ module Bosh::Cli
           context 'when the stemcell is remote' do
             let(:remote_stemcell_location) { 'http://location/stemcell.tgz' }
             let(:task_events_json) { '{"error":{"code":50002}}' }
-            before do
-              allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location, {}).and_return([:error, 1])
-              allow(director).to receive(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
-            end
 
             context 'when --skip-if-exists flag is given' do
-              before { command.add_option(:skip_if_exists, true) }
+              before do
+                allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location, {}).and_return([:error, 1])
+                allow(director).to receive(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
+                command.add_option(:skip_if_exists, true)
+              end
 
               it 'still uploads stemcell' do
                 expect(director).to receive(:upload_remote_stemcell).with('http://location/stemcell.tgz', {})
@@ -320,6 +394,11 @@ module Bosh::Cli
             end
 
             context 'when --skip-if-exists flag is not given' do
+              before do
+                allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location, {}).and_return([:error, 1])
+                allow(director).to receive(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
+              end
+
               it 'still uploads stemcell' do
                 expect(director).to receive(:upload_remote_stemcell).with('http://location/stemcell.tgz', {})
                 command.upload(remote_stemcell_location) rescue nil

@@ -142,6 +142,14 @@ describe 'director.yml.erb.erb' do
       }
     end
 
+    it 'renders correctly' do
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['host']).to eq('vcenter.address')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['user']).to eq('user')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['password']).to eq('vcenter.password')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['name']).to eq('vcenter.datacenters.first.name')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['clusters'][0]).to eq('cluster1')
+    end
+
     context 'when vcenter.address contains special characters' do
       before do
         deployment_manifest_fragment['properties']['vcenter']['address'] = "!vcenter.address''"
@@ -773,6 +781,17 @@ describe 'director.yml.erb.erb' do
     it 'configures the cpi correctly' do
       expect(parsed_yaml['cloud']['provider']['name']).to eq('test-cpi')
       expect(parsed_yaml['cloud']['provider']['path']).to eq('/var/vcap/jobs/test-cpi/bin/cpi')
+    end
+  end
+
+  context 'when ntp is provided' do
+    before do
+      deployment_manifest_fragment['properties']['director']['cpi_job'] = 'test-cpi'
+      deployment_manifest_fragment['properties']['ntp'] = ['1.1.1.1', '2.2.2.2']
+    end
+
+    it 'configures the cpi correctly' do
+      expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
     end
   end
 end

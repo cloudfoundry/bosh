@@ -4,11 +4,10 @@ platform: linux
 image: docker:///bosh/main
 
 inputs:
-- name: bosh-src
+  - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/run.sh
+  path: bosh-src/ci/pipelines/bosh/tasks/test-unit.sh
 
 params:
   RUBY_VERSION: replace-me
-  COMMAND: "echo command"

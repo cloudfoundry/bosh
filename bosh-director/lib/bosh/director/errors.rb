@@ -77,6 +77,7 @@ module Bosh::Director
   ReleaseInvalidPackage = err(30012)
   ReleaseExistingJobFingerprintMismatch = err(30013)
   ReleaseVersionCommitHashMismatch = err(30014)
+  ReleaseSha1DoesNotMatch = err(30015)
 
   ValidationInvalidType = err(40000)
   ValidationMissingField = err(40001)
@@ -90,6 +91,7 @@ module Bosh::Director
   StemcellInUse = err(50004)
   StemcellAliasAlreadyExists = err(50005)
   StemcellBothNameAndOS = err(50006)
+  StemcellSha1DoesNotMatch = err(50007)
 
   PackageInvalidArchive = err(60000)
   PackageMissingSourceCode = err(60001)

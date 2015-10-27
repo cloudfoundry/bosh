@@ -2,7 +2,7 @@
 
 set -e
 
-source bosh-src/ci/tasks/utils.sh
+source bosh-src/ci/pipelines/utils.sh
 
 check_param RUBY_VERSION
 check_param DB

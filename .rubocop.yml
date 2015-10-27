@@ -35,6 +35,9 @@ Documentation:
 CaseIndentation:
   Enabled: false
 
+ClassLength:
+  Enabled: false
+
 DotPosition:
   Enabled: false
 

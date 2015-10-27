@@ -19,3 +19,12 @@ print_git_state() {
     echo "---"
   fi
 }
+
+set_up_vagrant_private_key() {
+  if [ ! -f "$BOSH_VAGRANT_PRIVATE_KEY" ]; then
+    key_path=$(mktemp -d /tmp/ssh_key.XXXXXXXXXX)/value
+    echo "$BOSH_VAGRANT_PRIVATE_KEY" > $key_path
+    chmod 600 $key_path
+    export BOSH_VAGRANT_KEY_PATH=$key_path
+  fi
+}

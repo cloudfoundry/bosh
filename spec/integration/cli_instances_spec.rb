@@ -92,14 +92,33 @@ INSTANCES
 | foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
 |   process-1                                      | running |        |               |             |
 |   process-2                                      | running |        |               |             |
+|   process-3                                      | failing |        |               |             |
 +--------------------------------------------------+---------+--------+---------------+-------------+
 | foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
 |   process-1                                      | running |        |               |             |
 |   process-2                                      | running |        |               |             |
+|   process-3                                      | failing |        |               |             |
 +--------------------------------------------------+---------+--------+---------------+-------------+
 | foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
 |   process-1                                      | running |        |               |             |
 |   process-2                                      | running |        |               |             |
+|   process-3                                      | failing |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+INSTANCES
+
+    output = bosh_runner.run('instances --ps --failing')
+    expect(scrub_random_ids(output)).to include(<<INSTANCES)
++--------------------------------------------------+---------+--------+---------------+-------------+
+| Instance                                         | State   | AZ     | Resource Pool | IPs         |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+|   process-3                                      | failing |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+|   process-3                                      | failing |        |               |             |
++--------------------------------------------------+---------+--------+---------------+-------------+
+| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
+|   process-3                                      | failing |        |               |             |
 +--------------------------------------------------+---------+--------+---------------+-------------+
 INSTANCES
 
@@ -123,5 +142,12 @@ INSTANCES
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
+  end
+
+  it 'should return instances --failing' do
+    deploy_from_scratch
+    instances_failing = bosh_runner.run('instances --failing')
+
+    expect(instances_failing).to match /No failing instances/
   end
 end

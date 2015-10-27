@@ -14,7 +14,11 @@ module Bosh::Registry
         @openstack_properties = cloud_config['openstack']
 
         unless @openstack_properties['auth_url'].match(/\/tokens$/)
-          @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
+          if is_v3? @openstack_properties['auth_url']
+            @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/auth/tokens'
+          else
+            @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
+          end
         end
 
         @openstack_options = {
@@ -49,7 +53,7 @@ module Bosh::Registry
             raise ConfigError, 'Invalid OpenStack configuration parameters'
           end
 
-        elsif cloud_config['openstack']['auth_url'].match(/v3(\.\d+)?/)
+        elsif is_v3? cloud_config['openstack']['auth_url']
           unless cloud_config['openstack']['domain'] && cloud_config['openstack']['project']
             raise ConfigError, 'Invalid OpenStack configuration parameters'
           end
@@ -75,6 +79,10 @@ module Bosh::Registry
         return (instance.private_ip_addresses + instance.floating_ip_addresses).compact
       end
 
+      private
+      def is_v3?(url)
+        url.match(/\/v3(?=\/|$)/)
+      end
     end
 
   end

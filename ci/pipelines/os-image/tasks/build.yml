@@ -1,0 +1,19 @@
+---
+platform: linux
+
+image: docker:///bosh/init
+
+inputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/pipelines/os-image/tasks/build.sh
+
+params:
+  BOSH_AWS_ACCESS_KEY_ID:     replace-me
+  BOSH_AWS_SECRET_ACCESS_KEY: replace-me
+  BOSH_VAGRANT_PRIVATE_KEY:   replace-me
+  OPERATING_SYSTEM_NAME:      replace-me
+  OPERATING_SYSTEM_VERSION:   replace-me
+  OS_IMAGE_S3_BUCKET_NAME:    replace-me
+  OS_IMAGE_S3_KEY:            replace-me

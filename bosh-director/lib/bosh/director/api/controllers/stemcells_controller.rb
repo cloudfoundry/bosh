@@ -7,6 +7,7 @@ module Bosh::Director
         payload = json_decode(request.body)
         options = {
             fix: params['fix'] == 'true',
+            sha1: payload['sha1']
         }
         task = @stemcell_manager.create_stemcell_from_url(current_user, payload['location'], options)
         redirect "/tasks/#{task.id}"
@@ -15,6 +16,7 @@ module Bosh::Director
       post '/', :consumes => :multipart do
         options = {
             fix: params['fix'] == 'true',
+            sha1: params['sha1']
         }
         task = @stemcell_manager.create_stemcell_from_file_path(current_user, params[:nginx_upload_path], options)
         redirect "/tasks/#{task.id}"

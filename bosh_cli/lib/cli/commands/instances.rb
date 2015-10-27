@@ -6,6 +6,7 @@ module Bosh::Cli::Command
     option '--dns', 'Return instance DNS A records'
     option '--vitals', 'Return instance vitals information'
     option '--ps', "Return instance process information"
+    option '--failing', "Only show failing ones"
     def list
       auth_required
       deployment_required
@@ -40,7 +41,15 @@ module Bosh::Cli::Command
       has_disk_cid = instances.any? {|instance| instance.has_key? 'disk_cid'}
       has_az = instances.any? {|instance| instance.has_key? 'availability_zone' }
 
-      instances_table = construct_table_to_display(has_disk_cid, has_az, options, sorted)
+      instances_table, row_count = construct_table_to_display(has_disk_cid, has_az, options, sorted)
+
+      if options[:failing] && row_count == 0
+        nl
+        say('No failing instances')
+        nl
+        return
+      end
+
       legend = '(*) Bootstrap node'
 
       nl
@@ -48,19 +57,20 @@ module Bosh::Cli::Command
       nl
       say(legend)
       nl
-      say('Instances total: %d' % instances.size)
+      say('Instances total: %d' % row_count)
     end
 
     private
 
     def construct_table_to_display(has_disk_cid, has_az, options, sorted)
-      table do |display_table|
+      result = table do |display_table|
 
         headings = ['Instance', 'State']
         if has_az
           headings << 'AZ'
         end
         headings += ['Resource Pool', 'IPs']
+        row_count = 0
 
         if options[:details]
           headings << 'VM CID'
@@ -82,6 +92,18 @@ module Bosh::Cli::Command
 
         s = sorted.size
         sorted.each do |instance|
+          if options[:failing]
+            if options[:ps]
+              instance['processes'].keep_if { |p| p['state'] != 'running' }
+              next if instance['processes'].size == 0 && instance['job_state'] != 'failing'
+            else
+              next if instance['job_state'] != 'failing'
+            end
+          end
+
+          row_count += 1
+          display_table << :separator if row_count.between?(2, sorted.size)
+
           job_name = instance['job_name'] || 'unknown'
           index = instance['index'] || 'unknown'
           job = if instance.has_key?('instance_id')
@@ -167,6 +189,8 @@ module Bosh::Cli::Command
           end
         end
       end
+
+      return result, row_count
     end
 
     def sort(instances)
@@ -178,6 +202,5 @@ module Bosh::Cli::Command
         comparison
       end
     end
-
   end
 end

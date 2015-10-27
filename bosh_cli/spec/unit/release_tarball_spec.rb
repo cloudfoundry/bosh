@@ -92,7 +92,7 @@ foo: bar
       expect(File.exist?(new_tar_path)).to be(true)
 
       new_tarball = Bosh::Cli::ReleaseTarball.new(new_tar_path)
-      expect(new_tarball).to be_valid
+      expect(new_tarball).to be_valid, "Tarball is not valid, errors: #{new_tarball.errors}"
       expect(new_tarball.manifest).to match release_tarball.manifest
     end
   end

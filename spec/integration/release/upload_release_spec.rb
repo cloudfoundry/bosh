@@ -143,6 +143,13 @@ describe 'upload release', type: :integration do
     OUT
   end
 
+  it 'raises an error when --sha1 is used when uploading a local release' do
+    target_and_login
+    expect {
+      bosh_runner.run("upload release #{spec_asset('test_release.tgz')} --sha1 abcd1234")
+    }.to raise_error(RuntimeError, /Option '--sha1' is not supported for uploading local release/)
+  end
+
   describe 'uploading a release that already exists' do
     before { target_and_login }
 
@@ -186,6 +193,33 @@ describe 'upload release', type: :integration do
 
         expect(inspect1).to eq(inspect2)
       end
+    end
+  end
+
+  describe 'when the release is remote' do
+
+    before { target_and_login }
+    let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+    let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
+
+    before { file_server.start }
+    after { file_server.stop }
+
+    let(:release_url) { file_server.http_url("compiled_releases/test_release/releases/test_release/test_release-1.tgz") }
+    let(:sha1) { "14ab572f7d00333d8e528ab197a513d44c709257" }
+
+    it 'accepts the release when the sha1 matches' do
+      output = bosh_runner.run("upload release #{release_url} --sha1 #{sha1}")
+
+      expect(output).to include("Started creating new packages")
+      expect(output).to include("Started creating new jobs")
+      expect(output).to include("Release uploaded")
+    end
+
+    it 'rejects the release when the sha1 does not match' do
+      expect {
+        bosh_runner.run("upload release #{release_url} --sha1 abcd1234")
+      }.to raise_error(RuntimeError, /Error 30015: Release SHA1 `#{sha1}' does not match the expected SHA1 `abcd1234'/)
     end
   end
 
