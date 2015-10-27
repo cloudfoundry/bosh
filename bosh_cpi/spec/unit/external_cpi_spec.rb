@@ -237,10 +237,6 @@ describe Bosh::Clouds::ExternalCpi do
     it_calls_cpi_method(:set_vm_metadata, :set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
   end
 
-  describe '#configure_networks' do
-    it_calls_cpi_method(:configure_networks, :configure_networks, 'fake-vm-cid', {'net' => 'props'})
-  end
-
   describe '#create_disk' do
     it_calls_cpi_method(:create_disk, :create_disk, 100_000, 'fake-vm-cid')
   end

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class DeleteRelease < BaseJob
@@ -218,7 +216,6 @@ module Bosh::Director
 
         return deleted || @force
       end
-
     end
   end
 end

@@ -157,12 +157,6 @@ module Bosh::Director
       @dns_manager.flush_dns_cache
     end
 
-    def update_settings(instance)
-      if instance.trusted_certs_changed?
-        instance.update_trusted_certs
-      end
-    end
-
     # Returns an array of wait times distributed
     # on the [min_watch_time..max_watch_time] interval.
     #
@@ -232,17 +226,15 @@ module Bosh::Director
         return false
       end
 
-      @logger.debug('Trying to update VM settings in place')
-
-      network_updater = NetworkUpdater.new(instance_plan, agent(instance), @cloud, @logger)
-      success = network_updater.update
-
-      unless success
-        @logger.info('Failed to update networks on live vm, recreating with new network configurations')
+      if instance_plan.networks_changed?
+        @logger.debug("Networks have changed. Can't update VM in place")
         return false
       end
 
-      update_settings(instance)
+      if instance.trusted_certs_changed?
+        @logger.debug('Updating trusted certs in place')
+        instance.update_trusted_certs
+      end
 
       true
     end
