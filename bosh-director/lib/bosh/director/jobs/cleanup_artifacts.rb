@@ -17,6 +17,8 @@ module Bosh::Director
         @disk_manager = DiskManager.new(Config.cloud, Config.logger)
         @release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
+        @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(@release_manager)
+        @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
       end
 
       def perform
@@ -30,25 +32,7 @@ module Bosh::Director
             releases_to_keep, stemcells_to_keep = 2, 2
           end
 
-          unused_releases = @release_manager
-                              .get_all_releases
-                              .map do |release|
-            release['release_versions'].reject! { |version| version['currently_deployed'] }
-            release
-          end
-          unused_releases_to_delete = unused_releases
-                                        .reject{ |release| release['release_versions'].empty? }
-                                        .map do |release|
-            release['release_versions'].pop(releases_to_keep)
-
-            release
-          end
-          unused_release_name_and_version = unused_releases_to_delete.map do |release|
-            release['release_versions'].map do |version|
-              {'name' => release['name'], 'version' => version['version']}
-            end
-          end.flatten
-
+          unused_release_name_and_version = @releases_to_delete_picker.pick(releases_to_keep)
           event_log.begin_stage('Deleting releases', unused_release_name_and_version.count)
           unused_release_name_and_version.each do |name_and_version|
             pool.process do
@@ -60,22 +44,7 @@ module Bosh::Director
           end
           formatted_releases = unused_release_name_and_version.map { |nv|"#{nv['name']}/#{nv['version']}" }.join(', ')
 
-          unused_stemcell_names_and_versions = @stemcell_manager
-                                                 .find_all_stemcells
-                                                 .select { |stemcell| stemcell['deployments'].empty? }
-                                                 .inject({}) do |h, stemcell|
-            h[stemcell['name']] ||= []
-            h[stemcell['name']] << stemcell
-            h
-          end
-          stemcells_to_versions_to_delete = unused_stemcell_names_and_versions.each_pair do |_, versions|
-            versions.sort! do |sc1, sc2|
-              Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
-            end
-            versions.pop(stemcells_to_keep)
-          end
-          stemcells_to_delete = stemcells_to_versions_to_delete.values.flatten
-
+          stemcells_to_delete = @stemcells_to_delete_picker.pick(stemcells_to_keep)
           event_log.begin_stage('Deleting stemcells', stemcells_to_delete.count)
           stemcells_to_delete.each do |stemcell|
             pool.process do
