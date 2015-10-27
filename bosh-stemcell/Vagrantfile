@@ -79,8 +79,8 @@ EOS
     shell.inline = <<-BASH
       mkdir -p /mnt/tmp
       chown -R ubuntu:ubuntu /mnt/tmp
-      echo >> /home/ubuntu/.bashrc
-      echo 'export TMPDIR=/mnt/tmp' >> /home/ubuntu/.bashrc
+      echo >> /home/ubuntu/.profile
+      echo 'export TMPDIR=/mnt/tmp' >> /home/ubuntu/.profile
       mkdir -p /mnt/stemcells
       chown -R ubuntu:ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
@@ -91,7 +91,8 @@ EOS
       wget -q https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
       echo 46eecd290d8803887dec718c691cc243f2175fe0 go*.tar.gz | sha1sum -c -
       tar -C /usr/local -xzf go*.tar.gz
-      echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/ubuntu/.bashrc
+      rm go*.tar.gz
+      echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/ubuntu/.profile
     BASH
   end
 
