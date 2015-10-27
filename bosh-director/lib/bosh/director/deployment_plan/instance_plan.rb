@@ -64,6 +64,9 @@ module Bosh
           changed
         end
 
+        def instance_model
+          new? ? instance.model : existing_instance
+        end
 
         def needs_restart?
           @desired_instance.virtual_state == 'restart'

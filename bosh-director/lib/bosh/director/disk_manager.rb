@@ -9,7 +9,7 @@ module Bosh::Director
     def update_persistent_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
 
-      attach_disks_for(instance) unless instance.disk_currently_attached?
+      attach_disks_for(instance) unless instance.disk_currently_attached? # current state does not represent what is on agent right now
       check_persistent_disk(instance)
 
       disk = nil
@@ -98,6 +98,11 @@ module Bosh::Director
       end
     end
 
+    def unmount_disk_for(instance_plan)
+      disk = instance_plan.instance.model.persistent_disk
+      unmount(instance_plan.instance, disk)
+    end
+
     private
 
     def orphan_snapshots(snapshots, orphan_disk)
@@ -114,16 +119,23 @@ module Bosh::Director
     end
 
     def delete_mounted_persistent_disk(instance, disk)
-      disk_cid = disk.disk_cid
-      vm_cid = instance.model.vm.cid
+      unmount(instance, disk)
 
-      # Unmount the disk only if disk is known by the agent
-      if disks(instance).include?(disk_cid)
-        agent(instance).unmount_disk(disk_cid)
+      vm_cid = instance.model.vm.cid
+      if vm_cid.nil?
+        @logger.info('Skipping disk detaching, instance does not have VM')
+        return
+      end
+
+      disk_cid = disk.disk_cid
+      if disk_cid.nil?
+        @logger.info('Skipping disk detaching, instance does not have a disk')
+        return
       end
 
       begin
-        @cloud.detach_disk(vm_cid, disk_cid) if vm_cid
+        @logger.info("Detaching disk #{disk_cid}")
+        @cloud.detach_disk(vm_cid, disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
@@ -133,6 +145,19 @@ module Bosh::Director
       end
 
       orphan_disk(disk)
+    end
+
+    def unmount(instance, disk)
+      disk_cid = disk.disk_cid
+      if disk_cid.nil?
+        @logger.info('Skipping disk unmounting, instance does not have a disk')
+        return
+      end
+
+      if disks(instance).include?(disk_cid)
+        @logger.info("Unmounting disk #{disk_cid}")
+        agent(instance).unmount_disk(disk_cid)
+      end
     end
 
     # Synchronizes persistent_disks with the agent.
@@ -173,6 +198,7 @@ module Bosh::Director
       if e.ok_to_retry
         @logger.warn('Retrying attach disk operation after persistent disk update failed')
         # Re-creating the vm may cause it to be re-created in a place with more storage
+        unmount_disk_for(instance_plan)
         vm_recreator.recreate_vm(instance_plan, disk.disk_cid)
         begin
           @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)

@@ -110,6 +110,12 @@ module Bosh::Director
 
                   before { allow(vm_recreator).to receive(:recreate_vm) }
 
+                  it 'unmounts the disk' do
+                    expect(cloud).to receive(:attach_disk).with('vm234', 'new-disk-cid').once
+                    expect(agent_client).to receive(:unmount_disk).with('disk123').twice
+                    disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+                  end
+
                   it 'recreates the vm' do
                     expect(cloud).to receive(:attach_disk).with('vm234', 'new-disk-cid').once
                     expect(vm_recreator).to receive(:recreate_vm).with(instance_plan, 'new-disk-cid')
@@ -402,6 +408,15 @@ module Bosh::Director
 
           expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
         end
+      end
+    end
+
+    describe '#unmount_disk_for' do
+      it 'deletes the old mounted disk' do
+        expect(agent_client).to receive(:unmount_disk).with('disk123')
+        # expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+
+        disk_manager.unmount_disk_for(instance_plan)
       end
     end
   end

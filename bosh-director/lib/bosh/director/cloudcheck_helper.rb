@@ -62,7 +62,7 @@ module Bosh::Director
       )
 
       begin
-        vm_deleter.delete_for_instance_plan(instance_plan_to_delete, skip_disks: true)
+        vm_deleter.delete_for_instance_plan(instance_plan_to_delete)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that

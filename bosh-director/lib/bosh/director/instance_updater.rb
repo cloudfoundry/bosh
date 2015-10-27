@@ -62,6 +62,7 @@ module Bosh::Director
 
       if instance.state == 'detached'
         @logger.info("Detaching instance #{instance}")
+        @disk_manager.unmount_disk_for(instance_plan)
         @vm_deleter.delete_for_instance_plan(instance_plan)
         release_obsolete_ips(instance_plan)
         instance.update_state
@@ -70,6 +71,7 @@ module Bosh::Director
 
       unless try_to_update_in_place(instance_plan)
         @logger.debug('Failed to update in place. Recreating VM')
+        @disk_manager.unmount_disk_for(instance_plan)
         @vm_recreator.recreate_vm(instance_plan, nil)
       end
 

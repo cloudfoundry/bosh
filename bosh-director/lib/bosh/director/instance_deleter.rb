@@ -24,7 +24,7 @@ module Bosh::Director
           stop(instance_plan)
         end
 
-        vm_deleter.delete_for_instance_plan(instance_plan, skip_disks: true)
+        vm_deleter.delete_for_instance_plan(instance_plan)
 
         unless instance_model.compilation
           error_ignorer.with_force_check do

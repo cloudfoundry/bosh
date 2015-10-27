@@ -138,12 +138,10 @@ module Bosh::Director
         it 'recreates the VM' do
           fake_job_context
 
-          expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan, options|
+          expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan|
             expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
             expect(instance_plan.existing_instance.cloud_properties_hash).to eq({'foo' => 'bar'})
             expect(instance_plan.existing_instance.env).to eq({'key1' => 'value1'})
-
-            expect(options).to eq({skip_disks: true})
           end
 
           expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
