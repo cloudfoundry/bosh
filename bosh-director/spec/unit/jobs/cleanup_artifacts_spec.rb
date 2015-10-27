@@ -57,7 +57,7 @@ module Bosh::Director
            expect_any_instance_of(ThreadPool).to receive(:process).exactly(6).times.and_call_original
            result = delete_artifacts.perform
 
-           expect(result).to eq('orphaned disk(s) fake-cid-1, fake-cid-2; stemcell(s) stemcell-a/1, stemcell-b/2; release(s) release-1/1, release-2/2 deleted')
+           expect(result).to eq('stemcell(s) deleted: stemcell-a/1, stemcell-b/2; release(s) deleted: release-1/1, release-2/2; orphaned disk(s) deleted: fake-cid-1, fake-cid-2')
 
            expect(Models::OrphanDisk.all).to be_empty
            expect(Models::Release.all).to be_empty
@@ -83,7 +83,7 @@ module Bosh::Director
               expect_any_instance_of(ThreadPool).to receive(:process).exactly(8).times.and_call_original
               result = delete_artifacts.perform
 
-              expected_result = 'orphaned disk(s) ; stemcell(s) stemcell-a/1, stemcell-a/10, stemcell-b/2, stemcell-b/10; release(s) release-1/1, release-1/10, release-2/2, release-2/10 deleted'
+              expected_result = 'stemcell(s) deleted: stemcell-a/1, stemcell-a/10, stemcell-b/2, stemcell-b/10; release(s) deleted: release-1/1, release-1/10, release-2/2, release-2/10; orphaned disk(s) deleted: none'
               expect(result).to eq(expected_result)
 
               expect(Models::Stemcell.all).to be_empty
@@ -104,7 +104,7 @@ module Bosh::Director
           expect_any_instance_of(ThreadPool).not_to receive(:process)
           result = delete_artifacts.perform
 
-          expect(result).to eq('stemcell(s) ; release(s)  deleted')
+          expect(result).to eq('stemcell(s) deleted: none; release(s) deleted: none')
 
           expect(Models::Release.all.count).to eq(2)
           expect(Models::Stemcell.all.count).to eq(2)
@@ -126,7 +126,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
             result = delete_artifacts.perform
 
-            expected_result = 'stemcell(s) stemcell-a/1, stemcell-b/2; release(s)  deleted'
+            expected_result = 'stemcell(s) deleted: stemcell-a/1, stemcell-b/2; release(s) deleted: none'
             expect(result).to eq(expected_result)
 
             expect(Models::Stemcell.all.count).to eq(4)
@@ -148,7 +148,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
             result = delete_artifacts.perform
 
-            expected_result = 'stemcell(s) ; release(s) release-1/1, release-2/2 deleted'
+            expected_result = 'stemcell(s) deleted: none; release(s) deleted: release-1/1, release-2/2'
             expect(result).to eq(expected_result)
 
             expect(Models::Release.all.count).to eq(2)
@@ -186,7 +186,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).not_to receive(:process)
             result = delete_artifacts.perform
 
-            expect(result).to eq('stemcell(s) ; release(s)  deleted')
+            expect(result).to eq('stemcell(s) deleted: none; release(s) deleted: none')
 
             expect(Models::Release.all.count).to eq(4)
             expect(Models::Stemcell.all.count).to eq(4)

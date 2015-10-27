@@ -42,7 +42,11 @@ module Bosh::Director
               end
             end
           end
-          formatted_releases = unused_release_name_and_version.map { |nv|"#{nv['name']}/#{nv['version']}" }.join(', ')
+          formatted_releases = if unused_release_name_and_version.empty?
+                                 'none'
+                               else
+                                 unused_release_name_and_version.map { |nv| "#{nv['name']}/#{nv['version']}" }.join(', ')
+                               end
 
           stemcells_to_delete = @stemcells_to_delete_picker.pick(stemcells_to_keep)
           event_log.begin_stage('Deleting stemcells', stemcells_to_delete.count)
@@ -54,11 +58,16 @@ module Bosh::Director
               end
             end
           end
-          formatted_stemcells = stemcells_to_delete.map { |nv| "#{nv['name']}/#{nv['version']}" }.join(', ')
+          formatted_stemcells = if stemcells_to_delete.empty?
+                                  'none'
+                                else
+                                  stemcells_to_delete.map { |nv| "#{nv['name']}/#{nv['version']}" }.join(', ')
+                                end
+
+          result = "stemcell(s) deleted: #{formatted_stemcells}; release(s) deleted: #{formatted_releases}"
 
           if @config['remove_all']
             orphan_disk_cids = @disk_manager.list_orphan_disks.map { |disk| disk['disk_cid'] }
-
             event_log.begin_stage('Deleting orphaned disks', orphan_disk_cids.count)
             orphan_disk_cids.each do |orphan_disk_cid|
               pool.process do
@@ -68,9 +77,8 @@ module Bosh::Director
               end
             end
 
-            result = "orphaned disk(s) #{orphan_disk_cids.join(', ')}; stemcell(s) #{formatted_stemcells}; release(s) #{formatted_releases} deleted"
-          else
-            result = "stemcell(s) #{formatted_stemcells}; release(s) #{formatted_releases} deleted"
+            formatted_orphan_disk = orphan_disk_cids.empty? ? 'none' : orphan_disk_cids.join(', ')
+            result += "; orphaned disk(s) deleted: #{formatted_orphan_disk}"
           end
         end
 
