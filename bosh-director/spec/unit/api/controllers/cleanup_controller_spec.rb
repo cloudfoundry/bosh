@@ -33,11 +33,7 @@ module Bosh::Director
 
       context 'when request body asks to delete orphaned disks' do
         it 'cleans up all orphaned disks' do
-          post('/', JSON.generate('config' => {
-                'orphaned_disks_to_keep' => 0,
-                'releases_to_keep' => 1,
-                'stemcells_to_keep' => 2,
-              }))
+          post('/', JSON.generate('config' => {'remove_all' => true}), {'CONTENT_TYPE' => 'application/json'})
 
           expect_redirect_to_queued_task(last_response)
         end

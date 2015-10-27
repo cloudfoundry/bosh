@@ -625,8 +625,11 @@ module Bosh
           status == 201
         end
 
-        def cleanup
-          request_and_track(:post, '/cleanup')
+        def cleanup(config = {})
+          options = {}
+          options[:payload] = JSON.generate('config' => config)
+          options[:content_type] = 'application/json'
+          request_and_track(:post, '/cleanup', options)
         end
 
         def post(uri, content_type = nil, payload = nil, headers = {}, options = {})

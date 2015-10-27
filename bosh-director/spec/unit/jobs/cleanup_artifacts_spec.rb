@@ -9,7 +9,7 @@ module Bosh::Director
       it 'enqueues a CleanupArtifacts job' do
         fake_config = {'remove_all' => true}
 
-        expect(job_queue).to receive(:enqueue).with('fake-username', Jobs::CleanupArtifacts, 'delete artifacts', fake_config)
+        expect(job_queue).to receive(:enqueue).with('fake-username', Jobs::CleanupArtifacts, 'delete artifacts', [fake_config])
         Jobs::CleanupArtifacts.enqueue('fake-username', fake_config, job_queue)
       end
     end

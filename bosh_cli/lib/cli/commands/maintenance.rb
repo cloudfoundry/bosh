@@ -54,7 +54,8 @@ module Bosh::Cli::Command
     private
 
     def cleanup_disks
-      director.cleanup
+      config = {'remove_all' => true}
+      director.cleanup(config)
     end
 
     def cleanup_stemcells(n_to_keep)

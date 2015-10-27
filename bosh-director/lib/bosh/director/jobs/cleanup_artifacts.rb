@@ -9,7 +9,7 @@ module Bosh::Director
       end
 
       def self.enqueue(username, config, job_queue)
-        job_queue.enqueue(username, Jobs::CleanupArtifacts, 'delete artifacts', config)
+        job_queue.enqueue(username, Jobs::CleanupArtifacts, 'delete artifacts', [config])
       end
 
       def initialize(config)
