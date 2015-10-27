@@ -22,6 +22,7 @@ module Bosh::Director
       let(:release_2) { Models::Release.make(name: 'release-2') }
 
       before do
+        fake_locks
         allow(cloud).to receive(:delete_stemcell)
 
         Models::Stemcell.make(name: 'stemcell-a', version: '1')
