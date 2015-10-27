@@ -3,7 +3,6 @@
 require "socket"
 
 class ConnectionProxy
-
   def initialize(remote_host, remote_port, listen_port)
     @max_threads = 32
     @threads = []
@@ -27,6 +26,7 @@ class ConnectionProxy
           proxy_single_connection(client_socket)
         end
       rescue Interrupt => i
+        puts "Received interrupt: #{i.inspect}"
         server.close
       ensure
         # Clean up the dead threads, and wait until we have available threads.
@@ -45,7 +45,8 @@ class ConnectionProxy
       begin
         server_socket = TCPSocket.new(@remote_host, @remote_port)
         @server_sockets[Thread.current] = server_socket
-      rescue Errno::ECONNREFUSED
+      rescue Errno::ECONNREFUSED => e
+        puts "Received connection refused: #{e.inspect}"
         client_socket.close
         raise
       end
@@ -66,11 +67,13 @@ class ConnectionProxy
               client_socket.flush
             end
           end
-        rescue EOFError
+        rescue EOFError => e
+          puts "Received EOF: #{e.inspect}"
           break
         end
       end
     rescue StandardError => e
+      puts "Swallowing error: #{e.inspect}"
       # this happens when we get EOF on the client or server socket
     end
     @server_sockets.delete(Thread.current)
@@ -79,5 +82,10 @@ class ConnectionProxy
   end
 end
 
-cp = ConnectionProxy.new(ARGV[0], ARGV[1].to_i, ARGV[2].to_i)
-cp.start
+begin
+  cp = ConnectionProxy.new(ARGV[0], ARGV[1].to_i, ARGV[2].to_i)
+  cp.start
+rescue Exception => e
+  puts "Exception raised, exiting: #{e.inspect}"
+  raise
+end
