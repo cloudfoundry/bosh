@@ -254,37 +254,37 @@ end.else do
          }
       }
     }
-    aws_porperties =  plugin['properties']['aws']
+    aws_properties =  plugin['properties']['aws']
     if_p('aws.ec2_endpoint') do |ec2_endpoint|
-     aws_porperties['ec2_endpoint'] = ec2_endpoint
+     aws_properties['ec2_endpoint'] = ec2_endpoint
     end
 
     if_p('aws.elb_endpoint') do |elb_endpoint|
-     aws_porperties['elb_endpoint'] = elb_endpoint
+     aws_properties['elb_endpoint'] = elb_endpoint
     end
 
     if_p('aws.max_retries') do |max_retries|
-     aws_porperties['max_retries'] = max_retries.to_i
+     aws_properties['max_retries'] = max_retries.to_i
     end
 
     if_p('aws.http_read_timeout') do |http_read_timeout|
-      aws_porperties['http_read_timeout'] = http_read_timeout.to_i
+      aws_properties['http_read_timeout'] = http_read_timeout.to_i
     end
 
     if_p('aws.http_wire_trace') do |http_wire_trace|
-     aws_porperties['http_wire_trace'] = http_wire_trace
+     aws_properties['http_wire_trace'] = http_wire_trace
     end
 
     if_p('aws.ssl_ca_file') do |ssl_ca_file|
-      aws_porperties['ssl_ca_file'] = ssl_ca_file
+      aws_properties['ssl_ca_file'] = ssl_ca_file
     end
 
     if_p('aws.ssl_ca_path') do |ssl_ca_path|
-      aws_porperties['ssl_ca_path'] = ssl_ca_path
+      aws_properties['ssl_ca_path'] = ssl_ca_path
     end
 
     if_p('aws.ssl_verify_peer') do |ssl_verify_peer|
-     aws_porperties['ssl_verify_peer'] = ssl_verify_peer
+     aws_properties['ssl_verify_peer'] = ssl_verify_peer
     end
 
     if_p('aws.stemcell.kernel_id') do |kernel_id|
