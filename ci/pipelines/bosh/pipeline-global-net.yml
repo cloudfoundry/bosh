@@ -1,59 +1,21 @@
 ---
 groups:
-  - name: bosh
+  - name: bosh-global-net
     jobs:
-      - start-job
-      - unit-1.9
-      - unit-2.1
-      - integration-1.9-postgres
-      - integration-2.1-mysql
-      - integration-2.1-postgres
-      - publish-coverage
-      - promote-candidate
-
-  - name: 1.9
-    jobs:
-      - start-job
-      - unit-1.9
-      - integration-1.9-postgres
-      - publish-coverage
-      - promote-candidate
-
-  - name: 2.1
-    jobs:
-      - start-job
-      - unit-2.1
-      - integration-2.1-mysql
-      - integration-2.1-postgres
-      - publish-coverage
-      - promote-candidate
-
-  - name: mysql
-    jobs:
-      - start-job
-      - unit-1.9
-      - unit-2.1
-      - integration-2.1-mysql
-      - publish-coverage
-      - promote-candidate
-
-  - name: postgres
-    jobs:
-      - start-job
-      - unit-1.9
-      - unit-2.1
-      - integration-1.9-postgres
-      - integration-2.1-postgres
-      - publish-coverage
-      - promote-candidate
+    - start-job
+    - unit-1.9
+    - unit-2.1
+    - integration-1.9-postgres
+    - integration-2.1-mysql
+    - integration-2.1-postgres
+    - load-tests
 
 jobs:
   - name: start-job
     public: true
     serial: true
     plan:
-      - { get: interval-trigger, trigger: true }
-      - { get: bosh-src }
+      - { get: bosh-src, trigger: true }
 
   - name: unit-1.9
     public: true
@@ -127,44 +89,30 @@ jobs:
             RUBY_VERSION: 2.1.7
             NUM_GROUPS: 16
 
-  - name: publish-coverage
+  - name: load-tests
     public: true
     serial: true
     plan:
-      - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
-        get: bosh-src
-      - task: publish
-        file: bosh-src/ci/pipelines/bosh/tasks/publish-coverage.yml
-        config:
-          params:
-            CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - get: bosh-load-tests
 
-  - name: promote-candidate
-    public: true
-    serial: true
-    plan:
-      - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
-        get: bosh-src
-
-      - {put: bosh-candidate, params: {repository: bosh-src}}
+    - task: test
+      privileged: true
+      file: bosh-load-tests/ci/tasks/test.yml
+      config:
+        tags: ["bosh-integration"]
+        params:
+          RUBY_VERSION: 2.1.7
 
 resources:
-  - name: interval-trigger
-    type: time
-    source:
-      interval: 45m # average build time for the integration tests
-
   - name: bosh-src
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: {{branch}}
+      branch: global-net
 
-  - name: bosh-candidate
+  - name: bosh-load-tests
     type: git
     source:
-      uri: git@github.com:cloudfoundry/bosh.git
-      branch: candidate
-      private_key: {{github_deployment_key}}
+      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests
+      branch: master
