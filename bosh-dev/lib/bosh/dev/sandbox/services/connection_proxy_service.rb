@@ -23,5 +23,13 @@ module Bosh::Dev::Sandbox
     def stop
       @process.stop
     end
+
+    def stdout_contents
+      @process.stdout_contents
+    end
+
+    def stderr_contents
+      @process.stderr_contents
+    end
   end
 end
