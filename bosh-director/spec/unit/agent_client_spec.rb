@@ -107,12 +107,9 @@ module Bosh::Director
           it_acts_as_asynchronous_message :migrate_disk
           it_acts_as_asynchronous_message :mount_disk
           it_acts_as_asynchronous_message :unmount_disk
-          it_acts_as_asynchronous_message :configure_networks
           it_acts_as_asynchronous_message :stop
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
-          it_acts_as_asynchronous_message :prepare_network_change
-          it_acts_as_asynchronous_message :prepare_configure_networks
           it_acts_as_asynchronous_message :start
         end
 
@@ -194,11 +191,9 @@ module Bosh::Director
         it_acts_as_synchronous_message :cancel_task
         it_acts_as_synchronous_message :get_state
         it_acts_as_synchronous_message :list_disk
-        it_acts_as_synchronous_message :prepare_network_change
         it_acts_as_synchronous_message :start
       end
     end
-
 
     describe 'ping <=> pong' do
       let(:stemcell) do

@@ -173,27 +173,6 @@ describe Bosh::Cpi::Cli do
       end
     end
 
-    describe 'configure_networks' do
-      it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to(receive(:configure_networks).
-          with('fake-vm-cid', {'net' => 'props'})) { logs_io.write('fake-log') }.
-          and_return(nil)
-
-        subject.run <<-JSON
-          {
-            "method": "configure_networks",
-            "arguments": [
-              "fake-vm-cid",
-              {"net": "props"}
-            ],
-            "context" : { "director_uuid" : "abc" }
-          }
-        JSON
-
-        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
-      end
-    end
-
     describe 'create_disk' do
       it 'takes json and calls specified method on the cpi' do
         expect(cpi).to(receive(:create_disk).

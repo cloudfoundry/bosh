@@ -91,8 +91,7 @@ module Bosh
     # @param [String, Array] disk_locality disk id(s) if known of the disk(s) that will be
     #                                    attached to this vm
     # @param [Hash] env environment that will be passed to this vm
-    # @return [String] opaque id later used by {#configure_networks}, {#attach_disk},
-    #                  {#detach_disk}, and {#delete_vm}
+    # @return [String] opaque id later used by {#attach_disk}, {#detach_disk} and {#delete_vm}
     def create_vm(agent_id, stemcell_id, resource_pool,
                   networks, disk_locality, env)
       not_implemented(:create_vm)
@@ -145,17 +144,6 @@ module Bosh
     # @return [void]
     def set_vm_metadata(vm, metadata)
       not_implemented(:set_vm_metadata)
-    end
-
-    ##
-    # Configures networking an existing VM.
-    #
-    # @param [String] vm vm id that was once returned by {#create_vm}
-    # @param [Hash] networks list of networks and their settings needed for this VM,
-    #               same as the networks argument in {#create_vm}
-    # @return [void]
-    def configure_networks(vm_id, networks)
-      not_implemented(:configure_networks)
     end
 
     ##

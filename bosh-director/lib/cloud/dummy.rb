@@ -146,19 +146,6 @@ module Bosh
         File.exists?(disk_file(disk_id))
       end
 
-      CONFIGURE_NETWORKS_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, networks: Hash}}
-      def configure_networks(vm_cid, networks)
-        validate_and_record_inputs(CONFIGURE_NETWORKS_SCHEMA, __method__, vm_cid, networks)
-        cmd = commands.next_configure_networks_cmd(vm_cid)
-
-        # The only configure_networks test so far only tests the negative case.
-        # If a positive case is added, the agent will need to be re-started.
-        # Normally runit would handle that.
-        if cmd.not_supported || true
-          raise NotSupported, 'Dummy CPI was configured to return NotSupported'
-        end
-      end
-
       ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
       def attach_disk(vm_cid, disk_id)
         validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
@@ -426,7 +413,6 @@ module Bosh
       # Example file system layout for arranging commands information.
       # Currently uses file system as transport but could be switch to use NATS.
       #   base_dir/cpi/create_vm/next -> {"something": true}
-      #   base_dir/cpi/configure_networks/<vm_cid> -> (presence)
       class CommandTransport
         def initialize(base_dir, logger)
           @cpi_commands = File.join(base_dir, 'cpi_commands')
@@ -460,21 +446,6 @@ module Bosh
 
           path = File.join(@cpi_commands, 'pause_delete_vms')
           sleep(0.1) while File.exists?(path)
-        end
-
-        def make_configure_networks_not_supported(vm_cid)
-          @logger.info("Making configure_networks for #{vm_cid} raise NotSupported")
-          path = File.join(@cpi_commands, 'configure_networks', vm_cid)
-          FileUtils.mkdir_p(File.dirname(path))
-          File.write(path, 'marker')
-        end
-
-        def next_configure_networks_cmd(vm_cid)
-          @logger.info("Reading configure_networks configuration for #{vm_cid}")
-          vm_path = File.join(@cpi_commands, 'configure_networks', vm_cid)
-          vm_supported = File.exists?(vm_path)
-          FileUtils.rm_rf(vm_path)
-          ConfigureNetworksCommand.new(vm_supported)
         end
 
         def make_create_vm_always_use_dynamic_ip(ip_address)
