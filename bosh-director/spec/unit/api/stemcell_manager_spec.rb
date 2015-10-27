@@ -97,48 +97,48 @@ module Bosh::Director
     describe '#find_all_stemcells' do
       before do
           stemcell_1 = Bosh::Director::Models::Stemcell.create(
-            name: 'c-stemcell',
-            version: 'stemcell_version-10',
+            name: 'fake-stemcell-1',
+            version: 'stemcell_version-1',
             operating_system: 'stemcell_os-1',
             cid: 'cloud-id-1',
           )
           stemcell_1.add_deployment(Models::Deployment.make(name: 'first'))
           stemcell_1.add_deployment(Models::Deployment.make(name: 'second'))
           Bosh::Director::Models::Stemcell.create(
-            name: 'z-stemcell',
-            version: 'stemcell_version-1',
+            name: 'fake-stemcell-3',
+            version: 'stemcell_version-3',
             operating_system: 'stemcell_os-3',
             cid: 'cloud-id-3',
           )
           Bosh::Director::Models::Stemcell.create(
-            name: 'a-stemcell',
+            name: 'fake-stemcell-2',
             version: 'stemcell_version-2',
             operating_system: 'stemcell_os-2',
             :cid => 'cloud-id-2',
           )
       end
-      it 'returns a list of all stemcells sorted by version' do
+      it 'returns a list of all stemcells' do
         expect(subject.find_all_stemcells).to eq([
               {
-                'name' => 'z-stemcell',
-                'operating_system' => 'stemcell_os-3',
+                'name' => 'fake-stemcell-1',
+                'operating_system' => 'stemcell_os-1',
                 'version' => 'stemcell_version-1',
-                'cid' => 'cloud-id-3',
-                'deployments' => []
+                'cid' => 'cloud-id-1',
+                'deployments' => [{name: 'first'}, {name: 'second'}]
               },
               {
-                'name' => 'a-stemcell',
+                'name' => 'fake-stemcell-2',
                 'operating_system' => 'stemcell_os-2',
                 'version' => 'stemcell_version-2',
                 'cid' => 'cloud-id-2',
                 'deployments' => []
               },
               {
-                'name' => 'c-stemcell',
-                'operating_system' => 'stemcell_os-1',
-                'version' => 'stemcell_version-10',
-                'cid' => 'cloud-id-1',
-                'deployments' => [{name: 'first'}, {name: 'second'}]
+                'name' => 'fake-stemcell-3',
+                'operating_system' => 'stemcell_os-3',
+                'version' => 'stemcell_version-3',
+                'cid' => 'cloud-id-3',
+                'deployments' => []
               },
               ])
 

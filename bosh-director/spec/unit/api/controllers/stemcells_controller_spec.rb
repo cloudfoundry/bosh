@@ -70,9 +70,9 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         context 'when there are some stemcells' do
-          let!(:stemcells) do
-            (1..9).map do |i|
-              Models::Stemcell.make(
+          let(:stemcells) do
+            (1..10).map do |i|
+              Models::Stemcell.create(
                 :name => "stemcell-#{i}",
                 :version => i,
                 :cid => rand(25000 * i),
@@ -80,23 +80,51 @@ module Bosh::Director
             end
           end
 
-          it 'returns a list of stemcells in JSON' do
-            perform
-            expect(last_response.status).to eq(200)
+          context 'when deployments use stemcells' do
+            before { stemcells.each { |s| s.add_deployment(deployment); s.save } }
+            let(:deployment) { Models::Deployment.create(:name => 'fake-deployment-name') }
 
-            body = Yajl::Parser.parse(last_response.body)
-            expect(body).to be_an_instance_of(Array)
-            expect(body.size).to eq(9)
+            it 'returns a list of stemcells in JSON with existing deployments' do
+              perform
+              expect(last_response.status).to eq(200)
 
-            response_collection = body.map do |e|
-              [e['name'], e['version'], e['cid'], e['deployments']]
+              body = Yajl::Parser.parse(last_response.body)
+              expect(body).to be_an_instance_of(Array)
+              expect(body.size).to eq(10)
+
+              response_collection = body.map do |e|
+                [e['name'], e['version'], e['cid'], e['deployments']]
+              end
+
+              expected_collection = stemcells.sort_by(&:name).map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, [{ 'name' => 'fake-deployment-name' }]]
+              end
+
+              expect(response_collection).to eq(expected_collection)
             end
+          end
 
-            expected_collection = stemcells.sort_by(&:version).map do |e|
-              [e.name.to_s, e.version.to_s, e.cid.to_s, []]
+          context 'when deployments use stemcells' do
+            before { stemcells.each { |s| allow(s).to receive(:deployments).and_return([]) } }
+
+            it 'returns a list of stemcells in JSON with no existing deployments' do
+              perform
+              expect(last_response.status).to eq(200)
+
+              body = Yajl::Parser.parse(last_response.body)
+              expect(body).to be_an_instance_of(Array)
+              expect(body.size).to eq(10)
+
+              response_collection = body.map do |e|
+                [e['name'], e['version'], e['cid'], e['deployments']]
+              end
+
+              expected_collection = stemcells.sort_by(&:name).map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, []]
+              end
+
+              expect(response_collection).to eq(expected_collection)
             end
-
-            expect(response_collection).to eq(expected_collection)
           end
         end
 

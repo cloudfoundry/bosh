@@ -16,17 +16,13 @@ module Bosh::Director
       end
 
       def find_all_stemcells
-        Models::Stemcell.all
-          .sort do |sc1, sc2|
-          Bosh::Common::Version::StemcellVersion.parse(sc1.version.to_s) <=> Bosh::Common::Version::StemcellVersion.parse(sc2.version.to_s)
-        end
-          .map do |stemcell|
+        Models::Stemcell.order_by(:name.asc).map do |stemcell|
           {
             'name' => stemcell.name,
             'operating_system' => stemcell.operating_system,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
-            'deployments' => stemcell.deployments.map { |d| {name: d.name} }
+            'deployments' => stemcell.deployments.map { |d| { name: d.name } }
           }
         end
       end
