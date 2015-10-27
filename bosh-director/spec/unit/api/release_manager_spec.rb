@@ -82,14 +82,14 @@ module Bosh::Director
       it 'orders releases in ascending order of release version' do
         release = Models::Release.make(name: 'a')
         Models::ReleaseVersion.make(version: 3, release: release)
-        Models::ReleaseVersion.make(version: 6, release: release)
+        Models::ReleaseVersion.make(version: 10, release: release)
         Models::ReleaseVersion.make(version: 1, release: release)
 
         releases = subject.get_all_releases
 
         release_versions = releases.first['release_versions']
         release_version_numbers = release_versions.map{ |release_version| release_version['version'] }
-        expect(release_version_numbers).to eq(['1', '3', '6'])
+        expect(release_version_numbers).to eq(['1', '3', '10'])
       end
     end
 
