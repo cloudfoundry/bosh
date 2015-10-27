@@ -4,7 +4,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop # edit to 'hotfix-nnn' for hotfixes
+      branch: {{branch}}
 
 jobs:
   - name: start-job
