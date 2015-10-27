@@ -34,7 +34,9 @@
         lpass show --notes "OS image concourse secrets" > /tmp/hotfix-image-secrets.yml
 
         # Configure the pipeline
-        fly -t production configure -c /tmp/hotfix-image-pipeline.yml --var branch=$HOTFIX_NAME --vf /tmp/hotfix-image-secrets.yml $HOTFIX_IMG_PIPELINE
+        fly -t production configure -c /tmp/hotfix-image-pipeline.yml \
+          --var branch=$HOTFIX_NAME \
+          --vf /tmp/hotfix-image-secrets.yml $HOTFIX_IMG_PIPELINE
         ```
   - [ ] B. Make any image-building changes and push those to the hotfix branch
   - [ ] C. Run the pipeline
@@ -71,6 +73,7 @@
 
           # Configure the pipeline
           fly -t production configure -c /tmp/hotfix-bosh-pipeline.yml \
+            --var branch=$HOTFIX_NAME \
             --vf /tmp/hotfix-bosh-secrets.yml $HOTFIX_BOSH_PIPELINE
           ```
     - [ ] 2. Make code changes and push those to the hotfix branch
