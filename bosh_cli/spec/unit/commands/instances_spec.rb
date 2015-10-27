@@ -81,7 +81,7 @@ describe Bosh::Cli::Command::Instances do
     let(:deployment) { 'dep1' }
     let(:options) { {details: false, dns: false, vitals: false, failing: false} }
 
-    let(:vm_state1) {
+    let(:vm1_state) {
       {
         'job_name' => 'job1',
         'index' => 0,
@@ -128,13 +128,60 @@ describe Bosh::Cli::Command::Instances do
       }
     }
 
+    let(:vm2_state) {
+      {
+        'job_name' => 'job2',
+        'index' => 0,
+        'ips' => %w{192.168.0.3 192.168.0.4},
+        'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
+        'vitals' => 'vitals',
+        'job_state' => 'running',
+        'resource_pool' => 'rp1',
+        'vm_cid' => 'vm-cid2',
+        'disk_cid' => 'disk-cid2',
+        'agent_id' => 'agent2',
+        'vitals' => {
+          'load' => [1, 2, 3],
+          'cpu' => {
+            'user' => 4,
+            'sys' => 5,
+            'wait' => 6,
+          },
+          'mem' => {
+            'percent' => 7,
+            'kb' => 8,
+          },
+          'swap' => {
+            'percent' => 9,
+            'kb' => 10,
+          },
+          'disk' => {
+            'system' => {'percent' => 11},
+            'ephemeral' => {'percent' => 12},
+            'persistent' => {'percent' => 13},
+          },
+        },
+        'processes' => [
+          {
+            'name' => 'process-3',
+            'state' => 'running',
+          },{
+            'name' => 'process-4',
+            'state' => 'running'
+          },
+        ],
+        'resurrection_paused' => true,
+        'availability_zone' => 'az2'
+      }
+    }
+
     describe 'displaying Disk CID' do
       before { options[:details] = true }
 
       it 'does not display when no vm has a disk cid' do
-        vm_state1.delete('disk_cid')
+        vm1_state.delete('disk_cid')
 
-        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state1] }
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm1_state] }
 
         expect(command).to receive(:say) do |display_output|
 
@@ -145,10 +192,10 @@ describe Bosh::Cli::Command::Instances do
       end
 
       it 'display when second instance has a disk cid' do
-        vm_state2 = vm_state1.clone
+        vm_state2 = vm1_state.clone
 
-        vm_state1.delete('disk_cid')
-        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state1, vm_state2] }
+        vm1_state.delete('disk_cid')
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm1_state, vm_state2] }
 
         expect(command).to receive(:say) do |display_output|
 
@@ -161,11 +208,11 @@ describe Bosh::Cli::Command::Instances do
 
     context 'when the server returns instance ids' do
       before {
-        vm_state1['instance_id'] = 'abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-        vm_state2 = vm_state1.clone
+        vm1_state['instance_id'] = 'abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        vm_state2 = vm1_state.clone
         vm_state2['instance_id'] = 'stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         vm_state2['index'] = 1
-        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state1, vm_state2] }
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm1_state, vm_state2] }
       }
 
       it 'should include the instance id in the output' do
@@ -179,13 +226,13 @@ describe Bosh::Cli::Command::Instances do
 
     context 'sorting multiple instances' do
       it 'sort by job name first' do
-        vm_state1.delete('availability_zone')
+        vm1_state.delete('availability_zone')
 
-        vm_state2 = vm_state1.clone
+        vm_state2 = vm1_state.clone
         vm_state2['job_name'] = 'job0'
         vm_state2['availability_zone'] = 'az2'
 
-        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state2, vm_state1] }
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state2, vm1_state] }
 
         expect(command).to receive(:say) do |display_output|
 
@@ -198,18 +245,18 @@ describe Bosh::Cli::Command::Instances do
       end
 
       it 'if name is the same, sort by AZ' do
-        vm_state1.delete('availability_zone')
+        vm1_state.delete('availability_zone')
 
-        vm_state2 = vm_state1.clone
+        vm_state2 = vm1_state.clone
         vm_state2['availability_zone'] = 'az1'
 
-        vm_state3 = vm_state1.clone
+        vm_state3 = vm1_state.clone
         vm_state3['availability_zone'] = 'az2'
 
-        vm_state4 = vm_state1.clone
+        vm_state4 = vm1_state.clone
         vm_state4['availability_zone'] = 'zone1'
 
-        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state3, vm_state4, vm_state2, vm_state1] }
+        allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state3, vm_state4, vm_state2, vm1_state] }
 
         expect(command).to receive(:say) do |display_output|
 
@@ -229,54 +276,7 @@ describe Bosh::Cli::Command::Instances do
     end
 
     context 'when the deployment has instances' do
-      before { allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state1] } }
-
-      let(:vm2_state) {
-        {
-          'job_name' => 'job2',
-          'index' => 0,
-          'ips' => %w{192.168.0.3 192.168.0.4},
-          'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
-          'vitals' => 'vitals',
-          'job_state' => 'running',
-          'resource_pool' => 'rp1',
-          'vm_cid' => 'vm-cid2',
-          'disk_cid' => 'disk-cid2',
-          'agent_id' => 'agent2',
-          'vitals' => {
-            'load' => [1, 2, 3],
-            'cpu' => {
-              'user' => 4,
-              'sys' => 5,
-              'wait' => 6,
-            },
-            'mem' => {
-              'percent' => 7,
-              'kb' => 8,
-            },
-            'swap' => {
-              'percent' => 9,
-              'kb' => 10,
-            },
-            'disk' => {
-              'system' => {'percent' => 11},
-              'ephemeral' => {'percent' => 12},
-              'persistent' => {'percent' => 13},
-            },
-          },
-          'processes' => [
-            {
-              'name' => 'process-3',
-              'state' => 'running',
-            },{
-              'name' => 'process-4',
-              'state' => 'running'
-            },
-          ],
-          'resurrection_paused' => true,
-          'availability_zone' => 'az2'
-        }
-      }
+      before { allow(director).to receive(:fetch_vm_state).with(deployment) { [vm1_state, vm2_state] } }
 
       context 'default' do
         it 'show basic vms information' do
@@ -311,14 +311,10 @@ describe Bosh::Cli::Command::Instances do
             expect(display_output.to_s).to include 'AZ'
             expect(display_output.to_s).to include 'Resource Pool'
             expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to_not include 'job1/0'
-            expect(display_output.to_s).to include 'failing'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to_not include '| 192.168.0.1'
-            expect(display_output.to_s).to_not include '| 192.168.0.2'
             expect(display_output.to_s).to include 'job2/0'
+            expect(display_output.to_s).to include 'failing'
             expect(display_output.to_s).to include 'az2'
+            expect(display_output.to_s).to include 'rp1'
             expect(display_output.to_s).to include '| 192.168.0.3'
             expect(display_output.to_s).to include '| 192.168.0.4'
           end
@@ -327,7 +323,7 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'show AZ in basic vms information' do
-          vm_state1['availability_zone'] = 'az1'
+          vm1_state['availability_zone'] = 'az1'
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to include 'AZ'
             expect(display_output.to_s).to include 'az1'
@@ -337,7 +333,8 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'do not show AZ in basic vms information when there is no AZ info' do
-          vm_state1.delete('availability_zone')
+          vm1_state.delete('availability_zone')
+          vm2_state.delete('availability_zone')
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to_not include 'AZ'
           end
@@ -390,7 +387,7 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'shows vm details without active disk' do
-          vm_state1['disk_cid'] = nil
+          vm1_state['disk_cid'] = nil
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to include 'n/a'
           end
@@ -399,7 +396,8 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'does not show disk cid when response does not contain disk cid info' do
-          vm_state1.delete('disk_cid')
+          vm1_state.delete('disk_cid')
+          vm2_state.delete('disk_cid')
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to_not include 'Disk CID'
           end
@@ -510,7 +508,7 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'shows the instance vitals with unavailable ephemeral and persistent disks' do
-          new_vm_state = vm_state1
+          new_vm_state = vm1_state
           new_vm_state['vitals']['disk'].delete('ephemeral')
           new_vm_state['vitals']['disk'].delete('persistent')
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }

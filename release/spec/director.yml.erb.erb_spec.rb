@@ -179,6 +179,26 @@ describe 'director.yml.erb.erb' do
         expect(parsed_yaml['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
       end
     end
+
+    context 'when datacenter cluster are provided as hash' do
+      before do
+        deployment_manifest_fragment['properties']['vcenter'] = {
+          'address' => 'vcenter.address',
+          'user' => 'user',
+          'password' => 'vcenter.password',
+          'datacenters' => [
+            {
+              'name' => 'vcenter.datacenters.first.name',
+              'clusters' => [{'cluster-name' => {'resource_pool' => 'rp-name'}}]
+            },
+          ]
+        }
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['clusters']).to eq([{'cluster-name' => {'resource_pool' => 'rp-name'}}])
+      end
+    end
   end
 
   context 'when configured for vcloud' do

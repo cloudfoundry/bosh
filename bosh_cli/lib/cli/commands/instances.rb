@@ -63,6 +63,8 @@ module Bosh::Cli::Command
     private
 
     def construct_table_to_display(has_disk_cid, has_az, options, sorted)
+      row_count = 0
+
       result = table do |display_table|
 
         headings = ['Instance', 'State']
@@ -70,8 +72,6 @@ module Bosh::Cli::Command
           headings << 'AZ'
         end
         headings += ['Resource Pool', 'IPs']
-        row_count = 0
-
         if options[:details]
           headings << 'VM CID'
           if has_disk_cid

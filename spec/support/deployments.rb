@@ -336,61 +336,49 @@ module Bosh::Spec
       })
     end
 
-<<<<<<< HEAD
-    def self.simple_job(opts = {})
-      job_hash = {
-        'name' => opts.fetch(:name, 'foobar'),
-        'templates' => opts.fetch(:templates, ['name' => 'foobar']),
-||||||| merged common ancestors
-    def self.simple_job(options={})
-      {
-        'name'          => options.fetch(:name, 'foobar'),
-        'template'      => 'foobar',
-=======
     def self.remote_release_manifest(remote_release_url, sha1, version='latest')
       minimal_manifest.merge({
-        'jobs' => [
-          {
-            'name' => 'job',
-            'template' => 'job_using_pkg_1',
-            'instances' => 1,
-            'resource_pool' => 'a',
-            'networks' => [{'name' => 'a'}]
-          }
-        ],
-        'releases' => [{
-            'name'    => 'test_release',
-            'version' => version,
-            'url' => remote_release_url,
-            'sha1' => sha1
-        }]
-      })
+          'jobs' => [
+            {
+              'name' => 'job',
+              'templates' => [{ 'name' => 'job_using_pkg_1' }],
+              'instances' => 1,
+              'resource_pool' => 'a',
+              'networks' => [{'name' => 'a'}]
+            }
+          ],
+          'releases' => [{
+              'name'    => 'test_release',
+              'version' => version,
+              'url' => remote_release_url,
+              'sha1' => sha1
+            }]
+        })
     end
 
     def self.local_release_manifest(local_release_path, version = 'latest')
       minimal_manifest.merge({
-        'jobs' => [
-          {
-            'name' => 'job',
-            'template' => 'job_using_pkg_1',
-            'instances' => 1,
-            'resource_pool' => 'a',
-            'networks' => [{'name' => 'a'}]
-          }
-        ],
-        'releases' => [{
-            'name'    => 'test_release',
-            'version' => version,
-            'url' => local_release_path,
-        }]
-      })
+          'jobs' => [
+            {
+              'name' => 'job',
+              'templates' => [{ 'name' => 'job_using_pkg_1' }],
+              'instances' => 1,
+              'resource_pool' => 'a',
+              'networks' => [{'name' => 'a'}]
+            }
+          ],
+          'releases' => [{
+              'name'    => 'test_release',
+              'version' => version,
+              'url' => local_release_path,
+            }]
+        })
     end
 
-    def self.simple_job(options={})
-      {
-        'name'          => options.fetch(:name, 'foobar'),
-        'template'      => 'foobar',
->>>>>>> develop
+    def self.simple_job(opts = {})
+      job_hash = {
+        'name' => opts.fetch(:name, 'foobar'),
+        'templates' => opts.fetch(:templates, ['name' => 'foobar']),
         'resource_pool' => 'a',
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => 'a' }],

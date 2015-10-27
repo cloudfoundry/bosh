@@ -121,10 +121,6 @@ module Bosh::Director
       agent(instance).start
     end
 
-    def start!
-      agent.start
-    end
-
     def need_start?
       @target_state == 'started'
     end
