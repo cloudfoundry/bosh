@@ -783,4 +783,15 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['cloud']['provider']['path']).to eq('/var/vcap/jobs/test-cpi/bin/cpi')
     end
   end
+
+  context 'when ntp is provided' do
+    before do
+      deployment_manifest_fragment['properties']['director']['cpi_job'] = 'test-cpi'
+      deployment_manifest_fragment['properties']['ntp'] = ['1.1.1.1', '2.2.2.2']
+    end
+
+    it 'configures the cpi correctly' do
+      expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
+    end
+  end
 end
