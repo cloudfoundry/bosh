@@ -17,6 +17,9 @@ module Bosh::Director
         @disk_manager = DiskManager.new(Config.cloud, Config.logger)
         @release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
+        blobstore = App.instance.blobstores.blobstore
+        cloud = Config.cloud
+        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, blobstore, logger, event_log)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(@release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
       end
@@ -53,8 +56,8 @@ module Bosh::Director
           stemcells_to_delete.each do |stemcell|
             pool.process do
               event_log.track("Deleting stemcell #{stemcell['name']}/#{stemcell['version']}") do
-                delete_stemcell = Jobs::DeleteStemcell.new(stemcell['name'], stemcell['version'])
-                delete_stemcell.perform
+                stemcell_to_delete = @stemcell_manager.find_by_name_and_version(stemcell['name'], stemcell['version'])
+                @stemcell_deleter.delete(stemcell_to_delete)
               end
             end
           end

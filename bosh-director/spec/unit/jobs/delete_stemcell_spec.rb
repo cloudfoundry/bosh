@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -19,8 +17,6 @@ module Bosh::Director
 
       it 'should fail for unknown stemcells' do
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
 
         expect { job.perform }.to raise_exception(StemcellNotFound)
       end
@@ -32,8 +28,6 @@ module Bosh::Director
           and_raise('error')
 
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
 
         expect { job.perform }.to raise_exception('error')
       end
@@ -45,8 +39,6 @@ module Bosh::Director
           and_raise('error')
 
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', 'force' => true, blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
         expect { job.perform }.not_to raise_error
       end
 
@@ -57,8 +49,6 @@ module Bosh::Director
         deployment.add_stemcell(stemcell)
 
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
         expect { job.perform }.to raise_exception(StemcellInUse)
       end
 
@@ -68,8 +58,6 @@ module Bosh::Director
         expect(@cloud).to receive(:delete_stemcell).with('stemcell_cid')
 
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
         job.perform
 
         expect(Models::Stemcell[stemcell.id]).to be_nil
@@ -88,8 +76,6 @@ module Bosh::Director
         expect(blobstore).to receive(:delete).with('compiled-package-blb-id')
 
         job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
-        expect(job).to receive(:with_stemcell_lock).
-          with('test_stemcell', 'test_version').and_yield
         job.perform
 
         expect(Models::Stemcell[stemcell.id]).to be_nil
