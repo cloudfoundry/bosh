@@ -2,16 +2,18 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::Helpers::StemcellDeleter do
-    let(:blobstore) { double('Blobstore') }
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:event_log) { EventLog::Log.new }
     let(:cloud) { instance_double(Bosh::Cloud) }
-    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, blobstore, logger, event_log) }
+    let(:package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blobstore, logger, event_log )}
+    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, package_deleter, logger, event_log) }
     let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
     before do
       fake_locks
       allow(Config).to receive(:cloud).and_return(cloud)
       allow(event_log).to receive(:begin_stage)
+      allow(event_log).to receive(:track).and_call_original
     end
 
     context 'when stemcell deletion fails' do
@@ -70,6 +72,8 @@ module Bosh::Director
     context 'when stemcell deletion succeeds' do
       it 'should delete the stemcell metadata if the CPI deleted the stemcell' do
         expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1)
+        expect(event_log).to receive(:track).with('Delete stemcell').and_call_original
+        expect(event_log).to receive(:track).with('Deleting stemcell metadata').and_call_original
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid')
 
         stemcell_deleter.delete(stemcell)
@@ -78,10 +82,10 @@ module Bosh::Director
 
       it 'should delete the associated compiled packages' do
         expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1)
+        expect(event_log).to receive(:track).with('package-name/version').and_call_original
         expect(event_log).to receive(:begin_stage).with('Deleting compiled packages', 1, ['test_stemcell', 'test_version'])
-
         associated_package = Models::CompiledPackage.make(
-          package: Models::Package.make,
+          package: Models::Package.make(name: 'package-name', version: 'version'),
           stemcell: stemcell,
           blobstore_id: 'compiled-package-blb-1')
         unassociated_package = Models::CompiledPackage.make(

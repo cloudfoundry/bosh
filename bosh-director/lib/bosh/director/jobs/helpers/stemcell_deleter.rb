@@ -3,9 +3,9 @@ module Bosh::Director::Jobs
     class StemcellDeleter
       include Bosh::Director::LockHelper
 
-      def initialize(cloud, blobstore, logger, event_log)
+      def initialize(cloud, compiled_package_deleter, logger, event_log)
         @cloud = cloud
-        @blobstore = blobstore
+        @compiled_package_deleter = compiled_package_deleter
         @logger = logger
         @event_log = event_log
       end
@@ -33,8 +33,7 @@ module Bosh::Director::Jobs
           end
 
           @logger.info('Looking for any compiled packages on this stemcell')
-          compiled_packages =
-            Bosh::Director::Models::CompiledPackage.filter(:stemcell_id => stemcell.id)
+          compiled_packages = Bosh::Director::Models::CompiledPackage.filter(:stemcell_id => stemcell.id)
 
           @event_log.begin_stage('Deleting compiled packages',
             compiled_packages.count, [stemcell.name, stemcell.version])
@@ -42,14 +41,8 @@ module Bosh::Director::Jobs
               "(#{compiled_packages.count}) for `#{stemcell.name}/#{stemcell.version}'")
 
           compiled_packages.each do |compiled_package|
-            next unless compiled_package
-
-            package = compiled_package.package
-            track_and_log("#{package.name}/#{package.version}") do
-              @logger.info('Deleting compiled package: ' +
-                  "#{package.name}/#{package.version}")
-              @blobstore.delete(compiled_package.blobstore_id)
-              compiled_package.destroy
+            track_and_log("#{compiled_package.name}/#{compiled_package.version}") do
+              @compiled_package_deleter.delete(compiled_package, options)
             end
           end
 

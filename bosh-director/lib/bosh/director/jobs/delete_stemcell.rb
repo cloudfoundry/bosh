@@ -15,7 +15,8 @@ module Bosh::Director
         @stemcell_manager = Api::StemcellManager.new
 
         blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
-        @stemcell_deleter = Helpers::StemcellDeleter.new(@cloud, blobstore, logger, event_log)
+        compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blobstore, logger, event_log)
+        @stemcell_deleter = Helpers::StemcellDeleter.new(@cloud, compiled_package_deleter, logger, event_log)
       end
 
       def perform
