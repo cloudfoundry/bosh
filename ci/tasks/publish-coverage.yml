@@ -7,7 +7,7 @@ inputs:
   - name: bosh-src
 
 run:
-  path: bosh-src/ci/pipelines/bosh/tasks/publish-coverage.sh
+  path: bosh-src/ci/tasks/publish-coverage.sh
 
 params:
   CODECLIMATE_REPO_TOKEN: replace-me

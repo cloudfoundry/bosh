@@ -2,7 +2,7 @@
 
 set -e
 
-source bosh-src/ci/pipelines/utils.sh
+source bosh-src/ci/tasks/utils.sh
 check_param BOSH_AWS_ACCESS_KEY_ID
 check_param BOSH_AWS_SECRET_ACCESS_KEY
 check_param BOSH_AWS_SECRET_ACCESS_KEY
