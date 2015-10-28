@@ -32,7 +32,7 @@ module Bosh::Spec
     end
 
     def instances(deployment_name = '', options={})
-      instances_output = @runner.run("instances #{deployment_name}", options)
+      instances_output = @runner.run("instances #{deployment_name} --details", options)
       instances = parse_table_with_ips(instances_output, :instance)
 
       instances.map do |instance_data|
@@ -41,7 +41,8 @@ module Bosh::Spec
           instance_data[:job_name],
           instance_data[:index],
           !instance_data[:bootstrap].empty?,
-          instance_data[:az]
+          instance_data[:az],
+          instance_data[:disk_cid],
         )
       end
     end

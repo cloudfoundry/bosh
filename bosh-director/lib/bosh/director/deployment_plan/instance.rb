@@ -178,12 +178,6 @@ module Bosh::Director
         [hostname, job.canonical_name, Canonicalizer.canonicalize(network_name), Canonicalizer.canonicalize(deployment.name), @dns_manager.dns_domain_name].join('.')
       end
 
-      ##
-      # @return [Boolean] returns true if the persistent disk is attached to the VM
-      def disk_currently_attached?
-        @current_state['persistent_disk'].to_i > 0
-      end
-
       def cloud_properties_changed?
         changed = cloud_properties != @model.cloud_properties_hash
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed

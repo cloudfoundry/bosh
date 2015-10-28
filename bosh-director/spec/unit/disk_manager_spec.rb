@@ -21,7 +21,7 @@ module Bosh::Director
       job.persistent_disk_type = DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'})
       job
     end
-    let(:instance) { DeploymentPlan::Instance.new(job, 1, 'started', nil, instance_state, nil, logger) }
+    let(:instance) { DeploymentPlan::Instance.new(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(vm: vm_model)
       instance.add_persistent_disk(persistent_disk) if persistent_disk
@@ -31,7 +31,6 @@ module Bosh::Director
     let(:vm_model) { Models::Vm.make(cid: 'vm234') }
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
-    let(:instance_state) { {'persistent_disk' => 1} }
 
     before do
       instance.bind_existing_instance_model(instance_model)
@@ -47,15 +46,6 @@ module Bosh::Director
     end
 
     describe '#update_persistent_disk' do
-      context 'when the disk is not currently attached' do
-        let(:instance_state) { {'persistent_disk' => 0} }
-        it 'attaches the disk' do
-          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
-          expect(agent_client).to receive(:mount_disk).with('disk123')
-          disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-        end
-      end
-
       context 'checking persistent disk' do
         context 'when the agent reports a different disk cid from the model' do
           before do

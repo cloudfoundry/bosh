@@ -118,8 +118,10 @@ module Bosh
       def delete_vm(vm_cid)
         validate_and_record_inputs(DELETE_VM_SCHEMA, __method__, vm_cid)
         commands.wait_for_unpause_delete_vms
+        detach_disks_attached_to_vm(vm_cid)
         agent_pid = vm_cid.to_i
         Process.kill('KILL', agent_pid)
+
           # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
         # rubocop:enable HandleExceptions
@@ -149,9 +151,14 @@ module Bosh
       ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
       def attach_disk(vm_cid, disk_id)
         validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+        if disk_attached?(disk_id)
+          raise "#{disk_id} is already attached to an instance"
+        end
         file = attachment_file(vm_cid, disk_id)
         FileUtils.mkdir_p(File.dirname(file))
         FileUtils.touch(file)
+
+        @logger.info("Attached disk: '#{disk_id}' to vm: '#{vm_cid}' at attachment file: #{file}")
 
         agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
@@ -162,6 +169,9 @@ module Bosh
       DETACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
       def detach_disk(vm_cid, disk_id)
         validate_and_record_inputs(DETACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+        unless disk_attached_to_vm?(vm_cid, disk_id)
+          raise Bosh::Clouds::DiskNotAttached, "#{disk_id} is not attached to instance #{vm_cid}"
+        end
         FileUtils.rm(attachment_file(vm_cid, disk_id))
 
         agent_id = agent_id_for_vm_id(vm_cid)
@@ -380,8 +390,28 @@ module Bosh
         File.join(@base_dir, 'disks', disk_id)
       end
 
+      def disk_attached?(disk_id)
+        File.exist?(attachment_path(disk_id))
+      end
+
+      def disk_attached_to_vm?(vm_cid, disk_id)
+        File.exist?(attachment_file(vm_cid, disk_id))
+      end
+
+      def detach_disks_attached_to_vm(vm_cid)
+        @logger.info("Detaching disks for vm #{vm_cid}")
+        Dir.glob(attachment_file(vm_cid, '*')) do |file_path|
+          @logger.info("Detaching found attachment #{file_path}")
+          FileUtils.rm_rf(File.dirname(file_path))
+        end
+      end
+
       def attachment_file(vm_cid, disk_id)
-        File.join(@base_dir, 'attachments', vm_cid, disk_id)
+        File.join(attachment_path(disk_id), vm_cid)
+      end
+
+      def attachment_path(disk_id)
+        File.join(@base_dir, 'attachments', disk_id)
       end
 
       def snapshot_file(snapshot_id)
@@ -439,12 +469,14 @@ module Bosh
         end
 
         def wait_for_unpause_delete_vms
-          @logger.info("Wait for unpausing delete_vms")
           path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
           FileUtils.mkdir_p(File.dirname(path))
           File.write(path, 'marker')
 
           path = File.join(@cpi_commands, 'pause_delete_vms')
+          if File.exists?(path)
+            @logger.info("Wait for unpausing delete_vms")
+          end
           sleep(0.1) while File.exists?(path)
         end
 

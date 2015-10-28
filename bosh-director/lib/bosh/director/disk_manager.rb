@@ -9,7 +9,6 @@ module Bosh::Director
     def update_persistent_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
 
-      attach_disks_for(instance) unless instance.disk_currently_attached? # current state does not represent what is on agent right now
       check_persistent_disk(instance)
 
       disk = nil
@@ -100,6 +99,7 @@ module Bosh::Director
 
     def unmount_disk_for(instance_plan)
       disk = instance_plan.instance.model.persistent_disk
+      return if disk.nil?
       unmount(instance_plan.instance, disk)
     end
 

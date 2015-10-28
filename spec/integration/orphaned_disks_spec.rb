@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'cli: disks', type: :integration do
+describe 'orphaned disks', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
@@ -37,7 +37,7 @@ DISKS
   end
 
   context 'when there are no orphaned disks' do
-    it 'should err with no orphaned disks' do
+    it 'should indicated that there are no orphaned disks' do
       target_and_login
       result = bosh_runner.run('disks --orphaned')
 
@@ -61,5 +61,27 @@ DISKS
 
     result = bosh_runner.run('disks --orphaned')
     expect(result).not_to include orphaned_disk_cid
+  end
+
+  it 'orphans disks when removing persistent disk while also recreating' do
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['persistent_disk'] = 3000
+    manifest_hash['jobs'].first['instances'] = 1
+
+    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+    disk_cid = director.instances.first.disk_cid
+
+    cloud_config_hash['resource_pools'].first['cloud_properties']['foo'] = 'bar'
+    manifest_hash['jobs'].first.delete('persistent_disk')
+
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    expect(director.instances.first.disk_cid).to eq('n/a')
+
+    orphaned_output = bosh_runner.run('disks --orphaned')
+    expect(orphaned_output).to include(disk_cid)
   end
 end

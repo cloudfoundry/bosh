@@ -241,19 +241,13 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[1].method_name).to eq('detach_disk')
+        expect(second_deploy_invocations[1].method_name).to eq('delete_vm')
         expect(second_deploy_invocations[1].inputs).to match({
-          'vm_cid' => vm_cid,
-          'disk_id' => disk_cid
-        })
-
-        expect(second_deploy_invocations[2].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[2].inputs).to match({
           'vm_cid' => vm_cid
         })
 
-        expect(second_deploy_invocations[3].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[3].inputs).to match({
+        expect(second_deploy_invocations[2].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[2].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -271,8 +265,8 @@ describe 'CPI calls', type: :integration do
           'env' => {}
         })
 
-        expect(second_deploy_invocations[4].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[4].inputs).to match({
+        expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[3].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'Test Director',
@@ -282,10 +276,10 @@ describe 'CPI calls', type: :integration do
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
-        new_vm_cid = second_deploy_invocations[4].inputs['vm_cid']
+        new_vm_cid = second_deploy_invocations[3].inputs['vm_cid']
 
-        expect(second_deploy_invocations[5].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[5].inputs).to match({
+        expect(second_deploy_invocations[4].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[4].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
         })
