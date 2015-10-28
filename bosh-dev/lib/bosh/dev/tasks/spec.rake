@@ -3,6 +3,7 @@ require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
+require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
@@ -21,19 +22,28 @@ namespace :spec do
       unless ENV['SKIP_DEPS'] == 'true'
         unless ENV['SKIP_NGINX'] == 'true'
           nginx = Bosh::Dev::Sandbox::Nginx.new
-          retries = 3
-          begin
-            nginx.install
-          rescue
-            retries -= 1
-            retry if retries > 0
-            raise
-          end
+          install_with_retries(nginx)
+        end
+
+        unless ENV['SKIP_TCP_PROXY_NGINX'] == 'true'
+          tcp_proxy_nginx = Bosh::Dev::Sandbox::TCPProxyNginx.new
+          install_with_retries(tcp_proxy_nginx)
         end
 
         unless ENV['SKIP_UAA'] == 'true'
           Bosh::Dev::Sandbox::UaaService.install
         end
+      end
+    end
+
+    def install_with_retries(to_install)
+      retries = 3
+      begin
+        to_install.install
+      rescue
+        retries -= 1
+        retry if retries > 0
+        raise
       end
     end
 

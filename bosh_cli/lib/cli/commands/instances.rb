@@ -90,7 +90,6 @@ module Bosh::Cli::Command
         end
         display_table.headings = headings
 
-        s = sorted.size
         sorted.each do |instance|
           if options[:failing]
             if options[:ps]
@@ -102,7 +101,6 @@ module Bosh::Cli::Command
           end
 
           row_count += 1
-          display_table << :separator if row_count.between?(2, sorted.size)
 
           job_name = instance['job_name'] || 'unknown'
           index = instance['index'] || 'unknown'
@@ -176,7 +174,6 @@ module Bosh::Cli::Command
           end
 
           display_table << row
-          s -= 1
           if options[:ps] && instance['processes']
             instance['processes'].each do |process|
               name = process['name']
@@ -185,7 +182,7 @@ module Bosh::Cli::Command
               (headings.size - 2).times { process_row << '' }
               display_table << process_row
             end
-            display_table << :separator if s > 0
+            display_table << :separator if row_count < sorted.size
           end
         end
       end

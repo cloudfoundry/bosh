@@ -4,10 +4,9 @@ module Bosh::Cli::Resources
 
     # @param [String] directory base Release directory
     def self.discover(release_base, packages)
-      Dir[File.join(release_base, 'jobs', '*')].inject([]) do |jobs, job_base|
-        next unless File.directory?(job_base)
-        jobs << new(job_base, release_base, packages)
-      end
+      jobs_folder_contents = Dir[File.join(release_base, 'jobs', '*')]
+      job_folders = jobs_folder_contents.select { |f| File.directory?(f) }
+      job_folders.map { |job_base| new(job_base, release_base, packages) }
     end
 
     attr_reader :job_base, :release_base, :package_dependencies

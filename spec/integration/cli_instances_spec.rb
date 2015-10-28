@@ -4,7 +4,7 @@ describe 'cli: deployment process', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
-  it 'check output for BOSH INSTANCES', dns: true do
+  it 'displays instances in a deployment', dns: true do
     target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -144,10 +144,61 @@ INSTANCES
     expect(vitals[:persistent_disk_usage]).to match /n\/a/
   end
 
-  it 'should return instances --failing' do
-    deploy_from_scratch
-    instances_failing = bosh_runner.run('instances --failing')
+  context 'with the --ps flag' do
+    it 'displays instance processes' do
+      deploy_from_scratch
+      output = bosh_runner.run('instances --ps')
+      expect(output).to include(<<INSTANCES)
++-------------+---------+---------------+-------------+
+| Instance    | State   | Resource Pool | IPs         |
++-------------+---------+---------------+-------------+
+| foobar/0    | running | a             | 192.168.1.5 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/1    | running | a             | 192.168.1.6 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/2    | running | a             | 192.168.1.7 |
+|   process-1 | running |               |             |
+|   process-2 | running |               |             |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+INSTANCES
 
-    expect(instances_failing).to match /No failing instances/
+    end
+  end
+
+  context 'with the --failing flag' do
+    it 'filters out non-failing instances' do
+      deploy_from_scratch
+      expect(bosh_runner.run('instances --failing'))
+        .to match /No failing instances/
+    end
+  end
+
+  context 'with the --failing and --ps flags' do
+    it 'filters out non-failing processes' do
+      deploy_from_scratch
+      instances_ps = bosh_runner.run('instances --ps --failing')
+      expect(instances_ps).to include(<<INSTANCES)
++-------------+---------+---------------+-------------+
+| Instance    | State   | Resource Pool | IPs         |
++-------------+---------+---------------+-------------+
+| foobar/0    | running | a             | 192.168.1.5 |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/1    | running | a             | 192.168.1.6 |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+| foobar/2    | running | a             | 192.168.1.7 |
+|   process-3 | failing |               |             |
++-------------+---------+---------------+-------------+
+INSTANCES
+
+    end
   end
 end

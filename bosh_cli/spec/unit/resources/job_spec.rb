@@ -31,16 +31,35 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
   end
 
   describe '.discover' do
-    before do
-      release_source.add_dir(base)
-      release_source.add_dir('jobs/job_two')
+    context('when jobs folder contains only folders') do
+      before do
+        release_source.add_dir(base)
+        release_source.add_dir('jobs/job_two')
+      end
+
+      let(:jobs) { Bosh::Cli::Resources::Job.discover(release_source.path, made_packages) }
+  
+      it 'returns an Array of Job instances' do
+        expect(jobs).to be_a(Array)
+        expect(jobs[0]).to be_a(Bosh::Cli::Resources::Job)
+        expect(jobs[1]).to be_a(Bosh::Cli::Resources::Job)
+      end
     end
 
-    it 'returns an Array of Job instances' do
-      jobs = Bosh::Cli::Resources::Job.discover(release_source.path, made_packages)
-      expect(jobs).to be_a(Array)
-      expect(jobs[0]).to be_a(Bosh::Cli::Resources::Job)
-      expect(jobs[1]).to be_a(Bosh::Cli::Resources::Job)
+    context('when jobs folder contains a file') do
+      before do
+        release_source.add_dir(base)
+        release_source.add_dir('jobs/job_two')
+        release_source.add_file('jobs', 'stray-file', 'Really don\'t know what this file does here.')
+      end
+
+      let(:jobs) { Bosh::Cli::Resources::Job.discover(release_source.path, made_packages) }
+  
+      it 'returns an Array of Job instances' do
+        expect(jobs).to be_a(Array)
+        expect(jobs[0]).to be_a(Bosh::Cli::Resources::Job)
+        expect(jobs[1]).to be_a(Bosh::Cli::Resources::Job)
+      end
     end
   end
 

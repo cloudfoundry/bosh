@@ -25,6 +25,9 @@ module Bosh::Cli
       @option_parser = OptionParser.new(banner)
 
       Config.colorize = nil
+      if ENV.has_key?("BOSH_COLOR") && ENV["BOSH_COLOR"] == "false"
+        Config.colorize = false
+      end
       Config.output ||= STDOUT
 
       parse_global_options

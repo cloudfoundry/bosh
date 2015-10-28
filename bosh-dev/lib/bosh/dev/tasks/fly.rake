@@ -37,7 +37,7 @@ namespace :fly do
   end
 
   def execute(task, command_options =  nil)
-    sh("#{env} fly #{concourse_target} execute #{command_options} -x -c ci/pipelines/bosh/tasks/#{task}.yml -i bosh-src=$PWD")
+    sh("#{env} fly #{concourse_target} execute #{command_options} -x -c ci/tasks/#{task}.yml -i bosh-src=$PWD")
   end
 end
 
