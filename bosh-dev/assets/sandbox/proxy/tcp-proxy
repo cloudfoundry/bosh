@@ -44,7 +44,6 @@ class ConnectionProxy
     begin
       begin
         server_socket = TCPSocket.new(@remote_host, @remote_port)
-        @server_sockets[Thread.current] = server_socket
       rescue Errno::ECONNREFUSED => e
         puts "Received connection refused: #{e.inspect}"
         client_socket.close
@@ -76,7 +75,6 @@ class ConnectionProxy
       puts "Swallowing error: #{e.inspect}"
       # this happens when we get EOF on the client or server socket
     end
-    @server_sockets.delete(Thread.current)
     server_socket.close rescue StandardError
     client_socket.close rescue StandardError
   end
