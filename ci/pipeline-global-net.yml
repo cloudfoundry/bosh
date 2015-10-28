@@ -24,7 +24,7 @@ jobs:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
-        file: bosh-src/ci/pipelines/bosh/tasks/test-unit.yml
+        file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
             RUBY_VERSION: 1.9.3
@@ -36,7 +36,7 @@ jobs:
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
-        file: bosh-src/ci/pipelines/bosh/tasks/test-unit.yml
+        file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
             RUBY_VERSION: 2.1.7
@@ -49,7 +49,7 @@ jobs:
 
       - task: test
         privileged: true
-        file:  bosh-src/ci/pipelines/bosh/tasks/test-integration.yml
+        file:  bosh-src/ci/tasks/test-integration.yml
         config:
           tags: ["bosh-integration"]
           params:
@@ -65,7 +65,7 @@ jobs:
 
       - task: test
         privileged: true
-        file: bosh-src/ci/pipelines/bosh/tasks/test-integration.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         config:
           tags: ["bosh-integration"]
           params:
@@ -81,7 +81,7 @@ jobs:
 
       - task: test
         privileged: true
-        file: bosh-src/ci/pipelines/bosh/tasks/test-integration.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         config:
           tags: ["bosh-integration"]
           params:
