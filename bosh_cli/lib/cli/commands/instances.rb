@@ -78,7 +78,6 @@ module Bosh::Cli::Command
           end
 
           row_count += 1
-          t << :separator if row_count.between?(2, sorted.size)
 
           job = "#{instance['job_name'] || 'unknown'}/#{instance['index'] || 'unknown'}"
           ips = Array(instance['ips']).join("\n")
@@ -137,6 +136,8 @@ module Bosh::Cli::Command
               (headings.size - 2).times { process_row << '' }
               t << process_row
             end
+
+            t << :separator if row_count < instances.size
           end
         end
       end
