@@ -14,7 +14,6 @@ module Bosh::Dev::Sandbox
 
     def initialize(options, logger)
       @database = options[:database]
-      @database_proxy = options[:database_proxy]
       @redis_port = options[:redis_port]
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
@@ -87,14 +86,6 @@ module Bosh::Dev::Sandbox
       until resque_is_ready?
         if attempt > max_attempts
           @logger.error("Resque queue failed to start in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
-          if @database_proxy
-            @logger.error("#{DEBUG_HEADER} TCP Proxy STDOUT logs #{DEBUG_HEADER}:")
-            @logger.error(@database_proxy.stdout_contents)
-            @logger.error("#{DEBUG_HEADER} End of TCP STDOUT Proxy logs #{DEBUG_HEADER}")
-            @logger.error("#{DEBUG_HEADER} TCP Proxy STDERR logs #{DEBUG_HEADER}:")
-            @logger.error(@database_proxy.stderr_contents)
-            @logger.error("#{DEBUG_HEADER} End of TCP STDERR Proxy logs #{DEBUG_HEADER}")
-          end
           raise "Resque failed to start workers in #{timeout} seconds"
         end
 

@@ -1,0 +1,13 @@
+worker_processes 1;
+daemon off;
+
+error_log <%= sandbox_root %>/tcp_proxy_nginx.error.log debug;
+
+events { }
+
+stream {
+  server {
+    listen     <%= nginx_port %>;
+    proxy_pass <%= database_host %>:<%= database_port %>;
+  }
+}
