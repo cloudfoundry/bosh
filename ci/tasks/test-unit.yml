@@ -1,0 +1,13 @@
+---
+platform: linux
+
+image: docker:///bosh/main
+
+inputs:
+  - name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/test-unit.sh
+
+params:
+  RUBY_VERSION: replace-me
