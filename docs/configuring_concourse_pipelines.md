@@ -1,6 +1,7 @@
 # Steps for Configuring the BOSH Pipelines
 
 - [ ] 0. Set up environment
+
       ```bash
       export PROJECT_NAME=<PROJECT_NAME>
       export PROJECT_PATH=</PATH/TO/PROJECT>
@@ -8,7 +9,9 @@
       export LASTPASS_USER=<USER NAME>
       export LASTPASS_NOTE="${PROJECT_NAME} concourse secrets"
       ```
+
 - [ ] 1. Configure the pipeline
+
       ```bash
       cd $PROJECT_PATH
       git co $GIT_BRANCH
@@ -27,6 +30,7 @@
 ## Notes
 
 - To install the LastPass CLI:
+
   ```bash
   brew install lastpass-cli --with-pinentry
   ```
