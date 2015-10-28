@@ -45,24 +45,21 @@ module Bosh::Dev::Sandbox
     end
 
     def install
-      working_dir = Dir.mktmpdir
-
       # Clean up old compiled nginx bits to stay up-to-date
       FileUtils.rm_rf(@install_dir)
       FileUtils.mkdir_p(@install_dir)
 
-      runner = Bosh::Core::Shell.new
-      tcp_proxy_source_dir = @workspace.asset_path('tcp_proxy_nginx')
-      runner.run("cp -R #{tcp_proxy_source_dir}/ #{working_dir}")
+      Dir.mktmpdir do |working_dir|
+        runner = Bosh::Core::Shell.new
+        tcp_proxy_source_dir = @workspace.asset_path('tcp_proxy_nginx')
+        FileUtils.cp_r(tcp_proxy_source_dir, working_dir)
 
-      Dir.chdir(working_dir) do
-        packaging_script_path = File.join(working_dir, 'install.sh')
-        runner.run("bash #{packaging_script_path}", env: {
-            'BOSH_INSTALL_TARGET' => @install_dir,
-          })
+        Dir.chdir(File.join(working_dir, 'tcp_proxy_nginx')) do
+          runner.run('bash ./install.sh', env: {
+              'BOSH_INSTALL_TARGET' => @install_dir,
+            })
+        end
       end
-    ensure
-      FileUtils.rm_rf(working_dir)
     end
   end
 

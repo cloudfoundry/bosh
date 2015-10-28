@@ -8,7 +8,8 @@ echo "Building nginx..."
 pushd nginx-1.9.6
   ./configure \
     --prefix=${BOSH_INSTALL_TARGET} \
-    --with-stream
+    --with-stream \
+    --without-http_rewrite_module
 
   make
   make install
