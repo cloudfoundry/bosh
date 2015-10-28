@@ -6,6 +6,7 @@ module Bosh::Director
       let(:blobstore) { double('Blobstore') }
 
       before do
+        fake_locks
         @cloud = instance_double('Bosh::Cloud')
         allow(Config).to receive(:cloud).and_return(@cloud)
       end
