@@ -70,6 +70,18 @@ end
 
 Resque::Failure.backend = Resque::Failure::Backtrace
 
-worker.log "Starting worker #{worker}"
+begin
+  @resque_retries ||= 0
+  worker.log "Starting worker #{worker}. Resque info:\n#{Resque.info.inspect}"
+  worker.work(ENV['INTERVAL'] || 5) # interval, will block
+rescue Redis::TimeoutError => e
+  worker.log "Redis timeout [#{@resque_retries}]. Error : #{e.inspect}"
+  while @resque_retries < 10
+    @resque_retries += 1
+    sleep 0.5
+    retry
+  end
 
-worker.work(ENV['INTERVAL'] || 5) # interval, will block
+  worker.log "Redis timeout max retries reached. Error: #{e.inspect}"
+  raise e
+end
