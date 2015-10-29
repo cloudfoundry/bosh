@@ -147,16 +147,17 @@ module Bosh::Director
 
         @current_state = apply_spec
         agent_client.apply(@current_state)
-        agent_state = agent_client.get_state
-
-        unless agent_state.nil?
-          @current_state['configuration_hash'] = agent_state['configuration_hash']
-
-          #director needs the VM's IP for dynamic network
-          @current_state['networks'] = agent_state['networks']
-        end
-
         @model.vm.update(:apply_spec => @current_state)
+      end
+
+      def apply_partial_vm_state
+        partial_state = {'networks' => network_settings.to_hash}
+        agent_client.apply(partial_state)
+        agent_state = agent_client.get_state
+        unless agent_state.nil?
+          @current_state['networks'] = agent_state['networks']
+          @model.vm.update(:apply_spec => @current_state)
+        end
       end
 
       def update_trusted_certs
@@ -353,7 +354,6 @@ module Bosh::Director
         @vm = vm
       end
 
-
       def cloud_properties
         if @availability_zone.nil?
           vm_type.cloud_properties
@@ -371,7 +371,7 @@ module Bosh::Director
       private
 
       def network_settings
-        instance_plan = job.needed_instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
+        instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
         desired_reservations = instance_plan.network_plans
                                  .reject(&:obsolete?)
                                  .map { |network_plan| network_plan.reservation }

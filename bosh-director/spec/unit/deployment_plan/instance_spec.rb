@@ -182,7 +182,7 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#apply_vm_state' do
+    context 'applying state' do
       let(:job) { Job.new(logger) }
 
       before do
@@ -237,9 +237,9 @@ module Bosh::Director::DeploymentPlan
         instance.bind_to_vm_model(vm_model)
       end
 
-      context 'when agent returns updated configuration hash' do
-        before do
-          state = {
+      describe 'apply_vm_state' do
+        let(:state) do
+          {
             'deployment' => 'fake-deployment',
             'job' => 'fake-job-spec',
             'index' => 0,
@@ -252,23 +252,31 @@ module Bosh::Director::DeploymentPlan
             'dns_domain_name' => 'test-domain',
             'persistent_disk' => 0
           }
-
-          expect(agent_client).to receive(:apply).with(state).ordered
-
-          expected_model_state = state.merge({
-            'configuration_hash' => 'changed',
-            'networks' => {'changed' => {}},
-          })
-          get_state_hash = expected_model_state.merge({
-            'other' => 'stuff that should be ignored',
-          })
-          expect(agent_client).to receive(:get_state).and_return(get_state_hash).ordered
-          expect(vm_model).to receive(:update).with(apply_spec: expected_model_state).ordered
         end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
+          expect(agent_client).to receive(:apply).with(state).ordered
+          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
+
           instance.apply_vm_state
-          expect(instance.configuration_changed?).to be_truthy
+          expect(instance.current_state).to eq(state)
+        end
+      end
+
+      describe 'apply_partial_vm_state' do
+        before do
+          network_settings = {
+            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}}
+          }
+          expect(agent_client).to receive(:apply).with(network_settings).ordered
+
+          agent_state = {'networks' => {'changed' => {}}}
+          expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
+        end
+
+        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
+          instance.apply_partial_vm_state
+          expect(instance.vm.model.apply_spec['networks']).to eq({'changed' => {}})
         end
       end
     end
@@ -373,7 +381,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
         network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
-        allow(job).to receive(:needed_instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
+        allow(job).to receive(:instance_plans).and_return([InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)])
       end
 
       it 'returns a valid instance template_spec' do
@@ -550,7 +558,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:instance_state).with(index).and_return('started')
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
         network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
-        allow(job).to receive(:needed_instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
+        allow(job).to receive(:instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
       end
 
       it 'returns a valid instance apply_spec' do

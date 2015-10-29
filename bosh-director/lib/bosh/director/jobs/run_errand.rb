@@ -15,9 +15,9 @@ module Bosh::Director
       @errand_name = errand_name
       @deployment_manager = Api::DeploymentManager.new
       @instance_manager = Api::InstanceManager.new
-      @blobstore = App.instance.blobstores.blobstore
       @keep_alive = keep_alive
-      log_bundles_cleaner = LogBundlesCleaner.new(@blobstore, 60 * 60 * 24 * 10, logger) # 10 days
+      blobstore = App.instance.blobstores.blobstore
+      log_bundles_cleaner = LogBundlesCleaner.new(blobstore, 60 * 60 * 24 * 10, logger) # 10 days
       @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
     end
 
@@ -74,7 +74,7 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      job_manager = Errand::JobManager.new(deployment, job, @blobstore, Config.cloud, event_log, logger)
+      job_manager = Errand::JobManager.new(deployment, job, Config.cloud, event_log, logger)
 
       begin
         update_instances(job_manager)

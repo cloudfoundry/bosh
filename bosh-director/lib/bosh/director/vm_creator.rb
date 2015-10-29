@@ -5,11 +5,12 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
-    def initialize(cloud, logger, vm_deleter, disk_manager)
+    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer)
       @cloud = cloud
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
+      @job_renderer = job_renderer
     end
 
     def create_for_instance_plans(instance_plans, ip_provider, event_log)
@@ -44,8 +45,6 @@ module Bosh::Director
 
     def create_for_instance_plan(instance_plan, disks)
       instance = instance_plan.instance
-      existing_apply_spec = instance_plan.existing_instance.nil? ? {} : instance_plan.existing_instance.apply_spec
-
       @logger.info('Creating VM')
 
       vm_model = create(
@@ -73,13 +72,10 @@ module Bosh::Director
 
       @disk_manager.attach_disks_for(instance)
 
-      if instance_plan.existing_instance && instance_plan.needs_recreate?
-        agent_client.apply(existing_apply_spec)
-        agent_state = agent_client.get_state
-        instance_plan.existing_instance.vm.update(apply_spec: agent_state)
-      else
-        instance.apply_vm_state
-      end
+      instance.apply_partial_vm_state
+      # re-render job templates with updated dynamic network settings
+      @job_renderer.render_job_instance(instance)
+      instance.apply_vm_state
 
       instance_plan.mark_desired_network_plans_as_existing
     end

@@ -4,7 +4,7 @@ require 'bosh/director/job_updater'
 
 module Bosh::Director
   describe DeploymentPlan::Steps::UpdateStep do
-    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore) }
+    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
@@ -22,7 +22,6 @@ module Bosh::Director
       )
     end
     let(:cloud) { instance_double('Bosh::Cloud', delete_vm: nil) }
-    let(:blobstore) { instance_double('Bosh::Blobstore') }
     let(:manifest) { ManifestHelper.default_legacy_manifest }
     let(:releases) { [] }
     let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -31,6 +30,7 @@ module Bosh::Director
       allow(base_job).to receive(:logger).and_return(logger)
       allow(base_job).to receive(:track_and_log).and_yield
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
+      fake_app
     end
 
     describe '#perform' do

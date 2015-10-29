@@ -81,6 +81,8 @@ module Bosh::Director
 
       attr_reader :link_paths
 
+      attr_reader :instance_plans
+
       def self.parse(plan, job_spec, event_log, logger)
         parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)
@@ -106,7 +108,6 @@ module Bosh::Director
         @migrated_from = []
         @availability_zones = []
 
-        @sorted_instance_plans = []
         @instance_plans = []
       end
 
@@ -116,8 +117,11 @@ module Bosh::Director
 
       def add_instance_plans(instance_plans)
         @instance_plans = instance_plans
-        @sorted_instance_plans = InstancePlanSorter.new(@logger)
-                                   .sort(instance_plans.reject(&:obsolete?))
+      end
+
+      def sorted_instance_plans
+        @sorted_instance_plans ||= InstancePlanSorter.new(@logger)
+                                   .sort(@instance_plans.reject(&:obsolete?))
       end
 
       # Takes in a job spec and returns a job spec in the new format, if it
@@ -148,7 +152,7 @@ module Bosh::Director
       end
 
       def needed_instance_plans
-        @sorted_instance_plans
+        sorted_instance_plans
       end
 
       def unneeded_instances

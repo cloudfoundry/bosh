@@ -31,10 +31,10 @@ module Bosh
           @logger = logger
         end
 
-        def create_from_model(deployment_model)
+        def create_from_model(deployment_model, options={})
           manifest_hash = Psych.load(deployment_model.manifest)
           cloud_config_model = deployment_model.cloud_config
-          create_from_manifest(manifest_hash, cloud_config_model, {})
+          create_from_manifest(manifest_hash, cloud_config_model, options)
         end
 
         def create_from_manifest(manifest_hash, cloud_config, options)

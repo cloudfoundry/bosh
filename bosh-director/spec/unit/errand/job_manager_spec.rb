@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::JobManager do
-    subject { described_class.new(deployment, job, blobstore, cloud, event_log, logger) }
+    subject { described_class.new(deployment, job, cloud, event_log, logger) }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
@@ -14,6 +14,7 @@ module Bosh::Director
 
     let(:cloud) { instance_double('Bosh::Clouds') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+    before { fake_app }
 
     describe '#prepare' do
       it 'binds unallocated vms and instance networks for given job' do
@@ -31,7 +32,7 @@ module Bosh::Director
 
       it 'binds vms to instances, creates jobs configurations and updates dns' do
         job_renderer = instance_double('Bosh::Director::JobRenderer')
-        expect(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
+        expect(JobRenderer).to receive(:create).and_return(job_renderer)
 
         links_resolver = instance_double('Bosh::Director::DeploymentPlan::LinksResolver')
         expect(DeploymentPlan::LinksResolver).to receive(:new).with(deployment, logger).and_return(links_resolver)

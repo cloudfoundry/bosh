@@ -177,7 +177,8 @@ module Bosh::Director
 
     def vm_creator
       disk_manager = DiskManager.new(cloud, @logger)
-      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager)
+      job_renderer = JobRenderer.create
+      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
     end
 
     def validate_spec(spec)

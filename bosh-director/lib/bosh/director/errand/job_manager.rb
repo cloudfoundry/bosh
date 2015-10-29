@@ -2,19 +2,18 @@ module Bosh::Director
   class Errand::JobManager
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment
     # @param [Bosh::Director::DeploymentPlan::Job] job
-    # @param [Bosh::Blobstore::Client] blobstore
     # @param [Bosh::Clouds] cloud
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Logger] logger
-    def initialize(deployment, job, blobstore, cloud, event_log, logger)
+    def initialize(deployment, job, cloud, event_log, logger)
       @deployment = deployment
       @job = job
-      @blobstore = blobstore
       @event_log = event_log
       @logger = logger
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
       @disk_manager = DiskManager.new(cloud, logger)
-      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager)
+      @job_renderer = JobRenderer.create
+      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager, @job_renderer)
     end
 
     def prepare
@@ -28,9 +27,8 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_renderer = JobRenderer.new(@job, @blobstore)
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
-      job_updater = JobUpdater.new(@deployment, @job, job_renderer, links_resolver, @disk_manager)
+      job_updater = JobUpdater.new(@deployment, @job, @job_renderer, links_resolver, @disk_manager)
       job_updater.update
     end
 

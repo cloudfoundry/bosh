@@ -69,8 +69,7 @@ module Bosh::Director
           event_log,
           deployment_plan,
           multi_job_updater,
-          Config.cloud,
-          App.instance.blobstores.blobstore
+          Config.cloud
         )
       end
 
@@ -78,7 +77,7 @@ module Bosh::Director
 
       def multi_job_updater
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(@blobstore, Config.cloud, logger))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(Config.cloud, logger))
         end
       end
     end

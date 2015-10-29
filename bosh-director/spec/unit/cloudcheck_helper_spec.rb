@@ -22,7 +22,8 @@ module Bosh::Director
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, vm.id, {}) }
     let(:fake_cloud) { instance_double('Bosh::Cloud') }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(fake_cloud, logger) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(fake_cloud, logger, vm_deleter, nil) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(fake_cloud, logger, vm_deleter, nil, job_renderer) }
+    let(:job_renderer) { instance_double(JobRenderer) }
     let(:agent_client) { instance_double(AgentClient) }
 
     before do
@@ -31,6 +32,7 @@ module Bosh::Director
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(fake_cloud).to receive(:create_vm)
       allow(fake_cloud).to receive(:delete_vm)
+      fake_app
     end
 
     def fake_job_context

@@ -7,7 +7,8 @@ module Bosh::Director
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager) }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
+    let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
@@ -391,7 +392,7 @@ module Bosh::Director
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager) }
+      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer) }
       let(:disk_manager) { DiskManager.new(cloud, logger) }
 
       it 'reuses compilation VMs' do
@@ -469,6 +470,7 @@ module Bosh::Director
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
+        expect(agent).to receive(:apply).with({'networks' => initial_state['networks']})
         expect(agent).to receive(:get_state)
         expect(agent).to receive(:apply).with(initial_state)
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)

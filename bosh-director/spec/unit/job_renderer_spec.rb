@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { described_class.new(job, blobstore) }
+    subject(:renderer) { described_class.new(blobstore, logger) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
@@ -17,15 +17,15 @@ module Bosh::Director
 
     describe '#render_job_instances' do
       before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', job: job) }
+      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', job: job) }
 
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       it 'renders each jobs instance' do
         expect(renderer).to receive(:render_job_instance).with(instance1)
         expect(renderer).to receive(:render_job_instance).with(instance2)
-        renderer.render_job_instances
+        renderer.render_job_instances(job)
       end
     end
 
@@ -41,6 +41,7 @@ module Bosh::Director
           :rendered_templates_archive= => nil,
           :model => instance_model,
           :template_spec => {},
+          :job => job,
         })
       end
 

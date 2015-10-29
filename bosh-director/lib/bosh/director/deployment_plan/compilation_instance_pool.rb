@@ -113,7 +113,7 @@ module Bosh::Director
 
     class CompilationJob
       attr_reader :vm_type, :stemcell, :env, :name
-      attr_reader :needed_instance_plans
+      attr_reader :instance_plans
 
       def initialize(vm_type, stemcell, env, compilation_network_name)
         @vm_type = vm_type
@@ -121,7 +121,7 @@ module Bosh::Director
         @env = env
         @network = compilation_network_name
         @name = "compilation-#{SecureRandom.uuid}"
-        @needed_instance_plans = []
+        @instance_plans = []
       end
 
       def default_network
@@ -136,7 +136,7 @@ module Bosh::Director
       end
 
       def add_instance_plans(instance_plans)
-        @needed_instance_plans = instance_plans
+        @instance_plans = instance_plans
       end
 
       def spec

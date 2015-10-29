@@ -7,13 +7,14 @@ module Bosh::Director
 
     attr_reader :current_state
 
-    def self.new_instance_updater(job_renderer, ip_provider)
+    def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
       vm_deleter = VmDeleter.new(cloud, logger)
       disk_manager = DiskManager.new(cloud, logger)
-      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager)
-      vm_recreator = VmRecreator.new(vm_creator, vm_deleter, job_renderer)
+      job_renderer = JobRenderer.create
+      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)
+      vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       dns_manager = DnsManager.create
       new(
         cloud,

@@ -2,11 +2,12 @@ require 'spec_helper'
 
 describe Bosh::Director::VmCreator do
 
-  subject  {Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager)}
+  subject  {Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)}
 
   let(:disk_manager) { Bosh::Director::DiskManager.new(cloud, logger) }
   let(:cloud) { instance_double('Bosh::Cloud') }
   let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger)}
+  let(:job_renderer) { instance_double(Bosh::Director::JobRenderer) }
   let(:agent_client) do
     instance_double(
       Bosh::Director::AgentClient,
@@ -70,6 +71,8 @@ describe Bosh::Director::VmCreator do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
     allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
+    allow(job).to receive(:instance_plans).and_return([instance_plan])
+    allow(job_renderer).to receive(:render_job_instance).with(instance)
   end
 
   it 'should create a vm' do
@@ -106,6 +109,15 @@ describe Bosh::Director::VmCreator do
         id: instance_model.uuid
       })
     end
+
+    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+  end
+
+  it 'updates instance job templates with new IP' do
+    allow(cloud).to receive(:create_vm)
+    expect(job_renderer).to receive(:render_job_instance).with(instance)
+    expect(instance).to receive(:apply_partial_vm_state)
+    expect(instance).to receive(:apply_vm_state)
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end

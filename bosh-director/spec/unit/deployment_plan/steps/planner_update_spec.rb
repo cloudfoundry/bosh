@@ -57,7 +57,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -149,6 +149,7 @@ module Bosh::Director::DeploymentPlan
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
           before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
+          before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instance) }
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
 

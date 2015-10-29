@@ -3,23 +3,25 @@ require 'bosh/director/core/templates/job_instance_renderer'
 
 module Bosh::Director
   class JobRenderer
-    # @param [DeploymentPlan::Job]
-    def initialize(job, blobstore)
-      @job = job
-      @blobstore = blobstore
-      @logger = Config.logger
-
-      job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
-      @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job.templates, job_template_loader)
+    def self.create
+      new(App.instance.blobstores.blobstore, Config.logger)
     end
 
-    def render_job_instances
-      @job.instances.each { |instance| render_job_instance(instance) }
+    def initialize(blobstore, logger)
+      @blobstore = blobstore
+      @logger = logger
+    end
+
+    def render_job_instances(job)
+      job.instances.each { |instance| render_job_instance(instance) }
     end
 
     def render_job_instance(instance)
       @logger.debug("Rendering templates for instance #{instance}")
-      rendered_job_instance = @instance_renderer.render(instance.template_spec)
+
+      job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
+      instance_renderer = Core::Templates::JobInstanceRenderer.new(instance.job.templates, job_template_loader)
+      rendered_job_instance = instance_renderer.render(instance.template_spec)
 
       configuration_hash = rendered_job_instance.configuration_hash
 
