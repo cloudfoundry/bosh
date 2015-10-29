@@ -37,6 +37,8 @@ module Bosh::Dev::Sandbox
               in: :close,
             })
 
+          # TODO: Process.detach @pid
+
           @logger.info("Started process for #{@description} with PID #{@pid}, log-id: #{@log_id}")
         end
       end
