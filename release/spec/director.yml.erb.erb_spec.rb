@@ -93,6 +93,22 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
+    context 'when domain name specified' do
+       before do
+        deployment_manifest_fragment['properties']['dns'] = {
+          'domain_name' => 'domain.name'
+        }
+      end
+
+      it 'sets the domain_name field appropriately' do
+        expect(parsed_yaml['dns']).to eq({
+          'domain_name' => 'domain.name',
+        })
+      end
+
+
+    end
+
     context 'and when configured with a blobstore_path' do
       before do
         deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = {
