@@ -4,25 +4,6 @@ require 'erb'
 require 'bosh/director'
 require 'resque/failure/backtrace'
 
-require 'redis/errors'
-
-class Redis
-  class Client
-    def io
-      if File.exist?('/tmp/kill-redis')
-        raise Redis::TimeoutError
-      end
-
-      yield
-    rescue TimeoutError
-      raise TimeoutError, "Connection timed out"
-    rescue Errno::ECONNRESET, Errno::EPIPE, Errno::ECONNABORTED, Errno::EBADF, Errno::EINVAL => e
-      raise ConnectionError, "Connection lost (%s)" % [e.class.name.split("::").last]
-    end
-  end
-end
-
-
 config_file = nil
 index = nil
 erb = false
