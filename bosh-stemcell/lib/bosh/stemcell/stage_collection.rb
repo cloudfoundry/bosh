@@ -46,9 +46,9 @@ module Bosh::Stemcell
       when Infrastructure::OpenStack then
         openstack_stages
       when Infrastructure::Vsphere then
-        vsphere_stages
+        vsphere_vcloud_stages
       when Infrastructure::Vcloud then
-        vcloud_stages
+        vsphere_vcloud_stages
       when Infrastructure::Warden then
         warden_stages
       when Infrastructure::Azure then
@@ -86,9 +86,7 @@ module Bosh::Stemcell
           # Finalisation,
           :bosh_clean,
           :bosh_harden,
-          :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
-          :disable_blank_passwords,
           :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
@@ -103,9 +101,7 @@ module Bosh::Stemcell
           # Finalisation,
           :bosh_clean,
           :bosh_harden,
-          :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
-          :disable_blank_passwords,
           :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
@@ -120,7 +116,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def vsphere_stages
+    def vsphere_vcloud_stages
       if is_centos?
         [
           :system_network,
@@ -129,8 +125,8 @@ module Bosh::Stemcell
           :system_parameters,
           :bosh_clean,
           :bosh_harden,
+          :bosh_enable_password_authentication,
           :bosh_vsphere_agent_settings,
-          :disable_blank_passwords,
           :bosh_clean_ssh,
           :image_create,
           :image_install_grub,
@@ -145,43 +141,8 @@ module Bosh::Stemcell
           # Finalisation
           :bosh_clean,
           :bosh_harden,
+          :bosh_enable_password_authentication,
           :bosh_vsphere_agent_settings,
-          :disable_blank_passwords,
-          :bosh_clean_ssh,
-          # Image/bootloader
-          :image_create,
-          :image_install_grub,
-        ]
-      end
-    end
-
-    def vcloud_stages
-      if is_centos?
-        [
-          :system_network,
-          :system_open_vm_tools,
-          :system_vsphere_cdrom,
-          :system_parameters,
-          :bosh_clean,
-          :bosh_harden,
-          :bosh_vsphere_agent_settings,
-          :disable_blank_passwords,
-          :bosh_clean_ssh,
-          :image_create,
-          :image_install_grub,
-        ]
-      else
-        [
-          :system_network,
-          :system_open_vm_tools,
-          :system_vsphere_cdrom,
-          # Misc
-          :system_parameters,
-          # Finalisation
-          :bosh_clean,
-          :bosh_harden,
-          :bosh_vsphere_agent_settings,
-          :disable_blank_passwords,
           :bosh_clean_ssh,
           # Image/bootloader
           :image_create,
@@ -199,9 +160,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
-        :bosh_disable_password_authentication,
         :bosh_aws_agent_settings,
-        :disable_blank_passwords,
         :bosh_clean_ssh,
         # Image/bootloader
         :image_create,
@@ -217,6 +176,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
+        :bosh_enable_password_authentication,
         :bosh_clean_ssh,
         # only used for spec test
         :image_create,
@@ -232,9 +192,7 @@ module Bosh::Stemcell
         # Finalisation,
         :bosh_clean,
         :bosh_harden,
-        :bosh_disable_password_authentication,
         :bosh_azure_agent_settings,
-        :disable_blank_passwords,
         :bosh_clean_ssh,
         # Image/bootloader
         :image_create,
@@ -320,6 +278,7 @@ module Bosh::Stemcell
         :bosh_monit,
         :bosh_ntpdate,
         :bosh_sudoers,
+        :disable_blank_passwords,
       ]
     end
 

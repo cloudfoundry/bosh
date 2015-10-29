@@ -44,6 +44,9 @@ echo 'PermitUserEnvironment no' >> $chroot/etc/ssh/sshd_config
 sed "/^ *ClientAliveCountMax/d" -i $chroot/etc/ssh/sshd_config
 echo 'ClientAliveCountMax 0' >> $chroot/etc/ssh/sshd_config
 
+sed "/^ *PasswordAuthentication/d" -i $chroot/etc/ssh/sshd_config
+echo 'PasswordAuthentication no' >> $chroot/etc/ssh/sshd_config
+
 # protect against as-shipped sshd_config that has no newline at end
 echo "" >> $chroot/etc/ssh/sshd_config
 

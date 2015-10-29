@@ -80,6 +80,10 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to be_mode('600')
     end
 
+    it 'disallows password authentication' do
+      expect(sshd_config).to contain(/^PasswordAuthentication no$/)
+    end
+
     it 'shows a banner' do
       expect(sshd_config).to contain(/^Banner/)
     end
@@ -127,6 +131,12 @@ shared_examples_for 'every OS image' do
 
     it 'sets Protocol to 2 (stig: V-38607)' do
       expect(sshd_config).to contain(/^Protocol 2$/)
+    end
+  end
+
+  context 'disable blank password logins (stig: V-38497)' do
+    describe command('grep -R nullok /etc/pam.d') do
+      its (:stdout) { should eq('') }
     end
   end
 
