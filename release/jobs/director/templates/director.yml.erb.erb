@@ -84,7 +84,11 @@ if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
 end
 
 if_p('dns.domain_name') do |domain_name|
-      params['dns']['domain_name'] = domain_name
+  if params['dns'].nil?
+    params['dns']  = {'domain_name' =>  domain_name}
+  else
+    params['dns']['domain_name'] = domain_name
+  end
 end
 
 if p('blobstore.provider') == 's3'
