@@ -523,7 +523,8 @@ describe Bosh::Cli::Client::Director do
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => {
               'user'       => 'user',
@@ -537,7 +538,7 @@ describe Bosh::Cli::Client::Director do
                                                               :content_type => 'application/json'})
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.setup_ssh('foo', 'bar', 0, 'user', 'public_key', 'password')
+      @director.setup_ssh('foo', 'bar', 'fake-id', 'user', 'public_key', 'password')
     end
 
     it 'ssh cleanup' do
@@ -547,7 +548,8 @@ describe Bosh::Cli::Client::Director do
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => { 'user_regex' => 'bosh_' }
       }
@@ -559,7 +561,7 @@ describe Bosh::Cli::Client::Director do
                                                             )
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.cleanup_ssh('foo', 'bar', 'bosh_', [0])
+      @director.cleanup_ssh('foo', 'bar', 'bosh_', ['fake-id'])
     end
 
     context 'when director returns 404' do

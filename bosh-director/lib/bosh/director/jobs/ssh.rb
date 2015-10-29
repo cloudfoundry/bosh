@@ -23,17 +23,10 @@ module Bosh::Director
       def perform
         target = Target.new(@target_payload)
 
-        filter = {
-          :deployment_id => @deployment_id
-        }
-
-        if target.id_provided?
-          filter[:uuid] = target.id
-        elsif target.indexes_provided?
-          filter[:index] = target.indexes
-        end
-
+        filter = { deployment_id: @deployment_id }
         filter[:job] = target.job if target.job
+
+        filter.merge(target.id_filter)
 
         instances = @instance_manager.filter_by(filter)
 
@@ -42,7 +35,7 @@ module Bosh::Director
 
           logger.info("ssh #{@command} `#{instance.job}/#{instance.uuid}'")
           result = agent.ssh(@command, @params)
-          if target.id_provided?
+          if target.ids_provided?
             result["id"] = instance.uuid
           else
             result["index"] = instance.index
@@ -66,20 +59,39 @@ module Bosh::Director
       private
 
       class Target
-        attr_reader :job, :indexes, :id
+        attr_reader :job, :indexes, :ids
 
         def initialize(target_payload)
           @job = target_payload['job']
+          @ids = target_payload['ids']
           @indexes = target_payload['indexes']
-          @id = target_payload['id']
         end
 
-        def id_provided?
-          @id && !@id.empty?
+        def ids_provided?
+          @ids && @ids.size > 0
         end
 
         def indexes_provided?
           @indexes && @indexes.size > 0
+        end
+
+        def id_filter
+          unless ids_provided? && indexes_provided?
+            # for backwards compatibility with old cli
+            return {index: @indexes}
+          end
+
+          filter = {index: [], uuid: []}
+
+          @ids.each do |id|
+            if id.to_s =~ /^\d+$/
+              filter[:index] << id.to_i
+            else
+              filter[:uuid] << id
+            end
+          end
+
+          filter
         end
       end
     end

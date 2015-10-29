@@ -10,7 +10,7 @@ module Bosh::Director
     let(:instance_manager) { Api::InstanceManager.new }
     let(:deployment) { Models::Deployment.make }
     let(:result_file) { instance_double(TaskResultFile) }
-    let(:target) { {'job' => 'fake-job', 'indexes' => 5} }
+    let(:target) { {'job' => 'fake-job', 'indexes' => [5]} }
     describe 'Resque job class expectations' do
       let(:job_type) { :ssh }
       it_behaves_like 'a Resque job'
@@ -34,12 +34,24 @@ module Bosh::Director
     end
 
     context 'when instance id was passed in' do
-      let(:target) { {'job' => 'fake-job', 'id' => 'fake-uuid'} }
+      let(:target) { {'job' => 'fake-job', 'ids' => ['fake-uuid']} }
 
-      it 'finds instance by its id and generates response with id' do
-        expect(result_file).to receive(:write).with(Yajl::Encoder.encode([{'id' => 'fake-uuid', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}]))
+      context 'when id is instance uuid' do
+        it 'finds instance by its id and generates response with id' do
+          expect(result_file).to receive(:write).with(Yajl::Encoder.encode([{'id' => 'fake-uuid', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}]))
 
-        job.perform
+          job.perform
+        end
+      end
+
+      context 'when id is instance index' do
+        let(:target) { {'job' => 'fake-job', 'ids' => [5]} }
+
+        it 'finds instance by its index and generates response with id' do
+          expect(result_file).to receive(:write).with(Yajl::Encoder.encode([{'id' => 'fake-uuid', 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}]))
+
+          job.perform
+        end
       end
     end
   end

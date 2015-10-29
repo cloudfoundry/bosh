@@ -52,12 +52,6 @@ describe Bosh::Cli::Command::Ssh do
         }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
       end
 
-      it 'should fail to setup ssh when a job index is not an Integer' do
-        expect {
-          command.shell('dea/dea')
-        }.to raise_error(Bosh::Cli::CliError, 'Invalid job index, integer number expected')
-      end
-
       context 'when there is no instance with that job name in the deployment' do
         let(:manifest) do
           {
@@ -107,13 +101,13 @@ describe Bosh::Cli::Command::Ssh do
 
         it 'should implicitly chooses the only instance if job index not provided' do
           expect(command).not_to receive(:choose)
-          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
           command.shell('dea')
         end
 
         it 'should implicitly chooses the only instance if job name not provided' do
           expect(command).not_to receive(:choose)
-          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
           command.shell
         end
       end
@@ -142,7 +136,7 @@ describe Bosh::Cli::Command::Ssh do
 
         it 'should prompt for an instance if job name not given' do
           expect(command).to receive(:choose).and_return(['dea', 3])
-          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 3)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '3')
           command.shell
         end
       end
@@ -154,7 +148,7 @@ describe Bosh::Cli::Command::Ssh do
         allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         allow(director).to receive(:cleanup_ssh)
         expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
+          with('mycloud', 'dea', '0', 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
 
         expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
@@ -166,12 +160,18 @@ describe Bosh::Cli::Command::Ssh do
 
     describe 'session' do
       it 'should try to setup interactive shell when a job index is given' do
-        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
         command.shell('dea', '0')
       end
 
+      it 'should try to setup interactive shell when a job id is given' do
+        uuid = SecureRandom.uuid
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', uuid)
+        command.shell('dea', uuid)
+      end
+
       it 'should try to setup interactive shell when a job index is given as part of the job name' do
-        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
         command.shell('dea/0')
       end
 
@@ -412,7 +412,7 @@ describe Bosh::Cli::Command::Ssh do
       allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
       allow(director).to receive(:cleanup_ssh)
       expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
+          with('mycloud', 'dea', '0', 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
 
       command.add_option(:upload, false)
