@@ -17,7 +17,6 @@ module Bosh::Director
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
               'name' => @source.name,
-              'index' => instance.index,
               'id' => instance.uuid,
               'availability_zone' => availability_zone,
               'networks' => instance_plan.network_addresses
