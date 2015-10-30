@@ -418,6 +418,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'does not require persistent_disk_pool' do
+        instance.bind_existing_instance_model(instance_model)
         allow(job).to receive(:persistent_disk_type).and_return(nil)
 
         spec = instance.template_spec
@@ -447,9 +448,11 @@ module Bosh::Director::DeploymentPlan
         let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_type_spec) }
         let(:disk_type_spec) { {'name' => 'default', 'disk_size' => 400, 'cloud_properties' => {}} }
 
-        it 'returns a valid instance template_spec' do
+        before do
           instance.bind_existing_instance_model(instance_model)
+        end
 
+        it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
           instance.bind_unallocated_vm
           spec = instance.template_spec
@@ -559,6 +562,7 @@ module Bosh::Director::DeploymentPlan
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
         network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
         allow(job).to receive(:instance_plans).and_return [InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, network_plans: network_plans)]
+        instance.bind_existing_instance_model(instance_model)
       end
 
       it 'returns a valid instance apply_spec' do

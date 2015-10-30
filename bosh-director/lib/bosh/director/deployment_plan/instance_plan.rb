@@ -163,11 +163,7 @@ module Bosh
         end
 
         def network_settings_hash
-          if obsolete? || network_settings.to_hash.empty?
-            @existing_instance.apply_spec['networks']
-          else
-            network_settings.to_hash
-          end
+          network_settings.to_hash
         end
 
         def network_addresses

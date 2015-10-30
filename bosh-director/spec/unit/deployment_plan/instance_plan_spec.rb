@@ -331,35 +331,17 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#network_settings_hash' do
-      context 'when instance plan is obsolete' do
-        it 'gets the network settings from the existing instance spec (because its the last known instance state)' do
-         obsolete_instance_plan = InstancePlan.new(existing_instance: existing_instance, instance: nil, desired_instance: nil)
-
-          expect(obsolete_instance_plan.network_settings_hash).to eq({'obsolete' => 'network'})
-        end
-      end
-
-      context 'when instance plan is not obsolete' do
-        it 'generates network settings from the job and desired reservations' do
-          expect(instance_plan.network_settings_hash).to eq({
+      it 'generates network settings from the job and desired reservations' do
+        expect(instance_plan.network_settings_hash).to eq({
               'a' => {
                 'ip' => '192.168.1.3',
                 'netmask' => '255.255.255.0',
-                'cloud_properties' =>{},
-                'dns' =>['192.168.1.1', '192.168.1.2'],
+                'cloud_properties' => {},
+                'dns' => ['192.168.1.1', '192.168.1.2'],
                 'gateway' => '192.168.1.1',
                 'dns_record_name' => '1.foobar.a.simple.bosh'}
-              }
-            )
-        end
-
-        context 'when instance has no desired reservations' do
-          it 'gets the network settings from the existing instance spec (because its the last known instance state)' do
-            instance_plan.network_plans = []
-
-            expect(instance_plan.network_settings_hash).to eq({'obsolete' => 'network'})
-          end
-        end
+            }
+          )
       end
     end
 
