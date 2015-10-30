@@ -36,7 +36,7 @@ describe Bosh::Director::VmCreator do
   let(:env) { Bosh::Director::DeploymentPlan::Env.new({}) }
 
   let(:instance) do
-    instance = Bosh::Director::DeploymentPlan::Instance.new(
+    instance = Bosh::Director::DeploymentPlan::Instance.create_from_job(
       job,
       5,
       'started',
@@ -55,7 +55,7 @@ describe Bosh::Director::VmCreator do
     reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
   end
   let(:instance_plan) do
-    desired_instance = BD::DeploymentPlan::DesiredInstance.new(nil, {}, nil)
+    desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, {}, nil)
     network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
     BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
   end
@@ -71,6 +71,7 @@ describe Bosh::Director::VmCreator do
       package_spec: {},
       persistent_disk_type: nil,
       can_run_as_errand?: false,
+      compilation?: false,
     )
   end
   let(:vm) { nil }

@@ -8,6 +8,7 @@ module Bosh::Director
 
     def update_persistent_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
+      job = instance_plan.desired_instance.job
 
       check_persistent_disk(instance)
 
@@ -16,7 +17,7 @@ module Bosh::Director
 
       old_disk = instance.model.persistent_disk
 
-      if instance.job.persistent_disk_type && instance.job.persistent_disk_type.disk_size > 0
+      if job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
         disk = create_and_attach_disk(instance_plan, vm_recreator)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
@@ -191,7 +192,7 @@ module Bosh::Director
 
     def create_and_attach_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
-      disk = create_disk(instance)
+      disk = create_disk(instance_plan)
       @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
       return disk
     rescue Bosh::Clouds::NoDiskSpace => e
@@ -221,17 +222,20 @@ module Bosh::Director
       raise
     end
 
-    def create_disk(instance)
-      disk_size = instance.job.persistent_disk_type.disk_size
-      cloud_properties = instance.job.persistent_disk_type.cloud_properties
+    def create_disk(instance_plan)
+      job = instance_plan.desired_instance.job
+      instance_model = instance_plan.instance.model
+
+      disk_size = job.persistent_disk_type.disk_size
+      cloud_properties = job.persistent_disk_type.cloud_properties
 
       disk = nil
-      instance.model.db.transaction do
-        disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance.model.vm.cid)
+      instance_model.db.transaction do
+        disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm.cid)
         disk = Models::PersistentDisk.create(
           disk_cid: disk_cid,
           active: false,
-          instance_id: instance.model.id,
+          instance_id: instance_model.id,
           size: disk_size,
           cloud_properties: cloud_properties,
         )

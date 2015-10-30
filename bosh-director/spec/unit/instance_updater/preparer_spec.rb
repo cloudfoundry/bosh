@@ -3,8 +3,16 @@ require 'spec_helper'
 module Bosh::Director
   describe InstanceUpdater::Preparer do
     subject(:preparer) { described_class.new(instance_plan, agent_client, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', deployment_model: Models::Deployment.make, job: DeploymentPlan::Job.new(logger) ) }
-    let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, needs_recreate?: false) }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', deployment_model: Models::Deployment.make ) }
+    let(:instance_plan) do
+      job = DeploymentPlan::Job.new(logger)
+      Bosh::Director::DeploymentPlan::InstancePlan.new(
+        desired_instance: DeploymentPlan::DesiredInstance.new(job),
+        existing_instance: nil,
+        instance: instance,
+        needs_recreate?: false
+      )
+    end
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
     describe '#prepare' do

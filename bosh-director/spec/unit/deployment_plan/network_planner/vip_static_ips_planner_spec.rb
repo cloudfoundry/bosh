@@ -16,7 +16,7 @@ module Bosh::Director
 
     def make_instance_plan
       instance_model = Models::Instance.make
-      instance = DeploymentPlan::Instance.new(job, instance_model.index, 'started', deployment, {}, nil, logger)
+      instance = DeploymentPlan::Instance.create_from_job(job, instance_model.index, 'started', deployment, {}, nil, logger)
       instance.bind_existing_instance_model(instance_model)
       DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,

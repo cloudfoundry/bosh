@@ -93,7 +93,7 @@ module Bosh::Director
 
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
 
-      instance_from_model = DeploymentPlan::Instance.new(
+      instance_from_model = DeploymentPlan::Instance.create_from_job(
         job_from_instance_model,
         instance_model.index,
         instance_model.state,
@@ -104,40 +104,14 @@ module Bosh::Director
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
-      instance_plan_to_create = DeploymentPlan::InstancePlan.new(
+      DeploymentPlan::InstancePlan.new(
         existing_instance: instance_model,
         instance: instance_from_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
         network_plans: [],
         recreate_deployment: true
       )
-
-      vm_creator.create_for_instance_plan(
-        instance_plan_to_create,
-        Array(instance_model.persistent_disk_cid)
-      )
-
-      dns_manager = DnsManager.create
-      dns_names_to_ip = {}
-
-      instance_plan_to_create.existing_instance.vm.apply_spec['networks'].each do |network_name, network|
-        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, deployment_model.name)
-        dns_names_to_ip[index_dns_name] = network['ip']
-        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, deployment_model.name)
-        dns_names_to_ip[id_dns_name] = network['ip']
-      end
-
-      @logger.debug("Updating DNS record for instance: #{instance_from_model.model.inspect}; to: #{dns_names_to_ip.inspect}")
-      dns_manager.update_dns_record_for_instance(instance_from_model.model, dns_names_to_ip)
-      dns_manager.flush_dns_cache
-
-      if instance_model.state == 'started'
-        agent_client(instance_model.vm).run_script('pre-start', {})
-        agent_client(instance_model.vm).start
-      end
     end
-
-    private
 
     def cloud
       Bosh::Director::Config.cloud

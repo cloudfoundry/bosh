@@ -37,10 +37,10 @@ module Bosh
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
           @changes << :network if networks_changed?
-          @changes << :packages if instance.packages_changed?
+          @changes << :packages if packages_changed?
           @changes << :persistent_disk if persistent_disk_changed?
           @changes << :configuration if instance.configuration_changed?
-          @changes << :job if instance.job_changed?
+          @changes << :job if job_changed?
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
@@ -52,7 +52,7 @@ module Bosh
             return !@existing_instance.persistent_disk.nil?
           end
 
-          job = @instance.job
+          job = @desired_instance.job
           new_disk_size = job.persistent_disk_type ? job.persistent_disk_type.disk_size : 0
           new_disk_cloud_properties = job.persistent_disk_type ? job.persistent_disk_type.cloud_properties : {}
           changed = new_disk_size != disk_size
@@ -150,9 +150,9 @@ module Bosh
                                    .map { |network_plan| network_plan.reservation }
 
           DeploymentPlan::NetworkSettings.new(
-            @instance.job.name,
+            @desired_instance.job.name,
             @instance.model.deployment.name,
-            @instance.job.default_network,
+            @desired_instance.job.default_network,
             desired_reservations,
             @instance.current_state,
             @instance.availability_zone,
@@ -197,10 +197,31 @@ module Bosh
           DeploymentPlan::InstanceSpec.new(self).apply_spec
         end
 
+        def job_changed?
+          job = @desired_instance.job
+          return true if @instance.current_job_spec.nil?
+
+          # The agent job spec could be in legacy form.  job_spec cannot be,
+          # though, because we got it from the spec function in job.rb which
+          # automatically makes it non-legacy.
+          converted_current = Job.convert_from_legacy_spec(@instance.current_job_spec)
+          changed = job.spec != converted_current
+          log_changes(__method__, converted_current, job.spec, @instance) if changed
+          changed
+        end
+
+        def packages_changed?
+          job = @desired_instance.job
+
+          changed = job.package_spec != @instance.current_packages
+          log_changes(__method__, @instance.current_packages, job.package_spec, @instance) if changed
+          changed
+        end
+
         private
 
         def env_changed?
-          job = @instance.job
+          job = @desired_instance.job
 
           if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
             log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
@@ -225,7 +246,7 @@ module Bosh
 
         def vm_type_changed?
           if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
-            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @instance.job.vm_type.spec, @existing_instance)
+            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @desired_instance.job.vm_type.spec, @existing_instance)
             return true
           end
           false

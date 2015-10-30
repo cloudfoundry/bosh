@@ -53,13 +53,13 @@ module Bosh::Director
       end
 
       let(:instance_plan) do
-        DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: nil, instance: instance)
+        DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(job), instance: instance)
       end
 
       let(:instance) do
         deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
         availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-        DeploymentPlan::Instance.new(job, 5, 'started', deployment, {}, availability_zone, logger)
+        DeploymentPlan::Instance.create_from_job(job, 5, 'started', deployment, {}, availability_zone, logger)
       end
 
       before do

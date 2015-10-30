@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
-    let(:instance) { Instance.new(job, 3, 'started', plan, {}, az, logger) }
+    let(:instance) { Instance.create_from_job(job, 3, 'started', plan, {}, az, logger) }
     let(:reservation) {
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, manual_network)
       reservation.resolve_ip('10.0.0.6')
@@ -45,10 +45,9 @@ module Bosh::Director::DeploymentPlan
 
     describe '#network_settings' do
       let(:job) do
-        instance_double(Job, {
-            name: 'fake-job',
-            can_run_as_errand?: false,
-          })
+        job = Job.new(logger)
+        job.name = 'fake-job'
+        job
       end
 
       context 'dynamic network' do

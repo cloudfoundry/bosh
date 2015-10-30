@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe Instance do
     include Support::StemcellHelpers
 
-    subject(:instance) { Instance.new(job, index, state, plan, current_state, availability_zone, logger) }
+    subject(:instance) { Instance.create_from_job(job, index, state, plan, current_state, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
@@ -59,31 +59,6 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) { {'current' => 'state'} }
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
-    describe '#packages_changed?' do
-      let(:job) { Job.new(logger) }
-
-      describe 'when packages have changed' do
-        let(:current_state) { {'packages' => {'changed' => 'value'}} }
-
-        it 'should return true' do
-          expect(instance.packages_changed?).to eq(true)
-        end
-
-        it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {}')
-          instance.packages_changed?
-        end
-      end
-
-      describe 'when packages have not changed' do
-        let(:current_state) { {'packages' => {}} }
-
-        it 'should return false' do
-          expect(instance.packages_changed?).to eq(false)
-        end
-      end
-    end
-
     describe '#configuration_changed?' do
       let(:job) { Job.new(logger) }
 
@@ -109,7 +84,6 @@ module Bosh::Director::DeploymentPlan
 
     describe '#bind_unallocated_vm' do
       let(:index) { 2 }
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'dea', compilation?: false) }
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
@@ -132,11 +106,11 @@ module Bosh::Director::DeploymentPlan
 
       it 'creates a new uuid for each instance' do
         allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
-        first_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        first_instance = Instance.create_from_job(job, index, state, plan, current_state, availability_zone, logger)
         first_instance.bind_unallocated_vm
         first_uuid = first_instance.uuid
         index = 1
-        second_instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        second_instance = Instance.create_from_job(job, index, state, plan, current_state, availability_zone, logger)
         second_instance.bind_unallocated_vm
         second_uuid = second_instance.uuid
         expect(first_uuid).to_not be_nil
@@ -240,65 +214,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#job_changed?' do
-      let(:job) { Job.new(logger) }
-      before do
-        job.templates = [template]
-        job.name = state['job']['name']
-      end
-      let(:template) do
-        instance_double('Bosh::Director::DeploymentPlan::Template', {
-            name: state['job']['name'],
-            version: state['job']['version'],
-            sha1: state['job']['sha1'],
-            blobstore_id: state['job']['blobstore_id'],
-            logs: nil,
-          })
-      end
-      let(:state) do
-        {
-          'job' => {
-            'name' => 'hbase_slave',
-            'template' => 'hbase_slave',
-            'version' => '0+dev.9',
-            'sha1' => 'a8ab636b7c340f98891178096a44c09487194f03',
-            'blobstore_id' => 'e2e4e58e-a40e-43ec-bac5-fc50457d5563'
-          }
-        }
-      end
-
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-      let(:vm) { Vm.new }
-
-      context 'when an instance exists (with the same job name & instance index)' do
-        before do
-          instance_model = Bosh::Director::Models::Instance.make(bootstrap: true)
-          instance.bind_existing_instance_model(instance_model)
-        end
-
-        context 'that fully matches the job spec' do
-          let(:current_state) { {'job' => job.spec} }
-
-          it 'returns false' do
-            expect(instance.job_changed?).to eq(false)
-          end
-        end
-
-        context 'that does not match the job spec' do
-          let(:current_state) { {'job' => job.spec.merge('version' => 'old-version')} }
-
-          it 'returns true' do
-            expect(instance.job_changed?).to eq(true)
-          end
-
-          it 'logs the change' do
-            expect(logger).to receive(:debug).with(/job_changed\? changed FROM: .* TO: .*/)
-            instance.job_changed?
-          end
-        end
-      end
-    end
-
     describe '#trusted_certs_changed?' do
       before do
         instance.bind_existing_instance_model(instance_model)
@@ -334,14 +249,6 @@ module Bosh::Director::DeploymentPlan
         model.cloud_properties_hash = {'a' => 'b'}
         model
       }
-      let(:job) {
-        job = instance_double('Bosh::Director::DeploymentPlan::Job',
-          name: 'fake-job',
-          vm_type: vm_type,
-          stemcell: stemcell,
-        )
-      }
-
       before do
         instance.bind_existing_instance_model(instance_model)
       end
@@ -433,7 +340,7 @@ module Bosh::Director::DeploymentPlan
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
           allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+          instance = Instance.create_from_job(job, index, state, plan, current_state, availability_zone, logger)
 
           expect(instance.cloud_properties).to eq(
               {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -445,7 +352,7 @@ module Bosh::Director::DeploymentPlan
         it 'uses just the resource pool cloud properties' do
           allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-          instance = Instance.new(job, index, state, plan, current_state, nil, logger)
+          instance = Instance.create_from_job(job, index, state, plan, current_state, nil, logger)
 
           expect(instance.cloud_properties).to eq(
               {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
@@ -460,7 +367,7 @@ module Bosh::Director::DeploymentPlan
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
         allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-        instance = Instance.new(job, index, state, plan, current_state, availability_zone, logger)
+        instance = Instance.create_from_job(job, index, state, plan, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!

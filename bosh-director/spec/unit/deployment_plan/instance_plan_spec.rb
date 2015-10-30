@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => job_spec } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { Instance.new(job, 1, 'started', deployment_plan, current_state, availability_zone, logger) }
+    let(:instance) { Instance.create_from_job(job, 1, 'started', deployment_plan, current_state, availability_zone, logger) }
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
     let(:reservation) {
@@ -342,6 +342,81 @@ module Bosh::Director::DeploymentPlan
                 'dns_record_name' => '1.foobar.a.simple.bosh'}
             }
           )
+      end
+    end
+
+    describe '#job_changed?' do
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
+      let(:vm) { Vm.new }
+
+      context 'when an instance exists (with the same job name & instance index)' do
+        let(:current_state) { { 'job' => job.spec } }
+
+        context 'that fully matches the job spec' do
+          it 'returns false' do
+            expect(instance_plan.job_changed?).to eq(false)
+          end
+        end
+
+        context 'that does not match the job spec' do
+          before do
+            job.templates = [template]
+          end
+          let(:template) do
+            instance_double('Bosh::Director::DeploymentPlan::Template', {
+                name: state['job']['name'],
+                version: state['job']['version'],
+                sha1: state['job']['sha1'],
+                blobstore_id: state['job']['blobstore_id'],
+                logs: nil,
+              })
+          end
+          let(:state) do
+            {
+              'job' => {
+                'name' => 'hbase_slave',
+                'template' => 'hbase_slave',
+                'version' => '0+dev.9',
+                'sha1' => 'a8ab636b7c340f98891178096a44c09487194f03',
+                'blobstore_id' => 'e2e4e58e-a40e-43ec-bac5-fc50457d5563'
+              }
+            }
+          end
+
+          let(:current_state) { {'job' => job.spec.merge('version' => 'old-version')} }
+
+          it 'returns true' do
+            expect(instance_plan.job_changed?).to eq(true)
+          end
+
+          it 'logs the change' do
+            expect(logger).to receive(:debug).with(/job_changed\? changed FROM: .* TO: .*/)
+            instance_plan.job_changed?
+          end
+        end
+      end
+    end
+
+    describe '#packages_changed?' do
+      describe 'when packages have changed' do
+        let(:current_state) { {'packages' => {'changed' => 'value'}} }
+
+        it 'should return true' do
+          expect(instance_plan.packages_changed?).to eq(true)
+        end
+
+        it 'should log changes' do
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1')
+          instance_plan.packages_changed?
+        end
+      end
+
+      describe 'when packages have not changed' do
+        let(:current_state) { {'packages' => {}} }
+
+        it 'should return false' do
+          expect(instance_plan.packages_changed?).to eq(false)
+        end
       end
     end
 

@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan
         properties: properties)
     }
     let(:index) { 0 }
-    let(:instance) { Instance.new(job, index, 'started', plan, {}, availability_zone, logger) }
+    let(:instance) { Instance.create_from_job(job, index, 'started', plan, {}, availability_zone, logger) }
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
@@ -41,7 +41,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
-    let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance) }
+    let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(job), instance: instance) }
     let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_pool_spec) }
     let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
 

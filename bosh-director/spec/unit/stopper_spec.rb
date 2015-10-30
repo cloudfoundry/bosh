@@ -18,13 +18,12 @@ module Bosh::Director
     ) }
     let(:instance) { instance_double(DeploymentPlan::Instance,
       model: instance_model,
-      job: job,
       current_state: {},
       availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
       index: 0,
       uuid: SecureRandom.uuid
     ) }
-    let(:desired_instance) { DeploymentPlan::DesiredInstance.new }
+    let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain)
     end

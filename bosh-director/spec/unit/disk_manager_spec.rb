@@ -9,7 +9,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Cloud) }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
-        desired_instance: DeploymentPlan::DesiredInstance.new,
+        desired_instance: DeploymentPlan::DesiredInstance.new(job),
         instance: instance,
         network_plans: [],
       }) }
@@ -21,7 +21,7 @@ module Bosh::Director
       job.persistent_disk_type = DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, {'cloud' => 'properties'})
       job
     end
-    let(:instance) { DeploymentPlan::Instance.new(job, 1, 'started', nil, {}, nil, logger) }
+    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
       instance = Models::Instance.make(vm: vm_model)
       instance.add_persistent_disk(persistent_disk) if persistent_disk

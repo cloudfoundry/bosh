@@ -24,20 +24,25 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       'cloud_properties' => {}
     )
   end
-  let(:job) { instance_double(BD::DeploymentPlan::Job, name: 'foo-job', availability_zones: [az], migrated_from: [], compilation?: false) }
+  let(:job) do
+    job = BD::DeploymentPlan::Job.new(logger)
+    job.name = 'foo-job'
+    job.availability_zones << az
+    job
+  end
   let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(job, 'started', deployment) }
   let(:tracer_instance) do
     make_instance
   end
 
   def make_instance(idx=0)
-    instance = BD::DeploymentPlan::Instance.new(job, idx, 'started', deployment, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(job, idx, 'started', deployment, {}, az, logger)
     instance.bind_new_instance_model
     instance
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = BD::DeploymentPlan::Instance.new(job, existing_instance_model.index, 'started', deployment, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(job, existing_instance_model.index, 'started', deployment, {}, az, logger)
     instance.bind_existing_instance_model(existing_instance_model)
     instance
   end
@@ -70,9 +75,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when job has no az' do
-      let(:job) do
-        instance_double(BD::DeploymentPlan::Job, name: 'foo-job', availability_zones: [], compilation?: false)
-      end
+      before { job.availability_zones = [] }
 
       it 'creates instance plans for new instances with no az' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0)

@@ -5,9 +5,6 @@ module Bosh::Director
     # Represents a single job instance.
     class Instance
 
-      # @return [DeploymentPlan::Job] Associated job
-      attr_reader :job
-
       # @return [Integer] Instance index
       attr_reader :index
 
@@ -39,16 +36,48 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
+      def self.create_from_job(job, index, state, deployment, instance_state, availability_zone, logger)
+        new(
+          job.name,
+          index,
+          state,
+          job.vm_type,
+          job.stemcell,
+          job.env,
+          job.compilation?,
+          deployment,
+          instance_state,
+          availability_zone,
+          logger
+        )
+      end
+
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, state, deployment, instance_state, availability_zone, logger)
-        @job = job
+      def initialize(
+        job_name,
+        index,
+        state,
+        vm_type,
+        stemcell,
+        env,
+        compilation,
+        deployment,
+        instance_state,
+        availability_zone,
+        logger
+      )
         @index = index
         @availability_zone = availability_zone
         @logger = logger
         @deployment = deployment
-        @name = "#{@job.name}/#{@index}"
+        @job_name = job_name
+        @name = "#{job_name}/#{@index}"
+        @vm_type = vm_type
+        @stemcell = stemcell
+        @env = env
+        @compilation = compilation
 
         @configuration_hash = nil
         @template_hashes = nil
@@ -67,7 +96,7 @@ module Bosh::Director
       end
 
       def job_name
-        @job.name
+        @job_name
       end
 
       def to_s
@@ -91,10 +120,10 @@ module Bosh::Director
       def bind_new_instance_model
         @model = Models::Instance.create({
             deployment_id: deployment.model.id,
-            job: job.name,
+            job: @job_name,
             index: index,
             state: @state,
-            compilation: job.compilation?,
+            compilation: @compilation,
             uuid: SecureRandom.uuid,
             bootstrap: false
           })
@@ -109,15 +138,15 @@ module Bosh::Director
       end
 
       def vm_type
-        @job.vm_type
+        @vm_type
       end
 
       def stemcell
-        @job.stemcell
+        @stemcell
       end
 
       def env
-        @job.env.spec
+        @env.spec
       end
 
       def deployment_model
@@ -194,29 +223,12 @@ module Bosh::Director
         changed
       end
 
-      ##
-      # @return [Boolean] returns true if the expected job configuration differs
-      #   from the one provided by the VM
-      def job_changed?
-        return true if @current_state.nil?
-
-        job_spec = @job.spec
-        # The agent job spec could be in legacy form.  job_spec cannot be,
-        # though, because we got it from the spec function in job.rb which
-        # automatically makes it non-legacy.
-        converted_current = Job.convert_from_legacy_spec(@current_state['job'])
-        changed = job_spec != converted_current
-        log_changes(__method__, converted_current, job_spec) if changed
-        changed
+      def current_job_spec
+        @current_state['job']
       end
 
-      ##
-      # @return [Boolean] returns true if the expected packaged of the running
-      #   instance differ from the ones provided by the VM
-      def packages_changed?
-        changed = @job.package_spec != @current_state['packages']
-        log_changes(__method__, @current_state['packages'], @job.package_spec) if changed
-        changed
+      def current_packages
+        @current_state['packages']
       end
 
       def current_job_state
@@ -304,13 +316,13 @@ module Bosh::Director
 
         conditions = {
           deployment_id: @deployment.model.id,
-          job: @job.name,
+          job: @job_name,
           index: @index
         }
 
         Models::Instance.find_or_create(conditions) do |model|
           model.state = 'started'
-          model.compilation = @job.compilation?
+          model.compilation = @compilation
           model.uuid = SecureRandom.uuid
         end
       end

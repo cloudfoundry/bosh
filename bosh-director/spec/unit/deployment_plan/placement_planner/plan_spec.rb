@@ -14,7 +14,11 @@ module Bosh::Director::DeploymentPlan
     let(:zone_1) {AvailabilityZone.new('zone_1', {})}
     let(:zone_2) {AvailabilityZone.new('zone_2', {})}
     let(:zone_3) {AvailabilityZone.new('zone_3', {})}
-    let(:job) { instance_double(Job, name: 'db', compilation?: false) }
+    let(:job) do
+      job = Job.new(logger)
+      job.name = 'db'
+      job
+    end
 
     let(:desired) { [DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment)] }
     let(:existing) {

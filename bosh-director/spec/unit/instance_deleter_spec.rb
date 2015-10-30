@@ -56,7 +56,7 @@ module Bosh::Director
         let(:network) { instance_double(DeploymentPlan::ManualNetwork, name: 'manual-network') }
         let(:reservation) do
           az = DeploymentPlan::AvailabilityZone.new('az', {})
-          instance = DeploymentPlan::Instance.new(job, 5, {}, deployment_plan, 'started', az, logger)
+          instance = DeploymentPlan::Instance.create_from_job(job, 5, {}, deployment_plan, 'started', az, logger)
           reservation = DesiredNetworkReservation.new(instance, network, '192.168.1.2', :dynamic)
           reservation.mark_reserved
 
@@ -64,7 +64,7 @@ module Bosh::Director
         end
 
         let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
-        let(:job) { instance_double(DeploymentPlan::Job, name: 'fake-job-name') }
+        let(:job) { DeploymentPlan::Job.new(logger) }
         let(:deployment_plan) { instance_double(DeploymentPlan::Planner, ip_provider: ip_provider, model: deployment_model) }
 
         let(:stopper) { instance_double(Stopper) }

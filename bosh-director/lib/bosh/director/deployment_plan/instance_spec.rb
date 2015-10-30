@@ -4,7 +4,7 @@ module Bosh::Director
       def initialize(instance_plan)
         @instance = instance_plan.instance
         @deployment_name = @instance.deployment_model.name
-        @job = instance_plan.instance.job
+        @job = instance_plan.desired_instance.job
         @instance_plan = instance_plan
         @dns_manager = DnsManager.create
       end
