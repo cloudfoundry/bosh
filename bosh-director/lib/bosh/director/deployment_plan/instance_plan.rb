@@ -197,6 +197,10 @@ module Bosh
           DeploymentPlan::InstanceSpec.new(self).apply_spec
         end
 
+        def templates
+          @desired_instance.job.templates
+        end
+
         def template_spec
           DeploymentPlan::InstanceSpec.new(self).template_spec
         end
@@ -301,6 +305,14 @@ module Bosh
 
         def template_spec
           @apply_spec
+        end
+
+        def templates
+          @existing_instance.templates.map do |template_model|
+            template = DeploymentPlan::Template.new(nil, template_model.name)
+            template.bind_existing_model(template_model)
+            template
+          end
         end
       end
     end

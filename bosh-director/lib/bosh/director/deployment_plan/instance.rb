@@ -309,6 +309,15 @@ module Bosh::Director
         @availability_zone.name
       end
 
+      def update_templates(templates)
+        @model.db.transaction do
+          @model.remove_all_templates
+          templates.map(&:model).each do |template_model|
+            @model.add_template(template_model)
+          end
+        end
+      end
+
       private
 
       # Looks up instance model in DB
