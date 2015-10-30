@@ -107,7 +107,8 @@ module Bosh::Director
             release_version = @release_manager.find_version(release, @version)
             # found version may be different than the requested version, due to version formatting
             logger.info("Found release version: `#{release.name}/#{release_version.version}'")
-            release_version_deleter = Helpers::ReleaseVersionDeleter.new(@blobstore, @compiled_package_deleter, @force, logger, event_log)
+            package_deleter = Helpers::PackageDeleter.new(@compiled_package_deleter, @blobstore, logger)
+            release_version_deleter = Helpers::ReleaseVersionDeleter.new(@blobstore, package_deleter, @force, logger, event_log)
             release_version_deleter.delete(release_version, release)
           else
             logger.info('Checking for any deployments still using the release')

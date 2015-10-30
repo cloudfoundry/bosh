@@ -1,10 +1,9 @@
 module Bosh::Director::Jobs
   module Helpers
     class ReleaseVersionDeleter
-
-      def initialize(blobstore, compiled_package_deleter, force, logger, event_log)
+      def initialize(blobstore, package_deleter, force, logger, event_log)
         @blobstore = blobstore
-        @compiled_package_deleter = compiled_package_deleter
+        @package_deleter = package_deleter
         @logger = logger
         @errors = []
         @force = force
@@ -61,7 +60,7 @@ module Bosh::Director::Jobs
             @logger.info("Package #{package.name}/#{package.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
-            delete_package(package)
+            @errors += @package_deleter.delete(package, @force)
           end
         end
 
@@ -104,7 +103,7 @@ module Bosh::Director::Jobs
         @event_log.begin_stage('Deleting packages', release.packages.count)
         release.packages.each do |package|
           track_and_log("#{package.name}/#{package.version}") do
-            delete_package(package)
+            @errors += @package_deleter.delete(package, @force)
           end
         end
 
@@ -126,25 +125,6 @@ module Bosh::Director::Jobs
           end
 
           release.destroy
-        end
-      end
-
-      def delete_package(package)
-        compiled_packages = package.compiled_packages
-
-        @logger.info("Deleting package #{package.name}/#{package.version}")
-
-        compiled_packages.each do |compiled_package|
-          begin
-            @compiled_package_deleter.delete(compiled_package, {'force' => @force})
-          rescue Exception => e
-            @errors << e
-          end
-        end
-
-        if delete_blobstore_id(package.blobstore_id, true)
-          package.remove_all_release_versions
-          package.destroy
         end
       end
 

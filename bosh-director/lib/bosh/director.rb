@@ -134,6 +134,7 @@ require 'bosh/director/jobs/helpers/releases_to_delete_picker'
 require 'bosh/director/jobs/helpers/stemcells_to_delete_picker'
 require 'bosh/director/jobs/helpers/stemcell_deleter'
 require 'bosh/director/jobs/helpers/compiled_package_deleter'
+require 'bosh/director/jobs/helpers/package_deleter'
 require 'bosh/director/jobs/helpers/release_version_deleter'
 
 require 'bosh/director/models/helpers/model_helper'
