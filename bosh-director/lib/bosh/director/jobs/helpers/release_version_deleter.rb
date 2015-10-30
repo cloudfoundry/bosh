@@ -1,13 +1,13 @@
 module Bosh::Director::Jobs
   module Helpers
     class ReleaseVersionDeleter
-      def initialize(blob_deleter, package_deleter, force, logger, event_log)
-        @blob_deleter = blob_deleter
+      def initialize(package_deleter, template_deleter, force, logger, event_log)
         @package_deleter = package_deleter
-        @logger = logger
-        @errors = []
+        @template_deleter = template_deleter
         @force = force
+        @logger = logger
         @event_log = event_log
+        @errors = []
       end
 
       def delete(release_version, release)
@@ -76,7 +76,7 @@ module Bosh::Director::Jobs
             @logger.info("Template #{template.name}/#{template.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
-            delete_template(template)
+            @errors += @template_deleter.delete(template, @force)
           end
         end
 
@@ -110,7 +110,7 @@ module Bosh::Director::Jobs
         @event_log.begin_stage('Deleting jobs', release.templates.count)
         release.templates.each do |template|
           track_and_log("#{template.name}/#{template.version}") do
-            delete_template(template)
+            @errors += @template_deleter.delete(template, @force)
           end
         end
 
@@ -124,15 +124,6 @@ module Bosh::Director::Jobs
           end
 
           release.destroy
-        end
-      end
-
-      def delete_template(template)
-        @logger.info("Deleting job: #{template.name}/#{template.version}")
-
-        if @blob_deleter.delete(template.blobstore_id, @errors, @force)
-          template.remove_all_release_versions
-          template.destroy
         end
       end
 

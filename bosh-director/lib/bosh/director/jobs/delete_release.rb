@@ -12,15 +12,16 @@ module Bosh::Director
       def initialize(name, options = {})
         @name = name
         blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
-        @blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
+        blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
         @errors = []
         @force = !!options['force']
         @version = options['version']
 
-        compiled_package_deleter = Helpers::CompiledPackageDeleter.new(@blob_deleter, logger, event_log)
-        @package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, @blob_deleter, logger)
-        @release_version_deleter = Helpers::ReleaseVersionDeleter.new(@blob_deleter, @package_deleter, @force, logger, event_log)
-
+        compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger, event_log)
+        @package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
+        @template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        @release_version_deleter =
+          Helpers::ReleaseVersionDeleter.new(@package_deleter, @template_deleter, @force, logger, event_log)
         @release_manager = Api::ReleaseManager.new
       end
 
@@ -35,7 +36,7 @@ module Bosh::Director
         event_log.begin_stage('Deleting jobs', release.templates.count)
         release.templates.each do |template|
           track_and_log("#{template.name}/#{template.version}") do
-            delete_template(template)
+            @errors += @template_deleter.delete(template, @force)
           end
         end
 
@@ -49,15 +50,6 @@ module Bosh::Director
           end
 
           release.destroy
-        end
-      end
-
-      def delete_template(template)
-        logger.info("Deleting job: #{template.name}/#{template.version}")
-
-        if @blob_deleter.delete(template.blobstore_id, @errors, @force)
-          template.remove_all_release_versions
-          template.destroy
         end
       end
 
