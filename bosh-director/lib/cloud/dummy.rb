@@ -121,10 +121,10 @@ module Bosh
         detach_disks_attached_to_vm(vm_cid)
         agent_pid = vm_cid.to_i
         Process.kill('KILL', agent_pid)
-        # rubocop:disable HandleExceptions
-      rescue Errno::EINVAL, Errno::ESRCH, Errno::EPERM => e
+
+          # rubocop:disable HandleExceptions
+      rescue Errno::ESRCH
         # rubocop:enable HandleExceptions
-        @logger.info("Dummy CPI delete_vm failed for agent pid #{vm_name}. #{e}")
       ensure
         free_ips(vm_cid)
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_cid))
