@@ -72,7 +72,7 @@ describe Bosh::Director::VmCreator do
     Bosh::Director::Config.max_vm_create_tries = 2
     allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
     allow(job).to receive(:instance_plans).and_return([instance_plan])
-    allow(job_renderer).to receive(:render_job_instance).with(instance)
+    allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
   end
 
   it 'should create a vm' do
@@ -115,7 +115,7 @@ describe Bosh::Director::VmCreator do
 
   it 'updates instance job templates with new IP' do
     allow(cloud).to receive(:create_vm)
-    expect(job_renderer).to receive(:render_job_instance).with(instance)
+    expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
     expect(instance).to receive(:apply_partial_vm_state)
     expect(instance).to receive(:apply_vm_state)
 

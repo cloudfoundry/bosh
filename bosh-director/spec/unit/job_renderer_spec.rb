@@ -3,11 +3,29 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     subject(:renderer) { described_class.new(blobstore, logger) }
-    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+    let(:job) { DeploymentPlan::Job.new(logger) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-    before { allow(job).to receive(:templates).with(no_args).and_return(templates) }
-    let(:templates) { [instance_double('Bosh::Director::DeploymentPlan::Template')] }
+    before do
+      release_model = Models::Release.make(name: 'fake-release')
+      version = Models::ReleaseVersion.make(version: '123')
+      release_model.add_version(version)
+
+      template_model = Models::Template.make(name: 'fake-template')
+      version.add_template(template_model)
+      release_version.bind_model
+      template.bind_models
+
+      job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
+      job.stemcell = DeploymentPlan::Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'})
+      job.env = DeploymentPlan::Env.new({})
+
+      job.templates << template
+    end
+
+    let(:template) { DeploymentPlan::Template.new(release_version, 'fake-template') }
+    let(:release_version) { DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'}) }
+    let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
 
     before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
     let(:job_instance_renderer) { instance_double('Bosh::Director::Core::Templates::JobInstanceRenderer') }
@@ -16,43 +34,42 @@ module Bosh::Director
     let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
     describe '#render_job_instances' do
-      before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', job: job) }
-      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', job: job) }
+      before { allow(job).to receive(:instance_plans).with(no_args).and_return([instance_plan1, instance_plan2]) }
+      let(:instance_plan1) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
+      let(:instance_plan2) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
 
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       it 'renders each jobs instance' do
-        expect(renderer).to receive(:render_job_instance).with(instance1)
-        expect(renderer).to receive(:render_job_instance).with(instance2)
+        expect(renderer).to receive(:render_job_instance).with(instance_plan1)
+        expect(renderer).to receive(:render_job_instance).with(instance_plan2)
         renderer.render_job_instances(job)
       end
     end
 
     describe '#render_job_instance' do
       def perform
-        renderer.render_job_instance(instance)
+        renderer.render_job_instance(instance_plan)
+      end
+
+      let(:instance_plan) do
+        DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: nil, instance: instance)
       end
 
       let(:instance) do
-        instance_double('Bosh::Director::DeploymentPlan::Instance', {
-          :configuration_hash= => nil,
-          :template_hashes= => nil,
-          :rendered_templates_archive= => nil,
-          :model => instance_model,
-          :template_spec => {},
-          :job => job,
-        })
+        deployment = instance_double(DeploymentPlan::Planner)
+        availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
+        DeploymentPlan::Instance.new(job, 5, 'started', deployment, {}, availability_zone, logger)
+      end
+
+      before do
+        instance.bind_existing_instance_model(instance_model)
       end
 
       let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
       let(:instance_model) do
-        # not using an instance double since Sequel Model classes are a bit meta
-        double('Bosh::Director::Models::Instance', {
-          add_rendered_templates_archive: true,
-          latest_rendered_templates_archive: nil,
-        })
+        Models::Instance.make(deployment: deployment_model)
       end
 
       before { allow(job_instance_renderer).to receive(:render).and_return(rendered_job_instance) }
@@ -74,35 +91,36 @@ module Bosh::Director
       let(:configuration_hash) { 'fake-content-sha1' }
 
       it 'correctly initializes JobInstanceRenderer' do
+        expect(Core::Templates::JobInstanceRenderer).to receive(:new).
+          with(job.templates, job_template_loader)
         perform
-        expect(Core::Templates::JobInstanceRenderer).to have_received(:new).
-          with(templates, job_template_loader)
       end
 
       context 'when instance does not have a latest archive' do
         before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(nil) }
 
         it 'persists new archive' do
+          expect(rendered_job_instance).to receive(:persist).with(blobstore)
           perform
-          expect(rendered_job_instance).to have_received(:persist).with(blobstore)
         end
 
         it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
+          expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
           perform
-          expect(instance).to have_received(:rendered_templates_archive=).with(rendered_templates_archive)
         end
 
         it 'persists blob record in the database' do
           current_time = Time.now
           allow(Time).to receive(:now).and_return(current_time)
 
-          perform
-          expect(instance_model).to have_received(:add_rendered_templates_archive).with(
+          expect(instance_model).to receive(:add_rendered_templates_archive).with(
             blobstore_id: 'fake-new-blob-id',
             sha1: 'fake-new-sha1',
             content_sha1: configuration_hash,
             created_at: current_time,
           )
+
+          perform
         end
       end
 
@@ -134,15 +152,15 @@ module Bosh::Director
             before { allow(blobstore).to receive(:exists?).with('fake-latest-blob-id').and_return(true) }
 
             it 'does not persist new archive' do
+              expect(rendered_job_instance).to_not receive(:persist)
               perform
-              expect(rendered_job_instance).to_not have_received(:persist)
             end
 
             it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
-              perform
-              expect(Core::Templates::RenderedTemplatesArchive).to have_received(:new).
+              expect(instance).to receive(:rendered_templates_archive=).with(latest_rendered_templates_archive)
+              expect(Core::Templates::RenderedTemplatesArchive).to receive(:new).
                 with('fake-latest-blob-id', 'fake-latest-sha1')
-              expect(instance).to have_received(:rendered_templates_archive=).with(latest_rendered_templates_archive)
+              perform
             end
           end
 
@@ -165,45 +183,45 @@ module Bosh::Director
           let(:configuration_hash) { 'fake-latest-non-matching-content-sha1' }
 
           it 'persists new archive' do
+            expect(rendered_job_instance).to receive(:persist).with(blobstore)
             perform
-            expect(rendered_job_instance).to have_received(:persist).with(blobstore)
           end
 
           it 'sets rendered templates archive on the instance to archive with blobstore_id and sha1' do
+            expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
             perform
-            expect(instance).to have_received(:rendered_templates_archive=).with(rendered_templates_archive)
           end
 
           it 'persists blob record in the database' do
             current_time = Time.now
             allow(Time).to receive(:now).and_return(current_time)
-
+            expect(instance_model).to receive(:add_rendered_templates_archive).with(
+                blobstore_id: 'fake-new-blob-id',
+                sha1: 'fake-new-sha1',
+                content_sha1: configuration_hash,
+                created_at: current_time,
+              )
             perform
-            expect(instance_model).to have_received(:add_rendered_templates_archive).with(
-              blobstore_id: 'fake-new-blob-id',
-              sha1: 'fake-new-sha1',
-              content_sha1: configuration_hash,
-              created_at: current_time,
-            )
           end
         end
       end
 
       it 'renders all templates for all instances of a job' do
+        expected_template_spec = DeploymentPlan::InstanceSpec.new('fake-deployment', instance_plan).template_spec
+        expect(job_instance_renderer).to receive(:render).with(expected_template_spec)
         perform
-        expect(job_instance_renderer).to have_received(:render).with(instance.template_spec)
       end
 
       it 'updates each instance with configuration and templates hashses' do
+        expect(instance).to receive(:configuration_hash=).with(configuration_hash)
+        expect(instance).to receive(:template_hashes=).with(rendered_job_instance.template_hashes)
         perform
-        expect(instance).to have_received(:configuration_hash=).with(configuration_hash)
-        expect(instance).to have_received(:template_hashes=).with(rendered_job_instance.template_hashes)
       end
 
       it 'uploads all the rendered templates for instance that has configuration_hash' do
+        expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
+        expect(rendered_job_instance).to receive(:persist).with(blobstore)
         perform
-        expect(instance).to have_received(:rendered_templates_archive=).with(rendered_templates_archive)
-        expect(rendered_job_instance).to have_received(:persist).with(blobstore)
       end
     end
   end

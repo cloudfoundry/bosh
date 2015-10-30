@@ -267,11 +267,6 @@ module Bosh::Director
         InstanceSpec.new(@deployment.name, instance_plan).apply_spec
       end
 
-      def template_spec
-        instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
-        InstanceSpec.new(@deployment.name, instance_plan).template_spec
-      end
-
       def vm_created?
         !@vm.model.nil? && @vm.model.vm_exists?
       end

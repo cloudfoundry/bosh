@@ -74,7 +74,7 @@ module Bosh::Director
 
       instance.apply_partial_vm_state
       # re-render job templates with updated dynamic network settings
-      @job_renderer.render_job_instance(instance)
+      @job_renderer.render_job_instance(instance_plan)
       instance.apply_vm_state
 
       instance_plan.mark_desired_network_plans_as_existing
