@@ -470,8 +470,6 @@ module Bosh::Director
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
-        expect(agent).to receive(:apply).with({'networks' => initial_state['networks']})
-        expect(agent).to receive(:get_state)
         expect(agent).to receive(:apply).with(initial_state)
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 

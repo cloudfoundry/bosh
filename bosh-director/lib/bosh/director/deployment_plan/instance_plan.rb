@@ -197,6 +197,10 @@ module Bosh
           DeploymentPlan::InstanceSpec.new(self).apply_spec
         end
 
+        def template_spec
+          DeploymentPlan::InstanceSpec.new(self).template_spec
+        end
+
         def job_changed?
           job = @desired_instance.job
           return true if @instance.current_job_spec.nil?
@@ -278,6 +282,25 @@ module Bosh
           else
             {}
           end
+        end
+      end
+
+      class ResurrectionInstancePlan < InstancePlan
+        def initialize(apply_spec, attrs)
+          @apply_spec = apply_spec
+          super(attrs)
+        end
+
+        def network_settings_hash
+          @apply_spec['networks']
+        end
+
+        def apply_spec
+          @apply_spec
+        end
+
+        def template_spec
+          @apply_spec
         end
       end
     end

@@ -93,7 +93,7 @@ module Bosh::Director
       end
       instance.update_state
 
-      wait_until_running(instance)
+      wait_until_running(instance_plan)
 
       if instance.state == "started" && current_state["job_state"] != "running"
         raise AgentJobNotRunning, "`#{instance}' is not running after update"
@@ -124,21 +124,13 @@ module Bosh::Director
       agent(instance).start
     end
 
-    def need_start?
-      @target_state == 'started'
-    end
-
-    def dns_change_only?
-      @instance.changes.include?(:dns) && @instance.changes.size == 1
-    end
-
     def trusted_certs_change_only?(instance_plan)
       instance_plan.changes.include?(:trusted_certs) && instance_plan.changes.size == 1
     end
 
     def stop(instance_plan)
       instance = instance_plan.instance
-      stopper = Stopper.new(instance_plan, instance.state, apply_spec(instance_plan), Config, @logger)
+      stopper = Stopper.new(instance_plan, instance.state, Config, @logger)
       stopper.stop
     end
 
@@ -147,12 +139,9 @@ module Bosh::Director
     end
 
     def apply_state(instance_plan)
-      instance.apply_vm_state(apply_spec(instance_plan))
+      instance = instance_plan.instance
+      instance.apply_vm_state(instance_plan.apply_spec)
       RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
-    end
-
-    def apply_spec(instance_plan)
-      DeploymentPlan::InstanceSpec.new(instance_plan).apply_spec
     end
 
     def update_dns(instance_plan)
@@ -201,9 +190,11 @@ module Bosh::Director
     # Watch times don't include the get_state roundtrip time, so effective
     # max watch time is roughly:
     # max_watch_time + N_WATCH_INTERVALS * avg_roundtrip_time
-    def wait_until_running(instance)
-      min_watch_time = get_min_watch_time(instance.job.update)
-      max_watch_time = get_max_watch_time(instance.job.update)
+    def wait_until_running(instance_plan)
+      instance = instance_plan.instance
+      job = instance_plan.desired_instance.job
+      min_watch_time = get_min_watch_time(job.update)
+      max_watch_time = get_max_watch_time(job.update)
       watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
         sleep_time = watch_time.to_f / 1000
         @logger.info("Waiting for #{sleep_time} seconds to check #{instance} status")

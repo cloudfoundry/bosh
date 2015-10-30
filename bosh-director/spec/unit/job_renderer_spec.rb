@@ -7,20 +7,9 @@ module Bosh::Director
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before do
-      release_model = Models::Release.make(name: 'fake-release')
-      version = Models::ReleaseVersion.make(version: '123')
-      release_model.add_version(version)
-
-      template_model = Models::Template.make(name: 'fake-template')
-      version.add_template(template_model)
-      release_version.bind_model
-      template.bind_models
-
       job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
       job.stemcell = DeploymentPlan::Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'})
       job.env = DeploymentPlan::Env.new({})
-
-      job.templates << template
     end
 
     let(:template) { DeploymentPlan::Template.new(release_version, 'fake-template') }
@@ -63,6 +52,7 @@ module Bosh::Director
       end
 
       before do
+        allow(instance_plan).to receive(:template_spec).and_return({'template_spec' => []})
         instance.bind_existing_instance_model(instance_model)
       end
 
@@ -70,6 +60,12 @@ module Bosh::Director
 
       let(:instance_model) do
         Models::Instance.make(deployment: deployment_model)
+      end
+      before do
+        template_1 = Models::Template.make(name: 'template-1')
+        template_2 = Models::Template.make(name: 'template-2')
+        instance_model.add_template(template_1)
+        instance_model.add_template(template_2)
       end
 
       before { allow(job_instance_renderer).to receive(:render).and_return(rendered_job_instance) }
@@ -91,8 +87,12 @@ module Bosh::Director
       let(:configuration_hash) { 'fake-content-sha1' }
 
       it 'correctly initializes JobInstanceRenderer' do
-        expect(Core::Templates::JobInstanceRenderer).to receive(:new).
-          with(job.templates, job_template_loader)
+        expect(Core::Templates::JobInstanceRenderer).to receive(:new) do |templates, template_loader|
+          expect(templates.size).to eq(2)
+          expect(templates[0].name).to eq('template-1')
+          expect(templates[1].name).to eq('template-2')
+          expect(template_loader).to eq(job_template_loader)
+        end.and_return(job_instance_renderer)
         perform
       end
 
@@ -207,8 +207,7 @@ module Bosh::Director
       end
 
       it 'renders all templates for all instances of a job' do
-        expected_template_spec = DeploymentPlan::InstanceSpec.new(instance_plan).template_spec
-        expect(job_instance_renderer).to receive(:render).with(expected_template_spec)
+        expect(job_instance_renderer).to receive(:render).with({'template_spec' => []})
         perform
       end
 

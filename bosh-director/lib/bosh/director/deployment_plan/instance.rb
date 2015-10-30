@@ -95,6 +95,10 @@ module Bosh::Director
         @model && @model.bootstrap
       end
 
+      def compilation?
+        @compilation
+      end
+
       def job_name
         @job_name
       end

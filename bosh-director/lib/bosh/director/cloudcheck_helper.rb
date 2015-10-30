@@ -73,8 +73,36 @@ module Bosh::Director
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
-      # FIXME: Try to reduce dependencies
-      instance_model.bind_to_vm_model(vm)
+      instance_plan_to_create = create_instance_plan(instance_model, vm_apply_spec, vm_env)
+
+      vm_creator.create_for_instance_plan(
+        instance_plan_to_create,
+        Array(instance_model.persistent_disk_cid)
+      )
+
+      dns_manager = DnsManager.create
+      dns_names_to_ip = {}
+
+      instance_plan_to_create.existing_instance.vm.apply_spec['networks'].each do |network_name, network|
+        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, deployment_model.name)
+        dns_names_to_ip[index_dns_name] = network['ip']
+        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, deployment_model.name)
+        dns_names_to_ip[id_dns_name] = network['ip']
+      end
+
+      @logger.debug("Updating DNS record for instance: #{instance_plan_to_create.instance.model.inspect}; to: #{dns_names_to_ip.inspect}")
+      dns_manager.update_dns_record_for_instance(instance_plan_to_create.instance.model, dns_names_to_ip)
+      dns_manager.flush_dns_cache
+
+      if instance_model.state == 'started'
+        agent_client(instance_model.vm).run_script('pre-start', {})
+        agent_client(instance_model.vm).start
+      end
+    end
+
+    private
+
+    def create_instance_plan(instance_model, vm_apply_spec, vm_env)
       deployment_model = instance_model.deployment
       deployment_plan_from_model = DeploymentPlan::Planner.new(
         {name: deployment_model.name, properties: deployment_model.properties},
@@ -83,20 +111,20 @@ module Bosh::Director
         deployment_model,
         {'recreate' => true})
 
-      job_from_instance_model = DeploymentPlan::Job.new(@logger)
-      job_from_instance_model.name = instance_model.job
-      job_from_instance_model.vm_type = DeploymentPlan::VmType.new(vm_apply_spec['vm_type'])
-      job_from_instance_model.env = DeploymentPlan::Env.new(vm_env)
+      vm_type = DeploymentPlan::VmType.new(vm_apply_spec['vm_type'])
+      env = DeploymentPlan::Env.new(vm_env)
       stemcell = DeploymentPlan::Stemcell.new(vm_apply_spec['stemcell'])
       stemcell.add_stemcell_model
-      job_from_instance_model.stemcell = stemcell
-
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
 
-      instance_from_model = DeploymentPlan::Instance.create_from_job(
-        job_from_instance_model,
+      instance_from_model = DeploymentPlan::Instance.new(
+        instance_model.job,
         instance_model.index,
         instance_model.state,
+        vm_type,
+        stemcell,
+        env,
+        false,
         deployment_plan_from_model,
         vm_apply_spec,
         availability_zone,
@@ -104,12 +132,14 @@ module Bosh::Director
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
-      DeploymentPlan::InstancePlan.new(
-        existing_instance: instance_model,
-        instance: instance_from_model,
-        desired_instance: DeploymentPlan::DesiredInstance.new,
-        network_plans: [],
-        recreate_deployment: true
+      DeploymentPlan::ResurrectionInstancePlan.new(
+        vm_apply_spec,
+        {
+          existing_instance: instance_model,
+          instance: instance_from_model,
+          desired_instance: DeploymentPlan::DesiredInstance.new,
+          recreate_deployment: true
+        }
       )
     end
 

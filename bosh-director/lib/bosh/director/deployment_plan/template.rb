@@ -32,6 +32,10 @@ module Bosh::Director
         end
       end
 
+      def bind_existing_model(model)
+        @model = model
+      end
+
       # Downloads template blob to a given path
       # @return [String] Path to downloaded blob
       def download_blob

@@ -80,9 +80,11 @@ module Bosh::Director
     private
 
     def apply_state(instance_plan)
-      instance_plan.instance.apply_initial_vm_state(instance_plan.apply_spec)
-      # re-render job templates with updated dynamic network settings
-      @job_renderer.render_job_instance(instance_plan)
+      unless instance_plan.instance.compilation?
+        instance_plan.instance.apply_initial_vm_state(instance_plan.apply_spec)
+        # re-render job templates with updated dynamic network settings
+        @job_renderer.render_job_instance(instance_plan)
+      end
 
       # re-apply state with re-rendered templates
       instance_plan.instance.apply_vm_state(instance_plan.apply_spec)

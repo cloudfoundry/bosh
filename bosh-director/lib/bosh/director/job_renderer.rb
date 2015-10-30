@@ -18,13 +18,18 @@ module Bosh::Director
 
     def render_job_instance(instance_plan)
       instance = instance_plan.instance
-      job = instance_plan.desired_instance.job
       @logger.debug("Rendering templates for instance #{instance}")
 
       job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
-      instance_renderer = Core::Templates::JobInstanceRenderer.new(job.templates, job_template_loader)
-      instance_spec = DeploymentPlan::InstanceSpec.new(instance_plan)
-      rendered_job_instance = instance_renderer.render(instance_spec.template_spec)
+
+      templates = instance.model.templates.map do |template_model|
+        template = DeploymentPlan::Template.new(nil, template_model.name)
+        template.bind_existing_model(template_model)
+        template
+      end
+
+      instance_renderer = Core::Templates::JobInstanceRenderer.new(templates, job_template_loader)
+      rendered_job_instance = instance_renderer.render(instance_plan.template_spec)
 
       configuration_hash = rendered_job_instance.configuration_hash
 
