@@ -1,8 +1,8 @@
 module Bosh::Director::Jobs
   module Helpers
     class CompiledPackageDeleter
-      def initialize(blobstore, logger, event_log)
-        @blobstore = blobstore
+      def initialize(blob_deleter, logger, event_log)
+        @blob_deleter = blob_deleter
         @logger = logger
         @event_log = event_log
       end
@@ -14,15 +14,11 @@ module Bosh::Director::Jobs
             "#{package.name}/#{package.version}" +
             "for #{stemcell.name}/#{stemcell.version}")
 
-        begin
-          @blobstore.delete(compiled_package.blobstore_id)
-        rescue Exception => e
-          message = "Could not delete from blobstore: #{e}\n " + e.backtrace.join("\n")
-          raise Bosh::Director::CompiledPackageDeletionFailed, message unless options['force']
-          @logger.warn(message)
+        errors = []
+        if @blob_deleter.delete(compiled_package.blobstore_id, errors,  options['force'])
+          compiled_package.destroy
         end
-
-        compiled_package.destroy
+        errors
       end
     end
   end

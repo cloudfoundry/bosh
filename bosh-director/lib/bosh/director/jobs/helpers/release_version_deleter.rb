@@ -1,8 +1,8 @@
 module Bosh::Director::Jobs
   module Helpers
     class ReleaseVersionDeleter
-      def initialize(blobstore, package_deleter, force, logger, event_log)
-        @blobstore = blobstore
+      def initialize(blob_deleter, package_deleter, force, logger, event_log)
+        @blob_deleter = blob_deleter
         @package_deleter = package_deleter
         @logger = logger
         @errors = []
@@ -115,8 +115,7 @@ module Bosh::Director::Jobs
         end
 
         if @errors.empty? || @force
-          @event_log.begin_stage('Deleting release versions',
-            release.versions.count)
+          @event_log.begin_stage('Deleting release versions', release.versions.count)
 
           release.versions.each do |release_version|
             track_and_log("#{release.name}/#{release_version.version}") do
@@ -131,27 +130,10 @@ module Bosh::Director::Jobs
       def delete_template(template)
         @logger.info("Deleting job: #{template.name}/#{template.version}")
 
-        if delete_blobstore_id(template.blobstore_id)
+        if @blob_deleter.delete(template.blobstore_id, @errors, @force)
           template.remove_all_release_versions
           template.destroy
         end
-      end
-
-      def delete_blobstore_id(blobstore_id, nil_id_allowed = false)
-        if blobstore_id.nil? && nil_id_allowed
-          return true
-        end
-
-        deleted = false
-        begin
-          @blobstore.delete(blobstore_id)
-          deleted = true
-        rescue Exception => e
-          @logger.warn("Could not delete from blobstore: #{e}\n " + e.backtrace.join("\n"))
-          @errors << e
-        end
-
-        return deleted || @force
       end
 
       def track_and_log(task, log = true)

@@ -3,14 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe PackageDeleter do
-
-      subject(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
-
+      subject(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
+      let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
       let(:event_log) { EventLog::Log.new }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger, event_log) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger, event_log) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       before { allow(blobstore).to receive(:delete) }
-
       let(:release_version_1) { Models::ReleaseVersion.make() }
       let(:release_version_2) { Models::ReleaseVersion.make() }
       let(:package) { Models::Package.make(blobstore_id: 'package_blobstore_id') }
@@ -18,7 +16,6 @@ module Bosh::Director
       before do
         package.add_release_version(release_version_1)
         package.add_release_version(release_version_2)
-
         Models::CompiledPackage.make(package: package, blobstore_id: 'compiled_package_blobstore_id')
         Models::CompiledPackage.make(package: package)
       end
@@ -49,6 +46,18 @@ module Bosh::Director
 
           it 'should not return any errors' do
             expect(package_deleter.delete(package, force)).to be_empty
+          end
+
+          context 'when the package does not have source blobs and only contains compiled packages (and therefore the blobstore id is nil)' do
+            before do
+              package.update(blobstore_id: nil, sha1: nil)
+              allow(blobstore).to receive(:delete).with(nil).and_raise('cant')
+            end
+
+            it 'deletes the package model' do
+              package_deleter.delete(package, force)
+              expect(Models::Package.all).to be_empty
+            end
           end
 
           context 'when failing to delete the compiled package' do
