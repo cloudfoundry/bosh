@@ -168,7 +168,11 @@ module Bosh::Director
       @deadline = Time.now.to_i + deadline
 
       begin
+        Config.job_cancelled?
         ping
+      rescue TaskCancelled => e
+        @logger.debug("Task was cancelled. Stop waiting response from vm")
+        raise e
       rescue RpcTimeout
         retry if @deadline - Time.now.to_i > 0
         raise RpcTimeout, "Timed out pinging to #{@client_id} after #{deadline} seconds"

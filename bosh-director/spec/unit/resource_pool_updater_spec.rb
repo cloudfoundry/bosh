@@ -106,33 +106,35 @@ module Bosh::Director
           allow(@vm).to receive(:current_state=).with({'state' => 'foo'})
         end
 
-        it 'should update the database with the new VM''s trusted certs' do
+        def self.it_should_not_update_db(method, exception)
+          it 'should not update the DB with the new certificates' do
+            expect(agent).to receive(method).and_raise(exception)
+
+            begin
+              resource_pool_updater.create_missing_vm(@vm)
+            rescue exception
+              # expected
+            end
+
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          end
+        end
+
+        it 'should update the database with the new VM' 's trusted certs' do
           resource_pool_updater.create_missing_vm(@vm)
           expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: @vm_model.agent_id).count).to eq(1)
         end
 
-        it 'should not update the DB with the new certificates when the new vm fails to start' do
-          expect(agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
-
-          begin
-            resource_pool_updater.create_missing_vm(@vm)
-          rescue RpcTimeout
-            # expected
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the new vm fails to start' do
+          it_should_not_update_db(:wait_until_ready, RpcTimeout)
         end
 
-        it 'should not update the DB with the new certificates when the update_settings method fails' do
-          expect(agent).to receive(:update_settings).and_raise(RpcTimeout)
+        context 'when task was cancelled' do
+          it_should_not_update_db(:wait_until_ready, TaskCancelled)
+        end
 
-          begin
-            resource_pool_updater.create_missing_vm(@vm)
-          rescue RpcTimeout
-            # expected
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the update_settings method fails' do
+          it_should_not_update_db(:update_settings, RpcTimeout)
         end
       end
 
@@ -152,14 +154,14 @@ module Bosh::Director
 
       it 'should clean up the partially created VM' do
         agent = double(:AgentClient)
-        expect(agent).to receive(:wait_until_ready).and_raise('timeout')
+        expect(agent).to receive(:wait_until_ready).and_raise('any_error')
         allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
 
         expect(cloud).to receive(:delete_vm).with('vm-1')
 
         expect {
           resource_pool_updater.create_missing_vm(@vm)
-        }.to raise_error('timeout')
+        }.to raise_error('any_error')
 
         expect(Models::Vm.count).to eq(0)
       end

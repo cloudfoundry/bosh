@@ -402,6 +402,21 @@ module Bosh::Director
 
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::RpcRemoteException)
         end
+
+        it 'should raise an exception if task was cancelled' do
+          testjob_class = Class.new(Jobs::BaseJob) do
+            define_method :perform do
+              'foo'
+            end
+          end
+          task_id = 1
+          tasks_dir = Dir.mktmpdir
+          allow(Config).to receive(:base_dir).and_return(tasks_dir)
+          allow(Config).to receive(:cloud_options).and_return({})
+          task = Models::Task.make(:id => task_id, :state => 'cancelling')
+          testjob_class.perform(task_id)
+          expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
+        end
       end
     end
 

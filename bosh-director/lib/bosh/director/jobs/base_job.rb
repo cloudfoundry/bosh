@@ -28,7 +28,7 @@ module Bosh::Director
       def task_cancelled?
         return false if task_id.nil?
         task = task_manager.find_task(task_id)
-        task && (task.state == 'cancelling' || task.state == 'timeout')
+        task && (task.state == 'cancelling' || task.state == 'timeout' || task.state == 'cancelled')
       end
 
       def task_checkpoint

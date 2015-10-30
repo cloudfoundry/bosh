@@ -525,11 +525,11 @@ module Bosh::Director
         allow(@cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
 
-      def self.it_tears_down_vm_exactly_once
-        it 'tears down VMs exactly once when RpcTimeout error occurs' do
+      def self.it_tears_down_vm_exactly_once(exception)
+        it "tears down VMs exactly once when #{exception} error occurs" do
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient', apply: nil)
-          expect(agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
+          expect(agent).to receive(:wait_until_ready).and_raise(exception)
           expect(AgentClient).to receive(:with_defaults).and_return(agent)
 
           # vm is destroyed
@@ -538,18 +538,20 @@ module Bosh::Director
 
           compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield
-          expect { compiler.perform }.to raise_error(RpcTimeout)
+          expect { compiler.perform }.to raise_error(exception)
         end
       end
 
       context 'reuse_compilation_vms is true' do
         before { allow(@config).to receive_messages(reuse_compilation_vms: true) }
-        it_tears_down_vm_exactly_once
+        it_tears_down_vm_exactly_once(RpcTimeout)
+        it_tears_down_vm_exactly_once(TaskCancelled)
       end
 
       context 'reuse_compilation_vms is false' do
         before { allow(@config).to receive_messages(reuse_compilation_vms: false) }
-        it_tears_down_vm_exactly_once
+        it_tears_down_vm_exactly_once(RpcTimeout)
+        it_tears_down_vm_exactly_once(TaskCancelled)
       end
     end
 
@@ -694,35 +696,37 @@ module Bosh::Director
           allow(client).to receive(:wait_until_ready)
         end
 
-        it 'should update the database with the new VM''s trusted certs' do
+        def self.it_should_not_update_db(method, exception)
+          it 'should not update the DB with the new certificates' do
+            expect(client).to receive(method).and_raise(exception)
+
+            begin
+              compiler.prepare_vm(stemcell)
+            rescue exception
+              #
+            end
+
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          end
+        end
+
+        it 'should update the database with the new VM' 's trusted certs' do
           compiler.prepare_vm(stemcell) {
             # prepare_vm needs a block. so here it is.
           }
           expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: vm.agent_id).count).to eq(1)
         end
 
-        it 'should not update the DB with the new certificates when the new vm fails to start' do
-          expect(client).to receive(:wait_until_ready).and_raise(RpcTimeout)
-
-          begin
-            compiler.prepare_vm(stemcell)
-          rescue RpcTimeout
-            #
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the new vm fails to start' do
+          it_should_not_update_db(:wait_until_ready, RpcTimeout)
         end
 
-        it 'should not update the DB with the new certificates when the update_settings method fails' do
-          expect(client).to receive(:update_settings).and_raise(RpcTimeout)
+        context 'when task was cencelled' do
+          it_should_not_update_db(:wait_until_ready, TaskCancelled)
+        end
 
-          begin
-            compiler.prepare_vm(stemcell)
-          rescue RpcTimeout
-            # expected
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the update_settings method fails' do
+          it_should_not_update_db(:update_settings, RpcTimeout)
         end
       end
     end
