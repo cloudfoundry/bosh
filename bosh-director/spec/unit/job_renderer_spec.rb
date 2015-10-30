@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       let(:instance) do
-        deployment = instance_double(DeploymentPlan::Planner)
+        deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
         availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
         DeploymentPlan::Instance.new(job, 5, 'started', deployment, {}, availability_zone, logger)
       end
@@ -207,7 +207,7 @@ module Bosh::Director
       end
 
       it 'renders all templates for all instances of a job' do
-        expected_template_spec = DeploymentPlan::InstanceSpec.new('fake-deployment', instance_plan).template_spec
+        expected_template_spec = DeploymentPlan::InstanceSpec.new(instance_plan).template_spec
         expect(job_instance_renderer).to receive(:render).with(expected_template_spec)
         perform
       end

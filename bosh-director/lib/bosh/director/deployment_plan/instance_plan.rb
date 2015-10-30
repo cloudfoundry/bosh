@@ -191,6 +191,12 @@ module Bosh
           @network_plans.find { |plan| plan.reservation.network == network }
         end
 
+        def apply_spec
+          return {} if obsolete?
+
+          DeploymentPlan::InstanceSpec.new(self).apply_spec
+        end
+
         private
 
         def env_changed?

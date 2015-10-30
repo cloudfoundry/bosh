@@ -18,7 +18,6 @@ module Bosh::Director
     ) }
     let(:instance) { instance_double(DeploymentPlan::Instance,
       model: instance_model,
-      apply_spec: spec,
       job: job,
       current_state: {},
       availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
@@ -26,7 +25,9 @@ module Bosh::Director
       uuid: SecureRandom.uuid
     ) }
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new }
-    let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain) }
+    let(:instance_plan) do
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain)
+    end
     let(:spec) do
       {
         'vm_type' => {
@@ -39,6 +40,7 @@ module Bosh::Director
         }
       }
     end
+    before { allow(instance_plan).to receive(:apply_spec).and_return(spec) }
 
     describe '#stop' do
       context 'when skip_drain is set to true' do

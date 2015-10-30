@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe InstanceSpec do
     include Support::StemcellHelpers
-    subject(:instance_spec) { described_class.new('fake-deployment', instance_plan)}
+    subject(:instance_spec) { described_class.new(instance_plan)}
     let(:job_spec) { {name: 'job', release: 'release', templates: []} }
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }

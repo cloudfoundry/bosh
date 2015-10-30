@@ -84,7 +84,7 @@ module Bosh::Director
       if only_trusted_certs_changed
         @logger.debug('Skipping apply, trusted certs change only')
       else
-        apply_state(instance)
+        apply_state(instance_plan)
       end
 
       if instance.state == 'started'
@@ -138,7 +138,7 @@ module Bosh::Director
 
     def stop(instance_plan)
       instance = instance_plan.instance
-      stopper = Stopper.new(instance_plan, instance.state, Config, @logger)
+      stopper = Stopper.new(instance_plan, instance.state, apply_spec(instance_plan), Config, @logger)
       stopper.stop
     end
 
@@ -146,9 +146,13 @@ module Bosh::Director
       Api::SnapshotManager.take_snapshot(instance.model, clean: true)
     end
 
-    def apply_state(instance)
-      instance.apply_vm_state
+    def apply_state(instance_plan)
+      instance.apply_vm_state(apply_spec(instance_plan))
       RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
+    end
+
+    def apply_spec(instance_plan)
+      DeploymentPlan::InstanceSpec.new(instance_plan).apply_spec
     end
 
     def update_dns(instance_plan)

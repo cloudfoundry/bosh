@@ -142,7 +142,7 @@ module Bosh::Director
         end
       end
 
-      def apply_vm_state
+      def apply_vm_state(apply_spec)
         @logger.info('Applying VM state')
 
         @current_state = apply_spec
@@ -150,7 +150,7 @@ module Bosh::Director
         @model.vm.update(:apply_spec => @current_state)
       end
 
-      def apply_partial_vm_state
+      def apply_initial_vm_state(apply_spec)
         partial_state = {'networks' => apply_spec['networks']}
         agent_client.apply(partial_state)
         agent_state = agent_client.get_state
@@ -256,15 +256,6 @@ module Bosh::Director
         changed = config_trusted_certs != model_trusted_certs
         log_changes(__method__, model_trusted_certs, config_trusted_certs) if changed
         changed
-      end
-
-      ##
-      # Instance spec that's passed to the VM during the BOSH Agent apply call.
-      # It's what's used for comparing the expected vs the actual state.
-      # @return [Hash<String, Object>] instance spec
-      def apply_spec
-        instance_plan = job.instance_plans.find {|instance_plan| instance_plan.instance.uuid == uuid }
-        InstanceSpec.new(@deployment.name, instance_plan).apply_spec
       end
 
       def vm_created?

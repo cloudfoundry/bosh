@@ -1,10 +1,10 @@
 module Bosh::Director
   module DeploymentPlan
     class InstanceSpec
-      def initialize(deployment_name, instance_plan)
-        @deployment_name = deployment_name
-        @job = instance_plan.instance.job
+      def initialize(instance_plan)
         @instance = instance_plan.instance
+        @deployment_name = @instance.deployment_model.name
+        @job = instance_plan.instance.job
         @instance_plan = instance_plan
         @dns_manager = DnsManager.create
       end

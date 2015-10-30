@@ -72,15 +72,21 @@ module Bosh::Director
 
       @disk_manager.attach_disks_for(instance)
 
-      instance.apply_partial_vm_state
-      # re-render job templates with updated dynamic network settings
-      @job_renderer.render_job_instance(instance_plan)
-      instance.apply_vm_state
+      apply_state(instance_plan)
 
       instance_plan.mark_desired_network_plans_as_existing
     end
 
     private
+
+    def apply_state(instance_plan)
+      instance_plan.instance.apply_initial_vm_state(instance_plan.apply_spec)
+      # re-render job templates with updated dynamic network settings
+      @job_renderer.render_job_instance(instance_plan)
+
+      # re-apply state with re-rendered templates
+      instance_plan.instance.apply_vm_state(instance_plan.apply_spec)
+    end
 
     def create(deployment, stemcell, cloud_properties, network_settings, disks, env)
       vm = nil

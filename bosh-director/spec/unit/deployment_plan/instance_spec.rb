@@ -185,54 +185,11 @@ module Bosh::Director::DeploymentPlan
     context 'applying state' do
       let(:job) { Job.new(logger) }
 
-      before do
-        instance.bind_existing_instance_model(instance_model)
-
-        job.templates = [template]
-        job.name = 'fake-job'
-        job.default_network = {}
-        reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance, network, '10.0.0.6')
-        network_plans = [NetworkPlanner::Plan.new(reservation: reservation)]
-        desired_instance = DesiredInstance.new
-        job.add_instance_plans([InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance, network_plans: network_plans)])
-      end
-
-      let(:template) do
-        instance_double('Bosh::Director::DeploymentPlan::Template', {
-            name: 'fake-template',
-            version: 'fake-template-version',
-            sha1: 'fake-template-sha1',
-            blobstore_id: 'fake-template-blobstore-id',
-            logs: nil,
-          })
-      end
-
-      let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
-      let(:stemcell) { Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'}) }
-
-      before do
-        job.vm_type = vm_type
-        job.stemcell = stemcell
-      end
-      before { allow(job).to receive(:spec).with(no_args).and_return('fake-job-spec') }
-
-      let(:network) do
-        instance_double('Bosh::Director::DeploymentPlan::Network', {
-            name: 'fake-network',
-            network_settings: {'fake-network-settings' => {}},
-          })
-      end
-
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-      before { allow(agent_client).to receive(:apply) }
-
-      before { allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client) }
-
-      before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
 
       before do
-        instance.configuration_hash = 'fake-desired-configuration-hash'
-
+        allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+        instance.bind_existing_instance_model(instance_model)
         instance.bind_unallocated_vm
         instance.bind_to_vm_model(vm_model)
       end
@@ -258,24 +215,26 @@ module Bosh::Director::DeploymentPlan
           expect(agent_client).to receive(:apply).with(state).ordered
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
 
-          instance.apply_vm_state
+          instance.apply_vm_state(state)
           expect(instance.current_state).to eq(state)
         end
       end
 
-      describe 'apply_partial_vm_state' do
-        before do
-          network_settings = {
+      describe 'apply_initial_vm_state' do
+        let(:apply_spec) do
+          {
             'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}}
           }
-          expect(agent_client).to receive(:apply).with(network_settings).ordered
+        end
+        before do
+          expect(agent_client).to receive(:apply).with(apply_spec).ordered
 
           agent_state = {'networks' => {'changed' => {}}}
           expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
         end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          instance.apply_partial_vm_state
+          instance.apply_initial_vm_state(apply_spec)
           expect(instance.vm.model.apply_spec['networks']).to eq({'changed' => {}})
         end
       end

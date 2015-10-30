@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe InstanceUpdater::Preparer do
     subject(:preparer) { described_class.new(instance_plan, agent_client, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', deployment_model: Models::Deployment.make, job: DeploymentPlan::Job.new(logger) ) }
     let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan', instance: instance, needs_recreate?: false) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
@@ -21,7 +21,7 @@ module Bosh::Director
       context 'when nothing has changed' do
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          before { allow(instance).to receive_messages(apply_spec: 'fake-spec') }
+          before { allow_any_instance_of(DeploymentPlan::InstanceSpec).to receive_messages(apply_spec: 'fake-spec') }
 
 
           context 'when instance does not need to be recreated' do
