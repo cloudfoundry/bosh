@@ -67,7 +67,6 @@ module Bosh::Director
         Models::ReleaseVersion.make(release: release, version: '2')
 
         job = Jobs::DeleteRelease.new('test_release', 'version' => rv1.version, blobstore: blobstore)
-        expect(job).to receive(:delete_release_version).with(rv1)
         expect(job).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job.perform
@@ -92,7 +91,6 @@ module Bosh::Director
         job2 = Jobs::DeleteRelease.new('test_release', 'version' => '1', blobstore: blobstore)
         expect(job2).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
-        expect(job2).to receive(:delete_release_version).with(rv1)
         job2.perform
       end
     end
@@ -207,8 +205,8 @@ module Bosh::Director
         expect(blobstore).to receive(:delete).with('pkg3')
         expect(blobstore).to receive(:delete).with('template3')
         expect(blobstore).to receive(:delete).with('feeddead')
-
-        job.delete_release_version(@rv1)
+        expect(job).to receive(:with_release_lock).with('test_release', timeout: 10).and_yield
+        job.perform
 
         expect(Models::ReleaseVersion[@rv1.id]).to be_nil
         expect(Models::ReleaseVersion[@rv2.id]).not_to be_nil
