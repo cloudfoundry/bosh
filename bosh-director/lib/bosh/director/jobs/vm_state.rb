@@ -62,7 +62,7 @@ module Bosh::Director
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
-        vm_apply_spec = vm.apply_spec
+        vm_apply_spec = vm.instance ? vm.instance.spec : {}
 
         {
           :vm_cid => vm.cid,

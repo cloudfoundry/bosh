@@ -85,7 +85,7 @@ module Bosh
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
           if obsolete_plans.any? || desired_plans.any?
-            network_settings_for_previous_reservations = new? ? {} : @existing_instance.vm.apply_spec['networks']
+            network_settings_for_previous_reservations = new? ? {} : @existing_instance.spec['networks']
 
             log_changes(__method__, network_settings_for_previous_reservations, network_settings.to_hash, @existing_instance)
             true
@@ -194,7 +194,7 @@ module Bosh
         def apply_spec
           return {} if obsolete?
 
-          DeploymentPlan::InstanceSpec.new(self).apply_spec
+          DeploymentPlan::InstanceSpec.new(self).as_apply_spec
         end
 
         def templates
@@ -202,7 +202,7 @@ module Bosh
         end
 
         def template_spec
-          DeploymentPlan::InstanceSpec.new(self).template_spec
+          DeploymentPlan::InstanceSpec.new(self).as_template_spec
         end
 
         def job_changed?
@@ -239,13 +239,13 @@ module Bosh
         end
 
         def stemcell_changed?
-          if @existing_instance && @instance.stemcell.name != @existing_instance.apply_spec['stemcell']['name']
-            log_changes(__method__, @existing_instance.apply_spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
+          if @existing_instance && @instance.stemcell.name != @existing_instance.spec['stemcell']['name']
+            log_changes(__method__, @existing_instance.spec['stemcell']['name'], @instance.stemcell.name, @existing_instance)
             return true
           end
 
-          if @existing_instance && @instance.stemcell.version != @existing_instance.apply_spec['stemcell']['version']
-            log_changes(__method__, "version: #{@existing_instance.apply_spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
+          if @existing_instance && @instance.stemcell.version != @existing_instance.spec['stemcell']['version']
+            log_changes(__method__, "version: #{@existing_instance.spec['stemcell']['version']}", "version: #{@instance.stemcell.version}", @existing_instance)
             return true
           end
 
@@ -253,8 +253,8 @@ module Bosh
         end
 
         def vm_type_changed?
-          if @existing_instance && @instance.vm_type.spec != @existing_instance.apply_spec['vm_type']
-            log_changes(__method__, @existing_instance.apply_spec['vm_type'], @desired_instance.job.vm_type.spec, @existing_instance)
+          if @existing_instance && @instance.vm_type.spec != @existing_instance.spec['vm_type']
+            log_changes(__method__, @existing_instance.spec['vm_type'], @desired_instance.job.vm_type.spec, @existing_instance)
             return true
           end
           false
@@ -290,26 +290,21 @@ module Bosh
       end
 
       class ResurrectionInstancePlan < InstancePlan
-        def initialize(apply_spec, attrs)
-          @apply_spec = apply_spec
-          super(attrs)
-        end
-
         def network_settings_hash
-          @apply_spec['networks']
+          @existing_instance.spec['networks']
         end
 
         def apply_spec
-          @apply_spec
+          ApplySpec.new(@existing_instance.spec).spec
         end
 
         def template_spec
-          @apply_spec
+          TemplateSpec.new(@existing_instance.spec).spec
         end
 
         def templates
           @existing_instance.templates.map do |template_model|
-            template = DeploymentPlan::Template.new(nil, template_model.name)
+            template = Template.new(nil, template_model.name)
             template.bind_existing_model(template_model)
             template
           end

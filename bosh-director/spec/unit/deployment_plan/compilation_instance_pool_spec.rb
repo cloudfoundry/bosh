@@ -127,7 +127,7 @@ module Bosh::Director
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
         action
-        expect(vm_model.apply_spec).to eq(expected_apply_spec)
+        expect(vm_model.instance.spec).to eq(expected_apply_spec)
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 

@@ -67,13 +67,34 @@ module Bosh::Director::Models
       "#{self.job}/#{self.index}"
     end
 
-    def apply_spec
-      if vm
-        @apply_spec = vm.apply_spec
-      else
-        @apply_spec = {}
+    def spec
+      return nil if spec_json.nil?
+      result = Yajl::Parser.parse(spec_json)
+
+      unless result['resource_pool'].nil? && result['vm_type'].nil?
+        if result['resource_pool'] && result['vm_type'].nil?
+          result['vm_type'] = {
+            'name' => result['resource_pool']['name'],
+            'cloud_properties' => result['resource_pool']['cloud_properties']
+          }
+        end
+
+        if result['resource_pool'] && result['resource_pool']['stemcell'] && result['stemcell'].nil?
+          result['stemcell'] = result['resource_pool']['stemcell']
+          result['stemcell']['alias'] = result['resource_pool']['name']
+        end
+
+        if result['resource_pool']
+          result.delete('resource_pool')
+        end
+
       end
-      @apply_spec
+
+      result
+    end
+
+    def spec=(spec)
+      self.spec_json = Yajl::Encoder.encode(spec)
     end
 
     def bind_to_vm_model(vm)

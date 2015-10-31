@@ -54,7 +54,7 @@ module Bosh::Director::DeploymentPlan
     describe '#apply_spec' do
       it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
-        spec = instance_spec.apply_spec
+        spec = instance_spec.as_apply_spec
         expect(spec['deployment']).to eq('fake-deployment')
         expect(spec['job']).to eq(job_spec)
         expect(spec['index']).to eq(index)
@@ -81,20 +81,20 @@ module Bosh::Director::DeploymentPlan
         instance.rendered_templates_archive =
           Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
 
-        expect(instance_spec.apply_spec['rendered_templates_archive']).to eq(
+        expect(instance_spec.as_apply_spec['rendered_templates_archive']).to eq(
             'blobstore_id' => 'fake-blobstore-id',
             'sha1' => 'fake-sha1',
           )
       end
 
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
-        expect(instance_spec.apply_spec).to_not have_key('rendered_templates_archive')
+        expect(instance_spec.as_apply_spec).to_not have_key('rendered_templates_archive')
       end
 
       it 'does not require persistent_disk_type' do
         allow(job).to receive(:persistent_disk_type).and_return(nil)
 
-        spec = instance_spec.apply_spec
+        spec = instance_spec.as_apply_spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
       end
@@ -105,7 +105,7 @@ module Bosh::Director::DeploymentPlan
       it 'returns a valid instance template_spec' do
         network_name = network_spec['name']
         instance.bind_unallocated_vm
-        spec = instance_spec.template_spec
+        spec = instance_spec.as_template_spec
         expect(spec['deployment']).to eq('fake-deployment')
         expect(spec['job']).to eq(job_spec)
         expect(spec['index']).to eq(index)
@@ -136,7 +136,7 @@ module Bosh::Director::DeploymentPlan
       it 'does not require persistent_disk_pool' do
         allow(job).to receive(:persistent_disk_type).and_return(nil)
 
-        spec = instance_spec.template_spec
+        spec = instance_spec.as_template_spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
       end
@@ -164,7 +164,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
-          spec = instance_spec.template_spec
+          spec = instance_spec.as_template_spec
           expect(spec['deployment']).to eq('fake-deployment')
           expect(spec['job']).to eq(job_spec)
           expect(spec['index']).to eq(index)
@@ -196,7 +196,7 @@ module Bosh::Director::DeploymentPlan
         it 'does not require persistent_disk_type' do
           allow(job).to receive(:persistent_disk_type).and_return(nil)
 
-          spec = instance_spec.template_spec
+          spec = instance_spec.as_template_spec
           expect(spec['persistent_disk']).to eq(0)
           expect(spec['persistent_disk_type']).to eq(nil)
         end

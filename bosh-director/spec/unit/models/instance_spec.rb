@@ -92,5 +92,32 @@ module Bosh::Director::Models
         end
       end
     end
+
+    context 'apply' do
+      before do
+        subject.spec=({
+          'resource_pool' =>
+            {'name' => 'a',
+              'cloud_properties' => {},
+              'stemcell' => {
+                'name' => 'ubuntu-stemcell',
+                'version' => '1'
+              }
+            }
+        })
+      end
+
+      it 'should have vm_type' do
+        expect(subject.spec['vm_type']).to eq({'name' => 'a', 'cloud_properties' => {}})
+      end
+
+      it 'should have stemcell' do
+        expect(subject.spec['stemcell']).to eq({
+              'alias' => 'a',
+              'name' => 'ubuntu-stemcell',
+              'version' => '1'
+            })
+      end
+    end
   end
 end

@@ -9,48 +9,12 @@ module Bosh::Director
         @dns_manager = DnsManager.create
       end
 
-      def template_spec
-        keys = [
-          'deployment',
-          'job',
-          'index',
-          'bootstrap',
-          'id',
-          'availability_zone',
-          'networks',
-          'vm_type',
-          'stemcell',
-          'env',
-          'packages',
-          'properties',
-          'dns_domain_name',
-          'links',
-          'persistent_disk',
-          'persistent_disk_pool',
-          'persistent_disk_type',
-          'template_hashes'
-        ]
-        full_spec.select {|k,v| keys.include?(k) }
+      def as_template_spec
+        TemplateSpec.new(full_spec).spec
       end
 
-      def apply_spec
-        keys = [
-          'deployment',
-          'job',
-          'index',
-          'id',
-          'networks',
-          'vm_type',
-          'stemcell',
-          'env',
-          'packages',
-          'dns_domain_name',
-          'configuration_hash',
-          'persistent_disk',
-          'template_hashes',
-          'rendered_templates_archive',
-        ]
-        full_spec.select {|k,v| keys.include?(k) }
+      def as_apply_spec
+        ApplySpec.new(full_spec).spec
       end
 
       def full_spec
@@ -92,6 +56,62 @@ module Bosh::Director
         end
 
         spec
+      end
+    end
+
+    class TemplateSpec
+      def initialize(full_spec)
+        @full_spec = full_spec
+      end
+
+      def spec
+        keys = [
+          'deployment',
+          'job',
+          'index',
+          'bootstrap',
+          'id',
+          'availability_zone',
+          'networks',
+          'vm_type',
+          'stemcell',
+          'env',
+          'packages',
+          'properties',
+          'dns_domain_name',
+          'links',
+          'persistent_disk',
+          'persistent_disk_pool',
+          'persistent_disk_type',
+          'template_hashes'
+        ]
+        @full_spec.select {|k,v| keys.include?(k) }
+      end
+    end
+
+    class ApplySpec
+      def initialize(full_spec)
+        @full_spec = full_spec
+      end
+
+      def spec
+        keys = [
+          'deployment',
+          'job',
+          'index',
+          'id',
+          'networks',
+          'vm_type',
+          'stemcell',
+          'env',
+          'packages',
+          'dns_domain_name',
+          'configuration_hash',
+          'persistent_disk',
+          'template_hashes',
+          'rendered_templates_archive',
+        ]
+        @full_spec.select {|k,v| keys.include?(k) }
       end
     end
   end

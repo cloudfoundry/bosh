@@ -47,7 +47,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
-      instance_model.vm.apply_spec=({'vm_type' => 'name', 'networks' => network_settings, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
+      instance_model.spec = ({'vm_type' => 'name', 'networks' => network_settings, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end
@@ -134,7 +134,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the vm type has changed' do
         before do
-          instance_plan.existing_instance.vm.update(apply_spec: {'vm_type' => { 'name' => 'old', 'cloud_properties' => {'old' => 'value'}}})
+          instance_plan.existing_instance.update(spec: {'vm_type' => { 'name' => 'old', 'cloud_properties' => {'old' => 'value'}}})
         end
 
         it 'returns true' do
@@ -155,7 +155,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the stemcell type has changed' do
         before do
           expect(instance_plan).to receive(:vm_type_changed?).and_return(false)
-          instance_plan.existing_instance.vm.update(apply_spec: {
+          instance_plan.existing_instance.update(spec: {
               'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
             })
         end

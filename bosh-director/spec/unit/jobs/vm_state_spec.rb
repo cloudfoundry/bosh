@@ -24,8 +24,7 @@ module Bosh::Director
     end
 
     def set_vm_apply_spec(vm, options=nil)
-      vm.apply_spec=(options || {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
-      vm.save
+      vm.instance.update(spec: (options || {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}}))
     end
 
     before do
@@ -242,8 +241,6 @@ module Bosh::Director
       end
 
       it 'should return vm_type' do
-        set_vm_apply_spec(vm)
-
         Models::Instance.create(
           deployment: @deployment,
           job: 'dea',
@@ -253,6 +250,9 @@ module Bosh::Director
           vm: vm,
           uuid: 'blarg'
         )
+
+        set_vm_apply_spec(vm)
+
         stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')

@@ -4,8 +4,8 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
-    let(:instance_model) { Models::Instance.make(vm: vm) }
-    let(:vm) { Models::Vm.make(apply_spec: spec, env: {'old' => 'env'}) }
+    let(:instance_model) { Models::Instance.make(vm: vm, spec: spec) }
+    let(:vm) { Models::Vm.make(env: {'old' => 'env'}) }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     before { allow(AgentClient).to receive(:with_vm).with(instance_model.vm).and_return(agent_client) }

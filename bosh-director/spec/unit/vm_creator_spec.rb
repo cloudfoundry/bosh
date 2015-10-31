@@ -61,18 +61,17 @@ describe Bosh::Director::VmCreator do
   end
 
   let(:job) do
-    instance_double(Bosh::Director::DeploymentPlan::Job,
-      name: 'fake-job',
-      vm_type: vm_type,
-      stemcell: stemcell,
-      env: env,
-      default_network: {},
-      spec: {},
-      package_spec: {},
-      persistent_disk_type: nil,
-      can_run_as_errand?: false,
-      compilation?: false,
-    )
+    template_model = BD::Models::Template.make
+    template = BD::DeploymentPlan::Template.new(nil, 'fake-template')
+    template.bind_existing_model(template_model)
+
+    job = BD::DeploymentPlan::Job.new(logger)
+    job.name = 'fake-job'
+    job.vm_type = vm_type
+    job.stemcell = stemcell
+    job.env = env
+    job.templates << template
+    job
   end
   let(:vm) { nil }
   let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, vm: vm, index: 5, job: 'fake-job', deployment: deployment) }

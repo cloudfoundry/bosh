@@ -175,12 +175,12 @@ module Bosh::Director
         end
       end
 
-      def apply_vm_state(apply_spec)
+      def apply_vm_state(spec)
         @logger.info('Applying VM state')
 
-        @current_state = apply_spec
+        @current_state = spec
         agent_client.apply(@current_state)
-        @model.vm.update(:apply_spec => @current_state)
+        @model.update(spec: @current_state)
       end
 
       def apply_initial_vm_state(apply_spec)
@@ -189,7 +189,7 @@ module Bosh::Director
         agent_state = agent_client.get_state
         unless agent_state.nil?
           @current_state['networks'] = agent_state['networks']
-          @model.vm.update(:apply_spec => @current_state)
+          @model.update(spec: @current_state)
         end
       end
 

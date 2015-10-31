@@ -46,7 +46,6 @@ module Bosh::Director
         handler_error('VM does not have an associated instance')
       end
       instance_model = vm.instance
-      vm_apply_spec = vm.apply_spec
       vm_env = vm.env
 
       handler_error("VM doesn't belong to any deployment") unless vm.deployment
@@ -73,7 +72,7 @@ module Bosh::Director
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
-      instance_plan_to_create = create_instance_plan(instance_model, vm_apply_spec, vm_env)
+      instance_plan_to_create = create_instance_plan(instance_model, vm_env)
 
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
@@ -102,7 +101,7 @@ module Bosh::Director
 
     private
 
-    def create_instance_plan(instance_model, vm_apply_spec, vm_env)
+    def create_instance_plan(instance_model, vm_env)
       deployment_model = instance_model.deployment
       deployment_plan_from_model = DeploymentPlan::Planner.new(
         {name: deployment_model.name, properties: deployment_model.properties},
@@ -111,9 +110,10 @@ module Bosh::Director
         deployment_model,
         {'recreate' => true})
 
-      vm_type = DeploymentPlan::VmType.new(vm_apply_spec['vm_type'])
+      instance_spec = instance_model.spec
+      vm_type = DeploymentPlan::VmType.new(instance_spec['vm_type'])
       env = DeploymentPlan::Env.new(vm_env)
-      stemcell = DeploymentPlan::Stemcell.new(vm_apply_spec['stemcell'])
+      stemcell = DeploymentPlan::Stemcell.new(instance_spec['stemcell'])
       stemcell.add_stemcell_model
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
 
@@ -126,20 +126,17 @@ module Bosh::Director
         env,
         false,
         deployment_plan_from_model,
-        vm_apply_spec,
+        instance_spec,
         availability_zone,
         @logger
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
       DeploymentPlan::ResurrectionInstancePlan.new(
-        vm_apply_spec,
-        {
-          existing_instance: instance_model,
-          instance: instance_from_model,
-          desired_instance: DeploymentPlan::DesiredInstance.new,
-          recreate_deployment: true
-        }
+        existing_instance: instance_model,
+        instance: instance_from_model,
+        desired_instance: DeploymentPlan::DesiredInstance.new,
+        recreate_deployment: true
       )
     end
 
