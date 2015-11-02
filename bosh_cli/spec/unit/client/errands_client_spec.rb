@@ -1,6 +1,4 @@
-require 'json'
 require 'spec_helper'
-require 'cli/client/errands_client'
 
 describe Bosh::Cli::Client::ErrandsClient do
   subject(:client) { described_class.new(director) }

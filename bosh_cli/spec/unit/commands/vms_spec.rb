@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cli'
 
 describe Bosh::Cli::Command::Vms do
   subject(:command) { described_class.new }

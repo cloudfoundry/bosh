@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'cli'
-require 'cli/client/errands_client'
 
 describe Bosh::Cli::Command::Errand do
   subject(:command) { described_class.new }
