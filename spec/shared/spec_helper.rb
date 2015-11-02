@@ -14,10 +14,11 @@ end
 
 require 'rspec'
 require 'rspec/its'
-require File.expand_path('../extensions/fakefs', __FILE__)
 
 # Useful to see that tests are using expected version of Ruby in CI
 puts "Using #{RUBY_DESCRIPTION}"
+
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 RSpec.configure do |config|
   #config.deprecation_stream = StringIO.new

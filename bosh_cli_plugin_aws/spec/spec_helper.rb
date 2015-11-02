@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
+require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
 
 require 'webmock/rspec'
 require 'cli'
