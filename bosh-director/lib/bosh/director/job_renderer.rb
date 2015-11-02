@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     def render_job_instances(job)
-      job.instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
+      job.needed_instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
     end
 
     def render_job_instance(instance_plan)
