@@ -1,9 +1,9 @@
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
-require 'webmock'
-require 'timecop'
 require 'cli'
 require 'fakefs/spec_helpers'
+require 'timecop'
+require 'webmock'
 
 Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 

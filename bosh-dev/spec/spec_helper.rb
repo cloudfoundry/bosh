@@ -19,7 +19,7 @@ config.db = db
 
 Bosh::Clouds::Config.configure(config)
 
-Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require f }
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 SPEC_ROOT = File.dirname(__FILE__)
 

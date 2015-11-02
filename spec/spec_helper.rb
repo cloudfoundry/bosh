@@ -12,8 +12,7 @@ require 'restclient'
 require 'bosh/director'
 require 'blue-shell'
 
-SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
-Dir.glob("#{SPEC_ROOT}/support/**/*.rb") { |f| require(f) }
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
