@@ -291,7 +291,7 @@ module Bosh
         end
 
         def spec
-          InstanceSpec.create_from_database(@existing_instance.spec)
+          InstanceSpec.create_from_database(@existing_instance.spec, @instance)
         end
 
         def templates

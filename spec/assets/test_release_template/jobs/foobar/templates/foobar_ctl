@@ -15,6 +15,12 @@ case $1 in
       echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
     <% end %>
 
+    <% if_p('networks') do |networks| %>
+      <% networks.each do |net_name| %>
+        echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+      <% end %>
+    <% end %>
+
     echo $$ > $PIDFILE
 
     exec /bin/sh /var/vcap/packages/bar/run.sh

@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
     class InstanceSpec
-      def self.create_from_database(spec)
-        new(spec)
+      def self.create_from_database(spec, instance)
+        new(spec, instance)
       end
 
       def self.create_from_instance_plan(instance_plan)
@@ -26,7 +26,6 @@ module Bosh::Director
           'packages' => job.package_spec,
           'properties' => job.properties,
           'dns_domain_name' => dns_manager.dns_domain_name,
-          'configuration_hash' => instance.configuration_hash,
           'links' => job.link_spec,
         }
 
@@ -41,19 +40,12 @@ module Bosh::Director
           spec['persistent_disk'] = 0
         end
 
-        if instance.template_hashes
-          spec['template_hashes'] = instance.template_hashes
-        end
-
-        if instance.rendered_templates_archive
-          spec['rendered_templates_archive'] = instance.rendered_templates_archive.spec
-        end
-
-        new(spec)
+        new(spec, instance)
       end
 
-      def initialize(spec)
-        @full_spec = spec
+      def initialize(full_spec, instance)
+        @full_spec = full_spec
+        @instance = instance
       end
 
       def as_template_spec
@@ -65,7 +57,21 @@ module Bosh::Director
       end
 
       def full_spec
-        @full_spec
+        # re-generate spec with rendered templates info
+        # since job renderer sets it directly on instance
+        spec = @full_spec
+
+        if @instance.template_hashes
+          spec['template_hashes'] = @instance.template_hashes
+        end
+
+        if @instance.rendered_templates_archive
+          spec['rendered_templates_archive'] = @instance.rendered_templates_archive.spec
+        end
+
+        spec['configuration_hash'] = @instance.configuration_hash
+
+        spec
       end
     end
 

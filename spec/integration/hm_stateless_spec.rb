@@ -121,4 +121,37 @@ describe 'health_monitor: 1', type: :integration do
     director.vm('foobar', '0').fail_job
     waiter.wait(20) { expect(health_monitor.read_log).to match(%r{\[ALERT\] Alert @ .* fake-monit-description}) }
   end
+
+  it 're-renders templates with new dynamic network IPs' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
+    manifest_hash['jobs'].first['properties'] = { 'networks' => ['a', 'b'] }
+
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config['networks'] << {
+      'name' => 'b',
+      'type' => 'dynamic',
+      'cloud_properties' => {}
+    }
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+    puts director.vms.inspect
+
+    original_vm = director.vm('foobar', '0')
+    template = original_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=192.168.1.2')
+    expect(template).to include('b_ip=127.0.0.101')
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
+    original_vm.kill_agent
+    resurrected_vm = director.wait_for_vm('foobar', '0', 300)
+    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+
+    template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=192.168.1.2')
+    expect(template).to include('b_ip=127.0.0.102')
+  end
 end

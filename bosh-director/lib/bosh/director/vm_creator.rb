@@ -83,6 +83,7 @@ module Bosh::Director
       unless instance_plan.instance.compilation?
         instance_plan.instance.apply_initial_vm_state(instance_plan.spec)
         # re-render job templates with updated dynamic network settings
+        @logger.debug("Re-rendering templates with spec: #{instance_plan.spec.as_template_spec}")
         @job_renderer.render_job_instance(instance_plan)
       end
 
