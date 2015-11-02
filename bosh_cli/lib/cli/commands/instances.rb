@@ -30,6 +30,7 @@ module Bosh::Cli::Command
 
     def show_deployment(name, options={})
       instances = director.fetch_vm_state(name)
+      instance_count = instances.size
 
       if instances.empty?
         nl
@@ -71,8 +72,10 @@ module Bosh::Cli::Command
           if options[:failing]
             if options[:ps]
               instance['processes'].keep_if { |p| p['state'] != 'running' }
+              instance_count -= 1
               next if instance['processes'].size == 0 && instance['job_state'] != 'failing'
             else
+              instance_count -= 1
               next if instance['job_state'] != 'failing'
             end
           end
@@ -137,7 +140,7 @@ module Bosh::Cli::Command
               t << process_row
             end
 
-            t << :separator if row_count < instances.size
+            t << :separator if row_count < instance_count
           end
         end
       end

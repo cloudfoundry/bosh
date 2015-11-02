@@ -393,7 +393,7 @@ describe Bosh::Cli::Command::Instances do
             expect { perform }.to_not raise_error
           end
 
-          xit 'only shows failing instances' do
+          it 'only shows failing instances' do
             vm2_state['job_state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
@@ -410,7 +410,7 @@ describe Bosh::Cli::Command::Instances do
             perform
           end
 
-          xit 'shows instance and its processes when one of processes is failing' do
+          it 'shows instance and its processes when one of processes is failing' do
             vm2_state['processes'][0]['state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
@@ -428,7 +428,7 @@ describe Bosh::Cli::Command::Instances do
             perform
           end
 
-          xit 'shows instance and its processes when instance and one of processes are failing' do
+          it 'shows instance and its processes when instance and one of processes are failing' do
             vm2_state["job_state"] = 'failing'
             vm2_state['processes'][0]['state'] = 'failing'
 
