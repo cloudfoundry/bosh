@@ -410,7 +410,24 @@ describe Bosh::Cli::Command::Instances do
             perform
           end
 
-          it 'shows instance and its processes when one of processes is failing' do
+          it 'considers any non-"running" job as failing' do
+            vm2_state['job_state'] = 'vaporized'
+
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_table %(
+                +----------+-----------+---------------+-------------+
+                | Instance | State     | Resource Pool | IPs         |
+                +----------+-----------+---------------+-------------+
+                | job2/0   | vaporized | rp1           | 192.168.0.3 |
+                |          |           |               | 192.168.0.4 |
+                +----------+-----------+---------------+-------------+
+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 1')
+            perform
+          end
+
+          it 'shows instance and its processes when one of the processes is failing' do
             vm2_state['processes'][0]['state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
@@ -428,7 +445,7 @@ describe Bosh::Cli::Command::Instances do
             perform
           end
 
-          it 'shows instance and its processes when instance and one of processes are failing' do
+          it 'shows instance and its processes when instance and one of the processes are failing' do
             vm2_state["job_state"] = 'failing'
             vm2_state['processes'][0]['state'] = 'failing'
 
@@ -441,6 +458,24 @@ describe Bosh::Cli::Command::Instances do
                 |             |         |               | 192.168.0.4 |
                 |   process-3 | failing |               |             |
                 +-------------+---------+---------------+-------------+
+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 1')
+            perform
+          end
+
+          it 'considers any non-"running" process as failing' do
+            vm2_state['processes'][0]['state'] = 'exploded'
+
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_table %(
+                +-------------+----------+---------------+-------------+
+                | Instance    | State    | Resource Pool | IPs         |
+                +-------------+----------+---------------+-------------+
+                | job2/0      | running  | rp1           | 192.168.0.3 |
+                |             |          |               | 192.168.0.4 |
+                |   process-3 | exploded |               |             |
+                +-------------+----------+---------------+-------------+
               )
             end
             expect(command).to receive(:say).with('Instances total: 1')
