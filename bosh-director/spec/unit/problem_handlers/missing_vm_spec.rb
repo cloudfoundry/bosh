@@ -4,8 +4,7 @@ module Bosh::Director
   describe ProblemHandlers::MissingVM do
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
-    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model, apply_spec: spec) }
-    let(:recreated_vm) { Models::Vm.make(cid: 'vm-cid-2', agent_id: 'agent-007-2', deployment: deployment_model, apply_spec: spec) }
+    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model) }
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
     let(:spec) do
       {
@@ -19,7 +18,10 @@ module Bosh::Director
     end
     let(:networks) { {'a' => {'ip' => '192.168.1.2'}} }
 
-    before { fake_app }
+    before do
+      fake_app
+      allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
+    end
 
     it 'registers under missing_vm type' do
       expect(handler).to be_kind_of(described_class)
@@ -47,7 +49,7 @@ module Bosh::Director
       it 'recreates a VM' do
         prepare_deploy(manifest, manifest)
 
-        instance_model = Models::Instance.make(job: manifest['jobs'].first['name'], index: 0, vm: vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
+        instance_model = Models::Instance.make(job: manifest['jobs'].first['name'], index: 0, vm: vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' }, spec: spec)
         vm.update(env: { 'key1' => 'value1' }, :instance => instance_model)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')

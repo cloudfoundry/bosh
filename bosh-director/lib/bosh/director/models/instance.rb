@@ -43,7 +43,7 @@ module Bosh::Director::Models
 
     def cloud_properties_hash
       if cloud_properties.nil?
-        apply_spec['vm_type']['cloud_properties']
+        spec['vm_type']['cloud_properties']
       else
         JSON.parse(cloud_properties)
       end

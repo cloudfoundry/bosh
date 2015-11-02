@@ -3,7 +3,15 @@ require 'spec_helper'
 module Bosh::Director
   describe InstanceUpdater::Preparer do
     subject(:preparer) { described_class.new(instance_plan, agent_client, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', deployment_model: Models::Deployment.make ) }
+    let(:instance) do
+      instance_double(
+        'Bosh::Director::DeploymentPlan::Instance',
+        deployment_model: Models::Deployment.make,
+        rendered_templates_archive: nil,
+        configuration_hash: {'fake-spec' => true},
+        template_hashes: []
+      )
+    end
     let(:instance_plan) do
       job = DeploymentPlan::Job.new(logger)
       Bosh::Director::DeploymentPlan::InstancePlan.new(
@@ -29,14 +37,19 @@ module Bosh::Director
       context 'when nothing has changed' do
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          before { allow_any_instance_of(DeploymentPlan::InstanceSpec).to receive_messages(apply_spec: 'fake-spec') }
-
+          before do
+            expected_instance_spec = DeploymentPlan::InstanceSpec.new(apply_spec, instance)
+            allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).with(instance_plan).and_return(expected_instance_spec)
+          end
+          let(:apply_spec) do
+            {'template_hashes' =>[], 'configuration_hash' =>{'fake-spec' =>true}}
+          end
 
           context 'when instance does not need to be recreated' do
             before { allow(instance_plan).to receive_messages(needs_recreate?: false) }
 
             it 'sends prepare message to the instance' do
-              expect(agent_client).to receive(:prepare).with('fake-spec')
+              expect(agent_client).to receive(:prepare).with(apply_spec)
               preparer.prepare
             end
           end

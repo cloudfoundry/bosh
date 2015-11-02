@@ -184,10 +184,11 @@ module Bosh::Director::DeploymentPlan
             'persistent_disk' => 0
           }
         end
+        let(:instance_spec) { InstanceSpec.new(state, instance) }
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           expect(agent_client).to receive(:apply).with(state).ordered
-          instance.apply_vm_state(state)
+          instance.apply_vm_state(instance_spec)
           expect(instance.current_state).to eq(state)
           expect(instance_model.spec).to eq(state)
         end
@@ -199,15 +200,17 @@ module Bosh::Director::DeploymentPlan
             'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}}
           }
         end
+        let(:instance_spec) { InstanceSpec.new(apply_spec, instance) }
+
         before do
-          expect(agent_client).to receive(:apply).with(apply_spec).ordered
+          expect(agent_client).to receive(:apply).with({'networks' => instance_spec.as_apply_spec['networks']}).ordered
 
           agent_state = {'networks' => {'changed' => {}}}
           expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
         end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          instance.apply_initial_vm_state(apply_spec)
+          instance.apply_initial_vm_state(instance_spec)
           expect(instance_model.spec['networks']).to eq({'changed' => {}})
         end
       end

@@ -127,7 +127,8 @@ module Bosh::Director
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
         action
-        expect(vm_model.instance.spec).to eq(expected_apply_spec)
+        expected_vm_spec = expected_apply_spec.merge({'links' => {}, 'properties' => {}, 'availability_zone' => nil, 'bootstrap' => false})
+        expect(vm_model.instance.spec).to eq(expected_vm_spec)
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 

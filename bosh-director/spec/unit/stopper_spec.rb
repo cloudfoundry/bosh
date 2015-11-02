@@ -17,11 +17,15 @@ module Bosh::Director
       default_network: {}
     ) }
     let(:instance) { instance_double(DeploymentPlan::Instance,
+      job_name: job.name,
       model: instance_model,
       current_state: {},
       availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
       index: 0,
-      uuid: SecureRandom.uuid
+      uuid: SecureRandom.uuid,
+      rendered_templates_archive: nil,
+      configuration_hash: {'fake-spec' => true},
+      template_hashes: []
     ) }
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
     let(:instance_plan) do
@@ -39,7 +43,10 @@ module Bosh::Director
         }
       }
     end
-    before { allow(instance_plan).to receive(:apply_spec).and_return(spec) }
+    before do
+      instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
+      allow(instance_plan).to receive(:spec).and_return(instance_spec)
+    end
 
     describe '#stop' do
       context 'when skip_drain is set to true' do

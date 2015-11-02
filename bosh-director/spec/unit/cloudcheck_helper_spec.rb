@@ -84,7 +84,7 @@ module Bosh::Director
         end
 
         it "doesn't recreate VM if environment is unknown" do
-          vm.update(apply_spec: {})
+          vm.instance.update(spec: {})
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -92,7 +92,7 @@ module Bosh::Director
         end
 
         it 'whines on invalid spec format' do
-          vm.update(apply_spec: :foo, env: {})
+          vm.instance.update(spec: :foo)
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -100,7 +100,8 @@ module Bosh::Director
         end
 
         it 'whines on invalid env format' do
-          vm.update(apply_spec: {}, env: :bar)
+          vm.instance.update(spec: {})
+          vm.update(env: :bar)
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -131,7 +132,8 @@ module Bosh::Director
         let(:dns_manager) { instance_double(DnsManager) }
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          vm.update(apply_spec: spec, env: {'key1' => 'value1'})
+          vm.instance.update(spec: spec)
+          vm.update(env: {'key1' => 'value1'})
           allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
 
           allow(DnsManager).to receive(:create).and_return(dns_manager)
@@ -141,7 +143,6 @@ module Bosh::Director
           fake_job_context
 
           expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan|
-            expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
             expect(instance_plan.existing_instance.cloud_properties_hash).to eq({'foo' => 'bar'})
             expect(instance_plan.existing_instance.env).to eq({'key1' => 'value1'})
           end

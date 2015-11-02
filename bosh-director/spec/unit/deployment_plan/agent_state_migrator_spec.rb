@@ -15,9 +15,6 @@ module Bosh::Director
 
         expect(client).to receive(:get_state).and_return(state)
         expect(agent_state_migrator).to receive(:verify_state).with(vm_model, state)
-        expect(agent_state_migrator).to receive(:migrate_legacy_state).
-            with(vm_model, state)
-
         expect(agent_state_migrator.get_state(vm_model)).to eq(state)
       end
 
@@ -32,8 +29,6 @@ module Bosh::Director
           allow(agent_client).to receive(:get_state).and_return(legacy_state)
 
           allow(agent_state_migrator).to receive(:verify_state).with(vm_model, legacy_state)
-          allow(agent_state_migrator).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
-
           expect(agent_state_migrator.get_state(vm_model)).to eq(final_state)
         end
 

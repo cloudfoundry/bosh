@@ -24,8 +24,8 @@ module Bosh::Director
 
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
 
-      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model, apply_spec: {'networks' => networks})
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm: @vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' })
+      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
+      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm: @vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' }, spec: {'networks' => networks})
     end
 
     let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
@@ -109,17 +109,23 @@ module Bosh::Director
               'name' => 'stemcell-name',
               'version' => '3.0.2'
             },
-            'networks' => networks
+            'networks' => networks,
+            'template_hashes' => {},
+            'configuration_hash' => anything,
+            'rendered_templates_archive' => anything
           }
         end
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
+          @instance.update(spec: spec)
+          @vm.update(env: { 'key1' => 'value1' })
           allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222'), anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222')).and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
+          fake_app
+          allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
         end
 
         it 'recreates the VM' do
@@ -131,8 +137,9 @@ module Bosh::Director
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
-          expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:apply).with({'networks' => spec['networks']}).ordered
           expect(fake_new_agent).to receive(:get_state).and_return(spec).ordered
+          expect(fake_new_agent).to receive(:apply).with(spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
