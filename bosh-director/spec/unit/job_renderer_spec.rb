@@ -118,6 +118,17 @@ module Bosh::Director
         end
       end
 
+      context 'when instance plan does not have templates' do
+        before do
+          allow(instance_plan).to receive(:templates).and_return([])
+        end
+
+        it 'does not render' do
+          expect(job_instance_renderer).to_not receive(:render)
+          perform
+        end
+      end
+
       context 'when instance has rendered job templates archives' do
         before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(latest_archive) }
         let(:latest_archive) do

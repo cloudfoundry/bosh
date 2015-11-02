@@ -69,7 +69,9 @@ module Bosh::Director
           spec['rendered_templates_archive'] = @instance.rendered_templates_archive.spec
         end
 
-        spec['configuration_hash'] = @instance.configuration_hash
+        if @instance.configuration_hash
+          spec['configuration_hash'] = @instance.configuration_hash
+        end
 
         spec
       end

@@ -18,6 +18,12 @@ module Bosh::Director
 
     def render_job_instance(instance_plan)
       instance = instance_plan.instance
+
+      if instance_plan.templates.empty?
+        @logger.debug("Skipping rendering templates for '#{instance}', no templates")
+        return
+      end
+
       @logger.debug("Rendering templates for instance #{instance}")
 
       job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
