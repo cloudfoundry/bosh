@@ -80,7 +80,7 @@ module Bosh::Director::Core::Templates
         instance.persist(blobstore)
       end
 
-      let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+      let(:blobstore) { double('Bosh::Blobstore::BaseClient') }
 
       let(:templates) { [instance_double('Bosh::Director::Core::Templates::RenderedJobTemplate')] }
 
