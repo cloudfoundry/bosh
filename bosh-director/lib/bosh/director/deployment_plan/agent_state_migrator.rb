@@ -15,7 +15,6 @@ module Bosh::Director
         verify_state(vm_model, state)
         @logger.debug('Verified VM state')
 
-        migrate_legacy_state(vm_model, state)
         state.delete('release')
         if state.include?('job')
           state['job'].delete('release')
@@ -83,27 +82,6 @@ module Bosh::Director
               "VM `#{vm_model.cid}' is out of sync: " +
                 "it reports itself as `#{actual_job}/#{actual_index}' but " +
                 "according to DB it is `#{instance.job}/#{instance.index}'"
-          end
-        end
-      end
-
-      def migrate_legacy_state(vm_model, state)
-        # Persisting apply spec for VMs that were introduced before we started
-        # persisting it on apply itself (this is for cloudcheck purposes only)
-        if vm_model.apply_spec.nil?
-          # The assumption is that apply_spec <=> VM state
-          vm_model.update(:apply_spec => state)
-        end
-
-        instance = vm_model.instance
-        if instance
-          disk_size = state['persistent_disk'].to_i
-          persistent_disk = instance.persistent_disk
-
-          # This is to support legacy deployments where we did not have
-          # the disk_size specified.
-          if disk_size != 0 && persistent_disk && persistent_disk.size == 0
-            persistent_disk.update(:size => disk_size)
           end
         end
       end

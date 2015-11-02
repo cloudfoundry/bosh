@@ -23,7 +23,7 @@ module Bosh::Director
       job_template_loader = Core::Templates::JobTemplateLoader.new(@logger)
 
       instance_renderer = Core::Templates::JobInstanceRenderer.new(instance_plan.templates, job_template_loader)
-      rendered_job_instance = instance_renderer.render(instance_plan.template_spec)
+      rendered_job_instance = instance_renderer.render(instance_plan.spec.as_template_spec)
 
       configuration_hash = rendered_job_instance.configuration_hash
 

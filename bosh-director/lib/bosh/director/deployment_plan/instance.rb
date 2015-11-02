@@ -178,13 +178,15 @@ module Bosh::Director
       def apply_vm_state(spec)
         @logger.info('Applying VM state')
 
-        @current_state = spec
-        agent_client.apply(@current_state)
+        @current_state = spec.full_spec
+        agent_client.apply(spec.as_apply_spec)
         @model.update(spec: @current_state)
       end
 
-      def apply_initial_vm_state(apply_spec)
-        partial_state = {'networks' => apply_spec['networks']}
+      def apply_initial_vm_state(spec)
+        # Agent will return dynamic network settings, we need to update spec with it
+        # so that we can render templates with new spec later.
+        partial_state = {'networks' => spec.as_apply_spec['networks']}
         agent_client.apply(partial_state)
         agent_state = agent_client.get_state
         unless agent_state.nil?

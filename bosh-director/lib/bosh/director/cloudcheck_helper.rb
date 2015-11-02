@@ -49,8 +49,9 @@ module Bosh::Director
       vm_env = vm.env
 
       handler_error("VM doesn't belong to any deployment") unless vm.deployment
+      handler_error('Failed to recreate VM without instance') unless vm.instance
 
-      validate_spec(vm.apply_spec)
+      validate_spec(vm.instance.spec)
       validate_env(vm.env)
 
       instance_plan_to_delete = DeploymentPlan::InstancePlan.new(
@@ -82,10 +83,10 @@ module Bosh::Director
       dns_manager = DnsManager.create
       dns_names_to_ip = {}
 
-      instance_plan_to_create.existing_instance.vm.apply_spec['networks'].each do |network_name, network|
-        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, deployment_model.name)
+      instance_plan_to_create.existing_instance.spec['networks'].each do |network_name, network|
+        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[index_dns_name] = network['ip']
-        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, deployment_model.name)
+        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[id_dns_name] = network['ip']
       end
 

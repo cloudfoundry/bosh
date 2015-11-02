@@ -140,7 +140,7 @@ module Bosh::Director
 
     def apply_state(instance_plan)
       instance = instance_plan.instance
-      instance.apply_vm_state(instance_plan.apply_spec)
+      instance.apply_vm_state(instance_plan.spec)
       instance.update_templates(instance_plan.templates)
       RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
     end

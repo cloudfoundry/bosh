@@ -81,13 +81,13 @@ module Bosh::Director
 
     def apply_state(instance_plan)
       unless instance_plan.instance.compilation?
-        instance_plan.instance.apply_initial_vm_state(instance_plan.apply_spec)
+        instance_plan.instance.apply_initial_vm_state(instance_plan.spec)
         # re-render job templates with updated dynamic network settings
         @job_renderer.render_job_instance(instance_plan)
       end
 
       # re-apply state with re-rendered templates
-      instance_plan.instance.apply_vm_state(instance_plan.apply_spec)
+      instance_plan.instance.apply_vm_state(instance_plan.spec)
     end
 
     def create(deployment, stemcell, cloud_properties, network_settings, disks, env)

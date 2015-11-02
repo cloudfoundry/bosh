@@ -191,18 +191,14 @@ module Bosh
           @network_plans.find { |plan| plan.reservation.network == network }
         end
 
-        def apply_spec
+        def spec
           return {} if obsolete?
 
-          DeploymentPlan::InstanceSpec.new(self).as_apply_spec
+          DeploymentPlan::InstanceSpec.create_from_instance_plan(self)
         end
 
         def templates
           @desired_instance.job.templates
-        end
-
-        def template_spec
-          DeploymentPlan::InstanceSpec.new(self).as_template_spec
         end
 
         def job_changed?
@@ -294,12 +290,8 @@ module Bosh
           @existing_instance.spec['networks']
         end
 
-        def apply_spec
-          ApplySpec.new(@existing_instance.spec).spec
-        end
-
-        def template_spec
-          TemplateSpec.new(@existing_instance.spec).spec
+        def spec
+          InstanceSpec.create_from_database(@existing_instance.spec)
         end
 
         def templates

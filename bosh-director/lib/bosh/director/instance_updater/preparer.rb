@@ -12,7 +12,7 @@ module Bosh::Director
       # there is no point in preparing current VM for future since it will be destroyed.
       unless @instance_plan.needs_shutting_down? || instance.state == 'detached'
 
-        apply_spec = DeploymentPlan::InstanceSpec.new(@instance_plan).apply_spec
+        apply_spec = DeploymentPlan::InstanceSpec.create_from_instance_plan(@instance_plan).as_apply_spec
         @agent_client.prepare(apply_spec)
       end
     rescue RpcRemoteException => e
