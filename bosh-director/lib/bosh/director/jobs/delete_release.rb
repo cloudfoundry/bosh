@@ -25,34 +25,6 @@ module Bosh::Director
         @release_manager = Api::ReleaseManager.new
       end
 
-      def delete_release(release)
-        event_log.begin_stage('Deleting packages', release.packages.count)
-        release.packages.each do |package|
-          track_and_log("#{package.name}/#{package.version}") do
-            @errors += @package_deleter.delete(package, @force)
-          end
-        end
-
-        event_log.begin_stage('Deleting jobs', release.templates.count)
-        release.templates.each do |template|
-          track_and_log("#{template.name}/#{template.version}") do
-            @errors += @template_deleter.delete(template, @force)
-          end
-        end
-
-        if @errors.empty? || @force
-          event_log.begin_stage('Deleting release versions', release.versions.count)
-
-          release.versions.each do |release_version|
-            track_and_log("#{release.name}/#{release_version.version}") do
-              release_version.destroy
-            end
-          end
-
-          release.destroy
-        end
-      end
-
       def perform
         logger.info('Processing delete release')
 
@@ -89,6 +61,34 @@ module Bosh::Director
         end
 
         "/release/#{@name}"
+      end
+
+      def delete_release(release)
+        event_log.begin_stage('Deleting packages', release.packages.count)
+        release.packages.each do |package|
+          track_and_log("#{package.name}/#{package.version}") do
+            @errors += @package_deleter.delete(package, @force)
+          end
+        end
+
+        event_log.begin_stage('Deleting jobs', release.templates.count)
+        release.templates.each do |template|
+          track_and_log("#{template.name}/#{template.version}") do
+            @errors += @template_deleter.delete(template, @force)
+          end
+        end
+
+        if @errors.empty? || @force
+          event_log.begin_stage('Deleting release versions', release.versions.count)
+
+          release.versions.each do |release_version|
+            track_and_log("#{release.name}/#{release_version.version}") do
+              release_version.destroy
+            end
+          end
+
+          release.destroy
+        end
       end
     end
   end

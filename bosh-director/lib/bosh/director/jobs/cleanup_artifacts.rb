@@ -19,7 +19,9 @@ module Bosh::Director
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
         cloud = Config.cloud
-        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, blobstore, logger, event_log)
+        blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
+        compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger, event_log)
+        @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger, event_log)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(@release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
       end

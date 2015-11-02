@@ -17,7 +17,7 @@ module Bosh::Director
     describe '#perform' do
       let(:event_log){ EventLog::Log.new }
       let(:cloud){ instance_double(Bosh::Cloud) }
-      let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
+      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:release_1) { Models::Release.make(name: 'release-1') }
       let(:release_2) { Models::Release.make(name: 'release-2') }
 
@@ -25,17 +25,24 @@ module Bosh::Director
         fake_locks
         allow(cloud).to receive(:delete_stemcell)
 
-        Models::Stemcell.make(name: 'stemcell-a', version: '1')
+        stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', version: '1')
         Models::Stemcell.make(name: 'stemcell-b', version: '2')
 
-        Models::ReleaseVersion.make(version: 1, release: release_1)
+        release_version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
         Models::ReleaseVersion.make(version: 2, release: release_2)
+
+        package = Models::Package.make(release: release_1, blobstore_id: 'package_blob_id_1')
+        package.add_release_version(release_version_1)
+        Models::CompiledPackage.make(package: package, stemcell: stemcell_1, blobstore_id: 'compiled-package-1')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage)
 
         allow(Config).to receive(:cloud).and_return(cloud)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+
+        allow(blobstore).to receive(:delete).with('compiled-package-1')
+        allow(blobstore).to receive(:delete).with('blobstore-id-1')
       end
 
       context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
@@ -43,6 +50,7 @@ module Bosh::Director
          before do
            Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
            Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+           allow(blobstore).to receive(:delete).with('package_blob_id_1')
          end
 
          it 'logs and returns the result' do
@@ -78,7 +86,7 @@ module Bosh::Director
               expect(event_log).to receive(:begin_stage).with('Deleting releases', 4)
 
               allow(cloud).to receive(:delete_disk)
-
+              allow(blobstore).to receive(:delete).with('package_blob_id_1')
               delete_artifacts = Jobs::CleanupArtifacts.new({'remove_all' => true})
               expect_any_instance_of(ThreadPool).to receive(:process).exactly(8).times.and_call_original
               result = delete_artifacts.perform
