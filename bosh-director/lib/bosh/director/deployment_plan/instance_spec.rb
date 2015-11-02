@@ -1,6 +1,10 @@
 module Bosh::Director
   module DeploymentPlan
     class InstanceSpec
+      def self.create_empty
+        EmptyInstanceSpec.new
+      end
+
       def self.create_from_database(spec, instance)
         new(spec, instance)
       end
@@ -78,6 +82,15 @@ module Bosh::Director
     end
 
     private
+
+    class EmptyInstanceSpec < InstanceSpec
+      def initialize
+      end
+
+      def full_spec
+        {}
+      end
+    end
 
     class TemplateSpec
       def initialize(full_spec)

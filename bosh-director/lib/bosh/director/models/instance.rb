@@ -113,4 +113,5 @@ module Bosh::Director::Models
 
   Instance.plugin :association_dependencies
   Instance.add_association_dependencies :ip_addresses => :destroy
+  Instance.add_association_dependencies :templates => :nullify
 end

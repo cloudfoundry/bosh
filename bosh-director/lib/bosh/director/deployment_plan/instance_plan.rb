@@ -192,9 +192,9 @@ module Bosh
         end
 
         def spec
-          return {} if obsolete?
+          return InstanceSpec.create_empty if obsolete?
 
-          DeploymentPlan::InstanceSpec.create_from_instance_plan(self)
+          InstanceSpec.create_from_instance_plan(self)
         end
 
         def templates
