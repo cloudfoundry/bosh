@@ -175,6 +175,15 @@ module Support
       def remove_files(subdir, filepaths)
         filepaths.each { |filepath| remove_file(subdir, filepath) }
       end
+
+      private
+
+      def get_tmp_file_path(content)
+        tmp_file = File.open(File.join(Dir.mktmpdir, 'tmp'), 'w')
+        tmp_file.write(content)
+        tmp_file.close
+        tmp_file.path
+      end
     end
   end
 end

@@ -27,23 +27,15 @@ module Bosh::Dev
       it 'is the command to execute on vagrant to build and publish an OS image' do
         expected_cmd = strip_heredoc(<<-BASH)
           set -eu
-
           cd /bosh
-
           export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
-
           bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/some-uuid]
           bundle exec rake stemcell:upload_os_image[/tmp/some-uuid,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
         BASH
 
-        expect(strip_heredoc(subject.to_s)).to eq(strip_heredoc(expected_cmd))
+        expect(subject.to_s).to eq(strip_heredoc(expected_cmd).chomp)
       end
-    end
-
-    def strip_heredoc(str)
-      str.gsub(/^\s+/, '')
     end
   end
 end
-

@@ -206,11 +206,6 @@ def check_event_log
   yield events
 end
 
-def strip_heredoc(str)
-  indent = str.scan(/^[ \t]*(?=\S)/).min.size || 0
-  str.gsub(/^[ \t]{#{indent}}/, '')
-end
-
 module ManifestHelper
   class << self
     def default_deployment_manifest(overrides = {})

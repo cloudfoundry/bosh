@@ -82,10 +82,5 @@ module Bosh::Dev
         end
       end
     end
-
-    def strip_heredoc(str)
-      indent = str.scan(/^[ \t]*(?=\S)/).min.size
-      str.gsub(/^[ \t]{#{indent}}/, '')
-    end
   end
 end
