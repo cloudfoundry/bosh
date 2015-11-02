@@ -385,7 +385,6 @@ module Bosh::Director
           'stemcell' => @stemcell_a.spec,
           'env' =>{},
           'packages' => {},
-          'configuration_hash' => nil,
           'dns_domain_name' => 'bosh',
           'persistent_disk' => 0,
         }

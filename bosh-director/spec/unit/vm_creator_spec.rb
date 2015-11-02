@@ -40,7 +40,7 @@ describe Bosh::Director::VmCreator do
       job,
       5,
       'started',
-      deployment_plan,
+      deployment,
       {},
       nil,
       logger

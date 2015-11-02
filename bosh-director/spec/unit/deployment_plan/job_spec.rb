@@ -499,12 +499,12 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 1, 'started', plan, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 1, 'started', deployment, {}, nil, logger)
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_job(job, 2, 'started', plan, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_job(job, 2, 'started', deployment, {}, nil, logger)
       instance2.bind_new_instance_model
-      instance3 = BD::DeploymentPlan::Instance.create_from_job(job, 3, 'started', plan, {}, nil, logger)
+      instance3 = BD::DeploymentPlan::Instance.create_from_job(job, 3, 'started', deployment, {}, nil, logger)
       instance3.bind_new_instance_model
 
       desired_instance = BD::DeploymentPlan::DesiredInstance.new

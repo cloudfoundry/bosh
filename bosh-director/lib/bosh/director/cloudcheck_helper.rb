@@ -103,18 +103,9 @@ module Bosh::Director
     private
 
     def create_instance_plan(instance_model, vm_env)
-      deployment_model = instance_model.deployment
-      deployment_plan_from_model = DeploymentPlan::Planner.new(
-        {name: deployment_model.name, properties: deployment_model.properties},
-        deployment_model.manifest,
-        deployment_model.cloud_config,
-        deployment_model,
-        {'recreate' => true})
-
-      instance_spec = instance_model.spec
-      vm_type = DeploymentPlan::VmType.new(instance_spec['vm_type'])
+      vm_type = DeploymentPlan::VmType.new(instance_model.spec['vm_type'])
       env = DeploymentPlan::Env.new(vm_env)
-      stemcell = DeploymentPlan::Stemcell.new(instance_spec['stemcell'])
+      stemcell = DeploymentPlan::Stemcell.new(instance_model.spec['stemcell'])
       stemcell.add_stemcell_model
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
 
@@ -126,8 +117,8 @@ module Bosh::Director
         stemcell,
         env,
         false,
-        deployment_plan_from_model,
-        instance_spec,
+        instance_model.deployment,
+        instance_model.spec,
         availability_zone,
         @logger
       )

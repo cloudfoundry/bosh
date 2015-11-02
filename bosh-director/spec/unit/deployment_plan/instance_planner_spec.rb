@@ -36,7 +36,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   end
 
   def make_instance(idx=0)
-    instance = BD::DeploymentPlan::Instance.create_from_job(job, idx, 'started', deployment, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(job, idx, 'started', deployment_model, {}, az, logger)
     instance.bind_new_instance_model
     instance
   end
@@ -328,7 +328,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name) }
 
       before do
-        allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { existing_instance }
         BD::Models::IpAddress.make(address: ip_to_i('192.168.1.5'), network_name: 'fake-network', instance: existing_instance_model)
 
         allow(deployment).to receive(:network).with('fake-network') { manual_network }
@@ -337,7 +336,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, true, logger)
         allow(deployment).to receive(:ip_provider) { ip_provider  }
         fake_job
-        existing_instance.bind_existing_reservations({})
       end
 
       let(:manual_network) { BD::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }

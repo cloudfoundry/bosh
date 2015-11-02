@@ -25,7 +25,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
   describe '#fetch_existing' do
     let(:existing_instance) do
-      existing_instance = Bosh::Director::Models::Instance.make(
+      Bosh::Director::Models::Instance.make(
         deployment_id: 'deployment-id',
         job: 'job-name',
         index: 1,
@@ -35,17 +35,14 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         availability_zone: 'az-name',
         bootstrap: false,
       )
-      existing_instance.add_ip_address(BD::Models::IpAddress.make)
-      existing_instance
     end
 
-    it 'returns an DeploymentPlan::Instance with a bound Models::Instance and bound network reservations' do
+    it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
       desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, plan)
       instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {})
 
       expect(instance.model).to eq(existing_instance)
       expect(instance.uuid).to eq(existing_instance.uuid)
-      expect(instance.existing_network_reservations.count).to eq(1)
       expect(instance.state).to eq(existing_instance.state)
     end
 
@@ -56,6 +53,39 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
         expect(instance.state).to eq(desired_instance.state)
         expect(instance.uuid).to eq(existing_instance.uuid)
+      end
+    end
+
+    describe 'binding existing reservations' do
+      let(:desired_instance) do
+        BD::DeploymentPlan::DesiredInstance.new(job, nil, plan)
+      end
+
+      context 'when instance has reservations in db' do
+        before do
+          existing_instance.add_ip_address(BD::Models::IpAddress.make(address: 123))
+        end
+
+        it 'is using reservation from database' do
+          instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {})
+          expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
+        end
+      end
+
+      context 'when instance does not have reservations in database' do
+        context 'when binding reservations with state' do
+          it 'creates reservations from state' do
+            instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
+          end
+        end
+
+        context 'when binding without state' do
+          it 'has no reservations' do
+            instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, nil)
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([])
+          end
+        end
       end
     end
   end

@@ -32,11 +32,9 @@ module Bosh::Director
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
 
-      attr_reader :deployment
-
       attr_reader :existing_network_reservations
 
-      def self.create_from_job(job, index, state, deployment, instance_state, availability_zone, logger)
+      def self.create_from_job(job, index, state, deployment_model, instance_state, availability_zone, logger)
         new(
           job.name,
           index,
@@ -45,7 +43,7 @@ module Bosh::Director
           job.stemcell,
           job.env,
           job.compilation?,
-          deployment,
+          deployment_model,
           instance_state,
           availability_zone,
           logger
@@ -63,7 +61,7 @@ module Bosh::Director
         stemcell,
         env,
         compilation,
-        deployment,
+        deployment_model,
         instance_state,
         availability_zone,
         logger
@@ -71,7 +69,7 @@ module Bosh::Director
         @index = index
         @availability_zone = availability_zone
         @logger = logger
-        @deployment = deployment
+        @deployment_model = deployment_model
         @job_name = job_name
         @name = "#{job_name}/#{@index}"
         @vm_type = vm_type
@@ -123,7 +121,7 @@ module Bosh::Director
 
       def bind_new_instance_model
         @model = Models::Instance.create({
-            deployment_id: deployment.model.id,
+            deployment_id: @deployment_model.id,
             job: @job_name,
             index: index,
             state: @state,
@@ -154,7 +152,7 @@ module Bosh::Director
       end
 
       def deployment_model
-        @deployment.model
+        @deployment_model
       end
 
       # Updates this domain object to reflect an existing instance running on an existing vm
@@ -166,13 +164,8 @@ module Bosh::Director
         @vm.model = existing_instance_model.vm
       end
 
-      def bind_existing_reservations(state)
-        @existing_network_reservations = InstanceNetworkReservations.create_from_db(self, @deployment, @logger)
-        if @existing_network_reservations.none? && state
-          # This is for backwards compatibility when we did not store
-          # network reservations in DB and constructed them from instance state
-          @existing_network_reservations = InstanceNetworkReservations.create_from_state(self, state, @deployment, @logger)
-        end
+      def bind_existing_reservations(reservations)
+        @existing_network_reservations = reservations
       end
 
       def apply_vm_state(spec)
@@ -211,7 +204,7 @@ module Bosh::Director
       ##
       # @return [String] dns record name
       def dns_record_name(hostname, network_name)
-        [hostname, job.canonical_name, Canonicalizer.canonicalize(network_name), Canonicalizer.canonicalize(deployment.name), @dns_manager.dns_domain_name].join('.')
+        [hostname, job.canonical_name, Canonicalizer.canonicalize(network_name), Canonicalizer.canonicalize(@deployment_model.name), @dns_manager.dns_domain_name].join('.')
       end
 
       def cloud_properties_changed?
@@ -325,12 +318,12 @@ module Bosh::Director
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
-        if @deployment.model.nil?
+        if @deployment_model.nil?
           raise DirectorError, 'Deployment model is not bound'
         end
 
         conditions = {
-          deployment_id: @deployment.model.id,
+          deployment_id: @deployment_model.id,
           job: @job_name,
           index: @index
         }

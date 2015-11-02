@@ -120,7 +120,6 @@ module Bosh::Director
           'stemcell' => {'name' => 'stemcell-name'},
           'env' => { 'compilation' => 'environment'},
           'packages' => {},
-          'configuration_hash' => nil,
           'dns_domain_name' => 'bosh',
           'persistent_disk' => 0,
         }

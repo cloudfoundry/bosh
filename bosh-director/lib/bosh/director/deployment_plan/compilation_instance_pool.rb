@@ -71,7 +71,7 @@ module Bosh::Director
 
         @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan.compilation.network_name)
         availability_zone = @deployment_plan.compilation.availability_zone
-        instance = Instance.create_from_job(@compile_job, 0, 'started', @deployment_plan, {}, availability_zone, @logger)
+        instance = Instance.create_from_job(@compile_job, 0, 'started', @deployment_plan.model, {}, availability_zone, @logger)
         instance.bind_new_instance_model
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
