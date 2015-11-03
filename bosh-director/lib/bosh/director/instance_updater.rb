@@ -55,8 +55,6 @@ module Bosh::Director
         return
       end
 
-      only_trusted_certs_changed = trusted_certs_change_only?(instance_plan) # figure this out before we start changing things
-
       Preparer.new(instance_plan, agent(instance), @logger).prepare
 
       unless instance_plan.new?
@@ -73,10 +71,12 @@ module Bosh::Director
         return
       end
 
-      unless try_to_update_in_place(instance_plan)
+      recreated = false
+      if needs_recreate?(instance_plan)
         @logger.debug('Failed to update in place. Recreating VM')
         @disk_manager.unmount_disk_for(instance_plan)
         @vm_recreator.recreate_vm(instance_plan, nil)
+        recreated = true
       end
 
       release_obsolete_ips(instance_plan)
@@ -84,9 +84,12 @@ module Bosh::Director
       update_dns(instance_plan)
       @disk_manager.update_persistent_disk(instance_plan, @vm_recreator)
 
-      if only_trusted_certs_changed
-        @logger.debug('Skipping apply, trusted certs change only')
-      else
+      unless recreated
+        if instance.trusted_certs_changed?
+          @logger.debug('Updating trusted certs')
+          instance.update_trusted_certs
+        end
+
         apply_state(instance_plan)
       end
 
@@ -215,30 +218,25 @@ module Bosh::Director
       end
     end
 
-    def try_to_update_in_place(instance_plan)
+    def needs_recreate?(instance_plan)
       instance = instance_plan.instance
 
       if instance_plan.needs_shutting_down?
-        @logger.debug('Not updating VM in place. VM needs to be shutdown before it can be updated.')
-        return false
+        @logger.debug('VM needs to be shutdown before it can be updated.')
+        return true
       end
 
       if instance.cloud_properties_changed?
-        @logger.debug("Cloud Properties have changed. Can't update VM in place")
-        return false
+        @logger.debug('Cloud Properties have changed. Recreating VM')
+        return true
       end
 
       if instance_plan.networks_changed?
-        @logger.debug("Networks have changed. Can't update VM in place")
-        return false
+        @logger.debug('Networks have changed. Recreating VM')
+        return true
       end
 
-      if instance.trusted_certs_changed?
-        @logger.debug('Updating trusted certs in place')
-        instance.update_trusted_certs
-      end
-
-      true
+      false
     end
 
     def agent(instance)
