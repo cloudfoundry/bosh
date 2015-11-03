@@ -45,44 +45,49 @@ module Bosh::Cli
 
       context 'by default' do
         it 'only lists a table of most recent public stemcells' do
+          expect(ui).to receive(:say) do |table|
+            expect(table).to match_output %(
+              +----------------+
+              | Name           |
+              +----------------+
+              | foobar-456.tgz |
+              +----------------+
+            )
+          end
           public_stemcell_presenter.list({})
-
-          expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+----------------+
-| Name           |
-+----------------+
-| foobar-456.tgz |
-+----------------+
-          TABLE
         end
       end
 
       context 'when :all is specified' do
         it 'lists  a table of all public stemcells' do
-          public_stemcell_presenter.list(all: true)
+          expect(ui).to receive(:say) do |table|
+            expect(table).to match_output %(
+              +----------------+
+              | Name           |
+              +----------------+
+              | foobar-456.tgz |
+              | foobar-123.tgz |
+              +----------------+
+            )
+          end
 
-          expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+----------------+
-| Name           |
-+----------------+
-| foobar-456.tgz |
-| foobar-123.tgz |
-+----------------+
-          TABLE
+          public_stemcell_presenter.list(all: true)
         end
       end
 
       context 'when :full is specified' do
         it 'adds a column with the url to each public stemcell' do
-          public_stemcell_presenter.list(full: true)
+          expect(ui).to receive(:say) do |table|
+            expect(table).to match_output %(
+              +----------------+----------------------------------------------------------------+
+              | Name           | Url                                                            |
+              +----------------+----------------------------------------------------------------+
+              | foobar-456.tgz | https://bosh-jenkins-artifacts.s3.amazonaws.com/foobar-456.tgz |
+              +----------------+----------------------------------------------------------------+
+            )
+          end
 
-          expect(ui).to have_received(:say).with(<<-TABLE.strip)
-+----------------+----------------------------------------------------------------+
-| Name           | Url                                                            |
-+----------------+----------------------------------------------------------------+
-| foobar-456.tgz | https://bosh-jenkins-artifacts.s3.amazonaws.com/foobar-456.tgz |
-+----------------+----------------------------------------------------------------+
-          TABLE
+          public_stemcell_presenter.list(full: true)
         end
       end
     end

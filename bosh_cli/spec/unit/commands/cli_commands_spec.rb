@@ -263,7 +263,7 @@ describe Bosh::Cli::Command::Base do
           allow(@director).to receive_messages(list_releases: [release])
 
           expect(@cmd).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+--------------------+
               | Name      | Versions           |
               +-----------+--------------------+
@@ -295,7 +295,7 @@ describe Bosh::Cli::Command::Base do
           allow(@director).to receive_messages(list_releases: [release])
 
           expect(@cmd).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+----------+-------------+
               | Name      | Versions | Commit Hash |
               +-----------+----------+-------------+
@@ -317,7 +317,7 @@ describe Bosh::Cli::Command::Base do
           allow(@director).to receive_messages(list_releases: [release])
 
           expect(@cmd).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+----------+-------------+-------+
               | Name      | Versions | Commit Hash | Jobs  |
               +-----------+----------+-------------+-------+

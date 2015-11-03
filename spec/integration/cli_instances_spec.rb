@@ -9,16 +9,15 @@ describe 'cli: instances', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash)
 
     output = bosh_runner.run('instances')
-    expect(output).to include(<<INSTANCES)
-+----------+---------+---------------+-------------+
-| Instance | State   | Resource Pool | IPs         |
-+----------+---------+---------------+-------------+
-| foobar/0 | running | a             | 192.168.1.5 |
-| foobar/1 | running | a             | 192.168.1.6 |
-| foobar/2 | running | a             | 192.168.1.7 |
-+----------+---------+---------------+-------------+
-INSTANCES
-
+    expect(output).to match_output %(
+      +----------+---------+---------------+-------------+
+      | Instance | State   | Resource Pool | IPs         |
+      +----------+---------+---------------+-------------+
+      | foobar/0 | running | a             | 192.168.1.5 |
+      | foobar/1 | running | a             | 192.168.1.6 |
+      | foobar/2 | running | a             | 192.168.1.7 |
+      +----------+---------+---------------+-------------+
+    )
   end
 
   it 'should return instances --vitals' do
@@ -43,27 +42,26 @@ INSTANCES
     it 'displays instance processes' do
       deploy_from_scratch
       output = bosh_runner.run('instances --ps')
-      expect(output).to include(<<INSTANCES)
-+-------------+---------+---------------+-------------+
-| Instance    | State   | Resource Pool | IPs         |
-+-------------+---------+---------------+-------------+
-| foobar/0    | running | a             | 192.168.1.5 |
-|   process-1 | running |               |             |
-|   process-2 | running |               |             |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-| foobar/1    | running | a             | 192.168.1.6 |
-|   process-1 | running |               |             |
-|   process-2 | running |               |             |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-| foobar/2    | running | a             | 192.168.1.7 |
-|   process-1 | running |               |             |
-|   process-2 | running |               |             |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-INSTANCES
-
+      expect(output).to match_output %(
+        +-------------+---------+---------------+-------------+
+        | Instance    | State   | Resource Pool | IPs         |
+        +-------------+---------+---------------+-------------+
+        | foobar/0    | running | a             | 192.168.1.5 |
+        |   process-1 | running |               |             |
+        |   process-2 | running |               |             |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+        | foobar/1    | running | a             | 192.168.1.6 |
+        |   process-1 | running |               |             |
+        |   process-2 | running |               |             |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+        | foobar/2    | running | a             | 192.168.1.7 |
+        |   process-1 | running |               |             |
+        |   process-2 | running |               |             |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+      )
     end
   end
 
@@ -79,20 +77,20 @@ INSTANCES
     it 'filters out non-failing processes' do
       deploy_from_scratch
       instances_ps = bosh_runner.run('instances --ps --failing')
-      expect(instances_ps).to include(<<INSTANCES)
-+-------------+---------+---------------+-------------+
-| Instance    | State   | Resource Pool | IPs         |
-+-------------+---------+---------------+-------------+
-| foobar/0    | running | a             | 192.168.1.5 |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-| foobar/1    | running | a             | 192.168.1.6 |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-| foobar/2    | running | a             | 192.168.1.7 |
-|   process-3 | failing |               |             |
-+-------------+---------+---------------+-------------+
-INSTANCES
+      expect(instances_ps).to match_output %(
+        +-------------+---------+---------------+-------------+
+        | Instance    | State   | Resource Pool | IPs         |
+        +-------------+---------+---------------+-------------+
+        | foobar/0    | running | a             | 192.168.1.5 |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+        | foobar/1    | running | a             | 192.168.1.6 |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+        | foobar/2    | running | a             | 192.168.1.7 |
+        |   process-3 | failing |               |             |
+        +-------------+---------+---------------+-------------+
+      )
     end
   end
 end

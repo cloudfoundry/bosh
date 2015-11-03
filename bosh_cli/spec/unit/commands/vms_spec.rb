@@ -99,7 +99,7 @@ describe Bosh::Cli::Command::Vms do
       context 'default' do
         it 'show basic vms information' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+---------+---------------+-------------+
               | Job/index | State   | Resource Pool | IPs         |
               +-----------+---------+---------------+-------------+
@@ -118,7 +118,7 @@ describe Bosh::Cli::Command::Vms do
 
         it 'shows vm details' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+---------+---------------+-------------+------+----------+--------------+
               | Job/index | State   | Resource Pool | IPs         | CID  | Agent ID | Resurrection |
               +-----------+---------+---------------+-------------+------+----------+--------------+
@@ -137,7 +137,7 @@ describe Bosh::Cli::Command::Vms do
 
         it 'shows DNS A records' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+---------+---------------+-------------+-----------------------------------------+
               | Job/index | State   | Resource Pool | IPs         | DNS A records                           |
               +-----------+---------+---------------+-------------+-----------------------------------------+
@@ -156,7 +156,7 @@ describe Bosh::Cli::Command::Vms do
 
         it 'shows the vm vitals' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
               | Job/index | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
               |           |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
@@ -177,7 +177,7 @@ describe Bosh::Cli::Command::Vms do
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
               | Job/index | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
               |           |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |

@@ -29,10 +29,9 @@ describe 'finalize release', type: :integration do
       it 'prints release summary' do
         Dir.chdir(ClientSandbox.test_release_dir) do
           out = bosh_runner.run_in_current_dir("finalize release #{spec_asset('dummy-release.tgz')}")
-          expect(format_output(out).index(format_output(<<-OUT))).to_not be_nil
+          expect(out).to match_output %(
             Release summary
             ---------------
-
             Packages
             +---------------+---------+-------+
             | Name          | Version | Notes |
@@ -54,7 +53,7 @@ describe 'finalize release', type: :integration do
 
             Release name: dummy
             Release version: 1
-          OUT
+          )
         end
       end
 

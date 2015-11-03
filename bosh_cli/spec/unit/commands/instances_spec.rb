@@ -178,7 +178,7 @@ describe Bosh::Cli::Command::Instances do
       context 'default' do
         it 'show basic vms information' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+
               | Instance | State   | Resource Pool | IPs         |
               +----------+---------+---------------+-------------+
@@ -198,7 +198,7 @@ describe Bosh::Cli::Command::Instances do
           vm2_state['job_state'] = 'failing'
 
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+
               | Instance | State   | Resource Pool | IPs         |
               +----------+---------+---------------+-------------+
@@ -225,7 +225,7 @@ describe Bosh::Cli::Command::Instances do
 
         it 'shows vm details with active disk' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
               | Instance | State   | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
@@ -243,7 +243,7 @@ describe Bosh::Cli::Command::Instances do
         it 'shows vm details without active disk' do
           vm1_state['disk_cid'] = nil
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
               | Instance | State   | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
@@ -261,7 +261,7 @@ describe Bosh::Cli::Command::Instances do
         it 'does not show disk cid when response does not contain disk cid info' do
           vm1_state.delete('disk_cid')
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+---------+----------+--------------+
               | Instance | State   | Resource Pool | IPs         | VM CID  | Agent ID | Resurrection |
               +----------+---------+---------------+-------------+---------+----------+--------------+
@@ -281,7 +281,7 @@ describe Bosh::Cli::Command::Instances do
           vm2_state['job_state'] = 'failing'
 
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
               | Instance | State   | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
               +----------+---------+---------------+-------------+---------+-----------+----------+--------------+
@@ -301,7 +301,7 @@ describe Bosh::Cli::Command::Instances do
 
         it 'shows DNS A records' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+------------------------------------------+
               | Instance | State   | Resource Pool | IPs         | DNS A records                            |
               +----------+---------+---------------+-------------+------------------------------------------+
@@ -322,7 +322,7 @@ describe Bosh::Cli::Command::Instances do
 
         it 'shows the instance vitals' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
               | Instance | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
               |          |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
@@ -345,7 +345,7 @@ describe Bosh::Cli::Command::Instances do
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
               | Instance | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
               |          |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
@@ -365,7 +365,7 @@ describe Bosh::Cli::Command::Instances do
 
         it 'shows the details of each instance\'s processes' do
           expect(command).to receive(:say) do |table|
-            expect(table.to_s).to match_table %(
+            expect(table.to_s).to match_output %(
               +-------------+---------+---------------+-------------+
               | Instance    | State   | Resource Pool | IPs         |
               +-------------+---------+---------------+-------------+
@@ -397,7 +397,7 @@ describe Bosh::Cli::Command::Instances do
             vm2_state['job_state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
-              expect(table.to_s).to match_table %(
+              expect(table.to_s).to match_output %(
                 +----------+---------+---------------+-------------+
                 | Instance | State   | Resource Pool | IPs         |
                 +----------+---------+---------------+-------------+
@@ -414,7 +414,7 @@ describe Bosh::Cli::Command::Instances do
             vm2_state['job_state'] = 'vaporized'
 
             expect(command).to receive(:say) do |table|
-              expect(table.to_s).to match_table %(
+              expect(table.to_s).to match_output %(
                 +----------+-----------+---------------+-------------+
                 | Instance | State     | Resource Pool | IPs         |
                 +----------+-----------+---------------+-------------+
@@ -431,7 +431,7 @@ describe Bosh::Cli::Command::Instances do
             vm2_state['processes'][0]['state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
-              expect(table.to_s).to match_table %(
+              expect(table.to_s).to match_output %(
                 +-------------+---------+---------------+-------------+
                 | Instance    | State   | Resource Pool | IPs         |
                 +-------------+---------+---------------+-------------+
@@ -450,7 +450,7 @@ describe Bosh::Cli::Command::Instances do
             vm2_state['processes'][0]['state'] = 'failing'
 
             expect(command).to receive(:say) do |table|
-              expect(table.to_s).to match_table %(
+              expect(table.to_s).to match_output %(
                 +-------------+---------+---------------+-------------+
                 | Instance    | State   | Resource Pool | IPs         |
                 +-------------+---------+---------------+-------------+
@@ -468,7 +468,7 @@ describe Bosh::Cli::Command::Instances do
             vm2_state['processes'][0]['state'] = 'exploded'
 
             expect(command).to receive(:say) do |table|
-              expect(table.to_s).to match_table %(
+              expect(table.to_s).to match_output %(
                 +-------------+----------+---------------+-------------+
                 | Instance    | State    | Resource Pool | IPs         |
                 +-------------+----------+---------------+-------------+

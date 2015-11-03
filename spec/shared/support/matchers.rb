@@ -1,10 +1,10 @@
 module Support
-  RSpec::Matchers.define :match_table do |expected|
+  RSpec::Matchers.define :match_output do |expected|
     match do |actual|
-      @actual = actual
+      @actual = actual.strip
       @expected = strip_heredoc(expected).strip
 
-      @actual == @expected
+      @actual.include? @expected
     end
 
     failure_message do |actual|

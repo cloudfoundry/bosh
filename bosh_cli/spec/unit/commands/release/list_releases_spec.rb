@@ -11,6 +11,8 @@ module Bosh::Cli::Command::Release
       )
     end
 
+    let(:actual) { Bosh::Cli::Config.output.string }
+
     before do
       allow(command).to receive(:director).and_return(director)
       allow(command).to receive(:show_current_state)
@@ -51,20 +53,19 @@ module Bosh::Cli::Command::Release
 
       it 'lists all releases' do
         command.list
-        expect_output(<<-OUT)
+        expect(actual).to match_output %(
+          +--------------+----------+--------------+
+          | Name         | Versions | Commit Hash  |
+          +--------------+----------+--------------+
+          | bosh-release | 0+dev.1  | fake-hash-1  |
+          |              | 0+dev.2* | fake-hash-2  |
+          |              | 0+dev.3  | fake-hash-3+ |
+          +--------------+----------+--------------+
+          (*) Currently deployed
+          (+) Uncommitted changes
 
-        +--------------+----------+--------------+
-        | Name         | Versions | Commit Hash  |
-        +--------------+----------+--------------+
-        | bosh-release | 0+dev.1  | fake-hash-1  |
-        |              | 0+dev.2* | fake-hash-2  |
-        |              | 0+dev.3  | fake-hash-3+ |
-        +--------------+----------+--------------+
-        (*) Currently deployed
-        (+) Uncommitted changes
-
-        Releases total: 1
-        OUT
+          Releases total: 1
+        )
       end
 
       context 'when there is a deployed release' do
@@ -86,17 +87,16 @@ module Bosh::Cli::Command::Release
 
         it 'prints Currently deployed' do
           command.list
-          expect_output(<<-OUT)
+          expect(actual).to match_output %(
+            +--------------+----------+-------------+
+            | Name         | Versions | Commit Hash |
+            +--------------+----------+-------------+
+            | bosh-release | 0+dev.3* | fake-hash-3 |
+            +--------------+----------+-------------+
+            (*) Currently deployed
 
-          +--------------+----------+-------------+
-          | Name         | Versions | Commit Hash |
-          +--------------+----------+-------------+
-          | bosh-release | 0+dev.3* | fake-hash-3 |
-          +--------------+----------+-------------+
-          (*) Currently deployed
-
-          Releases total: 1
-          OUT
+            Releases total: 1
+          )
         end
       end
 
@@ -119,17 +119,16 @@ module Bosh::Cli::Command::Release
 
         it 'prints Uncommited changes' do
           command.list
-          expect_output(<<-OUT)
+          expect(actual).to match_output %(
+            +--------------+----------+--------------+
+            | Name         | Versions | Commit Hash  |
+            +--------------+----------+--------------+
+            | bosh-release | 0+dev.3  | fake-hash-3+ |
+            +--------------+----------+--------------+
+            (+) Uncommitted changes
 
-          +--------------+----------+--------------+
-          | Name         | Versions | Commit Hash  |
-          +--------------+----------+--------------+
-          | bosh-release | 0+dev.3  | fake-hash-3+ |
-          +--------------+----------+--------------+
-          (+) Uncommitted changes
-
-          Releases total: 1
-          OUT
+            Releases total: 1
+          )
         end
       end
 
@@ -145,24 +144,17 @@ module Bosh::Cli::Command::Release
 
         it 'prints Uncommited changes' do
           command.list
-          expect_output(<<-OUT)
+          expect(actual).to match_output %(
+            +--------------+----------+-------------+
+            | Name         | Versions | Commit Hash |
+            +--------------+----------+-------------+
+            | bosh-release | unknown  | unknown     |
+            +--------------+----------+-------------+
 
-          +--------------+----------+-------------+
-          | Name         | Versions | Commit Hash |
-          +--------------+----------+-------------+
-          | bosh-release | unknown  | unknown     |
-          +--------------+----------+-------------+
-
-          Releases total: 1
-          OUT
+            Releases total: 1
+          )
         end
-      end      
-    end
-
-    def expect_output(expected_output)
-      actual = Bosh::Cli::Config.output.string
-      indent = expected_output.scan(/^[ \t]*(?=\S)/).min.size || 0
-      expect(actual).to eq(expected_output.gsub(/^[ \t]{#{indent}}/, ''))
+      end
     end
   end
 end
