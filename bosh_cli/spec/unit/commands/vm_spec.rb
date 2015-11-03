@@ -69,7 +69,7 @@ module Bosh::Cli
           end
 
           it 'allows the user to omit the index' do
-            expect(director).to receive(:change_vm_resurrection).with(deployment, 'job1', 0, false)
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'job1', '0', false)
             command.resurrection_state('job1', 'on')
           end
         end
@@ -95,7 +95,7 @@ module Bosh::Cli
 
           describe 'changing the state' do
             it 'should toggle the resurrection state to true' do
-              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', 1, false).exactly(4).times
+              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '1', false).exactly(4).times
               command.resurrection_state('dea', '1', 'on')
               command.resurrection_state('dea/1', 'enable')
               command.resurrection_state('dea', '1', 'yes')
@@ -103,7 +103,7 @@ module Bosh::Cli
             end
 
             it 'should toggle the resurrection state to false' do
-              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', 3, true).exactly(4).times
+              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '3', true).exactly(4).times
               command.resurrection_state('dea', '3', 'disable')
               command.resurrection_state('dea/3', 'off')
               command.resurrection_state('dea', '3', 'no')

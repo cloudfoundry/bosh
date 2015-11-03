@@ -15,12 +15,14 @@ jobs:
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true }
       - { get: bosh-src, trigger: true }
 
   - name: unit-1.9
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true, passed: [start-job] }
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
@@ -33,6 +35,7 @@ jobs:
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true, passed: [start-job] }
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
@@ -45,6 +48,7 @@ jobs:
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true, passed: [start-job] }
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
@@ -61,6 +65,7 @@ jobs:
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true, passed: [start-job] }
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
@@ -77,6 +82,7 @@ jobs:
     public: true
     serial: true
     plan:
+      - { get: interval-trigger, trigger: true, passed: [start-job] }
       - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
@@ -93,6 +99,7 @@ jobs:
     public: true
     serial: true
     plan:
+    - { get: interval-trigger, trigger: true, passed: [start-job] }
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - get: bosh-load-tests
 
@@ -116,3 +123,10 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests
       branch: master
+
+  - name: interval-trigger
+    type: time
+    source:
+      start: 18:00 -0800
+      stop: 8:00 -0800
+      interval: 1h

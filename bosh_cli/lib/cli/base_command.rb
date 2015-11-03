@@ -260,11 +260,12 @@ module Bosh::Cli
       end
     end
 
-    def valid_index_for(manifest_hash, job, index, options = {})
-      index = '0' if job_unique_in_deployment?(manifest_hash, job)
+    def valid_index_for(manifest_hash, job, index)
+      if index.nil? && job_unique_in_deployment?(manifest_hash, job)
+        index = '0'
+      end
       err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
-      index = index.to_i if options[:integer_index]
-      index
+      index.to_s
     end
 
     def normalize_url(url)

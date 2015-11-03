@@ -260,7 +260,7 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
-        def setup_ssh(deployment_name, job, index, user,
+        def setup_ssh(deployment_name, job, id, user,
           public_key, password, options = {})
           options = options.dup
 
@@ -271,7 +271,8 @@ module Bosh
             'deployment_name' => deployment_name,
             'target'          => {
               'job'     => job,
-              'indexes' => [index].compact
+              'indexes' => [id].compact, # for backwards compatibility with old director
+              'ids' => [id].compact,
             },
             'params'          => {
               'user'       => user,
@@ -286,7 +287,7 @@ module Bosh
           request_and_track(:post, url, options)
         end
 
-        def cleanup_ssh(deployment_name, job, user_regex, indexes, options = {})
+        def cleanup_ssh(deployment_name, job, user_regex, id, options = {})
           options = options.dup
 
           url = "/deployments/#{deployment_name}/ssh"
@@ -296,7 +297,8 @@ module Bosh
             'deployment_name' => deployment_name,
             'target'          => {
               'job'     => job,
-              'indexes' => (indexes || []).compact
+              'indexes' => (id || []).compact,
+              'ids' => (id || []).compact,
             },
             'params'          => { 'user_regex' => user_regex }
           }
