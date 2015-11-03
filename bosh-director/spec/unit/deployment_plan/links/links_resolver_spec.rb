@@ -21,7 +21,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'api-server',
           'templates' => [
-            {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links}
+            {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links},
+            {'name' => 'template-without-links', 'release' => 'fake-release'}
           ],
           'resource_pool' => 'fake-resource-pool',
           'instances' => 1,
@@ -118,6 +119,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     release_model.add_version(version)
 
     template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', requires: requires_links)
+    version.add_template(template_model)
+
+    template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links)

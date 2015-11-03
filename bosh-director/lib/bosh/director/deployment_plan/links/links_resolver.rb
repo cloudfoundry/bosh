@@ -54,7 +54,7 @@ module Bosh::Director
 
       def ensure_provided_links_are_used(job, template)
         return if job.link_paths.empty?
-        job.link_paths[template.name].each do |link_name, _|
+        job.link_paths[template.name].to_a.each do |link_name, _|
           unless template.required_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
               "Link '#{link_name}' is not required in job '#{job.name}'"
