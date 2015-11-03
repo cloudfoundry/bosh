@@ -262,7 +262,7 @@ module Bosh::Director
       #
       # @return [Boolean] true if the VM needs to be sent a new set of trusted certificates
       def trusted_certs_changed?
-        model_trusted_certs = @model.vm.trusted_certs_sha1
+        model_trusted_certs = @model.vm ? @model.vm.trusted_certs_sha1 : nil
         config_trusted_certs = Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
         changed = config_trusted_certs != model_trusted_certs
         log_changes(__method__, model_trusted_certs, config_trusted_certs) if changed

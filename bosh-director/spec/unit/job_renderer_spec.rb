@@ -24,7 +24,6 @@ module Bosh::Director
     let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
     describe '#render_job_instances' do
-      before { allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2]) }
       let(:instance_plan1) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
       let(:instance_plan2) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
 
@@ -33,7 +32,7 @@ module Bosh::Director
       it 'renders each jobs instance' do
         expect(renderer).to receive(:render_job_instance).with(instance_plan1)
         expect(renderer).to receive(:render_job_instance).with(instance_plan2)
-        renderer.render_job_instances(job)
+        renderer.render_job_instances([instance_plan1, instance_plan2])
       end
     end
 

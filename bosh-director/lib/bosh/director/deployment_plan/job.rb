@@ -294,9 +294,10 @@ module Bosh::Director
         @persistent_disk_type = DiskType.new(SecureRandom.uuid, disk_size, {})
       end
 
-      #FIXME: there has to be a better way to do this
       def instance_plans_with_missing_vms
-        needed_instance_plans.reject { |instance_plan| instance_plan.instance.vm_created? }
+        needed_instance_plans.reject do |instance_plan|
+          instance_plan.instance.vm_created? || instance_plan.instance.state == 'detached'
+        end
       end
 
       def add_resolved_link(link_name, link_spec)
