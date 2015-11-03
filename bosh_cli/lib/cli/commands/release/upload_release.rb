@@ -14,6 +14,7 @@ If --name & --version are provided, they will be used for checking if release ex
       option '--sha1 SHA1', 'SHA1 of the remote release'
       option '--name NAME', 'name of the release'
       option '--version VERSION', 'version of the release'
+      option '--fix', 'verify blobstore contents and replace with correct versions'
 
       def upload(release_file = nil)
         auth_required
@@ -23,7 +24,8 @@ If --name & --version are provided, they will be used for checking if release ex
         upload_options = {
           :rebase => options[:rebase],
           :repack => true,
-          :sha1 => options[:sha1]
+          :sha1 => options[:sha1],
+          :fix => options[:fix],
         }
 
         #only check release_dir if not compiled release tarball
@@ -43,14 +45,19 @@ If --name & --version are provided, they will be used for checking if release ex
           end
         end
 
-        if options[:name] && options[:version]
+        if !options[:fix] && options[:name] && options[:version]
+          say("Checking whether release #{options[:name]}/#{options[:version]} already exists...".make_green, '')
           director.list_releases.each do |release|
             if release['name'] == options[:name]
               release['release_versions'].each do |version|
-                return if version['version'] == options[:version]
+                if version['version'] == options[:version]
+                  say('YES'.make_yellow)
+                  return
+                end
               end
             end
           end
+          say('NO'.make_yellow)
         end
 
         if release_file =~ /^#{URI::regexp}$/
@@ -98,6 +105,7 @@ If --name & --version are provided, they will be used for checking if release ex
         # Trying to repack release by default
         repack = upload_options[:repack]
         rebase = upload_options[:rebase]
+        fix = upload_options[:fix]
 
         say("\nVerifying manifest...")
         tarball.validate_manifest
@@ -116,7 +124,7 @@ If --name & --version are provided, they will be used for checking if release ex
         Bosh::Common::Version::ReleaseVersion.parse(tarball.version) if new_director?
 
         begin
-          if repack
+          if repack && !fix
             if tarball.compiled_release?
               package_matches = match_remote_compiled_packages(tarball.manifest)
             else
@@ -125,7 +133,7 @@ If --name & --version are provided, they will be used for checking if release ex
 
             # if the director is an older version that doesn't support optimized unpack we
             # have to upload everything
-            if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack?
+            if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack? || upload_options[:fix]
               tarball.validate(:allow_sparse => true, :validate_manifest => false)
               err('Release is invalid, please fix, verify and upload again') unless tarball.valid?
             else
@@ -156,7 +164,7 @@ If --name & --version are provided, they will be used for checking if release ex
           report = 'Release uploaded'
         end
 
-        status, task_id = director.upload_release(tarball_path, {rebase: rebase})
+        status, task_id = director.upload_release(tarball_path, rebase: rebase, fix: fix)
         task_report(status, task_id, report)
       end
 
@@ -172,7 +180,8 @@ If --name & --version are provided, they will be used for checking if release ex
         status, task_id = director.upload_remote_release(
           release_location,
           rebase: upload_options[:rebase],
-          sha1: upload_options[:sha1]
+          sha1: upload_options[:sha1],
+          fix: upload_options[:fix]
         )
         task_report(status, task_id, report)
       end

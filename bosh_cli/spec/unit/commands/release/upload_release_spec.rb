@@ -253,6 +253,32 @@ module Bosh::Cli::Command::Release
             end
           end
 
+          context 'with --fix' do
+            before do
+              command.add_option(:fix, true)
+            end
+
+            it 'should upload the release archive along with fix option' do
+              expect(command).to receive(:upload_tarball)
+                .with(release_archive, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:fix => true))
+              command.upload(release_archive)
+            end
+
+            it 'should ignore --name and --version' do
+              allow(director).to receive(:list_releases).and_return([])
+              command.add_option(:name, 'dummy')
+              command.add_option(:version, 'dev+1')
+              expect(command).to receive(:upload_tarball)
+                .with(release_archive, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:fix => true))
+              expect(director).to_not receive(:list_releases)
+              command.upload(release_archive)
+            end
+          end
+
           context 'when release does not exist' do
             let(:tarball_path) { spec_asset('test_release.tgz') }
             let(:valid_release_tarball_path) { spec_asset('valid_release.tgz') }
@@ -398,7 +424,7 @@ module Bosh::Cli::Command::Release
           end
 
           context 'with options' do
-            it 'should upload the release' do
+            it 'should upload the release with --rebase specified' do
               expect(command).to receive(:upload_remote_release)
                 .with(release_location, hash_including(:rebase => true))
                 .and_call_original
@@ -408,6 +434,19 @@ module Bosh::Cli::Command::Release
               )
 
               command.add_option(:rebase, true)
+              command.upload(release_location)
+            end
+
+            it 'should upload the release with --fix specified' do
+              expect(command).to receive(:upload_remote_release)
+                .with(release_location, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:fix => true),
+              )
+
+              command.add_option(:fix, true)
               command.upload(release_location)
             end
           end
