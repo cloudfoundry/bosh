@@ -76,7 +76,7 @@ describe 'director_scheduler', type: :integration do
       expect(runner.run('backup backup.tgz')).to match(/Backup of BOSH director was put in/i)
 
       backup_file = Bosh::Spec::TarFileInspector.new("#{tmp_dir}/backup.tgz")
-      expect(backup_file.file_names).to match_array(%w(task_logs.tgz director_db.sql blobs.tgz))
+      expect(backup_file.file_names).to match_array(%w(director_db.sql))
       expect(backup_file.smallest_file_size).to be > 0
     end
   end
