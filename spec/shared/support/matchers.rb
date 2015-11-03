@@ -11,9 +11,9 @@ module Support
       differ = RSpec::Support::Differ.new
 
       message = []
-      message << "Expected table:"
+      message << "Expected output:"
       message << @expected
-      message << "Actual table:"
+      message << "Actual output:"
       message << @actual
       message << "Diff:"
       message << differ.diff_as_string(@actual, @expected).to_s.strip
