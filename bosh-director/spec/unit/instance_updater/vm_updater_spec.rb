@@ -426,6 +426,7 @@ module Bosh::Director
 
       context 'when vm creation succeeds' do
         before { allow(Bosh::Director::VmCreator).to receive(:create).and_return(vm_model) }
+        let(:vm_model) { Models::Vm.make(cid: 'vm-1')}
 
         it 'binds vm model to the instance' do
           expect(instance).to receive(:bind_to_vm_model).with(vm_model)
@@ -443,28 +444,25 @@ module Bosh::Director
           expect(vm_creator.create(nil)).to eq([vm_model, agent_client])
         end
 
+        it 'deletes the partially created VM' do
+          expect(AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client)
+          #can be TaskCancelled, RpcTimeout or RpcRemoteException
+          expect(agent_client).to receive(:wait_until_ready).and_raise('any_error')
+
+          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
+
+          expect {
+            vm_creator.create(nil)
+          }.to raise_error('any_error')
+
+          expect(Models::Vm.count).to eq(0)
+        end
+
         context 'when saving association between instance and the vm model fails' do
           before { allow(instance).to receive(:bind_to_vm_model).and_raise(error) }
           let(:error) { Exception.new }
 
           it 'raises association error after deleting created vm from the cloud and the database' do
-            vm_deleter = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmDeleter')
-
-            expect(InstanceUpdater::VmUpdater::VmDeleter).to receive(:new).
-              with(instance, vm_model, cloud, logger).
-              and_return(vm_deleter)
-
-            expect(vm_deleter).to receive(:delete).with(no_args)
-
-            expect { vm_creator.create(nil) }.to raise_error(error)
-          end
-        end
-
-        context 'when vm agent fails to respond' do
-          before { allow(agent_client).to receive(:wait_until_ready).and_raise(error) }
-          let(:error) { Exception.new }
-
-          it 'raises vm agent time out error after deleting created vm from the cloud and the database' do
             vm_deleter = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmDeleter')
 
             expect(InstanceUpdater::VmUpdater::VmDeleter).to receive(:new).
@@ -506,33 +504,35 @@ module Bosh::Director
           allow(vm_deleter).to receive(:delete)
         end
 
-        it 'should update the database with the new VM''s trusted certs' do
+        def self.it_should_not_update_db(method, exception)
+          it 'should not update the DB with the new certificates' do
+            expect(agent_client).to receive(method).and_raise(exception)
+
+            begin
+              vm_creator.create(nil)
+            rescue exception
+              # expected
+            end
+
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          end
+        end
+
+        it 'should update the database with the new VM' 's trusted certs' do
           vm_creator.create(nil)
           expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: vm_model.agent_id).count).to eq(1)
         end
 
-        it 'should not update the DB with the new certificates when the new vm fails to start' do
-          expect(agent_client).to receive(:wait_until_ready).and_raise(RpcTimeout)
-
-          begin
-            vm_creator.create(nil)
-          rescue RpcTimeout
-            # expected
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the new vm fails to start' do
+          it_should_not_update_db(:wait_until_ready, RpcTimeout)
         end
 
-        it 'should not update the DB with the new certificates when the update_settings method fails' do
-          expect(agent_client).to receive(:update_settings).and_raise(RpcTimeout)
+        context 'when task was cancelled' do
+          it_should_not_update_db(:wait_until_ready, TaskCancelled)
+        end
 
-          begin
-            vm_creator.create(nil)
-          rescue RpcTimeout
-            # expected
-          end
-
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        context 'when the update_settings method fails' do
+          it_should_not_update_db(:update_settings, RpcTimeout)
         end
       end
     end

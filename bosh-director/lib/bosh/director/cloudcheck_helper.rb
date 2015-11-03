@@ -51,6 +51,8 @@ module Bosh::Director
         agent_client(vm).wait_until_ready
       rescue Bosh::Director::RpcTimeout
         handler_error("Agent still unresponsive after reboot")
+      rescue Bosh::Director::TaskCancelled
+        handler_error("Task was cancelled")
       end
     end
 

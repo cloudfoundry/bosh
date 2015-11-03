@@ -222,33 +222,35 @@ module Bosh::Director
                                      ordered.and_return('new-vm-cid')
           end
 
-          it 'should update the database with the new VM''s trusted certs' do
+          def self.it_should_not_update_db(method, exception)
+            it 'should not update the DB with the new certificates' do
+              expect(fake_new_agent).to receive(method).and_raise(exception)
+
+              begin
+                test_problem_handler.apply_resolution(:recreate_vm)
+              rescue exception
+                # expected
+              end
+
+              expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+            end
+          end
+
+          it 'should update the database with the new VM' 's trusted certs' do
             test_problem_handler.apply_resolution(:recreate_vm)
             expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: 'agent-222').count).to eq(1)
           end
 
-          it 'should not update the DB with the new certificates when the new vm fails to start' do
-            expect(fake_new_agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
-
-            begin
-              test_problem_handler.apply_resolution(:recreate_vm)
-            rescue RpcTimeout
-              # expected
-            end
-
-            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          context 'when the new vm fails to start' do
+            it_should_not_update_db(:wait_until_ready, RpcTimeout)
           end
 
-          it 'should not update the DB with the new certificates when the update_settings method fails' do
-            expect(fake_new_agent).to receive(:update_settings).and_raise(RpcTimeout)
+          context 'when task was cancelled' do
+            it_should_not_update_db(:wait_until_ready, TaskCancelled)
+          end
 
-            begin
-              test_problem_handler.apply_resolution(:recreate_vm)
-            rescue RpcTimeout
-              # expected
-            end
-
-            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          context 'when the update_settings method fails' do
+            it_should_not_update_db(:update_settings, RpcTimeout)
           end
         end
       end
