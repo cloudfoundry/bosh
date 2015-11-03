@@ -55,9 +55,7 @@ describe 'vm state', type: :integration do
       first_manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
       set_deployment(manifest_hash: first_manifest_hash)
 
-      # this stop should do nothing, but right now bosh does a full deploy,
-      # which changes the instance IP
-      expect(bosh_runner.run('stop foobar 0 --hard --force')).to match %r{foobar/0 has been detached}
+      deploy_simple_manifest(manifest_hash: first_manifest_hash)
       expect(director.vms('simple').size).to eq(0)
 
       second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
