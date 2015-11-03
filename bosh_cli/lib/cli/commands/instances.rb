@@ -72,11 +72,15 @@ module Bosh::Cli::Command
           if options[:failing]
             if options[:ps]
               instance['processes'].keep_if { |p| p['state'] != 'running' }
-              instance_count -= 1
-              next if instance['processes'].size == 0 && instance['job_state'] == 'running'
+              if instance['processes'].size == 0 && instance['job_state'] == 'running'
+                instance_count -= 1
+                next
+              end
             else
-              instance_count -= 1
-              next if instance['job_state'] == 'running'
+              if instance['job_state'] == 'running'
+                instance_count -= 1
+                next
+              end
             end
           end
 
