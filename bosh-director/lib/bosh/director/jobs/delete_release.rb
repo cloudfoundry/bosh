@@ -18,10 +18,11 @@ module Bosh::Director
         @version = options['version']
 
         compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger, event_log)
-        @package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
-        @template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
+        template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        @release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger)
         @release_version_deleter =
-          Helpers::ReleaseVersionDeleter.new(@package_deleter, @template_deleter, @force, logger, event_log)
+          Helpers::ReleaseVersionDeleter.new(@release_deleter, package_deleter, template_deleter, @force, logger, event_log)
         @release_manager = Api::ReleaseManager.new
       end
 
@@ -34,23 +35,8 @@ module Bosh::Director
           logger.info("Found release: #{release.name}")
 
           if @version
-            logger.info("Looking up release version `#{release.name}/#{@version}'")
-            release_version = @release_manager.find_version(release, @version)
-            # found version may be different than the requested version, due to version formatting
-            logger.info("Found release version: `#{release.name}/#{release_version.version}'")
-            @release_version_deleter.delete(release_version, release)
+            delete_release_version(release)
           else
-            logger.info('Checking for any deployments still using the release')
-            deployments = release.versions.map { |version|
-              version.deployments
-            }.flatten.uniq
-
-            unless deployments.empty?
-              names = deployments.map { |d| d.name }.join(', ')
-              raise ReleaseInUse,
-                "Release `#{release.name}' is still in use by: #{names}"
-            end
-
             delete_release(release)
           end
         end
@@ -63,32 +49,28 @@ module Bosh::Director
         "/release/#{@name}"
       end
 
+      private
+
       def delete_release(release)
-        event_log.begin_stage('Deleting packages', release.packages.count)
-        release.packages.each do |package|
-          track_and_log("#{package.name}/#{package.version}") do
-            @errors += @package_deleter.delete(package, @force)
-          end
+        logger.info('Checking for any deployments still using the release')
+        deployments = release.versions.map { |version|
+          version.deployments
+        }.flatten.uniq
+
+        unless deployments.empty?
+          names = deployments.map { |d| d.name }.join(', ')
+          raise ReleaseInUse,
+            "Release `#{release.name}' is still in use by: #{names}"
         end
+        @errors += @release_deleter.delete(release, @force)
+      end
 
-        event_log.begin_stage('Deleting jobs', release.templates.count)
-        release.templates.each do |template|
-          track_and_log("#{template.name}/#{template.version}") do
-            @errors += @template_deleter.delete(template, @force)
-          end
-        end
-
-        if @errors.empty? || @force
-          event_log.begin_stage('Deleting release versions', release.versions.count)
-
-          release.versions.each do |release_version|
-            track_and_log("#{release.name}/#{release_version.version}") do
-              release_version.destroy
-            end
-          end
-
-          release.destroy
-        end
+      def delete_release_version(release)
+        logger.info("Looking up release version `#{release.name}/#{@version}'")
+        release_version = @release_manager.find_version(release, @version)
+        # found version may be different than the requested version, due to version formatting
+        logger.info("Found release version: `#{release.name}/#{release_version.version}'")
+        @release_version_deleter.delete(release_version, release)
       end
     end
   end

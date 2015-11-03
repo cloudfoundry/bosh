@@ -114,7 +114,11 @@ module Bosh::Director
         expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        job.delete_release(release)
+
+        allow(job).to receive(:with_release_lock).
+            with('test_release', timeout: 10).and_yield
+
+        job.perform
 
         expect(job.instance_eval { @errors }).to be_empty
 
@@ -131,7 +135,11 @@ module Bosh::Director
         expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        job.delete_release(release)
+
+        allow(job).to receive(:with_release_lock).
+            with('test_release', timeout: 10).and_yield
+
+        expect { job.perform }.to raise_error(ReleaseDeleteFailed, "Can't delete release: bad")
 
         errors = job.instance_eval { @errors }
         expect(errors.length).to eql(1)
@@ -150,7 +158,9 @@ module Bosh::Director
         expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', 'force' => true, blobstore: blobstore)
-        job.delete_release(release)
+        allow(job).to receive(:with_release_lock).
+            with('test_release', timeout: 10).and_yield
+        expect { job.perform }.to raise_error(ReleaseDeleteFailed, "Can't delete release: bad")
 
         errors = job.instance_eval { @errors }
         expect(errors.length).to eql(1)
@@ -162,7 +172,6 @@ module Bosh::Director
         expect(Models::Template[@template.id]).to be_nil
         expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
       end
-
     end
 
     describe 'delete release version' do
