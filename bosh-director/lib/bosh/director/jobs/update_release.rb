@@ -492,7 +492,6 @@ module Bosh::Director
         if @fix
           if package.blobstore_id != nil
             logger.info("Verifying package #{desc} with blobstore_id: #{package.blobstore_id}")
-            return false if BlobUtil.verify_blob(package.blobstore_id, package.sha1)
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
             return true
@@ -502,7 +501,7 @@ module Bosh::Director
           if existing_blob
             pkg = Models::Package.where(blobstore_id: existing_blob).first
             logger.info("Verifying package #{desc} with blobstore_id: #{existing_blob}")
-            fix_package(pkg, package_tgz) unless BlobUtil.verify_blob(existing_blob, sha1)
+            fix_package(pkg, package_tgz)
             package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
             return true
           end

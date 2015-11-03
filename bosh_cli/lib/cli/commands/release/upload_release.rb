@@ -133,7 +133,7 @@ If --name & --version are provided, they will be used for checking if release ex
 
             # if the director is an older version that doesn't support optimized unpack we
             # have to upload everything
-            if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack? || upload_options[:fix]
+            if tarball.upload_packages?(package_matches) || !director_supports_fast_unpack?
               tarball.validate(:allow_sparse => true, :validate_manifest => false)
               err('Release is invalid, please fix, verify and upload again') unless tarball.valid?
             else

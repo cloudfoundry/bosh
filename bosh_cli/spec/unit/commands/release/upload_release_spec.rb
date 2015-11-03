@@ -266,8 +266,7 @@ module Bosh::Cli::Command::Release
               command.upload(release_archive)
             end
 
-            it 'should ignore --name and --version' do
-              allow(director).to receive(:list_releases).and_return([])
+            it 'does not validate if release was already uploaded' do
               command.add_option(:name, 'dummy')
               command.add_option(:version, 'dev+1')
               expect(command).to receive(:upload_tarball)
