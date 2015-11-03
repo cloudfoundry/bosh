@@ -222,15 +222,10 @@ module Bosh
           changed
         end
 
-        def keep_detached?
+        def currently_detached?
           return false if new?
 
-          if @existing_instance.state == 'detached' && @instance.state == 'detached'
-            @logger.debug("Instance '#{instance}' is left in detached state")
-            return true
-          end
-
-          false
+          @existing_instance.state == 'detached'
         end
 
         private

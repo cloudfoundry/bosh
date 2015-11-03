@@ -53,12 +53,7 @@ describe 'vm state', type: :integration do
       expect(director.vms('simple').size).to eq(0)
 
       first_manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
-      set_deployment(manifest_hash: first_manifest_hash)
-
-      bosh_runner.run('start foobar 0 --force')
-      vms = director.vms('simple')
-      expect(vms.size).to eq(1)
-      expect(vms.map(&:ips)).to eq(['192.168.1.10'])
+      deploy_simple_manifest(manifest_hash: first_manifest_hash)
 
       second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
         name: 'second',
@@ -68,6 +63,12 @@ describe 'vm state', type: :integration do
       # this deploy takes the newly freed IP
       deploy_simple_manifest(manifest_hash: second_manifest_hash)
       expect(director.vms('second').map(&:ips)).to eq(['192.168.1.2'])
+
+      set_deployment(manifest_hash: first_manifest_hash)
+      bosh_runner.run('start foobar 0 --force')
+      vms = director.vms('simple')
+      expect(vms.size).to eq(1)
+      expect(vms.map(&:ips)).to eq(['192.168.1.10'])
     end
   end
 end

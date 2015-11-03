@@ -55,11 +55,13 @@ module Bosh::Director
         return
       end
 
-      Preparer.new(instance_plan, agent(instance), @logger).prepare
+      unless instance_plan.currently_detached?
+        Preparer.new(instance_plan, agent(instance), @logger).prepare
 
-      unless instance_plan.new?
-        stop(instance_plan)
-        take_snapshot(instance)
+        unless instance_plan.new?
+          stop(instance_plan)
+          take_snapshot(instance)
+        end
       end
 
       if instance.state == 'detached'
