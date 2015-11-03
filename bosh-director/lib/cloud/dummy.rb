@@ -283,6 +283,11 @@ module Bosh
           .map { |path| File.basename(path) }
       end
 
+      def agent_dir_for_vm_cid(vm_cid)
+        agent_id = agent_id_for_vm_id(vm_cid)
+        agent_base_dir(agent_id)
+      end
+
       private
 
       def spawn_agent_process(agent_id)

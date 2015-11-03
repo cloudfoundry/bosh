@@ -130,10 +130,6 @@ module Bosh::Director
       agent(instance).start
     end
 
-    def trusted_certs_change_only?(instance_plan)
-      instance_plan.changes.include?(:trusted_certs) && instance_plan.changes.size == 1
-    end
-
     def stop(instance_plan)
       instance = instance_plan.instance
       stopper = Stopper.new(instance_plan, instance.state, Config, @logger)

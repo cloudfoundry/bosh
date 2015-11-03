@@ -81,8 +81,6 @@ module Bosh::Director
 
       attr_reader :link_paths
 
-      attr_reader :instance_plans
-
       def self.parse(plan, job_spec, event_log, logger)
         parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)

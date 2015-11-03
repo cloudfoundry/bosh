@@ -64,11 +64,12 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
     bosh_runner.run('deploy')
-    deploy_results = bosh_runner.run('task last --debug')
 
-    apply_spec_regex = %r{canary_update.foobar/0.*apply_spec_json.{5}(.+).{2}WHERE}
-    apply_spec_json = apply_spec_regex.match(deploy_results)[1]
-    apply_spec = JSON.parse(apply_spec_json.gsub('\"', '"'))
+    foobar_vm = director.vm('foobar', '0')
+    agent_base_dir = current_sandbox.cpi.agent_dir_for_vm_cid(foobar_vm.cid)
+    spec_file = File.join(agent_base_dir, 'bosh', 'spec.json')
+
+    apply_spec = JSON.parse(File.read(spec_file))
     packages = apply_spec['packages']
     packages.each do |key, value|
       expect(value['name']).to eq(key)

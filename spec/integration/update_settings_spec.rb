@@ -40,6 +40,5 @@ describe 'update settings configuration', type: :integration do
 
     nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm('foobar', '0').agent_id).join(',')
     expect(nats_messages).to match /stop.*update_settings.*start/
-    expect(nats_messages).to_not match /apply/
   end
 end
