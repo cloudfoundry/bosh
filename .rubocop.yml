@@ -70,3 +70,6 @@ inherit_from: .rubocop_todo.yml
 
 ClassLength:
   Enabled: false
+
+UselessSetterCall:
+  Enabled: false
