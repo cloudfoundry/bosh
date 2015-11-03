@@ -58,8 +58,11 @@ module Bosh::Director
       only_trusted_certs_changed = trusted_certs_change_only?(instance_plan) # figure this out before we start changing things
 
       Preparer.new(instance_plan, agent(instance), @logger).prepare
-      stop(instance_plan)
-      take_snapshot(instance)
+
+      unless instance_plan.new?
+        stop(instance_plan)
+        take_snapshot(instance)
+      end
 
       if instance.state == 'detached'
         @logger.info("Detaching instance #{instance}")
