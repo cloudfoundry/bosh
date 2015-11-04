@@ -404,8 +404,6 @@ module Bosh::Director
     describe '#unmount_disk_for' do
       it 'deletes the old mounted disk' do
         expect(agent_client).to receive(:unmount_disk).with('disk123')
-        # expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
-
         disk_manager.unmount_disk_for(instance_plan)
       end
     end

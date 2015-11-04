@@ -41,9 +41,7 @@ module Bosh::Director
       end
 
       def delete_disk_reference
-        @disk.db.transaction do
-          @disk.update(active: false)
-        end
+        @disk.update(active: false)
 
         # If VM is present we try to unmount and detach disk from VM
         if @vm && @vm.cid && cloud.has_vm?(@vm.cid)
