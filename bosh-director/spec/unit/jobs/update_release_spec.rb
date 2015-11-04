@@ -850,6 +850,63 @@ module Bosh::Director
           job.perform
         end
       end
+
+      context 'eliminates broken compiled packages' do
+        let!(:package) do
+          package = Models::Package.make(
+            release: release,
+            name: 'fake-name-1',
+            version: 'fake-version-1',
+            fingerprint: 'fake-fingerprint-1',
+            blobstore_id: 'fake-pkg-blobstore-id-1',
+            sha1: 'fake-pkg-sha-1'
+          )
+          release_version_model.add_package(package)
+          package
+        end
+        let!(:stemcell) { Models::Stemcell.make(
+          name: 'fake-stemcell-1',
+          version: 'fake-stemcell-version-1',
+          cid: 'fake-cid-1'
+        )}
+        let!(:compiled_package) { Models::CompiledPackage.make(
+          package: package,
+          stemcell: stemcell,
+          sha1: 'fake-compiled-sha-1',
+          blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
+          dependency_key: 'fake-dep-key-1'
+        )}
+
+        it 'verifies package' do
+          expect(BlobUtil).to receive(:verify_blob).with(
+            'fake-compiled-pkg-blobstore-id-1',
+            'fake-compiled-sha-1'
+          ).and_return(true)
+
+          expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+
+          expect(BlobUtil).not_to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
+          expect(Models::CompiledPackage.dataset.count).to eql 1
+
+          job.perform
+        end
+
+        it 'eliminates package when broken or missing' do
+          expect(BlobUtil).to receive(:verify_blob).with(
+            'fake-compiled-pkg-blobstore-id-1',
+            'fake-compiled-sha-1'
+          ).and_return(false)
+
+          expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+
+          expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
+          expect {
+            job.perform
+          }.to change { Models::CompiledPackage.dataset.count }.from(1).to(0)
+        end
+      end
     end
 
     describe 'create_package_for_compiled_release' do
