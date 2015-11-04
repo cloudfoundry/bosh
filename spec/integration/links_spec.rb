@@ -20,10 +20,13 @@ describe 'Links', type: :integration do
     upload_links_release
     upload_stemcell
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['availability_zones'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
+    cloud_config_hash['networks'].first['subnets'].first['availability_zone'] = 'z1'
     cloud_config_hash['networks'] << {
       'name' => 'dynamic-network',
-      'type' => 'dynamic'
+      'type' => 'dynamic',
+      'subnets' => [{'availability_zone' => 'z1'}]
     }
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -39,6 +42,7 @@ describe 'Links', type: :integration do
         instances: 2,
         static_ips: ['192.168.1.10', '192.168.1.11']
       )
+      job_spec['availability_zones'] = ['z1']
       job_spec['networks'] << {
         'name' => 'dynamic-network',
         'default' => ['dns', 'gateway']
@@ -47,21 +51,25 @@ describe 'Links', type: :integration do
     end
 
     let(:postgres_job_spec) do
-      Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::Deployments.simple_job(
         name: 'postgres',
         templates: [{'name' => 'database'}],
         instances: 1,
         static_ips: ['192.168.1.12']
       )
+      job_spec['availability_zones'] = ['z1']
+      job_spec
     end
 
     let(:mongo_db_spec)do
-      Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::Deployments.simple_job(
         name: 'mongo',
         templates: [{'name' => 'mongo_db'}],
         instances: 1,
         static_ips: ['192.168.1.13']
       )
+      job_spec['availability_zones'] = ['z1']
+      job_spec
     end
 
     let(:manifest) do
@@ -121,6 +129,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['backup']).to contain_exactly(
             {
               'name' => 'postgres',
+              'availability_zone' => 'z1',
               'networks' => [
                 {
                   'name' => 'a',
@@ -157,6 +166,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['backup']).to contain_exactly(
             {
               'name' => 'mongo',
+              'availability_zone' => 'z1',
               'networks' => [
                 {
                   'name' => 'a',
@@ -270,12 +280,14 @@ describe 'Links', type: :integration do
 
     context 'when link references another deployment' do
       let(:first_deployment_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'first_deployment_node',
           templates: [{'name' => 'node', 'links' => first_deployment_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
+        job_spec['availability_zones'] = ['z1']
+        job_spec
       end
 
       let(:first_deployment_links) do
@@ -293,12 +305,14 @@ describe 'Links', type: :integration do
       end
 
       let(:second_deployment_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'second_deployment_node',
           templates: [{'name' => 'node', 'links' => second_deployment_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
+        job_spec['availability_zones'] = ['z1']
+        job_spec
       end
 
       let(:second_deployment_links) do
