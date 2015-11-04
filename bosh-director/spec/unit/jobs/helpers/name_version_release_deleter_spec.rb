@@ -79,6 +79,7 @@ module Bosh::Director
           it 'deletes only the release version' do
             expect(errors).to be_empty
             expect(Models::ReleaseVersion.all.map(&:version)).to eq(['2'])
+            expect(Models::Package.map(&:blobstore_id)).to eq(['package-blob-id-2'])
           end
 
           describe 'when the things are not deletable' do
@@ -93,12 +94,12 @@ module Bosh::Director
             describe 'when forced' do
               let(:force) { true }
 
-              it 'deletes despite failures' do
+              it 'deletes the package despite failures' do
                 expect(errors).to_not be_empty
-                expect(Models::Package.all).to be_empty
-                expect(Models::Template.all).to be_empty
-                expect(Models::ReleaseVersion.all).to be_empty
-                expect(Models::Release.all).to be_empty
+                expect(Models::Package.all.map(&:blobstore_id)).to eq(['package-blob-id-2'])
+                expect(Models::Template.all.map(&:blobstore_id)).to eq(['template-blob-id-1', 'template-blob-id-2'])
+                expect(Models::ReleaseVersion.all.map(&:version)).to eq(['2'])
+                expect(Models::Release.all.map(&:name)).to eq(['release-1'])
               end
             end
           end
