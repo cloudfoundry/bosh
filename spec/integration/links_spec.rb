@@ -180,12 +180,14 @@ describe 'Links', type: :integration do
 
     context 'when release job requires and provides same link' do
       let(:first_node_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'first_node',
           templates: [{'name' => 'node', 'links' => first_node_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
+        job_spec['availability_zones'] = ['z1']
+        job_spec
       end
 
       let(:first_node_links) do
@@ -196,12 +198,14 @@ describe 'Links', type: :integration do
       end
 
       let(:second_node_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'second_node',
           templates: [{'name' => 'node', 'links' => second_node_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
+        job_spec['availability_zones'] = ['z1']
+        job_spec
       end
       let(:second_node_links) do
         {
