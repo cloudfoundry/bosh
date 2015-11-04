@@ -38,6 +38,7 @@ module Bosh::Director
       allow(agent_client).to receive(:list_disk).and_return(['disk123'])
       allow(cloud).to receive(:create_disk).and_return('new-disk-cid')
       allow(cloud).to receive(:attach_disk)
+      allow(agent_client).to receive(:stop)
       allow(agent_client).to receive(:mount_disk)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
@@ -101,6 +102,7 @@ module Bosh::Director
 
                 it 'unmounts the disk' do
                   expect(cloud).to receive(:attach_disk).with('vm234', 'new-disk-cid').once
+                  expect(agent_client).to receive(:stop)
                   expect(agent_client).to receive(:unmount_disk).with('disk123').twice
                   disk_manager.update_persistent_disk(instance_plan, vm_recreator)
                 end

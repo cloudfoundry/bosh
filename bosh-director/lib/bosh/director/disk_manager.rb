@@ -161,7 +161,9 @@ module Bosh::Director
       end
 
       if disks(instance).include?(disk_cid)
-        @logger.info("Unmounting disk #{disk_cid}")
+        @logger.info("Stopping instance '#{instance}' before unmount")
+        agent(instance).stop
+        @logger.info("Unmounting disk '#{disk_cid}'")
         agent(instance).unmount_disk(disk_cid)
       end
     end
