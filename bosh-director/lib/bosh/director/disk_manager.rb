@@ -87,7 +87,7 @@ module Bosh::Director
       end
     end
 
-    def delete_orphan_disk(disk_cid)
+    def delete_orphan_disk_by_disk_cid(disk_cid)
       @logger.info("Deleting orphan disk: #{disk_cid}")
       orphan_disk = Bosh::Director::Models::OrphanDisk.where(disk_cid: disk_cid).first
       if orphan_disk

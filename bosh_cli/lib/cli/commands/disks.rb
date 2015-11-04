@@ -47,7 +47,7 @@ module Bosh::Cli::Command
     def delete(orphan_disk_cid)
       auth_required
 
-      status, result = director.delete_orphan_disk(orphan_disk_cid)
+      status, result = director.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
 
       task_report(status, result, "Deleted orphaned disk #{orphan_disk_cid}")
     end

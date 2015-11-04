@@ -180,7 +180,7 @@ module Bosh
           body
         end
 
-        def delete_orphan_disk(orphan_disk_cid)
+        def delete_orphan_disk_by_disk_cid(orphan_disk_cid)
           request_and_track(:delete, "/disks/#{orphan_disk_cid}")
         end
 

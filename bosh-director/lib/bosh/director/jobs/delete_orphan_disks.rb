@@ -31,7 +31,7 @@ module Bosh::Director
           @orphan_disk_cids.each do |orphan_disk_cid|
             pool.process do
               event_log.track("Deleting orphaned disk #{orphan_disk_cid}") do
-                @disk_manager.delete_orphan_disk(orphan_disk_cid)
+                @disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
               end
             end
           end

@@ -394,7 +394,7 @@ module Bosh::Director
       it 'deletes disks from the cloud' do
         expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
 
-        subject.delete_orphan_disk(orphan_disk_cid_1)
+        subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
 
         expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
         expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
@@ -404,7 +404,7 @@ module Bosh::Director
         it 'raises DiskNotFound AND continues to delete the remaining disks' do
           expect(logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
 
-          subject.delete_orphan_disk('non_existing_orphan_disk_cid')
+          subject.delete_orphan_disk_by_disk_cid('non_existing_orphan_disk_cid')
         end
       end
 
@@ -414,7 +414,7 @@ module Bosh::Director
 
           expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
 
-          subject.delete_orphan_disk(orphan_disk_cid_1)
+          subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
           expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
         end
       end
@@ -424,7 +424,7 @@ module Bosh::Director
           allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Exception.new('Bad stuff happened!'))
 
           expect {
-            subject.delete_orphan_disk(orphan_disk_cid_1)
+            subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
           }.to raise_error Exception, 'Bad stuff happened!'
 
           expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
