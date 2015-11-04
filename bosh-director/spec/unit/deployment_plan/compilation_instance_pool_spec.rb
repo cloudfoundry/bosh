@@ -42,7 +42,7 @@ module Bosh::Director
       thread_pool
     end
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
-    let(:ip_provider) {instance_double(DeploymentPlan::IpProviderV2, reserve: nil, release: nil)}
+    let(:ip_provider) {instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
 
     let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
     let(:expected_network_settings) do

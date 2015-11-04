@@ -49,7 +49,7 @@ module Bosh::Director
         end
         let(:planner) do
           ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-          ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, true, logger)
+          ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, true, logger)
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',

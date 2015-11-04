@@ -24,7 +24,7 @@ module Bosh::Director
           deployment_model = @deployment_manager.find_by_name(@deployment_name)
 
           # using_global_networking is always true
-          ip_provider = DeploymentPlan::IpProviderV2.new(DeploymentPlan::InMemoryIpRepo.new(logger), true, logger)
+          ip_provider = DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), true, logger)
 
           dns_manager = DnsManager.create
           disk_manager = DiskManager.new(@cloud, logger)

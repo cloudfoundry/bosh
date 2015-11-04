@@ -92,7 +92,7 @@ module Bosh::Director
         else
           @ip_repo = InMemoryIpRepo.new(@logger)
         end
-        @ip_provider = IpProviderV2.new(@ip_repo, using_global_networking?, @logger)
+        @ip_provider = IpProvider.new(@ip_repo, using_global_networking?, @logger)
       end
 
       def_delegators :@cloud_planner,

@@ -333,7 +333,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         allow(deployment).to receive(:network).with('fake-network') { manual_network }
 
         ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-        ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, true, logger)
+        ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, true, logger)
         allow(deployment).to receive(:ip_provider) { ip_provider  }
         fake_job
       end

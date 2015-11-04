@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe IpProviderV2 do
+  describe IpProvider do
     let(:instance) { double(:instance, model: Bosh::Director::Models::Instance.make) }
     let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
     let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_legacy_ranges: Set.new) }
@@ -384,7 +384,7 @@ module Bosh::Director::DeploymentPlan
     describe 'with an in-memory repo' do
       let(:using_global_networking) { false }
       let(:ip_repo) { InMemoryIpRepo.new(logger) }
-      let(:ip_provider) { IpProviderV2.new(ip_repo, using_global_networking, logger) }
+      let(:ip_provider) { IpProvider.new(ip_repo, using_global_networking, logger) }
       it_should_behave_like 'an ip provider with any repo'
 
       describe :reserve_existing_ips do
@@ -405,7 +405,7 @@ module Bosh::Director::DeploymentPlan
     describe 'with a database-backed repo' do
       let(:using_global_networking) { true }
       let(:ip_repo) { DatabaseIpRepo.new(logger) }
-      let(:ip_provider) { IpProviderV2.new(ip_repo, using_global_networking, logger) }
+      let(:ip_provider) { IpProvider.new(ip_repo, using_global_networking, logger) }
       it_should_behave_like 'an ip provider with any repo'
 
       describe :reserve_existing_ips do

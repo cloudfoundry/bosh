@@ -5,7 +5,7 @@ describe Bosh::Director::JobUpdater do
   let(:disk_manager) { BD::DiskManager.new(cloud, logger)}
   let(:cloud) { instance_double(Bosh::Clouds) }
 
-  let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
+  let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
   let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
 
   let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', {

@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProviderV2, reserve: nil, reserve_existing_ips: nil) }
+  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider, reserve: nil, reserve_existing_ips: nil) }
   let(:plan) do
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       model: deployment,

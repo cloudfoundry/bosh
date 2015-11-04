@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class IpProviderV2
+    class IpProvider
       include IpUtil
 
       def initialize(ip_repo, using_global_networking, logger)

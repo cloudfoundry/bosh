@@ -7,7 +7,7 @@ module Bosh::Director
     subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
-    let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
+    let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
 
     let(:deployment_plan) do

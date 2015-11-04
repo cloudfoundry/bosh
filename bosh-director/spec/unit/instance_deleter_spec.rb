@@ -8,7 +8,7 @@ module Bosh::Director
     let(:cloud) { instance_double('Bosh::Cloud') }
     before { allow(Config).to receive(:cloud).and_return(cloud) }
 
-    let(:ip_provider) { instance_double(DeploymentPlan::IpProviderV2) }
+    let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
     let(:options) { {} }
     let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
