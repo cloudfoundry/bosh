@@ -7,17 +7,16 @@ module Bosh::Director
     end
 
     def update_persistent_disk(instance_plan, vm_recreator)
-      instance = instance_plan.instance
-      job = instance_plan.desired_instance.job
+      @logger.info('Updating persistent disk')
+      check_persistent_disk(instance_plan)
 
-      check_persistent_disk(instance)
-
-      disk = nil
       return unless instance_plan.persistent_disk_changed?
 
+      instance = instance_plan.instance
       old_disk = instance.model.persistent_disk
 
-      if job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
+      disk = nil
+      if instance_plan.needs_disk?
         disk = create_and_attach_disk(instance_plan, vm_recreator)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
@@ -30,7 +29,13 @@ module Bosh::Director
       delete_mounted_persistent_disk(instance, old_disk) if old_disk
     end
 
-    def attach_disks_for(instance)
+    def attach_disks_if_needed(instance_plan)
+      unless instance_plan.needs_disk?
+        @logger.warn('Skipping disk attachment, instance no longer needs disk')
+        return
+      end
+
+      instance = instance_plan.instance
       disk_cid = instance.model.persistent_disk_cid
       return @logger.info('Skipping disk attaching') if disk_cid.nil?
       vm_model = instance.vm.model
@@ -164,11 +169,14 @@ module Bosh::Director
     # Synchronizes persistent_disks with the agent.
     # (Currently assumes that we only have 1 persistent disk.)
     # @return [void]
-    def check_persistent_disk(instance)
+    def check_persistent_disk(instance_plan)
+      instance = instance_plan.instance
       return if instance.model.persistent_disks.empty?
       agent_disk_cid = disks(instance).first
 
-      if agent_disk_cid != instance.model.persistent_disk_cid
+      if agent_disk_cid.nil? && !instance_plan.needs_disk?
+        @logger.debug('Disk is already detached')
+      elsif agent_disk_cid != instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
           "`#{instance}' has invalid disks: agent reports " +
             "`#{agent_disk_cid}' while director record shows " +
@@ -217,9 +225,10 @@ module Bosh::Director
     def mount_and_migrate_disk(instance, new_disk, old_disk)
       agent(instance).mount_disk(new_disk.disk_cid)
       agent(instance).migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
-    rescue
+    rescue => e
+      @logger.debug("Failed to migrate disk, deleting new disk. #{e.inspect}")
       delete_mounted_persistent_disk(instance, new_disk)
-      raise
+      raise e
     end
 
     def create_disk(instance_plan)

@@ -70,7 +70,7 @@ module Bosh::Director
         raise e
       end
 
-      @disk_manager.attach_disks_for(instance)
+      @disk_manager.attach_disks_if_needed(instance_plan)
 
       apply_state(instance_plan)
 

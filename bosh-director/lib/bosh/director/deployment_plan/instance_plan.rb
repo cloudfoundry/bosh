@@ -228,6 +228,12 @@ module Bosh
           @existing_instance.state == 'detached'
         end
 
+        def needs_disk?
+          job = @desired_instance.job
+
+          job && job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
+        end
+
         private
 
         def env_changed?
@@ -298,6 +304,10 @@ module Bosh
 
         def spec
           InstanceSpec.create_from_database(@existing_instance.spec, @instance)
+        end
+
+        def needs_disk?
+          @existing_instance.persistent_disk_cid
         end
 
         def templates

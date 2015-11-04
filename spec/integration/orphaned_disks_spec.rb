@@ -63,13 +63,14 @@ DISKS
     expect(result).not_to include orphaned_disk_cid
   end
 
-  it 'orphans disks when removing persistent disk while also recreating' do
+  it 'does not detach and reattach disks unnecessarily' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['persistent_disk'] = 3000
     manifest_hash['jobs'].first['instances'] = 1
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+    first_deploy_invocations = current_sandbox.cpi.invocations
 
     disk_cid = director.instances.first.disk_cid
 
@@ -83,5 +84,10 @@ DISKS
 
     orphaned_output = bosh_runner.run('disks --orphaned')
     expect(orphaned_output).to include(disk_cid)
+
+    cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
+
+    # does not attach disk again, delete_vm
+    expect(cpi_invocations.map(&:method_name)).to eq(['snapshot_disk', 'delete_vm', 'create_vm', 'set_vm_metadata', 'detach_disk'])
   end
 end
