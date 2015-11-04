@@ -237,6 +237,6 @@ module Bosh::Director
         size: disk_size,
         cloud_properties: cloud_properties,
       )
-     end
+    end
   end
 end
