@@ -1,10 +1,9 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
-  subject(:job_updater) { described_class.new(deployment_plan, job, job_renderer, links_resolver, disk_manager) }
+  subject(:job_updater) { described_class.new(deployment_plan, job, links_resolver, disk_manager) }
   let(:disk_manager) { BD::DiskManager.new(cloud, logger)}
   let(:cloud) { instance_double(Bosh::Clouds) }
-
 
   let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProviderV2')}
   let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
@@ -23,7 +22,6 @@ describe Bosh::Director::JobUpdater do
     })
   end
 
-  let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
   let(:links_resolver) { instance_double('Bosh::Director::DeploymentPlan::LinksResolver') }
 
   let(:update_config) do
@@ -36,7 +34,6 @@ describe Bosh::Director::JobUpdater do
   describe 'update' do
     let(:needed_instance_plans) { [] }
     before { allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans) }
-    before { allow(job_renderer).to receive(:render_job_instances) }
     before { allow(links_resolver).to receive(:resolve) }
 
     let(:update_error) { RuntimeError.new('update failed') }
@@ -54,11 +51,6 @@ describe Bosh::Director::JobUpdater do
         allow(instance_plan).to receive(:changed?) { false }
         allow(instance_plan).to receive(:changes) { [] }
         [instance_plan]
-      end
-
-      it 'should render job instances' do
-        expect(job_renderer).to receive(:render_job_instances)
-        job_updater.update
       end
 
       it 'should not begin the updating job event stage' do

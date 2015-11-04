@@ -42,6 +42,7 @@ module Bosh::Director
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
             deployment_plan.bind_models
+            render_job_templates(deployment_plan.jobs_starting_on_deploy)
           end
 
           deployment_plan.compile_packages
@@ -83,6 +84,13 @@ module Bosh::Director
       def multi_job_updater
         @multi_job_updater ||= begin
           DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(Config.cloud, logger))
+        end
+      end
+
+      def render_job_templates(jobs)
+        job_renderer = JobRenderer.create
+        jobs.each do |job|
+          job_renderer.render_job_instances(job.needed_instance_plans)
         end
       end
     end

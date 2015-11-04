@@ -3,10 +3,9 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, job_renderer, links_resolver, disk_manager)
+    def initialize(deployment_plan, job, links_resolver, disk_manager)
       @deployment_plan = deployment_plan
       @job = job
-      @job_renderer = job_renderer
       @links_resolver = links_resolver
 
       @logger = Config.logger
@@ -17,8 +16,6 @@ module Bosh::Director
     def update
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
-
-      @job_renderer.render_job_instances(@job.needed_instance_plans)
 
       instance_plans = @job.needed_instance_plans.select(&:changed?)
 

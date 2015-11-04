@@ -16,10 +16,6 @@ module Bosh::Director
       @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager, @job_renderer)
     end
 
-    def prepare
-      @job.bind_instances(@deployment.ip_provider)
-    end
-
     def create_missing_vms
       @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider, @event_log)
     end
@@ -28,7 +24,7 @@ module Bosh::Director
     # @return [void]
     def update_instances
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
-      job_updater = JobUpdater.new(@deployment, @job, @job_renderer, links_resolver, @disk_manager)
+      job_updater = JobUpdater.new(@deployment, @job, links_resolver, @disk_manager)
       job_updater.update
     end
 

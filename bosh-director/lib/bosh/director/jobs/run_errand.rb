@@ -29,30 +29,36 @@ module Bosh::Director
         cloud_config_model = deployment_model.cloud_config
 
         deployment = nil
+        job = nil
 
         event_log.begin_stage('Preparing deployment', 1)
         event_log.track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
           deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
           deployment.bind_models
+          job = deployment.job(@errand_name)
+
+          if job.nil?
+            raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
+          end
+
+          unless job.can_run_as_errand?
+            raise RunErrandError,
+              "Job `#{job.name}' is not an errand. To mark a job as an errand " +
+                "set its lifecycle to 'errand' in the deployment manifest."
+          end
+
+          if job.instances.empty?
+            raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
+          end
+
+          logger.info('Starting to prepare for deployment')
+          job.bind_instances(deployment.ip_provider)
+
+          JobRenderer.create.render_job_instances(job.needed_instance_plans)
         end
 
         deployment.compile_packages
-
-        job = deployment.job(@errand_name)
-        if job.nil?
-          raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
-        end
-
-        unless job.can_run_as_errand?
-          raise RunErrandError,
-                "Job `#{job.name}' is not an errand. To mark a job as an errand " +
-                  "set its lifecycle to 'errand' in the deployment manifest."
-        end
-
-        if job.instances.empty?
-          raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
-        end
 
         runner = Errand::Runner.new(job, result_file, @instance_manager, event_log, @logs_fetcher)
 
@@ -111,9 +117,6 @@ module Bosh::Director
     end
 
     def update_instances(job_manager)
-      logger.info('Starting to prepare for deployment')
-      job_manager.prepare
-
       logger.info('Starting to create missing vms')
       job_manager.create_missing_vms
 

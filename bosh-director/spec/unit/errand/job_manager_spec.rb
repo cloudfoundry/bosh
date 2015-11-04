@@ -16,14 +16,6 @@ module Bosh::Director
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
     before { fake_app }
 
-    describe '#prepare' do
-      it 'binds unallocated vms and instance networks for given job' do
-        expect(job).to receive(:bind_instances).with(ip_provider)
-
-        subject.prepare
-      end
-    end
-
     describe '#update' do
       before { allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2]) }
       let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }

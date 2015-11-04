@@ -48,22 +48,27 @@ module Bosh::Director
           )
         end
         let(:planner) do
+          ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
+          ip_provider = BD::DeploymentPlan::IpProviderV2.new(ip_repo, true, logger)
+
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
             bind_models: nil,
             validate_packages: nil,
             compile_packages: nil,
+            ip_provider: ip_provider
           )
         end
 
         let(:cloud_config) { Models::CloudConfig.make }
 
         context 'when job representing an errand exists' do
-          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
+          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name', needed_instance_plans: []) }
           before { allow(planner).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
 
           context 'when job can run as an errand (usually means lifecycle: errand)' do
             before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(true) }
+            before { allow(deployment_job).to receive(:bind_instances) }
 
             context 'when job has at least 1 instance' do
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
@@ -103,7 +108,6 @@ module Bosh::Director
               end
               let(:job_manager) do
                 instance_double('Bosh::Director::Errand::JobManager', {
-                  prepare: nil,
                   update_instances: nil,
                   delete_instances: nil,
                   create_missing_vms: nil,
@@ -137,7 +141,7 @@ module Bosh::Director
                   result
                 end
 
-                expect(job_manager).to receive(:prepare).with(no_args).ordered
+                expect(deployment_job).to receive(:bind_instances)
 
                 expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
 
