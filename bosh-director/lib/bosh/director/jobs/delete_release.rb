@@ -11,66 +11,36 @@ module Bosh::Director
 
       def initialize(name, options = {})
         @name = name
-        blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
-        blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
-        @errors = []
         @force = !!options['force']
         @version = options['version']
 
+        blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
+        blob_deleter = Helpers::BlobDeleter.new(blobstore, logger)
         compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger, event_log)
         package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
         template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
-        @release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger)
-        @release_version_deleter =
-          Helpers::ReleaseVersionDeleter.new(@release_deleter, package_deleter, template_deleter, @force, logger, event_log)
-        @release_manager = Api::ReleaseManager.new
+        release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger)
+        release_version_deleter =
+          Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, event_log)
+        release_manager = Api::ReleaseManager.new
+        @name_version_release_deleter = Helpers::NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, event_log, logger)
       end
 
       def perform
         logger.info('Processing delete release')
 
-        with_release_lock(@name, :timeout => 10) do
-          logger.info("Looking up release: #{@name}")
-          release = @release_manager.find_by_name(@name)
-          logger.info("Found release: #{release.name}")
+        errors = nil
 
-          if @version
-            delete_release_version(release)
-          else
-            delete_release(release)
-          end
+        with_release_lock(@name, :timeout => 10) do
+          errors = @name_version_release_deleter.find_and_delete_release(@name, @version, @force)
         end
 
-        unless @errors.empty?
-          errors = @errors.map { |e| e.to_s }.join(', ')
-          raise ReleaseDeleteFailed, "Can't delete release: #{errors}"
+        unless errors.empty?
+          error_strings = errors.map { |e| e.to_s }.join(', ')
+          raise ReleaseDeleteFailed, "Can't delete release: #{error_strings}"
         end
 
         "/release/#{@name}"
-      end
-
-      private
-
-      def delete_release(release)
-        logger.info('Checking for any deployments still using the release')
-        deployments = release.versions.map { |version|
-          version.deployments
-        }.flatten.uniq
-
-        unless deployments.empty?
-          names = deployments.map { |d| d.name }.join(', ')
-          raise ReleaseInUse,
-            "Release `#{release.name}' is still in use by: #{names}"
-        end
-        @errors += @release_deleter.delete(release, @force)
-      end
-
-      def delete_release_version(release)
-        logger.info("Looking up release version `#{release.name}/#{@version}'")
-        release_version = @release_manager.find_version(release, @version)
-        # found version may be different than the requested version, due to version formatting
-        logger.info("Found release version: `#{release.name}/#{release_version.version}'")
-        @release_version_deleter.delete(release_version, release)
       end
     end
   end

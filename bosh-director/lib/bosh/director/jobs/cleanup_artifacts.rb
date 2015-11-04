@@ -1,6 +1,7 @@
 module Bosh::Director
   module Jobs
     class CleanupArtifacts < BaseJob
+      include Bosh::Director::LockHelper
 
       @queue = :normal
 
@@ -15,15 +16,21 @@ module Bosh::Director
       def initialize(config)
         @config = config
         @disk_manager = DiskManager.new(Config.cloud, Config.logger)
-        @release_manager = Api::ReleaseManager.new
+        release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
         cloud = Config.cloud
         blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
         compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger, event_log)
         @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger, event_log)
-        @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(@release_manager)
+        @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
+        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
+        template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger)
+        release_version_deleter =
+          Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, event_log)
+        @name_version_release_deleter = Helpers::NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, event_log, logger)
       end
 
       def perform
@@ -41,9 +48,12 @@ module Bosh::Director
           event_log.begin_stage('Deleting releases', unused_release_name_and_version.count)
           unused_release_name_and_version.each do |name_and_version|
             pool.process do
-              event_log.track("Deleting release #{name_and_version['name']}/#{name_and_version['version']}") do
-                delete_release = Jobs::DeleteRelease.new(name_and_version['name'], name_and_version)
-                delete_release.perform
+              name = name_and_version['name']
+              version = name_and_version['version']
+              event_log.track("Deleting release #{name}/#{version}") do
+                with_release_lock(name, :timeout => 10) do
+                  @name_version_release_deleter.find_and_delete_release(name, version, false)
+                end
               end
             end
           end

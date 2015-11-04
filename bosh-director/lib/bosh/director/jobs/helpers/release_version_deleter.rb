@@ -2,17 +2,15 @@ module Bosh::Director::Jobs
   module Helpers
     class ReleaseVersionDeleter
 
-      def initialize(release_deleter, package_deleter, template_deleter, force, logger, event_log)
+      def initialize(release_deleter, package_deleter, template_deleter, logger, event_log)
         @release_deleter = release_deleter
         @package_deleter = package_deleter
         @template_deleter = template_deleter
-        @force = force
         @logger = logger
         @event_log = event_log
-        @errors = []
       end
 
-      def delete(release_version, release)
+      def delete(release_version, release, force)
         @logger.info('Checking for any deployments still using ' +
             'this particular release version')
 
@@ -24,12 +22,14 @@ module Bosh::Director::Jobs
             "ReleaseVersion `#{release.name}/#{release_version.version}' is still in use by: #{names}"
         end
 
-        delete_release_version(release_version)
+        delete_release_version(release_version, force)
       end
 
       private
 
-      def delete_release_version(release_version)
+      def delete_release_version(release_version, force)
+        errors = []
+
         release = release_version.release
 
         packages_to_keep = []
@@ -62,7 +62,7 @@ module Bosh::Director::Jobs
             @logger.info("Package #{package.name}/#{package.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
-            @errors += @package_deleter.delete(package, @force)
+            errors += @package_deleter.delete(package, force)
           end
         end
 
@@ -78,7 +78,7 @@ module Bosh::Director::Jobs
             @logger.info("Template #{template.name}/#{template.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
-            @errors += @template_deleter.delete(template, @force)
+            errors += @template_deleter.delete(template, force)
           end
         end
 
@@ -92,13 +92,15 @@ module Bosh::Director::Jobs
         @logger.info('Remove all deployments in release version')
         release_version.remove_all_deployments
 
-        if @errors.empty? || @force
+        if errors.empty? || force
           release_version.destroy
         end
 
         if release.versions.empty?
-          @errors += @release_deleter.delete(release, @force)
+          errors += @release_deleter.delete(release, force)
         end
+
+        errors
       end
 
       def track_and_log(task, log = true)

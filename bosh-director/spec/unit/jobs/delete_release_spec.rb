@@ -45,23 +45,6 @@ module Bosh::Director
         expect { job.perform }.to raise_exception(ReleaseInUse)
       end
 
-      it 'should delete the release and associated jobs, packages, compiled packages and their metadata' do
-        job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        expect(job).to receive(:with_release_lock).
-          with('test_release', timeout: 10).and_yield
-        expect(job).to receive(:delete_release).with(release)
-        job.perform
-      end
-
-      it 'should fail if the delete was not successful' do
-        job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        expect(job).to receive(:delete_release).with(release)
-        expect(job).to receive(:with_release_lock).
-          with('test_release', timeout: 10).and_yield
-        job.instance_eval { @errors << 'bad' }
-        expect { job.perform }.to raise_exception
-      end
-
       it 'should support deleting a particular release version' do
         rv1 = Models::ReleaseVersion.make(release: release, version: '1')
         Models::ReleaseVersion.make(release: release, version: '2')
@@ -92,85 +75,6 @@ module Bosh::Director
         expect(job2).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job2.perform
-      end
-    end
-
-    describe 'delete_release' do
-
-      before(:each) do
-        @release_version = Models::ReleaseVersion.make(release: release)
-        @package = Models::Package.make(release: release, blobstore_id: 'package-blb')
-        @template = Models::Template.make(release: release, blobstore_id: 'template-blb')
-        @stemcell = Models::Stemcell.make
-        @compiled_package =
-          Models::CompiledPackage.make(package: @package, stemcell: @stemcell, blobstore_id: 'compiled-package-blb')
-        @release_version.add_package(@package)
-        @release_version.add_template(@template)
-      end
-
-      it 'should delete release and associated objects/meta' do
-        expect(blobstore).to receive(:delete).with('template-blb')
-        expect(blobstore).to receive(:delete).with('package-blb')
-        expect(blobstore).to receive(:delete).with('compiled-package-blb')
-
-        job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-
-        allow(job).to receive(:with_release_lock).
-            with('test_release', timeout: 10).and_yield
-
-        job.perform
-
-        expect(job.instance_eval { @errors }).to be_empty
-
-        expect(Models::Release[release.id]).to be_nil
-        expect(Models::ReleaseVersion[@release_version.id]).to be_nil
-        expect(Models::Package[@package.id]).to be_nil
-        expect(Models::Template[@template.id]).to be_nil
-        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
-      end
-
-      it 'should fail to delete the release if there is a blobstore error' do
-        expect(blobstore).to receive(:delete).with('template-blb').and_raise('bad')
-        expect(blobstore).to receive(:delete).with('package-blb')
-        expect(blobstore).to receive(:delete).with('compiled-package-blb')
-
-        job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-
-        allow(job).to receive(:with_release_lock).
-            with('test_release', timeout: 10).and_yield
-
-        expect { job.perform }.to raise_error(ReleaseDeleteFailed, "Can't delete release: bad")
-
-        errors = job.instance_eval { @errors }
-        expect(errors.length).to eql(1)
-        expect(errors.first.to_s).to eql('bad')
-
-        expect(Models::Release[release.id]).not_to be_nil
-        expect(Models::ReleaseVersion[@release_version.id]).not_to be_nil
-        expect(Models::Package[@package.id]).to be_nil
-        expect(Models::Template[@template.id]).not_to be_nil
-        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
-      end
-
-      it 'should forcefully delete the release when requested even if there is a blobstore error' do
-        expect(blobstore).to receive(:delete).with('template-blb').and_raise('bad')
-        expect(blobstore).to receive(:delete).with('package-blb')
-        expect(blobstore).to receive(:delete).with('compiled-package-blb')
-
-        job = Jobs::DeleteRelease.new('test_release', 'force' => true, blobstore: blobstore)
-        allow(job).to receive(:with_release_lock).
-            with('test_release', timeout: 10).and_yield
-        expect { job.perform }.to raise_error(ReleaseDeleteFailed, "Can't delete release: bad")
-
-        errors = job.instance_eval { @errors }
-        expect(errors.length).to eql(1)
-        expect(errors.first.to_s).to eql('bad')
-
-        expect(Models::Release[release.id]).to be_nil
-        expect(Models::ReleaseVersion[@release_version.id]).to be_nil
-        expect(Models::Package[@package.id]).to be_nil
-        expect(Models::Template[@template.id]).to be_nil
-        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
       end
     end
 
