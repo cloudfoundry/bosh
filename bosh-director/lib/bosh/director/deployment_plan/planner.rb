@@ -122,8 +122,7 @@ module Bosh::Director
           stemcell_manager,
           dns_manager,
           Config.cloud,
-          @logger,
-          Config.event_log
+          @logger
         )
 
         assembler.bind_models

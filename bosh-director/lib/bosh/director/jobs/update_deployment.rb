@@ -35,10 +35,15 @@ module Bosh::Director
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
 
-          planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-          deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+          deployment_plan = nil
 
-          deployment_plan.bind_models
+          event_log.begin_stage('Preparing deployment', 1)
+          event_log.track('Preparing deployment') do
+            planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+            deployment_plan.bind_models
+          end
+
           deployment_plan.compile_packages
 
           update_step(deployment_plan).perform

@@ -4,7 +4,7 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, event_log, logger) }
+        subject { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }

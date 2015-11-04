@@ -12,22 +12,20 @@ module Bosh
       end
 
       class PlannerFactory
-        def self.create(event_log, logger)
+        def self.create(logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
           deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new
 
           new(
             deployment_manifest_migrator,
             deployment_repo,
-            event_log,
             logger
           )
         end
 
-        def initialize(deployment_manifest_migrator, deployment_repo, event_log, logger)
+        def initialize(deployment_manifest_migrator, deployment_repo, logger)
           @deployment_manifest_migrator = deployment_manifest_migrator
           @deployment_repo = deployment_repo
-          @event_log = event_log
           @logger = logger
         end
 
@@ -38,17 +36,7 @@ module Bosh
         end
 
         def create_from_manifest(manifest_hash, cloud_config, options)
-          @event_log.begin_stage('Preparing deployment', 9)
-          @logger.info('Preparing deployment')
-
-          planner = nil
-
-          @event_log.track('Binding deployment') do
-            @logger.info('Binding deployment')
-            planner = parse_from_manifest(manifest_hash, cloud_config, options)
-          end
-
-          planner
+          parse_from_manifest(manifest_hash, cloud_config, options)
         end
 
         private
@@ -80,7 +68,7 @@ module Bosh
           global_network_resolver = GlobalNetworkResolver.new(deployment)
 
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver)
-          DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
+          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(deployment_manifest, plan_options)
           DeploymentValidator.new.validate(deployment)
           deployment
         end

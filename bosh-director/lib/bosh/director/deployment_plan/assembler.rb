@@ -5,70 +5,48 @@ module Bosh::Director
     include LockHelper
     include IpUtil
 
-    def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger, event_log)
+    def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger)
       @deployment_plan = deployment_plan
       @cloud = cloud
       @logger = logger
-      @event_log = event_log
       @stemcell_manager = stemcell_manager
       @dns_manager = dns_manager
     end
 
     def bind_models
-      track_and_log('Binding releases') do
-        bind_releases
+      @logger.info('Binding models')
+      bind_releases
+
+      migrate_legacy_dns_records
+      bind_job_renames
+
+      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
+      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
+      index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, {'recreate' => @deployment_plan.recreate})
+      instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
+      desired_jobs = @deployment_plan.jobs
+
+      job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
+
+      desired_jobs.each do |desired_job|
+        desired_instances = desired_job.desired_instances
+        existing_instances = job_migrator.find_existing_instances(desired_job)
+        instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
+        desired_job.add_instance_plans(instance_plans)
       end
 
-      track_and_log('Binding existing deployment') do
-        migrate_legacy_dns_records
-        bind_job_renames
+      instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
+      instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
 
-        instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
-        states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
-        index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
-        instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, {'recreate' => @deployment_plan.recreate})
-        instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
-        desired_jobs = @deployment_plan.jobs
+      mark_unknown_vms_for_deletion
 
-        job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
-
-        desired_jobs.each do |desired_job|
-          desired_instances = desired_job.desired_instances
-          existing_instances = job_migrator.find_existing_instances(desired_job)
-          instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
-          desired_job.add_instance_plans(instance_plans)
-        end
-
-        instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
-        instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
-
-        mark_unknown_vms_for_deletion
-      end
-
-      track_and_log('Binding stemcells') do
-        bind_stemcells
-      end
-
-      track_and_log('Binding templates') do
-        bind_templates
-      end
-
-      track_and_log('Binding properties') do
-        bind_properties
-      end
-
-      track_and_log('Binding unallocated VMs') do
-        bind_unallocated_vms
-      end
-
-      track_and_log('Binding networks') do
-        bind_instance_networks
-      end
-
-      track_and_log('Binding DNS') do
-        bind_dns
-      end
-
+      bind_stemcells
+      bind_templates
+      bind_properties
+      bind_unallocated_vms
+      bind_instance_networks
+      bind_dns
       bind_links
     end
 
@@ -137,11 +115,8 @@ module Bosh::Director
     def bind_links
       links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
-      @event_log.begin_stage('Binding links', @deployment_plan.jobs.size)
       @deployment_plan.jobs.each do |job|
-        @event_log.track(job.name) do
-          links_resolver.resolve(job)
-        end
+        links_resolver.resolve(job)
       end
     end
 
@@ -213,13 +188,6 @@ module Bosh::Director
           @logger.info("Renaming `#{old_name}' to `#{new_name}'")
           instance_model.update(:job => new_name)
         end
-      end
-    end
-
-    def track_and_log(message)
-      @event_log.track(message) do
-        @logger.info(message)
-        yield
       end
     end
   end

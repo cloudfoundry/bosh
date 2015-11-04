@@ -4,7 +4,6 @@ module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
     let(:redis) { double('Redis').as_null_object }
     before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
-    let(:event_log) { Bosh::Director::Config.event_log }
     let(:logger) { Logging::Logger.new('TestLogger') }
 
     before do
@@ -61,11 +60,11 @@ module Bosh::Director::DeploymentPlan
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
-          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger, event_log) }
+          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger) }
           let(:cloud_config) { nil }
 
           let(:deployment_plan) do
-            planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+            planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config, {})
             deployment_plan.bind_models
             deployment_plan

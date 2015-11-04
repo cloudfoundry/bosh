@@ -18,7 +18,6 @@ module Bosh::Director
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
-      # instance_plans_to_update = @job.needed_instance_plans.reject(&:keep_detached?)
       @job_renderer.render_job_instances(@job.needed_instance_plans)
 
       instance_plans = @job.needed_instance_plans.select(&:changed?)

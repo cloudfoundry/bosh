@@ -81,7 +81,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
-    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, event_log, logger) }
+    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, logger) }
     let(:deployment_repo) { DeploymentRepo.new }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }

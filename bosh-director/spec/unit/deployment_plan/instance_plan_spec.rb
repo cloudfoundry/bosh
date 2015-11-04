@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment_plan) do
-      planner_factory = PlannerFactory.create(BD::Config.event_log, logger)
+      planner_factory = PlannerFactory.create(logger)
       plan = planner_factory.create_from_model(deployment_model)
       plan.bind_models
       plan

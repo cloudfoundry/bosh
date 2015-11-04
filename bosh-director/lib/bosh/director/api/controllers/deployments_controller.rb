@@ -312,7 +312,7 @@ module Bosh::Director
       def load_deployment_plan
         deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
 
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
         planner_factory.create_from_model(deployment_model)
       end
 

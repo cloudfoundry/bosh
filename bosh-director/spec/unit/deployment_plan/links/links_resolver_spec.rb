@@ -4,7 +4,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   subject(:links_resolver) { described_class.new(deployment_plan, logger) }
 
   let(:deployment_plan) do
-    planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+    planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
     planner = planner_factory.create_from_manifest(deployment_manifest, nil, {})
     planner.bind_models
     planner
@@ -99,7 +99,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     }
   end
 
-  let(:event_log) { Bosh::Director::Config.event_log }
   let(:logger) { Logging::Logger.new('TestLogger') }
 
   let(:api_server_job) do
@@ -183,7 +182,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         before do
           other_deployment_manifest = generate_deployment_manifest('other-deployment', links, ['127.0.0.4', '127.0.0.5'])
 
-          planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+          planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
           deployment_plan = planner_factory.create_from_manifest(other_deployment_manifest, nil, {})
           deployment_plan.bind_models
 
@@ -366,7 +365,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     context 'when there is a cloud config' do
       let(:deployment_plan) do
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
         planner = planner_factory.create_from_manifest(deployment_manifest, cloud_config, {})
         planner.bind_models
         planner

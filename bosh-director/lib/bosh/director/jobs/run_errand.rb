@@ -28,10 +28,15 @@ module Bosh::Director
       with_deployment_lock(deployment_name) do
         cloud_config_model = deployment_model.cloud_config
 
-        planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-        deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+        deployment = nil
 
-        deployment.bind_models
+        event_log.begin_stage('Preparing deployment', 1)
+        event_log.track('Preparing deployment') do
+          planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+          deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+          deployment.bind_models
+        end
+
         deployment.compile_packages
 
         job = deployment.job(@errand_name)

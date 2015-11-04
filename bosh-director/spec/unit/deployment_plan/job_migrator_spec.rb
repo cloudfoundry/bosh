@@ -3,7 +3,6 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::JobMigrator do
     subject(:job_migrator) { described_class.new(deployment_plan, logger) }
-    let(:event_log) { Config.event_log }
 
     let(:etcd_job) do
       DeploymentPlan::Job.parse(deployment_plan, job_spec, event_log, logger)
@@ -60,7 +59,7 @@ module Bosh::Director
     end
 
     let(:deployment_plan) do
-      planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
+      planner_factory = DeploymentPlan::PlannerFactory.create(logger)
       plan = planner_factory.create_from_model(deployment_model)
       plan
     end

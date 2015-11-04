@@ -322,19 +322,7 @@ message on stderr of job 1 new version pre-start script
     # order for creating missing vms is not guaranteed (running in parallel)
     expect(output).to match(<<-OUT)
 Director task #{task_regex}
-  Started preparing deployment
-  Started preparing deployment > Binding deployment. Done #{step_duration_regex}
-  Started preparing deployment > Binding releases. Done #{step_duration_regex}
-  Started preparing deployment > Binding existing deployment. Done #{step_duration_regex}
-  Started preparing deployment > Binding stemcells. Done #{step_duration_regex}
-  Started preparing deployment > Binding templates. Done #{step_duration_regex}
-  Started preparing deployment > Binding properties. Done #{step_duration_regex}
-  Started preparing deployment > Binding unallocated VMs. Done #{step_duration_regex}
-  Started preparing deployment > Binding networks. Done #{step_duration_regex}
-  Started preparing deployment > Binding DNS. Done #{step_duration_regex}
-     Done preparing deployment #{step_duration_regex}
-
-  Started binding links > foobar. Done #{step_duration_regex}
+  Started preparing deployment > Preparing deployment. Done #{step_duration_regex}
 
   Started preparing package compilation > Finding packages to compile. Done #{step_duration_regex}
 

@@ -43,7 +43,7 @@ module Bosh::Director
           raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
         end
 
-        planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, @logger)
+        planner_factory = DeploymentPlan::PlannerFactory.create(@logger)
         planner = planner_factory.create_from_model(@targeted_deployment)
 
         network_name = planner.networks.first.name
