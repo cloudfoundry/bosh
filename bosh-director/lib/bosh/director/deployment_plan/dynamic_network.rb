@@ -119,8 +119,6 @@ module Bosh::Director
         if job_network_spec.has_key?('static_ips')
           raise JobStaticIPNotSupportedOnDynamicNetwork,
             "Job using dynamic network '#{name}' cannot specify static IP(s)"
-        else
-          true
         end
       end
 

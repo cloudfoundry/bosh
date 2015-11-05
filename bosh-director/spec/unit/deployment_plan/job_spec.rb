@@ -17,7 +17,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
 
-  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name', validate_reference_from_job!: true) }
+  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name', validate_reference_from_job!: true, validate_has_job!: nil) }
 
   let(:foo_properties) do
     {

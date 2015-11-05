@@ -46,13 +46,17 @@ module Bosh::Director
       end
 
       def validate_reference_from_job!(job_network_spec)
-        true
       end
     end
 
     class NetworkWithSubnets < Network
-      def validate_has_job!(az_names, job_name)
-        unreferenced_zones = az_names - availability_zones
+      def validate_has_job!(job_az_names, job_name)
+        if job_az_names.nil? && !any_subnet_without_az?
+          raise JobNetworkMissingRequiredAvailabilityZone,
+            "Job '#{job_name}' must specify availability zone that matches availability zones of network '#{@name}'."
+        end
+
+        unreferenced_zones = job_az_names.to_a - availability_zones
         unless unreferenced_zones.empty?
           raise Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
             "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
@@ -61,6 +65,10 @@ module Bosh::Director
 
       def availability_zones
         @subnets.map(&:availability_zone_names).flatten.compact.uniq
+      end
+
+      def any_subnet_without_az?
+        @subnets.empty? || @subnets.any? { |subnet| subnet.availability_zone_names.nil? }
       end
     end
   end

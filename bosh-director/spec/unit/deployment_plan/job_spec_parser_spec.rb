@@ -853,14 +853,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'availability_zones key' do
-      context 'when there is no key' do
-        it 'does nothing because it is optional for now, and it is nil so we can detect this case' do
-          job_spec.delete('availability_zones')
-
-          expect(parser.parse(job_spec).availability_zones).to be_nil
-        end
-      end
-
       context 'when there is a key but empty values' do
         it 'raises an exception' do
           job_spec['availability_zones'] = []

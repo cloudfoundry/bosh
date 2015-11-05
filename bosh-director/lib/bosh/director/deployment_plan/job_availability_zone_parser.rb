@@ -5,10 +5,10 @@ module Bosh::Director
 
       def parse(job_spec, job, deployment, networks)
         az_names = safe_property(job_spec, 'availability_zones', class: Array, optional: true)
-        return nil if az_names.nil?
-
-        check_validity_of(az_names, job.name)
         check_contains(az_names, networks, job)
+
+        return nil if az_names.nil?
+        check_validity_of(az_names, job.name)
         look_up_from_deployment(az_names, deployment, job.name)
       end
 

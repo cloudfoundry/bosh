@@ -9,7 +9,9 @@ module Bosh::Director
     end
 
     let(:etcd_job_spec) do
-      Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+      spec = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+      spec['availability_zones'] = ['z1', 'z2']
+      spec
     end
 
     let(:deployment_manifest) do
@@ -166,8 +168,8 @@ module Bosh::Director
             manifest = Bosh::Spec::Deployments.simple_manifest
             manifest['jobs'] = [
               etcd_job_spec,
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z1'),
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z2'),
+              Bosh::Spec::Deployments.simple_job(name: 'etcd_z1').merge({'availability_zones' => ['z1']}),
+              Bosh::Spec::Deployments.simple_job(name: 'etcd_z2').merge({'availability_zones' => ['z2']}),
             ]
             manifest
           end
@@ -239,6 +241,7 @@ module Bosh::Director
               {'name' => 'etcd_z1'},
               {'name' => 'etcd_z2'},
             ]
+            job['availability_zones'] = ['z1', 'z2']
             job
           end
           before do

@@ -530,6 +530,15 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           "Job 'foo-job' refers to an availability zone(s) '[\"zone_3\", \"zone_4\"]' but 'a' has no matching subnet(s)."
         )
     end
+
+    it 'raises when job does not have az, but subnets do' do
+      expect {
+        network.validate_has_job!(nil, 'foo-job')
+      }.to raise_error(
+          Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
+          "Job 'foo-job' must specify availability zone that matches availability zones of network 'a'."
+        )
+    end
   end
 
   describe :validate_reference_from_job do
@@ -537,7 +546,9 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       dynamic_network = BD::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
       job_network_spec = {'name' => 'dynamic'}
 
-      expect(dynamic_network.validate_reference_from_job!(job_network_spec)).to be_truthy
+      expect {
+        dynamic_network.validate_reference_from_job!(job_network_spec)
+      }.to_not raise_error
     end
 
     context 'when network is dynamic but job network spec uses static ips' do
