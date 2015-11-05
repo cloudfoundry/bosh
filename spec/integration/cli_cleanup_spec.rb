@@ -46,9 +46,9 @@ describe 'cli: cleanup', type: :integration do
 
       bosh_runner.run('cleanup --all')
 
-      expect(bosh_runner.run('releases', failure_expected: true)).to include('No releases')
-      expect(bosh_runner.run('stemcells', failure_expected: true)).to include('No stemcells')
-      expect(bosh_runner.run('disks --orphaned')).to include('No orphaned disks')
+      expect(bosh_runner.run('releases', failure_expected: true)).to match_output('No releases')
+      expect(bosh_runner.run('stemcells', failure_expected: true)).to match_output('No stemcells')
+      expect(bosh_runner.run('disks --orphaned')).to match_output('No orphaned disks')
     end
   end
 
