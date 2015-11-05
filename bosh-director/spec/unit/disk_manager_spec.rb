@@ -401,7 +401,10 @@ module Bosh::Director
       let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-a') }
       let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-b') }
       let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, orphaned_at: 0, snapshot_cid: 'snap-cid-2') }
-      before { allow(cloud).to receive(:delete_disk) }
+      before do
+        allow(cloud).to receive(:delete_disk)
+        allow(cloud).to receive(:delete_snapshot)
+      end
 
       describe 'deleting orphan disks' do
         describe 'delete orphan disks older than' do
@@ -424,29 +427,6 @@ module Bosh::Director
         end
       end
 
-      describe 'deleting an orphan disk model' do
-        it 'deletes disks from the cloud' do
-          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
-
-          subject.delete_orphan_disk(orphan_disk_1)
-
-          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
-          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
-        end
-
-        it 'deletes the orphan snapshots' do
-          expect(Models::OrphanSnapshot.all).to_not be_empty
-          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
-          expect(cloud).to receive(:delete_disk).with('snap-cid-a')
-          expect(cloud).to receive(:delete_disk).with('snap-cid-b')
-          expect(cloud).to_not receive(:delete_disk).with('snap-cid-2')
-
-          subject.delete_orphan_disk(orphan_disk_1)
-
-          expect(Models::OrphanSnapshot.all.map(&:snapshot_cid)).to eq(['snap-cid-2'])
-        end
-      end
-
       describe 'deleting an orphan disk by disk cid' do
         it 'deletes disks from the cloud' do
           expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
@@ -460,9 +440,9 @@ module Bosh::Director
         it 'deletes the orphan snapshots' do
           expect(Models::OrphanSnapshot.all).to_not be_empty
           expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
-          expect(cloud).to receive(:delete_disk).with('snap-cid-a')
-          expect(cloud).to receive(:delete_disk).with('snap-cid-b')
-          expect(cloud).to_not receive(:delete_disk).with('snap-cid-2')
+          expect(cloud).to receive(:delete_snapshot).with('snap-cid-a')
+          expect(cloud).to receive(:delete_snapshot).with('snap-cid-b')
+          expect(cloud).to_not receive(:delete_snapshot).with('snap-cid-2')
 
           subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
 
@@ -479,7 +459,7 @@ module Bosh::Director
 
         context 'when the snapshot is not found in the cloud' do
           it 'logs the error and continues to delete the remaining disks' do
-            expect(cloud).to receive(:delete_disk).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
+            expect(cloud).to receive(:delete_snapshot).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
             expect(logger).to receive(:debug).with('Disk not found in IaaS: snap-cid-a')
             subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
             expect(Models::OrphanSnapshot.where(orphan_disk_id: orphan_disk_1.id).all).to be_empty
