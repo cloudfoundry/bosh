@@ -383,6 +383,7 @@ module Bosh::Director
         all_compiled_packages.each do |compiled_package_spec|
           package = compiled_package_spec[:package]
           stemcell = compiled_package_spec[:stemcell]
+          compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
           existing_compiled_package = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
           if existing_compiled_package.empty?
@@ -390,9 +391,14 @@ module Bosh::Director
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
             event_log.track(package_desc) do
               other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
+              if @fix && !other_compiled_package.nil?
+                fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
+              end
               create_compiled_package(package, stemcell, release_dir, other_compiled_package)
               had_effect = true
             end
+          elsif @fix
+            fix_compiled_package(existing_compiled_package.first, compiled_pkg_tgz)
           end
         end
 
@@ -437,7 +443,6 @@ module Bosh::Director
         if other_compiled_package.nil?
           tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           validate_tgz(tgz, "#{package.name}.tgz")
-
           blobstore_id = BlobUtil.create_blob(tgz)
           sha1 = Digest::SHA1.file(tgz).hexdigest
         else
@@ -493,7 +498,7 @@ module Bosh::Director
           package.sha1 = package_meta['sha1']
 
           if package.blobstore_id != nil
-            fix_compiled_packages package
+            delete_compiled_packages package
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
             return true
@@ -501,7 +506,7 @@ module Bosh::Director
 
           if existing_blob
             pkg = Models::Package.where(blobstore_id: existing_blob).first
-            fix_compiled_packages package
+            delete_compiled_packages package
             fix_package(pkg, package_tgz)
             package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
             return true
@@ -647,9 +652,10 @@ module Bosh::Director
         package.blobstore_id = BlobUtil.create_blob(package_tgz)
         logger.info("Re-created package '#{package.name}/#{package.version}' \
 with blobstore_id '#{package.blobstore_id}'")
+        package.save
       end
 
-      def fix_compiled_packages(package)
+      def delete_compiled_packages(package)
         package.compiled_packages.each do |compiled_pkg|
           unless BlobUtil.verify_blob(compiled_pkg.blobstore_id, compiled_pkg.sha1)
             logger.info("Deleting compiled package '#{compiled_pkg.name}' \
@@ -664,6 +670,21 @@ for '#{compiled_pkg.stemcell.name}/#{compiled_pkg.stemcell.version}' with blobst
             compiled_pkg.destroy
           end
         end
+      end
+
+      def fix_compiled_package(compiled_pkg, compiled_pkg_tgz)
+        begin
+          logger.info("Deleting compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
+for '#{compiled_pkg.stemcell.name}/#{compiled_pkg.stemcell.version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
+          BlobUtil.delete_blob compiled_pkg.blobstore_id
+        rescue Bosh::Blobstore::BlobstoreError => e
+          logger.info("Error deleting compiled package '#{compiled_pkg.name}' \
+with blobstore_id '#{compiled_pkg.blobstore_id}' #{e.inspect}")
+        end
+        compiled_pkg.blobstore_id = BlobUtil.create_blob(compiled_pkg_tgz)
+        logger.info("Re-created compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
+with blobstore_id '#{compiled_pkg.blobstore_id}'")
+        compiled_pkg.save
       end
     end
   end
