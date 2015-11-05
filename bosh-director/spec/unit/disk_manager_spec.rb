@@ -387,47 +387,126 @@ module Bosh::Director
       end
     end
 
-    describe '#delete_orphan_disks' do
-      let(:orphan_disk_cid_1) { Models::OrphanDisk.make.disk_cid }
-      let(:orphan_disk_cid_2) { Models::OrphanDisk.make.disk_cid }
+    describe 'Deleting orphans' do
+      let(:time) { Time.now }
+      let(:ten_seconds_ago) { time - 10 }
+      let(:six_seconds_ago) { time - 6 }
+      let(:five_seconds_ago) { time - 5 }
+      let(:four_seconds_ago) { time - 4 }
 
-      it 'deletes disks from the cloud' do
-        expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+      let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', orphaned_at: ten_seconds_ago) }
+      let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', orphaned_at: five_seconds_ago) }
+      let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
+      let(:orphan_disk_cid_2) { orphan_disk_2.disk_cid }
+      let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-a') }
+      let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-b') }
+      let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, orphaned_at: 0, snapshot_cid: 'snap-cid-2') }
+      before { allow(cloud).to receive(:delete_disk) }
 
-        subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
+      describe 'deleting orphan disks' do
+        describe 'delete orphan disks older than' do
+          it 'deletes orphaned disks that were orphaned before the provided time' do
+            expect(cloud).to receive(:delete_disk).with('disk-cid-1')
 
-        expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
-        expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
-      end
+            subject.delete_orphan_disks_older_than(six_seconds_ago)
 
-      context 'when user accidentally tries to delete an non-existent disk' do
-        it 'raises DiskNotFound AND continues to delete the remaining disks' do
-          expect(logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
+            expect(Models::OrphanDisk.all.map(&:disk_cid)).to eq(['disk-cid-2'])
+          end
 
-          subject.delete_orphan_disk_by_disk_cid('non_existing_orphan_disk_cid')
+          it 'leaves orphaned disk that were orphaned after the provided time' do
+            expect(cloud).to receive(:delete_disk).with('disk-cid-1')
+            expect(cloud).to receive(:delete_disk).with('disk-cid-2')
+
+            subject.delete_orphan_disks_older_than(four_seconds_ago)
+
+            expect(Models::OrphanDisk.all).to be_empty
+          end
         end
       end
 
-      context 'when disk is not found in the cloud' do
-        it 'logs the error to the debug log AND continues to delete the remaining disks' do
-          allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+      describe 'deleting an orphan disk model' do
+        it 'deletes disks from the cloud' do
+          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
 
-          expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
+          subject.delete_orphan_disk(orphan_disk_1)
+
+          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
+        end
+
+        it 'deletes the orphan snapshots' do
+          expect(Models::OrphanSnapshot.all).to_not be_empty
+          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+          expect(cloud).to receive(:delete_disk).with('snap-cid-a')
+          expect(cloud).to receive(:delete_disk).with('snap-cid-b')
+          expect(cloud).to_not receive(:delete_disk).with('snap-cid-2')
+
+          subject.delete_orphan_disk(orphan_disk_1)
+
+          expect(Models::OrphanSnapshot.all.map(&:snapshot_cid)).to eq(['snap-cid-2'])
+        end
+      end
+
+      describe 'deleting an orphan disk by disk cid' do
+        it 'deletes disks from the cloud' do
+          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
 
           subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
+
           expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_2).all).to_not be_empty
         end
-      end
 
-      context 'when CPI is unable to delete a disk' do
-        it 'raises the error thrown by the CPI AND does NOT delete the disk from the database' do
-          allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Exception.new('Bad stuff happened!'))
+        it 'deletes the orphan snapshots' do
+          expect(Models::OrphanSnapshot.all).to_not be_empty
+          expect(cloud).to receive(:delete_disk).with(orphan_disk_cid_1)
+          expect(cloud).to receive(:delete_disk).with('snap-cid-a')
+          expect(cloud).to receive(:delete_disk).with('snap-cid-b')
+          expect(cloud).to_not receive(:delete_disk).with('snap-cid-2')
 
-          expect {
+          subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
+
+          expect(Models::OrphanSnapshot.all.map(&:snapshot_cid)).to eq(['snap-cid-2'])
+        end
+
+        context 'when user accidentally tries to delete an non-existent disk' do
+          it 'raises DiskNotFound AND continues to delete the remaining disks' do
+            expect(logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
+
+            subject.delete_orphan_disk_by_disk_cid('non_existing_orphan_disk_cid')
+          end
+        end
+
+        context 'when the snapshot is not found in the cloud' do
+          it 'logs the error and continues to delete the remaining disks' do
+            expect(cloud).to receive(:delete_disk).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
+            expect(logger).to receive(:debug).with('Disk not found in IaaS: snap-cid-a')
             subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
-          }.to raise_error Exception, 'Bad stuff happened!'
+            expect(Models::OrphanSnapshot.where(orphan_disk_id: orphan_disk_1.id).all).to be_empty
+          end
+        end
 
-          expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
+        context 'when disk is not found in the cloud' do
+          it 'logs the error to the debug log AND continues to delete the remaining disks' do
+            allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+
+            expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
+
+            subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
+            expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
+          end
+        end
+
+        context 'when CPI is unable to delete a disk' do
+          it 'raises the error thrown by the CPI AND does NOT delete the disk from the database' do
+            allow(cloud).to receive(:delete_disk).with(orphan_disk_cid_1).and_raise(Exception.new('Bad stuff happened!'))
+
+            expect {
+              subject.delete_orphan_disk_by_disk_cid(orphan_disk_cid_1)
+            }.to raise_error Exception, 'Bad stuff happened!'
+
+            expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).not_to be_empty
+          end
         end
       end
     end

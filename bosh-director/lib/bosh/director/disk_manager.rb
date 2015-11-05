@@ -87,19 +87,32 @@ module Bosh::Director
       end
     end
 
+    def delete_orphan_disk(orphan_disk)
+      begin
+        orphan_disk.orphan_snapshots.each do |orphan_snapshot|
+          delete_orphan_snapshot(orphan_snapshot)
+        end
+        @cloud.delete_disk(orphan_disk.disk_cid)
+        orphan_disk.destroy
+      rescue Bosh::Clouds::DiskNotFound
+        @logger.debug("Disk not found in IaaS: #{orphan_disk.disk_cid}")
+        orphan_disk.destroy
+      end
+    end
+
     def delete_orphan_disk_by_disk_cid(disk_cid)
       @logger.info("Deleting orphan disk: #{disk_cid}")
       orphan_disk = Bosh::Director::Models::OrphanDisk.where(disk_cid: disk_cid).first
       if orphan_disk
-        begin
-          @cloud.delete_disk(orphan_disk.disk_cid)
-          orphan_disk.destroy
-        rescue Bosh::Clouds::DiskNotFound
-          @logger.debug("Disk not found in IaaS: #{orphan_disk.disk_cid}")
-          orphan_disk.destroy
-        end
+        delete_orphan_disk(orphan_disk)
       else
         @logger.debug("Disk not found: #{disk_cid}")
+      end
+    end
+
+    def delete_orphan_disks_older_than(time)
+      Models::OrphanDisk.where{orphaned_at < time}.each do |old_orphan|
+        delete_orphan_disk(old_orphan)
       end
     end
 
@@ -110,6 +123,16 @@ module Bosh::Director
     end
 
     private
+
+    def delete_orphan_snapshot(orphan_snapshot)
+      begin
+        @cloud.delete_disk(orphan_snapshot.snapshot_cid)
+        orphan_snapshot.destroy
+      rescue Bosh::Clouds::DiskNotFound
+        @logger.debug("Disk not found in IaaS: #{orphan_snapshot.snapshot_cid}")
+        orphan_snapshot.destroy
+      end
+    end
 
     def orphan_snapshots(snapshots, orphan_disk)
       snapshots.each do |snapshot|
