@@ -14,7 +14,7 @@ module Bosh::Director
 
       def check_contains(az_names, networks, job)
         networks.each do |network|
-          network.validate_has_job!(az_names, job.name)
+          network.validate_has_azs!(az_names, job.name)
         end
       end
 

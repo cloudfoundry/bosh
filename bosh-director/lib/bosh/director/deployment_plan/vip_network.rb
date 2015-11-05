@@ -43,7 +43,7 @@ module Bosh::Director
         :static
       end
 
-      def validate_has_job!(az_names, job_name)
+      def validate_has_azs!(az_names, job_name)
         # nothing to validate
       end
     end

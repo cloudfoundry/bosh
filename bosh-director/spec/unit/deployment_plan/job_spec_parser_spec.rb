@@ -868,13 +868,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       context 'when there is a key with values' do
         it 'parses each value into the AZ on the deployment' do
           zone1, zone2 = set_up_azs!(["zone1", "zone2"], job_spec, deployment_plan)
-          allow(network).to receive(:validate_has_job!)
+          allow(network).to receive(:validate_has_azs!)
           expect(parser.parse(job_spec).availability_zones).to eq([zone1, zone2])
         end
 
         it 'raises an exception if the value are not strings' do
           job_spec['availability_zones'] = ['valid_zone', 3]
-          allow(network).to receive(:validate_has_job!)
+          allow(network).to receive(:validate_has_azs!)
           allow(deployment_plan).to receive(:availability_zone).with("valid_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
           expect {
@@ -886,7 +886,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         it 'raises an exception if the referenced AZ doesnt exist in the deployment' do
           job_spec['availability_zones'] = ['existent_zone', 'nonexistent_zone']
-          allow(network).to receive(:validate_has_job!)
+          allow(network).to receive(:validate_has_azs!)
           allow(deployment_plan).to receive(:availability_zone).with("existent_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
           allow(deployment_plan).to receive(:availability_zone).with("nonexistent_zone") { nil }
 
@@ -908,21 +908,21 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             first_network = instance_double(
               Bosh::Director::DeploymentPlan::ManualNetwork,
               name: 'first-network',
-              validate_has_job!: true,
+              validate_has_azs!: true,
               validate_reference_from_job!: true
             )
             second_network = instance_double(
               Bosh::Director::DeploymentPlan::ManualNetwork,
               name: 'second-network',
-              validate_has_job!: true,
+              validate_has_azs!: true,
               validate_reference_from_job!: true
             )
             allow(deployment_plan).to receive(:networks).and_return([first_network, second_network])
 
             parser.parse(job_spec)
 
-            expect(first_network).to have_received(:validate_has_job!).with(['zone1', 'zone2'], 'fake-job-name')
-            expect(second_network).to have_received(:validate_has_job!).with(['zone1', 'zone2'], 'fake-job-name')
+            expect(first_network).to have_received(:validate_has_azs!).with(['zone1', 'zone2'], 'fake-job-name')
+            expect(second_network).to have_received(:validate_has_azs!).with(['zone1', 'zone2'], 'fake-job-name')
           end
         end
       end
@@ -954,7 +954,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         }
       end
       before do
-        allow(network).to receive(:validate_has_job!)
+        allow(network).to receive(:validate_has_azs!)
         allow(deployment_plan).to receive(:availability_zone).with('z1') { Bosh::Director::DeploymentPlan::AvailabilityZone.new('z1', {}) }
         allow(deployment_plan).to receive(:availability_zone).with('z2') { Bosh::Director::DeploymentPlan::AvailabilityZone.new('z2', {}) }
       end
