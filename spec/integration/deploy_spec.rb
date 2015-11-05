@@ -119,15 +119,13 @@ describe 'deploy', type: :integration do
         deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
 
         expect_running_vms_with_names_and_count('foobar' => 3)
-        expect_output('deployments', <<-OUT)
+        expect_table('deployments', %(
           +--------+----------------------+-------------------+--------------+
           | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
           +--------+----------------------+-------------------+--------------+
           | simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | none         |
           +--------+----------------------+-------------------+--------------+
-
-          Deployments total: 1
-        OUT
+        ))
       end
     end
   end
@@ -204,16 +202,16 @@ describe 'deploy', type: :integration do
       job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
       job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
 
-      expect(job_1_stdout).to match(<<-EOF)
-message on stdout of job 1 pre-start script
-template interpolation works in this script: this is pre_start_message_1
-message on stdout of job 1 new version pre-start script
-      EOF
+      expect(job_1_stdout).to match_output %(
+        message on stdout of job 1 pre-start script
+        template interpolation works in this script: this is pre_start_message_1
+        message on stdout of job 1 new version pre-start script
+      )
 
-      expect(job_1_stderr).to match(<<-EOF)
-message on stderr of job 1 pre-start script
-message on stderr of job 1 new version pre-start script
-      EOF
+      expect(job_1_stderr).to match_output %(
+        message on stderr of job 1 pre-start script
+        message on stderr of job 1 new version pre-start script
+      )
     end
 
     context 'when the pre-start scripts are corrupted' do
@@ -320,7 +318,7 @@ message on stderr of job 1 new version pre-start script
     task_regex = '\\d+'
 
     # order for creating missing vms is not guaranteed (running in parallel)
-    expect(output).to match(<<-OUT)
+    expect(output).to match(strip_heredoc <<-OUT)
 Director task #{task_regex}
   Started preparing deployment > Preparing deployment. Done #{step_duration_regex}
 
@@ -406,14 +404,15 @@ Deployed `simple' to `Test Director'
         it 'fails with an error message saying there is no way to compile for that stemcell' do
           out = deploy(failure_expected: true)
           expect(out).to include("Error 60001:")
-          expect(out).to include(<<-EOF)
-Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
- - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
- - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
- - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
- - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
- - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
-          EOF
+
+          expect(out).to match_output %(
+            Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+             - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+             - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+             - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+             - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+             - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
+          )
         end
 
         context 'and multiple releases are referenced in the current deployment' do
@@ -424,23 +423,22 @@ Can't use release 'test_release/1'. It references packages without source code a
 
           it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
             out = deploy(failure_expected: true)
-
             expect(out).to include("Error 60001:")
 
-            expect(out).to include(<<-EOF)
-Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
- - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
- - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
-            EOF
+            expect(out).to match_output %(
+              Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+            )
 
-            expect(out).to include(<<-EOF)
-Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
- - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
- - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
- - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
- - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
- - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
-            EOF
+            expect(out).to match_output %(
+              Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+               - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+               - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+               - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
+            )
           end
         end
       end

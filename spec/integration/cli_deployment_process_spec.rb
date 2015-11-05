@@ -50,7 +50,9 @@ describe 'cli: deployment process', type: :integration do
         bosh_runner.run("deployment #{deployment_manifest.path}")
 
         expect(bosh_runner.run('deploy')).to match /Deployed `minimal2' to `Test Director'/
-        expect_output('deployments', <<-OUT)
+        expect_table('deployments', %(
+          Acting as user 'test' on 'Test Director'
+
           +----------+----------------+-------------------+--------------+
           | Name     | Release(s)     | Stemcell(s)       | Cloud Config |
           +----------+----------------+-------------------+--------------+
@@ -58,8 +60,9 @@ describe 'cli: deployment process', type: :integration do
           +----------+----------------+-------------------+--------------+
           | minimal2 | test_release/1 | ubuntu-stemcell/1 | latest       |
           +----------+----------------+-------------------+--------------+
+
           Deployments total: 2
-        OUT
+        ))
       end
     end
   end

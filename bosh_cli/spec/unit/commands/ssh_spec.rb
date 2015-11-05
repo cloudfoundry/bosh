@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'net/ssh/gateway'
-require 'cli/ssh_session'
 
 describe Bosh::Cli::Command::Ssh do
   include FakeFS::SpecHelpers

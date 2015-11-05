@@ -26,9 +26,8 @@ describe 'cli: login using the directors built-in user DB', type: :integration d
 
     it 'cannot log in if password is invalid' do
       bosh_runner.run("target #{current_sandbox.director_url}")
-      expect_output('login test admin', <<-OUT)
-        Cannot log in as `test'
-      OUT
+      expect { bosh_runner.run('login test admin') }
+        .to raise_error(RuntimeError, /Cannot log in as `test'/)
     end
   end
 

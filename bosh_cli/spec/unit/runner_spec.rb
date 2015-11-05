@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'tmpdir'
-require 'cli/base_command'
 
 describe Bosh::Cli::Runner do
   let(:runner) { described_class.new([]) }

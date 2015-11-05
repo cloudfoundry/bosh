@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cli/public_stemcells'
 
 module Bosh::Cli
   describe PublicStemcells, vcr: { cassette_name: 'promoted-stemcells' } do

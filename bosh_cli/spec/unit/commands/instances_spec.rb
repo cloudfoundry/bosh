@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cli'
 
 describe Bosh::Cli::Command::Instances do
   subject(:command) { described_class.new }
@@ -86,7 +85,7 @@ describe Bosh::Cli::Command::Instances do
         'job_name' => 'job1',
         'index' => 0,
         'ips' => %w{192.168.0.1 192.168.0.2},
-        'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
+        'dns' => %w{index.job1.network1.deployment.microbosh index.job1.network2.deployment.microbosh},
         'vitals' => 'vitals',
         'job_state' => 'running',
         'resource_pool' => 'rp1',
@@ -133,7 +132,7 @@ describe Bosh::Cli::Command::Instances do
         'job_name' => 'job2',
         'index' => 0,
         'ips' => %w{192.168.0.3 192.168.0.4},
-        'dns' => %w{index.job.network.deployment.microbosh index.job.network2.deployment.microbosh},
+        'dns' => %w{index.job2.network1.deployment.microbosh index.job2.network2.deployment.microbosh},
         'vitals' => 'vitals',
         'job_state' => 'running',
         'resource_pool' => 'rp1',
@@ -280,22 +279,17 @@ describe Bosh::Cli::Command::Instances do
 
       context 'default' do
         it 'show basic vms information' do
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'Instance'
-            expect(display_output.to_s).to include 'State'
-            expect(display_output.to_s).to include 'AZ'
-            expect(display_output.to_s).to include 'Resource Pool'
-            expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to include 'job1/0'
-            expect(display_output.to_s).to include 'running'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to include '| 192.168.0.1'
-            expect(display_output.to_s).to include '| 192.168.0.2'
-            expect(display_output.to_s).to include 'job2/0'
-            expect(display_output.to_s).to include 'az2'
-            expect(display_output.to_s).to include '| 192.168.0.3'
-            expect(display_output.to_s).to include '| 192.168.0.4'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         |
+              +----------+---------+-----+---------------+-------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 |
+              |          |         |     |               | 192.168.0.2 |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 |
+              |          |         |     |               | 192.168.0.4 |
+              +----------+---------+-----+---------------+-------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -305,18 +299,15 @@ describe Bosh::Cli::Command::Instances do
           options[:failing] = true
           vm2_state['job_state'] = 'failing'
 
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'Instance'
-            expect(display_output.to_s).to include 'State'
-            expect(display_output.to_s).to include 'AZ'
-            expect(display_output.to_s).to include 'Resource Pool'
-            expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to include 'job2/0'
-            expect(display_output.to_s).to include 'failing'
-            expect(display_output.to_s).to include 'az2'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to include '| 192.168.0.3'
-            expect(display_output.to_s).to include '| 192.168.0.4'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         |
+              +----------+---------+-----+---------------+-------------+
+              | job2/0   | failing | az2 | rp1           | 192.168.0.3 |
+              |          |         |     |               | 192.168.0.4 |
+              +----------+---------+-----+---------------+-------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 1')
           perform
@@ -354,33 +345,17 @@ describe Bosh::Cli::Command::Instances do
         before { options[:details] = true }
 
         it 'shows vm details with active disk' do
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'Instance'
-            expect(display_output.to_s).to include 'State'
-            expect(display_output.to_s).to include 'AZ'
-            expect(display_output.to_s).to include 'Resource Pool'
-            expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to include 'VM CID'
-            expect(display_output.to_s).to include 'Disk CID'
-            expect(display_output.to_s).to include 'Agent ID'
-            expect(display_output.to_s).to include 'Resurrection'
-            expect(display_output.to_s).to include 'job1/0'
-            expect(display_output.to_s).to include 'running'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to include '| 192.168.0.1'
-            expect(display_output.to_s).to include '| 192.168.0.2'
-            expect(display_output.to_s).to include 'vm-cid1'
-            expect(display_output.to_s).to include 'disk-cid1'
-            expect(display_output.to_s).to include 'agent1'
-            expect(display_output.to_s).to include 'paused'
-            expect(display_output.to_s).to include 'job2/0'
-            expect(display_output.to_s).to include 'az2'
-            expect(display_output.to_s).to include '| 192.168.0.3'
-            expect(display_output.to_s).to include '| 192.168.0.4'
-            expect(display_output.to_s).to include 'vm-cid2'
-            expect(display_output.to_s).to include 'disk-cid2'
-            expect(display_output.to_s).to include 'agent2'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       |
+              |          |         |     |               | 192.168.0.2 |         |           |          |              |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
+              |          |         |     |               | 192.168.0.4 |         |           |          |              |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -388,8 +363,17 @@ describe Bosh::Cli::Command::Instances do
 
         it 'shows vm details without active disk' do
           vm1_state['disk_cid'] = nil
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'n/a'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | n/a       | agent1   | paused       |
+              |          |         |     |               | 192.168.0.2 |         |           |          |              |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
+              |          |         |     |               | 192.168.0.4 |         |           |          |              |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -398,8 +382,17 @@ describe Bosh::Cli::Command::Instances do
         it 'does not show disk cid when response does not contain disk cid info' do
           vm1_state.delete('disk_cid')
           vm2_state.delete('disk_cid')
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to_not include 'Disk CID'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+---------+----------+--------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         | VM CID  | Agent ID | Resurrection |
+              +----------+---------+-----+---------------+-------------+---------+----------+--------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | agent1   | paused       |
+              |          |         |     |               | 192.168.0.2 |         |          |              |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | agent2   | paused       |
+              |          |         |     |               | 192.168.0.4 |         |          |              |
+              +----------+---------+-----+---------------+-------------+---------+----------+--------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -409,31 +402,17 @@ describe Bosh::Cli::Command::Instances do
           options[:failing] = true
           vm2_state['job_state'] = 'failing'
 
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'Instance'
-            expect(s.to_s).to include 'State'
-            expect(s.to_s).to include 'Resource Pool'
-            expect(s.to_s).to include 'IPs'
-            expect(s.to_s).to include 'VM CID'
-            expect(s.to_s).to include 'Disk CID'
-            expect(s.to_s).to include 'Agent ID'
-            expect(s.to_s).to include 'Resurrection'
-            expect(s.to_s).to_not include 'job1/0'
-            expect(s.to_s).to include 'failing'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to_not include '| 192.168.0.1'
-            expect(s.to_s).to_not include '| 192.168.0.2'
-            expect(s.to_s).to_not include 'vm-cid1'
-            expect(s.to_s).to_not include 'disk-cid1'
-            expect(s.to_s).to_not include 'agent1'
-            expect(s.to_s).to include 'paused'
-            expect(s.to_s).to include 'job2/0'
-            expect(s.to_s).to include '| 192.168.0.3'
-            expect(s.to_s).to include '| 192.168.0.4'
-            expect(s.to_s).to include 'vm-cid2'
-            expect(s.to_s).to include 'disk-cid2'
-            expect(s.to_s).to include 'agent2'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+              | job2/0   | failing | az2 | rp1           | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
+              |          |         |     |               | 192.168.0.4 |         |           |          |              |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
+            )
           end
+
           expect(command).to receive(:say).with('Instances total: 1')
           perform
         end
@@ -443,25 +422,17 @@ describe Bosh::Cli::Command::Instances do
         before { options[:dns] = true }
 
         it 'shows DNS A records' do
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'Instance'
-            expect(display_output.to_s).to include 'State'
-            expect(display_output.to_s).to include 'AZ'
-            expect(display_output.to_s).to include 'Resource Pool'
-            expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to include 'DNS A records'
-            expect(display_output.to_s).to include 'job1/0'
-            expect(display_output.to_s).to include 'running'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to include '| 192.168.0.1'
-            expect(display_output.to_s).to include '| 192.168.0.2'
-            expect(display_output.to_s).to include '| index.job.network.deployment.microbosh'
-            expect(display_output.to_s).to include 'job2/0'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include '| 192.168.0.3'
-            expect(display_output.to_s).to include '| 192.168.0.4'
-            expect(display_output.to_s).to include '| index.job.network2.deployment.microbosh'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+------------------------------------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         | DNS A records                            |
+              +----------+---------+-----+---------------+-------------+------------------------------------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | index.job1.network1.deployment.microbosh |
+              |          |         |     |               | 192.168.0.2 | index.job1.network2.deployment.microbosh |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 | index.job2.network1.deployment.microbosh |
+              |          |         |     |               | 192.168.0.4 | index.job2.network2.deployment.microbosh |
+              +----------+---------+-----+---------------+-------------+------------------------------------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -472,36 +443,18 @@ describe Bosh::Cli::Command::Instances do
         before { options[:vitals] = true }
 
         it 'shows the instance vitals' do
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to include 'Instance'
-            expect(display_output.to_s).to include 'State'
-            expect(display_output.to_s).to include 'AZ'
-            expect(display_output.to_s).to include 'Resource Pool'
-            expect(display_output.to_s).to include 'IPs'
-            expect(display_output.to_s).to include 'Load'
-            expect(display_output.to_s).to include '(avg01, avg05, avg15)'
-            expect(display_output.to_s).to include 'CPU'
-            expect(display_output.to_s).to include 'Memory Usage'
-            expect(display_output.to_s).to include 'Swap Usage'
-            expect(display_output.to_s).to include 'job1/0'
-            expect(display_output.to_s).to include 'job2/0'
-            expect(display_output.to_s).to include 'running'
-            expect(display_output.to_s).to include 'az1'
-            expect(display_output.to_s).to include 'az2'
-            expect(display_output.to_s).to include 'rp1'
-            expect(display_output.to_s).to include '| 192.168.0.1'
-            expect(display_output.to_s).to include '| 192.168.0.2'
-            expect(display_output.to_s).to include '| 192.168.0.3'
-            expect(display_output.to_s).to include '| 192.168.0.4'
-            expect(display_output.to_s).to include '1, 2, 3'
-            expect(display_output.to_s).to include '4%'
-            expect(display_output.to_s).to include '5%'
-            expect(display_output.to_s).to include '6%'
-            expect(display_output.to_s).to include '7% (8.0K)'
-            expect(display_output.to_s).to include '9% (10.0K)'
-            expect(display_output.to_s).to include '11%'
-            expect(display_output.to_s).to include '12%'
-            expect(display_output.to_s).to include '13%'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+              |          |         |     |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+              |          |         |     |               | 192.168.0.2 |                       |      |     |      |              |            |            |            |            |
+              | job2/0   | running | az2 | rp1           | 192.168.0.3 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+              |          |         |     |               | 192.168.0.4 |                       |      |     |      |              |            |            |            |            |
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -513,9 +466,16 @@ describe Bosh::Cli::Command::Instances do
           new_vm_state['vitals']['disk'].delete('persistent')
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
-          expect(command).to receive(:say) do |display_output|
-            expect(display_output.to_s).to_not include '12%'
-            expect(display_output.to_s).to_not include '13%'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | Instance | State   | AZ  | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+              |          |         |     |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | job1/0   | running | az1 | rp1           | 192.168.0.1 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | n/a        | n/a        |
+              |          |         |     |               | 192.168.0.2 |                       |      |     |      |              |            |            |            |            |
+              +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 1')
           perform
@@ -526,16 +486,22 @@ describe Bosh::Cli::Command::Instances do
         before { options[:ps] = true }
 
         it 'shows the details of each instance\'s processes' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'Instance'
-            expect(s.to_s).to include 'State'
-            expect(s.to_s).to include 'Resource Pool'
-            expect(s.to_s).to include 'IPs'
-            expect(s.to_s).to include 'process-1'
-            expect(s.to_s).to include 'process-2'
-            expect(s.to_s).to include 'process-3'
-            expect(s.to_s).to include 'process-4'
-            expect(s.to_s).to include 'running'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-------------+---------+-----+---------------+-------------+
+              | Instance    | State   | AZ  | Resource Pool | IPs         |
+              +-------------+---------+-----+---------------+-------------+
+              | job1/0      | running | az1 | rp1           | 192.168.0.1 |
+              |             |         |     |               | 192.168.0.2 |
+              |   process-1 | running |     |               |             |
+              |   process-2 | running |     |               |             |
+              +-------------+---------+-----+---------------+-------------+
+              | job2/0      | running | az2 | rp1           | 192.168.0.3 |
+              |             |         |     |               | 192.168.0.4 |
+              |   process-3 | running |     |               |             |
+              |   process-4 | running |     |               |             |
+              +-------------+---------+-----+---------------+-------------+
+            )
           end
           expect(command).to receive(:say).with('Instances total: 2')
           perform
@@ -552,57 +518,87 @@ describe Bosh::Cli::Command::Instances do
           it 'only shows failing instances' do
             vm2_state['job_state'] = 'failing'
 
-            expect(command).to receive(:say) do |s|
-              expect(s.to_s).to include 'Instance'
-              expect(s.to_s).to include 'State'
-              expect(s.to_s).to include 'Resource Pool'
-              expect(s.to_s).to include 'IPs'
-              expect(s.to_s).to_not include 'job1/0'
-              expect(s.to_s).to_not include 'process-1'
-              expect(s.to_s).to_not include 'process-2'
-              expect(s.to_s).to include 'job2/0'
-              expect(s.to_s).to_not include 'process-3'
-              expect(s.to_s).to_not include 'process-4'
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +----------+---------+-----+---------------+-------------+
+                | Instance | State   | AZ  | Resource Pool | IPs         |
+                +----------+---------+-----+---------------+-------------+
+                | job2/0   | failing | az2 | rp1           | 192.168.0.3 |
+                |          |         |     |               | 192.168.0.4 |
+                +----------+---------+-----+---------------+-------------+
+              )
             end
             expect(command).to receive(:say).with('Instances total: 1')
             perform
           end
 
-          it 'shows instance and its processes when one of processes is failing' do
+          it 'considers any non-"running" job as failing' do
+            vm2_state['job_state'] = 'vaporized'
+
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +----------+-----------+-----+---------------+-------------+
+                | Instance | State     | AZ  | Resource Pool | IPs         |
+                +----------+-----------+-----+---------------+-------------+
+                | job2/0   | vaporized | az2 | rp1           | 192.168.0.3 |
+                |          |           |     |               | 192.168.0.4 |
+                +----------+-----------+-----+---------------+-------------+
+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 1')
+            perform
+          end
+
+          it 'shows instance and its processes when one of the processes is failing' do
             vm2_state['processes'][0]['state'] = 'failing'
 
-            expect(command).to receive(:say) do |s|
-              expect(s.to_s).to include 'Instance'
-              expect(s.to_s).to include 'State'
-              expect(s.to_s).to include 'Resource Pool'
-              expect(s.to_s).to include 'IPs'
-              expect(s.to_s).to_not include 'job1/0'
-              expect(s.to_s).to_not include 'process-1'
-              expect(s.to_s).to_not include 'process-2'
-              expect(s.to_s).to include 'job2/0'
-              expect(s.to_s).to include 'process-3'
-              expect(s.to_s).to_not include 'process-4'
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +-------------+---------+-----+---------------+-------------+
+                | Instance    | State   | AZ  | Resource Pool | IPs         |
+                +-------------+---------+-----+---------------+-------------+
+                | job2/0      | running | az2 | rp1           | 192.168.0.3 |
+                |             |         |     |               | 192.168.0.4 |
+                |   process-3 | failing |     |               |             |
+                +-------------+---------+-----+---------------+-------------+
+              )
             end
             expect(command).to receive(:say).with('Instances total: 1')
             perform
           end
 
-          it 'shows instance and its processes when instance and one of processes are failing' do
+          it 'shows instance and its processes when instance and one of the processes are failing' do
             vm2_state["job_state"] = 'failing'
             vm2_state['processes'][0]['state'] = 'failing'
 
-            expect(command).to receive(:say) do |s|
-              expect(s.to_s).to include 'Instance'
-              expect(s.to_s).to include 'State'
-              expect(s.to_s).to include 'Resource Pool'
-              expect(s.to_s).to include 'IPs'
-              expect(s.to_s).to_not include 'job1/0'
-              expect(s.to_s).to_not include 'process-1'
-              expect(s.to_s).to_not include 'process-2'
-              expect(s.to_s).to include 'failing'
-              expect(s.to_s).to include 'job2/0'
-              expect(s.to_s).to include 'process-3'
-              expect(s.to_s).to_not include 'process-4'
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +-------------+---------+-----+---------------+-------------+
+                | Instance    | State   | AZ  | Resource Pool | IPs         |
+                +-------------+---------+-----+---------------+-------------+
+                | job2/0      | failing | az2 | rp1           | 192.168.0.3 |
+                |             |         |     |               | 192.168.0.4 |
+                |   process-3 | failing |     |               |             |
+                +-------------+---------+-----+---------------+-------------+
+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 1')
+            perform
+          end
+
+          it 'considers any non-"running" process as failing' do
+            vm2_state['processes'][0]['state'] = 'exploded'
+
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +-------------+----------+-----+---------------+-------------+
+                | Instance    | State    | AZ  | Resource Pool | IPs         |
+                +-------------+----------+-----+---------------+-------------+
+                | job2/0      | running  | az2 | rp1           | 192.168.0.3 |
+                |             |          |     |               | 192.168.0.4 |
+                |   process-3 | exploded |     |               |             |
+                +-------------+----------+-----+---------------+-------------+
+              )
             end
             expect(command).to receive(:say).with('Instances total: 1')
             perform

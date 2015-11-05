@@ -1,6 +1,6 @@
 $: << File.expand_path('..', __FILE__)
 
-require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
+require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
 
 require 'digest/sha1'
 require 'fileutils'
@@ -15,7 +15,7 @@ require 'machinist/sequel'
 require 'sham'
 require 'support/buffered_logger'
 
-Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require(f) }
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
 DIRECTOR_TEST_CERTS="these\nare\nthe\ncerts"
 DIRECTOR_TEST_CERTS_SHA1=Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
@@ -204,11 +204,6 @@ def check_event_log
   end
 
   yield events
-end
-
-def strip_heredoc(str)
-  indent = str.scan(/^[ \t]*(?=\S)/).min.size || 0
-  str.gsub(/^[ \t]{#{indent}}/, '')
 end
 
 module ManifestHelper

@@ -13,9 +13,8 @@ describe 'delete release', type: :integration do
     out = bosh_runner.run('delete release test_release')
     expect(out).to match regexp('Deleted `test_release')
 
-    expect_output('releases', <<-OUT)
-    No releases
-    OUT
+    expect { bosh_runner.run('releases') }
+      .to raise_error(RuntimeError, /No releases/)
   end
 
   it 'can delete an uploaded compiled release (no source)' do

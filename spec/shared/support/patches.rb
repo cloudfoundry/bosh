@@ -5,7 +5,7 @@ unless FakeFS::Version.to_s == '0.6.7'
   raise "Check that FakeFS #{FakeFS::Version} still needs to be patched"
 end
 
-module Extensions
+module Patches
   module FakeFS
     module Kernel
       # FakeFS makes `Kernel.open` public, and leaves it public when restoring
@@ -20,4 +20,4 @@ module Extensions
   end
 end
 
-FakeFS::Kernel.send(:include, Extensions::FakeFS::Kernel)
+FakeFS::Kernel.send(:include, Patches::FakeFS::Kernel)

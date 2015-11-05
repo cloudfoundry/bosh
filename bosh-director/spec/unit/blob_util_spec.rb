@@ -14,6 +14,7 @@ module Bosh::Director
     let(:compiled_package_cache_blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:cache_key) { 'cache_sha1' }
     let(:dep_key) { '[]' }
+    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     before do
       allow(Config).to receive(:compiled_package_cache_blobstore).and_return(compiled_package_cache_blobstore)
@@ -78,6 +79,26 @@ module Bosh::Director
           expect(file.to_path).to match %r[/blob$]
         end
         expect(BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key)).to eq(mock_compiled_package)
+      end
+    end
+
+    describe '#replace_blob' do
+      let(:fake_local_blobstore) { instance_double('Bosh::Blobstore::LocalClient') }
+      before do
+        allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
+      end
+
+      it 'replaces existing blob and returns new blobstore id when blob exists' do
+        expect(fake_local_blobstore).to receive(:exists?).with('fake-blobstore-id').and_return true
+        expect(fake_local_blobstore).to receive(:delete).with('fake-blobstore-id')
+        expect(BlobUtil).to receive(:create_blob).with('path-to-package').and_return 'new-blobstore-id'
+        expect(BlobUtil.replace_blob('fake-blobstore-id', 'path-to-package')).to eq 'new-blobstore-id'
+      end
+
+      it 'uploads blob and returns new blobstore id when blob is missing' do
+        expect(fake_local_blobstore).to receive(:exists?).with('fake-blobstore-id').and_return false
+        expect(BlobUtil).to receive(:create_blob).with('path-to-package').and_return 'new-blobstore-id'
+        expect(BlobUtil.replace_blob('fake-blobstore-id', 'path-to-package')).to eq 'new-blobstore-id'
       end
     end
   end

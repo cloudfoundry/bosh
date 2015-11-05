@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'common/version/release_version_list'
 
 module Bosh::Cli::Versions
   describe ReleaseVersionsIndex do

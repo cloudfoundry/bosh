@@ -1,9 +1,8 @@
 require 'spec_helper'
-require 'cli'
-require 'cli/client/errands_client'
 
 describe Bosh::Cli::Command::Errand do
   subject(:command) { described_class.new }
+  let(:actual) { Bosh::Cli::Config.output.string }
 
   ec = Bosh::Cli::Client::ErrandsClient
 
@@ -105,8 +104,7 @@ describe Bosh::Cli::Command::Errand do
 
               it 'does not raise an error' do
                 perform
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   fake-stdout
 
@@ -114,7 +112,7 @@ describe Bosh::Cli::Command::Errand do
                   fake-stderr
 
                   Errand `fake-errand-name' completed successfully (exit code 0)
-                TEXT
+                )
               end
             end
 
@@ -129,15 +127,13 @@ describe Bosh::Cli::Command::Errand do
                   /Errand `fake-errand-name' completed with error \(exit code 123\)/,
                 )
 
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   fake-stdout
 
                   [stderr]
                   fake-stderr
-
-                TEXT
+                )
               end
             end
 
@@ -152,15 +148,13 @@ describe Bosh::Cli::Command::Errand do
                   /Errand `fake-errand-name' was canceled \(exit code 143\)/,
                 )
 
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   fake-stdout
 
                   [stderr]
                   fake-stderr
-
-                TEXT
+                )
               end
             end
 
@@ -169,8 +163,7 @@ describe Bosh::Cli::Command::Errand do
 
               it 'prints actual output for stdout and stderr' do
                 perform
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   fake-stdout
 
@@ -178,7 +171,7 @@ describe Bosh::Cli::Command::Errand do
                   fake-stderr
 
                   Errand `fake-errand-name' completed successfully (exit code 0)
-                TEXT
+                )
               end
             end
 
@@ -187,8 +180,7 @@ describe Bosh::Cli::Command::Errand do
 
               it 'prints None for both stderr and actual output for stdout' do
                 perform
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   fake-stdout
 
@@ -196,7 +188,7 @@ describe Bosh::Cli::Command::Errand do
                   None
 
                   Errand `fake-errand-name' completed successfully (exit code 0)
-                TEXT
+                )
               end
             end
 
@@ -205,8 +197,7 @@ describe Bosh::Cli::Command::Errand do
 
               it 'prints None for both stdout and actual output for stderr' do
                 perform
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   None
 
@@ -214,7 +205,7 @@ describe Bosh::Cli::Command::Errand do
                   fake-stderr
 
                   Errand `fake-errand-name' completed successfully (exit code 0)
-                TEXT
+                )
               end
             end
 
@@ -223,8 +214,7 @@ describe Bosh::Cli::Command::Errand do
 
               it 'prints None for both stdout and stderr' do
                 perform
-                expect_output(<<-TEXT)
-
+                expect(actual).to match_output %(
                   [stdout]
                   None
 
@@ -232,7 +222,7 @@ describe Bosh::Cli::Command::Errand do
                   None
 
                   Errand `fake-errand-name' completed successfully (exit code 0)
-                TEXT
+                )
               end
             end
 
@@ -273,8 +263,7 @@ describe Bosh::Cli::Command::Errand do
                     end
 
                     perform
-                    expect_output(<<-TEXT)
-
+                    expect(actual).to match_output %(
                       [stdout]
                       fake-stdout
 
@@ -283,7 +272,7 @@ describe Bosh::Cli::Command::Errand do
 
                       fake-download-output
                       Errand `fake-errand-name' completed successfully (exit code 0)
-                    TEXT
+                    )
                   end
                 end
 
@@ -295,8 +284,7 @@ describe Bosh::Cli::Command::Errand do
                     it 'raises fetch logs download error' do
                       expect { perform }.to raise_error(error)
 
-                      expect_output(<<-TEXT)
-
+                      expect(actual).to match_output %(
                         [stdout]
                         fake-stdout
 
@@ -304,7 +292,7 @@ describe Bosh::Cli::Command::Errand do
                         fake-stderr
 
                         Errand `fake-errand-name' completed successfully (exit code 0)
-                      TEXT
+                      )
                     end
                   end
 
@@ -319,15 +307,13 @@ describe Bosh::Cli::Command::Errand do
                         /Errand `fake-errand-name' completed with error \(exit code 123\)/,
                       )
 
-                      expect_output(<<-TEXT)
-
+                      expect(actual).to match_output %(
                         [stdout]
                         fake-stdout
 
                         [stderr]
                         fake-stderr
-
-                      TEXT
+                      )
                     end
                   end
 
@@ -342,15 +328,13 @@ describe Bosh::Cli::Command::Errand do
                         /Errand `fake-errand-name' was canceled \(exit code 143\)/,
                       )
 
-                      expect_output(<<-TEXT)
-
+                      expect(actual).to match_output %(
                         [stdout]
                         fake-stdout
 
                         [stderr]
                         fake-stderr
-
-                      TEXT
+                      )
                     end
                   end
                 end
@@ -379,12 +363,11 @@ describe Bosh::Cli::Command::Errand do
 
             it 'reports task information to the user' do
               perform
-              expect_output(<<-TEXT)
-
+              expect(actual).to match_output %(
                 Errand `fake-errand-name' did not complete
 
                 For a more detailed error report, run: bosh task fake-task-id --debug
-              TEXT
+              )
             end
 
             it 'exits with exit code 1' do
@@ -436,11 +419,5 @@ describe Bosh::Cli::Command::Errand do
       expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
       perform
     end
-  end
-
-  def expect_output(expected_output)
-    actual = Bosh::Cli::Config.output.string
-    indent = expected_output.scan(/^[ \t]*(?=\S)/).min.size || 0
-    expect(actual).to eq(expected_output.gsub(/^[ \t]{#{indent}}/, ''))
   end
 end

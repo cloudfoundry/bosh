@@ -64,6 +64,7 @@ module Bosh::Cli::Command
 
     def construct_table_to_display(has_disk_cid, has_az, options, sorted)
       row_count = 0
+      instance_count = sorted.size
 
       result = table do |display_table|
 
@@ -94,9 +95,15 @@ module Bosh::Cli::Command
           if options[:failing]
             if options[:ps]
               instance['processes'].keep_if { |p| p['state'] != 'running' }
-              next if instance['processes'].size == 0 && instance['job_state'] != 'failing'
+              if instance['processes'].size == 0 && instance['job_state'] == 'running'
+                instance_count -= 1
+                next
+              end
             else
-              next if instance['job_state'] != 'failing'
+              if instance['job_state'] == 'running'
+                instance_count -= 1
+                next
+              end
             end
           end
 
@@ -182,7 +189,7 @@ module Bosh::Cli::Command
               (headings.size - 2).times { process_row << '' }
               display_table << process_row
             end
-            display_table << :separator if row_count < sorted.size
+            display_table << :separator if row_count < instance_count
           end
         end
       end

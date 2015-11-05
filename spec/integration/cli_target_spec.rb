@@ -8,28 +8,23 @@ describe 'cli: target', type: :integration do
   it 'whines on inaccessible target', no_reset: true do
     out = bosh_runner.run('target https://localhost', failure_expected: true)
     expect(out).to match(/cannot access director/i)
-
-    expect_output('target', <<-OUT)
-      Target not set
-    OUT
+    expect { bosh_runner.run('target') }
+      .to raise_error(RuntimeError, /Target not set/)
   end
 
   it 'sets correct target' do
-    expect_output("target #{current_sandbox.director_url}", <<-OUT)
-      Target set to `Test Director'
-    OUT
+    expect(bosh_runner.run("target #{current_sandbox.director_url}")).to match_output "Target set to `Test Director'"
 
     message = current_sandbox.director_url
-    expect_output('target', message)
+    expect(bosh_runner.run('target')).to match_output message
     Dir.chdir('/tmp') do
-      expect_output('target', message)
+      expect(bosh_runner.run('target')).to match_output message
     end
   end
 
   it 'uses correct certificate' do
-    expect_output("target --ca-cert #{current_sandbox.certificate_path} #{current_sandbox.director_url}", <<-OUT)
-      Target set to `Test Director'
-    OUT
+    expect(bosh_runner.run("target --ca-cert #{current_sandbox.certificate_path} #{current_sandbox.director_url}"))
+      .to match_output "Target set to `Test Director'"
   end
 
   it 'does not let user use deployment with target anymore (needs uuid)', no_reset: true do
@@ -41,11 +36,11 @@ describe 'cli: target', type: :integration do
     bosh_runner.run("target #{current_sandbox.director_url}")
     bosh_runner.run('deployment test2')
 
-    expect_output("target https://0.0.0.0:#{current_sandbox.director_port}", <<-OUT)
-      Target set to `Test Director'
-    OUT
+    expect(bosh_runner.run("target https://0.0.0.0:#{current_sandbox.director_port}"))
+      .to match_output "Target set to `Test Director'"
 
-    expect_output('deployment', 'Deployment not set')
+    expect { bosh_runner.run('deployment') }
+      .to raise_error(RuntimeError, /Deployment not set/)
     bosh_runner.run("target #{current_sandbox.director_url}")
     out = bosh_runner.run('deployment')
     expect(out).to match(regexp('test2'))

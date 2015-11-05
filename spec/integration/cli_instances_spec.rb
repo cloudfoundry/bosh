@@ -55,73 +55,72 @@ describe 'cli: deployment process', type: :integration do
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
 
-    output = bosh_runner.run('instances --dns')
-    expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
-| Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records                                             |
-+--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
-|                                                  |         |        |               |             | 0.foobar.a.simple.bosh                                    |
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
-|                                                  |         |        |               |             | 1.foobar.a.simple.bosh                                    |
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
-|                                                  |         |        |               |             | 2.foobar.a.simple.bosh                                    |
-+--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
-
-(*) Bootstrap node
-INSTANCES
-
     output = bosh_runner.run('instances')
-    expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| Instance                                         | State   | AZ     | Resource Pool | IPs         |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
-+--------------------------------------------------+---------+--------+---------------+-------------+
+    expect(scrub_random_ids(output)).to match_output %(
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | Instance                                         | State   | AZ     | Resource Pool | IPs         |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+      | foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+      | foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
 
-(*) Bootstrap node
-INSTANCES
+      (*) Bootstrap node
+    )
+
+    output = bosh_runner.run('instances --dns')
+    expect(scrub_random_ids(output)).to match_output %(
+      +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+      | Instance                                         | State   | AZ     | Resource Pool | IPs         | DNS A records                                             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+      | foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+      |                                                  |         |        |               |             | 0.foobar.a.simple.bosh                                    |
+      | foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+      |                                                  |         |        |               |             | 1.foobar.a.simple.bosh                                    |
+      | foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh |
+      |                                                  |         |        |               |             | 2.foobar.a.simple.bosh                                    |
+      +--------------------------------------------------+---------+--------+---------------+-------------+-----------------------------------------------------------+
+
+      (*) Bootstrap node
+    )
 
     output = bosh_runner.run('instances --ps')
-    expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| Instance                                         | State   | AZ     | Resource Pool | IPs         |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
-|   process-1                                      | running |        |               |             |
-|   process-2                                      | running |        |               |             |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
-|   process-1                                      | running |        |               |             |
-|   process-2                                      | running |        |               |             |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
-|   process-1                                      | running |        |               |             |
-|   process-2                                      | running |        |               |             |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-INSTANCES
+    expect(scrub_random_ids(output)).to match_output %(
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | Instance                                         | State   | AZ     | Resource Pool | IPs         |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+      |   process-1                                      | running |        |               |             |
+      |   process-2                                      | running |        |               |             |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+      |   process-1                                      | running |        |               |             |
+      |   process-2                                      | running |        |               |             |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
+      |   process-1                                      | running |        |               |             |
+      |   process-2                                      | running |        |               |             |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+    )
 
     output = bosh_runner.run('instances --ps --failing')
-    expect(scrub_random_ids(output)).to include(<<INSTANCES)
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| Instance                                         | State   | AZ     | Resource Pool | IPs         |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-| foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
-|   process-3                                      | failing |        |               |             |
-+--------------------------------------------------+---------+--------+---------------+-------------+
-INSTANCES
-
+    expect(scrub_random_ids(output)).to match_output %(
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | Instance                                         | State   | AZ     | Resource Pool | IPs         |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)* | running | zone-1 | a             | 192.168.1.2 |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-2 | a             | 192.168.2.2 |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+      | foobar/2 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)  | running | zone-3 | a             | 192.168.3.2 |
+      |   process-3                                      | failing |        |               |             |
+      +--------------------------------------------------+---------+--------+---------------+-------------+
+    )
   end
 
   it 'should return instances --vitals' do

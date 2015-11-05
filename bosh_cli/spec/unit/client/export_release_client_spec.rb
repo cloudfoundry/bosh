@@ -1,6 +1,4 @@
-require 'json'
 require 'spec_helper'
-require 'cli/client/export_release_client'
 
 describe Bosh::Cli::Client::ExportReleaseClient do
   subject(:client) { described_class.new(director) }

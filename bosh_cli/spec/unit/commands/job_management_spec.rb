@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-require 'cli'
-
 describe Bosh::Cli::Command::JobManagement do
   include FakeFS::SpecHelpers
 
