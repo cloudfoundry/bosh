@@ -516,28 +516,18 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'passes when all availability zone names are contained by subnets' do
-      expect { network.validate_has_azs!([], 'foo-job') }.to_not raise_error
-      expect { network.validate_has_azs!(['zone_1'], 'foo-job') }.to_not raise_error
-      expect { network.validate_has_azs!(['zone_2'], 'foo-job') }.to_not raise_error
-      expect { network.validate_has_azs!(['zone_1', 'zone_2'], 'foo-job') }.to_not raise_error
+      expect(network.has_azs?([])).to eq(true)
+      expect(network.has_azs?(['zone_1'])).to eq(true)
+      expect(network.has_azs?(['zone_2'])).to eq(true)
+      expect(network.has_azs?(['zone_1', 'zone_2'])).to eq(true)
     end
 
     it 'raises when any availability zone are not contained by a subnet' do
-      expect {
-        network.validate_has_azs!(['zone_1', 'zone_3', 'zone_2', 'zone_4'], 'foo-job')
-      }.to raise_error(
-          Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
-          "Job 'foo-job' refers to an availability zone(s) '[\"zone_3\", \"zone_4\"]' but 'a' has no matching subnet(s)."
-        )
+      expect(network.has_azs?(['zone_1', 'zone_3', 'zone_2', 'zone_4'])).to eq(false)
     end
 
     it 'raises when job does not have az, but subnets do' do
-      expect {
-        network.validate_has_azs!(nil, 'foo-job')
-      }.to raise_error(
-          Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
-          "Job 'foo-job' must specify availability zone that matches availability zones of network 'a'."
-        )
+      expect(network.has_azs?(nil)).to eq(false)
     end
   end
 

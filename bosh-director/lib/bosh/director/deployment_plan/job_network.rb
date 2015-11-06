@@ -34,8 +34,8 @@ module Bosh::Director
         @default_for = defaults
       end
 
-      def validate_has_azs!(az_names, job_name)
-        @deployment_network.validate_has_azs!(az_names, job_name)
+      def has_azs?(az_names)
+        @deployment_network.has_azs?(az_names)
       end
     end
   end

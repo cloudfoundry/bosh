@@ -14,18 +14,21 @@ module Bosh::Director
 
       def check_contains(az_names, networks, job)
         networks.each do |network|
-          network.validate_has_azs!(az_names, job.name)
+          unless network.has_azs?(az_names)
+            raise JobNetworkMissingRequiredAvailabilityZone,
+              "Job '#{job.name}' must specify availability zone that matches availability zones of network '#{network.name}'"
+          end
         end
       end
 
       def check_validity_of(az_names, job_name)
         if az_names.empty?
-          raise JobMissingAvailabilityZones, "Job `#{job_name}' has empty availability zones"
+          raise JobMissingAvailabilityZones, "Job '#{job_name}' has empty availability zones"
         end
 
         az_names.each do |name|
           unless name.is_a?(String)
-            raise JobInvalidAvailabilityZone, "Job `#{job_name}' has invalid availability zone '#{name}', string expected"
+            raise JobInvalidAvailabilityZone, "Job '#{job_name}' has invalid availability zone '#{name}', string expected"
           end
         end
       end
@@ -34,7 +37,7 @@ module Bosh::Director
         az_names.map do |name|
           az = deployment.availability_zone(name)
           if az.nil?
-            raise JobUnknownAvailabilityZone, "Job `#{job_name}' references unknown availability zone '#{name}'"
+            raise JobUnknownAvailabilityZone, "Job '#{job_name}' references unknown availability zone '#{name}'"
           end
           az
         end

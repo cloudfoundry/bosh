@@ -41,7 +41,7 @@ module Bosh::Director
         raise NotImplementedError
       end
 
-      def validate_has_azs!(az_names, job_name)
+      def has_azs?(az_names)
         raise NotImplementedError
       end
 
@@ -50,17 +50,17 @@ module Bosh::Director
     end
 
     class NetworkWithSubnets < Network
-      def validate_has_azs!(az_names, job_name)
+      def has_azs?(az_names)
         if az_names.nil? && !any_subnet_without_az?
-          raise JobNetworkMissingRequiredAvailabilityZone,
-            "Job '#{job_name}' must specify availability zone that matches availability zones of network '#{@name}'."
+          return false
         end
 
         unreferenced_zones = az_names.to_a - availability_zones
         unless unreferenced_zones.empty?
-          raise Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
-            "Job '#{job_name}' refers to an availability zone(s) '#{unreferenced_zones}' but '#{@name}' has no matching subnet(s)."
+          return false
         end
+
+        true
       end
 
       def availability_zones
