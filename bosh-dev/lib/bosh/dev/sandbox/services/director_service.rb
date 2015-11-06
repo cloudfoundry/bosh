@@ -108,6 +108,10 @@ module Bosh::Dev::Sandbox
       Redis.new(host: 'localhost', port: @redis_port).flushdb
     end
 
+    def db_config
+      YAML.load_file(@director_config)['db']
+    end
+
     private
 
     def migrate_database

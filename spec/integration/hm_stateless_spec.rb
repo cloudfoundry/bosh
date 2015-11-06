@@ -138,8 +138,6 @@ describe 'health_monitor: 1', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-    puts director.vms.inspect
-
     original_vm = director.vm('foobar', '0')
     template = original_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
@@ -148,7 +146,20 @@ describe 'health_monitor: 1', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
     original_vm.kill_agent
     resurrected_vm = director.wait_for_vm('foobar', '0', 300)
+
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+
+    rendered_file = resurrected_vm.file_path(File.join('jobs', 'foobar', 'bin', 'foobar_ctl'))
+
+    if !File.exist?(rendered_file)
+      resurrection_task_id = current_sandbox.db[:tasks].filter(
+        username: 'hm',
+        description: 'scan and fix',
+        result: 'scan and fix complete'
+      ).order(:timestamp).first[:id]
+      bosh_runner.print_task_debug_logs(resurrection_task_id, {})
+      fail 'Failed to find rendered template'
+    end
 
     template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')

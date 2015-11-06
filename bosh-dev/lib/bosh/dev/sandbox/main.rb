@@ -232,6 +232,10 @@ module Bosh::Dev::Sandbox
       @logger.info('Stopped sandbox')
     end
 
+    def db
+      Sequel.connect(@director_service.db_config)
+    end
+
     def nats_port
       @nats_port ||= @port_provider.get_port(:nats)
     end
