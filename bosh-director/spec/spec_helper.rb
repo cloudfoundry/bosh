@@ -233,6 +233,12 @@ module Migrations
         model.set_dataset model.dataset
       end
     end
+
+    def reset_models(*models)
+      models.each do |model|
+        model.set_dataset model.dataset
+      end
+    end
   end
 
   def during_migration(namespace, &blk)
