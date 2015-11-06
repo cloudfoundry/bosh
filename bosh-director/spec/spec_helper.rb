@@ -28,7 +28,7 @@ module SpecHelper
   class << self
     include BufferedLogger
 
-    attr_accessor :temp_dir
+    attr_accessor :temp_dir, :db
 
     def init
       ENV["RACK_ENV"] = "test"
@@ -84,8 +84,6 @@ module SpecHelper
       Sequel.extension :migration
 
       connect_database(@temp_dir)
-
-      run_migrations
     end
 
     def connect_database(path)
@@ -120,7 +118,7 @@ module SpecHelper
       Sequel::Migrator.apply(@db, @director_migrations, nil)
     end
 
-    def reset_database
+    def reset_database(delete_data = false)
       disconnect_database
 
       if @db_dir && File.directory?(@db_dir)
@@ -128,7 +126,9 @@ module SpecHelper
       end
 
       @db_dir = Dir.mktmpdir(nil, @temp_dir)
-      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
+      unless delete_data
+        FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
+      end
 
       connect_database(@db_dir)
 
@@ -161,6 +161,9 @@ BD = Bosh::Director
 
 RSpec.configure do |rspec|
   rspec.before(:each) do
+    unless self.respond_to?(:migration_unit_test?) && self.migration_unit_test?
+      SpecHelper.run_migrations
+    end
     unless $redis_63790_started
       redis_config = Tempfile.new('redis_config')
       File.write(redis_config.path, 'port 63790')
@@ -204,6 +207,52 @@ def check_event_log
   end
 
   yield events
+end
+
+module Migrations
+
+  class Migration
+    def initialize(migrations_directory, migrations)
+      @migrations_directory = migrations_directory
+      @migrations = migrations
+    end
+
+    def stop_before(migration_name)
+      target_index = @migrations.find_index(migration_name) - 1
+      target = @migrations.at(target_index).split('_').first.to_i
+      Sequel::Migrator.run(SpecHelper.db, @migrations_directory, :target => target)
+    end
+
+    def stop_after(migration_name)
+      target = migration_name.split('_').first.to_i
+      Sequel::Migrator.run(SpecHelper.db, @migrations_directory, target: target)
+    end
+
+    def reset_models(*models)
+      models.each do |model|
+        model.set_dataset model.dataset
+      end
+    end
+  end
+
+  def during_migration(namespace, &blk)
+    SpecHelper.reset_database(true)
+    director_migrations_directory = File.expand_path("../../db/migrations/#{namespace}", __FILE__)
+    migrations = Dir.entries(director_migrations_directory)
+                     .reject { |entry| entry == '.' || entry == '..' }
+                     .map { |entry| File.basename(entry, '.rb') }
+                     .sort!
+    migration = Migration.new(director_migrations_directory, migrations)
+    self.instance_exec(migration, SpecHelper.db, &blk)
+  end
+
+  def assert(&blk)
+    self.instance_exec(SpecHelper.db, &blk)
+  end
+
+  def migration_unit_test?
+    return true
+  end
 end
 
 module ManifestHelper
