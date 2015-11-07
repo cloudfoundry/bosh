@@ -56,9 +56,10 @@ module Bosh::Director::Jobs
           end
         end
 
-        @event_log.begin_stage('Deleting packages', packages_to_delete.count)
+
+        stage = @event_log.begin_stage('Deleting packages', packages_to_delete.count)
         packages_to_delete.each do |package|
-          track_and_log("#{package.name}/#{package.version}") do
+          track_and_log(stage, "#{package.name}/#{package.version}") do
             @logger.info("Package #{package.name}/#{package.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
@@ -72,9 +73,9 @@ module Bosh::Director::Jobs
           package.remove_release_version(release_version)
         end
 
-        @event_log.begin_stage('Deleting jobs', templates_to_delete.count)
+        stage = @event_log.begin_stage('Deleting jobs', templates_to_delete.count)
         templates_to_delete.each do |template|
-          track_and_log("#{template.name}/#{template.version}") do
+          track_and_log(stage, "#{template.name}/#{template.version}") do
             @logger.info("Template #{template.name}/#{template.version} " +
                 'is only used by this release version ' +
                 'and will be deleted')
@@ -103,10 +104,10 @@ module Bosh::Director::Jobs
         errors
       end
 
-      def track_and_log(task, log = true)
-        @event_log.track(task) do |ticker|
-          @logger.info(task) if log
-          yield ticker if block_given?
+      def track_and_log(stage, task)
+        stage.advance_and_track(task) do
+          @logger.info(task)
+          yield
         end
       end
     end

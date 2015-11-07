@@ -7,7 +7,7 @@ module Bosh::Director
 
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
       let(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger, event_log) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
       let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:event_log) { EventLog::Log.new }

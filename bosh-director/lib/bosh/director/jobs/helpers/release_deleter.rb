@@ -12,24 +12,24 @@ module Bosh::Director::Jobs
       def delete(release, force)
         errors = []
 
-        @event_log.begin_stage('Deleting packages', release.packages.count)
+        stage = @event_log.begin_stage('Deleting packages', release.packages.count)
         release.packages.each do |package|
-          track_and_log("#{package.name}/#{package.version}") do
+          track_and_log(stage, "#{package.name}/#{package.version}") do
             errors += @package_deleter.delete(package, force)
           end
         end
 
-        @event_log.begin_stage('Deleting jobs', release.templates.count)
+        stage = @event_log.begin_stage('Deleting jobs', release.templates.count)
         release.templates.each do |template|
-          track_and_log("#{template.name}/#{template.version}") do
+          track_and_log(stage, "#{template.name}/#{template.version}") do
             errors += @template_deleter.delete(template, force)
           end
         end
 
         if errors.empty? || force
-          @event_log.begin_stage('Deleting release versions', release.versions.count)
+          stage = @event_log.begin_stage('Deleting release versions', release.versions.count)
           release.versions.each do |release_version|
-            track_and_log("#{release.name}/#{release_version.version}") do
+            track_and_log(stage, "#{release.name}/#{release_version.version}") do
               release_version.destroy
             end
           end
@@ -41,8 +41,8 @@ module Bosh::Director::Jobs
 
       private
 
-      def track_and_log(task, log = true)
-        @event_log.track(task) do |ticker|
+      def track_and_log(stage, task, log = true)
+        stage.advance_and_track(task) do |ticker|
           @logger.info(task) if log
           yield ticker if block_given?
         end

@@ -1,11 +1,10 @@
 module Bosh::Director::Jobs
   module Helpers
     class NameVersionReleaseDeleter
-      def initialize(release_deleter, release_manager, release_version_deleter, event_log, logger)
+      def initialize(release_deleter, release_manager, release_version_deleter, logger)
         @release_deleter = release_deleter
         @release_manager = release_manager
         @release_version_deleter = release_version_deleter
-        @event_log = event_log
         @logger = logger
       end
 

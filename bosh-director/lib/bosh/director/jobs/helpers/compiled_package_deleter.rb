@@ -1,10 +1,9 @@
 module Bosh::Director::Jobs
   module Helpers
     class CompiledPackageDeleter
-      def initialize(blob_deleter, logger, event_log)
+      def initialize(blob_deleter, logger)
         @blob_deleter = blob_deleter
         @logger = logger
-        @event_log = event_log
       end
 
       def delete(compiled_package, options = {})

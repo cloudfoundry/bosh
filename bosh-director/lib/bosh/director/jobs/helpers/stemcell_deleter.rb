@@ -21,9 +21,9 @@ module Bosh::Director::Jobs
           end
 
           begin
-            @event_log.begin_stage('Deleting stemcell from cloud', 1)
+            stage = @event_log.begin_stage('Deleting stemcell from cloud', 1)
 
-            @event_log.track('Delete stemcell') do
+            stage.advance_and_track('Delete stemcell') do
               @cloud.delete_stemcell(stemcell.cid)
             end
           rescue => e
@@ -35,19 +35,21 @@ module Bosh::Director::Jobs
           @logger.info('Looking for any compiled packages on this stemcell')
           compiled_packages = Bosh::Director::Models::CompiledPackage.filter(:stemcell_id => stemcell.id)
 
-          @event_log.begin_stage('Deleting compiled packages',
+          stage = @event_log.begin_stage('Deleting compiled packages',
             compiled_packages.count, [stemcell.name, stemcell.version])
           @logger.info('Deleting compiled packages ' +
               "(#{compiled_packages.count}) for `#{stemcell.name}/#{stemcell.version}'")
 
           compiled_packages.each do |compiled_package|
-            track_and_log("#{compiled_package.name}/#{compiled_package.version}") do
+            message = "#{compiled_package.name}/#{compiled_package.version}"
+            stage.advance_and_track(message) do
+              @logger.info(message)
               @compiled_package_deleter.delete(compiled_package, options)
             end
           end
 
-          @event_log.begin_stage('Deleting stemcell metadata', 1)
-          @event_log.track('Deleting stemcell metadata') do
+          stage = @event_log.begin_stage('Deleting stemcell metadata', 1)
+          stage.advance_and_track('Deleting stemcell metadata') do
             stemcell.destroy
           end
         end
@@ -55,8 +57,8 @@ module Bosh::Director::Jobs
 
       private
 
-      def track_and_log(task, log = true)
-        @event_log.track(task) do |ticker|
+      def track_and_log(stage, task, log = true)
+        stage.advance_and_track(task) do |ticker|
           @logger.info(task) if log
           yield ticker if block_given?
         end

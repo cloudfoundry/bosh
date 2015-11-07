@@ -3,14 +3,14 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe NameVersionReleaseDeleter do
-      subject(:name_version_release_deleter) { NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, event_log, logger) }
+      subject(:name_version_release_deleter) { NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, logger) }
 
       let(:release_version_deleter) { ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, event_log) }
       let(:release_manager) { Bosh::Director::Api::ReleaseManager.new }
       let(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger) }
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
       let(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger, event_log) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
       let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:event_log) { EventLog::Log.new }

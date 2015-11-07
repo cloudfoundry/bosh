@@ -6,7 +6,7 @@ module Bosh::Director
       subject(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
       let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
       let(:event_log) { EventLog::Log.new }
-      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger, event_log) }
+      let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       before { allow(blobstore).to receive(:delete) }
       let(:release_version_1) { Models::ReleaseVersion.make() }
