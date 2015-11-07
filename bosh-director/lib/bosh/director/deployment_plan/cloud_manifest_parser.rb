@@ -88,10 +88,16 @@ module Bosh::Director
         compilation_spec = safe_property(cloud_manifest, 'compilation', :class => Hash)
         config = CompilationConfig.new(compilation_spec, az_list)
 
-        unless networks.any? { |network| network.name == config.network_name }
+        compilation_network = networks.find { |network| network.name == config.network_name }
+        if compilation_network.nil?
           raise CompilationConfigUnknownNetwork,
             "Compilation config references an unknown " +
               "network `#{config.network_name}'"
+        end
+
+        unless compilation_network.has_azs?([config.availability_zone_name])
+          raise JobNetworkMissingRequiredAvailabilityZone,
+            "Compilation config must specify availability zone that matches availability zones of network '#{compilation_network.name}'"
         end
 
         config

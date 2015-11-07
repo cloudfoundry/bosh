@@ -23,6 +23,7 @@ describe 'Links', type: :integration do
     cloud_config_hash['availability_zones'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['availability_zone'] = 'z1'
+    cloud_config_hash['compilation']['availability_zone'] = 'z1'
     cloud_config_hash['networks'] << {
       'name' => 'dynamic-network',
       'type' => 'dynamic',

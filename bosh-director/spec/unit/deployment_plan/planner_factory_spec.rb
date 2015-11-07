@@ -143,6 +143,7 @@ LOGMESSAGE
                     {'name' => 'zone2', 'cloud_properties' => {foo: 'baz'}},
                   ]
                 )
+                hash['compilation']['availability_zone'] = 'zone1'
                 hash['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
                     'range' => '192.168.2.0/24',
                     'gateway' => '192.168.2.1',

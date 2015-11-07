@@ -107,6 +107,27 @@ module Bosh::Director
               )
           end
         end
+
+        context 'when compilation refers to a network that does not have az that is specified in compilation' do
+          before do
+            cloud_manifest.merge!('compilation' => {
+                'network' => 'a',
+                'cloud_properties' => {'super' => 'important'},
+                'workers' => 3,
+                'availability_zone' => 'z1'
+              })
+            cloud_manifest['availability_zones'] = [{'name' => 'z1'}, {'name' => 'z2'}, {'name' => 'z3'}]
+            cloud_manifest['networks'].first['subnets'].first['availability_zones'] = ['z2', 'z3']
+          end
+
+          it 'raises an error' do
+            expect {
+              parsed_cloud_planner
+            }.to raise_error(
+                /Compilation config must specify availability zone that matches availability zones of network 'a'/,
+              )
+          end
+        end
       end
 
       describe 'networks' do

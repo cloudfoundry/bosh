@@ -30,6 +30,7 @@ module Bosh::Director
         { 'name' => 'z1' },
         { 'name' => 'z2' },
       ]
+      manifest['compilation']['availability_zone'] = 'z1'
       manifest['networks'].first['subnets'] = [
         {
           'range' => '192.168.1.0/24',

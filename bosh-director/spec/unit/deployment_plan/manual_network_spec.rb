@@ -136,15 +136,35 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       )
     end
 
-    it 'passes when all availability zone names are contained by subnets' do
+    it 'returns true when all availability zone names are contained by subnets' do
       expect(manual_network.has_azs?([])).to eq(true)
       expect(manual_network.has_azs?(['zone_1'])).to eq(true)
       expect(manual_network.has_azs?(['zone_2'])).to eq(true)
       expect(manual_network.has_azs?(['zone_1', 'zone_2'])).to eq(true)
     end
 
-    it 'raises when any availability zone are not contained by a subnet' do
+    it 'returns false when any availability zone are not contained by a subnet' do
       expect(manual_network.has_azs?(['zone_1', 'zone_3', 'zone_2', 'zone_4'])).to eq(false)
+    end
+
+    it 'returns false when there are no subnets without az' do
+      expect(manual_network.has_azs?([nil])).to eq(false)
+    end
+
+    it 'returns false when there are no subnets without az' do
+      expect(manual_network.has_azs?(nil)).to eq(false)
+    end
+
+    context 'when there are no subnets' do
+      let(:network_spec) do
+        Bosh::Spec::Deployments.network.merge(
+          'subnets' => []
+        )
+      end
+
+      it 'returns true when az is nil' do
+        expect(manual_network.has_azs?(nil)).to eq(true)
+      end
     end
   end
 

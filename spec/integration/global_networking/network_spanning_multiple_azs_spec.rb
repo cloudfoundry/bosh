@@ -29,6 +29,7 @@ describe 'networks spanning multiple azs', type: :integration do
     let(:cloud_config_hash) do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['availability_zones'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
+      cloud_config_hash['compilation']['availability_zone'] = 'my-az'
       network_a = cloud_config_hash['networks'].first
       network_a['type'] = 'manual'
       network_a['subnets'] = [

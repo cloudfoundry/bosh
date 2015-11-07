@@ -51,24 +51,22 @@ module Bosh::Director
 
     class NetworkWithSubnets < Network
       def has_azs?(az_names)
-        if az_names.nil? && !any_subnet_without_az?
-          return false
+        az_names = [az_names].flatten
+
+        if az_names.compact.empty? && availability_zones.empty?
+          return true
         end
 
-        unreferenced_zones = az_names.to_a - availability_zones
-        unless unreferenced_zones.empty?
-          return false
+        unreferenced_zones = az_names - availability_zones
+        if unreferenced_zones.empty?
+          return true
         end
 
-        true
+        false
       end
 
       def availability_zones
-        @subnets.map(&:availability_zone_names).flatten.compact.uniq
-      end
-
-      def any_subnet_without_az?
-        @subnets.empty? || @subnets.any? { |subnet| subnet.availability_zone_names.nil? }
+        @subnets.map(&:availability_zone_names).flatten.uniq
       end
     end
   end

@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
     let(:cloud_config_hash) do
       {
         'networks' => networks_spec,
-        'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}},
+        'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}, 'availability_zone' => cloud_config_availabilty_zones.first['name']},
         'resource_pools' => [
           {
             'name' => 'a',
@@ -125,6 +125,7 @@ module Bosh::Director::DeploymentPlan
           end
           before do
             manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
+            cloud_config_hash['compilation'].delete('availability_zone')
           end
 
           it 'does not assign AZs' do
@@ -418,6 +419,7 @@ module Bosh::Director::DeploymentPlan
             context 'when AZ to which instance belongs is removed' do
               let(:new_subnet_azs) { ['zone2'] }
               let(:job_availability_zones) { ['zone2'] }
+              before { cloud_config_hash['compilation']['availability_zone'] = 'zone2' }
 
               it 'raises an error' do
                 expect {
@@ -630,6 +632,7 @@ module Bosh::Director::DeploymentPlan
 
               before do
                 manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
+                cloud_config_hash['compilation'].delete('availability_zone')
               end
 
               context 'when existing instances do not have AZs' do

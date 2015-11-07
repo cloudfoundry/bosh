@@ -42,6 +42,7 @@ describe 'cli: vms', type: :integration do
       {'name' => 'zone-2', 'cloud_properties' => {}},
       {'name' => 'zone-3', 'cloud_properties' => {}},
     ]
+    cloud_config_hash['compilation']['availability_zone'] = 'zone-1'
     cloud_config_hash['networks'].first['subnets'] = [
       {
         'range' => '192.168.1.0/24',

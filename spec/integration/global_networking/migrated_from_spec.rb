@@ -11,6 +11,7 @@ describe 'migrated from', type: :integration do
     ]
     cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2]
     cloud_config_hash['disk_pools'] = [disk_pool_spec]
+    cloud_config_hash['compilation']['availability_zone'] = 'my-az-1'
 
     cloud_config_hash
   end

@@ -412,6 +412,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             'compilation' => {
               'workers' => 1,
               'network' => 'fake-manual-network',
+              'availability_zone' => 'az1',
             },
             'resource_pools' => [
               {

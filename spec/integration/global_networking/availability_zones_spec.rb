@@ -23,6 +23,7 @@ describe 'availability zones', type: :integration do
             'd' => 'az_value_for_d'
           }
         }]
+      cloud_config_hash['compilation']['availability_zone'] = 'my-az'
       cloud_config_hash['networks'].first['subnets'].first['availability_zone'] = 'my-az'
       cloud_config_hash
     end

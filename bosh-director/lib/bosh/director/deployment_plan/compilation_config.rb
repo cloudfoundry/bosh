@@ -44,6 +44,10 @@ module Bosh::Director
         @availability_zone = azs_list[@az_name]
         raise Bosh::Director::CompilationConfigInvalidAvailabilityZone if @az_name && !@az_name.empty? && @availability_zone.nil?
       end
+
+      def availability_zone_name
+        @availability_zone.nil? ? nil : @availability_zone.name
+      end
     end
   end
 end
