@@ -1,9 +1,7 @@
 #!/bin/bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
 
 PATH=/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/X11R6/bin
 
-exec rsyslogd -n -c5
+exec rsyslogd -n
