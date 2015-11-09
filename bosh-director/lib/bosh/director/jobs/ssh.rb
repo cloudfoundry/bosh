@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class Ssh < BaseJob
@@ -26,7 +24,7 @@ module Bosh::Director
         filter = { deployment_id: @deployment_id }
         filter[:job] = target.job if target.job
 
-        filter.merge(target.id_filter)
+        filter.merge!(target.id_filter)
 
         instances = @instance_manager.filter_by(filter)
 
@@ -76,12 +74,12 @@ module Bosh::Director
         end
 
         def id_filter
-          unless ids_provided? && indexes_provided?
+          if !ids_provided? && indexes_provided?
             # for backwards compatibility with old cli
             return {index: @indexes}
           end
 
-          filter = {index: [], uuid: []}
+          filter = Hash.new { |h,k| h[k] = [] }
 
           @ids.each do |id|
             if id.to_s =~ /^\d+$/
