@@ -221,7 +221,7 @@ module Bosh::Director
     end
 
     describe '#detach' do
-      it 'detaches the disk and deletes vm, updating resource pool with one empty vm' do
+      it 'detaches the disk and deletes vm' do
         disk_detacher = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::DiskDetacher')
         expect(InstanceUpdater::VmUpdater::DiskDetacher).to receive(:new).
           with(instance, vm_model, agent_client, cloud, logger).
@@ -240,7 +240,6 @@ module Bosh::Director
 
         expect(disk_detacher).to receive(:detach).with(no_args).ordered
         expect(vm_deleter).to receive(:delete).with(no_args).ordered
-        expect(resource_pool).to receive(:add_idle_vm).with(no_args).ordered
 
         updater.detach
       end
