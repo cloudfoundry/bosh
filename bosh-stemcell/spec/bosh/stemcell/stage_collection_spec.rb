@@ -248,6 +248,7 @@ module Bosh::Stemcell
               [
                 :system_network,
                 :system_open_vm_tools,
+                :disable_blank_passwords,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -272,6 +273,7 @@ module Bosh::Stemcell
               [
                 :system_network,
                 :system_open_vm_tools,
+                :disable_blank_passwords,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -300,6 +302,7 @@ module Bosh::Stemcell
               [
                 :system_network,
                 :system_open_vm_tools,
+                :disable_blank_passwords,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -324,6 +327,7 @@ module Bosh::Stemcell
               [
                 :system_network,
                 :system_open_vm_tools,
+                :disable_blank_passwords,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
