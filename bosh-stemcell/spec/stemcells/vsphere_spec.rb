@@ -12,6 +12,7 @@ describe 'vSphere Stemcell', stemcell_image: true do
       subject { file('/etc/ssh/sshd_config') }
 
       it { should_not contain /^PasswordAuthentication no$/ }
+      it { should contain /^PasswordAuthentication yes$/ }
     end
   end
 end
