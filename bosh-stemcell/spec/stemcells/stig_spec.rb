@@ -34,6 +34,10 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38491
       V-38484
       V-38613
+      V-38523
+      V-38524
+      V-38526
+      V-38529
     }
 
     expected_stig_test_cases = expected_base_stig_test_cases
