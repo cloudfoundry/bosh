@@ -147,6 +147,23 @@ module Bosh::Director
           end
         end
 
+        describe 'cancel drain' do
+          it 'should stop execution if task was canceled' do
+            allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+            expect(client).to receive(:start_task).and_return task
+            expect(client).to receive(:get_task_status).and_return task
+
+            cancel_task = task.dup
+            cancel_task['state'] = 'not running'
+            expect(client).to receive(:cancel_task).and_return cancel_task
+
+            task_cancelled = TaskCancelled.new(1)
+            expect(Config).to receive(:job_cancelled?).and_raise(task_cancelled)
+
+            expect{client.drain("fake", "args")}.to raise_error(task_cancelled)
+          end
+        end
+
         describe 'run_script' do
           it 'sends the script name to the agent' do
             expect(client).to receive(:send_message).with(:run_script, "script_name", {})

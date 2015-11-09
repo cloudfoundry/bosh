@@ -48,9 +48,6 @@ module Bosh::Director
       drain_time = initial_drain_time
 
       loop do
-        # This could go on forever if drain script is broken, canceling the task is a way out.
-        @config.task_checkpoint
-
         wait_time = drain_time.abs
         if wait_time > 0
           @logger.info("`#{@instance}' is draining: checking back in #{wait_time}s")

@@ -41,6 +41,11 @@ module Bosh::Director
             expect(agent_client).to receive(:stop).with(no_args).ordered
             subject.stop
           end
+
+          it 'should stop task if task was cancelled' do
+             allow(agent_client).to receive(:drain).and_raise(TaskCancelled)
+             expect{ subject.stop }.to raise_error(TaskCancelled)
+          end
         end
 
         context 'with dynamic drain' do
@@ -80,7 +85,7 @@ module Bosh::Director
       before { allow(subject).to receive(:sleep) }
 
       it 'can be canceled' do
-        expect(Config).to receive(:task_checkpoint).and_raise(TaskCancelled)
+        expect(agent_client).to receive(:drain).with("status").and_raise(TaskCancelled)
         expect {
           subject.send(:wait_for_dynamic_drain, -1)
         }.to raise_error TaskCancelled
