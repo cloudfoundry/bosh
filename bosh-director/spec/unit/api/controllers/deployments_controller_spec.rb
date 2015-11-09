@@ -96,6 +96,13 @@ module Bosh::Director
         end
 
         describe 'job management' do
+          it 'allows putting all jobs of deployment into stopped/detached state' do
+            Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            put '/foo/jobs/all?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            expect_redirect_to_queued_task(last_response)
+          end
+
           it 'allows putting jobs into different states' do
             Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))

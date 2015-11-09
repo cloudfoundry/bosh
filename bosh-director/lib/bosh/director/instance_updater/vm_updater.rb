@@ -55,8 +55,6 @@ module Bosh::Director
 
       vm_deleter = VmDeleter.new(@instance, @vm_model, @cloud, @logger)
       vm_deleter.delete
-
-      @instance.job.resource_pool.add_idle_vm
     end
 
     def attach_missing_disk
