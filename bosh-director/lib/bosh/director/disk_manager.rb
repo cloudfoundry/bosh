@@ -152,12 +152,6 @@ module Bosh::Director
     def delete_mounted_persistent_disk(instance, disk)
       unmount(instance, disk)
 
-      vm_cid = instance.model.vm.cid
-      if vm_cid.nil?
-        @logger.info('Skipping disk detaching, instance does not have VM')
-        return
-      end
-
       disk_cid = disk.disk_cid
       if disk_cid.nil?
         @logger.info('Skipping disk detaching, instance does not have a disk')
@@ -166,7 +160,7 @@ module Bosh::Director
 
       begin
         @logger.info("Detaching disk #{disk_cid}")
-        @cloud.detach_disk(vm_cid, disk_cid)
+        @cloud.detach_disk(instance.model.vm.cid, disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
