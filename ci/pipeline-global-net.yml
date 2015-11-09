@@ -105,7 +105,7 @@ jobs:
 
     - task: test
       privileged: true
-      file: bosh-load-tests/ci/tasks/test.yml
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
       config:
         tags: ["bosh-integration"]
         params:
@@ -121,7 +121,7 @@ resources:
   - name: bosh-load-tests
     type: git
     source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests
+      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
       branch: master
 
   - name: interval-trigger
