@@ -1,4 +1,6 @@
 shared_examples_for 'every OS image' do
+  let(:sshd_config) { file('/etc/ssh/sshd_config') }
+
   context 'installed by base_<os>' do
     describe command('dig -v') do # required by agent
       it { should return_exit_status(0) }
@@ -74,8 +76,6 @@ shared_examples_for 'every OS image' do
   end
 
   context 'configured by base_ssh' do
-    subject(:sshd_config) { file('/etc/ssh/sshd_config') }
-
     it 'is secure' do
       expect(sshd_config).to be_mode('600')
     end
