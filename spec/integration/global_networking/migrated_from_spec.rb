@@ -362,6 +362,7 @@ describe 'migrated from', type: :integration do
         # this is done until our bosh instances will show all instances
         # even those that don't have vms
         failing_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'failing')
+        failing_job_spec['availability_zones'] = ['my-az-1']
         manifest['jobs'].unshift(failing_job_spec)
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
@@ -440,9 +441,11 @@ describe 'migrated from', type: :integration do
         db1_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z1', persistent_disk_pool: 'fast_disks')
         db1_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db1_job_spec['instances'] = 1
+        db1_job_spec['availability_zones'] = ['my-az-1']
         db2_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z2', persistent_disk_pool: 'fast_disks')
         db2_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db2_job_spec['instances'] = 1
+        db2_job_spec['availability_zones'] = ['my-az-2']
         db3_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z3', persistent_disk_pool: 'fast_disks')
         db3_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db3_job_spec['instances'] = 2

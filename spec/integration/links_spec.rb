@@ -34,7 +34,15 @@ describe 'Links', type: :integration do
   end
 
   context 'when job requires link' do
-    let(:api_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_api', templates: [{'name' => 'api_server', 'links' => links}], instances: 1) }
+    let(:api_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+        name: 'my_api',
+        templates: [{'name' => 'api_server', 'links' => links}],
+        instances: 1
+      )
+      job_spec['availability_zones'] = ['z1']
+      job_spec
+    end
 
     let(:mysql_job_spec) do
       job_spec = Bosh::Spec::Deployments.simple_job(
