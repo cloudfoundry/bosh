@@ -101,7 +101,7 @@ jobs:
     plan:
     - { get: interval-trigger, trigger: true, passed: [start-job] }
     - { get: bosh-src, trigger: true, passed: [start-job] }
-    - get: bosh-load-tests
+    - get: bosh-load-tests-workspace
 
     - task: test
       privileged: true
@@ -118,7 +118,7 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: global-net
 
-  - name: bosh-load-tests
+  - name: bosh-load-tests-workspace
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
