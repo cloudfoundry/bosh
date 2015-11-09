@@ -56,12 +56,13 @@ describe 'Changing cloud config', type: :integration do
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
       original_vm = director.vm('foobar', '0')
+      original_vms_output = bosh_runner.run('vms')
 
       upload_a_different_cloud_config
 
       resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
-      expect(original_vm.ips).to eq(resurrected_vm.ips)
+      expect(original_vm.ips).to eq(resurrected_vm.ips), "Original vm IPs do not match resurrected vm IPs, original output: #{original_vms_output}"
     end
   end
 
