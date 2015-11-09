@@ -133,9 +133,9 @@ module Bosh::Director::Models
   end
 
   OrphanSnapshot.blueprint do
-    orphan_disk     { OrphanDisk.make }
-    snapshot_cid    { Sham.snapshot_cid }
-    created_at      { Time.now }
+    orphan_disk         { OrphanDisk.make }
+    snapshot_cid        { Sham.snapshot_cid }
+    snapshot_created_at { Time.now }
   end
 
   DeploymentProblem.blueprint do

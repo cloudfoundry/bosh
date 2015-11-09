@@ -16,8 +16,8 @@ module Bosh::Director
       let(:one_day_one_second_ago) { time - one_day_seconds - 1 }
       let(:less_than_one_day_ago) { time - one_day_seconds + 1 }
 
-      let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', orphaned_at: one_day_one_second_ago) }
-      let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', orphaned_at: less_than_one_day_ago) }
+      let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
+      let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
       before { allow(cloud).to receive(:delete_disk).with('disk-cid-1') }
 
       it 'deletes orphans older than days specified' do

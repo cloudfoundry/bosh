@@ -8,7 +8,7 @@ module Bosh::Director::Models
     end
 
     def before_create
-      self.orphaned_at ||= Time.now
+      self.created_at ||= Time.now
     end
 
     def cloud_properties

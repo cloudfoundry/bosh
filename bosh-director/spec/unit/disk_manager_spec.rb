@@ -323,7 +323,7 @@ module Bosh::Director
         conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
           orphan_disk: conflicting_orphan_disk,
           snapshot_cid: 'existing_cid',
-          created_at: 0
+          snapshot_created_at: 0
         )
 
         snapshot = Models::Snapshot.make(
@@ -353,14 +353,14 @@ module Bosh::Director
           instance_name: 'fake-name-1',
           size: 10,
           deployment_name: 'fake-deployment',
-          orphaned_at: orphaned_at,
+          created_at: orphaned_at,
         )
         Models::OrphanDisk.make(
           disk_cid: 'random-disk-cid-2',
           instance_name: 'fake-name-2',
           availability_zone: 'az2',
           deployment_name: 'fake-deployment',
-          orphaned_at: other_orphaned_at,
+          created_at: other_orphaned_at,
           cloud_properties: {'cloud' => 'properties'}
         )
 
@@ -394,13 +394,13 @@ module Bosh::Director
       let(:five_seconds_ago) { time - 5 }
       let(:four_seconds_ago) { time - 4 }
 
-      let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', orphaned_at: ten_seconds_ago) }
-      let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', orphaned_at: five_seconds_ago) }
+      let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: ten_seconds_ago) }
+      let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago) }
       let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
       let(:orphan_disk_cid_2) { orphan_disk_2.disk_cid }
-      let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-a') }
-      let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, orphaned_at: 0, snapshot_cid: 'snap-cid-b') }
-      let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, orphaned_at: 0, snapshot_cid: 'snap-cid-2') }
+      let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: 0, snapshot_cid: 'snap-cid-a') }
+      let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: 0, snapshot_cid: 'snap-cid-b') }
+      let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: 0, snapshot_cid: 'snap-cid-2') }
       before do
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)

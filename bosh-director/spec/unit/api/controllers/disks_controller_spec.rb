@@ -36,14 +36,14 @@ module Bosh::Director
           size: 10,
           availability_zone: 'az1',
           deployment_name: 'fake-deployment',
-          orphaned_at: orphaned_at,
+          created_at: orphaned_at,
           cloud_properties: {'cloud' => 'properties'}
         )
         Models::OrphanDisk.make(
           disk_cid: 'random-disk-cid-2',
           instance_name: 'fake-name-2',
           deployment_name: 'fake-deployment',
-          orphaned_at: orphaned_at,
+          created_at: orphaned_at,
         )
       end
 

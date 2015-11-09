@@ -82,7 +82,7 @@ module Bosh::Director
           'deployment_name' => disk.deployment_name,
           'instance_name' => disk.instance_name,
           'cloud_properties' => disk.cloud_properties.any? ? disk.cloud_properties : 'n/a',
-          'orphaned_at' => disk.orphaned_at.to_s
+          'orphaned_at' => disk.created_at.to_s
         }
       end
     end
@@ -98,7 +98,7 @@ module Bosh::Director
     end
 
     def delete_orphan_disks_older_than(time)
-      Models::OrphanDisk.where('orphaned_at < ?', time).each do |old_orphan|
+      Models::OrphanDisk.where('created_at < ?', time).each do |old_orphan|
         delete_orphan_disk(old_orphan)
       end
     end
@@ -143,7 +143,7 @@ module Bosh::Director
           orphan_disk: orphan_disk,
           snapshot_cid: snapshot.snapshot_cid,
           clean: snapshot.clean,
-          created_at: snapshot.created_at
+          snapshot_created_at: snapshot.created_at
         )
         snapshot.delete
       end
