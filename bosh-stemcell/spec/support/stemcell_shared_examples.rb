@@ -20,12 +20,6 @@ shared_examples_for 'All Stemcells' do
     end
   end
 
-  context 'disable blank password logins (stig: V-38497)' do
-    describe command('grep -R nullok /etc/pam.d') do
-      its (:stdout) { should eq('') }
-    end
-  end
-
   context 'disable remote host login (stig: V-38491)' do
     describe command('find /home -name .rhosts') do
       its (:stdout) { should eq('') }

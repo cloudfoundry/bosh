@@ -26,6 +26,9 @@ CollectionMethods:
 Encoding:
   Enabled: false
 
+EndAlignment:
+  Enabled: false
+
 LineLength:
   Max: 119
 
