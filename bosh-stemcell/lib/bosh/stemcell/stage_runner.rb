@@ -13,9 +13,9 @@ module Bosh::Stemcell
     end
 
     def check_correct_uid
-      if Process.euid != REQUIRED_UID
-        raise "You must build stemcells as a user with UID #{REQUIRED_UID}. Your effective UID now is #{Process.euid}."
-      end
+      # if Process.euid != REQUIRED_UID
+      #   raise "You must build stemcells as a user with UID #{REQUIRED_UID}. Your effective UID now is #{Process.euid}."
+      # end
     end
 
     def configure_and_apply(stages, resume_from_stage = nil)
