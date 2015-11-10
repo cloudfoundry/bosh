@@ -129,8 +129,8 @@ module Bosh::Director
       it 'should stop vm-drain if task is cancelled' do
         agent = double('agent')
         allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
-        allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled.new(1))
         expect(agent).to receive(:drain).with('shutdown').and_return(-2)
+        expect(agent).to receive(:drain).with('status').and_raise(TaskCancelled.new(1))
         expect { @deleter.drain('some_agent_id') }.to raise_error(TaskCancelled)
       end
     end

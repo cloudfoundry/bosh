@@ -56,7 +56,6 @@ module Bosh::Director
       while drain_time < 0
         drain_time = drain_time.abs
         begin
-          Config.job_cancelled?
           @logger.info("Drain - check back in #{drain_time} seconds")
           sleep(drain_time)
           drain_time = agent.drain("status")
