@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
         'reserved' => [],
         'cloud_properties' => {},
       }
-      spec['availability_zones'] = zone_names if zone_names
+      spec['azs'] = zone_names if zone_names
       spec
     end
     let(:networks_spec) do
@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
     let(:cloud_config_hash) do
       {
         'networks' => networks_spec,
-        'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}, 'availability_zone' => cloud_config_availabilty_zones.first['name']},
+        'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}, 'az' => cloud_config_availability_zones.first['name']},
         'resource_pools' => [
           {
             'name' => 'a',
@@ -52,9 +52,9 @@ module Bosh::Director::DeploymentPlan
             'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}
           }
         ],
-        'availability_zones' => cloud_config_availabilty_zones}
+        'azs' => cloud_config_availability_zones}
     end
-    let(:cloud_config_availabilty_zones) do
+    let(:cloud_config_availability_zones) do
       [
         {'name' => 'zone1', 'cloud_properties' => {:foo => 'bar'}},
         {'name' => 'zone2', 'cloud_properties' => {:foo => 'baz'}}
@@ -74,7 +74,7 @@ module Bosh::Director::DeploymentPlan
             'instances' => desired_instance_count,
             'networks' => job_networks,
             'properties' => {},
-            'availability_zones' => job_availability_zones
+            'azs' => job_availability_zones
           }
         ]
       }
@@ -124,8 +124,8 @@ module Bosh::Director::DeploymentPlan
             ]
           end
           before do
-            manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
-            cloud_config_hash['compilation'].delete('availability_zone')
+            manifest_hash['jobs'].each { |entry| entry.delete('azs') }
+            cloud_config_hash['compilation'].delete('az')
           end
 
           it 'does not assign AZs' do
@@ -262,7 +262,7 @@ module Bosh::Director::DeploymentPlan
               }
             ]
           end
-          let(:cloud_config_availabilty_zones) do
+          let(:cloud_config_availability_zones) do
             [{'name' => 'z1'}, {'name' => 'z2'}, {'name' => 'z3'}, {'name' => 'z4'}]
           end
 
@@ -339,7 +339,7 @@ module Bosh::Director::DeploymentPlan
             let(:job_availability_zones) { ['zone1'] }
 
             before do
-              cloud_config_hash['networks'].first['subnets'][1]['availability_zones'] = ['zone1']
+              cloud_config_hash['networks'].first['subnets'][1]['azs'] = ['zone1']
             end
 
               it 'raises an error' do
@@ -419,7 +419,7 @@ module Bosh::Director::DeploymentPlan
             context 'when AZ to which instance belongs is removed' do
               let(:new_subnet_azs) { ['zone2'] }
               let(:job_availability_zones) { ['zone2'] }
-              before { cloud_config_hash['compilation']['availability_zone'] = 'zone2' }
+              before { cloud_config_hash['compilation']['az'] = 'zone2' }
 
               it 'raises an error' do
                 expect {
@@ -612,7 +612,7 @@ module Bosh::Director::DeploymentPlan
               end
             end
 
-            context 'when job does not specify availability_zones' do
+            context 'when job does not specify azs' do
               let(:networks_spec) do
                 [
                   {'name' => 'a',
@@ -631,8 +631,8 @@ module Bosh::Director::DeploymentPlan
               end
 
               before do
-                manifest_hash['jobs'].each { |entry| entry.delete('availability_zones') }
-                cloud_config_hash['compilation'].delete('availability_zone')
+                manifest_hash['jobs'].each { |entry| entry.delete('azs') }
+                cloud_config_hash['compilation'].delete('az')
               end
 
               context 'when existing instances do not have AZs' do

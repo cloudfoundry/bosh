@@ -59,14 +59,14 @@ module Bosh::Director
 
         expect(body.first['disk_cid']).to eq('random-disk-cid-1')
         expect(body.first['size']).to eq(10)
-        expect(body.first['availability_zone']).to eq('az1')
+        expect(body.first['az']).to eq('az1')
         expect(body.first['instance_name']).to eq('fake-name-1')
         expect(body.first['orphaned_at']).to eq("#{orphaned_at}")
         expect(body.first['cloud_properties']).to eq({'cloud' => 'properties'})
 
         expect(body.last['disk_cid']).to eq('random-disk-cid-2')
         expect(body.last['size']).to eq('n/a')
-        expect(body.last['availability_zone']).to eq('n/a')
+        expect(body.last['az']).to eq('n/a')
         expect(body.last['instance_name']).to eq('fake-name-2')
         expect(body.last['orphaned_at']).to eq("#{orphaned_at}")
         expect(body.last['cloud_properties']).to eq('n/a')

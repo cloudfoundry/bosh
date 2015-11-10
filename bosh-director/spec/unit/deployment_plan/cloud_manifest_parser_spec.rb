@@ -19,7 +19,7 @@ module Bosh::Director
       describe 'availability zones' do
         context 'when availability zones section is specified' do
           let(:availability_zones) {
-            {'availability_zones' => [
+            {'azs' => [
               {'name' => 'z1',
                 'cloud_properties' =>
                   {'availability_zone' =>
@@ -38,17 +38,17 @@ module Bosh::Director
           before { cloud_manifest.merge!(availability_zones) }
 
           context 'if name is not present' do
-            let(:availability_zones) { {'availability_zones' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
+            let(:availability_zones) { {'azs' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
             it 'raises error' do
               expect { parsed_cloud_planner }.to raise_error(ValidationMissingField)
             end
           end
 
           context 'if an availability zone is duplicated' do
-            let(:availability_zones) { {'availability_zones' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
+            let(:availability_zones) { {'azs' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
 
             it 'raises error' do
-              expect { parsed_cloud_planner }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate availability zone name `z1'")
+              expect { parsed_cloud_planner }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate az name `z1'")
             end
           end
 
@@ -114,10 +114,10 @@ module Bosh::Director
                 'network' => 'a',
                 'cloud_properties' => {'super' => 'important'},
                 'workers' => 3,
-                'availability_zone' => 'z1'
+                'az' => 'z1'
               })
-            cloud_manifest['availability_zones'] = [{'name' => 'z1'}, {'name' => 'z2'}, {'name' => 'z3'}]
-            cloud_manifest['networks'].first['subnets'].first['availability_zones'] = ['z2', 'z3']
+            cloud_manifest['azs'] = [{'name' => 'z1'}, {'name' => 'z2'}, {'name' => 'z3'}]
+            cloud_manifest['networks'].first['subnets'].first['azs'] = ['z2', 'z3']
           end
 
           it 'raises an error' do
@@ -152,7 +152,7 @@ module Bosh::Director
             context 'when an availability zone is specified for a subnet' do
               it 'validates that a zone with that name is present' do
                 valid_manifest = cloud_manifest.merge({
-                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'azs' => [{'name' => 'fake-zone'}],
                     'networks' => [
                       {
                         'name' => 'a', #for compilation
@@ -169,7 +169,7 @@ module Bosh::Director
                             'static' => ['192.168.1.10'],
                             'reserved' => [],
                             'cloud_properties' => {},
-                            'availability_zone' => 'fake-zone'
+                            'az' => 'fake-zone'
                           }
                         ]
                       }]
@@ -181,7 +181,7 @@ module Bosh::Director
 
               it 'errors if no zone with that name is present' do
                 invalid_manifest = cloud_manifest.merge({
-                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'azs' => [{'name' => 'fake-zone'}],
                     'networks' => [{
                         'name' => 'fake-network',
                         'type' => 'manual',
@@ -193,7 +193,7 @@ module Bosh::Director
                             'static' => ['192.168.1.10'],
                             'reserved' => [],
                             'cloud_properties' => {},
-                            'availability_zone' => 'nonexistent-zone'
+                            'az' => 'nonexistent-zone'
                           }
                         ]
                       }]
@@ -210,7 +210,7 @@ module Bosh::Director
             context 'when an availability zone is specified for a subnet' do
               it 'validates that a zone with that name is present' do
                 valid_manifest = cloud_manifest.merge({
-                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'azs' => [{'name' => 'fake-zone'}],
                     'networks' => [
                       {
                         'name' => 'a', #for compilation
@@ -223,7 +223,7 @@ module Bosh::Director
                           {
                             'dns' => ['192.168.1.1', '192.168.1.2'],
                             'cloud_properties' => {},
-                            'availability_zone' => 'fake-zone'
+                            'az' => 'fake-zone'
                           }
                         ]
                       }]
@@ -235,7 +235,7 @@ module Bosh::Director
 
               it 'errors if no zone with that name is present' do
                 invalid_manifest = cloud_manifest.merge({
-                    'availability_zones' => [{'name' => 'fake-zone'}],
+                    'azs' => [{'name' => 'fake-zone'}],
                     'networks' => [{
                         'name' => 'fake-network',
                         'type' => 'dynamic',
@@ -243,7 +243,7 @@ module Bosh::Director
                           {
                             'dns' => ['192.168.1.1', '192.168.1.2'],
                             'cloud_properties' => {},
-                            'availability_zone' => 'nonexistent-zone'
+                            'az' => 'nonexistent-zone'
                           }
                         ]
                       }]

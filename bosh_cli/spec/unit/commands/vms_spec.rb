@@ -187,7 +187,6 @@ describe Bosh::Cli::Command::Vms do
         end
 
         it 'do not show AZ column when AZ is not defined' do
-          # vm_state.delete('availability_zone')
           expect(command).to receive(:say) do |output_display|
             expect(output_display.to_s).to_not include 'AZ'
           end

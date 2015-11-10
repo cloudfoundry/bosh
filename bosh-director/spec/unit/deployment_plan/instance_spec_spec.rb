@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
     let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
-    let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'availability_zone' => 'foo-az'} }
+    let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'} }
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
     let(:job) {
       job = instance_double('Bosh::Director::DeploymentPlan::Job',
@@ -129,7 +129,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['dns_domain_name']).to eq('bosh')
         expect(spec['links']).to eq('fake-link')
         expect(spec['id']).to eq('uuid-1')
-        expect(spec['availability_zone']).to eq('foo-az')
+        expect(spec['az']).to eq('foo-az')
         expect(spec['bootstrap']).to eq(true)
       end
 
@@ -189,7 +189,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['dns_domain_name']).to eq('bosh')
           expect(spec['links']).to eq('fake-link')
           expect(spec['id']).to eq('uuid-1')
-          expect(spec['availability_zone']).to eq('foo-az')
+          expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
         end
 

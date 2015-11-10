@@ -18,7 +18,7 @@ module Bosh::Director
             {
               'name' => @source.name,
               'id' => instance.uuid,
-              'availability_zone' => availability_zone,
+              'az' => availability_zone,
               'networks' => instance_plan.network_addresses
             }
           end

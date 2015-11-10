@@ -126,7 +126,7 @@ module Bosh::Director
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
         action
-        expected_vm_spec = expected_apply_spec.merge({'links' => {}, 'properties' => {}, 'availability_zone' => nil, 'bootstrap' => false})
+        expected_vm_spec = expected_apply_spec.merge({'links' => {}, 'properties' => {}, 'az' => nil, 'bootstrap' => false})
         expect(vm_model.instance.spec).to eq(expected_vm_spec)
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
@@ -163,7 +163,7 @@ module Bosh::Director
         end
       end
 
-      context 'when availability_zone is specified' do
+      context 'when az is specified' do
         before do
           allow(compilation_config).to receive_messages(
               network_name: 'network_name',
@@ -179,7 +179,7 @@ module Bosh::Director
           DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         end
         let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
-        it 'spins up vm in the availability_zone' do
+        it 'spins up vm in the az' do
           allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
 
           vm_instance = nil

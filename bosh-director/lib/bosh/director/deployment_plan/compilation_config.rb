@@ -40,7 +40,7 @@ module Bosh::Director
           compilation_config, 'cloud_properties', class: Hash, default: {})
         @env = safe_property(compilation_config, 'env', class: Hash, optional: true, default: {})
 
-        @az_name = safe_property(compilation_config, 'availability_zone', class: String, optional: true)
+        @az_name = safe_property(compilation_config, 'az', class: String, optional: true)
         @availability_zone = azs_list[@az_name]
         raise Bosh::Director::CompilationConfigInvalidAvailabilityZone if @az_name && !@az_name.empty? && @availability_zone.nil?
       end

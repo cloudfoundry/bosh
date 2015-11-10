@@ -32,7 +32,7 @@ module Bosh::Cli::Command
             disk['size'],
             disk['deployment_name'],
             disk['instance_name'],
-            disk['availability_zone'],
+            disk['az'],
             disk['orphaned_at']
           ]
         end

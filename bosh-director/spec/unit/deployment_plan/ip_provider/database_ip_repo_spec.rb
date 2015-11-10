@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
             'static' => [],
             'reserved' => [],
             'cloud_properties' => {},
-            'availability_zone' => 'az-1',
+            'az' => 'az-1',
           }
         ]
       }

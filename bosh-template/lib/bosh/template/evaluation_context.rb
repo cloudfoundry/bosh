@@ -29,7 +29,7 @@ module Bosh
       attr_reader :spec
 
       # @return [String] Template AZ
-      attr_reader :availability_zone
+      attr_reader :az
 
       attr_reader :bootstrap
 
@@ -50,7 +50,7 @@ module Bosh
         @index = spec['index']
         @id = spec['id']
         @bootstrap = spec['bootstrap']
-        @availability_zone = spec['availability_zone']
+        @az = spec['az']
         @spec = openstruct(spec)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)

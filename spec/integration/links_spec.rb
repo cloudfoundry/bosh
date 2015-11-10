@@ -20,14 +20,14 @@ describe 'Links', type: :integration do
     upload_links_release
     upload_stemcell
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['availability_zones'] = [{ 'name' => 'z1' }]
+    cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
-    cloud_config_hash['networks'].first['subnets'].first['availability_zone'] = 'z1'
-    cloud_config_hash['compilation']['availability_zone'] = 'z1'
+    cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
+    cloud_config_hash['compilation']['az'] = 'z1'
     cloud_config_hash['networks'] << {
       'name' => 'dynamic-network',
       'type' => 'dynamic',
-      'subnets' => [{'availability_zone' => 'z1'}]
+      'subnets' => [{'az' => 'z1'}]
     }
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -40,7 +40,7 @@ describe 'Links', type: :integration do
         templates: [{'name' => 'api_server', 'links' => links}],
         instances: 1
       )
-      job_spec['availability_zones'] = ['z1']
+      job_spec['azs'] = ['z1']
       job_spec
     end
 
@@ -51,7 +51,7 @@ describe 'Links', type: :integration do
         instances: 2,
         static_ips: ['192.168.1.10', '192.168.1.11']
       )
-      job_spec['availability_zones'] = ['z1']
+      job_spec['azs'] = ['z1']
       job_spec['networks'] << {
         'name' => 'dynamic-network',
         'default' => ['dns', 'gateway']
@@ -66,7 +66,7 @@ describe 'Links', type: :integration do
         instances: 1,
         static_ips: ['192.168.1.12']
       )
-      job_spec['availability_zones'] = ['z1']
+      job_spec['azs'] = ['z1']
       job_spec
     end
 
@@ -77,7 +77,7 @@ describe 'Links', type: :integration do
         instances: 1,
         static_ips: ['192.168.1.13']
       )
-      job_spec['availability_zones'] = ['z1']
+      job_spec['azs'] = ['z1']
       job_spec
     end
 
@@ -138,7 +138,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['backup']).to contain_exactly(
             {
               'name' => 'postgres',
-              'availability_zone' => 'z1',
+              'az' => 'z1',
               'networks' => [
                 {
                   'name' => 'a',
@@ -175,7 +175,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['backup']).to contain_exactly(
             {
               'name' => 'mongo',
-              'availability_zone' => 'z1',
+              'az' => 'z1',
               'networks' => [
                 {
                   'name' => 'a',
@@ -195,7 +195,7 @@ describe 'Links', type: :integration do
           instances: 1,
           static_ips: ['192.168.1.10']
         )
-        job_spec['availability_zones'] = ['z1']
+        job_spec['azs'] = ['z1']
         job_spec
       end
 
@@ -213,7 +213,7 @@ describe 'Links', type: :integration do
           instances: 1,
           static_ips: ['192.168.1.11']
         )
-        job_spec['availability_zones'] = ['z1']
+        job_spec['azs'] = ['z1']
         job_spec
       end
       let(:second_node_links) do
@@ -299,7 +299,7 @@ describe 'Links', type: :integration do
           instances: 1,
           static_ips: ['192.168.1.10']
         )
-        job_spec['availability_zones'] = ['z1']
+        job_spec['azs'] = ['z1']
         job_spec
       end
 
@@ -324,7 +324,7 @@ describe 'Links', type: :integration do
           instances: 1,
           static_ips: ['192.168.1.11']
         )
-        job_spec['availability_zones'] = ['z1']
+        job_spec['azs'] = ['z1']
         job_spec
       end
 

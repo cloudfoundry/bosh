@@ -12,7 +12,7 @@ databases:
   backup:
 <% link('backup_db.nodes').each do |node| %>
   - name: <%= node['name'] %>
-    availability_zone: <%= node['availability_zone'] %>
+    az: <%= node['az'] %>
     networks:
     <% node['networks'].each do |network_name, network_settings| %>
       - name: <%= network_name %>

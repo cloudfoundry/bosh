@@ -16,7 +16,7 @@ module Bosh::Director::DeploymentPlan
             'static' => [],
             'reserved' => [],
             'cloud_properties' => {},
-            'availability_zone' => 'az-1',
+            'az' => 'az-1',
           },
           {
             'range' => '192.168.2.0/30',
@@ -25,7 +25,7 @@ module Bosh::Director::DeploymentPlan
             'static' => [],
             'reserved' => [],
             'cloud_properties' => {},
-            'availability_zone' => 'az-2',
+            'az' => 'az-2',
           },
           {
             'range' => '192.168.3.0/30',
@@ -34,7 +34,7 @@ module Bosh::Director::DeploymentPlan
             'static' => [],
             'reserved' => [],
             'cloud_properties' => {},
-            'availability_zones' => ['az-2'],
+            'azs' => ['az-2'],
           }
 
         ]

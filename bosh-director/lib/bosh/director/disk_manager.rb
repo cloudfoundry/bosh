@@ -78,7 +78,7 @@ module Bosh::Director
         {
           'disk_cid' => disk.disk_cid,
           'size' => disk.size || 'n/a',
-          'availability_zone' => disk.availability_zone || 'n/a',
+          'az' => disk.availability_zone || 'n/a',
           'deployment_name' => disk.deployment_name,
           'instance_name' => disk.instance_name,
           'cloud_properties' => disk.cloud_properties.any? ? disk.cloud_properties : 'n/a',

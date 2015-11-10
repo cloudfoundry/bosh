@@ -4,7 +4,7 @@ module Bosh::Director
       include ValidationHelper
 
       def parse(job_spec, job, deployment, networks)
-        az_names = safe_property(job_spec, 'availability_zones', class: Array, optional: true)
+        az_names = safe_property(job_spec, 'azs', class: Array, optional: true)
         check_contains(az_names, networks, job)
 
         return nil if az_names.nil?

@@ -11,7 +11,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         config = BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
-            'availability_zone' => 'az1'
+            'az' => 'az1'
           }, { 'az1' => az1})
 
         expect(config.availability_zone).to eq(az1)
@@ -21,7 +21,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         expect{BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
-            'availability_zone' => 'az2'
+            'az' => 'az2'
           }, { 'az1' => az1})}.to raise_error(Bosh::Director::CompilationConfigInvalidAvailabilityZone)
       end
 
@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         expect{BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
-            'availability_zone' => 'az2'
+            'az' => 'az2'
           }, {})}.to raise_error(Bosh::Director::CompilationConfigInvalidAvailabilityZone)
       end
     end

@@ -20,7 +20,7 @@ module Bosh::Director
       attr_reader :name, :cloud_properties
 
       def inspect
-        "availability_zone: #{name}"
+        "az: #{name}"
       end
     end
   end

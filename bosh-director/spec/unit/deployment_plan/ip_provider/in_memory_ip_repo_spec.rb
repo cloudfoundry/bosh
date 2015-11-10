@@ -33,7 +33,7 @@ module Bosh::Director::DeploymentPlan
             'static' => [],
             'reserved' => [],
             'cloud_properties' => {},
-            'availability_zone' => 'zone_1',
+            'az' => 'zone_1',
           }
         ]
       }
@@ -118,7 +118,7 @@ module Bosh::Director::DeploymentPlan
               'static' => [],
               'reserved' => ['192.168.1.2', '192.168.1.3', '192.168.1.4'],
               'cloud_properties' => {},
-              'availability_zone' => 'zone_1',
+              'az' => 'zone_1',
             },
             {
               'range' => '192.168.2.0/29',
@@ -127,7 +127,7 @@ module Bosh::Director::DeploymentPlan
               'static' => [],
               'reserved' => ['192.168.2.2', '192.168.2.3', '192.168.2.4'],
               'cloud_properties' => {},
-              'availability_zone' => 'zone_2',
+              'az' => 'zone_2',
             }
           ]
         }
