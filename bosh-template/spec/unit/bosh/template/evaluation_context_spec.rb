@@ -30,7 +30,7 @@ module Bosh
           'index' => 0,
           'id' => 'deadbeef',
           'bootstrap' => true,
-          'availability_zone' => 'foo-az'
+          'az' => 'foo-az'
         }
 
         @context = make(@spec)
@@ -53,7 +53,7 @@ module Bosh
       end
 
       it 'exposes an availability zone' do
-        expect(eval_template('<%= availability_zone %>', @context)).to eq(@context.availability_zone)
+        expect(eval_template('<%= az %>', @context)).to eq(@context.az)
       end
 
       it 'exposes if the instance is bootstrap or not' do

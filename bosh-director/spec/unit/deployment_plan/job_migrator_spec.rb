@@ -10,7 +10,7 @@ module Bosh::Director
 
     let(:etcd_job_spec) do
       spec = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
-      spec['availability_zones'] = ['z1', 'z2']
+      spec['azs'] = ['z1', 'z2']
       spec
     end
 
@@ -26,11 +26,11 @@ module Bosh::Director
 
     let(:cloud_config_manifest) do
       manifest = Bosh::Spec::Deployments.simple_cloud_config
-      manifest['availability_zones'] = [
+      manifest['azs'] = [
         { 'name' => 'z1' },
         { 'name' => 'z2' },
       ]
-      manifest['compilation']['availability_zone'] = 'z1'
+      manifest['compilation']['az'] = 'z1'
       manifest['networks'].first['subnets'] = [
         {
           'range' => '192.168.1.0/24',
@@ -38,7 +38,7 @@ module Bosh::Director
           'dns' => ['192.168.1.1', '192.168.1.2'],
           'reserved' => [],
           'cloud_properties' => {},
-          'availability_zone' => 'z1'
+          'az' => 'z1'
         },
         {
           'range' => '192.168.2.0/24',
@@ -46,7 +46,7 @@ module Bosh::Director
           'dns' => ['192.168.2.1', '192.168.2.2'],
           'reserved' => [],
           'cloud_properties' => {},
-          'availability_zone' => 'z2'
+          'az' => 'z2'
         }
       ]
       manifest
@@ -77,10 +77,10 @@ module Bosh::Director
       context 'when job needs to be migrated from' do
         let(:etcd_job_spec) do
           job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
-          job['availability_zones'] = ['z1', 'z2']
+          job['azs'] = ['z1', 'z2']
           job['migrated_from'] = [
-            {'name' => 'etcd_z1', 'availability_zone' => 'z1'},
-            {'name' => 'etcd_z2', 'availability_zone' => 'z2'},
+            {'name' => 'etcd_z1', 'az' => 'z1'},
+            {'name' => 'etcd_z2', 'az' => 'z2'},
           ]
           job
         end
@@ -169,8 +169,8 @@ module Bosh::Director
             manifest = Bosh::Spec::Deployments.simple_manifest
             manifest['jobs'] = [
               etcd_job_spec,
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z1').merge({'availability_zones' => ['z1']}),
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z2').merge({'availability_zones' => ['z2']}),
+              Bosh::Spec::Deployments.simple_job(name: 'etcd_z1').merge({'azs' => ['z1']}),
+              Bosh::Spec::Deployments.simple_job(name: 'etcd_z2').merge({'azs' => ['z2']}),
             ]
             manifest
           end
@@ -190,7 +190,7 @@ module Bosh::Director
             manifest = Bosh::Spec::Deployments.simple_manifest
             another_job_spec = Bosh::Spec::Deployments.simple_job(name: 'another')
             another_job_spec['migrated_from'] = etcd_job_spec['migrated_from']
-            another_job_spec['availability_zones'] = etcd_job_spec['availability_zones']
+            another_job_spec['azs'] = etcd_job_spec['azs']
             manifest['jobs'] = [
               etcd_job_spec,
               another_job_spec
@@ -242,7 +242,7 @@ module Bosh::Director
               {'name' => 'etcd_z1'},
               {'name' => 'etcd_z2'},
             ]
-            job['availability_zones'] = ['z1', 'z2']
+            job['azs'] = ['z1', 'z2']
             job
           end
           before do

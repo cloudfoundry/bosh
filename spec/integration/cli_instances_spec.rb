@@ -8,12 +8,12 @@ describe 'cli: deployment process', type: :integration do
     target_and_login
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['availability_zones'] = [
+    cloud_config_hash['azs'] = [
       {'name' => 'zone-1', 'cloud_properties' => {}},
       {'name' => 'zone-2', 'cloud_properties' => {}},
       {'name' => 'zone-3', 'cloud_properties' => {}},
     ]
-    cloud_config_hash['compilation']['availability_zone'] = 'zone-1'
+    cloud_config_hash['compilation']['az'] = 'zone-1'
     cloud_config_hash['networks'].first['subnets'] = [
       {
         'range' => '192.168.1.0/24',
@@ -22,7 +22,7 @@ describe 'cli: deployment process', type: :integration do
         'static' => ['192.168.1.10'],
         'reserved' => [],
         'cloud_properties' => {},
-        'availability_zone' => 'zone-1',
+        'az' => 'zone-1',
       },
       {
         'range' => '192.168.2.0/24',
@@ -31,7 +31,7 @@ describe 'cli: deployment process', type: :integration do
         'static' => ['192.168.2.10'],
         'reserved' => [],
         'cloud_properties' => {},
-        'availability_zone' => 'zone-2',
+        'az' => 'zone-2',
       },
       {
         'range' => '192.168.3.0/24',
@@ -40,12 +40,12 @@ describe 'cli: deployment process', type: :integration do
         'static' => ['192.168.3.10'],
         'reserved' => [],
         'cloud_properties' => {},
-        'availability_zone' => 'zone-3',
+        'az' => 'zone-3',
       }
     ]
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['availability_zones'] = ['zone-1', 'zone-2', 'zone-3']
+    manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     output = bosh_runner.run('instances --details')

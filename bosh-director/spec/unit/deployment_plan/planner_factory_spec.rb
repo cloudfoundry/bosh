@@ -138,12 +138,12 @@ LOGMESSAGE
             describe 'jobs' do
               let(:cloud_config_hash) do
                 hash = Bosh::Spec::Deployments.simple_cloud_config.merge(
-                  'availability_zones' => [
+                  'azs' => [
                     {'name' => 'zone1', 'cloud_properties' => {foo: 'bar'}},
                     {'name' => 'zone2', 'cloud_properties' => {foo: 'baz'}},
                   ]
                 )
-                hash['compilation']['availability_zone'] = 'zone1'
+                hash['compilation']['az'] = 'zone1'
                 hash['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
                     'range' => '192.168.2.0/24',
                     'gateway' => '192.168.2.1',
@@ -153,20 +153,20 @@ LOGMESSAGE
                     'cloud_properties' => {},
                   })
 
-                hash['networks'].first['subnets'][0]['availability_zone'] = 'zone1'
-                hash['networks'].first['subnets'][1]['availability_zone'] = 'zone2'
+                hash['networks'].first['subnets'][0]['az'] = 'zone1'
+                hash['networks'].first['subnets'][1]['az'] = 'zone2'
                 hash
               end
               let(:manifest_hash) do
                 Bosh::Spec::Deployments.simple_manifest.merge(
                   'jobs' => [
-                    Bosh::Spec::Deployments.simple_job().merge('availability_zones' => ['zone1', 'zone2'])
+                    Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1', 'zone2'])
                   ]
                 )
               end
 
               context 'when there is one job with two availability zones' do
-                it 'has availability_zones as specified by users' do
+                it 'has azs as specified by users' do
                   expect(planner.jobs.length).to eq(1)
                   expect(planner.jobs.first.availability_zones.map(&:name)).to eq(['zone1', 'zone2'])
                   expect(planner.jobs.first.availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}, {foo: 'baz'}])
@@ -177,12 +177,12 @@ LOGMESSAGE
                 let(:manifest_hash) do
                   Bosh::Spec::Deployments.simple_manifest.merge(
                     'jobs' => [
-                      Bosh::Spec::Deployments.simple_job().merge('availability_zones' => ['zone1']),
-                      Bosh::Spec::Deployments.simple_job(name:'bar').merge('availability_zones' => ['zone2'])
+                      Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1']),
+                      Bosh::Spec::Deployments.simple_job(name:'bar').merge('azs' => ['zone2'])
                     ]
                   )
                 end
-                it 'has availability_zones as specified by users' do
+                it 'has azs as specified by users' do
                   expect(planner.jobs.length).to eq(2)
                   expect(planner.jobs[0].availability_zones.map(&:name)).to eq(['zone1'])
                   expect(planner.jobs[0].availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}])

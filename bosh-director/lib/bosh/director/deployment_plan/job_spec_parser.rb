@@ -322,11 +322,11 @@ module Bosh::Director
         migrated_from = safe_property(@job_spec, 'migrated_from', class: Array, optional: true, :default => [])
         migrated_from.each do |migrated_from_job_spec|
           name = safe_property(migrated_from_job_spec, 'name', class: String)
-          az = safe_property(migrated_from_job_spec, 'availability_zone', class: String, optional: true)
+          az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
           unless az.nil?
             unless @job.availability_zones.to_a.map(&:name).include?(az)
               raise DeploymentInvalidMigratedFromJob,
-              "Migrating job '#{name}' refers to availability_zone '#{az}' that is not in the list of availability_zones of '#{@job.name}' job"
+              "Migrating job '#{name}' refers to availability zone '#{az}' that is not in the list of availability zones of '#{@job.name}' job"
             end
           end
           @job.migrated_from << MigratedFromJob.new(name, az)

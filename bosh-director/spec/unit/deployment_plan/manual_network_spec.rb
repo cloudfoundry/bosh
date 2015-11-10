@@ -90,24 +90,24 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
   end
 
-  describe 'availability_zones' do
+  describe 'azs' do
     let(:network_spec) do
       Bosh::Spec::Deployments.network.merge(
         'subnets' => [
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'availability_zone' => 'zone_1',
+            'az' => 'zone_1',
           },
           {
             'range' => '10.2.0.0/24',
             'gateway' => '10.2.0.1',
-            'availability_zone' => 'zone_2'
+            'az' => 'zone_2'
           },
           {
             'range' => '10.4.0.0/24',
             'gateway' => '10.4.0.1',
-            'availability_zone' => 'zone_1'
+            'az' => 'zone_1'
           },
         ]
       )
@@ -125,12 +125,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'availability_zone' => 'zone_1',
+            'az' => 'zone_1',
           },
           {
             'range' => '10.2.0.0/24',
             'gateway' => '10.2.0.1',
-            'availability_zone' => 'zone_2'
+            'az' => 'zone_2'
           },
         ]
       )
@@ -175,7 +175,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.10.1.0/24',
             'gateway' => '10.10.1.1',
-            'availability_zone' => 'zone_1'
+            'az' => 'zone_1'
           },
           {
             'range' => '10.10.2.0/24',

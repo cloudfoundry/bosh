@@ -15,8 +15,8 @@ module Bosh::Director
             raise NetworkInvalidProperty, "top-level 'dns' invalid when specifying subnets"
           end
 
-          if network_spec.has_key?('availability_zone')
-            raise NetworkInvalidProperty, "top-level 'availability_zone' invalid when specifying subnets"
+          if network_spec.has_key?('az')
+            raise NetworkInvalidProperty, "top-level 'az' invalid when specifying subnets"
           end
 
           if network_spec.has_key?('cloud_properties')
@@ -43,24 +43,24 @@ module Bosh::Director
 
       def self.parse_availability_zones(spec, availability_zones, name)
 
-        has_availability_zones_key = spec.has_key?('availability_zones')
-        has_availability_zone_key = spec.has_key?('availability_zone')
+        has_availability_zones_key = spec.has_key?('azs')
+        has_availability_zone_key = spec.has_key?('az')
 
         if has_availability_zone_key && has_availability_zones_key
-          raise Bosh::Director::NetworkInvalidProperty, "Network '#{name}' contains both 'availability_zone' and 'availability_zones'. Choose one."
+          raise Bosh::Director::NetworkInvalidProperty, "Network '#{name}' contains both 'az' and 'azs'. Choose one."
         end
 
         if has_availability_zones_key
-          subnet_availability_zones = safe_property(spec, 'availability_zones', class: Array, optional: true)
+          subnet_availability_zones = safe_property(spec, 'azs', class: Array, optional: true)
           if subnet_availability_zones.empty?
-            raise Bosh::Director::NetworkInvalidProperty, "Network '#{name}' refers to an empty 'availability_zones' array"
+            raise Bosh::Director::NetworkInvalidProperty, "Network '#{name}' refers to an empty 'azs' array"
           end
           subnet_availability_zones.each do |zone|
             check_validity_of_availability_zone(zone, availability_zones, name)
           end
           subnet_availability_zones
         else
-          availability_zone = safe_property(spec, 'availability_zone', class: String, optional: true)
+          availability_zone = safe_property(spec, 'az', class: String, optional: true)
           check_validity_of_availability_zone(availability_zone, availability_zones, name)
           availability_zone.nil? ? nil : [availability_zone]
         end

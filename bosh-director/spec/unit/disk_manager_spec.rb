@@ -368,7 +368,7 @@ module Bosh::Director
               {
                 'disk_cid' => 'random-disk-cid-1',
                 'size' => 10,
-                'availability_zone' => 'n/a',
+                'az' => 'n/a',
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-1',
                 'cloud_properties' => 'n/a',
@@ -377,7 +377,7 @@ module Bosh::Director
               {
                 'disk_cid' => 'random-disk-cid-2',
                 'size' => 'n/a',
-                'availability_zone' => 'az2',
+                'az' => 'az2',
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-2',
                 'cloud_properties' => {'cloud' => 'properties'},

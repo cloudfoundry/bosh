@@ -145,7 +145,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'id' => instance1.uuid,
-                      'availability_zone' => nil,
+                      'az' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
@@ -158,7 +158,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'id' => instance2.uuid,
-                      'availability_zone' => nil,
+                      'az' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
@@ -204,7 +204,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'id' => instance1.uuid,
-                      'availability_zone' => nil,
+                      'az' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
@@ -217,7 +217,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'id' => instance2.uuid,
-                      'availability_zone' => nil,
+                      'az' => nil,
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.5',
@@ -276,7 +276,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'id' => instance1.uuid,
-                    'availability_zone' => nil,
+                    'az' => nil,
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3'
@@ -289,7 +289,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'id' => instance2.uuid,
-                    'availability_zone' => nil,
+                    'az' => nil,
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4'
@@ -377,7 +377,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       let(:cloud_config) do
         Bosh::Director::Models::CloudConfig.make(manifest: {
-            'availability_zones' => [
+            'azs' => [
               {
                 'name' => 'az1',
                 'cloud_properties' => {}
@@ -396,7 +396,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'name' => 'fake-subnet',
                     'range' => '127.0.0.0/20',
                     'gateway' => '127.0.0.1',
-                    'availability_zone' => 'az1',
+                    'az' => 'az1',
                     'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
                   }
                 ]
@@ -405,14 +405,14 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'name' => 'fake-dynamic-network',
                 'type' => 'dynamic',
                 'subnets' => [
-                  {'availability_zone' => 'az1'}
+                  {'az' => 'az1'}
                 ]
               }
             ],
             'compilation' => {
               'workers' => 1,
               'network' => 'fake-manual-network',
-              'availability_zone' => 'az1',
+              'az' => 'az1',
             },
             'resource_pools' => [
               {
@@ -449,7 +449,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links}
               ],
               'resource_pool' => 'fake-resource-pool',
-              'availability_zones' => ['az1'],
+              'azs' => ['az1'],
               'instances' => 1,
               'networks' => [
                 {
@@ -465,7 +465,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               ],
               'resource_pool' => 'fake-resource-pool',
               'instances' => 2,
-              'availability_zones' => ['az1'],
+              'azs' => ['az1'],
               'networks' => [
                 {
                   'name' => 'fake-manual-network',
@@ -495,7 +495,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'id' => instance1.uuid,
-                    'availability_zone' => 'az1',
+                    'az' => 'az1',
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3',
@@ -508,7 +508,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'id' => instance2.uuid,
-                    'availability_zone' => 'az1',
+                    'az' => 'az1',
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4',

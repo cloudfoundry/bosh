@@ -21,15 +21,15 @@ describe 'networks spanning multiple azs', type: :integration do
       },
     ]
     job['instances'] = 2
-    job['availability_zones'] = ['my-az', 'my-az2']
+    job['azs'] = ['my-az', 'my-az2']
     manifest_hash
   end
 
   describe 'manual networks' do
     let(:cloud_config_hash) do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['availability_zones'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
-      cloud_config_hash['compilation']['availability_zone'] = 'my-az'
+      cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
+      cloud_config_hash['compilation']['az'] = 'my-az'
       network_a = cloud_config_hash['networks'].first
       network_a['type'] = 'manual'
       network_a['subnets'] = [
@@ -39,7 +39,7 @@ describe 'networks spanning multiple azs', type: :integration do
           'dns' => ['192.168.1.1', '192.168.1.2'],
           'reserved' => [],
           'cloud_properties' => {},
-          'availability_zones' => ['my-az', 'my-az2']
+          'azs' => ['my-az', 'my-az2']
         }
       ]
       cloud_config_hash
@@ -59,14 +59,14 @@ describe 'networks spanning multiple azs', type: :integration do
   context 'when network is dynamic' do
     let(:cloud_config_hash) do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['availability_zones'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
-      cloud_config_hash['compilation']['availability_zone'] = 'my-az'
+      cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
+      cloud_config_hash['compilation']['az'] = 'my-az'
       cloud_config_hash['networks'] = [{
           'name' => 'a',
           'type' => 'dynamic',
           'subnets' => [
            {
-             'availability_zones' => ['my-az', 'my-az2'],
+             'azs' => ['my-az', 'my-az2'],
              'cloud_properties' => {'dynamic' => 'property'}
            }
           ]

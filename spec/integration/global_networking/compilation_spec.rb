@@ -14,7 +14,7 @@ describe 'global networking', type: :integration do
 
     let(:cloud_config_hash) do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['availability_zones'] = [{
+      cloud_config_hash['azs'] = [{
           'name' => 'z2',
           'cloud_properties' => {
             'az_section_config' => 'neato',
@@ -28,7 +28,7 @@ describe 'global networking', type: :integration do
           'subnets' => [{
               'range' => '10.0.0.0/24',
               'gateway' => '10.0.0.1',
-              'availability_zone' => 'z2',
+              'az' => 'z2',
             }]
         })
 
@@ -36,7 +36,7 @@ describe 'global networking', type: :integration do
         'compilation_section_config' => 'blah',
         'who_wins' => 'compilation_section'
       }
-      cloud_config_hash['compilation']['availability_zone'] = 'z2'
+      cloud_config_hash['compilation']['az'] = 'z2'
       cloud_config_hash['compilation']['network'] = 'network_with_az'
 
       cloud_config_hash
@@ -60,7 +60,7 @@ describe 'global networking', type: :integration do
 
     context 'when availability zone does not match any on the deployment' do
       it 'raises a availability zone not found error' do
-        cloud_config_hash['compilation']['availability_zone'] = 'non_existing_network'
+        cloud_config_hash['compilation']['az'] = 'non_existing_az'
         expect{upload_cloud_config(cloud_config_hash: cloud_config_hash)}.to raise_error(RuntimeError, /Error 120002\: Bosh\:\:Director\:\:CompilationConfigInvalidAvailabilityZone/)
       end
     end

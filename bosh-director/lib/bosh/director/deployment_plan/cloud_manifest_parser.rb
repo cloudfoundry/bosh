@@ -31,14 +31,14 @@ module Bosh::Director
       private
 
       def parse_availability_zones(cloud_manifest)
-        availability_zones = safe_property(cloud_manifest, 'availability_zones', :class => Array, :optional => true, :default => [])
+        availability_zones = safe_property(cloud_manifest, 'azs', :class => Array, :optional => true, :default => [])
         parsed_availability_zones = availability_zones.map do |availability_zone|
           AvailabilityZone.parse(availability_zone)
         end
 
         duplicates = detect_duplicates(parsed_availability_zones) { |az| az.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateAvailabilityZoneName, "Duplicate availability zone name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateAvailabilityZoneName, "Duplicate az name `#{duplicates.first.name}'"
         end
 
         parsed_availability_zones

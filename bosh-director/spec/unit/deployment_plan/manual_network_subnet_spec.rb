@@ -224,7 +224,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     end
 
     describe 'availability zone(s)' do
-      context 'when the subnet defines both availability_zone and availability_zones properties' do
+      context 'when the subnet defines both az and azs properties' do
         it 'errors' do
           expect {
             make_subnet(
@@ -232,18 +232,18 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
                 'cloud_properties' => {},
-                'availability_zone' => 'foo',
-                'availability_zones' => ['foo']
+                'az' => 'foo',
+                'azs' => ['foo']
               },
               [
                 Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
               ])
-          }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' contains both 'availability_zone' and 'availability_zones'. Choose one.")
+          }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' contains both 'az' and 'azs'. Choose one.")
         end
 
       end
 
-      context 'when the subnet defines availability_zones property' do
+      context 'when the subnet defines azs property' do
         describe 'when valid' do
           it 'should return the zones' do
             subnet = make_subnet(
@@ -251,7 +251,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
                 'cloud_properties' => {},
-                'availability_zones' => ['foo', 'bar']
+                'azs' => ['foo', 'bar']
               },
               [
                 Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
@@ -270,12 +270,12 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                   'range' => '192.168.0.0/24',
                   'gateway' => '192.168.0.254',
                   'cloud_properties' => {},
-                  'availability_zones' => []
+                  'azs' => []
                 },
                 [
                   Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
                 ])
-            }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' refers to an empty 'availability_zones' array")
+            }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' refers to an empty 'azs' array")
           end
         end
 
@@ -287,7 +287,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
                 'cloud_properties' => {},
-                'availability_zones' => ['foo', 'bar']
+                'azs' => ['foo', 'bar']
               },
               [
                 Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
@@ -297,7 +297,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
         end
       end
 
-      context 'when the subnet defines availability_zone property' do
+      context 'when the subnet defines az property' do
 
         context 'with no availability zone specified' do
           it 'does not care whether that az name is in the list' do
@@ -322,7 +322,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                   'range' => '192.168.0.0/24',
                   'gateway' => '192.168.0.254',
                   'cloud_properties' => {'foo' => 'bar'},
-                  'availability_zone' => nil
+                  'az' => nil
                 },
                 [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})]
               )
@@ -337,7 +337,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                 'range' => '192.168.0.0/24',
                 'gateway' => '192.168.0.254',
                 'cloud_properties' => {'foo' => 'bar'},
-                'availability_zone' => 'foo'
+                'az' => 'foo'
               },
               [
                 Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
@@ -363,7 +363,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
                   'range' => '192.168.0.0/24',
                   'gateway' => '192.168.0.254',
                   'cloud_properties' => {'foo' => 'bar'},
-                  'availability_zone' => 'foo'
+                  'az' => 'foo'
                 },
                 [
                   Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),

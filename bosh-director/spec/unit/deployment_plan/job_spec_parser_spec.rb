@@ -852,10 +852,10 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    describe 'availability_zones key' do
+    describe 'azs key' do
       context 'when there is a key but empty values' do
         it 'raises an exception' do
-          job_spec['availability_zones'] = []
+          job_spec['azs'] = []
 
           expect {
             parser.parse(job_spec)
@@ -873,7 +873,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         it 'raises an exception if the value are not strings' do
-          job_spec['availability_zones'] = ['valid_zone', 3]
+          job_spec['azs'] = ['valid_zone', 3]
           allow(network).to receive(:has_azs?).and_return(true)
           allow(deployment_plan).to receive(:availability_zone).with("valid_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
 
@@ -885,7 +885,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         it 'raises an exception if the referenced AZ doesnt exist in the deployment' do
-          job_spec['availability_zones'] = ['existent_zone', 'nonexistent_zone']
+          job_spec['azs'] = ['existent_zone', 'nonexistent_zone']
           allow(network).to receive(:has_azs?).and_return(true)
           allow(deployment_plan).to receive(:availability_zone).with("existent_zone") { instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone) }
           allow(deployment_plan).to receive(:availability_zone).with("nonexistent_zone") { nil }
@@ -940,12 +940,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
       context 'when there is a key with the wrong type' do
         it 'an exception is raised' do
-          job_spec['availability_zones'] = 3
+          job_spec['azs'] = 3
 
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::ValidationInvalidType, "Property `availability_zones' (value 3) did not match the required type `Array'"
+              Bosh::Director::ValidationInvalidType, "Property `azs' (value 3) did not match the required type `Array'"
             )
         end
       end
@@ -960,8 +960,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           'resource_pool' => 'fake-resource-pool-name',
           'instances' => 1,
           'networks'  => [{'name' => 'fake-network-name'}],
-          'migrated_from' => [{'name' => 'job-1', 'availability_zone' => 'z1'}, {'name' => 'job-2', 'availability_zone' => 'z2'}],
-          'availability_zones' => ['z1', 'z2']
+          'migrated_from' => [{'name' => 'job-1', 'az' => 'z1'}, {'name' => 'job-2', 'az' => 'z2'}],
+          'azs' => ['z1', 'z2']
         }
       end
       before do
@@ -981,13 +981,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       context 'when az is specified' do
         context 'when migrated job refers to az that is not in the list of availaibility_zones key' do
           it 'raises an error' do
-            job_spec['migrated_from'] = [{'name' => 'job-1', 'availability_zone' => 'unknown_az'}]
+            job_spec['migrated_from'] = [{'name' => 'job-1', 'az' => 'unknown_az'}]
 
             expect {
               parser.parse(job_spec)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidMigratedFromJob,
-                "Migrating job 'job-1' refers to availability_zone 'unknown_az' that is not in the list of availability_zones of 'fake-job-name' job"
+                "Migrating job 'job-1' refers to availability zone 'unknown_az' that is not in the list of availability zones of 'fake-job-name' job"
               )
           end
         end
@@ -995,7 +995,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     def set_up_azs!(azs, job_spec, deployment_plan)
-      job_spec['availability_zones'] = azs
+      job_spec['azs'] = azs
       azs.map do |az_name|
         fake_az = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: az_name)
         allow(deployment_plan).to receive(:availability_zone).with(az_name) { fake_az }
