@@ -4,12 +4,22 @@ module Bosh::Director
   describe Jobs::CleanupArtifacts do
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
+      let(:config) {  {'remove_all' => remove_all} }
 
-      it 'enqueues a CleanupArtifacts job' do
-        fake_config = {'remove_all' => true}
+      describe 'when user specifies --all at the command line' do
+        let(:remove_all) { true }
+        it "enqueues a CleanupArtifacts job with 'clean up all' in the description" do
+          expect(job_queue).to receive(:enqueue).with('fake-username', Jobs::CleanupArtifacts, 'clean up all', [config])
+          Jobs::CleanupArtifacts.enqueue('fake-username', config, job_queue)
+        end
+      end
 
-        expect(job_queue).to receive(:enqueue).with('fake-username', Jobs::CleanupArtifacts, 'delete artifacts', [fake_config])
-        Jobs::CleanupArtifacts.enqueue('fake-username', fake_config, job_queue)
+      describe 'when user omits --all at the command line' do
+        let(:remove_all) { false }
+        it "enqueues a CleanupArtifacts job with 'clean up all' in the description" do
+          expect(job_queue).to receive(:enqueue).with('fake-username', Jobs::CleanupArtifacts, 'clean up', [config])
+          Jobs::CleanupArtifacts.enqueue('fake-username', config, job_queue)
+        end
       end
     end
 
@@ -68,7 +78,7 @@ module Bosh::Director
             delete_artifacts = Jobs::CleanupArtifacts.new(config)
             result = delete_artifacts.perform
 
-            expect(result).to eq('release(s) deleted: release-1/1, release-2/2; stemcell(s) deleted: stemcell-a/1, stemcell-b/2; orphaned disk(s) deleted: fake-cid-1, fake-cid-2')
+            expect(result).to eq('Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s)')
 
             expect(Models::OrphanDisk.all).to be_empty
             expect(Models::Release.all).to be_empty
@@ -93,7 +103,7 @@ module Bosh::Director
               delete_artifacts = Jobs::CleanupArtifacts.new({'remove_all' => true})
               result = delete_artifacts.perform
 
-              expected_result = 'release(s) deleted: release-1/1, release-1/10, release-2/2, release-2/10; stemcell(s) deleted: stemcell-a/1, stemcell-a/10, stemcell-b/2, stemcell-b/10; orphaned disk(s) deleted: none'
+              expected_result = 'Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s)'
               expect(result).to eq(expected_result)
 
               expect(Models::Stemcell.all).to be_empty
@@ -114,7 +124,7 @@ module Bosh::Director
           expect_any_instance_of(ThreadPool).not_to receive(:process)
           result = delete_artifacts.perform
 
-          expect(result).to eq('release(s) deleted: none; stemcell(s) deleted: none; ')
+          expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')
 
           expect(Models::Release.all.count).to eq(2)
           expect(Models::Stemcell.all.count).to eq(2)
@@ -136,7 +146,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
             result = delete_artifacts.perform
 
-            expected_result = 'release(s) deleted: none; stemcell(s) deleted: stemcell-a/1, stemcell-b/2; '
+            expected_result = 'Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s)'
             expect(result).to eq(expected_result)
 
             expect(Models::Stemcell.all.count).to eq(4)
@@ -158,7 +168,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
             result = delete_artifacts.perform
 
-            expected_result = 'release(s) deleted: release-1/1, release-2/2; stemcell(s) deleted: none; '
+            expected_result = 'Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s)'
             expect(result).to eq(expected_result)
 
             expect(Models::Release.all.count).to eq(2)
@@ -196,7 +206,7 @@ module Bosh::Director
             expect_any_instance_of(ThreadPool).not_to receive(:process)
             result = delete_artifacts.perform
 
-            expect(result).to eq('release(s) deleted: none; stemcell(s) deleted: none; ')
+            expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')
 
             expect(Models::Release.all.count).to eq(4)
             expect(Models::Stemcell.all.count).to eq(4)
