@@ -10,6 +10,10 @@ module Bosh::Director
         Bosh::Director::JobRunner.new(self, task_id).run(*args)
       end
 
+      def self.schedule_message
+        "scheduled #{name.split('::').last}"
+      end
+
       attr_accessor :task_id
 
       def logger

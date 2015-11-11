@@ -11,7 +11,7 @@ module Bosh::Director
       [
         'foo',
         'bar',
-        { 'named' => 'named_value' }
+        {'named' => 'named_value'}
       ]
     }
     let(:scheduled_jobs) {
@@ -50,11 +50,19 @@ module Bosh::Director
       end
     end
 
+    module Jobs
+      class FakeJobWithScheduleMessage
+        def self.schedule_message
+          'class with schedule message'
+        end
+      end
+    end
+
     describe 'scheduling jobs' do
       it 'schedules jobs at the appropriate time' do
         subject = make_subject
         expect(fake_scheduler).to receive(:cron).with('0 1 * * *').
-          and_yield(double('Job', next_time: 'tomorrow'))
+            and_yield(double('Job', next_time: 'tomorrow'))
 
         expect(queue).to receive(:enqueue).with('scheduler', Jobs::FakeJob, 'scheduled FakeJob', params)
 
@@ -75,6 +83,28 @@ module Bosh::Director
 
       it 'raises if scheduled_jobs is not an Array' do
         expect { make_subject({}) }.to raise_error('scheduled_jobs must be an array')
+      end
+
+      describe 'scheduling jobs with a custom schedule message' do
+        let(:scheduled_jobs) do
+          [
+            {
+              'command' => 'FakeJobWithScheduleMessage',
+              'schedule' => '0 1 * * *',
+              'params' => params
+            }
+          ]
+        end
+
+        it 'sends the scheduled message' do
+          subject = make_subject
+          expect(fake_scheduler).to receive(:cron).with('0 1 * * *').
+              and_yield(double('Job', next_time: 'tomorrow'))
+
+          expect(queue).to receive(:enqueue).with('scheduler', Jobs::FakeJobWithScheduleMessage, 'class with schedule message', params)
+
+          subject.start!
+        end
       end
     end
   end

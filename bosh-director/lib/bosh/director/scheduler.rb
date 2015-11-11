@@ -44,9 +44,15 @@ module Bosh::Director
         @scheduler.cron(scheduled_job['schedule']) do |_|
           logger.info("enqueueing `#{scheduled_job['command']}'")
 
+          schedule_message = if director_job_class.respond_to?(:schedule_message)
+                               director_job_class.schedule_message
+                             else
+                               "scheduled #{scheduled_job['command']}"
+                             end
+
           @queue.enqueue('scheduler',
                          director_job_class,
-                         "scheduled #{scheduled_job['command']}",
+                         schedule_message,
                          scheduled_job['params'])
         end
 

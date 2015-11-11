@@ -98,23 +98,11 @@ module Bosh::Director
       end
     end
 
-    def delete_orphan_disks_older_than(time, event_log)
-      old_orphans = Models::OrphanDisk.where('created_at < ?', time)
-      stage = event_log.begin_stage('Deleting orphan disks', old_orphans.count)
-      old_orphans.each do |old_orphan|
-        stage.advance_and_track("#{old_orphan.disk_cid}") do
-          delete_orphan_disk(old_orphan)
-        end
-      end
-    end
-
     def unmount_disk_for(instance_plan)
       disk = instance_plan.instance.model.persistent_disk
       return if disk.nil?
       unmount(instance_plan.instance, disk)
     end
-
-    private
 
     def delete_orphan_disk(orphan_disk)
       begin
@@ -129,6 +117,8 @@ module Bosh::Director
         orphan_disk.destroy
       end
     end
+
+    private
 
     def delete_orphan_snapshot(orphan_snapshot)
       begin

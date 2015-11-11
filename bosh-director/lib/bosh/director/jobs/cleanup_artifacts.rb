@@ -52,7 +52,7 @@ module Bosh::Director
             pool.process do
               name = name_and_version['name']
               version = name_and_version['version']
-              release_stage.advance_and_track("Deleting release #{name}/#{version}") do
+              release_stage.advance_and_track("#{name}/#{version}") do
                 with_release_lock(name, :timeout => 10) do
                   @name_version_release_deleter.find_and_delete_release(name, version, false)
                 end
@@ -75,7 +75,7 @@ module Bosh::Director
         thread_pool.wrap do |pool|
           stemcells_to_delete.each do |stemcell|
             pool.process do
-              stemcell_stage.advance_and_track("Deleting stemcell #{stemcell['name']}/#{stemcell['version']}") do
+              stemcell_stage.advance_and_track("#{stemcell['name']}/#{stemcell['version']}") do
                 stemcell_to_delete = @stemcell_manager.find_by_name_and_version(stemcell['name'], stemcell['version'])
                 @stemcell_deleter.delete(stemcell_to_delete)
               end
@@ -92,24 +92,23 @@ module Bosh::Director
 
 
         if @config['remove_all']
-          orphan_disk_cids = @disk_manager.list_orphan_disks.map { |disk| disk['disk_cid'] }
-          orphan_disk_stage = event_log.begin_stage('Deleting orphaned disks', orphan_disk_cids.count)
+          orphan_disks = Models::OrphanDisk.all
+          orphan_disk_stage = event_log.begin_stage('Deleting orphaned disks', orphan_disks.count)
 
           thread_pool = ThreadPool.new(:max_threads => Config.max_threads)
           thread_pool.wrap do |pool|
-            orphan_disk_cids.each do |orphan_disk_cid|
+            orphan_disks.each do |orphan_disk|
               pool.process do
-                orphan_disk_stage.advance_and_track("#{orphan_disk_cid}") do
-                  @disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
+                orphan_disk_stage.advance_and_track("#{orphan_disk.disk_cid}") do
+                  @disk_manager.delete_orphan_disk(orphan_disk)
                 end
               end
             end
           end
 
-          formatted_orphan_disk = orphan_disk_cids.empty? ? 'none' : orphan_disk_cids.join(', ')
+          formatted_orphan_disk = orphan_disks.empty? ? 'none' : orphan_disks.map(&:disk_cid).join(', ')
           result += "orphaned disk(s) deleted: #{formatted_orphan_disk}"
         end
-
 
         result
       end
