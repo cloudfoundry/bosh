@@ -157,7 +157,9 @@ describe 'health_monitor: 1', type: :integration do
         description: 'scan and fix',
         result: 'scan and fix complete'
       ).order(:timestamp).first[:id]
+      current_sandbox.logger.info("Printing debug logs for #{self.class.name}")
       bosh_runner.print_task_debug_logs(resurrection_task_id, {})
+      current_sandbox.logger.info("Finished printing debug logs for #{self.class.name}")
       fail 'Failed to find rendered template'
     end
 
