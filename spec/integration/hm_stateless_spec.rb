@@ -149,22 +149,29 @@ describe 'health_monitor: 1', type: :integration do
 
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
 
-    rendered_file = resurrected_vm.file_path(File.join('jobs', 'foobar', 'bin', 'foobar_ctl'))
-
-    if !File.exist?(rendered_file)
-      resurrection_task_id = current_sandbox.db[:tasks].filter(
-        username: 'hm',
-        description: 'scan and fix',
-        result: 'scan and fix complete'
-      ).order(:timestamp).first[:id]
-      current_sandbox.logger.info("Printing debug logs for #{self.class.name}")
-      bosh_runner.print_task_debug_logs(resurrection_task_id, {})
-      current_sandbox.logger.info("Finished printing debug logs for #{self.class.name}")
-      fail 'Failed to find rendered template'
-    end
+    wait_for_resurrection_to_finish
 
     template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
     expect(template).to include('b_ip=127.0.0.102')
+  end
+
+  def wait_for_resurrection_to_finish
+    attempts = 0
+
+    while attempts < 20
+      attempts += 1
+      resurrection_task = current_sandbox.db[:tasks].filter(
+        username: 'hm',
+        description: 'scan and fix',
+        state: 'processing'
+      )
+      return unless resurrection_task.any?
+
+      current_sandbox.logger.debug("Waiting for resurrection to finish, found resurrection tasks: #{resurrection_task.all}")
+      sleep(0.5)
+    end
+
+    current_sandbox.logger.debug('Failed to wait for resurrection to complete')
   end
 end
