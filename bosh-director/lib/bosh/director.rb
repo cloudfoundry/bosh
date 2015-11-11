@@ -87,6 +87,7 @@ require 'bosh/director/problem_scanner/scanner'
 require 'bosh/director/problem_resolver'
 require 'bosh/director/error_ignorer'
 require 'bosh/director/deployment_deleter'
+require 'bosh/director/transactor'
 require 'bosh/director/sequel'
 require 'common/thread_pool'
 

@@ -305,7 +305,8 @@ module Bosh::Director
       end
 
       def update_templates(templates)
-        @model.db.transaction do
+        transactor = Transactor.new
+        transactor.retryable_transaction(Bosh::Director::Config.db) do
           @model.remove_all_templates
           templates.map(&:model).each do |template_model|
             @model.add_template(template_model)

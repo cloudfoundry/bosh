@@ -7,7 +7,8 @@ module Bosh
           return deployment if deployment
 
           canonical_name = Canonicalizer.canonicalize(name)
-          Models::Deployment.db.transaction do
+          transactor = Transactor.new
+          transactor.retryable_transaction(Models::Deployment.db) do
             Models::Deployment.each do |other|
               if Canonicalizer.canonicalize(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,

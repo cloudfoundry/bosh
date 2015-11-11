@@ -4,6 +4,7 @@ module Bosh::Director
     def initialize(cloud, logger)
       @cloud = cloud
       @logger = logger
+      @transactor = Transactor.new
     end
 
     def update_persistent_disk(instance_plan, vm_recreator)
@@ -21,7 +22,7 @@ module Bosh::Director
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 
-      instance.model.db.transaction do
+      @transactor.retryable_transaction(Bosh::Director::Config.db) do
         old_disk.update(:active => false) if old_disk
         disk.update(:active => true) if disk
       end
@@ -55,7 +56,7 @@ module Bosh::Director
     end
 
     def orphan_disk(disk)
-      disk.db.transaction do
+      @transactor.retryable_transaction(Bosh::Director::Config.db) do
         orphan_disk = Models::OrphanDisk.create(
           disk_cid: disk.disk_cid,
           size: disk.size,
