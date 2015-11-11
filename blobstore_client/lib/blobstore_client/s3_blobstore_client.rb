@@ -31,7 +31,7 @@ module Bosh
         aws_options = {
           use_ssl: @options.fetch(:use_ssl, true),
           s3_port: @options.fetch(:port, 443),
-          s3_endpoint: @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host),
+          s3_endpoint: @options.fetch(:host, URI.parse(@options[:s3_endpoint] || S3BlobstoreClient::ENDPOINT).host),
           s3_force_path_style: @options.fetch(:s3_force_path_style, false),
           ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
           s3_multipart_threshold: @options.fetch(:s3_multipart_threshold, 16_777_216),
@@ -51,7 +51,8 @@ module Bosh
           end
 
           @options[:bucket] ||= @options[:bucket_name]
-          @options[:endpoint] ||= S3BlobstoreClient::ENDPOINT
+          endpoint = @options[:s3_endpoint] || S3BlobstoreClient::ENDPOINT
+          @options[:endpoint] ||= endpoint
           @simple = SimpleBlobstoreClient.new(@options)
         else
           @s3 = AWS::S3.new(aws_options)
