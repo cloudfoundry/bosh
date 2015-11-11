@@ -99,7 +99,7 @@ module Bosh::Director
           thread_pool.wrap do |pool|
             orphan_disk_cids.each do |orphan_disk_cid|
               pool.process do
-                orphan_disk_stage.advance_and_track("Deleting orphaned disk #{orphan_disk_cid}") do
+                orphan_disk_stage.advance_and_track("#{orphan_disk_cid}") do
                   @disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
                 end
               end

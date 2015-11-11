@@ -21,11 +21,7 @@ module Bosh::Director::Jobs
           end
 
           begin
-            stage = @event_log.begin_stage('Deleting stemcell from cloud', 1)
-
-            stage.advance_and_track('Delete stemcell') do
-              @cloud.delete_stemcell(stemcell.cid)
-            end
+            @cloud.delete_stemcell(stemcell.cid)
           rescue => e
             raise unless options['force']
             @logger.warn(e.backtrace.join("\n"))
@@ -48,10 +44,7 @@ module Bosh::Director::Jobs
             end
           end
 
-          stage = @event_log.begin_stage('Deleting stemcell metadata', 1)
-          stage.advance_and_track('Deleting stemcell metadata') do
-            stemcell.destroy
-          end
+          stemcell.destroy
         end
       end
 

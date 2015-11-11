@@ -19,7 +19,6 @@ module Bosh::Director
 
     context 'when stemcell deletion fails' do
       it "should raise error if CPI can't delete the stemcell" do
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1)
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid').and_raise('error')
 
         expect {
@@ -41,16 +40,13 @@ module Bosh::Director
 
     context 'when CPI raises an error AND the "force" option is used' do
       it 'should not raise an error' do
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1)
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid').and_raise('error')
 
         expect { stemcell_deleter.delete(stemcell, 'force' => true) }.not_to raise_error
       end
 
       it 'should delete stemcell metadata' do
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1)
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid').and_raise('error')
-
         stemcell_deleter.delete(stemcell, 'force' => true)
         expect(Models::Stemcell.all).to be_empty
       end
@@ -75,11 +71,7 @@ module Bosh::Director
       let(:stemcell_metadata_stage) { instance_double(Bosh::Director::EventLog::Stage) }
       let(:compiled_package_stage) { instance_double(Bosh::Director::EventLog::Stage) }
 
-      it 'should delete the stemcell metadata if the CPI deleted the stemcell' do
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1).and_return(stemcell_stage)
-        expect(stemcell_stage).to receive(:advance_and_track).with('Delete stemcell').and_yield
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell metadata', 1).and_return(stemcell_metadata_stage)
-        expect(stemcell_metadata_stage).to receive(:advance_and_track).with('Deleting stemcell metadata').and_yield
+      it 'should delete the stemcell models if the CPI deleted the stemcell' do
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid')
 
         stemcell_deleter.delete(stemcell)
@@ -87,8 +79,6 @@ module Bosh::Director
       end
 
       it 'should delete the associated compiled packages' do
-        expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1).and_return(stemcell_stage)
-        allow(stemcell_stage).to receive(:advance_and_track).and_yield
         expect(event_log).to receive(:begin_stage).with('Deleting compiled packages', 1, ['test_stemcell', 'test_version']).and_return(compiled_package_stage)
         expect(compiled_package_stage).to receive(:advance_and_track).with('package-name/version').and_yield
         associated_package = Models::CompiledPackage.make(

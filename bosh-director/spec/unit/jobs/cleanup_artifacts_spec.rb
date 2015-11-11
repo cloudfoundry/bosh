@@ -56,8 +56,6 @@ module Bosh::Director
           end
 
           it 'logs and returns the result' do
-            expect(event_log).to receive(:begin_stage).with('Deleting stemcell metadata', 1).and_return(stage)
-            expect(event_log).to receive(:begin_stage).with('Deleting stemcell from cloud', 1).and_return(stage)
             expect(event_log).to receive(:begin_stage).with('Deleting packages', 1).and_return(stage)
             expect(event_log).to receive(:begin_stage).with('Deleting jobs', 0).and_return(stage)
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2).and_return(stage)
