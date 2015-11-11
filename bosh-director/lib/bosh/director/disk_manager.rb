@@ -97,9 +97,13 @@ module Bosh::Director
       end
     end
 
-    def delete_orphan_disks_older_than(time)
-      Models::OrphanDisk.where('created_at < ?', time).each do |old_orphan|
-        delete_orphan_disk(old_orphan)
+    def delete_orphan_disks_older_than(time, event_log)
+      old_orphans = Models::OrphanDisk.where('created_at < ?', time)
+      stage = event_log.begin_stage('Deleting orphan disks', old_orphans.count)
+      old_orphans.each do |old_orphan|
+        stage.advance_and_track("#{old_orphan.disk_cid}") do
+          delete_orphan_disk(old_orphan)
+        end
       end
     end
 
@@ -116,6 +120,7 @@ module Bosh::Director
         orphan_disk.orphan_snapshots.each do |orphan_snapshot|
           delete_orphan_snapshot(orphan_snapshot)
         end
+        @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
         @cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
       rescue Bosh::Clouds::DiskNotFound

@@ -97,7 +97,7 @@ properties:
     default: 5
   director.disks.cleanup_schedule:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
-    default: '0,30 * * * *' #every 30min
+    default: '* 0,30 * * * * UTC' #every 30min
 
   # Director User Management
   director.user_management.provider:

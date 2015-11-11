@@ -394,6 +394,8 @@ module Bosh::Director
       let(:five_seconds_ago) { time - 5 }
       let(:four_seconds_ago) { time - 4 }
 
+      let(:event_log) { instance_double(EventLog::Log) }
+      let(:stage) { instance_double(EventLog::Stage) }
       let(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: ten_seconds_ago) }
       let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago) }
       let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
@@ -404,25 +406,30 @@ module Bosh::Director
       before do
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)
+        allow(event_log).to receive(:begin_stage).and_return(stage)
+        allow(stage).to receive(:advance_and_track).and_yield
       end
 
       describe 'deleting orphan disks' do
         describe 'delete orphan disks older than' do
           it 'deletes orphaned disks that were orphaned before the provided time' do
             expect(cloud).to receive(:delete_disk).with('disk-cid-1')
-
-            subject.delete_orphan_disks_older_than(six_seconds_ago)
-
+            subject.delete_orphan_disks_older_than(six_seconds_ago, event_log)
             expect(Models::OrphanDisk.all.map(&:disk_cid)).to eq(['disk-cid-2'])
           end
 
           it 'leaves orphaned disk that were orphaned after the provided time' do
             expect(cloud).to receive(:delete_disk).with('disk-cid-1')
             expect(cloud).to receive(:delete_disk).with('disk-cid-2')
-
-            subject.delete_orphan_disks_older_than(four_seconds_ago)
-
+            subject.delete_orphan_disks_older_than(four_seconds_ago, event_log)
             expect(Models::OrphanDisk.all).to be_empty
+          end
+
+          it 'logs to the event log' do
+            expect(event_log).to receive(:begin_stage).with('Deleting orphan disks', 2).and_return(stage)
+            expect(stage).to receive(:advance_and_track).with('disk-cid-1').and_yield
+            expect(stage).to receive(:advance_and_track).with('disk-cid-2').and_yield
+            subject.delete_orphan_disks_older_than(four_seconds_ago, event_log)
           end
         end
       end

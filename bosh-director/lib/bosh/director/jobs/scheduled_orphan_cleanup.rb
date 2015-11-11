@@ -17,7 +17,7 @@ module Bosh::Director
       def perform
         time = Time.now - (@max_orphaned_age_in_days * 24 * 60 * 60)
         logger.info("Started cleanup of orphan disks and orphan snapshots older than #{time}")
-        @disk_manager.delete_orphan_disks_older_than(time)
+        @disk_manager.delete_orphan_disks_older_than(time, event_log)
         "Cleaned up orphaned disks and orphaned snapshots older than #{time}"
       rescue => e
         logger.error("Error occurred cleaning up orphaned disks and orphaned snapshots: #{e.message}\n#{e.backtrace.join("\n")}")
