@@ -34,7 +34,10 @@ module Bosh::Director
     end
 
     describe 'performing the job' do
-      before { allow(cloud).to receive(:delete_disk).with('disk-cid-1') }
+      before do
+        allow(Time).to receive(:now).and_return(time)
+        allow(cloud).to receive(:delete_disk).with('disk-cid-1')
+      end
 
       it 'deletes orphans older than days specified' do
         subject.perform
