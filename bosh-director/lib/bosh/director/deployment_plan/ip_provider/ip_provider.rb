@@ -75,7 +75,11 @@ module Bosh::Director
 
       def reserve_existing_ips(reservation)
         # Do nothing for Dynamic Network
-        return if reservation.network.is_a?(DynamicNetwork)
+        if reservation.network.is_a?(DynamicNetwork)
+          reservation.resolve_type(:dynamic)
+          reservation.mark_reserved
+          return
+        end
 
         return reserve_vip(reservation) if reservation.network.is_a?(VipNetwork)
 

@@ -67,4 +67,25 @@ describe 'network configuration', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
   end
+
+  it 'does not recreate VM when re-deploying with unchanged dynamic networking' do
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['networks'] = [{
+        'name' => 'a',
+        'type' => 'dynamic',
+        'cloud_properties' => {}
+    }]
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+
+    legacy_manifest = manifest_hash.merge(cloud_config_hash)
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+
+    deploy_from_scratch(manifest_hash: legacy_manifest, legacy: true)
+    agent_id = director.vms.first.agent_id
+    deploy_simple_manifest(manifest_hash: legacy_manifest, legacy: true)
+    expect(director.vms.map(&:agent_id)).to eq([agent_id])
+  end
 end
