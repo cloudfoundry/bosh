@@ -7,19 +7,28 @@ module Bosh::Director
         :scheduled_orphan_cleanup
       end
 
+      def self.has_work(params)
+        time = time_days_ago(params['max_orphaned_age_in_days'])
+        Models::OrphanDisk.where('created_at < ?', time).any?
+      end
+
+      def self.time_days_ago(days)
+        Time.now - (days * 24 * 60 * 60)
+      end
+
       def self.schedule_message
         "clean up orphan disks"
       end
 
-      def initialize(options = {})
-        logger.debug("ScheduledOrphanCleanup initialized with options: #{options.inspect}")
-        @max_orphaned_age_in_days = options['max_orphaned_age_in_days']
-        cloud = options.fetch(:cloud) { Config.cloud }
+      def initialize(params = {})
+        logger.debug("ScheduledOrphanCleanup initialized with params: #{params.inspect}")
+        @max_orphaned_age_in_days = params['max_orphaned_age_in_days']
+        cloud = params.fetch(:cloud) { Config.cloud }
         @disk_manager = DiskManager.new(cloud, logger)
       end
 
       def perform
-        time = Time.now - (@max_orphaned_age_in_days * 24 * 60 * 60)
+        time = self.class.time_days_ago(@max_orphaned_age_in_days)
         logger.info("Started cleanup of orphan disks and orphan snapshots older than #{time}")
 
         old_orphans = Models::OrphanDisk.where('created_at < ?', time)
