@@ -4,12 +4,9 @@ require 'rbconfig'
 describe 'Ubuntu 14.04 OS image', os_image: true do
   # it_behaves_like 'every OS image'
   it_behaves_like 'an upstart-based OS image'
-<<<<<<< HEAD
   it_behaves_like 'a Linux kernel 3.x based OS image'
   it_behaves_like 'a Linux kernel module configured OS image'
-=======
-  # it_behaves_like 'a Linux kernel 3.x based OS image'
->>>>>>> altoros/power-3033-stemcell
+  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   describe package('apt') do
     it { should be_installed }
@@ -162,26 +159,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       rsync
       rsyslog
       rsyslog-gnutls
-<<<<<<< HEAD
-      rsyslog-mmjsonparse
-      rsyslog-relp
-=======
-      openssh-server
-      traceroute
-      libncurses5-dev
-      quota
-      libaio1
-      gdb
-      libcap2-bin
-      libcap-dev
-      libbz2-dev
-      cmake
-      scsitools
-      mg
-      htop
-      module-assistant
-      debhelper
->>>>>>> altoros/power-3033-stemcell
       runit
       scsitools
       strace
