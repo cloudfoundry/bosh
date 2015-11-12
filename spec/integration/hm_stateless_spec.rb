@@ -144,34 +144,10 @@ describe 'health_monitor: 1', type: :integration do
     expect(template).to include('b_ip=127.0.0.101')
 
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
-    original_vm.kill_agent
-    resurrected_vm = director.wait_for_vm('foobar', '0', 300)
-
-    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
-
-    wait_for_resurrection_to_finish
+    resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
 
     template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=192.168.1.2')
     expect(template).to include('b_ip=127.0.0.102')
-  end
-
-  def wait_for_resurrection_to_finish
-    attempts = 0
-
-    while attempts < 20
-      attempts += 1
-      resurrection_task = current_sandbox.db[:tasks].filter(
-        username: 'hm',
-        description: 'scan and fix',
-        state: 'processing'
-      )
-      return unless resurrection_task.any?
-
-      current_sandbox.logger.debug("Waiting for resurrection to finish, found resurrection tasks: #{resurrection_task.all}")
-      sleep(0.5)
-    end
-
-    current_sandbox.logger.debug('Failed to wait for resurrection to complete')
   end
 end

@@ -3,11 +3,12 @@ module Bosh::Spec
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
   class Director
-    def initialize(runner, waiter, agents_base_dir, director_nats_port, logger)
+    def initialize(runner, waiter, agents_base_dir, director_nats_port, db, logger)
       @runner = runner
       @waiter = waiter
       @agents_base_dir = agents_base_dir
       @director_nats_port = director_nats_port
+      @db = db
       @logger = logger
       @nats_recording = []
     end
@@ -116,11 +117,32 @@ module Bosh::Spec
       vm.kill_agent
       resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300)
 
+      wait_for_resurrection_to_finish
+
       if vm.cid == resurrected_vm.cid
         raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
       end
 
       resurrected_vm
+    end
+
+    def wait_for_resurrection_to_finish
+      attempts = 0
+
+      while attempts < 20
+        attempts += 1
+        resurrection_task = @db[:tasks].filter(
+          username: 'hm',
+          description: 'scan and fix',
+          state: 'processing'
+        )
+        return unless resurrection_task.any?
+
+        @logger.debug("Waiting for resurrection to finish, found resurrection tasks: #{resurrection_task.all}")
+        sleep(0.5)
+      end
+
+      @logger.debug('Failed to wait for resurrection to complete')
     end
 
     private

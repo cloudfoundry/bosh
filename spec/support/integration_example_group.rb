@@ -13,6 +13,7 @@ module IntegrationExampleGroup
       waiter,
       current_sandbox.agent_tmp_path,
       current_sandbox.nats_port,
+      current_sandbox.db,
       logger,
     )
   end
