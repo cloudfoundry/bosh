@@ -25,10 +25,13 @@ pkg_mgr install $debs
 
 # we need newer rsyslog; this comes from the upstream project's own repo
 run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
-# needed to remove rsyslog-mmjsonparse
+# needed to remove rsyslog-mmjsonparse on ppc64le
 # because of this issue https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
-# pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
-pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
+if [ `uname -m` == "ppc64le" ]; then
+  pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
+else
+  pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+fi
 
 
 exclusions="postfix"

@@ -93,7 +93,7 @@ describe Bosh::Stemcell::StemcellPackager do
 
       architecture = 'x86_64'
       if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
-        architecture = 'ppc64'
+        architecture = 'ppc64le'
       end
 
       expect(actual_manifest).to eq({

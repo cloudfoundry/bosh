@@ -45,7 +45,7 @@ ruby_basename=ruby-1.9.3-p545
 ruby_archive=$ruby_basename.tar.gz
 
 cp -r $dir/assets/$ruby_archive $chroot/$bosh_dir/src
-cp -r $config_folder $chroot/$bosh_dir/src    # maybe we don't need it here
+cp -r $config_folder $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src

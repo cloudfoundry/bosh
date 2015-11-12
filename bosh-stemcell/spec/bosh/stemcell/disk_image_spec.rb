@@ -8,7 +8,7 @@ module Bosh::Stemcell
     if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
       # power8 guest images have a p1: PReP partition and p2: file system, we need loopXp2 here
       let(:kpartx_map_output) { 'add map FAKE_LOOP1p2 (252:9): 0 20953088 linear /dev/loop1 18432' }
-    else 
+    else
       let(:kpartx_map_output) { 'add map FAKE_LOOP1p1 (252:3): 0 3997984 linear /dev/loop1 63' }
     end
     let(:options) do
@@ -46,9 +46,9 @@ module Bosh::Stemcell
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
         if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
           expect(shell).to receive(:run).
-                             with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                             with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                              output_command: false).and_return(kpartx_map_output)
-        else 
+        else
           expect(shell).to receive(:run).
                              with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
         end
@@ -61,7 +61,7 @@ module Bosh::Stemcell
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
         if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
           allow(shell).to receive(:run).
-                             with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                             with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                              output_command: false).and_return(kpartx_map_output)
           expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false)
         else
@@ -114,7 +114,7 @@ module Bosh::Stemcell
             allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
             if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
               allow(shell).to receive(:run).
-                                 with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                                 with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                  output_command: false).and_return(kpartx_map_output)
             else
               allow(shell).to receive(:run).
@@ -135,7 +135,7 @@ module Bosh::Stemcell
 
           if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
             allow(shell).to receive(:run).
-                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                output_command: false).and_return(kpartx_map_output)
             expect(shell).to receive(:run).
               with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false).ordered.
@@ -182,7 +182,7 @@ module Bosh::Stemcell
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
         if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
           allow(shell).to receive(:run).
-                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                output_command: false).and_return(kpartx_map_output)
           expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false)
         else
@@ -206,7 +206,7 @@ module Bosh::Stemcell
           allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
           if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
             allow(shell).to receive(:run).
-                                 with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
+                                 with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                  output_command: false).and_return(kpartx_map_output)
             expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false)
           else

@@ -5,30 +5,30 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
   it_behaves_like 'All Stemcells'
 
   context 'installed by image_install_grub', {exclude_on_warden: true, exclude_on_ppc64le: true} do
-      describe file('/boot/grub/grub.conf') do
-        it { should be_file }
-        it { should contain 'default=0' }
-        it { should contain 'timeout=1' }
-        its(:content) { should match %r{^title Ubuntu 14\.04.* LTS \(.*\)$} }
-        it { should contain '  root (hd0,0)' }
-        its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
-        it { should contain ' selinux=0' }
-        it { should contain ' cgroup_enable=memory swapaccount=1' }
-        it { should contain ' console=tty0 console=ttyS0,115200n8' }
-        it { should contain ' earlyprintk=ttyS0 rootdelay=300' }
-        its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
+    describe file('/boot/grub/grub.conf') do
+      it { should be_file }
+      it { should contain 'default=0' }
+      it { should contain 'timeout=1' }
+      its(:content) { should match %r{^title Ubuntu 14\.04.* LTS \(.*\)$} }
+      it { should contain '  root (hd0,0)' }
+      its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
+      it { should contain ' selinux=0' }
+      it { should contain ' cgroup_enable=memory swapaccount=1' }
+      it { should contain ' console=tty0 console=ttyS0,115200n8' }
+      it { should contain ' earlyprintk=ttyS0 rootdelay=300' }
+      its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
 
-        it('should set the grub menu password (stig: V-38585)') { should contain /^password --md5 $1$.*/ }
-        it('should be of mode 600 (stig: V-38583)') { should be_mode('600') }
-        it('should be owned by root (stig: V-38579)') { should be_owned_by('root') }
-        it('should be grouped into root (stig: V-38581)') { should be_grouped_into('root') }
-      end
-
-      describe file('/boot/grub/menu.lst') do
-        before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
-        it { should be_linked_to('./grub.conf') }
-      end
+      it('should set the grub menu password (stig: V-38585)') { should contain /^password --md5 $1$.*/ }
+      it('should be of mode 600 (stig: V-38583)') { should be_mode('600') }
+      it('should be owned by root (stig: V-38579)') { should be_owned_by('root') }
+      it('should be grouped into root (stig: V-38581)') { should be_grouped_into('root') }
     end
+
+    describe file('/boot/grub/menu.lst') do
+      before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
+      it { should be_linked_to('./grub.conf') }
+    end
+  end
 
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
@@ -36,15 +36,13 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
-  # Commented because of this error:
-  # https://gist.githubusercontent.com/allomov/67f0796d88ac222bf07a/raw/30882678fcc8f4367d8dfcb36c03f6a1c2163d86/gistfile3.txt
-  # context 'installed by bosh_harden' do
-  #   describe 'disallow unsafe setuid binaries' do
-  #     subject { backend.run_command('find -L / -xdev -perm +6000 -a -type f')[:stdout].split }
+  context 'installed by bosh_harden' do
+    describe 'disallow unsafe setuid binaries' do
+      subject { backend.run_command('find -L / -xdev -perm +6000 -a -type f')[:stdout].split }
 
-  #     it { should match_array(%w(/bin/su /usr/bin/sudo /usr/bin/sudoedit)) }
-  #   end
-  # end
+      it { should match_array(%w(/bin/su /usr/bin/sudo /usr/bin/sudoedit)) }
+    end
+  end
 
   context 'installed by system-network', {
     exclude_on_vsphere: true,

@@ -2,11 +2,10 @@ require 'spec_helper'
 require 'rbconfig'
 
 describe 'Ubuntu 14.04 OS image', os_image: true do
-  # it_behaves_like 'every OS image'
+  it_behaves_like 'every OS image'
   it_behaves_like 'an upstart-based OS image'
   it_behaves_like 'a Linux kernel 3.x based OS image'
   it_behaves_like 'a Linux kernel module configured OS image'
-  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   describe package('apt') do
     it { should be_installed }
@@ -79,7 +78,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      if RbConfig::CONFIG['host_cpu'] == "powerpc64le" 
+      if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted' }
         it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty main restricted' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main restricted' }
@@ -159,6 +158,8 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       rsync
       rsyslog
       rsyslog-gnutls
+      rsyslog-mmjsonparse
+      rsyslog-relp
       runit
       scsitools
       strace
@@ -170,7 +171,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).each do |pkg|
+    ).reject{ |pkg| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
@@ -218,14 +219,14 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       ).each do |pkg|
         describe package(pkg) do
           it { should be_installed }
-        end    
+        end
       end
       %w(grub grubenv grub.chrp).each do |grub_file|
         describe file("/boot/grub/#{grub_file}") do
           it { should be_file }
         end
       end
-    else 
+    else
       %w(
         grub
       ).each do |pkg|

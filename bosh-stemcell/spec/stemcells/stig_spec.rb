@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Stig test case verification', { stemcell_image: true, stig_check: true, exclude_on_ppc64le: true } do
+describe 'Stig test case verification', { stemcell_image: true, stig_check: true } do
   it 'confirms all stig test cases ran' do
     expected_base_stig_test_cases = %W{
       V-38682
@@ -76,7 +76,8 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
           'V-38581'
         ]
     end
-
+    expected_stig_test_cases= expected_stig_test_cases.reject{ |s| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and
+                                                ['V-38579', 'V-38581', 'V-38583', 'V-38585'].include?(s) }
     expect($stig_test_cases.to_a).to match_array expected_stig_test_cases
   end
 end

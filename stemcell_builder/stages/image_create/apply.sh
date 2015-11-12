@@ -10,7 +10,7 @@ source $base_dir/lib/prelude_apply.bash
 disk_image=${work}/${stemcell_image_name}
 
 if [ "`uname -m`" == "ppc64le" ]; then
-  # ppc64le guest images have a PReP partition 
+  # ppc64le guest images have a PReP partition
   # this and other code changes for ppc64le with input from Paulo Flabiano Smorigo @ IBM
   part_offset=2048s
   part_size=9MiB

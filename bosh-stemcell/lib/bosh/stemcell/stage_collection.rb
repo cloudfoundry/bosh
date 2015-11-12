@@ -33,10 +33,10 @@ module Bosh::Stemcell
       [
         :bosh_ruby,
         :bosh_go_agent,
-        # :bosh_micro_go,   # bosh-agent is crashing during stemcell creation
+        :bosh_micro_go,
         :aws_cli,
         :logrotate_config,
-      ]
+      ].reject{ |s| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and s ==  :bosh_micro_go }
     end
 
     def build_stemcell_image_stages
@@ -212,7 +212,7 @@ module Bosh::Stemcell
         :bosh_sysstat,
         :system_kernel,
         :system_kernel_modules,
-        # :system_ixgbevf,  # because of this issue https://gist.github.com/allomov-altoros/c63b326528beacd00e39
+        :system_ixgbevf,
         bosh_steps,
         :rsyslog_config,
         :delay_monit_start,
@@ -220,7 +220,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
-      ].flatten
+      ].flatten.reject{ |s| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and s ==  :system_ixgbevf }
     end
 
     def photon_os_stages
