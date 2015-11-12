@@ -24,11 +24,15 @@ module Bosh::Director
         # We should not be calling reserve on reservations that have already been reserved
         return if reservation.reserved?
 
-        # Do nothing for Dynamic Network
-        return if reservation.network.is_a?(DynamicNetwork)
+        if reservation.network.is_a?(DynamicNetwork)
+          reserve_dynamic(reservation)
+          return
+        end
 
-        # Reserve IP for VIP Network
-        return reserve_vip(reservation) if reservation.network.is_a?(VipNetwork)
+        if reservation.network.is_a?(VipNetwork)
+          reserve_vip(reservation)
+          return
+        end
 
         # Reserve IP for Manual Network
         if reservation.ip.nil?
@@ -63,9 +67,7 @@ module Bosh::Director
               raise Bosh::Director::NetworkReservationIpReserved, message
             end
 
-            @ip_repo.add(reservation)
-
-            mark_reserved_with_reservation_type(reservation, subnet)
+            reserve_manual(reservation, subnet)
           else
             raise NetworkReservationIpOutsideSubnet,
               "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{reservation.network.name}'"
@@ -74,29 +76,31 @@ module Bosh::Director
       end
 
       def reserve_existing_ips(reservation)
-        # Do nothing for Dynamic Network
         if reservation.network.is_a?(DynamicNetwork)
-          reservation.resolve_type(:dynamic)
-          reservation.mark_reserved
+          reserve_dynamic(reservation)
           return
         end
 
-        return reserve_vip(reservation) if reservation.network.is_a?(VipNetwork)
+        if reservation.network.is_a?(VipNetwork)
+          reserve_vip(reservation)
+          return
+        end
 
         @logger.debug('Reserving existing ips')
         subnet = find_subnet_containing(reservation)
         if subnet
           return if subnet.restricted_ips.include?(reservation.ip.to_i)
-          @ip_repo.add(reservation)
 
           @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
-          mark_reserved_with_reservation_type(reservation, subnet)
+          reserve_manual(reservation, subnet)
         end
       end
 
       private
 
-      def mark_reserved_with_reservation_type(reservation, subnet)
+      def reserve_manual(reservation, subnet)
+        @ip_repo.add(reservation)
+
         subnet_az_names = subnet.availability_zone_names.to_a.join(', ')
         if subnet.static_ips.include?(reservation.ip.to_i)
           reservation.resolve_type(:static)
@@ -112,6 +116,13 @@ module Bosh::Director
       def reserve_vip(reservation)
         @logger.debug("Reserving IP '#{format_ip(reservation.ip)}' for vip network '#{reservation.network.name}'")
         @ip_repo.add(reservation)
+        reservation.resolve_type(:static)
+        reservation.mark_reserved
+      end
+
+      def reserve_dynamic(reservation)
+        reservation.resolve_type(:dynamic)
+        reservation.mark_reserved
       end
 
       def filter_subnet_by_instance_az(reservation)

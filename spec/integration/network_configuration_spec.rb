@@ -68,16 +68,24 @@ describe 'network configuration', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
   end
 
-  it 'does not recreate VM when re-deploying with unchanged dynamic networking' do
+  it 'does not recreate VM when re-deploying with unchanged dynamic and vip networking' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['networks'] = [{
         'name' => 'a',
         'type' => 'dynamic',
         'cloud_properties' => {}
-    }]
+      },
+      {
+        'name' => 'b',
+        'type' => 'vip',
+        'static_ips' => ['69.69.69.69'],
+      }
+    ]
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
 
     legacy_manifest = manifest_hash.merge(cloud_config_hash)
 

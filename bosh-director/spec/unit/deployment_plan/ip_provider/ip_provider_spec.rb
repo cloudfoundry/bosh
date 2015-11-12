@@ -342,6 +342,17 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
+        context 'when vip network' do
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, vip_network, '69.69.69.69') }
+          let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
+
+          it 'marks reservation as reserved' do
+            ip_provider.reserve_existing_ips(existing_network_reservation)
+            expect(existing_network_reservation.static?).to be_truthy
+            expect(existing_network_reservation.reserved?).to be_truthy
+          end
+        end
+
         context 'when manual network' do
           let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
           context 'when IP is a static IP' do
