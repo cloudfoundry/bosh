@@ -32,13 +32,14 @@ module Bosh::Director
         logger.info("Started cleanup of orphan disks and orphan snapshots older than #{time}")
 
         old_orphans = Models::OrphanDisk.where('created_at < ?', time)
-        stage = event_log.begin_stage('Deleting orphan disks', old_orphans.count)
+        old_orphans_count = old_orphans.count
+        stage = event_log.begin_stage('Deleting orphan disks', old_orphans_count)
         old_orphans.each do |old_orphan|
           stage.advance_and_track("#{old_orphan.disk_cid}") do
             @disk_manager.delete_orphan_disk(old_orphan)
           end
         end
-        "Deleted #{old_orphans.count} orphaned disk(s) older than #{time}"
+        "Deleted #{old_orphans_count} orphaned disk(s) older than #{time}"
       rescue => e
         logger.error("Error occurred cleaning up orphaned disks and orphaned snapshots: #{e.message}\n#{e.backtrace.join("\n")}")
       end

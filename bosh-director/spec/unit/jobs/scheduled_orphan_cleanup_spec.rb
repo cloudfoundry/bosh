@@ -40,6 +40,10 @@ module Bosh::Director
         subject.perform
         expect(Models::OrphanDisk.all.map(&:disk_cid)).to eq(['disk-cid-2'])
       end
+
+      it 'should show the count deleted' do
+        expect(subject.perform).to eq("Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}")
+      end
     end
   end
 end
