@@ -115,7 +115,8 @@ describe Bosh::Director::VmCreator do
         job: 'fake-job',
         index: '5',
         director: 'fake-director-name',
-        id: instance_model.uuid
+        id: instance_model.uuid,
+        name: "fake-job/#{instance_model.uuid}"
       })
     end
 

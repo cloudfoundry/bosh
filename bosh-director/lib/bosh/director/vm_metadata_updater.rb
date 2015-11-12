@@ -19,6 +19,7 @@ module Bosh::Director
           metadata[:id] = vm.instance.uuid
           metadata[:job] = vm.instance.job
           metadata[:index] = vm.instance.index.to_s
+          metadata[:name] = "#{vm.instance.job}/#{vm.instance.uuid}"
         end
 
         @cloud.set_vm_metadata(vm.cid, metadata)

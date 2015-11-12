@@ -60,6 +60,7 @@ describe Bosh::Director::VmMetadataUpdater do
             id: 'some_instance_id',
             job: 'job-value',
             index: 'index-value',
+            name: 'job-value/some_instance_id'
           }
           expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           vm_metadata_updater.update(vm, {})
