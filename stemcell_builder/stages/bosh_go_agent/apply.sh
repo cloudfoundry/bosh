@@ -24,11 +24,7 @@ ln -s /etc/sv/monit /etc/service/monit
 # Alerts for monit config
 cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 
-if [ "`uname -m`" == "ppc64le" ]; then
-  build_script=build-linux-ppc64le
-else
-  build_script=build
-fi
+build_script=build
 
 agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
 cd $agent_dir

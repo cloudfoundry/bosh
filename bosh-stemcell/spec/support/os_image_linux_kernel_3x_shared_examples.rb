@@ -13,7 +13,7 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it { should be_file }
     end
 
-    context 'installed by system_ixgbevf' do
+    context 'installed by system_ixgbevf', exclude_on_ppc64le: true do
       describe package('dkms') do
         it { should be_installed }
       end
@@ -22,7 +22,7 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
         it 'is installed with the right version' do
           expect(file("/var/lib/dkms/ixgbevf/2.16.1/#{kernel_version}/x86_64/module/ixgbevf.ko")).to be_a_file
           end
-      end
+       end
     end
   end
 end

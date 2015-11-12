@@ -156,6 +156,7 @@ module Bosh::Stemcell
     end
 
     def exclude_exclusions
+      [
       case infrastructure.name
       when 'vsphere'
         ' --tag ~exclude_on_vsphere'
@@ -171,7 +172,14 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_azure'
       else
         ''
+      end,
+      case RbConfig::CONFIG['host_cpu']
+      when 'powerpc64le'
+        ' --tag ~exclude_on_ppc64le'
+      else
+        ''
       end
+      ].join(' ')
     end
 
     def image_file_path

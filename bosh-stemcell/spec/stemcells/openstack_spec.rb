@@ -25,7 +25,7 @@ describe 'OpenStack Stemcell', stemcell_image: true do
     describe 'disallows password authentication' do
       subject { file('/etc/ssh/sshd_config') }
 
-      it { should contain /^PasswordAuthentication yes$/ }
+      it { should contain /^PasswordAuthentication no$/ }
     end
   end
 end
