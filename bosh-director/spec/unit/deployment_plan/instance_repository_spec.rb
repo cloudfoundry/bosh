@@ -34,8 +34,10 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         uuid: 'uuid-2',
         availability_zone: 'az-name',
         bootstrap: false,
+        spec: instance_spec
       )
     end
+    let(:instance_spec) { {} }
 
     it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
       desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, plan)
@@ -73,6 +75,15 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       end
 
       context 'when instance does not have reservations in database' do
+        context 'when instance has reservations on dynamic networks' do
+          let(:instance_spec) { {'networks' => {'name-7' => {'type' => 'dynamic', 'ip' => '10.10.0.10'}}} }
+
+          it 'creates reservations from state' do
+            instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
+            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
+          end
+        end
+
         context 'when binding reservations with state' do
           it 'creates reservations from state' do
             instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
