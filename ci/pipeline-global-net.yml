@@ -9,6 +9,7 @@ groups:
     - integration-2.1-mysql
     - integration-2.1-postgres
     - load-tests
+    - fuzz-tests
 
 jobs:
   - name: start-job
@@ -111,12 +112,34 @@ jobs:
         params:
           RUBY_VERSION: 2.1.7
 
+  - name: fuzz-tests
+    public: true
+    serial: true
+    plan:
+    - { get: interval-trigger, trigger: true, passed: [start-job] }
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-fuzz-tests }
+
+    - task: test
+      privileged: true
+      file: bosh-fuzz-tests/ci/tasks/test.yml
+      config:
+        tags: ["bosh-integration"]
+        params:
+          RUBY_VERSION: 2.1.7
+
 resources:
   - name: bosh-src
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: global-net
+
+  - name: bosh-fuzz-tests
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
+      branch: master
 
   - name: bosh-load-tests-workspace
     type: git
