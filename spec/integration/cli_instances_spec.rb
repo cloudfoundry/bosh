@@ -24,9 +24,7 @@ describe 'cli: instances', type: :integration do
     deploy_from_scratch
     vitals = director.instances_vitals[0]
 
-    expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_user_sys_wait]).to match /\d+\.?\d*[%], \d+\.?\d*[%], \d+\.?\d*[%]/
 
     expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
     expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
@@ -91,6 +89,59 @@ describe 'cli: instances', type: :integration do
         |   process-3 | failing |               |             |
         +-------------+---------+---------------+-------------+
       )
+    end
+  end
+
+  context 'with the --vitals and --ps flags' do
+    it 'display instances and processes' do
+      deploy_from_scratch
+      vitals = director.instances_ps_vitals[0]
+
+      expect(vitals[:uptime]).to be_empty
+      expect(vitals[:cpu]).to be_empty
+      expect(vitals[:cpu_user_sys_wait]).to match /\d+\.?\d*[%], \d+\.?\d*[%], \d+\.?\d*[%]/
+
+      expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+      expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+
+      expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
+      expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+
+      # persistent disk was not deployed
+      expect(vitals[:persistent_disk_usage]).to match /n\/a/
+
+      vitals = director.instances_ps_vitals[1]
+
+      expect(vitals[:uptime]).to match /\d+d \d+h \d+m \d+s/
+      expect(vitals[:cpu_user_sys_wait]).to be_empty
+      expect(vitals[:cpu]).to match /\d+%/
+      expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+    end
+
+    it 'filters out non-failing processes' do
+      deploy_from_scratch
+      vitals = director.instances_ps_vitals_failing[0]
+
+      expect(vitals[:uptime]).to be_empty
+      expect(vitals[:cpu]).to be_empty
+      expect(vitals[:cpu_user_sys_wait]).to match /\d+\.?\d*[%], \d+\.?\d*[%], \d+\.?\d*[%]/
+
+      expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+      expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+
+      expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
+      expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+
+      # persistent disk was not deployed
+      expect(vitals[:persistent_disk_usage]).to match /n\/a/
+
+      vitals = director.instances_ps_vitals_failing[1]
+
+      expect(vitals[:instance]).to eq('process-3')
+      expect(vitals[:uptime]).to match /\d+d \d+h \d+m \d+s/
+      expect(vitals[:cpu_user_sys_wait]).to be_empty
+      expect(vitals[:cpu]).to match /\d+%/
+      expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
     end
   end
 end
