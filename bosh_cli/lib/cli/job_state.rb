@@ -65,8 +65,8 @@ module Bosh::Cli
     end
 
     def job_description(job, index)
-      return 'all jobs' if job == :all
-      index ? "#{job}/#{index}" : "#{job}/ALL"
+      return 'all jobs' if job == '*'
+      index ? "#{job}/#{index}" : "#{job}/*"
     end
 
   end

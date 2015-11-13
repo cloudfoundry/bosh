@@ -6,7 +6,7 @@ describe 'stop job', type: :integration do
   it 'stops a job' do
     deploy_from_scratch
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
-    expect(bosh_runner.run('stop foobar')).to include("foobar/ALL stopped, VM(s) still running")
+    expect(bosh_runner.run('stop foobar')).to include("foobar/* stopped, VM(s) still running")
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
   end
 

@@ -222,9 +222,9 @@ describe Bosh::Cli::Command::JobManagement do
 
     context 'if an index is not supplied' do
       it 'tells the user what it is about to do' do
-          expect(command).to receive(:say).with("You are about to #{verb} dea/ALL#{operation_description_extra}")
-          expect(command).to receive(:say).with("Performing `#{verb} dea/ALL#{operation_description_extra}'...")
-          expect(command).to receive(:say).with %r{\ndea/ALL #{past_verb}}
+          expect(command).to receive(:say).with("You are about to #{verb} dea/*#{operation_description_extra}")
+          expect(command).to receive(:say).with("Performing `#{verb} dea/*#{operation_description_extra}'...")
+          expect(command).to receive(:say).with %r{\ndea/\* #{past_verb}}
           command.public_send(method_name, 'dea')
 
       end
@@ -235,7 +235,7 @@ describe Bosh::Cli::Command::JobManagement do
 
       it 'reports back on the task report' do
           allow(director).to receive_messages(change_job_state: %w(done 23))
-          expect(command).to receive(:task_report).with('done', '23', "dea/ALL #{past_verb}#{extra_task_report_info}")
+          expect(command).to receive(:task_report).with('done', '23', "dea/* #{past_verb}#{extra_task_report_info}")
           command.public_send(method_name, 'dea')
       end
     end
@@ -249,7 +249,7 @@ describe Bosh::Cli::Command::JobManagement do
       end
 
       it 'changes the all job states' do
-        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, :all, nil, new_state, { skip_drain: false })
+        expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, '*', nil, new_state, { skip_drain: false })
         command.public_send(method_name)
       end
 

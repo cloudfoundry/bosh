@@ -22,7 +22,7 @@ module Bosh::Cli
       option '--hard', 'Power off VM'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def stop_job(job = :all, index = nil)
+      def stop_job(job = '*', index = nil)
         if hard?
           change_job_state(:detach, job, index)
         else
@@ -53,7 +53,7 @@ module Bosh::Cli
       def change_job_state(state, job, index = nil)
         auth_required
         manifest = parse_manifest(state)
-        unless job == :all
+        unless job == '*'
           job_must_exist_in_deployment(manifest.hash, job)
           index = valid_index_for(manifest.hash, job, index) unless state == :stop || state  == :detach
         end
