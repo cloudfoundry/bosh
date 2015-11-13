@@ -29,8 +29,10 @@ module Bosh::Director
       def snapshots(deployment, job=nil, index=nil)
         filter = { deployment: deployment }
         filter[:job] = job if job
-        filter[:index] = index if index
-
+        if index
+          filter_key = index.to_s =~ /^\d+$/ ? :index : :uuid
+          filter[filter_key] = index
+        end
         result = []
         instances = Models::Instance.filter(filter).all
 
