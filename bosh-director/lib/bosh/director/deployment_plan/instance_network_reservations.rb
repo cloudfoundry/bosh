@@ -25,6 +25,14 @@ module Bosh::Director
           reservations.add_existing(instance, deployment, ip_address.network_name, ip_address.address, ip_address.type)
         end
 
+        unless instance.model.spec.nil?
+          # Dynamic network reservations are not saved in DB, recreating from instance spec
+          instance.model.spec.fetch('networks', []).each do |network_name, network_config|
+            next unless network_config['type'] == 'dynamic'
+            reservations.add_existing(instance, deployment, network_name, network_config['ip'], '')
+          end
+        end
+
         reservations
       end
 
