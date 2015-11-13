@@ -11,3 +11,4 @@ rm -rf s3cli
 mkdir s3cli
 current_version=0.0.11
 curl -L -o s3cli/s3cli https://s3.amazonaws.com/s3cli-artifacts/s3cli-${current_version}-linux-amd64
+echo "d8cfbf440e9c8054a81463c39540b21cdea34dec s3cli/s3cli" | sha1sum -c -
