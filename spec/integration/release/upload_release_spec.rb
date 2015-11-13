@@ -559,12 +559,6 @@ describe 'upload release', type: :integration do
 
       out = bosh_runner.run("upload release #{release_filename} --fix")
 
-      expect(out).to match /Started fixing package \'pkg_1.*Done/
-      expect(out).to match /Started fixing package \'pkg_2.*Done/
-      expect(out).to match /Started fixing package \'pkg_3_depends_on_2.*Done/
-      expect(out).to match /Started fixing package \'pkg_4_depends_on_3.*Done/
-      expect(out).to match /Started fixing package \'pkg_5_depends_on_4_and_1.*Done/
-
       inspect2 = bosh_runner.run('inspect release test_release/1')
       new_pkg_inspect = Bosh::Dev::TableParser.new(inspect2.split(/\n\n/)[1]).to_a
 

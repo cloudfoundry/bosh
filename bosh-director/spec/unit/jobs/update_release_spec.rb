@@ -812,7 +812,8 @@ module Bosh::Director
         end
 
         it 'verifies and fixes package' do
-          expect(BlobUtil).to receive(:replace_blob).with('fake-blobstore-id-1', File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id')
+          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
           job.perform
         end
       end
@@ -843,7 +844,8 @@ module Bosh::Director
         end
 
         it 'fixes existing package and copy blob' do
-          expect(BlobUtil).to receive(:replace_blob).with('fake-blobstore-id-1', File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
           expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
           job.perform
         end
