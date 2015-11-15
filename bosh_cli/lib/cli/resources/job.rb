@@ -19,8 +19,8 @@ module Bosh::Cli::Resources
 
     def spec
       @spec ||= load_yaml_file(job_base.join('spec'))
-    rescue
-      raise Bosh::Cli::InvalidJob, 'Job spec is missing'
+    rescue Exception => e
+      raise Bosh::Cli::InvalidJob, "Job spec is missing or invalid: #{e.message}"
     end
 
     def name
