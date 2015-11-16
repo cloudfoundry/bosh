@@ -150,7 +150,7 @@ module Bosh::Cli::Command
                   prow << '' if has_disk_cid
                 end
                 if has_uptime
-                  if process['uptime']
+                  if process['uptime'] && process['uptime']['secs']
                     uptime = Integer(process['uptime']['secs'])
                     days = uptime/60/60/24
                     hours = uptime/60/60%24
