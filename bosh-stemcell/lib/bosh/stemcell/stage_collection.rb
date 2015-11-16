@@ -36,7 +36,7 @@ module Bosh::Stemcell
         :bosh_micro_go,
         :aws_cli,
         :logrotate_config,
-      ]
+      ].reject{ |s| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and s ==  :bosh_micro_go }
     end
 
     def build_stemcell_image_stages
@@ -220,7 +220,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
-      ].flatten
+      ].flatten.reject{ |s| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and s ==  :system_ixgbevf }
     end
 
     def photon_os_stages

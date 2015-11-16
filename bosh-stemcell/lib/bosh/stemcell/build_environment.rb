@@ -42,7 +42,7 @@ module Bosh::Stemcell
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "OS_IMAGE=#{os_image_tarball_path}",
-        'bundle exec rspec -fd',
+        "bundle exec rspec -fd#{exclude_arch_exclusions}",
         "spec/os_image/#{operating_system_spec_name}_spec.rb",
       ].join(' ')
     end
@@ -156,6 +156,7 @@ module Bosh::Stemcell
     end
 
     def exclude_exclusions
+      [
       case infrastructure.name
       when 'vsphere'
         ' --tag ~exclude_on_vsphere'
@@ -171,8 +172,20 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_azure'
       else
         ''
+      end,
+      exclude_arch_exclusions
+      ].join(' ')
+    end
+
+    def exclude_arch_exclusions
+      case RbConfig::CONFIG['host_cpu']
+      when 'powerpc64le'
+        ' --tag ~exclude_on_ppc64le'
+      else
+        ''
       end
     end
+
 
     def image_file_path
       File.join(work_path, settings['stemcell_image_name'])

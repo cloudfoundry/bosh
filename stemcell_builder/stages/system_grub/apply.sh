@@ -9,28 +9,32 @@ source $base_dir/lib/prelude_apply.bash
 
 # Install grub or grub2 (check existence of classic grub package first because Ubuntu Trusty has a transitional grub2 dummy package)
 
-if pkg_exists grub; then
-  pkg_mgr install grub
-elif pkg_exists grub2; then
+# Install grub
+if [ `uname -m` == "ppc64le" ]; then
+  # ppc64le uses grub2
   pkg_mgr install grub2
 else
-  echo "Can't find grub or grub2 package to install"
-  exit 2
+  pkg_mgr install grub
 fi
 
-if [ -d $chroot/usr/lib/grub/x86* ] # classic GRUB on Ubuntu
+
+if [ -f $chroot/etc/debian_version ] # Ubuntu
 then
 
-  rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
+  if [ `uname -m` == "ppc64le" ]; then
+    rsync -a $chroot/usr/lib/grub/powerpc*/ $chroot/boot/grub/
+  else
+    rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
+  fi
 
-elif [ -d $chroot/etc/grub.d ] # GRUB 2 on CentOS 7 or Ubuntu
+elif [ -f $chroot/etc/centos-release ] # CentOS
 then
 
-  echo "Found grub2; grub-legacy bootloader stages not needed"
+  rsync -a $chroot/usr/share/grub/x86*/ $chroot/boot/grub/
 
 else
 
-  echo "Can't find GRUB or GRUB 2 files, exiting"
+  echo "Unknown OS, exiting"
   exit 2
 
 fi

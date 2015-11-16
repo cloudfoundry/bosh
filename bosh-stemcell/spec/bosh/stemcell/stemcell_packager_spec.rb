@@ -90,6 +90,12 @@ describe Bosh::Stemcell::StemcellPackager do
       packager.package('raw')
 
       actual_manifest = YAML.load_file(File.join(work_dir, 'stemcell/stemcell.MF'))
+
+      architecture = 'x86_64'
+      if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+        architecture = 'ppc64le'
+      end
+
       expect(actual_manifest).to eq({
         'name' => 'bosh-fake_infra-fake_hypervisor-centos-7-go_agent-raw',
         'version' => '1234',
@@ -106,7 +112,7 @@ describe Bosh::Stemcell::StemcellPackager do
           'container_format' => 'bare',
           'os_type' => 'linux',
           'os_distro' => 'centos',
-          'architecture' => 'x86_64',
+          'architecture' => architecture,
           'fake_infra_specific_property' => 'some_value'
         }
       })
