@@ -40,8 +40,6 @@ module Bosh::Director
           end
         end
         "Deleted #{old_orphans_count} orphaned disk(s) older than #{time}"
-      rescue => e
-        logger.error("Error occurred cleaning up orphaned disks and orphaned snapshots: #{e.message}\n#{e.backtrace.join("\n")}")
       end
     end
   end
