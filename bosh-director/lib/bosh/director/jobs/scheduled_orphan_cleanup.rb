@@ -8,7 +8,7 @@ module Bosh::Director
       end
 
       def self.has_work(params)
-        time = time_days_ago(params['max_orphaned_age_in_days'])
+        time = time_days_ago(params.first['max_orphaned_age_in_days'])
         Models::OrphanDisk.where('created_at < ?', time).any?
       end
 

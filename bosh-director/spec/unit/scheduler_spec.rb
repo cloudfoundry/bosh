@@ -132,7 +132,7 @@ module Bosh::Director
 
           it 'sends the job params to the job #has_work method' do
             allow(queue).to receive(:enqueue)
-            expect(Jobs::FakeJobHasWork).to receive(:has_work).with(params)
+            expect(Jobs::FakeJobHasWork).to receive(:has_work).with(params).twice
             scheduler.start!
           end
 

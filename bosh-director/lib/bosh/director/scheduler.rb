@@ -43,26 +43,28 @@ module Bosh::Director
 
         @scheduler.cron(scheduled_job['schedule']) do |_|
 
-          should_enqueue = if director_job_class.respond_to?(:has_work)
-                              director_job_class.has_work(scheduled_job['params'])
-                            else
-                              true
-                            end
+          should_enqueue = true
+          if director_job_class.respond_to?(:has_work)
+            logger.debug("Scheduler cron - checking /
+#{director_job_class}.has_work:#{director_job_class.has_work(scheduled_job['params'])} /
+with params #{scheduled_job['params']}")
 
-          return unless should_enqueue
+            should_enqueue = director_job_class.has_work(scheduled_job['params'])
+          end
 
-          logger.info("enqueueing `#{scheduled_job['command']}'")
+          if should_enqueue
+            logger.info("enqueueing `#{scheduled_job['command']}'")
 
-          schedule_message = if director_job_class.respond_to?(:schedule_message)
-                               director_job_class.schedule_message
-                             else
-                               "scheduled #{scheduled_job['command']}"
-                             end
+            schedule_message = "scheduled #{scheduled_job['command']}"
+            if director_job_class.respond_to?(:schedule_message)
+              schedule_message = director_job_class.schedule_message
+            end
 
-          @queue.enqueue('scheduler',
-                         director_job_class,
-                         schedule_message,
-                         scheduled_job['params'])
+            @queue.enqueue('scheduler',
+              director_job_class,
+              schedule_message,
+              scheduled_job['params'])
+          end
         end
 
         logger.info("added scheduled job `#{director_job_class}' with interval '#{scheduled_job['schedule']}'")
