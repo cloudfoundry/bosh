@@ -179,11 +179,12 @@ else
 fi
 
 if [ -f ${image_mount_point}/etc/debian_version ] # Ubuntu
+
 then
   if [ "`uname -m`" == "ppc64le" ]; then
     run_in_chroot ${image_mount_point} "
     if [ -f /etc/default/grub ]; then
-      sed -i -e 's/^GRUB_CMDLINE_LINUX=\\\"\\\"/GRUB_CMDLINE_LINUX=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 \\\"/' /etc/default/grub
+      sed -i -e 's/^grub_cmdline_linux=\\\"\\\"/grub_cmdline_linux=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 \\\"/' /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
     "
@@ -197,19 +198,10 @@ title ${os_name} (${kernel_version})
   initrd /boot/${initrd_file}
 GRUB_CONF
 fi
+
 elif [ -f ${image_mount_point}/etc/redhat-release ] # Centos or RHEL
 then
-
-# For CentOS 6 (Linux 2.x), we need to set xen_blkfront.sda_is_xvda=1 to force CentOS to have device mapping consistent
-# with Ubuntu. For CentOS 7 (Linux 3.x), we must not use this parameter because it prevents the system from booting.
-version_specific_params=""
-if [ ${kernel_version:0:1} = 2 ]; then
-  version_specific_params="xen_blkfront.sda_is_xvda=1"
-elif [ ${kernel_version:0:1} = 3 ]; then
-  version_specific_params="net.ifnames=0 plymouth.enable=0"
-fi
-
-cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
+  cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
 default=0
 timeout=1
 title ${os_name} (${kernel_version})
@@ -256,4 +248,3 @@ fi
 
 run_in_chroot ${image_mount_point} "rm -f /boot/grub/menu.lst"
 run_in_chroot ${image_mount_point} "ln -s ./grub.conf /boot/grub/menu.lst"
-
