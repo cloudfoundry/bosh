@@ -96,7 +96,7 @@ describe Bosh::Cli::Command::JobManagement do
         else
           expect {
             command.public_send(method_name, 'dea')
-          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
         end
       end
     end
@@ -160,7 +160,7 @@ describe Bosh::Cli::Command::JobManagement do
             else
               expect {
                 command.public_send(method_name, 'dea')
-              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
             end
           end
 
@@ -172,7 +172,7 @@ describe Bosh::Cli::Command::JobManagement do
             else
               expect {
                 command.public_send(method_name, 'dea')
-              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index. There is more than one instance of this job type.')
+              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
             end
           end
         end

@@ -90,7 +90,7 @@ module Bosh::Cli
           it 'does not allow the user to omit the index' do
             expect {
               command.resurrection_state('dea', 'on')
-            }.to raise_error(CliError, 'You should specify the job index. There is more than one instance of this job type.')
+            }.to raise_error(CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
           end
 
           describe 'changing the state' do

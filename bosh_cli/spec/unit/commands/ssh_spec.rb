@@ -130,7 +130,7 @@ describe Bosh::Cli::Command::Ssh do
           expect {
             command.shell('dea')
           }.to raise_error(Bosh::Cli::CliError,
-                           'You should specify the job index. There is more than one instance of this job type.')
+                           'You should specify the job index or id. There is more than one instance of this job type.')
         end
 
         it 'should prompt for an instance if job name not given' do
