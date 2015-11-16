@@ -19,6 +19,7 @@ module Bosh::Director
       @job_class = job_class
       @task_logger.info("Looking for task with task id #{@task_id}")
       @task = task_manager.find_task(@task_id)
+      @task_logger.info("Found task #{@task.inspect}")
     end
 
     # Runs director job
@@ -98,7 +99,8 @@ module Bosh::Director
 
       run_checkpointing
 
-      @task_logger.info("Performing task: #{@task.id}")
+      @task.reload
+      @task_logger.info("Performing task: #{@task.inspect}")
 
       @task.state = :processing
       @task.timestamp = Time.now
