@@ -72,7 +72,7 @@ module Bosh::Director
         it 'raises an exception because there is no agent to contact' do
           expect {
             fetch_logs.perform
-          }.to raise_error(InstanceVmMissing, "`fake-job-name/42' doesn't reference a VM")
+          }.to raise_error(InstanceVmMissing, "`fake-job-name/#{instance.uuid} (42)' doesn't reference a VM")
         end
       end
     end

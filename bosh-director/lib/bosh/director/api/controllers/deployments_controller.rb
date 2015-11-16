@@ -75,17 +75,17 @@ module Bosh::Director
       end
 
       # GET /deployments/foo/jobs/dea/2/logs
-      get '/:deployment/jobs/:job/:index/logs' do
+      get '/:deployment/jobs/:job/:index_or_id/logs' do
         deployment = params[:deployment]
         job = params[:job]
-        index = params[:index]
+        index_or_id = params[:index_or_id]
 
         options = {
           'type' => params[:type].to_s.strip,
           'filters' => params[:filters].to_s.strip.split(/[\s\,]+/)
         }
 
-        task = @instance_manager.fetch_logs(current_user, deployment, job, index, options)
+        task = @instance_manager.fetch_logs(current_user, deployment, job, index_or_id, options)
         redirect "/tasks/#{task.id}"
       end
 

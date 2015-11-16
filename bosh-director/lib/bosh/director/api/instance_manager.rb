@@ -6,7 +6,7 @@ module Bosh::Director
       # @raise [InstanceNotFound]
       def find_instance(instance_id)
         InstanceLookup.new.by_id(instance_id)
-      end
+        end
 
       # @param [String] deployment_name Deployment name
       # @param [String] job Job name
@@ -29,7 +29,7 @@ module Bosh::Director
         vm = instance.vm
         if vm.nil?
           raise InstanceVmMissing,
-                "`#{instance.job}/#{instance.index}' doesn't reference a VM"
+                "`#{instance.job}/#{instance.uuid} (#{instance.index})' doesn't reference a VM"
         end
 
         if vm.agent_id.nil?
@@ -39,13 +39,18 @@ module Bosh::Director
         AgentClient.with_vm(vm)
       end
 
-      def fetch_logs(username, deployment_name, job, index, options = {})
-        if deployment_name.nil? || job.nil? || index.nil?
+      def fetch_logs(username, deployment_name, job, index_or_id, options = {})
+        if deployment_name.nil? || job.nil? || index_or_id.nil?
           raise DirectorError,
-                'deployment, job and index parameters are required'
+                'deployment, job and index/id parameters are required'
         end
 
-        instance = find_by_name(deployment_name, job, index)
+        # This is for backwards compatibility and can be removed when we move to referencing job by instance id only.
+        if index_or_id.to_s =~ /^\d+$/
+          instance = find_by_name(deployment_name, job, index_or_id)
+        else
+          instance = filter_by(uuid: index_or_id).first
+        end
 
         JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options])
       end
