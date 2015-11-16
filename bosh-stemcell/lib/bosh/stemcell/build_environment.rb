@@ -174,7 +174,7 @@ module Bosh::Stemcell
         ''
       end,
       exclude_arch_exclusions
-      ].join(' ')
+      ].join(' ').strip
     end
 
     def exclude_arch_exclusions
