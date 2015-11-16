@@ -25,14 +25,14 @@ module Bosh::Cli::Command
       logs_downloader.download(resource_id, logs_path)
     end
 
+    private
+
     def fetch_log_resource_id(deployment_name, index, job)
       resource_id = director.fetch_logs(deployment_name, job, index, log_type, filters)
       err('Error retrieving logs') if resource_id.nil?
 
       resource_id
     end
-
-    private
 
     def agent_logs_wanted?
       options[:agent]
