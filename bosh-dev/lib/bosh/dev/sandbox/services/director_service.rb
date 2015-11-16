@@ -92,9 +92,13 @@ module Bosh::Dev::Sandbox
         attempt += 1
         sleep delay
       end
+
+      start_monitor_workers
     end
 
     def stop_workers
+      stop_monitor_workers
+
       @logger.debug('Waiting for Resque queue to drain...')
       attempt = 0
       delay = 0.1
@@ -122,6 +126,30 @@ module Bosh::Dev::Sandbox
 
       # wait for resque workers in parallel for fastness
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
+    end
+
+    def start_monitor_workers
+      @monitor_workers = true
+      monitor_workers
+    end
+
+    def stop_monitor_workers
+      @monitor_workers = false
+    end
+
+    def monitor_workers
+      Thread.new do
+        while @monitor_workers
+          @worker_processes.map(&:pid).each do |worker_pid|
+            begin
+              Process.kill(0, worker_pid)
+            rescue Errno::ESRCH
+              raise "Worker is no longer running (PID #{worker_pid})"
+            end
+          end
+          sleep(5)
+        end
+      end
     end
 
     def reset
