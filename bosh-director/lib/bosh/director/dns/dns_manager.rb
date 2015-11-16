@@ -7,7 +7,7 @@ module Bosh::Director
       dns_enabled = !!Config.dns_db # to be consistent with current behavior
       logger = Config.logger
       local_dns_repo = LocalDnsRepo.new(logger)
-      dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'))
+      dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
       dns_provider = PowerDns.new(dns_domain_name, logger)
 
       new(dns_domain_name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger)
