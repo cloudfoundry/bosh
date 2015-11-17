@@ -38,10 +38,7 @@ module Bosh::Cli::Command
 
       sorted = sort(instances)
 
-      has_disk_cid = instances.any? {|instance| instance.has_key? 'disk_cid'}
-      has_az = instances.any? {|instance| instance.has_key? 'availability_zone' }
-
-      instances_table, row_count = construct_table_to_display(has_disk_cid, has_az, options, sorted)
+      instances_table, row_count = construct_table_to_display(options, sorted)
 
       if options[:failing] && row_count == 0
         nl
@@ -62,12 +59,13 @@ module Bosh::Cli::Command
 
     private
 
-    def construct_table_to_display(has_disk_cid, has_az, options, sorted)
+    def construct_table_to_display(options, instances)
       row_count = 0
-      has_disk_cid = instances[0].has_key?('disk_cid')
+      has_disk_cid = instances.any? {|instance| instance.has_key?('disk_cid') }
+      has_az = instances.any? {|instance| instance.has_key?('availability_zone') }
       has_uptime = instances[0]['processes'] && instances[0]['processes'].size > 0 && instances[0]['processes'][0].has_key?('uptime')
       has_cpu = instances[0]['processes'] && instances[0]['processes'].size > 0 && instances[0]['processes'][0].has_key?('cpu')
-      instance_count = sorted.size
+      instance_count = instances.size
 
       result = table do |display_table|
 
@@ -81,26 +79,15 @@ module Bosh::Cli::Command
           if has_disk_cid
             headings += ['Disk CID']
           end
-          headings +=['Agent ID', 'Resurrection']
+          headings += ['Agent ID', 'Resurrection']
         end
 
         if options[:dns]
           headings += ['DNS A records']
         end
 
-        if options[:vitals]
-          headings += [{:value => "Uptime", :alignment => :center}] if options[:ps] && has_uptime
-          headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
-          headings += [{:value => "CPU %\n(User, Sys, Wait)", :alignment => :center}]
-          headings += ["CPU %"] if options[:ps] && has_cpu
-          headings += ['Memory Usage', 'Swap Usage']
-          headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
-        end
-        display_table.headings = headings
-
-
-        last_job = ''
-        sorted.each do |instance|
+        instances_to_show = []
+        instances.each do |instance|
           if options[:failing]
             if options[:ps]
               instance['processes'].keep_if { |p| p['state'] != 'running' }
@@ -116,6 +103,23 @@ module Bosh::Cli::Command
             end
           end
 
+          instances_to_show << instance
+        end
+
+        if options[:vitals]
+          show_total = instance_count > 1 || instances_to_show[0]['processes'].size > 0
+
+          headings += [{:value => 'Uptime', :alignment => :center}] if options[:ps] && has_uptime && show_total
+          headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
+          headings += [{:value => "CPU %\n(User, Sys, Wait)", :alignment => :center}]
+          headings += ['CPU %'] if options[:ps] && has_cpu && show_total
+          headings += ['Memory Usage', 'Swap Usage']
+          headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
+        end
+        display_table.headings = headings
+
+        last_job = ''
+        instances_to_show.each do |instance|
           row_count += 1
 
           job_name = instance['job_name'] || 'unknown'
@@ -135,8 +139,7 @@ module Bosh::Cli::Command
           vitals = instance['vitals']
           az = instance['availability_zone'].nil? ? 'n/a' : instance['availability_zone']
 
-          row = [job, instance['job_state'], instance['resource_pool'], ips]
-          display_table << :separator if row_count.between?(2, instance_count) && (options[:ps] || last_job != '' && instance['job_name'] != last_job)
+          row = [job, instance['job_state']]
           if has_az
             row << az
           end
@@ -148,6 +151,8 @@ module Bosh::Cli::Command
           end
 
           row << ips
+
+          display_table << :separator if row_count.between?(2, instance_count) && (options[:ps] || last_job != '' && instance['job_name'] != last_job)
 
           if options[:details]
             if has_disk_cid
@@ -197,6 +202,7 @@ module Bosh::Cli::Command
                   prow += ['','','']
                   prow << '' if has_disk_cid
                 end
+                prow << '' if has_az
                 if has_uptime
                   if process['uptime']
                     uptime = Integer(process['uptime']['secs'])
@@ -230,10 +236,6 @@ module Bosh::Cli::Command
           end
 
           last_job = instance['job_name'] || 'unknown'
-          if instance['processes'].size == 0 && instance_count == 1
-            headings.delete_at(4)
-            headings.delete_at(6)
-          end
         end
         display_table.headings = headings
       end
