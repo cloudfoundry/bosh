@@ -308,10 +308,9 @@ module Bosh::Director
 
     def send_cancellable_message(method_name, *args)
       task = start_task(method_name, *args)
-      cancel_blk = lambda {Config.job_cancelled?}
       if task['agent_task_id']
         begin
-          wait_for_task(task['agent_task_id'], &cancel_blk)
+          wait_for_task(task['agent_task_id']) { Config.job_cancelled? }
         rescue TaskCancelled => e
           cancel_task(task['agent_task_id'])
           raise e
