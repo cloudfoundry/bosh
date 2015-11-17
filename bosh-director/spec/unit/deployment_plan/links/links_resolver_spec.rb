@@ -144,6 +144,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   'nodes' => [
                     {
                       'name' => 'mysql',
+                      'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
                       'networks' => {
@@ -157,6 +158,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     },
                     {
                       'name' => 'mysql',
+                      'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
                       'networks' => {
@@ -203,6 +205,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   'nodes' => [
                     {
                       'name' => 'mysql',
+                      'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
                       'networks' => {
@@ -216,6 +219,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     },
                     {
                       'name' => 'mysql',
+                      'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
                       'networks' => {
@@ -275,6 +279,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'nodes' => [
                   {
                     'name' => 'mysql',
+                    'index' => 0,
                     'id' => instance1.uuid,
                     'az' => nil,
                     'networks' => {
@@ -288,6 +293,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   },
                   {
                     'name' => 'mysql',
+                    'index' => 1,
                     'id' => instance2.uuid,
                     'az' => nil,
                     'networks' => {
@@ -494,6 +500,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'nodes' => [
                   {
                     'name' => 'mysql',
+                    'index' => 0,
                     'id' => instance1.uuid,
                     'az' => 'az1',
                     'networks' => {
@@ -507,6 +514,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   },
                   {
                     'name' => 'mysql',
+                    'index' => 1,
                     'id' => instance2.uuid,
                     'az' => 'az1',
                     'networks' => {
