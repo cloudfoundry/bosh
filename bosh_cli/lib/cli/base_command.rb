@@ -260,11 +260,8 @@ module Bosh::Cli
       end
     end
 
-    def valid_index_for(manifest_hash, job, index)
-      if index.nil? && job_unique_in_deployment?(manifest_hash, job)
-        index = '0'
-      end
-      err('You should specify the job index or id. There is more than one instance of this job type.') if index.nil?
+    def valid_index_for(index)
+      err('You must specify the job index or id.') if index.nil?
       index.to_s
     end
 

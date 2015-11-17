@@ -6,7 +6,17 @@ module Bosh::Cli
     let(:director) { instance_double('Bosh::Cli::Client::Director') }
     let(:deployment) { 'dep1' }
     let(:target) { 'http://example.org' }
-    let(:deployment_manifest) { { 'name' => deployment } }
+    let(:deployment_manifest) do
+      {
+        'name' => deployment,
+        'jobs' => [
+          {
+            'name' => 'dea',
+            'instances' => 50
+          }
+        ]
+      }
+    end
 
     before do
       allow(command).to receive(:director).and_return(director)
@@ -23,10 +33,10 @@ module Bosh::Cli
     end
 
     it 'requires login' do
-        allow(command).to receive(:logged_in?) { false }
-        expect {
-          command.resurrection_state('on')
-        }.to raise_error(Bosh::Cli::CliError, "Please log in first")
+      allow(command).to receive(:logged_in?) { false }
+      expect {
+        command.resurrection_state('on')
+      }.to raise_error(Bosh::Cli::CliError, "Please log in first")
     end
 
     context 'when logged in' do
@@ -55,68 +65,34 @@ module Bosh::Cli
           end
         end
 
-        context 'and there is only one job of the specified type in the deployment' do
-          let(:deployment_manifest) do
-            {
-              'name' => deployment,
-              'jobs' => [
-                {
-                  'name'      => 'job1',
-                  'instances' => 1
-                }
-              ]
-            }
-          end
-
-          it 'allows the user to omit the index' do
-            expect(director).to receive(:change_vm_resurrection).with(deployment, 'job1', '0', false)
-            command.resurrection_state('job1', 'on')
-          end
+        it 'does not allow the user to omit the index' do
+          expect {
+            command.resurrection_state('dea', 'on')
+          }.to raise_error(CliError, 'You must specify the job index or id.')
         end
 
-        context 'and there are many jobs of the specified type in the deployment' do
-          let(:deployment_manifest) do
-            {
-              'name' => deployment,
-              'jobs' => [
-                {
-                  'name'      => 'dea',
-                  'instances' => 50
-                }
-              ]
-            }
+        describe 'changing the state' do
+          it 'should toggle the resurrection state to true' do
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '1', false).exactly(4).times
+            command.resurrection_state('dea', '1', 'on')
+            command.resurrection_state('dea/1', 'enable')
+            command.resurrection_state('dea', '1', 'yes')
+            command.resurrection_state('dea/1', 'true')
           end
 
-          it 'does not allow the user to omit the index' do
-            expect {
-              command.resurrection_state('dea', 'on')
-            }.to raise_error(CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
+          it 'should toggle the resurrection state to false' do
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '3', true).exactly(4).times
+            command.resurrection_state('dea', '3', 'disable')
+            command.resurrection_state('dea/3', 'off')
+            command.resurrection_state('dea', '3', 'no')
+            command.resurrection_state('dea/3', 'false')
           end
 
-          describe 'changing the state' do
-            it 'should toggle the resurrection state to true' do
-              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '1', false).exactly(4).times
-              command.resurrection_state('dea', '1', 'on')
-              command.resurrection_state('dea/1', 'enable')
-              command.resurrection_state('dea', '1', 'yes')
-              command.resurrection_state('dea/1', 'true')
-            end
-
-            it 'should toggle the resurrection state to false' do
-              expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', '3', true).exactly(4).times
-              command.resurrection_state('dea', '3', 'disable')
-              command.resurrection_state('dea/3', 'off')
-              command.resurrection_state('dea', '3', 'no')
-              command.resurrection_state('dea/3', 'false')
-            end
-
-            it 'should error with an incorrect value' do
-              expect { command.resurrection_state('dea', '1', 'nada') }.to raise_error CliError
-            end
+          it 'should error with an incorrect value' do
+            expect { command.resurrection_state('dea', '1', 'nada') }.to raise_error CliError
           end
         end
       end
     end
-
   end
 end

@@ -15,7 +15,7 @@ module Bosh::Cli::Command
       auth_required
 
       manifest = prepare_deployment_manifest(show_state: true)
-      index_or_id = valid_index_for(manifest.hash, job, index_or_id)
+      index_or_id = valid_index_for(index_or_id)
       check_arguments
 
       logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)

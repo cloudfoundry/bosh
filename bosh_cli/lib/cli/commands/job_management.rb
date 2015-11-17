@@ -55,7 +55,7 @@ module Bosh::Cli
         auth_required
         manifest = parse_manifest(state, job)
 
-        index = valid_index_for(manifest.hash, job, index)
+        index = valid_index_for(index)
         vm_state = VmState.new(self, manifest, force?)
         job_state = JobState.new(self, vm_state, skip_drain: skip_drain?)
         status, task_id, completion_desc = job_state.change(state, job, index)
