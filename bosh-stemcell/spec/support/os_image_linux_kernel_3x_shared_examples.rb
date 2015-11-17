@@ -23,6 +23,22 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'must not accept IPv4 source-routed packets on any interface (stig: V-38523)' do
         should contain /^net.ipv4.conf.all.accept_source_route=0$/
       end
+
+      it 'must ignore ICMPv6 redirects by default (stig: V-38548)' do
+        should contain /^net.ipv6.conf.default.accept_redirects=0$/
+      end
+
+      it 'must not accept ICMPv4 secure redirect packets by default (stig: V-38532)' do
+        should contain /^net.ipv4.conf.default.secure_redirects=0$/
+      end
+
+      it 'must not send ICMPv4 redirects by default (stig: V-38600)' do
+        should contain /^net.ipv4.conf.default.send_redirects=0$/
+      end
+
+      it 'must not send ICMPv4 redirects from any interface. (stig: V-38601)' do
+        should contain /^net.ipv4.conf.all.send_redirects=0$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
