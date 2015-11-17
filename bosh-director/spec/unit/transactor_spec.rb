@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'mysql2'
 
 module Bosh::Director
   describe Transactor do
@@ -38,16 +37,15 @@ module Bosh::Director
 
         def execute(error_message)
           @tries += 1
-          raise Mysql2::Error, error_message if @tries < 3
+          raise Sequel::DatabaseError, error_message if @tries < 3
 
           @success = true
         end
       end
 
-
       context 'when a deadlock error is raised from MySql' do
         it 'retries the transaction on deadlock' do
-          expect { transactor.retryable_transaction(db) { execute('Deadlock found when trying to get lock') } }.to_not raise_error
+          expect { transactor.retryable_transaction(db) { execute('Mysql2::Error: Deadlock found when trying to get lock') } }.to_not raise_error
         end
       end
 

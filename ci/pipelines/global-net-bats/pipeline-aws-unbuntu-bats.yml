@@ -15,6 +15,10 @@ jobs:
         - {trigger: false, get: bats}
         - {trigger: false, get: bosh-init}
 
+      - task: teardown-infrastructure
+        file: bosh-src/ci/pipelines/global-net-bats/tasks/teardown-infrastructure.yml
+        config: *recreate-primary-config
+
       - task: setup-infrastructure
         file: bosh-src/ci/pipelines/global-net-bats/tasks/setup-infrastructure.yml
         config: &recreate-primary-config
@@ -53,9 +57,6 @@ jobs:
       - task: teardown-director
         file: bosh-src/ci/pipelines/global-net-bats/tasks/teardown-director.yml
 
-      - task: teardown-infrastructure
-        file: bosh-src/ci/pipelines/global-net-bats/tasks/teardown-infrastructure.yml
-        config: *recreate-primary-config
 
 resources:
 
