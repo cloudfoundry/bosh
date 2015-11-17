@@ -143,42 +143,6 @@ describe Bosh::Cli::Command::JobManagement do
       end
     end
 
-    context 'if an index is not supplied' do
-      it 'tells the user what it is about to do' do
-        if instance_count == 1
-          expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
-          expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
-          expect(command).to receive(:say).with %r{\ndea/0 #{past_verb}}
-          command.public_send(method_name, 'dea')
-        else
-          expect {
-            command.public_send(method_name, 'dea')
-          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
-        end
-      end
-      it 'changes the job state' do
-        if instance_count == 1
-          expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state, {skip_drain: false})
-          command.public_send(method_name, 'dea')
-        else
-          expect {
-            command.public_send(method_name, 'dea')
-          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
-        end
-      end
-      it 'reports back on the task report' do
-        if instance_count == 1
-          allow(director).to receive_messages(change_job_state: %w(done 23))
-          expect(command).to receive(:task_report).with('done', '23', "dea/0 #{past_verb}#{extra_task_report_info}")
-          command.public_send(method_name, 'dea')
-        else
-          expect {
-            command.public_send(method_name, 'dea')
-          }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
-        end
-      end
-    end
-
     context 'if the job is not supplied in the command' do
       it 'displays an error about the missing argument' do
         expect {

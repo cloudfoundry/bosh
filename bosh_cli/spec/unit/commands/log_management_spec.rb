@@ -178,7 +178,7 @@ describe Bosh::Cli::Command::LogManagement do
             }.to raise_error(Bosh::Cli::CliError, /Unable to download logs from director:/)
           end
 
-          context 'when we do not specify the job index and it is unique' do
+          context 'when user does not specify the job index or id' do
             let(:manifest) do
               {
                 'name' => deployment,
@@ -190,33 +190,10 @@ describe Bosh::Cli::Command::LogManagement do
               }
             end
 
-            it 'does all the same things' do
-              Timecop.freeze do
-                time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
-                allow(director).to receive_messages(fetch_logs: 'resource-id')
-                expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-                expect(FileUtils).to receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")
-                command.fetch_logs(job)
-              end
-            end
-          end
-
-          context 'when we do not specify the job index and it is not' do
-            let(:manifest) do
-              {
-                'name' => deployment,
-                'uuid' => 'totally-and-universally-unique',
-                'jobs' => [{
-                  'name' => 'dea',
-                  'instances' => 52735
-                }]
-              }
-            end
-
-            it 'complains' do
+            it 'raises a CliError' do
               expect {
                 command.fetch_logs(job)
-              }.to raise_error(Bosh::Cli::CliError, 'You should specify the job index or id. There is more than one instance of this job type.')
+              }.to raise_error(Bosh::Cli::CliError, 'You must specify the job index or id.')
             end
           end
         end

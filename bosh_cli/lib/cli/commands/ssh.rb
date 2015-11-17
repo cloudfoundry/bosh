@@ -29,7 +29,7 @@ module Bosh::Cli
         manifest = prepare_deployment_manifest(show_state: true)
         job_must_exist_in_deployment(manifest.hash, job)
 
-        id = valid_index_for(manifest.hash, job, id)
+        id = valid_index_for(id)
 
         if command.empty?
           setup_interactive_shell(manifest.name, job, id)

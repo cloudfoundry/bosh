@@ -58,7 +58,7 @@ describe Bosh::Cli::DeploymentHelper do
       manifest = {
         'name' => 'mycloud',
         'director_uuid' => 'deadbeef',
-        'release' => { 'name' => 'appcloud', 'version' => 42 }
+        'release' => {'name' => 'appcloud', 'version' => 42}
       }
       manifest_file = Tempfile.new('manifest')
       Psych.dump(manifest, manifest_file)
@@ -77,11 +77,11 @@ describe Bosh::Cli::DeploymentHelper do
       manifest = {
         'name' => 'mycloud',
         'director_uuid' => 'deadbeef',
-        'release' => { 'name' => 'appcloud', 'version' => 42 },
+        'release' => {'name' => 'appcloud', 'version' => 42},
         'resource_pools' => [
-          { 'stemcell' => { 'name' => 'foo', 'version' => 'latest' } },
-          { 'stemcell' => { 'name' => 'foo', 'version' => 22 } },
-          { 'stemcell' => { 'name' => 'bar', 'version' => 'latest' } },
+          {'stemcell' => {'name' => 'foo', 'version' => 'latest'}},
+          {'stemcell' => {'name' => 'foo', 'version' => 22}},
+          {'stemcell' => {'name' => 'bar', 'version' => 'latest'}},
         ]
       }
 
@@ -94,10 +94,10 @@ describe Bosh::Cli::DeploymentHelper do
       allow(cmd).to receive(:director).and_return(director)
 
       stemcells = [
-        { 'name' => 'foo', 'version' => '22.6.4' },
-        { 'name' => 'foo', 'version' => '22' },
-        { 'name' => 'bar', 'version' => '4.0.8' },
-        { 'name' => 'bar', 'version' => '4.1' }
+        {'name' => 'foo', 'version' => '22.6.4'},
+        {'name' => 'foo', 'version' => '22'},
+        {'name' => 'bar', 'version' => '4.0.8'},
+        {'name' => 'bar', 'version' => '4.1'}
       ]
 
       expect(director).to receive(:list_stemcells).and_return(stemcells)
@@ -113,7 +113,7 @@ describe Bosh::Cli::DeploymentHelper do
     let(:manifest_hash) do
       {
         'name' => 'mycloud',
-        'jobs' => [{ 'name' => 'job1' }]
+        'jobs' => [{'name' => 'job1'}]
       }
     end
 
@@ -131,8 +131,8 @@ describe Bosh::Cli::DeploymentHelper do
       {
         'name' => 'mycloud',
         'jobs' => [
-          { 'name' => 'job1', 'instances' => 1 },
-          { 'name' => 'job2', 'instances' => 2 }
+          {'name' => 'job1', 'instances' => 1},
+          {'name' => 'job2', 'instances' => 2}
         ]
       }
     end
@@ -155,46 +155,30 @@ describe Bosh::Cli::DeploymentHelper do
   end
 
   describe '#prompt_for_job_and_index' do
-    context 'when there is only 1 job instance in total' do
-      before do
-        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
-          'name' => 'mycloud',
-          'jobs' => [{ 'name' => 'job', 'instances' => 1 }],
-        }))
-      end
-
-      it 'does not prompt the user to choose a job' do
-        expect(deployment_helper).not_to receive(:choose)
-        deployment_helper.prompt_for_job_and_index
-      end
+    before do
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
+        'name' => 'mycloud',
+        'jobs' => [{'name' => 'job', 'instances' => 2}],
+      }))
     end
 
-    context 'when there is more than 1 job instance' do
-      before do
-        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
-          'name' => 'mycloud',
-          'jobs' => [{ 'name' => 'job', 'instances' => 2 }],
-        }))
-      end
-
-      it 'prompts the user to choose one' do
-        menu = double('menu')
-        expect(deployment_helper).to receive(:choose).and_yield(menu)
-        expect(menu).to receive(:prompt=).with('Choose an instance: ')
-        expect(menu).to receive(:choice).with('job/0')
-        expect(menu).to receive(:choice).with('job/1')
-        deployment_helper.prompt_for_job_and_index
-      end
+    it 'prompts the user to choose one' do
+      menu = double('menu')
+      expect(deployment_helper).to receive(:choose).and_yield(menu)
+      expect(menu).to receive(:prompt=).with('Choose an instance: ')
+      expect(menu).to receive(:choice).with('job/0')
+      expect(menu).to receive(:choice).with('job/1')
+      deployment_helper.prompt_for_job_and_index
     end
   end
 
   describe '#jobs_and_indexes' do
     before do
-      allow(deployment_helper).to receive_messages(prepare_deployment_manifest:  double(:manifest, hash:{
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
         'name' => 'mycloud',
         'jobs' => [
-          { 'name' => 'job1', 'instances' => 1 },
-          { 'name' => 'job2', 'instances' => 2 },
+          {'name' => 'job1', 'instances' => 1},
+          {'name' => 'job2', 'instances' => 2},
         ]
       }))
     end
@@ -215,8 +199,8 @@ describe Bosh::Cli::DeploymentHelper do
         allow(deployment_helper).to receive(:say) { |line| output += "#{line}\n" }
 
         allow(director).to receive(:get_deployment)
-          .with('fake-deployment-name')
-          .and_return(current_deployment)
+                             .with('fake-deployment-name')
+                             .and_return(current_deployment)
 
         deployment_helper.inspect_deployment_changes(manifest)
         expect(output).to include("Releases\nNo changes")

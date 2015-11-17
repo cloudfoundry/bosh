@@ -135,8 +135,6 @@ module Bosh::Cli
     def prompt_for_job_and_index
       jobs_list = jobs_and_indexes
 
-      return jobs_list.first if jobs_list.size == 1
-
       choose do |menu|
         menu.prompt = 'Choose an instance: '
         jobs_list.each do |job_name, index|
