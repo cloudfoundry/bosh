@@ -5,9 +5,9 @@ module Bosh::Director
       # a-z, 0-9, -, case insensitive, and must start with a letter
       string = string.downcase.gsub(/_/, "-")
       if opts[:allow_dots]
-        string = string.gsub(/[^a-z0-9-\.]/, "")
+        string = string.gsub(/[^a-z0-9\-\.]/, "")
       else
-        string = string.gsub(/[^a-z0-9-]/, "")
+        string = string.gsub(/[^a-z0-9\-]/, "")
       end
 
       validate_dns_name(string)
