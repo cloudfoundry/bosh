@@ -57,7 +57,7 @@ describe 'migrating to cloud config', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: second_deployment_manifest)
-      vms = director.vms
+      vms = director.vms('second_deployment')
       expect(vms.size).to eq(1)
       expect(vms.first.ips).to eq('192.168.1.16')
     end
