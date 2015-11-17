@@ -109,6 +109,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['main']).to contain_exactly(
             {
               'name' => 'mysql',
+              'index' => 0,
               'networks' => [
                 {
                   'name' => 'a',
@@ -122,6 +123,7 @@ describe 'Links', type: :integration do
             },
             {
               'name' => 'mysql',
+              'index' => 1,
               'networks' => [
                 {
                   'name' => 'a',
@@ -139,6 +141,7 @@ describe 'Links', type: :integration do
             {
               'name' => 'postgres',
               'az' => 'z1',
+              'index' => 0,
               'networks' => [
                 {
                   'name' => 'a',
@@ -175,6 +178,7 @@ describe 'Links', type: :integration do
         expect(template['databases']['backup']).to contain_exactly(
             {
               'name' => 'mongo',
+              'index' => 0,
               'az' => 'z1',
               'networks' => [
                 {
