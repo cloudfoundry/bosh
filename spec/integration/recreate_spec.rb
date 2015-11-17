@@ -11,10 +11,10 @@ describe 'recreate job', type: :integration do
     deploy_from_scratch
     original_cids = vm_cids_for_job('foobar')
 
-    expect(bosh_runner.run('recreate foobar 0')).to match %r{foobar/0 has been recreated}
+    expect(bosh_runner.run('recreate foobar 0')).to match %r{foobar/0 recreated}
     expect((vm_cids_for_job('foobar') & original_cids).size).to eq(original_cids.size - 1)
 
-    expect(bosh_runner.run('recreate foobar 1')).to match %r{foobar/1 has been recreated}
+    expect(bosh_runner.run('recreate foobar 1')).to match %r{foobar/1 recreated}
     expect((vm_cids_for_job('foobar') & original_cids).size).to eq(original_cids.size - 2)
   end
 

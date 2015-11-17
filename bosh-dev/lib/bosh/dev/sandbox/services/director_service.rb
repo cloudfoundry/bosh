@@ -138,10 +138,64 @@ module Bosh::Dev::Sandbox
         attempt += 1
         sleep delay
       end
+
+      start_monitor_workers
     end
 
     def stop_workers
+      stop_monitor_workers
+
+      @logger.debug('Waiting for Resque queue to drain...')
+      attempt = 0
+      delay = 0.1
+      timeout = 60
+      max_attempts = timeout/delay
+
+      until resque_is_done?
+        if attempt > max_attempts
+          @logger.error("Resque queue failed to drain in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
+          @database.current_tasks.each do |current_task|
+            @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
+            @logger.error(File.read(File.join(current_task[:output], 'debug')))
+            @logger.error("#{DEBUG_HEADER} End of task '#{current_task[:description]}' #{DEBUG_HEADER}:")
+          end
+
+          raise "Resque queue failed to drain in #{timeout} seconds"
+        end
+
+        attempt += 1
+        sleep delay
+      end
+      @logger.debug('Resque queue drained')
+
+      Redis.new(host: 'localhost', port: @redis_port).flushdb
+
+      # wait for resque workers in parallel for fastness
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
+    end
+
+    def start_monitor_workers
+      @monitor_workers = true
+      monitor_workers
+    end
+
+    def stop_monitor_workers
+      @monitor_workers = false
+    end
+
+    def monitor_workers
+      Thread.new do
+        while @monitor_workers
+          @worker_processes.map(&:pid).each do |worker_pid|
+            begin
+              Process.kill(0, worker_pid)
+            rescue Errno::ESRCH
+              raise "Worker is no longer running (PID #{worker_pid})"
+            end
+          end
+          sleep(5)
+        end
+      end
     end
 
     def reset

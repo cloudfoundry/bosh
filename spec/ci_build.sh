@@ -12,13 +12,21 @@ mkdir -p $TMPDIR
 (
   cd "$(git rev-parse --show-toplevel)"
   # Ensure that any modifications or stray files are removed
-  git clean -df
+  git clean -dff
   git checkout .
 
   # BUILD_FLOW_GIT_COMMIT gets set in the bosh_build_flow jenkins jobs.
   # This ensures we check out the same git commit for all jenkins jobs in the flow.
   if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
+
+    if branch=$(git symbolic-ref --short -q HEAD) ; then
+      echo 'on branch $branch'
+      git pull
+    else
+      echo 'not on any branch (skipping pull)'
+    fi
+
     git submodule update --init --recursive
     git clean -dff
   fi

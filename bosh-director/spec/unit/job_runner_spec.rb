@@ -92,19 +92,6 @@ module Bosh::Director
       expect(task.state).to eq('cancelled')
     end
 
-    it "doesn't update task state when checkpointing" do
-      task = Models::Task[42]
-      task.update(:state => 'processing')
-
-      runner = make_runner(sample_job_class, 42)
-
-      task.update(:state => 'cancelling')
-      runner.checkpoint
-
-      task.reload
-      expect(task.state).to eq('cancelling')
-    end
-
     it 'handles task error' do
       job = Class.new(Jobs::BaseJob) do
         define_method(:perform) { |*args| raise 'Oops' }
@@ -114,6 +101,20 @@ module Bosh::Director
       task.reload
       expect(task.state).to eq('error')
       expect(task.result).to eq('Oops')
+    end
+  end
+
+  describe TaskCheckPointer do
+    before { Models::Task.make(id: 42) }
+
+    it 'updates task checkpoint time' do
+      task = Models::Task[42]
+      task.update(:state => 'processing')
+      expect(task.checkpoint_time).to be(nil)
+      TaskCheckPointer.new(task.id).checkpoint
+
+      task.reload
+      expect(task.checkpoint_time).to_not be(nil)
     end
   end
 end

@@ -99,31 +99,38 @@ describe Bosh::Cli::Command::Instances do
             'sys' => 5,
             'wait' => 6,
           },
-          'mem' => {
-            'percent' => 7,
-            'kb' => 8,
-          },
-          'swap' => {
-            'percent' => 9,
-            'kb' => 10,
-          },
-          'disk' => {
-            'system' => {'percent' => 11},
-            'ephemeral' => {'percent' => 12},
-            'persistent' => {'percent' => 13},
-          },
-        },
-        'processes' => [
-          {
-            'name' => 'process-1',
-            'state' => 'running',
-          },{
-            'name' => 'process-2',
-            'state' => 'running'
-          },
-        ],
-        'resurrection_paused' => true,
-        'availability_zone' => 'az1'
+          'processes' => [
+            {
+              'name' => 'process-1',
+              'state' => 'running',
+              'uptime' => {
+                'secs' => 144987,
+              },
+              'mem' => {
+                'percent' => 7,
+                'kb' => 8,
+              },
+              'cpu' => {
+                'total' => 0.4,
+              },
+            },{
+              'name' => 'process-2',
+              'state' => 'running',
+              'uptime' => {
+                'secs' => 144987,
+              },
+              'mem' => {
+                'percent' => 7,
+                'kb' => 8,
+              },
+              'cpu' => {
+                'total' => 0.4,
+              },
+            },
+          ],
+          'resurrection_paused' => true,
+          'availability_zone' => 'az1'
+        }
       }
     }
 
@@ -146,31 +153,38 @@ describe Bosh::Cli::Command::Instances do
             'sys' => 5,
             'wait' => 6,
           },
-          'mem' => {
-            'percent' => 7,
-            'kb' => 8,
-          },
-          'swap' => {
-            'percent' => 9,
-            'kb' => 10,
-          },
-          'disk' => {
-            'system' => {'percent' => 11},
-            'ephemeral' => {'percent' => 12},
-            'persistent' => {'percent' => 13},
-          },
-        },
-        'processes' => [
-          {
-            'name' => 'process-3',
-            'state' => 'running',
-          },{
-            'name' => 'process-4',
-            'state' => 'running'
-          },
-        ],
-        'resurrection_paused' => true,
-        'availability_zone' => 'az2'
+          'processes' => [
+            {
+              'name' => 'process-3',
+              'state' => 'running',
+              'uptime' => {
+                'secs' => 144987,
+              },
+              'mem' => {
+                'percent' => 7,
+                'kb' => 8,
+              },
+              'cpu' => {
+                'total' => 0.4,
+              },
+            },{
+              'name' => 'process-4',
+              'state' => 'running',
+              'uptime' => {
+                'secs' => 144987,
+              },
+              'mem' => {
+                'percent' => 7,
+                'kb' => 8,
+              },
+              'cpu' => {
+                'total' => 0.4,
+              },
+            },
+          ],
+          'resurrection_paused' => true,
+          'availability_zone' => 'az2'
+        }
       }
     }
 
@@ -286,7 +300,8 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 |
               |          |         |     |               | 192.168.0.2 |
-              | job2/0   | running | az2 | rp1           | 192.168.0.3 |
+              +----------+---------+-----+---------------+-------------+
+              | job2/0   | running | az2 |     | rp1           | 192.168.0.3 |
               |          |         |     |               | 192.168.0.4 |
               +----------+---------+-----+---------------+-------------+
             )
@@ -352,6 +367,7 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       |
               |          |         |     |               | 192.168.0.2 |         |           |          |              |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
               | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
               |          |         |     |               | 192.168.0.4 |         |           |          |              |
               +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
@@ -370,6 +386,7 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | n/a       | agent1   | paused       |
               |          |         |     |               | 192.168.0.2 |         |           |          |              |
+              +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
               | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       |
               |          |         |     |               | 192.168.0.4 |         |           |          |              |
               +----------+---------+-----+---------------+-------------+---------+-----------+----------+--------------+
@@ -389,6 +406,7 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+---------+----------+--------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 | vm-cid1 | agent1   | paused       |
               |          |         |     |               | 192.168.0.2 |         |          |              |
+              +----------+---------+-----+---------------+-------------+---------+----------+--------------+
               | job2/0   | running | az2 | rp1           | 192.168.0.3 | vm-cid2 | agent2   | paused       |
               |          |         |     |               | 192.168.0.4 |         |          |              |
               +----------+---------+-----+---------------+-------------+---------+----------+--------------+
@@ -429,6 +447,7 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+------------------------------------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 | index.job1.network1.deployment.microbosh |
               |          |         |     |               | 192.168.0.2 | index.job1.network2.deployment.microbosh |
+              +----------+---------+-----+---------------+-------------+------------------------------------------+
               | job2/0   | running | az2 | rp1           | 192.168.0.3 | index.job2.network1.deployment.microbosh |
               |          |         |     |               | 192.168.0.4 | index.job2.network2.deployment.microbosh |
               +----------+---------+-----+---------------+-------------+------------------------------------------+
@@ -451,6 +470,7 @@ describe Bosh::Cli::Command::Instances do
               +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
               | job1/0   | running | az1 | rp1           | 192.168.0.1 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
               |          |         |     |               | 192.168.0.2 |                       |      |     |      |              |            |            |            |            |
+              +----------+---------+-----+---------------+-------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
               | job2/0   | running | az2 | rp1           | 192.168.0.3 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
               |          |         |     |               | 192.168.0.4 |                       |      |     |      |              |            |            |            |            |
               +----------+---------+-----+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
@@ -486,21 +506,46 @@ describe Bosh::Cli::Command::Instances do
         before { options[:ps] = true }
 
         it 'shows the details of each instance\'s processes' do
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +-------------+---------+---------------+-------------+
+                | Instance    | State   | Resource Pool | IPs         |
+                +-------------+---------+---------------+-------------+
+                | job1/0      | running | rp1           | 192.168.0.1 |
+                |             |         |               | 192.168.0.2 |
+                |   process-1 | running |               |             |
+                |   process-2 | running |               |             |
+                +-------------+---------+---------------+-------------+
+                | job2/0      | running | rp1           | 192.168.0.3 |
+                |             |         |               | 192.168.0.4 |
+                |   process-3 | running |               |             |
+                |   process-4 | running |               |             |
+                +-------------+---------+---------------+-------------+
+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 2')
+            perform
+        end
+
+        it 'shows the details of two instance\'s processes of the same job' do
+          vm2_state['job_name'] = 'job1'
+          vm2_state['index'] = 1
+
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output %(
-              +-------------+---------+-----+---------------+-------------+
-              | Instance    | State   | AZ  | Resource Pool | IPs         |
-              +-------------+---------+-----+---------------+-------------+
-              | job1/0      | running | az1 | rp1           | 192.168.0.1 |
-              |             |         |     |               | 192.168.0.2 |
-              |   process-1 | running |     |               |             |
-              |   process-2 | running |     |               |             |
-              +-------------+---------+-----+---------------+-------------+
-              | job2/0      | running | az2 | rp1           | 192.168.0.3 |
-              |             |         |     |               | 192.168.0.4 |
-              |   process-3 | running |     |               |             |
-              |   process-4 | running |     |               |             |
-              +-------------+---------+-----+---------------+-------------+
+              +-------------+---------+---------------+-------------+
+              | Instance    | State   | Resource Pool | IPs         |
+              +-------------+---------+---------------+-------------+
+              | job1/0      | running | rp1           | 192.168.0.1 |
+              |             |         |               | 192.168.0.2 |
+              |   process-1 | running |               |             |
+              |   process-2 | running |               |             |
+              +-------------+---------+---------------+-------------+
+              | job2/0      | running | rp1           | 192.168.0.3 |
+              |             |         |               | 192.168.0.4 |
+              |   process-3 | running |               |             |
+              |   process-4 | running |               |             |
+              +-------------+---------+---------------+-------------+
             )
           end
           expect(command).to receive(:say).with('Instances total: 2')
@@ -570,6 +615,7 @@ describe Bosh::Cli::Command::Instances do
           it 'shows instance and its processes when instance and one of the processes are failing' do
             vm2_state["job_state"] = 'failing'
             vm2_state['processes'][0]['state'] = 'failing'
+            vm2_state['processes'][0]['monitored'] = true
 
             expect(command).to receive(:say) do |table|
               expect(table.to_s).to match_output %(
@@ -602,6 +648,336 @@ describe Bosh::Cli::Command::Instances do
             end
             expect(command).to receive(:say).with('Instances total: 1')
             perform
+          end
+        end
+
+        context 'with vitals' do
+          before { options[:vitals] = true }
+
+          context 'without failing' do
+            it 'shows full detail of the instances and processes' do
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job1/0      | running | rp1           | 192.168.0.1 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.2 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-1 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-2 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-4 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                )
+              end
+              expect(command).to receive(:say).with('Instances total: 2')
+              perform
+            end
+
+            it 'shows full detail of the instances and processes without `uptime` column when unavailable in the first process' do
+              vm1_state['processes'][0].delete('uptime')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job1/0      | running | rp1           | 192.168.0.1 | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.2 |                       |                   |       |              |            |            |            |            |
+                  |   process-1 | running |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-2 | running |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | running |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-4 | running |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                )
+              end
+              expect(command).to receive(:say).with('Instances total: 2')
+              perform
+            end
+
+            it 'shows full detail of the instances and processes with `uptime` column when unavailable in non-first process' do
+              vm1_state['processes'][1].delete('uptime')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job1/0      | running | rp1           | 192.168.0.1 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.2 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-1 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-2 | running |               |             |                |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-4 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+              )
+              end
+              expect(command).to receive(:say).with('Instances total: 2')
+              perform
+            end
+
+            it 'shows full detail of the instances and processes without `cpu` column when unavailable in the first process' do
+              vm1_state['processes'][0].delete('cpu')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | job1/0      | running | rp1           | 192.168.0.1 |                | 1, 2, 3               | 4%, 5%, 6%        | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.2 |                |                       |                   |              |            |            |            |            |
+                  |   process-1 | running |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                  |   process-2 | running |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                |                       |                   |              |            |            |            |            |
+                  |   process-3 | running |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                  |   process-4 | running |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+              )
+              end
+              expect(command).to receive(:say).with('Instances total: 2')
+              perform
+            end
+
+            it 'shows full detail of the instances and processes with `cpu` column when unavailable in non-first process' do
+              vm1_state['processes'][1].delete('cpu')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job1/0      | running | rp1           | 192.168.0.1 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.2 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-1 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-2 | running |               |             | 1d 16h 16m 27s |                       |                   |       | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  |   process-4 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+              )
+              end
+              expect(command).to receive(:say).with('Instances total: 2')
+              perform
+            end
+
+            it 'shows full detail of the instances and processes with empty value when `mem` unavailable in process' do
+            vm1_state['processes'][0].delete('mem')
+
+            expect(command).to receive(:say) do |table|
+              expect(table.to_s).to match_output %(
+                +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                | job1/0      | running | rp1           | 192.168.0.1 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                |             |         |               | 192.168.0.2 |                |                       |                   |       |              |            |            |            |            |
+                |   process-1 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  |              |            |            |            |            |
+                |   process-2 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                |   process-3 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                |   process-4 | running |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+              )
+            end
+            expect(command).to receive(:say).with('Instances total: 2')
+            perform
+          end
+          end
+
+          context 'with failing' do
+            before { options[:failing] = true }
+
+            it 'show full details of failing instance' do
+              vm2_state['job_state'] = 'vaporized'
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +----------+-----------+---------------+-------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | Instance | State     | Resource Pool | IPs         |         Load          |       CPU %       | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |          |           |               |             | (avg01, avg05, avg15) | (User, Sys, Wait) |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +----------+-----------+---------------+-------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | job2/0   | vaporized | rp1           | 192.168.0.3 | 1, 2, 3               | 4%, 5%, 6%        | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |          |           |               | 192.168.0.4 |                       |                   |              |            |            |            |            |
+                  +----------+-----------+---------------+-------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                )
+              end
+            expect(command).to receive(:say).with('Instances total: 1')
+            perform
+            end
+
+            context 'when one of the processes is failing' do
+              before {  vm2_state['processes'][0]['state'] = 'failing' }
+
+              it 'shows full details of instance and its processes' do
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | failing |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+                )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+
+              it 'does not show `uptime` column when `uptime` is unavailable in first process' do
+                vm1_state['processes'][0].delete('uptime')
+
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                    +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | Instance    | State   | Resource Pool | IPs         |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                    |             |         |               |             | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                    +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | job2/0      | running | rp1           | 192.168.0.3 | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                    |             |         |               | 192.168.0.4 |                       |                   |       |              |            |            |            |            |
+                    |   process-3 | failing |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                    +-------------+---------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+
+              it 'does not show `cpu` column when `cpu` is unavailable in first process' do
+                vm1_state['processes'][0].delete('cpu')
+
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                    | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                    |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |              |            | Disk Usage | Disk Usage | Disk Usage |
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                    | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                    |             |         |               | 192.168.0.4 |                |                       |                   |              |            |            |            |            |
+                    |   process-3 | failing |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+
+              it 'shows empty value when `mem` is unavailable in process' do
+                vm2_state['processes'][0].delete('mem')
+
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | Instance    | State   | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                    |             |         |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | job2/0      | running | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                    |             |         |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                    |   process-3 | failing |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  |              |            |            |            |            |
+                    +-------------+---------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+            end
+
+            context 'when instance and one of the processes are failing' do
+              before {
+                vm2_state['job_state'] = 'vaporized'
+                vm2_state['processes'][0]['state'] = 'failing'
+              }
+
+              it 'shows full details of instance and its processes' do
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                    +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | Instance    | State     | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                    |             |           |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                    +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | job2/0      | vaporized | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                    |             |           |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                    |   process-3 | failing   |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                    +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+
+              it 'does not show `uptime` column when `uptime` is unavailable in first process' do
+              vm1_state['processes'][0].delete('uptime')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+-----------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State     | Resource Pool | IPs         |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |           |               |             | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+-----------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | vaporized | rp1           | 192.168.0.3 | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |           |               | 192.168.0.4 |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | failing   |               |             |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                  +-------------+-----------+---------------+-------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                )
+              end
+              expect(command).to receive(:say).with('Instances total: 1')
+              perform
+              end
+
+              it 'does not show `cpu` column when `cpu` is unavailable in first process' do
+              vm1_state['processes'][0].delete('cpu')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | Instance    | State     | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |           |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                  | job2/0      | vaporized | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |           |               | 192.168.0.4 |                |                       |                   |              |            |            |            |            |
+                  |   process-3 | failing   |               |             | 1d 16h 16m 27s |                       |                   | 7% (8.0K)    |            |            |            |            |
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+--------------+------------+------------+------------+------------+
+                )
+              end
+              expect(command).to receive(:say).with('Instances total: 1')
+              perform
+              end
+
+              it 'shows empty value when `mem` unavailable in process' do
+              vm2_state['processes'][0].delete('mem')
+
+              expect(command).to receive(:say) do |table|
+                expect(table.to_s).to match_output %(
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | Instance    | State     | Resource Pool | IPs         |     Uptime     |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                  |             |           |               |             |                | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  | job2/0      | vaporized | rp1           | 192.168.0.3 |                | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                  |             |           |               | 192.168.0.4 |                |                       |                   |       |              |            |            |            |            |
+                  |   process-3 | failing   |               |             | 1d 16h 16m 27s |                       |                   | 0.4%  |              |            |            |            |            |
+                  +-------------+-----------+---------------+-------------+----------------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                )
+              end
+              expect(command).to receive(:say).with('Instances total: 1')
+              perform
+            end
+            end
           end
         end
       end

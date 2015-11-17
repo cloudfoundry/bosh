@@ -490,22 +490,20 @@ module Bosh::Director
         package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
 
         if @fix
+          package.sha1 = package_meta['sha1']
+
           if package.blobstore_id != nil
-            logger.info("Verifying package #{desc} with blobstore_id: #{package.blobstore_id}")
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
             return true
           end
-          package.sha1 = package_meta['sha1']
 
           if existing_blob
             pkg = Models::Package.where(blobstore_id: existing_blob).first
-            logger.info("Verifying package #{desc} with blobstore_id: #{existing_blob}")
             fix_package(pkg, package_tgz)
             package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
             return true
           end
-
         else
           return false unless package.blobstore_id.nil?
           package.sha1 = package_meta['sha1']
@@ -638,10 +636,15 @@ module Bosh::Director
       end
 
       def fix_package(package, package_tgz)
-        single_step_stage("Fixing package '#{package.name}/#{package.version}'") do
-          logger.info("Fixing package '#{package.name}/#{package.version}'")
-          package.blobstore_id = BlobUtil.replace_blob(package.blobstore_id, package_tgz)
+        begin
+          logger.info("Deleting package '#{package.name}/#{package.version}'")
+          BlobUtil.delete_blob(package.blobstore_id)
+        rescue Bosh::Blobstore::BlobstoreError => e
+          logger.info("Error deleting blob '#{package.blobstore_id}, #{package.name}/#{package.version}': #{e.inspect}")
         end
+        package.blobstore_id = BlobUtil.create_blob(package_tgz)
+        logger.info("Re-created package '#{package.name}/#{package.version}' \
+with blobstore_id '#{package.blobstore_id}'")
       end
     end
   end

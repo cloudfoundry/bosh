@@ -79,13 +79,41 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
       expect(job.spec).to eq(spec)
     end
 
+    context 'when the spec file is invalid' do
+      before do
+        release_source.remove_file(base, 'spec')
+        invalid_spec = <<-SPEC
+---
+name: foo-job
+
+packages:
+  - foo
+  - bar
+
+templates:
+  a.conf: a.conf
+  b.yml: b.yml
+
+properties:
+  prop_a:  value_a
+\tprop_b:  value_b
+SPEC
+
+        release_source.add_file(base, 'spec', invalid_spec)
+      end
+
+      it 'raises' do
+        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Incorrect YAML structure in `#{release_source.path}/jobs/foo-job/spec': (<unknown>): found a tab character that violate intendation while scanning a plain scalar at line 13 column 12")
+      end
+    end
+
     context 'when the spec file is missing' do
       before do
         release_source.remove_file(base, 'spec')
       end
 
       it 'raises' do
-        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, 'Job spec is missing')
+        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Cannot find file `#{release_source.path}/jobs/foo-job/spec'")
       end
     end
   end
