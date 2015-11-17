@@ -24,7 +24,7 @@ describe 'stop job', type: :integration do
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
     expect(bosh_runner.run('stop')).to include("all jobs stopped, VM(s) still running")
     vms = director.vms
-    expect(vms.map(&:job_name_index)).to match_array(['another-job/0', 'foobar/0', 'foobar/1'])
+    expect(vms.map(&:job_name)).to match_array(['another-job', 'foobar', 'foobar'])
     expect(vms.map(&:last_known_state).uniq).to match_array(['stopped'])
   end
 
@@ -34,6 +34,6 @@ describe 'stop job', type: :integration do
     expect(bosh_runner.run('stop foobar 0 --hard')).to include("foobar/0 detached, VM(s) deleted")
     vms = director.vms
     expect(vms.count).to eq(2)
-    expect(vms.map(&:job_name_index)).to match_array(['foobar/1', 'foobar/2'])
+    expect(vms.map(&:job_name)).to match_array(['foobar', 'foobar'])
   end
 end

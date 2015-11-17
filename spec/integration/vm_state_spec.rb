@@ -11,7 +11,7 @@ describe 'vm state', type: :integration do
       vm_with_index_0 = vms.find{ |vm| vm.index == '0'}
       disks_before_detaching = current_sandbox.cpi.disk_cids
 
-      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 has been detached}
+      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 detached}
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
 
       expect(director.vms.map(&:instance_id)).to eq(vms.map(&:instance_id) - [vm_with_index_0.instance_id])
@@ -29,7 +29,7 @@ describe 'vm state', type: :integration do
       expect(deployed_vms.size).to eq(1)
       expect(deployed_vms.first.ips).to eq('192.168.1.2')
 
-      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 has been detached}
+      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 detached}
       expect(director.vms.size).to eq(0)
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
@@ -49,7 +49,7 @@ describe 'vm state', type: :integration do
       deploy_from_scratch(manifest_hash: first_manifest_hash)
       expect(director.vms('simple').map(&:ips)).to eq(['192.168.1.2'])
 
-      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 has been detached}
+      expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 detached}
       expect(director.vms('simple').size).to eq(0)
 
       first_manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']

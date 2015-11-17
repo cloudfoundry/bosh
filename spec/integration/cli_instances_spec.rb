@@ -126,6 +126,7 @@ describe 'cli: deployment process', type: :integration do
 
   it 'should return instances --vitals' do
     deploy_from_scratch
+    vitals = director.instances_ps_vitals[0]
 
     expect(vitals[:cpu_user_sys_wait]).to match /\d+\.?\d*[%], \d+\.?\d*[%], \d+\.?\d*[%]/
 
@@ -144,27 +145,6 @@ describe 'cli: deployment process', type: :integration do
       deploy_from_scratch
       expect(bosh_runner.run('instances --failing'))
         .to match /No failing instances/
-    end
-  end
-
-  context 'with the --failing and --ps flags' do
-    it 'filters out non-failing processes' do
-      deploy_from_scratch
-      instances_ps = bosh_runner.run('instances --ps --failing')
-      expect(instances_ps).to match_output %(
-        +-------------+---------+---------------+-------------+
-        | Instance    | State   | Resource Pool | IPs         |
-        +-------------+---------+---------------+-------------+
-        | foobar/0    | running | a             | 192.168.1.5 |
-        |   process-3 | failing |               |             |
-        +-------------+---------+---------------+-------------+
-        | foobar/1    | running | a             | 192.168.1.6 |
-        |   process-3 | failing |               |             |
-        +-------------+---------+---------------+-------------+
-        | foobar/2    | running | a             | 192.168.1.7 |
-        |   process-3 | failing |               |             |
-        +-------------+---------+---------------+-------------+
-      )
     end
   end
 

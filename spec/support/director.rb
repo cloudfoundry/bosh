@@ -175,7 +175,6 @@ module Bosh::Spec
       header_row = rows.shift
       return [] unless header_row
 
-      values_row = rows.shift
       headers = {}
 
       header_row.each_with_index do |row_line|
@@ -188,7 +187,10 @@ module Bosh::Spec
 
       headers = headers.values.map { |header| header.strip.sub(' %','').gsub(/[\%\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
-      values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      rows.map do |row|
+        # rows is an array of arrays, convert to array of hashes, where keys are downcased titles
+        row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      end.flatten
     end
 
     def parse_table_with_ips(output, table_type=:vm)
