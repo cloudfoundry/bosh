@@ -27,17 +27,12 @@ module Bosh::Director
       private
 
       def parse_stemcells
-
         if @deployment_manifest.has_key?('stemcells')
           safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
-            if !stemcell_hash.has_key?('alias')
-              raise ValidationMissingField, "Alias is required for top level stemcell"
+            alias_val = safe_property(stemcell_hash, 'alias', :class=> String)
+            if @deployment.stemcells.has_key?(alias_val)
+              raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
             end
-
-            if @deployment.stemcells.has_key?(stemcell_hash['alias'])
-              raise StemcellAliasAlreadyExists, "Stemcell alias #{stemcell_hash['alias']} already exists"
-            end
-
             @deployment.add_stemcell(Stemcell.new(stemcell_hash))
           end
         end

@@ -40,9 +40,12 @@ module Bosh::Director
           compilation_config, 'cloud_properties', class: Hash, default: {})
         @env = safe_property(compilation_config, 'env', class: Hash, optional: true, default: {})
 
-        @az_name = safe_property(compilation_config, 'az', class: String, optional: true)
-        @availability_zone = azs_list[@az_name]
-        raise Bosh::Director::CompilationConfigInvalidAvailabilityZone if @az_name && !@az_name.empty? && @availability_zone.nil?
+        az_name = safe_property(compilation_config, 'az', class: String, optional: true)
+        @availability_zone = azs_list[az_name]
+        if az_name && !az_name.empty? && @availability_zone.nil?
+          raise Bosh::Director::CompilationConfigInvalidAvailabilityZone,
+            "Compilation config references unknown az '#{az_name}'. Known azs are: [#{azs_list.keys.join(', ')}]"
+        end
       end
 
       def availability_zone_name

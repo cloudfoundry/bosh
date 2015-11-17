@@ -180,7 +180,7 @@ module Bosh::Director
               job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
-                "Failed to migrate job 'etcd_z1' to 'etcd', deployment still contains it"
+                "Failed to migrate job 'etcd_z1' to 'etcd'. A deployment can not migrate a job and also specify it. Please remove job 'etcd_z1'."
               )
           end
         end
@@ -203,7 +203,7 @@ module Bosh::Director
               job_migrator.find_existing_instances(etcd_job)
             }.to raise_error(
                 DeploymentInvalidMigratedFromJob,
-                "Failed to migrate job 'etcd_z1' to 'etcd', can only be used in one job to migrate"
+                "Failed to migrate job 'etcd_z1' to 'etcd'. A job may be migrated to only one job."
               )
           end
         end

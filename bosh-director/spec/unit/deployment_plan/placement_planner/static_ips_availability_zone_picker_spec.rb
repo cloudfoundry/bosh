@@ -152,7 +152,7 @@ module Bosh::Director::DeploymentPlan
           let(:desired_instance_count) { 1 }
 
           it 'raises an exception' do
-            expect{instance_plans}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Job 'fake-job' declares static ip '192.168.3.5' which belongs to no subnet")
+            expect{instance_plans}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Job 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
           end
         end
 

@@ -648,7 +648,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
-            "Job `fake-job-name' references both a persistent disk pool `fake-disk-pool-name' and a persistent disk type `fake-disk-pool-name'"
+            "Job `fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
+              "'disk_pools' key will be DEPRECATED in the future."
           )
       end
     end
@@ -987,7 +988,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidMigratedFromJob,
-                "Migrating job 'job-1' refers to availability zone 'unknown_az' that is not in the list of availability zones of 'fake-job-name' job"
+                "Job 'job-1' specified for migration to job 'fake-job-name' refers to availability zone 'unknown_az'. " +
+                  "Az 'unknown_az' is not in the list of availability zones of job 'fake-job-name'."
               )
           end
         end

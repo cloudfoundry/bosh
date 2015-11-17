@@ -87,8 +87,8 @@ module Bosh::Director::DeploymentPlan
           ]
         end
         let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-        let(:job_networks) { [JobNetwork.new('network_A', ['192.168.1.10', '192.168.1.11'], [], deployment_network)] }
-
+        let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
+        let(:job_static_ips) { ['192.168.1.10', '192.168.1.11'] }
         it 'prefers first IPs' do
           networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, 'fake-job')
           static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
@@ -96,6 +96,16 @@ module Bosh::Director::DeploymentPlan
 
           static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
           expect(static_ip_to_azs.ip).to eq('192.168.1.11')
+        end
+
+        context 'when the job specifies a static ip that belongs to no subnet' do
+          let(:job_static_ips) { ['192.168.1.10', '192.168.1.244'] }
+          it 'raises' do
+            expect {
+              PlacementPlanner::NetworksToStaticIps.create(job_networks, 'fake-job')
+            }.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch,
+                "Job 'fake-job' with network 'network_A' declares static ip '192.168.1.244', which belongs to no subnet")
+          end
         end
       end
     end

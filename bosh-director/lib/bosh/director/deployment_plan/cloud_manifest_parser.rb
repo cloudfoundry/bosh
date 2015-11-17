@@ -97,7 +97,7 @@ module Bosh::Director
 
         unless compilation_network.has_azs?([config.availability_zone_name])
           raise JobNetworkMissingRequiredAvailabilityZone,
-            "Compilation config must specify availability zone that matches availability zones of network '#{compilation_network.name}'"
+            "Compilation config refers to az '#{config.availability_zone_name}' but network '#{compilation_network.name}' has no matching subnet(s)."
         end
 
         config
@@ -147,7 +147,7 @@ module Bosh::Director
         disk_types = safe_property(cloud_manifest, 'disk_types', :class => Array, :optional => true, :default => [])
 
         if disk_pools.any? && disk_types.any?
-          raise DeploymentInvalidDiskSpecification, 'Both disk_types and disk_pools are specified, only one key is allowed *Disk pools will be DEPRECATED in the future'
+          raise DeploymentInvalidDiskSpecification, "Both 'disk_types' and 'disk_pools' are specified, only one key is allowed. 'disk_pools' key will be DEPRECATED in the future."
         end
 
         disk_names = []

@@ -22,7 +22,8 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             'workers' => 2,
             'network' => 'foo',
             'az' => 'az2'
-          }, { 'az1' => az1})}.to raise_error(Bosh::Director::CompilationConfigInvalidAvailabilityZone)
+          }, { 'az1' => az1})}.to raise_error(Bosh::Director::CompilationConfigInvalidAvailabilityZone,
+            "Compilation config references unknown az 'az2'. Known azs are: [az1]")
       end
 
       it 'should raise CompilationConfigInvalidAvailabilityZone when availability zone not in deployment' do

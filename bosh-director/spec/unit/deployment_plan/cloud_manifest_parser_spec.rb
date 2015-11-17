@@ -124,7 +124,7 @@ module Bosh::Director
             expect {
               parsed_cloud_planner
             }.to raise_error(
-                /Compilation config must specify availability zone that matches availability zones of network 'a'/,
+                "Compilation config refers to az 'z1' but network 'a' has no matching subnet(s).",
               )
           end
         end
@@ -505,7 +505,7 @@ module Bosh::Director
                 parsed_cloud_planner
               }.to raise_error(
                   DeploymentInvalidDiskSpecification,
-                  'Both disk_types and disk_pools are specified, only one key is allowed *Disk pools will be DEPRECATED in the future',
+                  "Both 'disk_types' and 'disk_pools' are specified, only one key is allowed. 'disk_pools' key will be DEPRECATED in the future."
                 )
             end
           end

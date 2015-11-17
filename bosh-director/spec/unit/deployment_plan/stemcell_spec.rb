@@ -31,14 +31,46 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect(sc.version).to eq("0.5.2")
     end
 
-    it "requires name and version" do
-      %w(name version).each do |key|
-        spec = valid_spec.dup
-        spec.delete(key)
-
+    it "requires version" do
+        valid_spec.delete('version')
         expect {
-          make(spec)
-        }.to raise_error(BD::ValidationMissingField)
+          make(valid_spec)
+        }.to raise_error(BD::ValidationMissingField,
+            "Required property `version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
+    end
+
+    context 'os and name' do
+      context 'when only os is specified' do
+        it 'is valid' do
+          valid_spec.delete('name')
+          valid_spec['os'] = 'os1'
+          expect { make(valid_spec) }.to_not raise_error
+        end
+      end
+
+      context 'when only name is specified' do
+        it 'is valid' do
+          valid_spec.delete('os')
+          valid_spec['name'] = 'stemcell-name'
+          expect { make(valid_spec) }.to_not raise_error
+        end
+      end
+
+      context 'when neither os or name are specified' do
+        it 'raises' do
+          valid_spec.delete('name')
+          valid_spec.delete('os')
+          expect { make(valid_spec) }.to raise_error(BD::ValidationMissingField,
+              "Required property `os' or `name' was not specified in object ({\"version\"=>\"0.5.2\"})")
+        end
+      end
+      context 'when both os and name are specified' do
+        it 'raises' do
+          valid_spec['name'] = 'stemcell-name'
+          valid_spec['os'] = 'os1'
+          expect { make(valid_spec) }.to raise_error(BD::StemcellBothNameAndOS,
+              "Properties `os' and `name' are both specified for stemcell, choose one. ({\"name\"=>\"stemcell-name\", \"version\"=>\"0.5.2\", \"os\"=>\"os1\"})")
+        end
       end
     end
 

@@ -35,17 +35,22 @@ module Bosh::Director
       migrated_from_jobs.each do |migrated_from_job|
         if @deployment_plan.job(migrated_from_job.name)
           raise DeploymentInvalidMigratedFromJob,
-            "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', deployment still contains it"
+            "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}'. " +
+              'A deployment can not migrate a job and also specify it. ' +
+              "Please remove job '#{migrated_from_job.name}'."
         end
 
         other_jobs = @deployment_plan.jobs.reject { |job| job.name == desired_job_name }
-        if other_jobs.any? do |job|
+
+        migrate_to_multiple_jobs = other_jobs.any? do |job|
           job.migrated_from.any? do |other_migrated_from_job|
             other_migrated_from_job.name == migrated_from_job.name
           end
         end
+
+        if migrate_to_multiple_jobs
           raise DeploymentInvalidMigratedFromJob,
-            "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', can only be used in one job to migrate"
+            "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}'. A job may be migrated to only one job."
         end
 
         migrated_from_job_instances = []

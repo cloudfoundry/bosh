@@ -71,7 +71,9 @@ module Bosh::Director
             manifest_hash['stemcells'].first.delete('alias')
             expect {
               parsed_deployment.stemcells
-            }.to raise_error Bosh::Director::ValidationMissingField
+            }.to raise_error Bosh::Director::ValidationMissingField,
+                "Required property `alias' was not specified in object " +
+                  '({"name"=>"bosh-aws-xen-hvm-ubuntu-trusty-go_agent", "version"=>"1234"})'
           end
         end
 
@@ -84,7 +86,7 @@ module Bosh::Director
           it 'errors out when alias of stemcells are not unique' do
             expect {
               parsed_deployment.stemcells
-            }.to raise_error Bosh::Director::StemcellAliasAlreadyExists
+            }.to raise_error Bosh::Director::StemcellAliasAlreadyExists, "Duplicate stemcell alias 'stemcell1'"
           end
         end
 

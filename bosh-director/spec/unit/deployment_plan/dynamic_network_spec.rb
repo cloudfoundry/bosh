@@ -238,7 +238,9 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty, "top-level 'dns' invalid when specifying subnets")
+        }.to raise_error(BD::NetworkInvalidProperty,
+            "Network 'foo' must not specify 'dns' when also specifying 'subnets'. " +
+              "Instead, 'dns' should be specified on subnet entries.")
       end
 
       it 'raises error when availability zone is present at the top level' do
@@ -259,7 +261,9 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty, "top-level 'az' invalid when specifying subnets")
+        }.to raise_error(BD::NetworkInvalidProperty,
+            "Network 'foo' must not specify 'az' when also specifying 'subnets'. " +
+              "Instead, 'az' should be specified on subnet entries.")
       end
 
       it 'raises error when cloud_properties is present at the top level' do
@@ -280,8 +284,9 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty, "top-level 'cloud_properties' invalid when specifying subnets")
-
+        }.to raise_error(BD::NetworkInvalidProperty,
+            "Network 'foo' must not specify 'cloud_properties' when also specifying 'subnets'. " +
+              "Instead, 'cloud_properties' should be specified on subnet entries.")
       end
 
       it 'validates the az references an existing AZ' do

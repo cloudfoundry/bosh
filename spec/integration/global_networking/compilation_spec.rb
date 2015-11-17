@@ -61,7 +61,7 @@ describe 'global networking', type: :integration do
     context 'when availability zone does not match any on the deployment' do
       it 'raises a availability zone not found error' do
         cloud_config_hash['compilation']['az'] = 'non_existing_az'
-        expect{upload_cloud_config(cloud_config_hash: cloud_config_hash)}.to raise_error(RuntimeError, /Error 120002\: Bosh\:\:Director\:\:CompilationConfigInvalidAvailabilityZone/)
+        expect{upload_cloud_config(cloud_config_hash: cloud_config_hash)}.to raise_error(RuntimeError, /Error 120002: Compilation config references unknown az 'non_existing_az'. Known azs are: \[z2\]/)
       end
     end
 

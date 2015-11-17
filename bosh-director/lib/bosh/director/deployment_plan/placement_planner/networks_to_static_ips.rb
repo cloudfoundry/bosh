@@ -16,7 +16,9 @@ module Bosh
               job_network.static_ips.each do |static_ip|
                 subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
                 if subnet_for_ip.nil?
-                  raise JobNetworkInstanceIpMismatch, "Job '#{job_name}' declares static ip '#{format_ip(static_ip)}' which belongs to no subnet"
+                  raise JobNetworkInstanceIpMismatch,
+                    "Job '#{job_name}' with network '#{job_network.name}' declares static ip '#{format_ip(static_ip)}', " +
+                      "which belongs to no subnet"
                 end
                 az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
                 networks_to_static_ips[job_network.name] ||= []

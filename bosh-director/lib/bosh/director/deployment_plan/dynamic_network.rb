@@ -11,17 +11,9 @@ module Bosh::Director
         dns_manager = DnsManager.create
 
         if network_spec.has_key?('subnets')
-          if network_spec.has_key?('dns')
-            raise NetworkInvalidProperty, "top-level 'dns' invalid when specifying subnets"
-          end
-
-          if network_spec.has_key?('az')
-            raise NetworkInvalidProperty, "top-level 'az' invalid when specifying subnets"
-          end
-
-          if network_spec.has_key?('cloud_properties')
-            raise NetworkInvalidProperty, "top-level 'cloud_properties' invalid when specifying subnets"
-          end
+          validate_network_has_no_key('dns', name, network_spec)
+          validate_network_has_no_key('az', name, network_spec)
+          validate_network_has_no_key('cloud_properties', name, network_spec)
 
           subnets = network_spec['subnets'].map do |subnet_properties|
             dns_spec = safe_property(subnet_properties, 'dns', :class => Array, :optional => true)
@@ -39,6 +31,13 @@ module Bosh::Director
         end
 
         new(name, subnets, logger)
+      end
+
+      def self.validate_network_has_no_key(key, name, network_spec)
+        if network_spec.has_key?(key)
+          raise NetworkInvalidProperty, "Network '#{name}' must not specify '#{key}' when also specifying 'subnets'. " +
+              "Instead, '#{key}' should be specified on subnet entries."
+        end
       end
 
       def self.parse_availability_zones(spec, availability_zones, name)

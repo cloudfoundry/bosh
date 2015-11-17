@@ -166,8 +166,8 @@ module Bosh::Director
 
         if disk_type_name && disk_pool_name
           raise JobInvalidPersistentDisk,
-            "Job `#{@job.name}' references both a persistent disk pool `#{disk_pool_name}' " +
-              "and a persistent disk type `#{disk_type_name}'"
+            "Job `#{@job.name}' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
+              "'disk_pools' key will be DEPRECATED in the future."
         end
 
         if disk_type_name
@@ -326,7 +326,8 @@ module Bosh::Director
           unless az.nil?
             unless @job.availability_zones.to_a.map(&:name).include?(az)
               raise DeploymentInvalidMigratedFromJob,
-              "Migrating job '#{name}' refers to availability zone '#{az}' that is not in the list of availability zones of '#{@job.name}' job"
+              "Job '#{name}' specified for migration to job '#{@job.name}' refers to availability zone '#{az}'. " +
+                "Az '#{az}' is not in the list of availability zones of job '#{@job.name}'."
             end
           end
           @job.migrated_from << MigratedFromJob.new(name, az)
