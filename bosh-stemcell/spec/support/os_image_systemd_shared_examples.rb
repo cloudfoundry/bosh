@@ -16,5 +16,9 @@ shared_examples_for 'a systemd-based OS image' do
     describe command('systemctl is-enabled rsyslog') do
       it { should return_stdout /enabled/ }
     end
+
+    describe command('systemctl is-enabled ntp') do
+      it { should return_stdout /enabled/ }
+    end
   end
 end

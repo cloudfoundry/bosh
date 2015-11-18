@@ -259,4 +259,10 @@ EOF
       its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
     end
   end
+
+  context 'ntp service should be installed' do
+    describe service('ntp') do
+      it { should be_enabled }
+    end
+  end
 end
