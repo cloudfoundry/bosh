@@ -742,6 +742,25 @@ describe Bosh::Cli::Command::Instances do
                 perform
               end
 
+              it 'shows full details of instance and its processes with empty uptime' do
+                vm2_state['processes'][0]['uptime'] = {}
+
+                expect(command).to receive(:say) do |table|
+                  expect(table.to_s).to match_output %(
+                    +-------------+---------+---------------+-------------+--------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | Instance    | State   | Resource Pool | IPs         | Uptime |         Load          |       CPU %       | CPU % | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+                    |             |         |               |             |        | (avg01, avg05, avg15) | (User, Sys, Wait) |       |              |            | Disk Usage | Disk Usage | Disk Usage |
+                    +-------------+---------+---------------+-------------+--------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                    | job2/0      | running | rp1           | 192.168.0.3 |        | 1, 2, 3               | 4%, 5%, 6%        |       | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+                    |             |         |               | 192.168.0.4 |        |                       |                   |       |              |            |            |            |            |
+                    |   process-3 | failing |               |             |        |                       |                   | 0.4%  | 7% (8.0K)    |            |            |            |            |
+                    +-------------+---------+---------------+-------------+--------+-----------------------+-------------------+-------+--------------+------------+------------+------------+------------+
+                  )
+                end
+                expect(command).to receive(:say).with('Instances total: 1')
+                perform
+              end
+
               it 'does not show `uptime` column when `uptime` is unavailable in first process' do
                 vm1_state['processes'][0].delete('uptime')
 
