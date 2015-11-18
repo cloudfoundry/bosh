@@ -259,7 +259,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::DeploymentInvalidLink,
-            "Link 'db' can not be found by path 'fake-deployment.mysql.mysql-template.db'"
+            "Cannot resolve link path 'fake-deployment.mysql.mysql-template.db' " +
+              "required for link 'db' in job 'api-server' on template 'api-server-template'"
       end
     end
 
@@ -327,7 +328,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::DeploymentInvalidLink,
-            "Link 'db' can not be found by path 'fake-deployment.mysql.non-existent.db'"
+            "Cannot resolve link path 'fake-deployment.mysql.non-existent.db' " +
+              "required for link 'db' in job 'api-server' on template 'api-server-template'"
       end
     end
 
@@ -337,7 +339,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'mysql.mysql-template' is in invalid format"
+        }.to raise_error Bosh::Director::DeploymentInvalidLink,
+            "Link 'mysql.mysql-template' is invalid. " +
+              "A link must have either 3 or 4 parts: " +
+              "[deployment_name.]job_name.template_name.link_name"
       end
     end
 
@@ -361,11 +366,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let(:requires_links) { [] }
       let(:provided_links) { ['db'] } # name and type is implicitly db
 
-      it 'raises unknown link error' do
+      it 'raises unused link error' do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
-            "Link 'db' is not required in job 'api-server'"
+            "Template 'api-server-template' in job 'api-server' specifies link 'db', " +
+              "but the release job does not require it."
       end
     end
 

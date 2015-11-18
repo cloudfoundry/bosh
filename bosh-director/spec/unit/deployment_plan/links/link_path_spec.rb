@@ -22,12 +22,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'when link is not in correct format' do
-    let(:path) { 'invalid' }
+    let(:path) { 'invalid.path' }
 
     it 'raises an error' do
       expect {
         described_class.parse('current-deployment', path, logger)
-      }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'invalid' is in invalid format"
+      }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'invalid.path' is invalid. " +
+            "A link must have either 3 or 4 parts: [deployment_name.]job_name.template_name.link_name"
     end
   end
 end

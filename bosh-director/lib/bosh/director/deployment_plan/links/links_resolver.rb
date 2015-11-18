@@ -33,7 +33,9 @@ module Bosh::Director
           link_spec = link_lookup.find_link_spec
 
           unless link_spec
-            raise DeploymentInvalidLink, "Link '#{link_name}' can not be found by path '#{link_path}'"
+            raise DeploymentInvalidLink,
+              "Cannot resolve link path '#{link_path}' required for link '#{link_name}' " +
+                "in job '#{job.name}' on template '#{template.name}'"
           end
 
           job.add_resolved_link(link_name, link_spec)
@@ -46,7 +48,8 @@ module Bosh::Director
         template.provided_links.each do |provided_link|
           link_spec = Link.new(provided_link.name, job).spec
 
-          @logger.debug("Saving link spec for job '#{job.name}', template: '#{template.name}', link: '#{provided_link}', spec: '#{link_spec}'")
+          @logger.debug("Saving link spec for job '#{job.name}', template: '#{template.name}', " +
+              "link: '#{provided_link}', spec: '#{link_spec}'")
 
           @deployment_plan.link_spec[job.name][template.name][provided_link.name][provided_link.type] = link_spec
         end
@@ -57,7 +60,8 @@ module Bosh::Director
         job.link_paths[template.name].to_a.each do |link_name, _|
           unless template.required_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
-              "Link '#{link_name}' is not required in job '#{job.name}'"
+              "Template '#{template.name}' in job '#{job.name}' specifies link '#{link_name}', " +
+                "but the release job does not require it."
           end
         end
       end
