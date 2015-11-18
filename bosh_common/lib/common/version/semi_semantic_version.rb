@@ -41,6 +41,10 @@ module Bosh::Common
         self.class.new(SemiSemantic::Version.new(@version.release.increment))
       end
 
+      def timestamp_release
+        self.class.new(SemiSemantic::Version.new(@version.release, @version.pre_release, SemiSemantic::VersionSegment.parse("dev." + Time.now.to_i.to_s)))
+      end
+
       def <=>(other)
         @version <=> other.version
       end

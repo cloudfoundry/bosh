@@ -50,7 +50,6 @@ module Bosh::Director
 
       vm_model = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
                                 vm.network_settings, nil, @resource_pool.env)
-
       agent = AgentClient.with_defaults(vm_model.agent_id)
       agent.wait_until_ready
       agent.update_settings(Config.trusted_certs)

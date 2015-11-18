@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'support/release_helper'
+require 'digest'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
@@ -129,6 +130,33 @@ module Bosh::Director
           expect(job).to receive(:process_release)
 
           job.perform
+        end
+
+        context 'with a sha1' do
+          context 'when the sha1 does match' do
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => Digest::SHA1.file(release_path).hexdigest } }
+            it 'verifies the sha1 matches the release' do
+              allow(job).to receive(:release_path).and_return(release_path)
+
+              expect(job).to receive(:download_remote_release)
+              expect(job).to receive(:process_release)
+
+              job.perform
+            end
+          end
+
+          context 'when the sha1 does not match' do
+            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => 'abcd1234'} }
+            it 'raises an error when the sha1 does not match' do
+              allow(job).to receive(:release_path).and_return(release_path)
+
+              expect(job).to receive(:download_remote_release)
+
+              expect {
+                job.perform
+              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch)
+            end
+          end
         end
       end
 
@@ -739,6 +767,88 @@ module Bosh::Director
 
         rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.2').first
         expect(rv).to_not be_nil
+      end
+    end
+
+    describe 'fixing broken packages' do
+      subject(:job) { Jobs::UpdateRelease.new(release_path, 'fix' => true) }
+      let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_path) { File.join(release_dir, 'release.tgz') }
+      let(:manifest) do
+        {
+          'name' => 'appcloud',
+          'version' => release_version,
+          'commit_hash' => '12345678',
+          'uncommitted_changes' => true,
+          'jobs' => manifest_jobs,
+          'packages' => manifest_packages,
+        }
+      end
+      let(:release_version) { '42+dev.1' }
+      let!(:release) { Models::Release.make(name: 'appcloud') }
+      let(:manifest_packages) do
+        [
+          {
+            'sha1' => 'fake-sha-1',
+            'fingerprint' => 'fake-fingerprint-1',
+            'name' => 'fake-name-1',
+            'version' => 'fake-version-1',
+            'dependencies' => []
+          }
+        ]
+      end
+      let(:manifest_jobs) { [] }
+      let!(:release_version_model) { Models::ReleaseVersion.make(release: release, version: '42+dev.1', commit_hash: '12345678', uncommitted_changes: true) }
+      before do
+        allow(Dir).to receive(:mktmpdir).and_return(release_dir)
+        allow(job).to receive(:with_release_lock).and_yield
+      end
+
+      context 'when uploading existing release' do
+        let!(:package) do
+          package = Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1', blobstore_id: 'fake-blobstore-id-1', sha1: 'fake-sha-1')
+          release_version_model.add_package(package)
+          package
+        end
+
+        it 'verifies and fixes package' do
+          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+          job.perform
+        end
+      end
+
+      context 'when re-using existing packages' do
+        let!(:another_release) { Models::Release.make(name: 'foocloud') }
+        let!(:old_release_version_model) do
+          Models::ReleaseVersion.make(
+            release: another_release,
+            version: '41+dev.1',
+            commit_hash: '23456789',
+            uncommitted_changes: true
+          )
+        end
+
+        let!(:existing_pkg) do
+          package = Models::Package.make(
+            release: another_release,
+            name: 'fake-name-1',
+            version: 'fake-version-1',
+            fingerprint: 'fake-fingerprint-1',
+            blobstore_id: 'fake-blobstore-id-1',
+            sha1: 'fake-sha-1'
+          ).save
+
+          old_release_version_model.add_package(package)
+          package
+        end
+
+        it 'fixes existing package and copy blob' do
+          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+          expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
+          job.perform
+        end
       end
     end
 

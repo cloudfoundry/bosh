@@ -72,17 +72,19 @@ describe 'release lifecycle', type: :integration do
 
     bosh_runner.run('deploy')
 
-    expect_output('releases', <<-OUT)
-    +--------------+----------+-------------+
-    | Name         | Versions | Commit Hash |
-    +--------------+----------+-------------+
-    | bosh-release | 2.0*     | #{commit_hash}+   |
-    +--------------+----------+-------------+
-    (*) Currently deployed
-    (+) Uncommitted changes
+    expect_table('releases', %(
+      Acting as user 'test' on 'Test Director'
 
-    Releases total: 1
-    OUT
+      +--------------+----------+-------------+
+      | Name         | Versions | Commit Hash |
+      +--------------+----------+-------------+
+      | bosh-release | 2.0*     | #{commit_hash}+   |
+      +--------------+----------+-------------+
+      (*) Currently deployed
+      (+) Uncommitted changes
+
+      Releases total: 1
+    ))
   end
 
   # ~57s
@@ -121,20 +123,21 @@ describe 'release lifecycle', type: :integration do
     expect(out).to match /bosh-release.+0\+dev\.1.*0\+dev\.2/m
 
     bosh_runner.run('delete release bosh-release 0+dev.2')
-    expect_output('releases', <<-OUT)
-    +--------------+----------+-------------+
-    | Name         | Versions | Commit Hash |
-    +--------------+----------+-------------+
-    | bosh-release | 0+dev.1  | #{commit_hash}    |
-    +--------------+----------+-------------+
+    expect_table('releases', %(
+      Acting as user 'test' on 'Test Director'
 
-    Releases total: 1
-    OUT
+      +--------------+----------+-------------+
+      | Name         | Versions | Commit Hash |
+      +--------------+----------+-------------+
+      | bosh-release | 0+dev.1  | #{commit_hash}    |
+      +--------------+----------+-------------+
+
+      Releases total: 1
+    ))
 
     bosh_runner.run('delete release bosh-release 0+dev.1')
-    expect_output('releases', <<-OUT )
-    No releases
-    OUT
+    expect { bosh_runner.run('releases') }
+      .to raise_error(RuntimeError, /No releases/)
   end
 
   it 'verifies a sample valid release', no_reset: true do

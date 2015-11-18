@@ -1,0 +1,8 @@
+---
+platform: linux
+image: docker:///cloudfoundry/bosh-lite-ci
+inputs:
+- name: bosh-src
+- name: stemcell-version
+run:
+  path: bosh-src/ci/pipelines/stemcells/tasks/build-stemcell.sh

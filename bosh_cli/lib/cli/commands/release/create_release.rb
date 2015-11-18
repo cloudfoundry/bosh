@@ -17,6 +17,7 @@ module Bosh::Cli::Command
       option '--name NAME', 'specify a custom release name'
       option '--version VERSION', 'specify a custom version number (ex: 1.0.0 or 1.0-beta.2+dev.10)'
       option '--dir RELEASE_DIRECTORY', 'path to release directory'
+      option '--timestamp-version', 'create release with the timestamp as the dev version (ex: 1+dev.TIMESTAMP)'
 
       def create(manifest_file = nil)
         switch_to_release_dir
@@ -29,12 +30,23 @@ module Bosh::Cli::Command
             err('Cannot specify a custom version number when creating from a manifest. The manifest already specifies a version.'.make_red)
           end
 
+          if options[:'timestamp_version']
+            err('Cannot specify timestamp-version when creating from a manifest. The manifest already specifies a version.'.make_red)
+          end
+
           say('Recreating release from the manifest')
           Bosh::Cli::ReleaseCompiler.compile(manifest_file, cache_dir, release.blobstore, [], release.dir)
           release_filename = manifest_file
         else
-          version = options[:version]
-          version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s unless version.nil?
+          if options[:version] && options[:'timestamp_version']
+            err('Cannot specify both timestamp-version and version when creating a release.')
+          end
+
+          version = nil
+          if options[:version]
+            version = options[:version]
+            version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s unless version.nil?
+          end
 
           release_filename = create_from_spec(version)
         end
@@ -99,6 +111,8 @@ module Bosh::Cli::Command
 
         header('Building release')
         release_builder = build_release(job_artifacts, manifest_only, package_artifacts, license_artifacts, name, version)
+        info[:generated_version] = release_builder.version
+        info[:generated_manifest_path] = release_builder.manifest_path
 
         header('Release summary')
         show_summary(release_builder)
@@ -150,7 +164,8 @@ module Bosh::Cli::Command
           final: final,
           commit_hash: commit_hash,
           version: version,
-          uncommitted_changes: dirty_state?
+          uncommitted_changes: dirty_state?,
+          timestamp_version: options[:'timestamp_version']
         )
 
         unless dry_run

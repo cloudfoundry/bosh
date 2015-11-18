@@ -75,9 +75,11 @@ properties:
   openstack.api_key:
     description: OpenStack API key
   openstack.tenant:
-    description: OpenStack tenant name
+     description: OpenStack tenant name (required for Keystone API version 2)
+  openstack.project:
+     description: OpenStack project name (required for Keystone API version 3)
   openstack.domain:
-    description: OpenStack domain (optional)
+     description: OpenStack domain (required for Keystone API version 3)
   openstack.region:
     description: OpenStack region (optional)
   openstack.endpoint_type:

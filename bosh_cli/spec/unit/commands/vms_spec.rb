@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cli'
 
 describe Bosh::Cli::Command::Vms do
   subject(:command) { described_class.new }
@@ -99,12 +98,15 @@ describe Bosh::Cli::Command::Vms do
 
       context 'default' do
         it 'show basic vms information' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+---------+---------------+-------------+
+              | Job/index | State   | Resource Pool | IPs         |
+              +-----------+---------+---------------+-------------+
+              | job1/0    | awesome | rp1           | 192.168.0.1 |
+              |           |         |               | 192.168.0.2 |
+              +-----------+---------+---------------+-------------+
+            )
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -115,15 +117,15 @@ describe Bosh::Cli::Command::Vms do
         before { options[:details] = true }
 
         it 'shows vm details' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include 'cid1'
-            expect(s.to_s).to include 'agent1'
-            expect(s.to_s).to include 'paused'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+---------+---------------+-------------+------+----------+--------------+
+              | Job/index | State   | Resource Pool | IPs         | CID  | Agent ID | Resurrection |
+              +-----------+---------+---------------+-------------+------+----------+--------------+
+              | job1/0    | awesome | rp1           | 192.168.0.1 | cid1 | agent1   | paused       |
+              |           |         |               | 192.168.0.2 |      |          |              |
+              +-----------+---------+---------------+-------------+------+----------+--------------+
+            )
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -134,14 +136,15 @@ describe Bosh::Cli::Command::Vms do
         before { options[:dns] = true }
 
         it 'shows DNS A records' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include '| index.job.network.deployment.microbosh'
-            expect(s.to_s).to include '| index.job.network2.deployment.microbosh'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+---------+---------------+-------------+-----------------------------------------+
+              | Job/index | State   | Resource Pool | IPs         | DNS A records                           |
+              +-----------+---------+---------------+-------------+-----------------------------------------+
+              | job1/0    | awesome | rp1           | 192.168.0.1 | index.job.network.deployment.microbosh  |
+              |           |         |               | 192.168.0.2 | index.job.network2.deployment.microbosh |
+              +-----------+---------+---------------+-------------+-----------------------------------------+
+            )
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -152,21 +155,16 @@ describe Bosh::Cli::Command::Vms do
         before { options[:vitals] = true }
 
         it 'shows the vm vitals' do
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to include 'job1/0'
-            expect(s.to_s).to include 'awesome'
-            expect(s.to_s).to include 'rp1'
-            expect(s.to_s).to include '| 192.168.0.1'
-            expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include '1, 2, 3'
-            expect(s.to_s).to include '4%'
-            expect(s.to_s).to include '5%'
-            expect(s.to_s).to include '6%'
-            expect(s.to_s).to include '7% (8.0K)'
-            expect(s.to_s).to include '9% (10.0K)'
-            expect(s.to_s).to include '11%'
-            expect(s.to_s).to include '12%'
-            expect(s.to_s).to include '13%'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | Job/index | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+              |           |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | job1/0    | awesome | rp1           | 192.168.0.1 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | 12%        | 13%        |
+              |           |         |               | 192.168.0.2 |                       |      |     |      |              |            |            |            |            |
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+            )
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform
@@ -178,9 +176,16 @@ describe Bosh::Cli::Command::Vms do
           new_vm_state['vitals']['disk'].delete('persistent')
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
-          expect(command).to receive(:say) do |s|
-            expect(s.to_s).to_not include '12%'
-            expect(s.to_s).to_not include '13%'
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | Job/index | State   | Resource Pool | IPs         |         Load          | CPU  | CPU | CPU  | Memory Usage | Swap Usage | System     | Ephemeral  | Persistent |
+              |           |         |               |             | (avg01, avg05, avg15) | User | Sys | Wait |              |            | Disk Usage | Disk Usage | Disk Usage |
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+              | job1/0    | awesome | rp1           | 192.168.0.1 | 1, 2, 3               | 4%   | 5%  | 6%   | 7% (8.0K)    | 9% (10.0K) | 11%        | n/a        | n/a        |
+              |           |         |               | 192.168.0.2 |                       |      |     |      |              |            |            |            |            |
+              +-----------+---------+---------------+-------------+-----------------------+------+-----+------+--------------+------------+------------+------------+------------+
+            )
           end
           expect(command).to receive(:say).with('VMs total: 1')
           perform

@@ -14,6 +14,7 @@ module Bosh::Director
     let(:compiled_package_cache_blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:cache_key) { 'cache_sha1' }
     let(:dep_key) { '[]' }
+    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     before do
       allow(Config).to receive(:compiled_package_cache_blobstore).and_return(compiled_package_cache_blobstore)
@@ -78,6 +79,18 @@ module Bosh::Director
           expect(file.to_path).to match %r[/blob$]
         end
         expect(BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key)).to eq(mock_compiled_package)
+      end
+    end
+
+    describe '#delete_blob' do
+      let(:fake_local_blobstore) { instance_double('Bosh::Blobstore::LocalClient') }
+      before do
+        allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
+      end
+
+      it 'deletes blob' do
+        expect(fake_local_blobstore).to receive(:delete).with('fake-blobstore-id')
+        expect{ BlobUtil.delete_blob('fake-blobstore-id') }.to_not raise_error
       end
     end
   end

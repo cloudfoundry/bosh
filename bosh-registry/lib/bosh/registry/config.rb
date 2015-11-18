@@ -25,13 +25,17 @@ module Bosh::Registry
 
       @db = connect_db(config["db"])
 
-      plugin = config["cloud"]["plugin"]
-      begin
-        require "bosh/registry/instance_manager/#{plugin}"
-      rescue LoadError
-        raise ConfigError, "Could not find Provider Plugin: #{plugin}"
+      if config.has_key?("cloud")
+        plugin = config["cloud"]["plugin"]
+        begin
+          require "bosh/registry/instance_manager/#{plugin}"
+        rescue LoadError
+          raise ConfigError, "Could not find Provider Plugin: #{plugin}"
+        end
+        @instance_manager = Bosh::Registry::InstanceManager.const_get(plugin.capitalize).new(config["cloud"])
+      else
+        @instance_manager = Bosh::Registry::InstanceManager.new
       end
-      @instance_manager = Bosh::Registry::InstanceManager.const_get(plugin.capitalize).new(config["cloud"])
     end
 
     def connect_db(db_config)
@@ -62,15 +66,16 @@ module Bosh::Registry
         raise ConfigError, "Database configuration is missing from config file"
       end
 
-      unless config.has_key?("cloud") && config["cloud"].is_a?(Hash)
-        raise ConfigError, "Cloud configuration is missing from config file"
-      end
+      if config.has_key?("cloud")
+        unless config["cloud"].is_a?(Hash)
+          raise ConfigError, "Cloud configuration is missing from config file"
+        end
 
-      if config["cloud"]["plugin"].nil?
-        raise ConfigError, "Cloud plugin is missing from config file"
+        if config["cloud"]["plugin"].nil?
+          raise ConfigError, "Cloud plugin is missing from config file"
+        end
       end
     end
 
   end
-
 end

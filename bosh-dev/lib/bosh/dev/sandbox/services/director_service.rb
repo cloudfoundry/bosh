@@ -18,9 +18,9 @@ module Bosh::Dev::Sandbox
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
-      base_log_path = options[:base_log_path]
+      @base_log_path = options[:base_log_path]
 
-      log_location = "#{base_log_path}.director.out"
+      log_location = "#{@base_log_path}.director.out"
       @process = Service.new(
         %W[bosh-director -c #{@director_config}],
         {output: log_location},
@@ -32,7 +32,7 @@ module Bosh::Dev::Sandbox
       @worker_processes = 3.times.map do |index|
         Service.new(
           %W[bosh-director-worker -c #{@director_config}],
-          {output: "#{base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
+          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
           @logger,
         )
       end
@@ -92,9 +92,13 @@ module Bosh::Dev::Sandbox
         attempt += 1
         sleep delay
       end
+
+      start_monitor_workers
     end
 
     def stop_workers
+      stop_monitor_workers
+
       @logger.debug('Waiting for Resque queue to drain...')
       attempt = 0
       delay = 0.1
@@ -122,6 +126,30 @@ module Bosh::Dev::Sandbox
 
       # wait for resque workers in parallel for fastness
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
+    end
+
+    def start_monitor_workers
+      @monitor_workers = true
+      monitor_workers
+    end
+
+    def stop_monitor_workers
+      @monitor_workers = false
+    end
+
+    def monitor_workers
+      Thread.new do
+        while @monitor_workers
+          @worker_processes.map(&:pid).each do |worker_pid|
+            begin
+              Process.kill(0, worker_pid)
+            rescue Errno::ESRCH
+              raise "Worker is no longer running (PID #{worker_pid})"
+            end
+          end
+          sleep(5)
+        end
+      end
     end
 
     def reset

@@ -9,10 +9,10 @@ describe Bosh::Registry::InstanceManager do
     valid_config.merge({'cloud' => {
       'plugin' => 'openstack',
       'openstack' => {
-        'auth_url' => 'http://127.0.0.1:5000/v3.0',
+        'auth_url' => 'http://127.0.0.1:5000/v3',
         'username' => 'foo',
         'api_key' => 'bar',
-        'tenant' => 'foo',
+        'project' => 'foo',
         'domain' => 'mydomain',
         'region' => '',
         'connection_options' => connection_options,
@@ -43,10 +43,11 @@ describe Bosh::Registry::InstanceManager do
     let(:openstack_compute) {
       {
         :provider => 'OpenStack',
-        :openstack_auth_url => 'http://127.0.0.1:5000/v3.0/tokens',
+        :openstack_auth_url => 'http://127.0.0.1:5000/v3/auth/tokens',
         :openstack_username => 'foo',
         :openstack_api_key => 'bar',
-        :openstack_tenant => 'foo',
+        :openstack_tenant => nil,
+        :openstack_project_name => 'foo',
         :openstack_domain_name => 'mydomain',
         :openstack_region => '',
         :openstack_endpoint_type => nil,
@@ -112,7 +113,7 @@ describe Bosh::Registry::InstanceManager do
       expect(compute).to receive(:servers).twice.and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       expect {
         expect(manager.read_settings('foo', '10.0.0.1')).to eq('bar')
-      }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized') 
+      }.to raise_error(Bosh::Registry::ConnectionError, 'Unable to connect to OpenStack API: Unauthorized')
     end
   end
 end

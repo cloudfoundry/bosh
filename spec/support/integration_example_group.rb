@@ -154,14 +154,8 @@ module IntegrationExampleGroup
     }
   end
 
-  def format_output(out)
-    out.gsub(/^\s*/, '').gsub(/\s*$/, '')
-  end
-
-  # forcefully suppress raising on error...caller beware
-  def expect_output(cmd, expected_output)
-    expect(format_output(bosh_runner.run(cmd, :failure_expected => true))).
-      to include(format_output(expected_output))
+  def expect_table(cmd, expected)
+    expect(bosh_runner.run(cmd)).to match_output(expected)
   end
 
   def expect_running_vms(job_name_index_list)

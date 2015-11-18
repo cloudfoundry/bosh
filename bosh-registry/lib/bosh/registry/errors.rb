@@ -17,4 +17,6 @@ module Bosh::Registry
 
   class InstanceError < Error; end
   class InstanceNotFound < Error; code(404); end
+
+  class NotImplemented < Error; end
 end

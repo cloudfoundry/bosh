@@ -68,6 +68,14 @@ module Bosh::Spec
       parse_table(@runner.run('instances --ps', options))
     end
 
+    def instances_ps_vitals(options = {})
+      parse_table(@runner.run('instances --ps --vitals', options))
+    end
+
+    def instances_ps_vitals_failing(options = {})
+      parse_table(@runner.run('instances --ps --vitals --failing', options))
+    end
+
     def start_recording_nats
       # have to read NATS port on main thread, or the new thread hangs on startup (?!)
       nats_uri = "nats://localhost:#{@director_nats_port}"
@@ -118,7 +126,7 @@ module Bosh::Spec
         end
       end
 
-      headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
+      headers = headers.values.map { |header| header.strip.sub(' %','').gsub(/[\%\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
       values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
     end

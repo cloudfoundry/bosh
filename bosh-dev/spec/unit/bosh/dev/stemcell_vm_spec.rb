@@ -6,7 +6,9 @@ module Bosh::Dev
   describe StemcellVm do
     subject(:vm) { StemcellVm.new(vm_name) }
 
-    before { class_double('Rake::FileUtilsExt', sh: nil).as_stubbed_const }
+    before do
+      class_double('Rake::FileUtilsExt', sh: nil, verbose: false).as_stubbed_const
+    end
 
     describe '#run' do
       subject { vm.run('echo hello') }
@@ -79,11 +81,6 @@ module Bosh::Dev
           expect { subject }.to raise_error(/must be 'local' or 'remote'/)
         end
       end
-    end
-
-    def strip_heredoc(str)
-      indent = str.scan(/^[ \t]*(?=\S)/).min.size
-      str.gsub(/^[ \t]{#{indent}}/, '')
     end
   end
 end

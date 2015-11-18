@@ -35,6 +35,77 @@ module Bosh::Spec
         })
     end
 
+    def self.remote_stemcell_manifest(stemcell_url, stemcell_sha1)
+      minimal_manifest.merge(
+      {
+        'networks' => [{
+          'name' => 'a',
+          'subnets' => [{
+              'range' => '192.168.1.0/24',
+              'gateway' => '192.168.1.1',
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'static' => ['192.168.1.10'],
+              'reserved' => [],
+              'cloud_properties' => {},
+            }],
+        }],
+
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => {},
+        },
+
+        'resource_pools' => [{
+          'name' => 'a',
+          'size' => 3,
+          'cloud_properties' => {},
+          'network' => 'a',
+          'stemcell' => {
+            'name' => 'ubuntu-stemcell',
+            'version' => 1,
+            'url' => stemcell_url,
+            'sha1' => stemcell_sha1,
+          },
+        }],
+      })
+    end
+
+    def self.local_stemcell_manifest(stemcell_path)
+      minimal_manifest.merge(
+      {
+        'networks' => [{
+          'name' => 'a',
+          'subnets' => [{
+              'range' => '192.168.1.0/24',
+              'gateway' => '192.168.1.1',
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'static' => ['192.168.1.10'],
+              'reserved' => [],
+              'cloud_properties' => {},
+            }],
+        }],
+
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => {},
+        },
+
+        'resource_pools' => [{
+          'name' => 'a',
+          'size' => 3,
+          'cloud_properties' => {},
+          'network' => 'a',
+          'stemcell' => {
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'url' => stemcell_path,
+          },
+        }],
+      })
+    end
+
     def self.resource_pool
       {
         'name' => 'a',
@@ -234,6 +305,45 @@ module Bosh::Spec
     def self.simple_manifest
       test_release_manifest.merge({
         'jobs' => [simple_job]
+      })
+    end
+
+    def self.remote_release_manifest(remote_release_url, sha1, version='latest')
+      minimal_manifest.merge({
+        'jobs' => [
+          {
+            'name' => 'job',
+            'template' => 'job_using_pkg_1',
+            'instances' => 1,
+            'resource_pool' => 'a',
+            'networks' => [{'name' => 'a'}]
+          }
+        ],
+        'releases' => [{
+            'name'    => 'test_release',
+            'version' => version,
+            'url' => remote_release_url,
+            'sha1' => sha1
+        }]
+      })
+    end
+
+    def self.local_release_manifest(local_release_path, version = 'latest')
+      minimal_manifest.merge({
+        'jobs' => [
+          {
+            'name' => 'job',
+            'template' => 'job_using_pkg_1',
+            'instances' => 1,
+            'resource_pool' => 'a',
+            'networks' => [{'name' => 'a'}]
+          }
+        ],
+        'releases' => [{
+            'name'    => 'test_release',
+            'version' => version,
+            'url' => local_release_path,
+        }]
       })
     end
 

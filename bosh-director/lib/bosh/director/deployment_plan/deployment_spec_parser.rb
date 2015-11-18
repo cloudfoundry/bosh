@@ -64,7 +64,8 @@ module Bosh::Director
       def parse_jobs
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         jobs.each do |job_spec|
-          state_overrides = @job_states.fetch(job_spec['name'], {})
+          # get state specific for this job or all jobs
+          state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
           @deployment.add_job(Job.parse(@deployment, job_spec, @event_log, @logger))
         end

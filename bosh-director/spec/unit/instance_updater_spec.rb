@@ -397,13 +397,6 @@ module Bosh::Director
         expect(agent_client).to receive(:start)
         subject.start!
       end
-
-      it 'logs errors' do
-        allow(agent_client).to receive(:start).and_raise('error')
-        expect(Config.logger).to receive(:warn).
-          with('Agent start raised an exception: #<RuntimeError: error>, ignoring for compatibility')
-        subject.start!
-      end
     end
 
     describe '#run_pre_start_scripts' do

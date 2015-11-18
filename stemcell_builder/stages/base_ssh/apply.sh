@@ -7,6 +7,9 @@ source $base_dir/lib/prelude_apply.bash
 
 chmod 0600 $chroot/etc/ssh/sshd_config
 
+# protect against as-shipped sshd_config that has no newline at end
+echo "" >> $chroot/etc/ssh/sshd_config
+
 sed "/^ *UseDNS/d" -i $chroot/etc/ssh/sshd_config
 echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 
@@ -44,8 +47,11 @@ echo 'PermitUserEnvironment no' >> $chroot/etc/ssh/sshd_config
 sed "/^ *ClientAliveCountMax/d" -i $chroot/etc/ssh/sshd_config
 echo 'ClientAliveCountMax 0' >> $chroot/etc/ssh/sshd_config
 
-# protect against as-shipped sshd_config that has no newline at end
-echo "" >> $chroot/etc/ssh/sshd_config
+sed "/^ *PasswordAuthentication/d" -i $chroot/etc/ssh/sshd_config
+echo 'PasswordAuthentication no' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *PrintLastLog/d" -i $chroot/etc/ssh/sshd_config
+echo 'PrintLastLog yes' >> $chroot/etc/ssh/sshd_config
 
 # OS Specifics
 if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" -o "$(get_os_type)" == "photon" ]; then

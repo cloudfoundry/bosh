@@ -29,7 +29,7 @@ module Bosh::Cli
       end
 
       if options[:resolve_properties]
-        compiler = DeploymentManifestCompiler.new(File.read(@deployment_file))
+        compiler = DeploymentManifestCompiler.new(Psych.dump(@hash))
         properties = {}
 
         begin

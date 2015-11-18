@@ -96,6 +96,7 @@ module Bosh
         def upload_remote_stemcell(stemcell_location, options = {})
           options                = options.dup
           payload                = { 'location' => stemcell_location }
+          payload[:sha1]         = options[:sha1] if options[:sha1]
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
 
@@ -299,12 +300,12 @@ module Bosh
         end
 
         def change_job_state(deployment_name, manifest_yaml,
-          job_name, index, new_state, options = {})
+          job, index, new_state, options = {})
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
 
-          url = "/deployments/#{deployment_name}/jobs/#{job_name}"
+          url = "/deployments/#{deployment_name}/jobs/#{job}"
           url += "/#{index}" if index
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
@@ -640,7 +641,8 @@ module Bosh
 
         def releases_path(options = {})
           path = '/releases'
-          params = [:rebase, :skip_if_exists].select { |p| options[p] }.map { |p| "#{p}=true" }
+          params = [:rebase, :skip_if_exists, :fix].select { |p| options[p] }.map { |p| "#{p}=true" }
+          params.push "sha1=#{options[:sha1]}" unless options[:sha1].blank?
           path << "?#{params.join('&')}" unless params.empty?
           path
         end

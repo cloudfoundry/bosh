@@ -29,6 +29,7 @@ module Bosh::Cli
       @name = name
       raise 'Release name is blank' if name.blank?
 
+      @timestamp_version = options.fetch(:'timestamp_version', false)
       @version = options.fetch(:version, nil)
 
       @final_index = Versions::VersionsIndex.new(final_releases_dir)
@@ -195,6 +196,10 @@ module Bosh::Cli
 
       if @final
         # Drop pre-release and post-release segments, and increment the release segment
+        if @timestamp_version
+          raise ReleaseVersionError.new('Release version cannot be set to a timestamp for a final release')
+        end
+
         latest_final_version.increment_release
       else
         # Increment or Reset the post-release segment
@@ -202,13 +207,19 @@ module Bosh::Cli
         latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version
-          if latest_dev_version.version.post_release.nil?
+          if @timestamp_version
+            latest_dev_version.timestamp_release
+          elsif latest_dev_version.version.post_release.nil?
             latest_dev_version.default_post_release
           else
             latest_dev_version.increment_post_release
           end
         else
-          latest_final_version.default_post_release
+          if @timestamp_version
+            latest_final_version.timestamp_release
+          else
+            latest_final_version.default_post_release
+          end
         end
       end
     end

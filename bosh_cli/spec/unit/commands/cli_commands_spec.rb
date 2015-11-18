@@ -259,21 +259,18 @@ describe Bosh::Cli::Command::Base do
           }
         end
 
-        let(:releases_table) do
-          <<-OUT.gsub(/^\s*/, '').chomp
-      +-----------+--------------------+
-      | Name      | Versions           |
-      +-----------+--------------------+
-      | release-1 | 1, 2, 2.1-dev*, 15 |
-      +-----------+--------------------+
-          OUT
-        end
-
-
         it 'lists releases in a nice table and include information about current deployments' do
           allow(@director).to receive_messages(list_releases: [release])
 
-          expect(@cmd).to receive(:say).with(releases_table)
+          expect(@cmd).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+--------------------+
+              | Name      | Versions           |
+              +-----------+--------------------+
+              | release-1 | 1, 2, 2.1-dev*, 15 |
+              +-----------+--------------------+
+            )
+          end
           expect(@cmd).to receive(:say).with('(*) Currently deployed')
           expect(@cmd).to receive(:say).with('Releases total: 1')
 
@@ -294,36 +291,21 @@ describe Bosh::Cli::Command::Base do
           }
         end
 
-        let(:releases_table) do
-          <<-OUT.gsub(/^\s*/, '').chomp
-      +-----------+----------+-------------+
-      | Name      | Versions | Commit Hash |
-      +-----------+----------+-------------+
-      | release-1 | 1        | unknown     |
-      |           | 2        | 00000000+   |
-      |           | 2.1-dev* | unknown     |
-      |           | 15       | 1a2b3c4d+   |
-      +-----------+----------+-------------+
-          OUT
-        end
-
-        let(:releases_with_jobs_table) do
-          <<-OUT.gsub(/^\s*/, '').chomp
-      +-----------+----------+-------------+-------+
-      | Name      | Versions | Commit Hash | Jobs  |
-      +-----------+----------+-------------+-------+
-      | release-1 | 1        | unknown     | n/a   |
-      |           | 2        | 00000000+   | job-1 |
-      |           | 2.1-dev* | unknown     | job-1 |
-      |           | 15       | 1a2b3c4d+   | job-1 |
-      +-----------+----------+-------------+-------+
-          OUT
-        end
-
         it 'lists releases in a nice table and includes information about current deployments and uncommitted changes' do
           allow(@director).to receive_messages(list_releases: [release])
 
-          expect(@cmd).to receive(:say).with(releases_table)
+          expect(@cmd).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+----------+-------------+
+              | Name      | Versions | Commit Hash |
+              +-----------+----------+-------------+
+              | release-1 | 1        | unknown     |
+              |           | 2        | 00000000+   |
+              |           | 2.1-dev* | unknown     |
+              |           | 15       | 1a2b3c4d+   |
+              +-----------+----------+-------------+
+            )
+          end
           expect(@cmd).to receive(:say).with('(*) Currently deployed')
           expect(@cmd).to receive(:say).with('(+) Uncommitted changes')
           expect(@cmd).to receive(:say).with('Releases total: 1')
@@ -334,7 +316,18 @@ describe Bosh::Cli::Command::Base do
         it 'lists releases in a nice table and includes job names if available' do
           allow(@director).to receive_messages(list_releases: [release])
 
-          expect(@cmd).to receive(:say).with(releases_with_jobs_table)
+          expect(@cmd).to receive(:say) do |table|
+            expect(table.to_s).to match_output %(
+              +-----------+----------+-------------+-------+
+              | Name      | Versions | Commit Hash | Jobs  |
+              +-----------+----------+-------------+-------+
+              | release-1 | 1        | unknown     | n/a   |
+              |           | 2        | 00000000+   | job-1 |
+              |           | 2.1-dev* | unknown     | job-1 |
+              |           | 15       | 1a2b3c4d+   | job-1 |
+              +-----------+----------+-------------+-------+
+            )
+          end
           expect(@cmd).to receive(:say).with('(*) Currently deployed')
           expect(@cmd).to receive(:say).with('(+) Uncommitted changes')
           expect(@cmd).to receive(:say).with('Releases total: 1')

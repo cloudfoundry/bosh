@@ -81,7 +81,8 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       # Cannot assert on output because there is no guarantee
       # that process will be cancelled after output is echoed
       result_output = bosh_runner.run("task #{task_id} --result")
-      expect(result_output).to include('"exit_code":143')
+      # can be either terminated or killed
+      expect(result_output).to  match /"exit_code":(143|137)/
     end
   end
 

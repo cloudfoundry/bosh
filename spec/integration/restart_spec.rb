@@ -5,6 +5,6 @@ describe 'restart job', type: :integration do
 
   it 'restarts a job' do
     deploy_from_scratch
-    expect(bosh_runner.run('restart foobar 0')).to match %r{foobar/0 has been restarted}
+    expect(bosh_runner.run('restart foobar 0')).to match %r{foobar/0 restarted}
   end
 end

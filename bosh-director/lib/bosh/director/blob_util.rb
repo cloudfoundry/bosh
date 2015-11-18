@@ -22,6 +22,10 @@ module Bosh::Director
       blobstore_id
     end
 
+    def self.delete_blob(blobstore_id)
+      blobstore.delete(blobstore_id)
+    end
+
     def self.save_to_global_cache(compiled_package, cache_key)
       global_cache_filename = [compiled_package.package.name, cache_key].join('-')
       Dir.mktmpdir do |path|

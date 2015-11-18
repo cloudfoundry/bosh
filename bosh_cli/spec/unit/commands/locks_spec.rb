@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cli'
 
 describe Bosh::Cli::Command::Locks do
   let(:command) { described_class.new }

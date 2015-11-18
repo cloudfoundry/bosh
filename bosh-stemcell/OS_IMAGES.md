@@ -7,6 +7,45 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `uVOqUoQtxwXO2.7DVCkRyv_RNSayziQM`
+  - update libxml2 for usn-2812-1
+
+* `Nh0G1YGSO8pgwCbOHtvDDTk.Ds.7Yxc_`
+  - update for USN-2810-1: Kerberos vulnerabilities
+
+* `MwjwmqQgu7CqpIMECnojJ6VZLiwQhDQz`
+  - changes for stigs (V-38523, V-38524, V-38526, V-38529)
+
+* `kNxr8G52rcPMvg5tafh7ldLyAjR3X6g6`
+  - changes for blank passwords
+
+* `xMl7HhuREluPZP0YyHZLnxhlHZXrB723`
+  - update linux image for USN-2806-1
+
+* `Zibxbt9mNrQnPmgwVXjtVnFJZYiJZT6m`
+  - update linux image for USN-2798: kernel (Vivid HWE) vulnerabilities
+
+* `N81hCvgAbYz5JLVlJwpEclmeTegW66qd`
+  - update unzip for USN-2788-1: unzip vulnerabilities
+
+* `.4y0e8CHJ4a3mZ3VPpKPAFW3OKxnRmrv`
+  - add bosh_sudoers group
+
+* `8LbjKPGE07yEeDNp7RkIRe6xdDI3Jre.`
+  - yanked
+
+* `7DQf.gOqy.oQcPBa19sgcbOHcvi458La`
+  - yanked
+
+* `L8DtBIngBPbziIOl9UZoyAocxGiUfpdL`
+  - yanked
+
+* `Ry5gW034s1xK65YcBEdmuL.ermC3iiE7`
+  - yanked
+
+* `t4kWs38oNti4vRrKE9xicElzLb4wCTBm`
+  - update kernel for USN-2778-1
+
 * `HU9BVWuGxWwoxJ2jOJYKqDRTjwh419Ig`
   - update kernel for USN-2765-1
 
@@ -17,7 +56,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - update kernel for USN-2751-1
 
 * `Z2u8KpEbHMXu1sYd1lI1VC_RPZGGSYoz`
-   - add package for growpart command
+  - add package for growpart command
 
 * `07SVLfhlpQJWWKphcELs9MV2pwgs1n3y`
   - update ubuntu for FreeType vulnerabilities for USN-2739-1
@@ -72,7 +111,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - update unattended-upgrades to 0.82.1ubuntu2.3
 
 * `DRT11QyZUb3Y.tbS00W3QgAQ_lWMhVYJ`
-  update python to version python3.4 amd64 3.4.0-2ubuntu1.1
+  - update python to version python3.4 amd64 3.4.0-2ubuntu1.1
 
 * `xLfl7rZVgkXKijjY11rSOGk.AJ8KcmEV`
   - update kernel to 3.16.0-41-generic 3.16.0-41.57~14.04.1
@@ -263,11 +302,47 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `70iKyO1XVyO23ci2JpztKdHMClFu6eVF`
+  - (periodic) bump centos to match ubuntu update
+
+* `KJOs81.dHgRSBJ9CgcjOEgxd9I2gO7zF`
+  - (periodic) bump centos to match ubuntu update
+
+* `k.v0bPRcoftbZK2nREGM5J4kKmEIZXE5`
+  - changes for stigs (V-38523, V-38524, V-38526, V-38529)
+
+* `ibO7C43zyqH5QDmZ1Ozl52FH9dAaYiCP`
+  - (periodic) bump centos to match ubuntu update
+
+* `iErRGYf6hJANmRBq0BFiR1PITqufCXLV`
+  - (periodic) bump centos to match ubuntu update
+
+* `V8QX.fIS.DODjNJZBaUB1WNSCwKPFyKS`
+  - (periodic) bump centos to match ubuntu update
+
+* `2QbANNOEHcpvZeegGUwTOTRRkZ08vHmS`
+  - add bosh_sudoers group
+
+* `X7Rvv6Mnv3SsHTXXhjqJlK7PimaKgCfy`
+  - yanked
+
+* `gFr4O0SWv4cQZe8ivJ7W8pb8dC_cahOi`
+  - yanked
+
+* `1G6GOeAS0ktBhdHhcZhd3rsH3bh7yRh0`
+  - yanked
+
+* `TZTJLOEg4z4wGJXSqaHY3fEdu8yWtK.o`
+  - yanked
+
+* `60DupjHdE2ef85pZN86s7UfHhNQp1plk`
+  - (periodic) bump centos to match ubuntu update
+
 * `3YJSMiU5nD07NEAN8wFJ6uya5XH7WriY`
   - update centos to match ubuntu update for USN-2739-1
 
 * `43zhprNWRQoYBhDBVkJm6uAocH0IBgLw`
-   - add package for growpart command
+  - add package for growpart command
 
 * `upXZonWLgbjXkN1VKg5W560cFsQ.D3J9`
   - symlink /var/run to /run

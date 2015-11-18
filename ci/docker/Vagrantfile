@@ -10,7 +10,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.customize ['modifyvm', :id, '--memory', '4096']
   end
 
-  # mount bosh dir for testing
   config.vm.synced_folder('../../', '/opt/bosh', owner: 'root', group: 'root')
 
   if Vagrant.has_plugin?("vagrant-proxyconf")

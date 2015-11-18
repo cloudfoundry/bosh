@@ -38,6 +38,13 @@ module Bosh::Cli::Command::Release
           before { allow(director).to receive(:get_release).and_raise(Bosh::Cli::ResourceNotFound) }
           before { allow(director).to receive(:match_packages).and_return([]) }
 
+          it 'should error if --sha1 option is used' do
+            command.add_option(:sha1, 'shawesome')
+            expect {
+              command.upload(release_archive)
+            }.to raise_error(Bosh::Cli::CliError, /Option '--sha1' is not supported for uploading local release/)
+          end
+
           describe 'converting to old format' do
             let!(:tarball) do
               instance_double(
@@ -55,6 +62,8 @@ module Bosh::Cli::Command::Release
             before {
               allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
               allow(tarball).to receive(:compiled_release?).and_return(false)
+              allow(tarball).to receive(:upload_packages?).and_return(true)
+              allow(tarball).to receive(:validate_manifest)
 
               allow(director).to receive(:upload_release)
               allow(director).to receive(:get_status).and_return({'version' => director_version})
@@ -244,6 +253,31 @@ module Bosh::Cli::Command::Release
             end
           end
 
+          context 'with --fix' do
+            before do
+              command.add_option(:fix, true)
+            end
+
+            it 'should upload the release archive along with fix option' do
+              expect(command).to receive(:upload_tarball)
+                .with(release_archive, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:fix => true))
+              command.upload(release_archive)
+            end
+
+            it 'does not validate if release was already uploaded' do
+              command.add_option(:name, 'dummy')
+              command.add_option(:version, 'dev+1')
+              expect(command).to receive(:upload_tarball)
+                .with(release_archive, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:fix => true))
+              expect(director).to_not receive(:list_releases)
+              command.upload(release_archive)
+            end
+          end
+
           context 'when release does not exist' do
             let(:tarball_path) { spec_asset('test_release.tgz') }
             let(:valid_release_tarball_path) { spec_asset('valid_release.tgz') }
@@ -266,6 +300,7 @@ module Bosh::Cli::Command::Release
               allow(director).to receive(:upload_release)
               allow(director).to receive(:match_compiled_packages)
               expect(command).to_not receive(:check_if_release_dir)
+              expect(command).to receive(:upload_tarball)
               command.upload(tarball_path)
             end
           end
@@ -303,6 +338,72 @@ module Bosh::Cli::Command::Release
                 command.upload(tarball_path)
               end
             end
+
+            context 'when the director does not support fast unpack' do
+              let(:director_version) { '1.3100.0' }
+
+              let(:tarball_path) { spec_asset('test_release.tgz') }
+              let!(:tarball) do
+                instance_double(
+                    'Bosh::Cli::ReleaseTarball',
+                    validate: nil,
+                    valid?: true,
+                    release_name: 'fake-release-name',
+                    version: '8.1',
+                    manifest: nil,
+                    repack: nil
+                )
+              end
+
+              it 'does upload release with full unpack' do
+                allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
+                allow(tarball).to receive(:compiled_release?).and_return(false)
+                allow(tarball).to receive(:upload_packages?).and_return(true)
+                expect(director).to receive(:upload_release)
+                expect(tarball).to receive(:validate_manifest)
+                expect(tarball).to receive(:validate)
+                expect(tarball).to_not receive(:validate_jobs)
+                command.upload(tarball_path)
+              end
+            end
+          end
+
+          context 'when the same release is already uploaded' do
+            let(:director_version) { '1.3101.0' }
+            let(:tarball_path) { spec_asset('test_release.tgz') }
+            let!(:tarball) do
+              instance_double(
+                  'Bosh::Cli::ReleaseTarball',
+                  validate: nil,
+                  valid?: true,
+                  release_name: 'fake-release-name',
+                  version: '8.1',
+                  manifest: nil,
+                  repack: nil
+              )
+            end
+
+            before {
+              allow(director).to receive(:get_status).and_return({'version' => director_version})
+              allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
+              allow(tarball).to receive(:compiled_release?).and_return(false)
+            }
+
+            it 'should not untar packages' do
+              expect(director).to receive(:upload_release).twice
+
+              expect(tarball).to receive(:validate_manifest)
+              expect(tarball).to receive(:validate)
+              allow(tarball).to receive(:upload_packages?).and_return(true)
+              command.upload(tarball_path)
+
+              expect(tarball).to receive(:validate_manifest)
+              expect(tarball).to_not receive(:validate)
+              expect(tarball).to receive(:validate_jobs)
+              expect(tarball).to receive(:print_manifest)
+              allow(tarball).to receive(:upload_packages?).and_return(false)
+              command.upload(tarball_path)
+            end
           end
         end
 
@@ -322,7 +423,7 @@ module Bosh::Cli::Command::Release
           end
 
           context 'with options' do
-            it 'should upload the release' do
+            it 'should upload the release with --rebase specified' do
               expect(command).to receive(:upload_remote_release)
                 .with(release_location, hash_including(:rebase => true))
                 .and_call_original
@@ -332,6 +433,31 @@ module Bosh::Cli::Command::Release
               )
 
               command.add_option(:rebase, true)
+              command.upload(release_location)
+            end
+
+            it 'should upload the release with --fix specified' do
+              expect(command).to receive(:upload_remote_release)
+                .with(release_location, hash_including(:fix => true))
+                .and_call_original
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:fix => true),
+              )
+
+              command.add_option(:fix, true)
+              command.upload(release_location)
+            end
+          end
+
+          context 'with --name and --version' do
+            let(:director_releases) { [{"name" => "goobers_release", "release_versions" => [{"version" => "1"}]}] }
+            it 'should not upload a release if one exists already' do
+              expect(director).to receive(:list_releases).and_return(director_releases)
+              expect(director).to_not receive(:upload_remote_release)
+
+              command.add_option(:name, "goobers_release")
+              command.add_option(:version, "1")
               command.upload(release_location)
             end
           end

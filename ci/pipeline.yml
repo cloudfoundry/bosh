@@ -159,11 +159,11 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: develop
+      branch: {{branch}}
 
   - name: bosh-candidate
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh.git
       branch: candidate
-      private_key: {{github_deployment_key__bosh}}
+      private_key: {{github_deployment_key}}

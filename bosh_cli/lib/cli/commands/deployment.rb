@@ -88,6 +88,54 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
+      manifest = build_manifest
+      if manifest.hash['releases']
+        manifest.hash['releases'].each do |release|
+          if release['url'].blank?
+            if release['version'] == 'create'
+              err("Expected URL when specifying release version `create'")
+            end
+          else
+            parsed_uri = URI.parse(release['url'])
+            case parsed_uri.scheme
+            when 'file'
+              if release['version'] == 'create'
+                path_is_reasonable!(parsed_uri.path)
+                _, info = run_nested_command "create", "release", "--name", release['name'], "--dir", parsed_uri.path, "--timestamp-version", "--force"
+                release['version'] = info[:generated_version]
+                run_nested_command "upload", "release", "--dir", parsed_uri.path, info[:generated_manifest_path]
+              else
+                run_nested_command "upload", "release", parsed_uri.path, '--name', release['name'], '--version', release['version'].to_s
+              end
+            when 'http', 'https'
+              err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
+              err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
+              run_nested_command "upload", "release", release['url'], "--sha1", release['sha1'], "--name", release['name'], "--version", release['version'].to_s
+            else
+              err("Invalid URL format for release `#{release['name']}' with URL `#{release['url']}'. Supported schemes: file, http, https.")
+            end
+          end
+        end
+      end
+
+      if manifest.hash['resource_pools']
+        manifest.hash['resource_pools'].each do |resource_pool|
+          unless resource_pool['stemcell']['url'].blank?
+            parsed_uri = URI.parse(resource_pool['stemcell']['url'])
+            case parsed_uri.scheme
+            when 'file'
+              run_nested_command "upload", "stemcell", parsed_uri.path, "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
+            when 'http', 'https'
+              err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
+              run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'],
+                "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
+            else
+              err("Invalid URL format for stemcell `#{resource_pool['stemcell']['name']}' with URL `#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
+            end
+          end
+        end
+      end
+
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
       inspect_deployment_changes(
@@ -258,11 +306,12 @@ module Bosh::Cli::Command
 
     private
     def show_current
-      if deployment
+      config.target = target
+      if config.deployment
         if interactive?
-          say("Current deployment is `#{deployment.make_green}'")
+          say("Current deployment is `#{config.deployment.make_green}'")
         else
-          say(deployment)
+          say(config.deployment)
         end
       else
         err("Deployment not set")
@@ -275,11 +324,19 @@ module Bosh::Cli::Command
 
       [deployment["name"], releases.join("\n"), stemcells.join("\n"), deployment.fetch("cloud_config", "none")]
     end
-    
+
     def names_and_versions_from(arr)
       arr.map { |hash|
         hash.values_at("name", "version").join("/")
       }.sort
     end
+
+    def path_is_reasonable!(path)
+      #path is actually to a directory, not a file
+      unless File.directory?(path)
+        err "Path must be a release directory when version is `create'"
+      end
+    end
+
   end
 end

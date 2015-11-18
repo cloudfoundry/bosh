@@ -246,5 +246,53 @@ module Bosh::Cli
         end
       end
     end
+
+    context 'when timestamp-version option is passed into the initializer' do
+      context 'and a final release is being created' do
+        it 'raises error when trying to obtain the version' do
+          builder = new_builder({ final: true, timestamp_version: true })
+          expect { builder.version }.to raise_error(ReleaseVersionError, 'Release version cannot be set to a timestamp for a final release')
+        end
+      end
+
+      context 'and a dev release is being created' do
+        it 'generates a dev timestamp release' do
+          builder = new_builder({ timestamp_version: true })
+          expect(builder.version).to match(/0\+dev\.[0-9]{10}/)
+          builder.build
+        end
+
+        context 'and a final release already exists' do
+          it 'sets the dev version to the latest final release plus timestamp' do
+            final_storage_dir = File.join(release_source.path, 'releases', release_name)
+            final_index = Versions::VersionsIndex.new(final_storage_dir)
+
+            final_index.add_version('deadbeef', { 'version' => '7.4' })
+
+            builder = new_builder({ timestamp_version: true})
+            expect(builder.version).to match(/7\.4\+dev\.[0-9]{10}/)
+            builder.build
+          end
+        end
+
+        context 'and a dev release already exists' do
+          it 'uses the timestamp rather than incrementing the dev release version' do
+            final_storage_dir = File.join(release_source.path, 'releases', release_name)
+            final_index = Versions::VersionsIndex.new(final_storage_dir)
+
+            final_index.add_version('deadbeef', { 'version' => '7.3' })
+
+            dev_storage_dir = File.join(release_source.path, 'dev_releases', release_name)
+            dev_index = Versions::VersionsIndex.new(dev_storage_dir)
+
+            dev_index.add_version('deadcafe', { 'version' => '7.3.1-dev' })
+
+            builder = new_builder({ timestamp_version: true })
+            expect(builder.version).to match(/7\.3\+dev\.[0-9]{10}/)
+            builder.build
+          end
+        end
+      end
+    end
   end
 end

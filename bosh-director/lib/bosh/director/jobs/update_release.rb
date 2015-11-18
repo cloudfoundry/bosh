@@ -11,6 +11,7 @@ module Bosh::Director
       @compiled_release = false
 
       attr_accessor :release_model
+      attr_reader :release_path, :release_url, :sha1
 
       def self.job_type
         :update_release
@@ -23,6 +24,7 @@ module Bosh::Director
           # file will be downloaded to the release_path
           @release_path = File.join(Dir.tmpdir, "release-#{SecureRandom.uuid}")
           @release_url = release_path
+          @sha1 = options['sha1']
         else
           # file already exists at the release_path
           @release_path = release_path
@@ -31,6 +33,7 @@ module Bosh::Director
         @release_model, @release_version_model, @manifest, @name, @version = nil, nil, nil, nil, nil
 
         @rebase = !!options['rebase']
+        @fix = !!options['fix']
       end
 
       # Extracts release tarball, verifies release manifest and saves release in DB
@@ -39,7 +42,9 @@ module Bosh::Director
         logger.info("Processing update release")
         logger.info("Release rebase will be performed") if @rebase
 
-        single_step_stage("Downloading remote release") { download_remote_release } if @release_url
+        single_step_stage("Downloading remote release") { download_remote_release } if release_url
+
+        single_step_stage("Verifying remote release") { verify_sha1 } if sha1
 
         release_dir = nil
         single_step_stage("Extracting release") { release_dir = extract_release }
@@ -55,11 +60,11 @@ module Bosh::Director
 
       ensure
         FileUtils.rm_rf(release_dir) if release_dir
-        FileUtils.rm_rf(@release_path) if @release_path
+        FileUtils.rm_rf(release_path) if release_path
       end
 
       def download_remote_release
-        download_remote_file('release', @release_url, @release_path)
+        download_remote_file('release', release_url, release_path)
       end
 
       # Extracts release tarball
@@ -67,9 +72,9 @@ module Bosh::Director
       def extract_release
         release_dir = Dir.mktmpdir
 
-        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{@release_path} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", :on_error => :return)
         if result.failed?
-          logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
+          logger.error("Failed to extract release archive '#{release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
           FileUtils.rm_rf(release_dir)
           raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
@@ -102,6 +107,13 @@ module Bosh::Director
 
         @commit_hash = @manifest.fetch("commit_hash", nil)
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
+      end
+
+      def verify_sha1
+        release_hash = Digest::SHA1.file(release_path).hexdigest
+        if release_hash != sha1
+          raise ReleaseSha1DoesNotMatch, "Release SHA1 `#{release_hash}' does not match the expected SHA1 `#{sha1}'"
+        end
       end
 
       def compiled_release
@@ -192,6 +204,7 @@ module Bosh::Director
         new_packages = []
         existing_packages = []
         registered_packages = []
+        packages_existing_from_other_releases = []
 
         @manifest[@packages_folder].each do |package_meta|
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
@@ -242,7 +255,6 @@ module Bosh::Director
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
-
             packages.each do |package|
               unless package.blobstore_id.nil?
                 package_meta["blobstore_id"] = package.blobstore_id
@@ -251,6 +263,7 @@ module Bosh::Director
               end
             end
             new_packages << package_meta
+            packages_existing_from_other_releases << package_meta
           end
         end
 
@@ -268,7 +281,7 @@ module Bosh::Director
             end
           end
           consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
-          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir)
+          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir, packages_existing_from_other_releases)
         else
           backfill_source_for_packages(registered_packages, release_dir)
         end
@@ -316,7 +329,7 @@ module Bosh::Director
               end
             end
 
-            if source_release && package.blobstore_id.nil?
+            if source_release && (package.blobstore_id.nil? || @fix)
               save_package_source_blob(package, package_meta, release_dir)
               package.save
             end
@@ -361,29 +374,43 @@ module Bosh::Director
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
-      def create_compiled_packages(all_compiled_packages, release_dir)
+      def create_compiled_packages(all_compiled_packages, release_dir, packages_existing_from_other_releases)
         return false if all_compiled_packages.nil?
 
         event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
-
         had_effect = false
+
         all_compiled_packages.each do |compiled_package_spec|
           package = compiled_package_spec[:package]
           stemcell = compiled_package_spec[:stemcell]
 
-          existing_compiled_package = Models::CompiledPackage.where(
-              :package_id => package.id,
-              :stemcell_id => stemcell.id)
-
+          existing_compiled_package = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
           if existing_compiled_package.empty?
+
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
             event_log.track(package_desc) do
-              create_compiled_package(package, stemcell, release_dir)
+              other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
+              create_compiled_package(package, stemcell, release_dir, other_compiled_package)
               had_effect = true
             end
           end
         end
+
         had_effect
+      end
+
+      def get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
+        other_compiled_package = nil
+        packages_existing_from_other_releases.each do |other_package_meta|
+          if other_package_meta["fingerprint"] == package.fingerprint
+            packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
+            packages.each do |pkg|
+              other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_id => stemcell.id).first
+              break unless other_compiled_package.nil?
+            end
+          end
+        end
+        other_compiled_package
       end
 
       def stemcells_used_by_package(package_meta)
@@ -406,14 +433,21 @@ module Bosh::Director
         stemcells
       end
 
-      def create_compiled_package(package, stemcell, release_dir)
-        tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-        validate_tgz(tgz, "#{package.name}.tgz")
+      def create_compiled_package(package, stemcell, release_dir, other_compiled_package)
+        if other_compiled_package.nil?
+          tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
+          validate_tgz(tgz, "#{package.name}.tgz")
+
+          blobstore_id = BlobUtil.create_blob(tgz)
+          sha1 = Digest::SHA1.file(tgz).hexdigest
+        else
+          blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
+          sha1 = other_compiled_package.sha1
+        end
 
         compiled_package = Models::CompiledPackage.new
-
-        compiled_package.blobstore_id = BlobUtil.create_blob(tgz)
-        compiled_package.sha1 = Digest::SHA1.file(tgz).hexdigest
+        compiled_package.blobstore_id = blobstore_id
+        compiled_package.sha1 = sha1
 
         transitive_dependencies = @release_version_model.transitive_dependencies(package)
         compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
@@ -451,24 +485,39 @@ module Bosh::Director
 
       # @return [boolean] true if a new blob was created; false otherwise
       def save_package_source_blob(package, package_meta, release_dir)
-        return false unless package.blobstore_id.nil?
-
-        name, version, existing_blob = package_meta['name'], package_meta['version'], package_meta['blobstore_id']
+        name, version, existing_blob, sha1 = package_meta['name'], package_meta['version'], package_meta['blobstore_id'], package_meta['sha1']
         desc = "package '#{name}/#{version}'"
+        package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
 
-        package.sha1 = package_meta['sha1']
+        if @fix
+          package.sha1 = package_meta['sha1']
 
-        if existing_blob
-          logger.info("Creating #{desc} from existing blob #{existing_blob}")
-          package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+          if package.blobstore_id != nil
+            validate_tgz(package_tgz, desc)
+            fix_package(package, package_tgz)
+            return true
+          end
 
-        elsif package
-          logger.info("Creating #{desc} from provided bits")
+          if existing_blob
+            pkg = Models::Package.where(blobstore_id: existing_blob).first
+            fix_package(pkg, package_tgz)
+            package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
+            return true
+          end
+        else
+          return false unless package.blobstore_id.nil?
+          package.sha1 = package_meta['sha1']
 
-          package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
-          validate_tgz(package_tgz, desc)
-          package.blobstore_id = BlobUtil.create_blob(package_tgz)
+          if existing_blob
+            logger.info("Creating #{desc} from existing blob #{existing_blob}")
+            package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+            return true
+          end
         end
+
+        logger.info("Creating #{desc} from provided bits")
+        validate_tgz(package_tgz, desc)
+        package.blobstore_id = BlobUtil.create_blob(package_tgz)
 
         true
       end
@@ -584,6 +633,18 @@ module Bosh::Director
         strings = models.map(&:version)
         list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
         list.rebase(@version)
+      end
+
+      def fix_package(package, package_tgz)
+        begin
+          logger.info("Deleting package '#{package.name}/#{package.version}'")
+          BlobUtil.delete_blob(package.blobstore_id)
+        rescue Bosh::Blobstore::BlobstoreError => e
+          logger.info("Error deleting blob '#{package.blobstore_id}, #{package.name}/#{package.version}': #{e.inspect}")
+        end
+        package.blobstore_id = BlobUtil.create_blob(package_tgz)
+        logger.info("Re-created package '#{package.name}/#{package.version}' \
+with blobstore_id '#{package.blobstore_id}'")
       end
     end
   end

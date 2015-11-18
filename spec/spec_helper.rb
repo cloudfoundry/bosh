@@ -1,4 +1,4 @@
-require File.expand_path('../shared_spec_helper', __FILE__)
+require File.expand_path('../shared/spec_helper', __FILE__)
 
 require 'fileutils'
 require 'digest/sha1'
@@ -12,10 +12,9 @@ require 'restclient'
 require 'bosh/director'
 require 'blue-shell'
 
-SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
-Dir.glob("#{SPEC_ROOT}/support/**/*.rb") { |f| require(f) }
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
 
-ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
+ASSETS_DIR = File.expand_path('../assets', __FILE__)
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
 BOSH_WORK_TEMPLATE    = File.join(ASSETS_DIR, 'bosh_work_dir')
 

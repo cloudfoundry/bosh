@@ -1,8 +1,0 @@
----
-blobstore:
-  swift:
-    hp:
-      hp_access_key: foo
-      hp_secret_key: bar
-      hp_tenant_id: foo
-      hp_avl_zone: avl

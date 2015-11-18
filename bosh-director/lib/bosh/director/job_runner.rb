@@ -19,6 +19,7 @@ module Bosh::Director
       @job_class = job_class
       @task_logger.info("Looking for task with task id #{@task_id}")
       @task = task_manager.find_task(@task_id)
+      @task_logger.info("Found task #{@task.inspect}")
     end
 
     # Runs director job
@@ -32,13 +33,6 @@ module Bosh::Director
 
       duration = Duration.duration(Time.now - started_at)
       @task_logger.info("Task took #{duration} to process.")
-    end
-
-    # Task checkpoint: updates timestamp so running task isn't marked as
-    # timed out.
-    # @return [void]
-    def checkpoint
-      @task.update(:checkpoint_time => Time.now)
     end
 
     private
@@ -98,7 +92,7 @@ module Bosh::Director
 
       run_checkpointing
 
-      @task_logger.info("Performing task: #{@task.id}")
+      @task_logger.info("Performing task: #{@task.inspect}")
 
       @task.state = :processing
       @task.timestamp = Time.now
@@ -125,11 +119,15 @@ module Bosh::Director
     # same as Resque worker process lifetime.
     # @return [Thread] Checkpoint thread
     def run_checkpointing
+      # task check pointer is scoped to separate class to avoid
+      # the secondary thread and main thread modifying the same @task
+      # variable (and accidentally clobbering it in the process)
+      task_checkpointer = TaskCheckPointer.new(@task.id)
       Thread.new do
         with_thread_name("task:#{@task.id}-checkpoint") do
           while true
             sleep(Config.task_checkpoint_interval)
-            checkpoint
+            task_checkpointer.checkpoint
           end
         end
       end
@@ -167,6 +165,16 @@ module Bosh::Director
       director_error = DirectorError.create_from_exception(exception)
       Config.event_log.log_error(director_error)
     end
+  end
 
+  class TaskCheckPointer
+    def initialize(task_id)
+      task_manager = Bosh::Director::Api::TaskManager.new
+      @task = task_manager.find_task(task_id)
+    end
+
+    def checkpoint
+      @task.update(:checkpoint_time => Time.now)
+    end
   end
 end

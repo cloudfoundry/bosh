@@ -1,6 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 require 'cli/job_state'
-require 'cli/vm_state'
 
 module Bosh::Cli
   module Command
@@ -18,12 +17,12 @@ module Bosh::Cli
 
       # bosh stop
       usage 'stop'
-      desc 'Stop job/instance'
+      desc 'Stop all jobs/job/instance'
       option '--soft', 'Stop process only'
       option '--hard', 'Power off VM'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def stop_job(job, index = nil)
+      def stop_job(job = '*', index = nil)
         if hard?
           change_job_state(:detach, job, index)
         else
@@ -53,12 +52,13 @@ module Bosh::Cli
 
       def change_job_state(state, job, index = nil)
         auth_required
-        manifest = parse_manifest(state, job)
-
-        index = valid_index_for(manifest.hash, job, index)
-        vm_state = VmState.new(self, manifest, force?)
-        job_state = JobState.new(self, vm_state, skip_drain: skip_drain?)
-        status, task_id, completion_desc = job_state.change(state, job, index)
+        manifest = parse_manifest(state)
+        unless job == '*'
+          job_must_exist_in_deployment(manifest.hash, job)
+          index = valid_index_for(manifest.hash, job, index) unless state == :stop || state  == :detach
+        end
+        job_state = JobState.new(self, manifest, skip_drain: skip_drain?)
+        status, task_id, completion_desc = job_state.change(state, job, index, force?)
         task_report(status, task_id, completion_desc)
       end
 
@@ -78,9 +78,8 @@ module Bosh::Cli
         !!options[:skip_drain]
       end
 
-      def parse_manifest(operation, job)
+      def parse_manifest(operation)
         manifest = prepare_deployment_manifest(show_state: true)
-        job_must_exist_in_deployment(manifest.hash, job)
 
         if hard? && soft?
           err('Cannot handle both --hard and --soft options, please choose one')

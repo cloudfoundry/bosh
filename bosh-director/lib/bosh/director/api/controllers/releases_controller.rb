@@ -6,7 +6,9 @@ module Bosh::Director
       post '/', :consumes => :json do
         payload = json_decode(request.body)
         options = {
-          rebase:         params['rebase'] == 'true',
+          rebase: params['rebase'] == 'true',
+          fix:    params['fix'] == 'true',
+          sha1:   params['sha1']
         }
         task = @release_manager.create_release_from_url(current_user, payload['location'], options)
         redirect "/tasks/#{task.id}"
@@ -14,7 +16,8 @@ module Bosh::Director
 
       post '/', :consumes => :multipart do
         options = {
-          rebase: params['rebase'] == 'true',
+          rebase:         params['rebase'] == 'true',
+          fix:            params['fix'] == 'true',
         }
 
         task = @release_manager.create_release_from_file_path(current_user, params[:nginx_upload_path], options)

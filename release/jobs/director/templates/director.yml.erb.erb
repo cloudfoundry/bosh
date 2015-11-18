@@ -1,470 +1,519 @@
----
-name: <%= p('director.name') %>
-port: <%= p('director.backend_port') %>
-encryption: <%= p('director.encryption') %>
+<%=
+params = {
+  'name' => p('director.name'),
+  'port' => p('director.backend_port'),
+  'encryption' => p('director.encryption'),
+  'max_tasks' => p('director.max_tasks'),
+  'max_threads' => p('director.max_threads'),
+  'logging' => {
+    'level' => 'DEBUG',
+    'file' =>  "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.debug.log"
+  },
+  'redis' => {
+    'host' => p('redis.address'),
+    'port' => p('redis.port'),
+    'password' => p('redis.password'),
+    'logging' => {
+      'level' => p('redis.loglevel')
+    }
+  },
+  'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
+  'dir' => '/var/vcap/store/director',
+  'db' => {
+    'adapter' => p('director.db.adapter'),
+    'user' => p('director.db.user'),
+    'password' => p('director.db.password'),
+    'host' => p('director.db.host'),
+    'port' => p('director.db.port'),
+    'database' => p('director.db.database'),
+    'connection_options' => p('director.db.connection_options')
+  },
+  'snapshots' => {
+    'enabled'=> p('director.enable_snapshots')
+  },
+  'max_vm_create_tries' => p('director.max_vm_create_tries')
+}
 
-max_tasks: <%= p('director.max_tasks') %>
-max_threads: <%= p('director.max_threads') %>
+if_p('resque.loglevel') do |resque_loglevel|
+  params['resque'] = {'logging' => {'level' => resque_loglevel}}
+end
 
-logging:
-  level: DEBUG
-  file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
+params['scheduled_jobs'] = []
 
-<% if_p("resque.loglevel") do |resque_loglevel| %>
-resque:
-  logging:
-    level: <%= resque_loglevel %>
-<% end %>
+if_p('director.snapshot_schedule') do |snapshot_schedule|
+  params['scheduled_jobs'] << {
+    'command' => 'SnapshotDeployments',
+    'schedule' =>  snapshot_schedule
+  }
+end
 
-redis:
-  host: <%= p('redis.address') %>
-  port: <%= p('redis.port') %>
-  password: <%= p('redis.password') %>
-  logging:
-    level: <%= p('redis.loglevel') %>
+if_p('director.self_snapshot_schedule') do |self_snapshot_schedule|
+  params['scheduled_jobs'] << {
+    'command' => 'SnapshotSelf',
+    'schedule' =>  self_snapshot_schedule
+  }
+end
 
-mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
+if_p('director.backup_schedule') do |backup_schedule|
+  params['scheduled_jobs'] << {
+    'command' => 'ScheduledBackup',
+    'schedule' =>  backup_schedule
+  }
+end
 
-dir: /var/vcap/store/director
+params['scan_and_fix'] = {
+  'auto_fix_stateful_nodes' => p('director.auto_fix_stateful_nodes')
+}
 
-db:
-  adapter: <%= p('director.db.adapter') %>
-  user: <%= p('director.db.user') %>
-  password: <%= p('director.db.password') %>
-  host: <%= p('director.db.host') %>
-  port: <%= p('director.db.port') %>
-  database: <%= p('director.db.database') %>
-  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
+if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
+     'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do
+  |adapter, user, password, db_host, port, database, connection_options, address|
+  params['dns'] = {
+    'server' => address,
+    'flush_command' => '/var/vcap/jobs/powerdns/bin/powerdns_ctl flush',
+    'db' => {
+        'adapter' => adapter,
+        'user' => user,
+        'password' => password,
+        'host' => db_host,
+        'port' => port,
+        'database' => database,
+        'connection_options' => connection_options
+     }
+  }
 
-snapshots:
-  enabled: <%= p('director.enable_snapshots') %>
+  if_p('dns.domain_name') do |domain_name|
+    params['dns']['domain_name'] = domain_name
+  end
+end
 
-max_vm_create_tries: <%= p('director.max_vm_create_tries') %>
+if p('blobstore.provider') == 's3'
+  blobstore_options = {
+    'bucket_name' => p('blobstore.bucket_name'),
+    'credentials_source' => p('blobstore.credentials_source', 'static'),
+    'access_key_id' => p('blobstore.access_key_id', nil),
+    'secret_access_key' => p('blobstore.secret_access_key', nil)
+  }
 
-scheduled_jobs:
-  <% if_p('director.snapshot_schedule') do |snapshot_schedule| %>
-  - command: SnapshotDeployments
-    schedule: <%= snapshot_schedule %>
-  <% end %>
-  <% if_p('director.self_snapshot_schedule') do |self_snapshot_schedule| %>
-  - command: SnapshotSelf
-    schedule: <%= self_snapshot_schedule %>
-  <% end %>
-  <% if_p('director.backup_schedule') do |backup_schedule| %>
-  - command: ScheduledBackup
-    schedule: <%= backup_schedule %>
-  <% end %>
+  if_p('blobstore.use_ssl') do |use_ssl|
+     blobstore_options['use_ssl'] = use_ssl
+  end
 
-scan_and_fix:
-  auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
-<% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
-        'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do |
-                        adapter, user, password, db_host, port, database, connection_options, address| %>
-dns:
-  server: <%= address %>
-  <% if_p('dns.domain_name') do |domain_name| %>
-  domain_name: <%= domain_name %>
-  <% end %>
-  flush_command: '/var/vcap/jobs/powerdns/bin/powerdns_ctl flush'
-  db:
-    adapter: <%= adapter %>
-    user: <%= user %>
-    password: <%= password %>
-    host: <%= db_host %>
-    port: <%= port %>
-    database: <%= database %>
-    connection_options: <%= JSON.generate(connection_options) %>
-<% end %>
+  if_p('blobstore.s3_port') do |s3_port|
+     blobstore_options['port'] = s3_port
+  end
 
-blobstore:
-  provider: <%= p('blobstore.provider') %>
-  options:
-<% if p('blobstore.provider') == 's3' %>
-    bucket_name: <%= p('blobstore.bucket_name') %>
-    credentials_source: <%= p('blobstore.credentials_source', 'static') %>
-    access_key_id: <%= p('blobstore.access_key_id', nil) %>
-    secret_access_key: <%= p('blobstore.secret_access_key', nil) %>
+  if_p('blobstore.host') do |host|
+     blobstore_options['host'] = host
+  end
 
-  <% if_p('blobstore.use_ssl') do |use_ssl| %>
-    use_ssl: <%= use_ssl %>
-<% end %>
-<% if_p('blobstore.s3_port') do |port| %>
-    port: <%= port %>
-<% end %>
-<% if_p('blobstore.host') do |host| %>
-    host: <%= host %>
-<% end %>
-<% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
-    s3_force_path_style: <%= s3_force_path_style %>
-<% end %>
-<% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
-    ssl_verify_peer: <%= ssl_verify_peer %>
-<% end %>
-<% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
-    s3_multipart_threshold: <%= s3_multipart_threshold %>
-<% end %>
-<% else %>
-    endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
-    user: <%= p('blobstore.director.user') %>
-    password: <%= p('blobstore.director.password') %>
-<% end %>
+  if_p('blobstore.s3_force_path_style') do |s3_force_path_style|
+     blobstore_options['s3_force_path_style'] = s3_force_path_style
+  end
 
-<%
+  if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer|
+     blobstore_options['ssl_verify_peer'] = ssl_verify_peer
+  end
+
+  if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold|
+     blobstore_options['s3_multipart_threshold'] = s3_multipart_threshold
+  end
+else
+  blobstore_options = {
+    'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",
+    'user' => p('blobstore.director.user'),
+    'password' => p('blobstore.director.password')
+  }
+end
+
+params['blobstore'] = {
+  'provider' => p('blobstore.provider'),
+  'options' => blobstore_options
+}
+
 user_management = {
-  provider: p('director.user_management.provider'),
+    'provider' => p('director.user_management.provider')
 }
 
 if p('director.user_management.provider') == 'uaa'
   options = {
-     url: p('director.user_management.uaa.url'),
-     symmetric_key: p('director.user_management.uaa.symmetric_key', nil),
-     public_key: p('director.user_management.uaa.public_key', nil)
+    'url' => p('director.user_management.uaa.url'),
+    'symmetric_key' => p('director.user_management.uaa.symmetric_key', nil),
+    'public_key' => p('director.user_management.uaa.public_key', nil)
   }
-  if options[:symmetric_key].nil? && options[:public_key].nil?
+
+  if options['symmetric_key'].nil? && options['public_key'].nil?
     raise 'UAA provider requires symmetric or public key'
   end
 
-  user_management[:uaa] = options
+  user_management['uaa'] = options
 else
   # making optional for backwards compatibility with micro bosh plugin
-  user_management[:local] = {
-    users: p('director.user_management.local.users', [])
+  user_management['local'] = {
+    'users' => p('director.user_management.local.users', [])
   }
 end
-%>
 
-ignore_missing_gateway: <%= JSON.dump(p('director.ignore_missing_gateway')) %>
-user_management: <%= JSON.dump(user_management) %>
-trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
+params['ignore_missing_gateway'] = p('director.ignore_missing_gateway')
+params['user_management'] = user_management
+params['trusted_certs'] = p('director.trusted_certs')
 
-<% if_p('compiled_package_cache.options.bucket_name') do |bucket_name| %>
-compiled_package_cache:
-  provider: s3
-  options:
-    bucket_name: <%= bucket_name %>
-    credentials_source: <%= p('compiled_package_cache.options.credentials_source', 'static') %>
-    access_key_id: <%= p('compiled_package_cache.options.access_key_id', nil) %>
-    secret_access_key: <%= p('compiled_package_cache.options.secret_access_key', nil) %>
-<% if_p('compiled_package_cache.options.s3_port') do |port| %>
-    port: <%= port %>
-<% end %>
-<% if_p('compiled_package_cache.options.host') do |host| %>
-    host: <%= host %>
-<% end %>
-<% if_p('compiled_package_cache.options.s3_force_path_style') do |s3_force_path_style| %>
-    s3_force_path_style: <%= s3_force_path_style %>
-<% end %>
-<% if_p('compiled_package_cache.options.use_ssl') do |use_ssl| %>
-    use_ssl: <%= use_ssl %>
-<% end %>
-<% if_p('compiled_package_cache.options.ssl_verify_peer') do |ssl_verify_peer| %>
-    ssl_verify_peer: <%= ssl_verify_peer %>
-<% end %>
-<% if_p('compiled_package_cache.options.s3_multipart_threshold') do |s3_multipart_threshold| %>
-    s3_multipart_threshold: <%= s3_multipart_threshold %>
-<% end %>
-<% end %>
+if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
+  params['compiled_package_cache'] = {
+    'provider' => 's3',
+    'options' => {
+      'bucket_name' => bucket_name,
+      'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
+      'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
+      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil)
+    }
+  }
 
-<% if_p('compiled_package_cache.options.swift_provider',
-        'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
-compiled_package_cache:
-  provider: swift
-  options:
-    swift_provider: <%= swift_provider %>
-    container_name: <%= container_name %>
-    <% if_p('compiled_package_cache.options.hp_access_key',
-            'compiled_package_cache.options.hp_secret_key',
-            'compiled_package_cache.options.hp_tenant_id',
-            'compiled_package_cache.options.hp_avl_zone') do |hp_access_key, hp_secret_key, hp_tenant_id, hp_avl_zone| %>
-    hp:
-      hp_access_key: <%= hp_access_key %>
-      hp_secret_key: <%= hp_secret_key %>
-      hp_tenant_id: <%= hp_tenant_id %>
-      hp_avl_zone: <%= hp_avl_zone %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.openstack_auth_url',
-            'compiled_package_cache.options.openstack_username',
-            'compiled_package_cache.options.openstack_api_key',
-            'compiled_package_cache.options.openstack_tenant') do |openstack_auth_url, openstack_username, openstack_api_key, openstack_tenant| %>
-    openstack:
-      openstack_auth_url: <%= openstack_auth_url %>
-      openstack_username: <%= openstack_username %>
-      openstack_api_key: <%= openstack_api_key %>
-      openstack_tenant: <%= openstack_tenant %>
-      <% if_p('compiled_package_cache.options.openstack_domain_name') do |openstack_domain_name| %>
-      openstack_domain_name: <%= openstack_domain_name %>
-      <% end %>
-      <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
-      openstack_region: <%= openstack_region %>
-      <% end %>
-    <% end %>
-    <% if_p('compiled_package_cache.options.rackspace_username',
-            'compiled_package_cache.options.rackspace_api_key') do |rackspace_username, rackspace_api_key| %>
-    rackspace:
-      rackspace_username: <%= rackspace_username %>
-      rackspace_api_key: <%= rackspace_api_key %>
-      <% if_p('compiled_package_cache.options.rackspace_region') do |rackspace_region| %>
-      rackspace_region: <%= rackspace_region %>
-      <% end %>
-    <% end %>
-<% end %>
+  options =  params['compiled_package_cache']['options']
 
-<% if_p('compiled_package_cache.options.blobstore_path') do |blobstore_path| %>
-compiled_package_cache:
-  provider: local
-  options:
-    blobstore_path: <%= blobstore_path %>
-<% end %>
+  if_p('compiled_package_cache.options.s3_port') do |port|
+     options['port'] = port
+  end
 
-<% if_p('director.backup_destination') do |backup_destination| %>
-backup_destination: <%= JSON.dump(backup_destination) %>
-<% end %>
+  if_p('compiled_package_cache.options.host') do |host|
+     options['host'] = host
+  end
 
-cloud:
-<% if_p('director.cpi_job') do |cpi_job_name| %>
-  provider:
-    name: <%= cpi_job_name %>
-    path: /var/vcap/jobs/<%= cpi_job_name %>/bin/cpi
-  properties:
-<% end.else do %>
+  if_p('compiled_package_cache.options.s3_force_path_style') do |s3_force_path_style|
+     options['s3_force_path_style'] = s3_force_path_style
+  end
 
-  <% plugin = nil %>
-  <% if_p('aws.default_key_name', 'aws.default_security_groups',
+  if_p('compiled_package_cache.options.use_ssl') do |use_ssl|
+      options['use_ssl'] = use_ssl
+  end
+
+  if_p('compiled_package_cache.options.ssl_verify_peer') do |ssl_verify_peer|
+      options['ssl_verify_peer'] = ssl_verify_peer
+  end
+
+  if_p('compiled_package_cache.options.s3_multipart_threshold') do |s3_multipart_threshold|
+     options['s3_multipart_threshold'] = s3_multipart_threshold
+  end
+end
+
+if_p('compiled_package_cache.options.blobstore_path') do |blobstore_path|
+  params['compiled_package_cache'] = {
+    'provider' => 'local',
+    'options' => {
+      'blobstore_path' => blobstore_path
+  }
+}
+end
+
+if_p('director.backup_destination') do |backup_destination|
+  params['backup_destination'] = backup_destination
+end
+
+if_p('director.default_ssh_options.gateway_host',
+        'director.default_ssh_options.gateway_user') do |gateway_host, gateway_user|
+  params['default_ssh_options'] = {
+    'gateway_host' => gateway_host,
+    'gateway_user' => gateway_user
+  }
+end
+
+
+if_p('director.cpi_job') do |cpi_job_name|
+  params['cloud'] = {
+    'provider' => {
+      'name' => cpi_job_name,
+      'path' => "/var/vcap/jobs/#{cpi_job_name}/bin/cpi",
+  },
+  'properties' => {}
+}
+end.else do
+  plugin = nil
+  if_p('aws.default_key_name', 'aws.default_security_groups',
           'aws.region', 'registry.address',
           'registry.http.port', 'registry.http.user',
           'registry.http.password') do |default_key_name, default_security_groups,
                                             region, reg_address,
                                             reg_port, reg_user,
-                                            reg_password| %>
-  plugin: aws <% plugin = "aws" %>
-  properties:
-    aws:
-      credentials_source: <%= p('aws.credentials_source', 'static') %>
-      access_key_id: <%= p('aws.access_key_id', nil) %>
-      secret_access_key: <%= p('aws.secret_access_key', nil) %>
-      default_iam_instance_profile: <%= p('aws.default_iam_instance_profile', nil) %>
+                                            reg_password|
+    plugin = {
+      'plugin' => 'aws',
+      'properties' => {
+        'aws' => {
+          'credentials_source' => p('aws.credentials_source', 'static'),
+          'access_key_id' => p('aws.access_key_id', nil),
+          'secret_access_key' => p('aws.secret_access_key', nil),
+          'default_iam_instance_profile' => p('aws.default_iam_instance_profile', nil),
+          'default_key_name' => default_key_name,
+          'default_security_groups' => default_security_groups,
+          'region' => region
+        },
+         'registry' => {
+           'endpoint' => "http://#{reg_address}:#{reg_port}",
+          'user' => reg_user,
+          'password' => reg_password
+         }
+      }
+    }
+    aws_properties =  plugin['properties']['aws']
+    if_p('aws.ec2_endpoint') do |ec2_endpoint|
+     aws_properties['ec2_endpoint'] = ec2_endpoint
+    end
 
-      default_key_name: <%= default_key_name %>
-      default_security_groups: <%= default_security_groups %>
-      region: <%= region %>
-      <% if_p('aws.ec2_endpoint') do |ec2_endpoint| %>
-      ec2_endpoint: <%= ec2_endpoint %>
-      <% end %>
-      <% if_p('aws.elb_endpoint') do |elb_endpoint| %>
-      elb_endpoint: <%= elb_endpoint %>
-      <% end %>
-      <% if_p('aws.max_retries') do |max_retries| %>
-      max_retries: <%= max_retries %>
-      <% end %>
-      <% if_p('aws.http_read_timeout') do |http_read_timeout| %>
-      http_read_timeout: <%= http_read_timeout %>
-      <% end %>
-      <% if_p('aws.http_wire_trace') do |http_wire_trace| %>
-      http_wire_trace: <%= http_wire_trace %>
-      <% end %>
-      <% if_p('aws.ssl_ca_file') do |ssl_ca_file| %>
-      ssl_ca_file: <%= ssl_ca_file %>
-      <% end %>
-      <% if_p('aws.ssl_ca_path') do |ssl_ca_path| %>
-      ssl_ca_path: <%= ssl_ca_path %>
-      <% end %>
-      <% if_p('aws.ssl_verify_peer') do |ssl_verify_peer| %>
-      ssl_verify_peer: <%= ssl_verify_peer %>
-      <% end %>
-    registry:
-      endpoint: http://<%= reg_address %>:<%= reg_port %>
-      user: <%= JSON.dump(reg_user) %>
-      password: <%= JSON.dump(reg_password) %>
-    <% if_p('aws.stemcell.kernel_id') do |kernel_id| %>
-    stemcell:
-      kernel_id: <%= kernel_id %>
-    <% end %>
-  <% end %>
+    if_p('aws.elb_endpoint') do |elb_endpoint|
+     aws_properties['elb_endpoint'] = elb_endpoint
+    end
 
-  <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
-          'openstack.tenant', 'openstack.default_key_name',
-          'openstack.default_security_groups','openstack.wait_resource_poll_interval',
-          'registry.address', 'registry.http.port', 'registry.http.user',
-          'registry.http.password') do |auth_url, username, api_key,
+    if_p('aws.max_retries') do |max_retries|
+     aws_properties['max_retries'] = max_retries.to_i
+    end
+
+    if_p('aws.http_read_timeout') do |http_read_timeout|
+      aws_properties['http_read_timeout'] = http_read_timeout.to_i
+    end
+
+    if_p('aws.http_wire_trace') do |http_wire_trace|
+     aws_properties['http_wire_trace'] = http_wire_trace
+    end
+
+    if_p('aws.ssl_ca_file') do |ssl_ca_file|
+      aws_properties['ssl_ca_file'] = ssl_ca_file
+    end
+
+    if_p('aws.ssl_ca_path') do |ssl_ca_path|
+      aws_properties['ssl_ca_path'] = ssl_ca_path
+    end
+
+    if_p('aws.ssl_verify_peer') do |ssl_verify_peer|
+     aws_properties['ssl_verify_peer'] = ssl_verify_peer
+    end
+
+    if_p('aws.stemcell.kernel_id') do |kernel_id|
+      plugin['properties']['stemcell'] = {
+        kernel_id: kernel_id
+    }
+    end
+  end
+
+  if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
+       'openstack.tenant', 'openstack.default_key_name',
+       'openstack.default_security_groups','openstack.wait_resource_poll_interval',
+       'registry.address', 'registry.http.port', 'registry.http.user',
+       'registry.http.password') do |auth_url, username, api_key,
                                         tenant, default_key_name,
                                         default_security_groups, wait_resource_poll_interval,
-                                        reg_address, reg_port, reg_user, reg_password| %>
-  plugin: openstack <% plugin = "openstack" %>
-  properties:
-    openstack:
-      auth_url: <%= JSON.dump(auth_url) %>
-      username: <%= JSON.dump(username) %>
-      api_key: <%= JSON.dump(api_key) %>
-      tenant: <%= JSON.dump(tenant) %>
-      <% if_p("openstack.domain") do |domain| %>
-      domain: <%= domain %>
-      <% end %>
-      <% if_p("openstack.region") do |region| %>
-      region: <%= region %>
-      <% end %>
-      <% if_p("openstack.endpoint_type") do |endpoint_type| %>
-      endpoint_type: <%= endpoint_type %>
-      <% end %>
-      <% if_p("openstack.state_timeout") do |state_timeout| %>
-      state_timeout: <%= state_timeout %>
-      <% end %>
-      <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
-      stemcell_public_visibility: <%= stemcell_public_visibility %>
-      <% end %>
-      <% if_p('openstack.connection_options') do |connection_options| %>
-      connection_options: <%= JSON.generate(connection_options) %>
-      <% end %>
-      <% if_p("openstack.boot_from_volume") do |boot_from_volume| %>
-      boot_from_volume: <%= boot_from_volume %>
-      <% end %>
-      <% if_p("openstack.boot_volume_cloud_properties") do |boot_volume_cloud_properties| %>
-      boot_volume_cloud_properties:
-        <% if_p("openstack.boot_volume_cloud_properties.type") do |boot_volume_type| %>
-        type: <%= boot_volume_type %>
-        <% end %>
-      <% end %>
-      <% if_p("openstack.ignore_server_availability_zone") do |ignore_server_availability_zone| %>
-      ignore_server_availability_zone: <%= ignore_server_availability_zone %>
-      <% end %>
-      default_key_name: <%= default_key_name %>
-      default_security_groups: <%= default_security_groups %>
-      wait_resource_poll_interval: <%= wait_resource_poll_interval %>
-      <% if_p("openstack.config_drive") do |config_drive| %>
-      config_drive: <%= config_drive %>
-      <% end %>
-      <% if_p("openstack.use_dhcp") do |use_dhcp| %>
-      use_dhcp: <%= use_dhcp %>
-      <% end %>
-    registry:
-      endpoint: http://<%= reg_address %>:<%= reg_port %>
-      user: <%= JSON.dump(reg_user) %>
-      password: <%= JSON.dump(reg_password) %>
-  <% end %>
+                                        reg_address, reg_port, reg_user, reg_password|
+    plugin = {
+      'plugin' => 'openstack',
+      'properties' => {
+        'openstack' => {
+          'auth_url' => auth_url,
+          'username' => username,
+          'api_key' => api_key,
+          'default_key_name' => default_key_name,
+          'default_security_groups' => default_security_groups,
+          'wait_resource_poll_interval' => wait_resource_poll_interval
+        },
+        'registry' => {
+          'endpoint' => "http://#{reg_address}:#{reg_port}",
+          'user' => reg_user,
+          'password' => reg_password
+        }
+      }
+    }
+    if_p("openstack.tenant") do |tenant|
+      plugin['properties']['openstack']['tenant'] = tenant
+    end
 
-  <% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
-  plugin: vsphere <% plugin = "vsphere" %>
-  properties:
-    mem_overcommit_ratio: 0.7
-    cpi_log: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.cpi.log
-    vcenters:
-      - host: <%= JSON.dump(address) %>
-        user: <%= JSON.dump(user) %>
-        password: <%= JSON.dump(password) %>
-        datacenters:
-          <% datacenters.each do |dc| %>
-          - name: <%= dc['name'] %>
-            vm_folder: <%= dc['vm_folder'] || "BOSH_VMs" %>
-            template_folder: <%= dc['template_folder'] || "BOSH_Templates" %>
-            disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
-            datastore_pattern: <%= dc['datastore_pattern'] %>
-            persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
-            allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
-            clusters:
-              <% dc['clusters'].each do |cluster| %>
-                <% case cluster
-                   when Hash %>
-                  <% cluster.each do |cluster_name, cluster_properties| %>
-              - <%= cluster_name.to_s %>:
-                    <% cluster_properties.each do |k, v| %>
-                  <%= "#{k.to_s}: #{v}" %>
-                    <% end %>
-                  <% end %>
-                <% when String %>
-              - <%= cluster.to_s %>
-                <% end %>
-              <% end %>
-          <% end %>
-  <% end %>
+    if_p("openstack.project") do |project|
+      plugin['properties']['openstack']['project'] = project
+    end
 
-  <% if_p('vcd.url', 'vcd.user', 'vcd.password',
+    if_p("openstack.domain") do |domain|
+       plugin['properties']['openstack']['domain'] = domain
+    end
+
+    if_p("openstack.region") do |region|
+       plugin['properties']['openstack']['region'] = region
+    end
+
+    if_p("openstack.endpoint_type") do |endpoint_type|
+       plugin['properties']['openstack']['endpoint_type'] = endpoint_type
+    end
+
+    if_p("openstack.state_timeout") do |state_timeout|
+       plugin['properties']['openstack']['state_timeout'] = state_timeout
+    end
+
+    if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility|
+     plugin['properties']['openstack']['stemcell_public_visibility'] = stemcell_public_visibility
+    end
+
+    if_p('openstack.connection_options') do |connection_options|
+       plugin['properties']['openstack']['connection_options'] = connection_options
+    end
+
+    if_p("openstack.boot_from_volume") do |boot_from_volume|
+       plugin['properties']['openstack']['boot_from_volume'] = boot_from_volume
+    end
+
+    if_p("openstack.boot_volume_cloud_properties") do |boot_volume_cloud_properties|
+      if_p("openstack.boot_volume_cloud_properties.type") do |boot_volume_type|
+        plugin['properties']['openstack']['boot_volume_cloud_properties'] = {
+          type: boot_volume_type
+        }
+      end
+    end
+
+    if_p("openstack.ignore_server_availability_zone") do |ignore_server_availability_zone|
+      plugin['properties']['openstack']['ignore_server_availability_zone'] = ignore_server_availability_zone
+    end
+
+    if_p("openstack.config_drive") do |config_drive|
+       plugin['properties']['openstack']['config_drive'] = config_drive
+    end
+
+    if_p("openstack.use_dhcp") do |use_dhcp|
+       plugin['properties']['openstack']['use_dhcp'] = use_dhcp
+    end
+  end
+
+  if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters|
+    plugin = {
+      'plugin' => 'vsphere',
+      'properties' => {
+        'mem_overcommit_ratio' => 0.7,
+        'cpi_log' => "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.cpi.log",
+        'vcenters' => [{
+          'host' => address,
+          'user' => user,
+          'password' => password,
+          'datacenters' => []
+        }],
+      }
+    }
+
+    datacenters.each do |dc|
+      plugin['properties']['vcenters'][0]['datacenters'] << {
+        name: dc['name'],
+        vm_folder: dc['vm_folder'] || "BOSH_VMs",
+        template_folder: dc['template_folder'] || "BOSH_Templates",
+        disk_path: dc['disk_path'] || "BOSH_Disks",
+        datastore_pattern: dc['datastore_pattern'],
+        persistent_datastore_pattern: dc['persistent_datastore_pattern'],
+        allow_mixed_datastores: dc.fetch('allow_mixed_datastores', true),
+        clusters: dc['clusters']
+      }
+    end
+
+  end
+
+  if_p('vcd.url', 'vcd.user', 'vcd.password',
           'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
           'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
           'vcd.entities.vm_metadata_key', 'vcd.entities.description') do |url, user, password,
                                                                           organization, datacenter,
                                                                           vapp_catalog, media_catalog,
-                                                                          vm_metadata_key, description| %>
-  plugin: vcloud <% plugin = "vcloud" %>
-  properties:
-    vcds:
-      - url: <%= JSON.dump(url) %>
-        user: <%= JSON.dump(user) %>
-        password: <%= JSON.dump(password) %>
-        entities:
-          organization: <%= JSON.dump(organization) %>
-          virtual_datacenter: <%= JSON.dump(datacenter) %>
-          vapp_catalog: <%= JSON.dump(vapp_catalog) %>
-          media_catalog: <%= JSON.dump(media_catalog) %>
-          vm_metadata_key: <%= JSON.dump(vm_metadata_key) %>
-          description: <%= JSON.dump(description) %>
-          <% if_p('vcd.entities.control') do |control| %>
-          control:
-            <% if_p('vcd.entities.control.wait_max') do |wait_max| %>
-            wait_max: <%= wait_max %>
-            <% end %>
-            <% if_p('vcd.entities.control.wait_delay') do |wait_delay| %>
-            wait_delay: <%= wait_delay %>
-            <% end %>
-            <% if_p('vcd.entities.control.cookie_timeout') do |cookie_timeout| %>
-            cookie_timeout: <%= cookie_timeout %>
-            <% end %>
-            <% if_p('vcd.entities.control.retry_max') do |retry_max| %>
-            retry_max: <%= retry_max %>
-            <% end %>
-            <% if_p('vcd.entities.control.retry_delay') do |retry_delay| %>
-            retry_delay: <%= retry_delay %>
-            <% end %>
-          <% end %>
+                                                                          vm_metadata_key, description|
+    plugin = {
+      'plugin' => 'vcloud',
+      'properties' => {
+        'vcds' => [{
+          'url' => url,
+            'user' => user,
+            'password' => password,
+            'entities' => {
+              'organization' => organization,
+              'virtual_datacenter' => datacenter,
+              'vapp_catalog' => vapp_catalog,
+              'media_catalog' => media_catalog,
+              'vm_metadata_key' => vm_metadata_key,
+              'description' => description
+            }
+        }]
+      }
+    }
 
-  <% end %>
+    if_p('vcd.entities.control') do |control|
+      plugin['properties']['vcds'][0]['entities']['control'] = {}
 
-  <% raise "Could not find cloud plugin" if plugin.nil? %>
+      control = plugin['properties']['vcds'][0]['entities']['control']
 
-<% end %>
-    agent:
-      ntp: [<%= p('ntp').join(", ") %>]
+      if_p('vcd.entities.control.wait_max') do |wait_max|
+        control['wait_max'] = wait_max.to_i
+      end
 
-      blobstore:
-        provider: <%= p('blobstore.provider') %>
-        options:
-      <% if p('blobstore.provider') == "s3" %>
-          bucket_name: <%= p('blobstore.bucket_name') %>
-          credentials_source: <%= p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static') %>
-          access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil) %>
-          secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil) %>
+      if_p('vcd.entities.control.wait_delay') do |wait_delay|
+        control['wait_delay'] = wait_delay.to_i
+      end
 
-      <% port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil) %>
-      <% unless port.nil? %>
-          port: <%= port  %>
-      <% end %>
+      if_p('vcd.entities.control.cookie_timeout') do |cookie_timeout|
+        control['cookie_timeout'] = cookie_timeout.to_i
+      end
 
-      <% host = p(['agent.blobstore.host', 'blobstore.host'], nil) %>
-      <% unless host.nil? %>
-          host: <%= host %>
-      <% end %>
+      if_p('vcd.entities.control.retry_max') do |retry_max|
+        control['retry_max'] = retry_max.to_i
+      end
 
-      <% use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil) %>
-      <% unless use_ssl.nil? %>
-          use_ssl: <%= use_ssl %>
-      <% end %>
+      if_p('vcd.entities.control.retry_delay') do |retry_delay|
+        control['retry_delay'] = retry_delay.to_i
+      end
+    end
 
-      <% ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil) %>
-      <% unless ssl_verify_peer.nil? %>
-          ssl_verify_peer: <%= ssl_verify_peer %>
-      <% end %>
+  end
 
-      <% s3_force_path_style = p(['agent.blobstore.s3_force_path_style', 'blobstore.s3_force_path_style'], nil) %>
-      <% unless s3_force_path_style.nil? %>
-          s3_force_path_style: <%= s3_force_path_style %>
-      <% end %>
+  raise "Could not find cloud plugin" if plugin.nil?
+  params['cloud'] = plugin
 
-      <% s3_multipart_threshold = p(['agent.blobstore.s3_multipart_threshold', 'blobstore.s3_multipart_threshold'], nil) %>
-      <% unless s3_multipart_threshold.nil? %>
-          s3_multipart_threshold: <%= s3_multipart_threshold %>
-      <% end %>
-      <% else %>
-          endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
-          user: <%= p('blobstore.agent.user') %>
-          password: <%= p('blobstore.agent.password') %>
-      <% end %>
+end
 
-      mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p(['agent.nats.address', 'nats.address']) %>:<%= p('nats.port') %>
+params['cloud']['properties']['agent'] = {
+ 'ntp' => p('ntp'),
+ 'blobstore' => {'provider' => p('blobstore.provider'), 'options' => {} },
+ 'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p(['agent.nats.address', 'nats.address'])}:#{p('nats.port')}"
+}
+
+options =  params['cloud']['properties']['agent']['blobstore']['options']
+if p('blobstore.provider') == "s3"
+  options['bucket_name'] = p('blobstore.bucket_name')
+  options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
+  options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
+  options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
+
+  port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil)
+  unless port.nil?
+      options['port'] = port
+  end
+
+  host = p(['agent.blobstore.host', 'blobstore.host'], nil)
+  unless host.nil?
+    options['host'] = host
+  end
+
+  use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil)
+  unless use_ssl.nil?
+    options['use_ssl'] = use_ssl
+  end
+
+  ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil)
+  unless ssl_verify_peer.nil?
+    options['ssl_verify_peer'] = ssl_verify_peer
+  end
+
+  s3_force_path_style = p(['agent.blobstore.s3_force_path_style', 'blobstore.s3_force_path_style'], nil)
+  unless s3_force_path_style.nil?
+    options['s3_force_path_style'] = s3_force_path_style
+  end
+
+  s3_multipart_threshold = p(['agent.blobstore.s3_multipart_threshold', 'blobstore.s3_multipart_threshold'], nil)
+  unless s3_multipart_threshold.nil?
+    options['s3_multipart_threshold'] = s3_multipart_threshold
+  end
+
+  else
+    options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
+    options['user'] = p('blobstore.agent.user')
+    options['password'] = p('blobstore.agent.password')
+  end
+
+JSON.dump(params)
+%>

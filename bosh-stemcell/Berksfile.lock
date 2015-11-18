@@ -1,8 +1,0 @@
-DEPENDENCIES
-  golang
-  stemcell-golang
-    path: sites-cookbooks/stemcell-golang
-
-GRAPH
-  golang (1.5.0)
-  stemcell-golang (0.0.1)

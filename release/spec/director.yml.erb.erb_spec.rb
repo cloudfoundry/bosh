@@ -93,6 +93,18 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
+    context 'when domain name specified without all other dns properties' do
+      before do
+        deployment_manifest_fragment['properties']['dns'] = {
+          'domain_name' => 'domain.name'
+        }
+      end
+
+      it 'does not set the domain_name field appropriately' do
+        expect(parsed_yaml['dns']).to be_nil
+      end
+    end
+
     context 'and when configured with a blobstore_path' do
       before do
         deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = {
@@ -142,6 +154,14 @@ describe 'director.yml.erb.erb' do
       }
     end
 
+    it 'renders correctly' do
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['host']).to eq('vcenter.address')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['user']).to eq('user')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['password']).to eq('vcenter.password')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['name']).to eq('vcenter.datacenters.first.name')
+      expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['clusters'][0]).to eq('cluster1')
+    end
+
     context 'when vcenter.address contains special characters' do
       before do
         deployment_manifest_fragment['properties']['vcenter']['address'] = "!vcenter.address''"
@@ -169,6 +189,26 @@ describe 'director.yml.erb.erb' do
 
       it 'renders correctly' do
         expect(parsed_yaml['cloud']['properties']['vcenters'][0]['password']).to eq("!vcenter.password''")
+      end
+    end
+
+    context 'when datacenter cluster are provided as hash' do
+      before do
+        deployment_manifest_fragment['properties']['vcenter'] = {
+          'address' => 'vcenter.address',
+          'user' => 'user',
+          'password' => 'vcenter.password',
+          'datacenters' => [
+            {
+              'name' => 'vcenter.datacenters.first.name',
+              'clusters' => [{'cluster-name' => {'resource_pool' => 'rp-name'}}]
+            },
+          ]
+        }
+      end
+
+      it 'renders correctly' do
+        expect(parsed_yaml['cloud']['properties']['vcenters'][0]['datacenters'][0]['clusters']).to eq([{'cluster-name' => {'resource_pool' => 'rp-name'}}])
       end
     end
   end
@@ -270,6 +310,7 @@ describe 'director.yml.erb.erb' do
         'api_key' => 'api_key',
         'tenant' => 'tenant',
         'domain' => 'domain',
+        'project' => 'project',
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
@@ -295,6 +336,7 @@ describe 'director.yml.erb.erb' do
         'api_key' => 'api_key',
         'tenant' => 'tenant',
         'domain' => 'domain',
+        'project' => 'project',
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
@@ -771,6 +813,17 @@ describe 'director.yml.erb.erb' do
     it 'configures the cpi correctly' do
       expect(parsed_yaml['cloud']['provider']['name']).to eq('test-cpi')
       expect(parsed_yaml['cloud']['provider']['path']).to eq('/var/vcap/jobs/test-cpi/bin/cpi')
+    end
+  end
+
+  context 'when ntp is provided' do
+    before do
+      deployment_manifest_fragment['properties']['director']['cpi_job'] = 'test-cpi'
+      deployment_manifest_fragment['properties']['ntp'] = ['1.1.1.1', '2.2.2.2']
+    end
+
+    it 'configures the cpi correctly' do
+      expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
     end
   end
 end

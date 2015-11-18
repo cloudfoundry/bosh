@@ -264,7 +264,10 @@ module Bosh::Director
         jobs_json = json_decode(request.body)['jobs']
         payload = convert_job_instance_hash(jobs_json)
 
-        start_task { @problem_manager.scan_and_fix(current_user, params[:deployment], payload) }
+        deployment = @deployment_manager.find_by_name(params[:deployment])
+        if deployment_has_instance_to_resurrect?(deployment)
+          start_task { @problem_manager.scan_and_fix(current_user, params[:deployment], payload) }
+        end
       end
 
       post '/', :consumes => :yaml do
@@ -320,6 +323,16 @@ module Bosh::Director
           job, indicies = kv
           jobs + indicies.map { |index| [job, index] }
         end
+      end
+
+      def deployment_has_instance_to_resurrect?(deployment)
+        false if deployment.nil?
+        filter = {
+          deployment_id: deployment.id,
+          resurrection_paused: false
+        }
+        instances = @instance_manager.filter_by(filter)
+        instances.any?
       end
     end
   end

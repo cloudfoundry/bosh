@@ -86,9 +86,10 @@ module Bosh
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
         Process.kill('KILL', agent_pid)
-      # rubocop:disable HandleExceptions
-      rescue Errno::ESRCH
-      # rubocop:enable HandleExceptions
+        # rubocop:disable HandleExceptions
+      rescue Errno::EINVAL, Errno::ESRCH, Errno::EPERM => e
+        # rubocop:enable HandleExceptions
+        @logger.info("Dummy CPI delete_vm failed for agent pid #{vm_name}. #{e}")
       ensure
         free_ips(ips_for_vm_id(vm_name)) if has_vm?(vm_name)
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))

@@ -1,4 +1,6 @@
 shared_examples_for 'every OS image' do
+  let(:sshd_config) { file('/etc/ssh/sshd_config') }
+
   context 'installed by base_<os>' do
     describe command('dig -v') do # required by agent
       it { should return_exit_status(0) }
@@ -12,6 +14,7 @@ shared_examples_for 'every OS image' do
   context 'installed by bosh_sudoers' do
     describe file('/etc/sudoers') do
       it { should be_file }
+      it { should contain '%bosh_sudoers ALL=(ALL) NOPASSWD: ALL' }
       it { should contain '#includedir /etc/sudoers.d' }
     end
   end
@@ -57,6 +60,10 @@ shared_examples_for 'every OS image' do
       it { should exist }
     end
 
+    describe group('bosh_sudoers') do
+      it { should exist }
+    end
+
     describe command('rsyslogd -N 1') do
       it { should return_stdout /version 8/ }
       it { should return_exit_status(0) }
@@ -68,9 +75,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'the sshd_config, as set up by base_ssh' do
-    subject(:sshd_config) { file('/etc/ssh/sshd_config') }
-
+  context 'configured by base_ssh' do
     it 'is secure' do
       expect(sshd_config).to be_mode('600')
     end
@@ -79,8 +84,12 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^Banner/)
     end
 
-    it 'disallows root login' do
+    it 'disallows root login (stig: V-38613)' do
       expect(sshd_config).to contain(/^PermitRootLogin no$/)
+    end
+
+    it 'allows PrintLastLog (stig: V-38484)' do
+      expect(sshd_config).to contain(/^PrintLastLog yes$/)
     end
 
     it 'disallows X11 forwarding' do
@@ -122,6 +131,12 @@ shared_examples_for 'every OS image' do
 
     it 'sets Protocol to 2 (stig: V-38607)' do
       expect(sshd_config).to contain(/^Protocol 2$/)
+    end
+  end
+
+  context 'blank password logins are disabled (stig: V-38497)' do
+    describe command('grep -R nullok /etc/pam.d') do
+      its (:stdout) { should eq('') }
     end
   end
 
@@ -196,5 +211,26 @@ shared_examples_for 'every OS image' do
     describe command('find \/ -xdev -type f -perm -002') do
       its (:stdout) { should eq('') }
     end
+  end
+
+  # NOTE: These shared examples are executed in the OS image building spec,
+  # suites and the Stemcell building spec suites. In the OS image suites
+  # nothing will be excluded, which is the desired behavior... we want all OS
+  # images to perform theses stages. For the Stemcell suites the exlude flags
+  # here apply.
+  describe 'exceptions' do
+    context 'unless: vcloud / vsphere / warden', {
+      exclude_on_vsphere: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+    } do
+      it 'disallows password authentication' do
+        expect(sshd_config).to contain(/^PasswordAuthentication no$/)
+      end
+    end
+  end
+
+  describe service('xinetd') do
+    it('should be disabled (stig: V-38582)') { should_not be_enabled }
   end
 end

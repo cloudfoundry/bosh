@@ -5,6 +5,8 @@ module Bosh::Dev
     end
 
     def run(cmd)
+      Rake::FileUtilsExt.verbose(false)
+
       run_cmd = <<-BASH
         set -e
 
@@ -50,4 +52,3 @@ module Bosh::Dev
     end
   end
 end
-

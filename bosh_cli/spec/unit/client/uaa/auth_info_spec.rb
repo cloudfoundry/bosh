@@ -1,5 +1,4 @@
-require 'cli/client/uaa/auth_info'
-require 'cli/client/director'
+require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa::AuthInfo do
   subject(:auth_info) { described_class.new(director, {}, 'cert-file') }

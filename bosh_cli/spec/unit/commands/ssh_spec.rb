@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'net/ssh/gateway'
-require 'cli/ssh_session'
 
 describe Bosh::Cli::Command::Ssh do
   include FakeFS::SpecHelpers
@@ -31,8 +30,7 @@ describe Bosh::Cli::Command::Ssh do
     allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
 
-    allow(command).to receive(:encrypt_password).with('password').and_return('encrypted_password')
-    command.add_option(:default_password, 'password')
+    allow(command).to receive(:encrypt_password).with('').and_return('encrypted_password')
 
     allow(Bosh::Cli::SSHSession).to receive(:new).and_return(ssh_session)
     allow(ssh_session).to receive(:public_key).and_return("public_key")
@@ -207,6 +205,37 @@ describe Bosh::Cli::Command::Ssh do
         end
       end
 
+      it 'should setup ssh with gateway from bosh director' do
+        expect(Net::SSH::Gateway).to receive(:new).with('dummy-host', 'vcap', {}).and_return(net_ssh)
+        expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+        expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=yes", "")
+
+        expect(director).to receive(:setup_ssh).and_return([:done, 42])
+        expect(director).to receive(:get_task_result_log).with(42).
+                                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap' }]))
+        expect(director).to receive(:cleanup_ssh)
+        expect(ssh_session).to receive(:cleanup)
+
+        expect(net_ssh).to receive(:close)
+        expect(net_ssh).to receive(:shutdown!)
+
+        command.shell('dea/0')
+      end
+
+      it 'should not setup ssh with gateway from bosh director when no_gateway is specified' do
+        allow(Net::SSH::Gateway).to receive(:new){expect(true).to equal?(false)}
+        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-i/tmp/.bosh/tmp/random_uuid_key", "-o StrictHostKeyChecking=yes", "")
+
+        expect(director).to receive(:setup_ssh).and_return([:done, 42])
+        expect(director).to receive(:get_task_result_log).with(42).
+                                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap' }]))
+        expect(director).to receive(:cleanup_ssh)
+        expect(ssh_session).to receive(:cleanup)
+
+        command.add_option(:no_gateway, true)
+        command.shell('dea/0')
+      end
+
       context 'with a gateway host' do
         let(:gateway_host) { 'gateway-host' }
         let(:gateway_user) { ENV['USER'] }
@@ -223,6 +252,25 @@ describe Bosh::Cli::Command::Ssh do
           expect(director).to receive(:setup_ssh).and_return([:done, 42])
           expect(director).to receive(:get_task_result_log).with(42).
               and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+          expect(director).to receive(:cleanup_ssh)
+          expect(ssh_session).to receive(:cleanup)
+
+          expect(net_ssh).to receive(:close)
+          expect(net_ssh).to receive(:shutdown!)
+
+          command.shell('dea/0')
+        end
+
+        it 'should still setup ssh with gateway host even if no_gateway is specified' do
+          command.add_option(:no_gateway, true)
+
+          expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
+          expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=yes", "")
+
+          expect(director).to receive(:setup_ssh).and_return([:done, 42])
+          expect(director).to receive(:get_task_result_log).with(42).
+                                  and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
           expect(director).to receive(:cleanup_ssh)
           expect(ssh_session).to receive(:cleanup)
 
