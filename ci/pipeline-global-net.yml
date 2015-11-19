@@ -117,6 +117,7 @@ jobs:
     serial: true
     plan:
     - { get: interval-trigger, trigger: true, passed: [start-job] }
+    - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - { get: bosh-fuzz-tests }
 
@@ -153,3 +154,8 @@ resources:
       start: 18:00 -0800
       stop: 8:00 -0800
       interval: 1h
+
+  - name: fuzz-interval-trigger
+    type: time
+    source:
+      interval: 15m
