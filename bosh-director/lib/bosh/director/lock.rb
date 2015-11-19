@@ -30,24 +30,25 @@ module Bosh::Director
       acquire
 
       @refresh_thread = Thread.new do
-        redis = Config.redis
         sleep_interval = [1.0, @expiration/2].max
         begin
-          loop do
+          stopped = false
+          until stopped
             @logger.debug("Renewing lock: #@name")
-            redis.watch(@name)
-            existing_lock = redis.get(@name)
-            lock_id = existing_lock.split(":")[1]
-            break if lock_id != @id
-            lock_expiration = Time.now.to_f + @expiration + 1
-            redis.multi do
-              redis.set(@name, "#{lock_expiration}:#@id")
+            Models::Lock.db.transaction do
+              lock_record = Models::Lock.for_update[name: @name]
+              if lock_record.nil? || lock_record.uid != @id
+                stopped = true
+                raise Sequel::Rollback
+              end
+              lock_expiration = Time.now.to_f + @expiration + 1
+              lock_record.update(expired_at: Time.at(lock_expiration))
             end
-            sleep(sleep_interval)
+
+            sleep(sleep_interval) unless stopped
           end
         ensure
           @logger.debug("Lock renewal thread exiting")
-          redis.quit
         end
       end
 
@@ -72,60 +73,58 @@ module Bosh::Director
 
     def acquire
       @logger.debug("Acquiring lock: #@name")
-      redis = Config.redis
       started = Time.now
 
       lock_expiration = Time.now.to_f + @expiration + 1
-      until redis.setnx(@name, "#{lock_expiration}:#@id")
-        existing_lock = redis.get(@name)
-        @logger.debug("Lock #@name is already locked by someone " +
-                          "else: #{existing_lock}")
-        if lock_expired?(existing_lock)
-          @logger.debug("Lock #@name is already expired, " +
-                            "trying to take it back")
-          replaced_lock = redis.getset(@name, "#{lock_expiration}:#@id")
-          if replaced_lock == existing_lock
-            @logger.debug("Lock #@name was revoked and relocked")
-            break
+      acquired = false
+      until acquired
+        Models::Lock.db.transaction do
+          lock_record = Models::Lock.for_update[name: @name]
+          if lock_record.nil?
+            lock_record =  Models::Lock.create(name: @name,
+                                               uid: @id,
+                                               expired_at: Time.at(lock_expiration))
+            acquired = true
           else
-            @logger.debug("Lock #@name was acquired by someone else, " +
-                              "trying again")
+            if lock_expired?(lock_record)
+               @logger.debug("Lock #@name is already expired, " +
+                            "taking it")
+               lock_record.update(id: @id, expired_at: Time.at(lock_expiration))
+               acquired = true
+            end
           end
         end
-
-        raise TimeoutError if Time.now - started > @timeout
-
-        sleep(0.5)
-
-        lock_expiration = Time.now.to_f + @expiration + 1
+        unless acquired
+          raise TimeoutError if Time.now - started > @timeout
+          sleep(0.5)
+          lock_expiration = Time.now.to_f + @expiration + 1
+        end
       end
 
       @lock_expiration = lock_expiration
       @logger.debug("Acquired lock: #@name")
     end
 
+
     def delete
       @logger.debug("Deleting lock: #@name")
-      redis = Config.redis
-
-      redis.watch(@name)
-      existing_lock = redis.get(@name)
-      lock_id = existing_lock.split(":")[1]
-      if lock_id == @id
-        redis.multi do
-          redis.del(@name)
+      Models::Lock.db.transaction do
+        lock_record = Models::Lock.for_update[name: @name]
+        if lock_record.nil?
+           @logger.debug("Can not find lock: #@name")
+        else
+          if lock_record.uid == @id
+            lock_record.destroy
+            @logger.debug("Deleted lock: #@name")
+          else
+            @logger.debug("Lock: #@name was acquired by someone else")
+          end
         end
-      else
-        redis.unwatch
       end
-      @logger.debug("Deleted lock: #@name")
     end
 
-    def lock_expired?(lock)
-      existing_lock_expiration = lock.split(":")[0].to_f
-      lock_time_left = existing_lock_expiration - Time.now.to_f
-      @logger.info("Lock: #{lock} expires in #{lock_time_left} seconds")
-      lock_time_left < 0
+    def lock_expired?(lock_record)
+      lock_record.expired_at < Time.now
     end
   end
 end
