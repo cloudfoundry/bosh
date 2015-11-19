@@ -53,8 +53,8 @@ module Bosh
           @simple = SimpleBlobstoreClient.new(@options)
         end
 
-      rescue Aws::Errors::ServiceError => e
-        raise BlobstoreError, "Failed to initialize S3 blobstore: #{e.message}"
+      rescue Aws::S3::Errors::ServiceError => e
+        raise BlobstoreError, "Failed to initialize S3 blobstore: #{e.code} : #{e.message}"
       end
 
       # @param [File] file file to store in S3
@@ -68,8 +68,8 @@ module Bosh
         store_in_s3(path, full_oid_path(object_id))
 
         object_id
-      rescue Aws::Errors::ServiceError => e
-        raise BlobstoreError, "Failed to create object, S3 response error: #{e.message}"
+      rescue Aws::S3::Errors::ServiceError => e
+        raise BlobstoreError, "Failed to create object, S3 response error code #{e.code}: #{e.message}"
       end
 
       # @param [String] object_id object id to retrieve
@@ -85,8 +85,8 @@ module Bosh
 
       rescue Aws::S3::Errors::NoSuchKey => e
         raise NotFound, "S3 object '#{object_id}' not found"
-      rescue Aws::Errors::ServiceError => e
-        raise BlobstoreError, "Failed to find object '#{object_id}', S3 response error: #{e.message}"
+      rescue Aws::S3::Errors::ServiceError => e
+        raise BlobstoreError, "Failed to find object '#{object_id}', S3 response error code #{e.code}: #{e.message}"
       end
 
       # @param [String] object_id object id to delete
@@ -100,8 +100,8 @@ module Bosh
         raise NotFound, "Object '#{object_id}' is not found" unless s3_object.exists?
 
         s3_object.delete
-      rescue Aws::Errors::ServiceError => e
-        raise BlobstoreError, "Failed to delete object '#{object_id}', S3 response error: #{e.message}"
+      rescue Aws::S3::Errors::ServiceError => e
+        raise BlobstoreError, "Failed to delete object '#{object_id}', S3 response error code #{e.code}: #{e.message}"
       end
 
       def object_exists?(object_id)
