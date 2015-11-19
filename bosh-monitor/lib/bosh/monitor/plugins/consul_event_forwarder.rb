@@ -158,7 +158,7 @@ module Bosh::Monitor
       #We keep track so we aren't sending superfluous registrations
       #Only register ttl for events that have a job assigned
       def event_unregistered?(event)
-        @use_ttl && event.respond_to?(:job) && !@checklist.include?(event.job)
+        @use_ttl && event.respond_to?(:job) && !@checklist.include?(label_for_ttl(event))
       end
 
       def registration_payload(event)
