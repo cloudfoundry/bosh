@@ -121,7 +121,7 @@ module Bosh::Monitor
 
         #if a registration request returns without error we log it
         #we don't want to send extra registrations
-        @checklist << event.job if note_type == :register
+        @checklist << label_for_event(event) if note_type == :register
       rescue => e
         logger.error("Could not forward event to Consul Cluster @#{@host}: #{e.inspect}")
       end
