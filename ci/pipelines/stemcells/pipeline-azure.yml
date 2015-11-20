@@ -76,8 +76,8 @@ resources:
 - name: bosh-src
   type: git
   source:
-    uri: https://github.com/cppforlife/bosh.git
-    branch: azure_stemcells
+    uri: https://github.com/cloudfoundry/bosh.git
+    branch: master
 
 - name: published-stemcell
   type: bosh-io-stemcell
