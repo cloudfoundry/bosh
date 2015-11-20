@@ -45,17 +45,12 @@ module Bosh::Director
       ips = []
       records.each do |record|
         ips << record.content
+        Models::Dns::Record.filter(:content.like(record.name)).each do |ptr|
+          @logger.info("Deleting reverse DNS record: #{ptr.name} -> #{ptr.content}")
+          ptr.destroy
+        end
         @logger.info("Deleting DNS record: #{record.name}")
         record.destroy
-      end
-
-      # delete PTR records from IP list
-      ips.each do |ip|
-        records = Models::Dns::Record.filter(:name.like(reverse_host(ip)))
-        records.each do |record|
-          @logger.info("Deleting reverse DNS record: #{record.name}")
-          record.destroy
-        end
       end
 
       # see if any of the reverse domains are empty and should be deleted

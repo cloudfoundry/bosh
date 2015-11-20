@@ -69,26 +69,33 @@ module Bosh::Director
     end
 
     describe '#delete' do
+      let(:ip) {'1.2.3.4'}
+
       before do
-        power_dns.create_or_update_dns_records('1.foobar.network-a.dep.bosh', '1.2.3.4')
-        power_dns.create_or_update_dns_records('1.foobar.network-b.dep.bosh', '1.2.3.4')
+        power_dns.create_or_update_dns_records('1.foobar.network-a.dep.bosh', ip)
+        power_dns.create_or_update_dns_records('uuid1uuid.foobar.network-a.dep.bosh', ip)
+        power_dns.create_or_update_dns_records('1.foobar.network-b.dep.bosh', ip)
       end
 
       it 'deletes dns record' do
         power_dns.delete('1.foobar.%.dep.bosh')
-        expect(Models::Dns::Record.filter(type: 'A').all.size).to eq(0)
+        expect(Models::Dns::Record.filter(type: 'A').map(&:name)).to eq(['uuid1uuid.foobar.network-a.dep.bosh'])
       end
 
-      it 'deletes ptr record' do
+      it 'deletes ptr records associated with the pattern' do
         power_dns.delete('1.foobar.%.dep.bosh')
-        expect(Models::Dns::Record.filter(type: 'PTR').all.size).to eq(0)
+        expect(Models::Dns::Record.filter(type: 'PTR').map(&:content)).to eq(['uuid1uuid.foobar.network-a.dep.bosh'])
+      end
+
+      it 'deletes the NS and SOA records when there are no more A/PTR records in the domain' do
+        power_dns.delete('%.foobar.%.dep.bosh')
         expect(Models::Dns::Record.filter(type: 'NS').all.size).to eq(0)
         expect(Models::Dns::Record.filter(type: 'SOA').all.size).to eq(0)
       end
 
       it 'deletes empty reverse domain' do
         expect {
-          power_dns.delete('1.foobar.%.dep.bosh')
+          power_dns.delete('%.foobar.%.dep.bosh')
         }.to change { Models::Dns::Domain.all.size }.from(2).to(1)
       end
     end
