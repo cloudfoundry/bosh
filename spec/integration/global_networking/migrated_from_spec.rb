@@ -3,6 +3,13 @@ require 'spec_helper'
 describe 'migrated from', type: :integration do
   with_reset_sandbox_before_each
 
+  let(:cloud_config_hash) do
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['networks'].first['subnets'] = [subnet1, subnet2]
+    cloud_config_hash['disk_pools'] = [disk_pool_spec]
+    cloud_config_hash
+  end
+
   let(:cloud_config_hash_with_azs) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [
@@ -314,12 +321,8 @@ describe 'migrated from', type: :integration do
     end
 
     context 'when migrating without persistent disks' do
-      let(:etcd_z1_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd_z1')
-      end
-      let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd')
-      end
+      let(:etcd_z1_job) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd_z1') }
+      let(:etcd_job) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd') }
 
       it 'balances vms across azs' do
         manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
@@ -383,7 +386,35 @@ describe 'migrated from', type: :integration do
     end
   end
 
-  context 'when migrating with availability zones' do
+  context 'when migrating without azs' do
+    let(:job1) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'job1') }
+    let(:job2) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'job2') }
+
+    let(:manifest_1) do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      job_spec = job1
+      job_spec['networks'].first['name'] = cloud_config_hash['networks'].first['name']
+      manifest_hash['jobs'] = [job_spec]
+      manifest_hash
+    end
+
+    let(:manifest_2) do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      job_spec = job2
+      job_spec['networks'].first['name'] = cloud_config_hash['networks'].first['name']
+      job_spec['migrated_from'] = [{'name' => 'job1'}]
+      manifest_hash['jobs'] = [job_spec]
+      manifest_hash
+    end
+
+    it 'succeeds' do
+      deploy_from_scratch(manifest_hash: manifest_1, cloud_config_hash: cloud_config_hash)
+      deploy_from_scratch(manifest_hash: manifest_2, cloud_config_hash: cloud_config_hash)
+      expect(director.vms.size).to eq(2)
+    end
+  end
+
+  context 'when migrating with azs' do
     context 'when migrating into new job in different az' do
       it 'recreates VM and disk in new az' do
         deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)

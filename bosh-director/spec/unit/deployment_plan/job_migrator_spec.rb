@@ -49,6 +49,18 @@ module Bosh::Director
           'az' => 'z2'
         }
       ]
+      manifest['networks'] << {
+        'name' => 'no-az',
+        'subnets' => [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+          }
+        ]
+      }
       manifest
     end
 
@@ -235,27 +247,48 @@ module Bosh::Director
           end
         end
 
-        context 'when migrated from section does not contain availability zone and instance models do not have az (legacy instances)' do
-          let(:etcd_job_spec) do
-            job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
-            job['migrated_from'] = [
-              {'name' => 'etcd_z1'},
-              {'name' => 'etcd_z2'},
-            ]
-            job['azs'] = ['z1', 'z2']
-            job
-          end
-          before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+        context 'when migrated_from section does not contain availability zone and instance models do not have az (legacy instances)' do
+          context 'and the desired job has azs' do
+            let(:etcd_job_spec) do
+              job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+              job['migrated_from'] = [
+                {'name' => 'etcd_z1'},
+              ]
+              job['azs'] = ['z1', 'z2']
+              job
+            end
+
+            before do
+              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+            end
+
+            it 'raises an error' do
+              expect {
+                job_migrator.find_existing_instances(etcd_job)
+              }.to raise_error(
+                  DeploymentInvalidMigratedFromJob,
+                  "Failed to migrate job 'etcd_z1' to 'etcd', availability zone of 'etcd_z1' is not specified"
+                )
+            end
           end
 
-          it 'raises an error' do
-            expect {
-              job_migrator.find_existing_instances(etcd_job)
-            }.to raise_error(
-                DeploymentInvalidMigratedFromJob,
-                "Failed to migrate job 'etcd_z1' to 'etcd', availability zone of 'etcd_z1' is not specified"
-              )
+          context 'and the desired job does not have azs' do
+            let(:etcd_job_spec) do
+              job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+              job['migrated_from'] = [{'name' => 'etcd_z1'}]
+              job['networks'] = [{'name' => 'no-az'}]
+              job
+            end
+
+            before do
+              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+            end
+
+            it 'succeeds' do
+              expect {
+                job_migrator.find_existing_instances(etcd_job)
+              }.to_not raise_error
+            end
           end
         end
       end

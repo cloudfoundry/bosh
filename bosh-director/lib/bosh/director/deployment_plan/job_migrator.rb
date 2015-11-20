@@ -57,7 +57,9 @@ module Bosh::Director
 
         @deployment_plan.existing_instances.each do |instance|
           if instance.job == migrated_from_job.name
-            if instance.availability_zone.nil? && migrated_from_job.availability_zone.nil?
+            if instance.availability_zone.nil? &&
+              migrated_from_job.availability_zone.nil?  &&
+              desired_job.availability_zones.to_a.compact.any?
               raise DeploymentInvalidMigratedFromJob,
                 "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}', availability zone of '#{migrated_from_job.name}' is not specified"
             end
