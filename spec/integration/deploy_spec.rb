@@ -75,9 +75,10 @@ describe 'deploy', type: :integration do
 
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_v2.tgz')} --skip-if-exists")
       v2_stemcell_id = current_sandbox.cpi.all_stemcells.last[9..-1]
+      puts "---> DEBUG all CPI stemcells: #{current_sandbox.cpi.all_stemcells.pretty_inspect}"
       deploy_simple_manifest(manifest_hash)
       create_vm_invocations_1 = current_sandbox.cpi.invocations_for_method("create_vm")
-
+      puts "---> DEBUG invocation stemcells: #{create_vm_invocations_1.map { |inv| inv['inputs']['stemcell_id'] }.pretty_inspect}"
       expect(create_vm_invocations_1.count).to be > create_vm_invocations.count
       expect(create_vm_invocations_1.last['inputs']['stemcell_id']).to eq(v2_stemcell_id)
     end
