@@ -58,10 +58,8 @@ module Bosh::Director
       unless instance_plan.currently_detached?
         Preparer.new(instance_plan, agent(instance), @logger).prepare
 
-        unless instance_plan.new?
-          stop(instance_plan)
-          take_snapshot(instance)
-        end
+        stop(instance_plan)
+        take_snapshot(instance)
       end
 
       if instance.state == 'detached'
@@ -93,14 +91,11 @@ module Bosh::Director
           @logger.debug('Updating trusted certs')
           instance.update_trusted_certs
         end
-
-        apply_state(instance_plan)
       end
 
-      if instance.state == 'started'
-        run_pre_start_scripts(instance)
-        start!(instance)
-      end
+      cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
+      InstanceUpdater::StateApplier.new(instance_plan, agent(instance), cleaner).apply
+
       instance.update_state
 
       wait_until_running(instance_plan)
@@ -126,14 +121,6 @@ module Bosh::Director
       instance_plan.release_obsolete_network_plans
     end
 
-    def run_pre_start_scripts(instance)
-      agent(instance).run_script("pre-start", {})
-    end
-
-    def start!(instance)
-      agent(instance).start
-    end
-
     def stop(instance_plan)
       instance = instance_plan.instance
       stopper = Stopper.new(instance_plan, instance.state, Config, @logger)
@@ -142,13 +129,6 @@ module Bosh::Director
 
     def take_snapshot(instance)
       Api::SnapshotManager.take_snapshot(instance.model, clean: true)
-    end
-
-    def apply_state(instance_plan)
-      instance = instance_plan.instance
-      instance.apply_vm_state(instance_plan.spec)
-      instance.update_templates(instance_plan.templates)
-      RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger).clean
     end
 
     def update_dns(instance_plan)

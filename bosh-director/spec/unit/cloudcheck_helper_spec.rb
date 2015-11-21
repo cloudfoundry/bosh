@@ -135,6 +135,7 @@ module Bosh::Director
           vm.instance.update(spec: spec)
           vm.update(env: {'key1' => 'value1'})
           allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm).and_return(fake_new_agent)
 
           allow(DnsManager).to receive(:create).and_return(dns_manager)
         end
@@ -153,6 +154,7 @@ module Bosh::Director
             expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
           end
 
+          expect(fake_new_agent).to receive(:apply).with(spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 

@@ -106,7 +106,7 @@ module Bosh::Director
         action
       end
 
-      it 'applies vm state' do
+      it 'applies initial vm state' do
         allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
         expected_apply_spec = {
           'deployment' => 'mycloud',
@@ -116,18 +116,12 @@ module Bosh::Director
           'index' => 0,
           'id' => 'uuid-1',
           'networks' => expected_network_settings,
-          'vm_type' => {},
           'stemcell' => {'name' => 'stemcell-name'},
-          'env' => { 'compilation' => 'environment'},
-          'packages' => {},
-          'dns_domain_name' => 'bosh',
-          'persistent_disk' => 0,
+          'vm_type' => {}
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
         action
-        expected_vm_spec = expected_apply_spec.merge({'links' => {}, 'properties' => {}, 'az' => nil, 'bootstrap' => false})
-        expect(vm_model.instance.spec).to eq(expected_vm_spec)
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 

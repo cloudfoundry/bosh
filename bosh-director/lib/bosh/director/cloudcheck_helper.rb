@@ -92,14 +92,12 @@ module Bosh::Director
         dns_names_to_ip[id_dns_name] = network['ip']
       end
 
-      @logger.debug("Updating DNS record for instance: #{instance_plan_to_create.instance.model.inspect}; to: #{dns_names_to_ip.inspect}")
-      dns_manager.update_dns_record_for_instance(instance_plan_to_create.instance.model, dns_names_to_ip)
+      @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
+      dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
       dns_manager.flush_dns_cache
 
-      if instance_model.state == 'started'
-        agent_client(instance_model.vm).run_script('pre-start', {})
-        agent_client(instance_model.vm).start
-      end
+      cleaner = RenderedJobTemplatesCleaner.new(instance_model, @blobstore, @logger)
+      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.vm), cleaner).apply
     end
 
     private

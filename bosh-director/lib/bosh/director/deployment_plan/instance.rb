@@ -179,8 +179,10 @@ module Bosh::Director
       def apply_initial_vm_state(spec)
         # Agent will return dynamic network settings, we need to update spec with it
         # so that we can render templates with new spec later.
-        partial_state = {'networks' => spec.as_apply_spec['networks']}
+        initial_spec_keys = ['networks', 'deployment', 'job', 'index', 'id', 'stemcell', 'vm_type']
+        partial_state = spec.as_apply_spec.select { |k, _| initial_spec_keys.include?(k) }
         agent_client.apply(partial_state)
+        @current_state.merge!(partial_state)
         agent_state = agent_client.get_state
         unless agent_state.nil?
           @current_state['networks'] = agent_state['networks']

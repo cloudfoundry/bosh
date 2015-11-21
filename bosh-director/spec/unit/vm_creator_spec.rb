@@ -91,7 +91,6 @@ describe Bosh::Director::VmCreator do
 
     expect(instance).to receive(:bind_to_vm_model)
     expect(agent_client).to receive(:wait_until_ready)
-    expect(instance).to receive(:apply_vm_state)
     expect(instance).to receive(:update_trusted_certs)
     expect(instance).to receive(:update_cloud_properties!)
 
@@ -127,7 +126,6 @@ describe Bosh::Director::VmCreator do
     allow(cloud).to receive(:create_vm)
     expect(job_renderer).to receive(:render_job_instance).with(instance_plan)
     expect(instance).to receive(:apply_initial_vm_state)
-    expect(instance).to receive(:apply_vm_state)
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end

@@ -382,11 +382,7 @@ module Bosh::Director
           'id' => 'deadbeef',
           'networks' => net,
           'vm_type' => {},
-          'stemcell' => @stemcell_a.spec,
-          'env' =>{},
-          'packages' => {},
-          'dns_domain_name' => 'bosh',
-          'persistent_disk' => 0,
+          'stemcell' => { 'name' => @stemcell_a.name, 'version' => @stemcell_a.version }
         }
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
@@ -470,6 +466,7 @@ module Bosh::Director
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
         expect(agent).to receive(:apply).with(initial_state)
+        expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'})
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 
         compiler = DeploymentPlan::Steps::PackageCompileStep.new(
@@ -632,7 +629,7 @@ module Bosh::Director
           ip_provider: ip_provider
         )
       end
-      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
+      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {}) }
       let(:vm) { Models::Vm.make }
       let(:instance) { instance_double(DeploymentPlan::Instance, vm: vm) }
 
@@ -680,6 +677,8 @@ module Bosh::Director
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
           allow(client).to receive(:wait_until_ready)
+          allow(client).to receive(:apply)
+          allow(client).to receive(:get_state)
         end
 
         def self.it_should_not_update_db(method, exception)
