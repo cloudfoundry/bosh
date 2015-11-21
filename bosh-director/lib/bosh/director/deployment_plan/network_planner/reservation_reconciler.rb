@@ -13,7 +13,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         existing_reservations.each do |existing_reservation|
-          desired_reservation = desired_reservations.find { |ip| ip.network == existing_reservation.network }
+          desired_reservation = desired_reservations.find do |reservation|
+              reservation.network == existing_reservation.network &&
+                (reservation.dynamic? || reservation.ip == existing_reservation.ip)
+          end
 
           if desired_reservation && existing_reservation.reserved?
             @logger.debug("For desired reservation #{desired_reservation} found existing reservation on the same network #{existing_reservation}")

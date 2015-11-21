@@ -104,7 +104,6 @@ module Bosh::Director
         end
       end
 
-
       def default_networks_for_properties(networks)
         @properties_that_require_defaults.inject({}) do |defaults, property|
           defaults.merge(property => networks.select { |network| network.default_for?(property) })
