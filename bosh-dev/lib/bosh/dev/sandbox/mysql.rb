@@ -40,6 +40,13 @@ module Bosh::Dev::Sandbox
       result
     end
 
+    def current_locked_jobs
+      jobs_cmd = %Q{mysql --user=#{@username} --password=#{@password} -e "select * from delayed_jobs where locked_by is not null;" #{db_name}}
+      job_lines = `#{jobs_cmd}`.lines.to_a[1..-1] || []
+
+      job_lines
+    end
+
     def truncate_db
       @logger.info("Truncating mysql database #{db_name}")
       table_name_cmd = %Q{mysql --user=#{@username} --password=#{@password} -e "show tables;" #{db_name}}

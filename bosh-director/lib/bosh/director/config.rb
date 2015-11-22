@@ -405,16 +405,20 @@ module Bosh::Director
       end
     end
 
-    def resque_logger
+    def worker_logger
       logger = Logging::Logger.new('DirectorWorker')
-      resque_logging = hash.fetch('resque', {}).fetch('logging', {})
-      if resque_logging.has_key?('file')
-        logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: resque_logging.fetch('file'), layout: ThreadFormatter.layout))
+      worker_logging = hash.fetch('resque', {}).fetch('logging', {})
+      if worker_logging.has_key?('file')
+        logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: worker_logging.fetch('file'), layout: ThreadFormatter.layout))
       else
         logger.add_appenders(Logging.appenders.stdout('DirectorWorkerIO', layout: ThreadFormatter.layout))
       end
-      logger.level = Logging.levelify(resque_logging.fetch('level', 'info'))
+      logger.level = Logging.levelify(worker_logging.fetch('level', 'info'))
       logger
+    end
+
+    def db
+      Config.configure_db(hash['db'])
     end
 
     def blobstore_config

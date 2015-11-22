@@ -1,0 +1,115 @@
+#!/usr/bin/env ruby
+
+require 'erb'
+require 'bosh/director'
+
+config_file = nil
+index = nil
+erb = false
+
+class JobNamePlugin < Delayed::Plugin
+
+  callbacks do |lifecycle|
+    lifecycle.before(:perform) do |worker, job|
+      job_say(worker, job, "RUNNING INSIDE")
+    end
+  end
+
+  def self.job_say(worker, job, text)
+    real_job = YAML.load_dj(job.handler)
+    text = "Job #{real_job.job_class} (task=#{real_job.task_id}) #{text}"
+    say text, worker
+  end
+
+  def self.say(text, worker)
+    text = "[Worker(#{worker.name})] #{text}"
+    return unless worker.logger
+    level = worker.default_log_level
+    unless level.is_a?(String)
+      level = Logger::Severity.constants.detect { |i| Logger::Severity.const_get(i) == level }.to_s.downcase
+    end
+    worker.logger.send(level, "#{Time.now.strftime('%FT%T%z')}: #{text}")
+  end
+end
+
+begin
+  opts = OptionParser.new do |op|
+    op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
+      config_file = opt
+    end
+
+    op.on('-i', '--index [ARG]', Integer, 'Worker Index') do |opt|
+      index = opt
+    end
+
+    op.on('-e', '--[no-]erb', 'Treat Configuration as ERB Template') do |opt|
+      erb = opt
+    end
+  end
+
+  opts.parse!(ARGV.dup)
+
+  config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
+  config = nil
+
+# Is this code even used anymore?
+  if erb
+    class ConfigBindingHelper
+      attr_reader :index
+
+      def initialize(index)
+        @index = index
+      end
+
+      def get_binding
+        binding
+      end
+    end
+
+    template = ERB.new(File.read(config_file), 0, '%<>-')
+    contents = template.result(ConfigBindingHelper.new(index).get_binding)
+    config_hash = Psych.load(contents)
+    config = Bosh::Director::Config.load_hash(config_hash)
+  else
+    config = Bosh::Director::Config.load_file(config_file)
+  end
+  config.db
+  Delayed::Worker.logger = config.worker_logger
+
+  index = 0 if index.nil?
+  Delayed::Worker.backend = :sequel
+  Bosh::Director::App.new(config)
+
+  Delayed::Worker.destroy_failed_jobs = false
+  Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 5
+  Delayed::Worker.max_attempts = 0
+
+  worker = nil
+  queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
+
+  Delayed::Worker.plugins << JobNamePlugin
+
+  worker = Delayed::Worker.new({:queues => queues})
+
+  EM.error_handler { |e| worker.logger.error ("Error raised during event loop: #{e.inspect}, backtrace: #{e.backtrace}") }
+  Thread.new { EM.run }
+
+  worker.name = "worker_#{index}"
+  worker.logger.info("Starting worker #{worker.name}.")
+  begin
+    @worker_retries ||= 0
+
+    # raise Exception.new if @worker_retries<5
+    worker.start
+
+  rescue Exception => e
+    worker.logger.error("Something goes wrong during worker start. Attempt #{@worker_retries}. Error: #{e.inspect}")
+    while @worker_retries < 10
+      @worker_retries += 1
+      sleep 0.5
+      retry
+    end
+    worker.logger.error("Max retries reached. Error: #{e.inspect}")
+    raise e
+  end
+end
