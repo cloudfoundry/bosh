@@ -6,9 +6,9 @@ module Bosh::Director
   describe Jobs::DeleteRelease do
     let(:blobstore) { double('Blobstore') }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :delete_release }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe 'perform' do

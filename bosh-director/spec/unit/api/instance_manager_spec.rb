@@ -23,7 +23,7 @@ module Bosh::Director
         allow(instance_lookup).to receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
       end
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
 
@@ -47,7 +47,7 @@ module Bosh::Director
         allow(deployment_lookup).to receive_messages(by_name: deployment)
       end
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 

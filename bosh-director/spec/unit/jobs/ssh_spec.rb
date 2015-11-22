@@ -9,9 +9,9 @@ module Bosh::Director
     let (:instance_manager) { instance_double (Api::InstanceManager)}
     let (:instance) { instance_double(Models::Instance)}
     let (:result_file) { instance_double(TaskResultFile) }
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     it 'returns default_ssh_options if they exist' do
