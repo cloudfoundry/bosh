@@ -86,7 +86,15 @@ module Bosh::Dev
       FileUtils.mkdir_p dirname
 
       component.dependencies.each do |dependency|
-        Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
+        if gem_exists?(dependency)
+          Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
+        else
+          puts "Possible issue with gem git source. Will try to build from source."
+          #in case of no gem, check if there is source of the gem and build it. Bundler at this moment does not build gem if source is git in Gemfile
+          spec = Bundler.load.specs.find { |s| s.name == dependency.name }
+          raise Bundler::GemNotFound, "Could not find gem '#{dependency.name}' in the current bundle." unless spec
+          Rake::FileUtilsExt.sh "cd #{spec.full_gem_path} && gem build #{dependency.name}.gemspec && mv #{dependency.name}-#{dependency.version}.gem #{dirname}"
+        end
       end
 
       if has_db?(component.name)
@@ -98,5 +106,10 @@ module Bosh::Dev
     def build_dir
       @build_dir ||= "/tmp/all_the_gems/#{Process.pid}"
     end
+
+    private
+      def gem_exists?(dependency)
+        !Dir["#{build_dir}/#{dependency.name}-*.gem"].empty?
+      end
   end
 end

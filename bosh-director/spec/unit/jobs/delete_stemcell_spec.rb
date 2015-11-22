@@ -12,9 +12,9 @@ module Bosh::Director
         allow(Config).to receive(:cloud).and_return(@cloud)
       end
 
-      describe 'Resque job class expectations' do
+      describe 'DJ job class expectations' do
         let(:job_type) { :delete_stemcell }
-        it_behaves_like 'a Resque job'
+        it_behaves_like 'a DJ job'
       end
 
       it 'should fail for unknown stemcells' do

@@ -6,9 +6,9 @@ module Bosh::Director
 
     subject(:job) { described_class.new(%w(snap0 snap1)) }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :delete_snapshot }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     it 'tells the snapshot manager to delete the snapshots' do

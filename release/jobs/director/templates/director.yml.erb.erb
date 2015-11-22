@@ -34,8 +34,8 @@ params = {
   'max_vm_create_tries' => p('director.max_vm_create_tries')
 }
 
-if_p('resque.loglevel') do |resque_loglevel|
-  params['resque'] = {'logging' => {'level' => resque_loglevel}}
+if_p('dj.loglevel') do |worker_loglevel|
+  params['dj'] = {'logging' => {'level' => worker_loglevel}}
 end
 
 params['scheduled_jobs'] = []
