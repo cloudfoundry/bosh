@@ -9,8 +9,9 @@ module Bosh
     class S3BlobstoreClient < BaseClient
 
       ENDPOINT = 'https://s3.amazonaws.com'
-      DEFAULT_REGION = ' ' # hack to get the v2 AWS SDK to behave
-      DEFAULT_CIPHER_NAME = 'aes-128-cbc'
+      DEFAULT_REGION = 'us-east-1'
+      # hack to get the v2 AWS SDK to behave with S3-compatible blobstores
+      BLANK_REGION = ' '
 
       attr_reader :simple
 
@@ -30,14 +31,18 @@ module Bosh
         host = @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host)
         uri = @options[:port].nil? ? host : "#{host}:#{@options[:port]}"
         endpoint = "#{protocol}://#{uri}"
+        region = @options.fetch(:region, DEFAULT_REGION)
 
         @aws_options = {
           bucket_name: @options[:bucket_name],
-          endpoint: endpoint,
-          region: @options.fetch(:region, DEFAULT_REGION),
+          region: @options[:host].nil? ? region : BLANK_REGION,
           force_path_style: @options.fetch(:s3_force_path_style, false),
           ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
         }
+
+        @aws_options[:endpoint] = endpoint unless @options[:host].nil?
+
+        @aws_options[:signature_version] = 's3' unless use_v4_signing?(region)
 
         @aws_options.merge!(aws_credentials)
 
@@ -108,6 +113,14 @@ module Bosh
         object_id = full_oid_path(object_id)
         return simple.exists?(object_id) if simple
 
+        # Hack to get the Aws SDK to redirect to the correct region on
+        # subsequent requests
+        unless @region_configured
+          s3 = Aws::S3::Client.new(@aws_options.reject{|k| k == :bucket_name})
+          s3.list_objects({bucket: @aws_options[:bucket_name]})
+          @region_configured = true
+        end
+
         Aws::S3::Object.new({:key => object_id}.merge(@aws_options)).exists?
       end
 
@@ -117,9 +130,9 @@ module Bosh
       # @param [String] oid object id
       # @return [void]
       def store_in_s3(path, oid)
-        s3_object = Aws::S3::Object.new({:key => oid}.merge(@aws_options))
-        raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exists?
+        raise BlobstoreError, "object id #{oid} is already in use" if object_exists?(oid)
 
+        s3_object = Aws::S3::Object.new({:key => oid}.merge(@aws_options))
         multipart_threshold = @options.fetch(:s3_multipart_threshold, 16_777_216)
         s3_object.upload_file(path, {content_type: "application/octet-stream", multipart_threshold: multipart_threshold})
         nil
@@ -134,6 +147,11 @@ module Bosh
 
       def full_oid_path(object_id)
          @options[:folder] ?  @options[:folder] + '/' + object_id : object_id
+      end
+
+      def use_v4_signing?(region)
+        (region == 'eu-central-1' ||
+         region == 'cn-north-1')
       end
 
       def aws_credentials

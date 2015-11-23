@@ -24,37 +24,9 @@ module Bosh::Blobstore
     end
 
     describe 'options' do
-      context 'when option keys are symbols' do
-        before do
-          options.merge!(
-            bucket_name: 'test',
-            access_key_id: 'KEY',
-            secret_access_key: 'SECRET',
-          )
-        end
-
-        it 'sets given values' do
-          pending("on refactor of initializer tests")
-          expect(client.bucket_name).to eq('test')
-        end
-      end
-
-      context 'when option keys are string' do
-        before do
-          options.merge!(
-            'bucket_name' => 'test',
-            'access_key_id' => 'KEY',
-            'secret_access_key' => 'SECRET',
-          )
-        end
-
-        it 'sets given values' do
-          pending("on refactor of initializer tests")
-          expect(client.bucket_name).to eq('test')
-        end
-      end
-
       context 'when advanced options are provided for customization' do
+        let(:blob) { instance_double(Aws::S3::Object) }
+        let(:s3_client) { instance_double(Aws::S3::Client) }
         before do
           options.merge!(
             'bucket_name' => 'test',
@@ -67,53 +39,56 @@ module Bosh::Blobstore
             'host' => 'our.userdefined.com',
             's3_force_path_style' => true,
           )
+          allow(blob).to receive(:upload_file)
+          allow(blob).to receive(:exists?)
+          allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+          allow(s3_client).to receive(:list_objects)
         end
 
         it 'uses those options when building Aws::S3 client' do
-          pending("refactor with put object call")
-          expect(Aws::S3::Object).to receive(:new).with(
-            access_key_id: 'KEY',
-            secret_access_key: 'SECRET',
-            ssl_verify_peer: false,
+          expect(Aws::S3::Object).to receive(:new).with(hash_including(
+            bucket_name: 'test',
             endpoint: 'http://our.userdefined.com:8080',
             force_path_style: true,
-          )
+            ssl_verify_peer: false,
+            access_key_id: 'KEY',
+            secret_access_key: 'SECRET',
+          )).twice.and_return(blob)
 
-          client
+          client.create_file('foo', 'file')
         end
       end
 
       context 'when advanced options are not provided for customization' do
+        let(:blob) { instance_double(Aws::S3::Object) }
+        let(:s3_client) { instance_double(Aws::S3::Client) }
         before do
           options.merge!(
             'bucket_name' => 'test',
             'access_key_id' => 'KEY',
             'secret_access_key' => 'SECRET',
           )
+          allow(blob).to receive(:upload_file)
+          allow(blob).to receive(:exists?)
+          allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+          allow(s3_client).to receive(:list_objects)
         end
 
         it 'uses default options when building Aws::S3 client' do
-          pending("refactor with put object call")
-          expect(Aws::S3::Client).to receive(:new).with(
+          expect(Aws::S3::Object).to receive(:new).with(
+            key: 'foo',
+            bucket_name: 'test',
+            region: 'us-east-1',
             access_key_id: 'KEY',
             secret_access_key: 'SECRET',
             ssl_verify_peer: true,
-            endpoint: 'https://s3.amazonaws.com',
             force_path_style: false,
-          )
+            signature_version: 's3'
+          ).twice.and_return(blob)
 
-          client
+          client.create_file('foo', 'file')
         end
 
-        # TODO: audit this comment for truthfulness in integration tests
-        it 'uses s3_force_path_style=false by default because s3 ' +
-           'does not properly work this setting turned on' do
-          pending("refactor with put object call")
-          expect(Aws::S3::Client).to receive(:new).
-            with(hash_including(force_path_style: false))
-
-          client
-        end
       end
     end
 
@@ -148,8 +123,12 @@ module Bosh::Blobstore
       end
 
       it 'should raise an error if the same object id is used' do
-        blob = instance_double('Aws::S3::Object', exists?: true)
-        allow(blob).to receive(:exists?).and_return(true)
+        blob = instance_double(Aws::S3::Object, exists?: true)
+        allow(Aws::S3::Object).to receive(:new).and_return(blob)
+        s3_client = instance_double(Aws::S3::Client)
+        allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+
+        allow(s3_client).to receive(:list_objects)
 
         expect {
           client.create(File.open(asset('file')), 'foobar')
@@ -187,6 +166,7 @@ module Bosh::Blobstore
 
       context 'with non existing blob' do
         let(:blob) { instance_double('Aws::S3::Object', exists?: false) }
+        let(:s3_client) { instance_double('Aws::S3::Client') }
         let(:options) do
           {
             bucket_name: 'test',
@@ -198,8 +178,10 @@ module Bosh::Blobstore
 
         before do
           allow(Aws::S3::Object).to receive(:new).and_return(blob)
+          allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
 
           allow(blob).to receive(:upload_file)
+          allow(s3_client).to receive(:list_objects)
         end
 
         it 'uses a proper content-type' do
@@ -265,8 +247,13 @@ module Bosh::Blobstore
       end
 
       let(:blob) { instance_double('Aws::S3::Object') }
+      let(:s3_client) { instance_double('Aws::S3::Client') }
 
-      before { allow(Aws::S3::Object).to receive(:new).and_return(blob) }
+      before do
+        allow(Aws::S3::Object).to receive(:new).and_return(blob)
+        allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+        allow(s3_client).to receive(:list_objects)
+      end
 
       it 'should return true if the object already exists' do
         allow(blob).to receive(:exists?).and_return(true)
@@ -276,6 +263,18 @@ module Bosh::Blobstore
       it 'should return false if the object does not exist' do
         allow(blob).to receive(:exists?).and_return(false)
         expect(client.exists?('fake-oid')).to be(false)
+      end
+
+      it 'should only need to list objects once for the same client' do
+        expect(Aws::S3::Client).to receive(:new).once.and_return(s3_client)
+        expect(s3_client).to receive(:list_objects).once
+
+        allow(blob).to receive(:exists?).and_return(true)
+        expect(client.exists?('fake-oid')).to be(true)
+        expect(client.exists?('fake-oid')).to be(true)
+        expect(client.exists?('fake-oid')).to be(true)
+        expect(client.exists?('fake-oid')).to be(true)
+        expect(client.exists?('fake-oid')).to be(true)
       end
 
       context 'without folder options' do
