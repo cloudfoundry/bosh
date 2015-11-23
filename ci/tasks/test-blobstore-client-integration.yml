@@ -1,0 +1,13 @@
+---
+platform: linux
+image: docker:///bosh/blobstore_client
+inputs:
+  - name: bosh-src
+run:
+  path: bosh-src/ci/tasks/test-blobstore-client-integration.sh
+params:
+  access_key_id: replace-me
+  secret_access_key: replace-me
+  s3_region: replace-me
+  s3_host: replace-me
+  run_aws_tests:

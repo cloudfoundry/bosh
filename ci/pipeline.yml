@@ -5,6 +5,7 @@ groups:
       - start-job
       - unit-1.9
       - unit-2.1
+      - blobstore-client-integration
       - integration-1.9-postgres
       - integration-2.1-mysql
       - integration-2.1-postgres
@@ -78,6 +79,21 @@ jobs:
           params:
             RUBY_VERSION: 2.1.7
 
+  - name: blobstore-client-integration
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - task: test
+        file: bosh-src/ci/tasks/test-blobstore-client-integration.yml
+        config:
+          params:
+            access_key_id: {{blobstore_client_aws_access_key_id}}
+            secret_access_key: {{blobstore_client_aws_secret_access_key}}
+            s3_region: {{blobstore_client_aws_s3_region}}
+            s3_host: {{blobstore_client_aws_s3_host}}
+            run_aws_tests: "Not null"
+
   - name: integration-1.9-postgres
     public: true
     serial: true
@@ -131,7 +147,7 @@ jobs:
     serial: true
     plan:
       - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9, blobstore-client-integration]
         get: bosh-src
       - task: publish
         file: bosh-src/ci/tasks/publish-coverage.yml
@@ -144,7 +160,7 @@ jobs:
     serial: true
     plan:
       - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9, blobstore-client-integration]
         get: bosh-src
 
       - {put: bosh-candidate, params: {repository: bosh-src}}
