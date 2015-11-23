@@ -77,7 +77,7 @@ namespace :stemcell do
       require 'tempfile'
       require 'bosh/dev/download_adapter'
 
-      os_image_versions_file = File.expand_path('../../config/os_image_versions.json', __FILE__)
+      os_image_versions_file = File.expand_path('../../../../../../bosh-stemcell/os_image_versions.json', __FILE__)
       os_image_versions = JSON.load(File.open(os_image_versions_file))
       os_image_version = os_image_versions[args.os_image_key]
       puts "Using OS image #{args.os_image_key}, version #{os_image_version}"
