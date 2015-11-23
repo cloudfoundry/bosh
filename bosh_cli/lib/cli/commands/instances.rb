@@ -204,7 +204,7 @@ module Bosh::Cli::Command
                 end
                 prow << '' if has_az
                 if has_uptime
-                  if process['uptime'] && process['uptime']['secs']
+                  if process['uptime']
                     uptime = Integer(process['uptime']['secs'])
                     days = uptime/60/60/24
                     hours = uptime/60/60%24
