@@ -18,6 +18,7 @@ module Bosh::Director
         payload = {
           'id' => SecureRandom.uuid,
           'severity' => Severity::WARNING,
+          'source' => 'director',
           'title' => 'director - begin update deployment',
           'summary' => "Begin update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
           'created_at' => Time.now.to_i
@@ -31,6 +32,7 @@ module Bosh::Director
         payload = {
           'id' => SecureRandom.uuid,
           'severity' => Severity::WARNING,
+          'source' => 'director',
           'title' => 'director - finish update deployment',
           'summary' => "Finish update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
           'created_at' => Time.now.to_i
@@ -44,6 +46,7 @@ module Bosh::Director
         payload = {
           'id' => SecureRandom.uuid,
           'severity' => Severity::ERROR,
+          'source' => 'director',
           'title' => 'director - error during update deployment',
           'summary' => "Error during update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}': #{exception.inspect}",
           'created_at' => Time.now.to_i
