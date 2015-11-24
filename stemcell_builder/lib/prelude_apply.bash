@@ -21,12 +21,12 @@ function get_os_type {
   centos_file=$chroot/etc/centos-release
   rhel_file=$chroot/etc/redhat-release
   ubuntu_file=$chroot/etc/lsb-release
-  photon_file=$chroot/etc/photon-release
+  photonos_file=$chroot/etc/photon-release
 
   os_type=''
-  if [ -f $photon_file ]
+  if [ -f $photonos_file ]
   then
-    os_type='photon'
+    os_type='photonos'
   elif [ -f $ubuntu_file ]
   then
     os_type='ubuntu'
@@ -49,7 +49,7 @@ function pkg_mgr {
     run_in_chroot $chroot "apt-get update"
     run_in_chroot $chroot "apt-get -f -y --force-yes --no-install-recommends $*"
     run_in_chroot $chroot "apt-get clean"
-  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photon' ]
+  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photonos' ]
   then
     run_in_chroot $chroot "yum --verbose --assumeyes $*"
     run_in_chroot $chroot "yum clean all"
@@ -73,7 +73,7 @@ function pkg_exists {
     else
       return 1
     fi
-  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photon' ]
+  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' -o "${os_type}" == 'photonos' ]
   then
     result=`run_in_chroot $chroot "if yum list $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
     if [ "$result" == 'exists' ]; then

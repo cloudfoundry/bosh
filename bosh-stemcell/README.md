@@ -99,21 +99,21 @@ There are a few extra steps you need to do before building a RHEL OS image:
 
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
-### Special requirements for building a Photon OS image
+### Special requirements for building a PhotonOS image
 
-There are a few extra steps you need to do before building a Photon OS image:
+There are a few extra steps you need to do before building a PhotonOS image:
 
 1. Start up or re-provision the stemcell building machine (run `vagrant up` or `vagrant provision` from this directory)
-2. Download the [latest Photon ISO image](https://vmware.bintray.com/photon/iso/) and use `scp` to copy it to the stemcell building machine. The version must be TP2-dev or newer.
-3. On the stemcell building machine, mount the Photon ISO at `/mnt/photon`:
+2. Download the [latest PhotonOS ISO image](https://vmware.bintray.com/photon/iso/) and use `scp` to copy it to the stemcell building machine. The version must be TP2-dev or newer.
+3. On the stemcell building machine, mount the PhotonOS ISO at `/mnt/photonos`:
 
-        # mkdir -p /mnt/photon
-        # mount photon.iso /mnt/photon
+        # mkdir -p /mnt/photonos
+        # mount photon.iso /mnt/photonos
 
 4. On the stemcell building machine, run the stemcell building rake task:
 
         $ cd /bosh
-        $ bundle exec rake stemcell:build_os_image[photon,TP2,/tmp/photon_TP2_base_image.tgz]
+        $ bundle exec rake stemcell:build_os_image[photonos,TP2,/tmp/photon_TP2_base_image.tgz]
 
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
