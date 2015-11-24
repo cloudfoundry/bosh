@@ -41,8 +41,12 @@ module Bosh
       def create_stemcell(image_path, cloud_properties)
         validate_and_record_inputs(CREATE_STEMCELL_SCHEMA, __method__, image_path, cloud_properties)
 
-        stemcell_id = Digest::SHA1.hexdigest(File.read(image_path))
-        File.write(stemcell_file(stemcell_id), image_path)
+        content = File.read(image_path)
+        data = YAML.load(content)
+        data.merge!('image' => image_path)
+        stemcell_id = Digest::SHA1.hexdigest(content)
+
+        File.write(stemcell_file(stemcell_id), YAML.dump(data))
         stemcell_id
       end
 
@@ -268,7 +272,21 @@ module Bosh
       end
 
       def all_stemcells
-        Dir.entries(@base_dir).select { |files| files.match /stemcell_./ }
+        files = Dir.entries(@base_dir).select { |file| file.match /stemcell_./ }
+
+        Dir.chdir(@base_dir) do
+          [].tap do |results|
+            files.each do |file|
+              # data --> [{ 'name' => 'ubuntu-stemcell', 'version': '1', 'image' => <image path> }]
+              data = YAML.load(File.read(file))
+              results << { 'id' => file.sub(/^stemcell_/, '') }.merge(data)
+            end
+          end
+        end
+      end
+
+      def latest_stemcell
+        all_stemcells.sort { |a, b| a[:version].to_i <=> b[:version].to_i }.last
       end
 
       def all_snapshots
