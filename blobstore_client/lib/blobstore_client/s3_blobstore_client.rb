@@ -27,24 +27,18 @@ module Bosh
       def initialize(options)
         super(options)
 
-        protocol = @options.fetch(:use_ssl, true) ? 'https' : 'http'
-        host = @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host)
-        uri = @options[:port].nil? ? host : "#{host}:#{@options[:port]}"
-        endpoint = "#{protocol}://#{uri}"
-        region = @options.fetch(:region, DEFAULT_REGION)
-
-        @aws_options = {
+        @aws_options = build_aws_options({
           bucket_name: @options[:bucket_name],
-          region: @options[:host].nil? ? region : BLANK_REGION,
-          force_path_style: @options.fetch(:s3_force_path_style, false),
-          ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
-        }
-
-        @aws_options[:endpoint] = endpoint unless @options[:host].nil?
-
-        @aws_options[:signature_version] = 's3' unless use_v4_signing?(region)
-
-        @aws_options.merge!(aws_credentials)
+          use_ssl: @options.fetch(:use_ssl, true),
+          host: @options[:host],
+          port: @options[:port],
+          region: @options.fetch(:region, DEFAULT_REGION),
+          s3_force_path_style: @options.fetch(:s3_force_path_style, false),
+          ssl_verify_peer:  @options.fetch(:ssl_verify_peer, true),
+          credentials_source: @options.fetch(:credentials_source, 'static'),
+          access_key_id: @options[:access_key_id],
+          secret_access_key: @options[:secret_access_key]
+        })
 
         # using S3 without credentials is a special case:
         # it is really the simple blobstore client with a bucket name
@@ -154,25 +148,49 @@ module Bosh
          region == 'cn-north-1')
       end
 
-      def aws_credentials
+      def aws_credentials(credentials_source, access_key_id, secret_access_key)
         creds = {}
         # credentials_source could be static (default) or env_or_profile
         # static credentials must be included in aws_properties
         # env_or_profile credentials will use the Aws DefaultCredentialsProvider
         # to find Aws credentials in environment variables or EC2 instance profiles
-        case @options.fetch(:credentials_source, 'static')
+        case credentials_source
           when 'static'
-            creds[:access_key_id]     = @options[:access_key_id]
-            creds[:secret_access_key] = @options[:secret_access_key]
+            creds[:access_key_id]     = access_key_id
+            creds[:secret_access_key] = secret_access_key
 
           when 'env_or_profile'
-            if !@options[:access_key_id].nil? || !@options[:secret_access_key].nil?
+            if !access_key_id.nil? || !secret_access_key.nil?
               raise BlobstoreError, "can't use access_key_id or secret_access_key with env_or_profile credentials_source"
             end
           else
             raise BlobstoreError, 'invalid credentials_source'
         end
         return creds
+      end
+
+      def build_aws_options(options)
+        aws_options = {
+          bucket_name: options[:bucket_name],
+          region: options[:region],
+          force_path_style: options[:s3_force_path_style],
+          ssl_verify_peer: options[:ssl_verify_peer],
+        }
+
+        unless options[:host].nil?
+          host = options[:host]
+          protocol = options[:use_ssl] ? 'https' : 'http'
+          uri = options[:port].nil? ? host : "#{host}:#{options[:port]}"
+          aws_options[:endpoint] = "#{protocol}://#{uri}"
+          aws_options[:region] = BLANK_REGION
+        end
+
+        aws_options[:signature_version] = 's3' unless use_v4_signing?(options[:region])
+
+        creds = aws_credentials(options[:credentials_source], options[:access_key_id], options[:secret_access_key])
+        aws_options.merge!(creds)
+
+        aws_options
       end
     end
   end
