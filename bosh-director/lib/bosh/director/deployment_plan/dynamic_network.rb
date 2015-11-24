@@ -13,6 +13,7 @@ module Bosh::Director
         if network_spec.has_key?('subnets')
           validate_network_has_no_key('dns', name, network_spec)
           validate_network_has_no_key('az', name, network_spec)
+          validate_network_has_no_key('azs', name, network_spec)
           validate_network_has_no_key('cloud_properties', name, network_spec)
 
           subnets = network_spec['subnets'].map do |subnet_properties|
