@@ -1,23 +1,32 @@
+GIT
+  remote: https://github.com/cloudfoundry/delayed_job_sequel.git
+  revision: 6975a36f419631e7408c11c869d4371b119064a5
+  specs:
+    delayed_job_sequel (4.0.1)
+      delayed_job (~> 4.0.0)
+      sequel (>= 3.38, < 5.0)
+      tzinfo
+
 PATH
   remote: agent_client
   specs:
-    agent_client (1.3140.0)
+    agent_client (1.3143.0)
       httpclient (= 2.4.0)
       yajl-ruby (~> 1.2.0)
 
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (1.3140.0)
+    blobstore_client (1.3143.0)
       aws-sdk (= 1.60.2)
-      bosh_common (~> 1.3140.0)
+      bosh_common (~> 1.3143.0)
       httpclient (= 2.4.0)
       multi_json (~> 1.1)
 
 PATH
   remote: bosh-core
   specs:
-    bosh-core (1.3140.0)
+    bosh-core (1.3143.0)
       gibberish (~> 1.4.0)
       yajl-ruby (~> 1.2.0)
 
@@ -39,20 +48,21 @@ PATH
 PATH
   remote: bosh-director
   specs:
-    bosh-director (1.3140.0)
+    bosh-director (1.3143.0)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.3140.0)
-      bosh-core (~> 1.3140.0)
-      bosh-director-core (~> 1.3140.0)
-      bosh-registry (~> 1.3140.0)
-      bosh-template (~> 1.3140.0)
+      blobstore_client (~> 1.3143.0)
+      bosh-core (~> 1.3143.0)
+      bosh-director-core (~> 1.3143.0)
+      bosh-registry (~> 1.3143.0)
+      bosh-template (~> 1.3143.0)
       bosh_aws_cpi (= 2.1.0)
-      bosh_common (~> 1.3140.0)
-      bosh_cpi (~> 1.3140.0)
+      bosh_common (~> 1.3143.0)
+      bosh_cpi (~> 1.3143.0)
       bosh_openstack_cpi (= 2.1.0)
       bosh_vcloud_cpi (= 0.11.0)
       bosh_vsphere_cpi (= 2.2.0)
       cf-uaa-lib (~> 3.2.1)
+      delayed_job_sequel (~> 4.0.1)
       eventmachine (~> 1.0.0)
       fog (~> 1.34.0)
       fog-aws (~> 0.7.6)
@@ -77,14 +87,14 @@ PATH
 PATH
   remote: bosh-director-core
   specs:
-    bosh-director-core (1.3140.0)
-      bosh-template (~> 1.3140.0)
-      bosh_common (~> 1.3140.0)
+    bosh-director-core (1.3143.0)
+      bosh-template (~> 1.3143.0)
+      bosh_common (~> 1.3143.0)
 
 PATH
   remote: bosh-monitor
   specs:
-    bosh-monitor (1.3140.0)
+    bosh-monitor (1.3143.0)
       aws-sdk (= 1.60.2)
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.6.0)
@@ -100,9 +110,9 @@ PATH
 PATH
   remote: bosh-registry
   specs:
-    bosh-registry (1.3140.0)
+    bosh-registry (1.3143.0)
       aws-sdk
-      bosh_cpi (~> 1.3140.0)
+      bosh_cpi (~> 1.3143.0)
       fog
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
@@ -112,34 +122,34 @@ PATH
 PATH
   remote: bosh-release
   specs:
-    bosh-release (1.3140.0)
-      agent_client (~> 1.3140.0)
-      blobstore_client (~> 1.3140.0)
-      bosh-template (~> 1.3140.0)
-      bosh_common (~> 1.3140.0)
+    bosh-release (1.3143.0)
+      agent_client (~> 1.3143.0)
+      blobstore_client (~> 1.3143.0)
+      bosh-template (~> 1.3143.0)
+      bosh_common (~> 1.3143.0)
       trollop (~> 1.16)
       yajl-ruby (~> 1.2.0)
 
 PATH
   remote: bosh-stemcell
   specs:
-    bosh-stemcell (1.3140.0)
-      bosh-core (~> 1.3140.0)
+    bosh-stemcell (1.3143.0)
+      bosh-core (~> 1.3143.0)
       bosh_aws_cpi (= 2.1.0)
 
 PATH
   remote: bosh-template
   specs:
-    bosh-template (1.3140.0)
+    bosh-template (1.3143.0)
       semi_semantic (~> 1.1.0)
 
 PATH
   remote: bosh_cli
   specs:
-    bosh_cli (1.3140.0)
-      blobstore_client (~> 1.3140.0)
-      bosh-template (~> 1.3140.0)
-      bosh_common (~> 1.3140.0)
+    bosh_cli (1.3143.0)
+      blobstore_client (~> 1.3143.0)
+      bosh-template (~> 1.3143.0)
+      bosh_common (~> 1.3143.0)
       cf-uaa-lib (~> 3.2.1)
       highline (~> 1.6.2)
       httpclient (= 2.4.0)
@@ -156,27 +166,27 @@ PATH
 PATH
   remote: bosh_cli_plugin_aws
   specs:
-    bosh_cli_plugin_aws (1.3140.0)
-      bosh-core (~> 1.3140.0)
-      bosh-stemcell (~> 1.3140.0)
+    bosh_cli_plugin_aws (1.3143.0)
+      bosh-core (~> 1.3143.0)
+      bosh-stemcell (~> 1.3143.0)
       bosh_aws_cpi (= 2.1.0)
-      bosh_cli (~> 1.3140.0)
-      bosh_cli_plugin_micro (~> 1.3140.0)
+      bosh_cli (~> 1.3143.0)
+      bosh_cli_plugin_micro (~> 1.3143.0)
 
 PATH
   remote: bosh_cli_plugin_micro
   specs:
-    bosh_cli_plugin_micro (1.3140.0)
-      agent_client (~> 1.3140.0)
-      blobstore_client (~> 1.3140.0)
-      bosh-core (~> 1.3140.0)
-      bosh-director-core (~> 1.3140.0)
-      bosh-registry (~> 1.3140.0)
-      bosh-stemcell (~> 1.3140.0)
+    bosh_cli_plugin_micro (1.3143.0)
+      agent_client (~> 1.3143.0)
+      blobstore_client (~> 1.3143.0)
+      bosh-core (~> 1.3143.0)
+      bosh-director-core (~> 1.3143.0)
+      bosh-registry (~> 1.3143.0)
+      bosh-stemcell (~> 1.3143.0)
       bosh_aws_cpi (= 2.1.0)
-      bosh_cli (~> 1.3140.0)
-      bosh_common (~> 1.3140.0)
-      bosh_cpi (~> 1.3140.0)
+      bosh_cli (~> 1.3143.0)
+      bosh_common (~> 1.3143.0)
+      bosh_cpi (~> 1.3143.0)
       bosh_openstack_cpi (= 2.1.0)
       bosh_vcloud_cpi (= 0.11.0)
       bosh_vsphere_cpi (= 2.2.0)
@@ -187,22 +197,22 @@ PATH
 PATH
   remote: bosh_common
   specs:
-    bosh_common (1.3140.0)
+    bosh_common (1.3143.0)
       logging (~> 1.8.2)
       semi_semantic (~> 1.1.0)
 
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.3140.0)
-      bosh_common (~> 1.3140.0)
+    bosh_cpi (1.3143.0)
+      bosh_common (~> 1.3143.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
 
 PATH
   remote: simple_blobstore_server
   specs:
-    simple_blobstore_server (1.3140.0)
+    simple_blobstore_server (1.3143.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
 
@@ -210,6 +220,12 @@ GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (2.3.2)
+    activesupport (4.2.5)
+      i18n (~> 0.7)
+      json (~> 1.7, >= 1.7.7)
+      minitest (~> 5.1)
+      thread_safe (~> 0.3, >= 0.3.4)
+      tzinfo (~> 1.1)
     addressable (2.3.7)
     ast (2.0.0)
     aws-sdk (1.60.2)
@@ -262,6 +278,8 @@ GEM
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     daemons (1.2.3)
+    delayed_job (4.0.6)
+      activesupport (>= 3.0, < 5.0)
     diff-lcs (1.2.5)
     docile (1.1.5)
     dogapi (1.6.0)
@@ -380,6 +398,7 @@ GEM
     gibberish (1.4.0)
     highline (1.6.21)
     httpclient (2.4.0)
+    i18n (0.7.0)
     inflecto (0.0.2)
     ipaddress (0.8.0)
     json (1.8.3)
@@ -394,6 +413,7 @@ GEM
     mime-types (2.6.2)
     mini_portile (0.6.2)
     minitar (0.5.4)
+    minitest (5.8.3)
     mono_logger (1.1.0)
     multi_json (1.11.2)
     mysql2 (0.3.11)
@@ -549,6 +569,7 @@ DEPENDENCIES
   bosh_common!
   bosh_cpi!
   codeclimate-test-reporter
+  delayed_job_sequel (= 4.0.1)!
   eventmachine (= 1.0.3)
   fakefs
   httpclient

@@ -15,9 +15,11 @@ stop_workers()
 {
   for pid_file in "$RUN_DIR"/worker_*.pid
   do
+    if [ -f "$pid_file" ] ; then
       worker_pid=`cat ${pid_file}`
       # Stop resque workers from accepting any new jobs
       kill -s USR2 ${worker_pid}
+    fi
   done
 }
 
@@ -27,7 +29,7 @@ COMPONENT=drain erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/
 
 num_workers=`/var/vcap/packages/director/bin/bosh-director-drain-workers -r -c /var/vcap/jobs/director/config/drain.yml 2>>$LOG_DIR/drain.stderr.log`
 
-if [ $num_workers -eq 0 ]; then
+if ([ $? != 0 ] || [ $num_workers -eq 0 ]); then
   echo 0
 else
   echo -$default_wait_time

@@ -116,7 +116,7 @@ module Bosh::Director
 
     # Spawns a thread that periodically updates task checkpoint time.
     # There is no need to kill this thread as job execution lifetime is the
-    # same as Resque worker process lifetime.
+    # same as worker process lifetime.
     # @return [Thread] Checkpoint thread
     def run_checkpointing
       # task check pointer is scoped to separate class to avoid

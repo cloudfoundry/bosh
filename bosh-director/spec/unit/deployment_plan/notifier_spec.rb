@@ -24,6 +24,7 @@ module Bosh::Director
             {
               'id' => SecureRandom.uuid,
               'severity' => 4, # corresponds to the `warning` severity level
+              'source' => 'director',
               'title' => 'director - begin update deployment',
               'summary' => "Begin update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
               'created_at' => Time.now.to_i
@@ -44,6 +45,7 @@ module Bosh::Director
             {
               'id'         => SecureRandom.uuid,
               'severity'   => 4, # corresponds to the `warning` severity level
+              'source' => 'director',
               'title'      => 'director - finish update deployment',
               'summary'    => "Finish update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
               'created_at' => Time.now.to_i
@@ -64,6 +66,7 @@ module Bosh::Director
             {
               'id'         => SecureRandom.uuid,
               'severity'   => 3, # corresponds to the `error` severity level
+              'source' => 'director',
               'title'      => 'director - error during update deployment',
               'summary'    => "Error during update deployment for '#{planner.canonical_name}' against Director '#{uuid}': #<Exception: This is an exception>",
               'created_at' => Time.now.to_i
