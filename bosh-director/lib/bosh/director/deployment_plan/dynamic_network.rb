@@ -10,11 +10,12 @@ module Bosh::Director
         logger = TaggedLogger.new(logger, 'network-configuration')
         dns_manager = DnsManager.create
 
+        validate_network_has_no_key('az', name, network_spec)
+        validate_network_has_no_key('azs', name, network_spec)
+
         if network_spec.has_key?('subnets')
-          validate_network_has_no_key('dns', name, network_spec)
-          validate_network_has_no_key('az', name, network_spec)
-          validate_network_has_no_key('azs', name, network_spec)
-          validate_network_has_no_key('cloud_properties', name, network_spec)
+          validate_network_has_no_key_while_subnets_present('dns', name, network_spec)
+          validate_network_has_no_key_while_subnets_present('cloud_properties', name, network_spec)
 
           subnets = network_spec['subnets'].map do |subnet_properties|
             dns_spec = safe_property(subnet_properties, 'dns', :class => Array, :optional => true)
@@ -27,17 +28,22 @@ module Bosh::Director
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
           dns_spec = safe_property(network_spec, 'dns', :class => Array, :optional => true)
           dns = dns_manager.dns_servers(network_spec['name'], dns_spec)
-          network_availability_zones = parse_availability_zones(network_spec, availability_zones, name)
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, network_availability_zones)]
+          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, nil)]
         end
 
         new(name, subnets, logger)
       end
 
-      def self.validate_network_has_no_key(key, name, network_spec)
+      def self.validate_network_has_no_key_while_subnets_present(key, name, network_spec)
         if network_spec.has_key?(key)
           raise NetworkInvalidProperty, "Network '#{name}' must not specify '#{key}' when also specifying 'subnets'. " +
               "Instead, '#{key}' should be specified on subnet entries."
+        end
+      end
+
+      def self.validate_network_has_no_key(key, name, network_spec)
+        if network_spec.has_key?(key)
+          raise NetworkInvalidProperty, "Network '#{name}' must not specify '#{key}'."
         end
       end
 

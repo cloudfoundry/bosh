@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
     let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
-    let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'} }
+    let(:network_spec) { {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}] } }
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
     let(:job) {
       job = instance_double('Bosh::Director::DeploymentPlan::Job',
@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan
         expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
         expect(spec['networks'][network_name]).to eq({
             'type' => 'dynamic',
-            'cloud_properties' => network_spec['cloud_properties'],
+            'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
             'dns_record_name' => expect_dns_name
             })
 
@@ -114,7 +114,7 @@ module Bosh::Director::DeploymentPlan
         expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
-            'cloud_properties' => network_spec['cloud_properties'],
+            'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
             'dns_record_name' => expect_dns_name
           )
 
@@ -174,7 +174,7 @@ module Bosh::Director::DeploymentPlan
 
           expect(spec['networks'][network_name]).to eq({
             'type' => 'dynamic',
-            'cloud_properties' => network_spec['cloud_properties'],
+            'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
             'dns_record_name' => expect_dns_name
           })
 

@@ -15,10 +15,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           {
             'name' => 'foo',
             'dns' => %w[1.2.3.4 5.6.7.8],
-            'cloud_properties' => {
-              'foz' => 'baz'
-            },
-            'az' => 'foo-zone'
+            'cloud_properties' => {'foz' => 'baz'},
           },
           [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
           logger
@@ -28,7 +25,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.length).to eq(1)
         expect(network.subnets.first.dns).to eq(['1.2.3.4', '5.6.7.8'])
         expect(network.subnets.first.cloud_properties).to eq({'foz' => 'baz'})
-        expect(network.subnets.first.availability_zone_names).to eq(['foo-zone'])
+        expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
       it 'defaults cloud properties to empty hash' do
@@ -71,37 +68,30 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
-      it 'does not allow availability zone to be nil' do
+      it 'raises error when `az` is present on the network spec' do
         expect {
           BD::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
-              'cloud_properties' => {
-                'foz' => 'baz'
-              },
-              'az' => nil
-            },
-            [],
-            logger
-          )
-        }.to raise_error(BD::ValidationInvalidType)
-      end
-
-      it 'validates the az references an existing AZ' do
-        expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
-            {
-              'name' => 'foo',
-              'dns' => %w[1.2.3.4 5.6.7.8],
-              'cloud_properties' => {
-                'foz' => 'baz'
-              },
               'az' => 'foo-zone'
             },
-            [BD::DeploymentPlan::AvailabilityZone.new('bar-zone', {})],
+            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
             logger
           )
-        }.to raise_error(BD::NetworkSubnetUnknownAvailabilityZone)
+        }.to raise_error(BD::NetworkInvalidProperty, "Network 'foo' must not specify 'az'.")
+      end
+
+      it 'raises error when `azs` is present on the network spec' do
+        expect {
+          BD::DeploymentPlan::DynamicNetwork.parse(
+            {
+              'name' => 'foo',
+              'azs' => ['foo-zone']
+            },
+            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+            logger
+          )
+        }.to raise_error(BD::NetworkInvalidProperty, "Network 'foo' must not specify 'azs'.")
       end
     end
 
@@ -241,52 +231,6 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         }.to raise_error(BD::NetworkInvalidProperty,
             "Network 'foo' must not specify 'dns' when also specifying 'subnets'. " +
               "Instead, 'dns' should be specified on subnet entries.")
-      end
-
-      it 'raises error when `az` is present at the top level' do
-        expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
-            {
-              'name' => 'foo',
-              'az' => 'foo-zone',
-              'subnets' => [
-                {
-                  'dns' => %w[9.8.7.6 5.4.3.2],
-                  'cloud_properties' => {
-                    'foz' => 'baz'
-                  }
-                },
-              ]
-            },
-            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
-            logger
-          )
-        }.to raise_error(BD::NetworkInvalidProperty,
-            "Network 'foo' must not specify 'az' when also specifying 'subnets'. " +
-              "Instead, 'az' should be specified on subnet entries.")
-      end
-
-      it 'raises error when `azs` is present at the top level' do
-        expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
-            {
-              'name' => 'foo',
-              'azs' => ['foo-zone'],
-              'subnets' => [
-                {
-                  'dns' => %w[9.8.7.6 5.4.3.2],
-                  'cloud_properties' => {
-                    'foz' => 'baz'
-                  }
-                },
-              ]
-            },
-            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
-            logger
-          )
-        }.to raise_error(BD::NetworkInvalidProperty,
-            "Network 'foo' must not specify 'azs' when also specifying 'subnets'. " +
-              "Instead, 'azs' should be specified on subnet entries.")
       end
 
       it 'raises error when cloud_properties is present at the top level' do
