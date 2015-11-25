@@ -156,7 +156,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when the job specifies a single network with static IPs spanning multiple AZs' do
+        context 'when the job specifies a single network with static IPs from different AZs' do
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
 
           it 'assigns instances to the AZs' do
@@ -168,6 +168,31 @@ module Bosh::Director::DeploymentPlan
             expect(new_instance_plans[1].desired_instance.az.name).to eq('zone1')
             expect(new_instance_plans[2].desired_instance.az.name).to eq('zone2')
           end
+        end
+
+        context 'when job specifies a single network with static IP spanning multiple AZs' do
+          let(:job_availability_zones) { ['zone1'] }
+          let(:networks_spec) do
+            [
+                {'name' => 'a',
+                 'subnets' => [
+                     make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone1', 'zone2']),
+                 ]
+                }
+            ]
+          end
+
+          let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.1.12'] }
+
+          it 'picks az that is specified on a job and static IP belongs to' do
+              expect(new_instance_plans.size).to eq(3)
+              expect(existing_instance_plans).to eq([])
+              expect(obsolete_instance_plans).to eq([])
+
+              expect(new_instance_plans[0].desired_instance.az.name).to eq('zone1')
+              expect(new_instance_plans[1].desired_instance.az.name).to eq('zone1')
+              expect(new_instance_plans[2].desired_instance.az.name).to eq('zone1')
+            end
         end
 
         context 'when the job specifies multiple networks with static IPs from the same AZ' do

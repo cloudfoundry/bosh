@@ -6,8 +6,10 @@ module Bosh
           extend Bosh::Director::IpUtil
           include Bosh::Director::IpUtil
 
-          def self.create(job_networks, job_name)
+          def self.create(job_networks, desired_azs, job_name)
             networks_to_static_ips = {}
+
+            desired_az_names = desired_azs.nil? ? [nil] : desired_azs.to_a.map(&:name)
 
             job_networks.each do |job_network|
               next unless job_network.static?
@@ -21,8 +23,9 @@ module Bosh
                       "which belongs to no subnet"
                 end
                 az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
+                filtered_az_names = az_names.select { |static_ip_az_name| desired_az_names.include?(static_ip_az_name) }.uniq
                 networks_to_static_ips[job_network.name] ||= []
-                networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, az_names)
+                networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, filtered_az_names)
               end
             end
 

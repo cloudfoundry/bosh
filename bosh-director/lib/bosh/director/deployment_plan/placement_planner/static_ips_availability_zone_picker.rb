@@ -10,7 +10,7 @@ module Bosh
             @network_planner = network_planner
             @job_networks = job_networks
             @job_name = job_name
-            @networks_to_static_ips = NetworksToStaticIps.create(@job_networks, job_name)
+            @networks_to_static_ips = NetworksToStaticIps.create(@job_networks, desired_azs, job_name)
             @desired_azs = desired_azs
             @logger = logger
           end

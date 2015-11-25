@@ -103,15 +103,17 @@ module Bosh::Director::DeploymentPlan
             ManualNetworkSubnet.new(
               'network_A',
               NetAddr::CIDR.create('192.168.1.0/24'),
-              nil, nil, nil, nil, ['zone_1'], [],
+              nil, nil, nil, nil, subnet_azs, [],
               ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14'])
           ]
         end
         let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
         let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
         let(:job_static_ips) { ['192.168.1.10', '192.168.1.11'] }
+        let(:desired_azs) { [AvailabilityZone.new('zone_1', {})] }
+        let(:subnet_azs) { ['zone_1'] }
         it 'prefers first IPs' do
-          networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, 'fake-job')
+          networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
           static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
           expect(static_ip_to_azs.ip).to eq('192.168.1.10')
 
@@ -123,9 +125,20 @@ module Bosh::Director::DeploymentPlan
           let(:job_static_ips) { ['192.168.1.10', '192.168.1.244'] }
           it 'raises' do
             expect {
-              PlacementPlanner::NetworksToStaticIps.create(job_networks, 'fake-job')
+              PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
             }.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch,
                 "Job 'fake-job' with network 'network_A' declares static ip '192.168.1.244', which belongs to no subnet")
+          end
+        end
+
+        context 'when desired azs are subset of subnet azs' do
+          let(:subnet_azs) { ['zone_2', 'zone_1'] }
+
+          it 'returns static ip in desired az' do
+            networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
+            static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+            expect(static_ip_to_azs.ip).to eq('192.168.1.10')
+            expect(static_ip_to_azs.az_names).to eq(['zone_1'])
           end
         end
       end
