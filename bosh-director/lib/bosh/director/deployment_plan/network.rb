@@ -37,10 +37,6 @@ module Bosh::Director
               "#network_settings not implemented for #{self.class}"
       end
 
-      def subnet_azs_contained_in(availability_zones)
-        raise NotImplementedError
-      end
-
       def has_azs?(az_names)
         raise NotImplementedError
       end
