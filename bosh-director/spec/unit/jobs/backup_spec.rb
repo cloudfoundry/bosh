@@ -4,9 +4,9 @@ require 'fakefs/spec_helpers'
 
 module Bosh::Director
   describe Jobs::Backup do
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :bosh_backup }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe '#perform' do

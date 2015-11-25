@@ -4,11 +4,11 @@ module Bosh::Director
       attr_reader :job_class, :task_id
 
       def initialize(job_class, task_id, args)
-        raise DirectorError, "Invalid director job class `#{job_class}'. It should have `perform' method."  unless job_class.instance_methods(false).include?(:perform)
         unless job_class.kind_of?(Class) &&
             job_class <= Jobs::BaseJob
           raise DirectorError, "Invalid director job class `#{job_class}'"
         end
+        raise DirectorError, "Invalid director job class `#{job_class}'. It should have `perform' method."  unless job_class.instance_methods(false).include?(:perform)
         @job_class = job_class
         @task_id = task_id
         @args = args
