@@ -1,5 +1,5 @@
+require 'bosh/stemcell/arch'
 require 'spec_helper'
-require 'rbconfig'
 
 describe 'Ubuntu 14.04 OS image', os_image: true do
   it_behaves_like 'every OS image'
@@ -78,26 +78,17 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+      if Bosh::Stemcell::Arch.ppc64le?
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty main restricted' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main restricted' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty-updates main restricted' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty universe' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty universe' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates universe' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty-updates universe' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty multiverse' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty multiverse' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates multiverse' }
-        it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty-updates multiverse' }
 
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security main restricted' }
-        it { should contain 'deb-src http://ports.ubuntu.com/ubuntu-ports/ trusty-security main restricted' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security universe' }
-        it { should contain 'deb-src http://ports.ubuntu.com/ubuntu-ports/ trusty-security universe' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security multiverse' }
-        it { should contain 'deb-src http://ports.ubuntu.com/ubuntu-ports/ trusty-security multiverse' }
 
       else
         it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
@@ -171,7 +162,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).reject{ |pkg| RbConfig::CONFIG['host_cpu'] == 'powerpc64le' and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
+    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end

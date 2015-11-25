@@ -6,6 +6,7 @@ set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
+source $base_dir/lib/helpers.sh
 
 assert_available debootstrap
 
