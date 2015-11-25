@@ -279,6 +279,9 @@ module Bosh::Director
 
       def update_stemcell_references!
         current_stemcell_models = resource_pools.map { |pool| pool.stemcell.model }
+        @stemcells.values.map(&:model).each do |stemcell|
+          current_stemcell_models << stemcell
+        end
         model.stemcells.each do |deployment_stemcell|
           deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
         end

@@ -32,6 +32,13 @@ describe 'vm_types and stemcells', type: :integration do
 
     create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
     expect(create_vm_invocations.last.inputs['env']).to eq(env_hash)
+    expect(bosh_runner.run('deployments')).to match_output  %(
++--------+----------------------+-------------------+--------------+
+| Name   | Release(s)           | Stemcell(s)       | Cloud Config |
++--------+----------------------+-------------------+--------------+
+| simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | latest       |
++--------+----------------------+-------------------+--------------+
+    )
   end
 
   context 'when env on a job changes' do
