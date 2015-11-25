@@ -1,3 +1,4 @@
+require 'bosh/stemcell/arch'
 require 'forwardable'
 
 module Bosh::Stemcell
@@ -25,7 +26,7 @@ module Bosh::Stemcell
 
     def name
       mod_name = definition.light? ? "light-#{base_name}" : base_name
-      if RbConfig::CONFIG['host_cpu'] == 'powerpc64le'
+      if Bosh::Stemcell::Arch.ppc64le?
         "#{mod_name}-ppc64le"
       else
         mod_name

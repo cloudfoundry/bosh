@@ -1,11 +1,12 @@
 require 'spec_helper'
+require 'bosh/stemcell/arch'
 require 'bosh/stemcell/disk_image'
 
 module Bosh::Stemcell
   describe DiskImage do
     let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
 
-    if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+    if Bosh::Stemcell::Arch.ppc64le?
       # power8 guest images have a p1: PReP partition and p2: file system, we need loopXp2 here
       let(:kpartx_map_output) { 'add map FAKE_LOOP1p2 (252:9): 0 20953088 linear /dev/loop1 18432' }
     else
@@ -44,7 +45,7 @@ module Bosh::Stemcell
       it 'maps the file to a loop device' do
         losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-        if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+        if Bosh::Stemcell::Arch.ppc64le?
           expect(shell).to receive(:run).
                              with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                              output_command: false).and_return(kpartx_map_output)
@@ -59,7 +60,7 @@ module Bosh::Stemcell
       it 'mounts the loop device' do
         losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-        if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+        if Bosh::Stemcell::Arch.ppc64le?
           allow(shell).to receive(:run).
                              with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                              output_command: false).and_return(kpartx_map_output)
@@ -75,7 +76,7 @@ module Bosh::Stemcell
 
       context 'when the device does not exist' do
         let(:mount_command) do
-          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+          if Bosh::Stemcell::Arch.ppc64le?
             'sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt'
           else
             'sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt'
@@ -93,7 +94,7 @@ module Bosh::Stemcell
         it 'runs mount a second time after sleeping long enough for the device node to be created' do
           losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
           allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+          if Bosh::Stemcell::Arch.ppc64le?
             allow(shell).to receive(:run).
                                with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
                                output_command: false).and_return(kpartx_map_output)
@@ -112,7 +113,7 @@ module Bosh::Stemcell
           it 'raises an error' do
             losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
             allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-            if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+            if Bosh::Stemcell::Arch.ppc64le?
               allow(shell).to receive(:run).
                                  with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                  output_command: false).and_return(kpartx_map_output)
@@ -133,7 +134,7 @@ module Bosh::Stemcell
           losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
           allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
 
-          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+          if Bosh::Stemcell::Arch.ppc64le?
             allow(shell).to receive(:run).
                                with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                output_command: false).and_return(kpartx_map_output)
@@ -180,7 +181,7 @@ module Bosh::Stemcell
         fake_thing = double('FakeThing')
         losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
         allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-        if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+        if Bosh::Stemcell::Arch.ppc64le?
           allow(shell).to receive(:run).
                                with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                output_command: false).and_return(kpartx_map_output)
@@ -204,7 +205,7 @@ module Bosh::Stemcell
         it 'mounts the disk, calls the provided block, and unmounts' do
           losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
           allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
-          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+          if Bosh::Stemcell::Arch.ppc64le?
             allow(shell).to receive(:run).
                                  with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
                                  output_command: false).and_return(kpartx_map_output)

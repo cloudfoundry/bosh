@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 
 disk_image=${work}/${stemcell_image_name}
 
-if [ "`uname -m`" == "ppc64le" ]; then
+if is_ppc64le; then
   # ppc64le guest images have a PReP partition
   # this and other code changes for ppc64le with input from Paulo Flabiano Smorigo @ IBM
   part_offset=2048s
@@ -22,7 +22,7 @@ fi
 
 dd if=/dev/null of=${disk_image} bs=1M seek=${image_create_disk_size} 2> /dev/null
 parted --script ${disk_image} mklabel msdos
-if [ "`uname -m`" == "ppc64le" ]; then
+if is_ppc64le; then
   parted --script ${disk_image} mkpart primary $part_offset $part_size
   parted --script ${disk_image} set 1 boot on
   parted --script ${disk_image} set 1 prep on
@@ -39,7 +39,7 @@ kpartx -dv ${disk_image}
 device=$(losetup --show --find ${disk_image})
 add_on_exit "losetup --verbose --detach ${device}"
 
-if [ "`uname -m`" == "ppc64le" ]; then
+if is_ppc64le; then
   device_partition=$(kpartx -av ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" " -f3)
 else
   device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)

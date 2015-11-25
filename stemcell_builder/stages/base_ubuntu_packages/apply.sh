@@ -15,7 +15,7 @@ cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted \
 cloud-guest-utils anacron software-properties-common"
 
-if [ `uname -m` == "ppc64le" ]; then
+if is_ppc64le; then
   debs="$debs \
 libreadline-dev libtool texinfo ppc64-diag libffi-dev \
 libruby bundler libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev"
@@ -27,10 +27,9 @@ pkg_mgr install $debs
 run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
 # needed to remove rsyslog-mmjsonparse on ppc64le
 # because of this issue https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
-if [ `uname -m` == "ppc64le" ]; then
-  pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
-else
-  pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
+if [ ! is_ppc64le ]; then
+  pkg_mgr install "rsyslog-mmjsonparse"
 fi
 
 

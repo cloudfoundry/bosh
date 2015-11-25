@@ -186,7 +186,6 @@ module Bosh::Stemcell
       end
     end
 
-
     def image_file_path
       File.join(work_path, settings['stemcell_image_name'])
     end
