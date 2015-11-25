@@ -45,10 +45,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'validate_ips_are_in_desired_azs' do
-      context 'when there are AZs that are declared in job networks but not in desired azs'do
+      context 'when there are no AZs that job can put its static ips in'do
         let(:desired_azs) do
           [
-            AvailabilityZone.new('z1', {}),
             AvailabilityZone.new('z3', {}),
           ]
         end
@@ -58,6 +57,28 @@ module Bosh::Director::DeploymentPlan
             networks_to_static_ips.validate_ips_are_in_desired_azs(desired_azs)
           }.to raise_error Bosh::Director::JobStaticIpsFromInvalidAvailabilityZone,
             "Job 'fake-job' declares static ip '192.168.0.1' which does not belong to any of the job's availability zones."
+        end
+      end
+
+      context 'when job declares azs which is subset of azs on ip subnet' do
+        let(:desired_azs) do
+          [
+              AvailabilityZone.new('z1', {}),
+          ]
+        end
+
+        let(:networks_to_static_ips_hash) do
+          {
+              'network-1' => [
+                  PlacementPlanner::NetworksToStaticIps::StaticIpToAzs.new('192.168.0.1', ['z2', 'z1']),
+              ]
+          }
+        end
+
+        it 'does not raise an error' do
+          expect {
+            networks_to_static_ips.validate_ips_are_in_desired_azs(desired_azs)
+          }.to_not raise_error
         end
       end
 
