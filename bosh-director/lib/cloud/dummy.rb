@@ -281,12 +281,12 @@ module Bosh
               data = YAML.load(File.read(file))
               results << { 'id' => file.sub(/^stemcell_/, '') }.merge(data)
             end
-          end
+          end.sort { |a, b| a[:version].to_i <=> b[:version].to_i }
         end
       end
 
       def latest_stemcell
-        all_stemcells.sort { |a, b| a[:version].to_i <=> b[:version].to_i }.last
+        all_stemcells.last
       end
 
       def all_snapshots

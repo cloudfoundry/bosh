@@ -31,7 +31,7 @@ describe 'deploy', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-      v2_stemcell_id = current_sandbox.cpi.all_stemcells.first[9..-1]
+      stemcell_id = current_sandbox.cpi.all_stemcells[0]['id']
 
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_v2.tgz')} --skip-if-exists")
 
@@ -43,7 +43,7 @@ describe 'deploy', type: :integration do
       expect(create_vm_invocations.count).to be > 0
 
       create_vm_invocations.each do |invocation|
-        expect(invocation['inputs']['stemcell_id']).to eq(v2_stemcell_id)
+        expect(invocation['inputs']['stemcell_id']).to eq(stemcell_id)
       end
 
     end
