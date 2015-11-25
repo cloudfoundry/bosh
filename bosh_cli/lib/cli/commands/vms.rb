@@ -36,7 +36,7 @@ module Bosh::Cli::Command
 
       sorted = sort(vms)
 
-      has_az = vms.any? {|vm| vm.has_key? 'availability_zone' }
+      has_az = vms.any? {|vm| vm.has_key? 'az' }
 
       vms_table = table do |t|
         headings = ['VM', 'State']
@@ -67,7 +67,7 @@ module Bosh::Cli::Command
           ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
-          az = vm['availability_zone'].nil? ? 'n/a' : vm['availability_zone']
+          az = vm['az'].nil? ? 'n/a' : vm['az']
 
           row = [job, vm['job_state']]
           if has_az
@@ -132,7 +132,7 @@ module Bosh::Cli::Command
     def sort(vms)
       sorted = vms.sort do |a, b|
         comparison = a['job_name'].to_s <=> b['job_name'].to_s
-        comparison = a['availability_zone'].to_s <=> b['availability_zone'].to_s if comparison == 0
+        comparison = a['az'].to_s <=> b['az'].to_s if comparison == 0
         comparison = a['index'].to_i <=> b['index'].to_i if comparison == 0
         comparison = a['resource_pool'].to_s <=> b['resource_pool'].to_s if comparison == 0
         comparison

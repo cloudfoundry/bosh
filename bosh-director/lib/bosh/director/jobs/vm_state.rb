@@ -78,7 +78,7 @@ module Bosh::Director
           :vitals => job_vitals,
           :processes => processes,
           :resurrection_paused => vm.instance ? vm.instance.resurrection_paused : nil,
-          :availability_zone => vm.instance ? vm.instance.availability_zone : nil,
+          :az => vm.instance ? vm.instance.availability_zone : nil,
           :instance_id => vm.instance ? vm.instance.uuid : nil,
           :is_bootstrap => vm.instance ? vm.instance.bootstrap : false
         }

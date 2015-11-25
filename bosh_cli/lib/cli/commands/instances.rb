@@ -62,7 +62,7 @@ module Bosh::Cli::Command
     def construct_table_to_display(options, instances)
       row_count = 0
       has_disk_cid = instances.any? {|instance| instance.has_key?('disk_cid') }
-      has_az = instances.any? {|instance| instance.has_key?('availability_zone') }
+      has_az = instances.any? {|instance| instance.has_key?('az') }
       has_uptime = instances[0]['processes'] && instances[0]['processes'].size > 0 && instances[0]['processes'][0].has_key?('uptime')
       has_cpu = instances[0]['processes'] && instances[0]['processes'].size > 0 && instances[0]['processes'][0].has_key?('cpu')
       instance_count = instances.size
@@ -137,7 +137,7 @@ module Bosh::Cli::Command
           ips = Array(instance['ips']).join("\n")
           dns_records = Array(instance['dns']).join("\n")
           vitals = instance['vitals']
-          az = instance['availability_zone'].nil? ? 'n/a' : instance['availability_zone']
+          az = instance['az'].nil? ? 'n/a' : instance['az']
 
           row = [job, instance['job_state']]
           if has_az
@@ -246,7 +246,7 @@ module Bosh::Cli::Command
     def sort(instances)
       instances.sort do |instance1, instance2|
         comparison = instance1['job_name'].to_s <=> instance2['job_name'].to_s
-        comparison = instance1['availability_zone'].to_s <=> instance2['availability_zone'].to_s if comparison == 0
+        comparison = instance1['az'].to_s <=> instance2['az'].to_s if comparison == 0
         comparison = instance1['index'].to_i <=> instance2['index'].to_i if comparison == 0
         comparison = instance1['resource_pool'].to_s <=> instance2['resource_pool'].to_s if comparison == 0
         comparison

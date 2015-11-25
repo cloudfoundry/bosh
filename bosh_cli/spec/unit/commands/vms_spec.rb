@@ -95,11 +95,11 @@ describe Bosh::Cli::Command::Vms do
 
     context 'sorting multiple instances' do
       it 'sort by job name first' do
-        vm_state.delete('availability_zone')
+        vm_state.delete('az')
 
         vm_state2 = vm_state.clone
         vm_state2['job_name'] = 'job0'
-        vm_state2['availability_zone'] = 'az2'
+        vm_state2['az'] = 'az2'
 
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state2, vm_state] }
 
@@ -114,16 +114,16 @@ describe Bosh::Cli::Command::Vms do
       end
 
       it 'if name is the same, sort by AZ' do
-        vm_state.delete('availability_zone')
+        vm_state.delete('az')
 
         vm_state2 = vm_state.clone
-        vm_state2['availability_zone'] = 'az1'
+        vm_state2['az'] = 'az1'
 
         vm_state3 = vm_state.clone
-        vm_state3['availability_zone'] = 'az2'
+        vm_state3['az'] = 'az2'
 
         vm_state4 = vm_state.clone
-        vm_state4['availability_zone'] = 'zone1'
+        vm_state4['az'] = 'zone1'
 
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state3, vm_state4, vm_state2, vm_state] }
 
@@ -178,7 +178,7 @@ describe Bosh::Cli::Command::Vms do
         end
 
         it 'show AZ information' do
-          vm_state['availability_zone'] = 'az1'
+          vm_state['az'] = 'az1'
           expect(command).to receive(:say) do |output_display|
             expect(output_display.to_s).to include 'AZ'
             expect(output_display.to_s).to include 'az1'

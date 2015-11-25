@@ -143,7 +143,7 @@ describe Bosh::Cli::Command::Instances do
           },
         ],
         'resurrection_paused' => true,
-        'availability_zone' => 'az1'
+        'az' => 'az1'
       }
     }
 
@@ -210,7 +210,7 @@ describe Bosh::Cli::Command::Instances do
           },
         ],
         'resurrection_paused' => true,
-        'availability_zone' => 'az2'
+        'az' => 'az2'
       }
     }
 
@@ -265,11 +265,11 @@ describe Bosh::Cli::Command::Instances do
 
     context 'sorting multiple instances' do
       it 'sort by job name first' do
-        vm1_state.delete('availability_zone')
+        vm1_state.delete('az')
 
         vm_state2 = vm1_state.clone
         vm_state2['job_name'] = 'job0'
-        vm_state2['availability_zone'] = 'az2'
+        vm_state2['az'] = 'az2'
 
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state2, vm1_state] }
 
@@ -284,16 +284,16 @@ describe Bosh::Cli::Command::Instances do
       end
 
       it 'if name is the same, sort by AZ' do
-        vm1_state.delete('availability_zone')
+        vm1_state.delete('az')
 
         vm_state2 = vm1_state.clone
-        vm_state2['availability_zone'] = 'az1'
+        vm_state2['az'] = 'az1'
 
         vm_state3 = vm1_state.clone
-        vm_state3['availability_zone'] = 'az2'
+        vm_state3['az'] = 'az2'
 
         vm_state4 = vm1_state.clone
-        vm_state4['availability_zone'] = 'zone1'
+        vm_state4['az'] = 'zone1'
 
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state3, vm_state4, vm_state2, vm1_state] }
 
@@ -355,7 +355,7 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'show AZ in basic vms information' do
-          vm1_state['availability_zone'] = 'az1'
+          vm1_state['az'] = 'az1'
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to include 'AZ'
             expect(display_output.to_s).to include 'az1'
@@ -365,8 +365,8 @@ describe Bosh::Cli::Command::Instances do
         end
 
         it 'do not show AZ in basic vms information when there is no AZ info' do
-          vm1_state.delete('availability_zone')
-          vm2_state.delete('availability_zone')
+          vm1_state.delete('az')
+          vm2_state.delete('az')
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to_not include 'AZ'
           end
