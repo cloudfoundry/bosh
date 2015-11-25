@@ -53,12 +53,6 @@ describe Bosh::Cli::Command::JobManagement do
 
     it_requires_logged_in_user ->(command) { command.public_send(method_name, 'dea') }
 
-    it 'complains if the job does not exist' do
-      expect {
-        command.public_send(method_name, 'some_fake_job', 0)
-      }.to raise_error(Bosh::Cli::CliError, "Job `some_fake_job' doesn't exist")
-    end
-
     it 'does not allow both --hard and --soft options' do
       command.options[:hard] = true
       command.options[:soft] = true

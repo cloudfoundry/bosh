@@ -20,9 +20,6 @@ module Bosh::Cli
           resurrection = Resurrection.new(new_state)
 
           manifest = prepare_deployment_manifest(show_state: true)
-          job_must_exist_in_deployment(manifest.hash, job)
-          index = valid_index_for(manifest.hash, job, index, integer_index: true)
-
           director.change_vm_resurrection(manifest.name, job, index, resurrection.paused?)
         end
       end

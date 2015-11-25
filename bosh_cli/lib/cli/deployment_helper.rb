@@ -128,10 +128,6 @@ module Bosh::Cli
       !!find_job(manifest_hash, job_name)
     end
 
-    def job_must_exist_in_deployment(manifest_hash, job)
-      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(manifest_hash, job)
-    end
-
     def prompt_for_job_and_index
       jobs_list = jobs_and_indexes
 

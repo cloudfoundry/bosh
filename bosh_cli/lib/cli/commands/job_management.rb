@@ -53,7 +53,6 @@ module Bosh::Cli
       def change_job_state(state, job, index = nil)
         auth_required
         manifest = parse_manifest(state)
-        job_must_exist_in_deployment(manifest.hash, job) unless job == '*'
         job_state = JobState.new(self, manifest, skip_drain: skip_drain?)
         status, task_id, completion_desc = job_state.change(state, job, index, force?)
         task_report(status, task_id, completion_desc)
