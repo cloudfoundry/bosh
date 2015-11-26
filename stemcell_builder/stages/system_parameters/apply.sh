@@ -14,14 +14,14 @@ fi
 
 echo -n $stemcell_infrastructure > $chroot/var/vcap/bosh/etc/infrastructure
 
-# Temporary workaround: if we are building a RHEL and Photon stemcell, tell the BOSH agent
+# Temporary workaround: if we are building a RHEL and PhotonOS stemcell, tell the BOSH agent
 # it's a CentOS machine. This is required because the current version of bosh-agent
-# does not recognize the OS type "rhel" and "photon".
+# does not recognize the OS type "rhel" and "photonos".
 #
 # This workaround should be reverted once we can go back to the latest version of
 # the bosh-agent submodule. See
 os="${stemcell_operating_system}"
-if [ "${os}" == "rhel" ] || [ "${os}" == "photon" ] ; then
+if [ "${os}" == "rhel" ] || [ "${os}" == "photonos" ] ; then
   os="centos"
 fi
 
