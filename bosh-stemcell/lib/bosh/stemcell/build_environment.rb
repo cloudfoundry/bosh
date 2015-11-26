@@ -42,7 +42,7 @@ module Bosh::Stemcell
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "OS_IMAGE=#{os_image_tarball_path}",
-        "bundle exec rspec -fd #{exclude_arch_exclusions}",
+        "bundle exec rspec -fd#{exclude_arch_exclusions}",
         "spec/os_image/#{operating_system_spec_name}_spec.rb",
       ].join(' ')
     end
@@ -173,14 +173,14 @@ module Bosh::Stemcell
       else
         ''
       end,
-      exclude_arch_exclusions
+      exclude_arch_exclusions.strip
       ].join(' ').rstrip
     end
 
     def exclude_arch_exclusions
       case RbConfig::CONFIG['host_cpu']
       when 'powerpc64le'
-        '--tag ~exclude_on_ppc64le'
+        ' --tag ~exclude_on_ppc64le'
       else
         ''
       end
