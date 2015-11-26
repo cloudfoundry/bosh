@@ -25,6 +25,7 @@ ln -s /etc/sv/monit /etc/service/monit
 cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 
 agent_dir=$assets_dir/go/src/github.com/cloudfoundry/bosh-agent
+
 cd $agent_dir
 bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/

@@ -204,7 +204,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_grub' do
-    if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
+    if Bosh::Stemcell::Arch.ppc64le?
       %w(
         grub2
       ).each do |pkg|
