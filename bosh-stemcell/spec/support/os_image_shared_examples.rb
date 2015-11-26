@@ -84,10 +84,6 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^Banner/)
     end
 
-    it 'disallows root login (stig: V-38613)' do
-      expect(sshd_config).to contain(/^PermitRootLogin no$/)
-    end
-
     it 'allows PrintLastLog (stig: V-38484)' do
       expect(sshd_config).to contain(/^PrintLastLog yes$/)
     end
@@ -219,13 +215,22 @@ shared_examples_for 'every OS image' do
   # images to perform theses stages. For the Stemcell suites the exlude flags
   # here apply.
   describe 'exceptions' do
-    context 'unless: vcloud / vsphere / warden', {
+    context 'unless: vcloud / vsphere / warden / softlayer', {
       exclude_on_vsphere: true,
       exclude_on_vcloud: true,
       exclude_on_warden: true,
+      exclude_on_softlayer: true,
     } do
       it 'disallows password authentication' do
         expect(sshd_config).to contain(/^PasswordAuthentication no$/)
+      end
+    end
+
+    context 'unless: softlayer', {
+        exclude_on_softlayer: true,
+    } do
+      it 'disallows root login (stig: V-38613)' do
+        expect(sshd_config).to contain(/^PermitRootLogin no$/)
       end
     end
   end
