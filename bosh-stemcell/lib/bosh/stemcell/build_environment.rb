@@ -170,6 +170,8 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_openstack'
       when 'azure'
         ' --tag ~exclude_on_azure'
+      when 'softlayer'
+        ' --tag ~exclude_on_softlayer'
       else
         ''
       end,
