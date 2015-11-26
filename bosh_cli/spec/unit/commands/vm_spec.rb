@@ -50,25 +50,23 @@ module Bosh::Cli
       end
 
       context 'when "job & index" are specified' do
-        context 'and there are no jobs of the specified type in the deployment' do
+        context 'and there is only one job of the specified type in the deployment' do
           let(:deployment_manifest) do
             {
               'name' => deployment,
-              'jobs' => []
+              'jobs' => [
+                {
+                  'name'      => 'job1',
+                  'instances' => 1
+                }
+              ]
             }
           end
 
-          it 'errors' do
-            expect {
-              command.resurrection_state('job1', '0', 'on')
-            }.to raise_error(CliError, "Job `job1' doesn't exist")
+          it 'allows the user to omit the index (though the director will complain)' do
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'job1', nil, false)
+            command.resurrection_state('job1', 'on')
           end
-        end
-
-        it 'does not allow the user to omit the index' do
-          expect {
-            command.resurrection_state('dea', 'on')
-          }.to raise_error(CliError, 'You must specify the job index or id.')
         end
 
         describe 'changing the state' do

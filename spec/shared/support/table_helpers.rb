@@ -14,7 +14,7 @@ module Support
       def data
         table = parsed.dup
         head = table.shift
-        table.map { |row| head.zip(row).to_h }
+        table.map { |row| Hash[head.zip(row)] }
       end
 
       private

@@ -102,6 +102,8 @@ module Support
       def git_init
         Dir.chdir(@path) do
           `git init`
+          `git config user.name "Fake User"`
+          `git config user.email fake-user@example.com`
           `git add -A`
           `git commit -m 'initial commit'`
         end

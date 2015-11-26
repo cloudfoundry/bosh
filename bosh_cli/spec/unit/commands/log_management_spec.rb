@@ -177,25 +177,6 @@ describe Bosh::Cli::Command::LogManagement do
               command.fetch_logs(job, index)
             }.to raise_error(Bosh::Cli::CliError, /Unable to download logs from director:/)
           end
-
-          context 'when user does not specify the job index or id' do
-            let(:manifest) do
-              {
-                'name' => deployment,
-                'uuid' => 'totally-and-universally-unique',
-                'jobs' => [{
-                  'name' => 'dea',
-                  'instances' => 1
-                }]
-              }
-            end
-
-            it 'raises a CliError' do
-              expect {
-                command.fetch_logs(job)
-              }.to raise_error(Bosh::Cli::CliError, 'You must specify the job index or id.')
-            end
-          end
         end
       end
     end

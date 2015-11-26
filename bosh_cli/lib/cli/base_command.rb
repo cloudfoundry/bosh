@@ -260,11 +260,6 @@ module Bosh::Cli
       end
     end
 
-    def valid_index_for(index)
-      err('You must specify the job index or id.') if index.nil?
-      index.to_s
-    end
-
     def normalize_url(url)
       url = url.gsub(/\/$/, '')
       url = "https://#{url}" unless url.match(/^http:?/)
@@ -282,7 +277,7 @@ module Bosh::Cli
         uri.port = DEFAULT_DIRECTOR_PORT
         uri.to_s
       end
+      end
     end
   end
-end
 end

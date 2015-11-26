@@ -11,11 +11,10 @@ module Bosh::Cli::Command
     option '--dir destination_directory', String, 'download directory'
     option '--all', 'deprecated'
 
-    def fetch_logs(job, index_or_id = nil)
+    def fetch_logs(job, index_or_id)
       auth_required
 
       manifest = prepare_deployment_manifest(show_state: true)
-      index_or_id = valid_index_for(index_or_id)
       check_arguments
 
       logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
@@ -74,4 +73,3 @@ module Bosh::Cli::Command
     end
   end
 end
-
