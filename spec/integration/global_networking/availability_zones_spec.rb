@@ -644,5 +644,49 @@ describe 'availability zones', type: :integration do
         expect(current_bootstrap_node.id).to eq(new_bootstrap_node.id)
       end
     end
+
+    context 'when adding and deleting azs from a single subnet' do
+      it 'should update vms with obsolete ips' do
+        cloud_config_hash['azs'] = [
+            {'name' => 'my-az', 'cloud_properties' => {'availability_zone' => 'my-az'}},
+            {'name' => 'my-az2', 'cloud_properties' => {'availability_zone' => 'my-az2'}},
+        ]
+
+        cloud_config_hash['networks'].first['subnets'] = [
+            {
+                'range' => '192.168.1.0/24',
+                'gateway' => '192.168.1.1',
+                'dns' => ['8.8.8.8'],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'azs' => ['my-az', 'my-az2']
+            },
+            {
+                'range' => '192.168.2.0/24',
+                'gateway' => '192.168.2.1',
+                'dns' => ['8.8.8.8'],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'az' => 'my-az2'
+            }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        simple_manifest['jobs'].first['instances'] = 2
+        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+        expect(director.vms.map(&:ips)).to match_array(['192.168.1.2', '192.168.1.3'])
+
+        cloud_config_hash['networks'].first['subnets'].first['azs'] = ['my-az']
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        vms = director.vms
+        expect(vms.map(&:availability_zone)).to match_array(['my-az', 'my-az2'])
+        expect(vms.map(&:ips)).to match_array(['192.168.1.2', '192.168.2.2'])
+      end
+    end
   end
 end

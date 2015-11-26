@@ -122,6 +122,11 @@ module Bosh::Director
         end
       end
 
+      def find_az_names_for_ip(ip)
+        # On dynamic network ip does not belong to any subnet
+        availability_zones
+      end
+
       private
 
       def find_subnet_for_az(az_name)

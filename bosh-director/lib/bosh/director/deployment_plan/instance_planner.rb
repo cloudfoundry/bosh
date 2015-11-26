@@ -73,12 +73,8 @@ module Bosh
 
         def reconcile_network_plans(instance_plans)
           instance_plans.each do |instance_plan|
-            desired_reservations = instance_plan.network_plans.map{ |np| np.reservation }
-            network_plans = NetworkPlanner::ReservationReconciler.new(@logger)
-                              .reconcile(
-                                desired_reservations,
-                                instance_plan.instance.existing_network_reservations
-                              )
+            network_plans = NetworkPlanner::ReservationReconciler.new(instance_plan, @logger)
+                              .reconcile(instance_plan.instance.existing_network_reservations)
             instance_plan.network_plans = network_plans
           end
         end

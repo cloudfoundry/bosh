@@ -4,9 +4,33 @@ module Bosh::Director::DeploymentPlan
   describe NetworkPlanner::ReservationReconciler do
     include Bosh::Director::IpUtil
     describe :reconcile do
-      let(:network_planner) { NetworkPlanner::ReservationReconciler.new(logger) }
+      let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
       let(:instance) { instance_double(Instance) }
-      let(:network) { ManualNetwork.new('my-network', [], logger) }
+      let(:network) { ManualNetwork.new('my-network', subnets, logger) }
+      let(:subnets) do
+        [
+          ManualNetworkSubnet.new(
+            'my-network',
+            NetAddr::CIDR.create('192.168.1.0/24'),
+            nil, nil, nil, nil, ['zone_1'], [],
+            ['192.168.1.10']),
+          ManualNetworkSubnet.new(
+            'my-network',
+            NetAddr::CIDR.create('192.168.2.0/24'),
+            nil, nil, nil, nil, ['zone_2'], [],
+            ['192.168.2.10']),
+        ]
+      end
+      let(:instance_plan) do
+        network_plans = desired_reservations.map { |r| NetworkPlanner::Plan.new(reservation: r) }
+        InstancePlan.new(
+          desired_instance: DesiredInstance.new(nil, nil, nil, desired_az),
+          network_plans: network_plans,
+          existing_instance: nil,
+          instance: nil
+        )
+      end
+      let(:desired_az) { AvailabilityZone.new('zone_1', {}) }
       let(:existing_reservations) {
         [
           BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2'),
@@ -32,7 +56,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should keep existing reservation and return no desired new or obsolete network plans' do
-          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(existing_reservations)
           obsolete_plans = network_plans.select(&:obsolete?)
           existing_plans = network_plans.select(&:existing?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
@@ -58,7 +82,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should keep existing reservation that match IP address' do
-            network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
+            network_plans = network_planner.reconcile(existing_reservations)
             obsolete_plans = network_plans.select(&:obsolete?)
             existing_plans = network_plans.select(&:existing?)
             desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
@@ -70,6 +94,54 @@ module Bosh::Director::DeploymentPlan
             expect(desired_plans.count).to eq(1)
             expect(ip_to_netaddr(desired_plans.first.reservation.ip)).to eq('192.168.1.4')
           end
+        end
+      end
+
+      context 'when existing reservation availability zones do not match job availability zones' do
+        let(:desired_az) { AvailabilityZone.new('zone_2', {}) }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2')] }
+        before { existing_reservations[0].resolve_type(:dynamic) }
+        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
+
+        it 'not reusing existing reservations' do
+          network_plans = network_planner.reconcile(existing_reservations)
+          obsolete_plans = network_plans.select(&:obsolete?)
+          existing_plans = network_plans.select(&:existing?)
+          desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+          expect(obsolete_plans.count).to eq(1)
+          expect(ip_to_netaddr(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
+          expect(existing_plans.count).to eq(0)
+          expect(desired_plans.count).to eq(1)
+          expect(desired_plans.first.reservation.type).to eq(:dynamic)
+        end
+      end
+
+      context 'when existing reservation and job do not belong to any availability zone' do
+        let(:desired_az) { nil }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2')] }
+        before { existing_reservations[0].resolve_type(:dynamic) }
+        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
+        let(:subnets) do
+          [
+            ManualNetworkSubnet.new(
+              'my-network',
+              NetAddr::CIDR.create('192.168.1.0/24'),
+              nil, nil, nil, nil, nil, [],
+              ['192.168.1.10'])
+          ]
+        end
+
+        it 'reusing existing reservations' do
+          network_plans = network_planner.reconcile(existing_reservations)
+          obsolete_plans = network_plans.select(&:obsolete?)
+          existing_plans = network_plans.select(&:existing?)
+          desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+          expect(obsolete_plans.count).to eq(0)
+          expect(existing_plans.count).to eq(1)
+          expect(ip_to_netaddr(existing_plans.first.reservation.ip)).to eq('192.168.1.2')
+          expect(desired_plans.count).to eq(0)
         end
       end
 
@@ -89,7 +161,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return desired network plans for the new reservations' do
-          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(existing_reservations)
           obsolete_plans = network_plans.select(&:obsolete?)
           existing_plans = network_plans.select(&:existing?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
@@ -110,7 +182,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return desired network plans for the new reservations' do
-          network_plans = network_planner.reconcile(desired_reservations, existing_reservations)
+          network_plans = network_planner.reconcile(existing_reservations)
           existing_plans = network_plans.select(&:existing?)
           obsolete_plans = network_plans.select(&:obsolete?)
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)

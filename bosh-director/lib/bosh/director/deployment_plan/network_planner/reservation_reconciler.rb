@@ -1,18 +1,26 @@
 module Bosh::Director::DeploymentPlan
   module NetworkPlanner
     class ReservationReconciler
-      def initialize(logger)
+      def initialize(instance_plan, logger)
+        @instance_plan = instance_plan
         @logger = logger
       end
 
-      def reconcile(desired_reservations, existing_reservations)
+      def reconcile(existing_reservations)
         unplaced_existing_reservations = Set.new(existing_reservations)
         existing_network_plans = []
+        desired_reservations = @instance_plan.network_plans.map{ |np| np.reservation }
+
         desired_network_plans = desired_reservations.map do |reservation|
           Plan.new(reservation: reservation)
         end
 
         existing_reservations.each do |existing_reservation|
+          unless az_is_desired(existing_reservation)
+            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.az}'")
+            next
+          end
+
           desired_reservation = desired_reservations.find do |reservation|
               reservation.network == existing_reservation.network &&
                 (reservation.dynamic? || reservation.ip == existing_reservation.ip)
@@ -54,6 +62,15 @@ module Bosh::Director::DeploymentPlan
         existing_reservation.type == reservation.type &&
           reservation.static? &&
           reservation.ip == existing_reservation.ip
+      end
+
+      def az_is_desired(existing_reservation)
+        ip_az_names = existing_reservation.network.find_az_names_for_ip(existing_reservation.ip)
+        desired_az = @instance_plan.desired_instance.az
+        return true if ip_az_names.nil? && desired_az.nil?
+        return false if desired_az.nil?
+
+        ip_az_names.to_a.include?(desired_az.name)
       end
     end
   end

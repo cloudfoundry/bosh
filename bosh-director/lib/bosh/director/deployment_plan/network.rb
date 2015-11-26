@@ -41,6 +41,10 @@ module Bosh::Director
         raise NotImplementedError
       end
 
+      def find_az_names_for_ip(ip)
+        raise NotImplementedError
+      end
+
       def validate_reference_from_job!(job_network_spec)
       end
     end

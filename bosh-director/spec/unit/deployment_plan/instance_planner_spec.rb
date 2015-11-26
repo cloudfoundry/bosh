@@ -343,7 +343,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         BD::DeploymentPlan::ManualNetworkSubnet.new(
           'fake-network',
           NetAddr::CIDR.create('192.168.1.0/24'),
-          nil, nil, nil, nil, [], [],
+          nil, nil, nil, nil, ['foo-az'], [],
           [])
       end
 

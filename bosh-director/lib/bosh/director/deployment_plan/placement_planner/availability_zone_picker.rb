@@ -8,11 +8,13 @@ module Bosh
             @network_planner = network_planner
             @networks = networks
             @desired_azs = desired_azs
+            @logger = Config.logger
           end
 
           def place_and_match_in(desired_instances, existing_instance_models)
             unplaced_existing_instances =  UnplacedExistingInstances.new(existing_instance_models)
             desired_azs_sorted = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(@desired_azs)
+            @logger.debug("Desired azs: #{desired_azs_sorted.inspect}")
             placed_instances = PlacedDesiredInstances.new(desired_azs_sorted)
 
             remaining_desired_instances = place_instances_that_have_persistent_disk_in_existing_az(desired_azs_sorted, desired_instances, placed_instances, unplaced_existing_instances)
@@ -42,7 +44,10 @@ module Bosh
           def balance_across_desired_azs(desired_instances, placed_instances, unplaced_existing_instances)
             desired_instances.each do |desired_instance|
               azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
+              @logger.debug("azs with fewest placed: #{azs_with_fewest_placed.inspect}")
               az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
+              @logger.debug("az: #{az.inspect}")
+
               existing_instance = unplaced_existing_instances.claim_instance_for_az(az)
               placed_instances.record_placement(az, desired_instance, existing_instance)
             end

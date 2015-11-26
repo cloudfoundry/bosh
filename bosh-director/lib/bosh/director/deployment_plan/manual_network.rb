@@ -70,6 +70,13 @@ module Bosh::Director
         static_ips.include?(cidr_ip.to_i) ? :static : :dynamic
       end
 
+      def find_az_names_for_ip(ip)
+        subnet = find_subnet_containing(ip)
+        if subnet
+          return subnet.availability_zone_names
+        end
+      end
+
       private
 
       # @param [Integer, NetAddr::CIDR, String] ip
