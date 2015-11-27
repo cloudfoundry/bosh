@@ -156,18 +156,21 @@ describe Bosh::Cli::DeploymentHelper do
 
   describe '#prompt_for_job_and_index' do
     before do
-      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
-        'name' => 'mycloud',
-        'jobs' => [{'name' => 'job', 'instances' => 2}],
-      }))
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, name: 'mycloud',
+      jobs: [{'name' => 'job', 'instances' => 2}]))
+
+      allow(director).to receive(:fetch_vm_state).and_return([
+        {"instance_id" => "1234-5678-9012-3456", "index" => 0, "job_name" => "job"},
+        {"instance_id" => "1234-5678-9012-3457", "index" => 1, "job_name" => "job"}
+      ])
     end
 
     it 'prompts the user to choose one' do
       menu = double('menu')
       expect(deployment_helper).to receive(:choose).and_yield(menu)
       expect(menu).to receive(:prompt=).with('Choose an instance: ')
-      expect(menu).to receive(:choice).with('job/0')
-      expect(menu).to receive(:choice).with('job/1')
+      expect(menu).to receive(:choice).with('job/0 (1234-5678-9012-3456)')
+      expect(menu).to receive(:choice).with('job/1 (1234-5678-9012-3457)')
       deployment_helper.prompt_for_job_and_index
     end
   end
