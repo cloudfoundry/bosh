@@ -16,8 +16,6 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
       "Sources": [
         {
           "Type": "File",
-          "MetaDataPath": "",
-          "UserDataPath": "/var/vcap/bosh/user_data.json",
           "SettingsPath": "/var/vcap/bosh/user_data.json"
         }
       ],
