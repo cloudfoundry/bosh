@@ -22,9 +22,6 @@ module Bosh::Dev::Sandbox
 
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
-    REDIS_CONFIG = 'redis_test.conf'
-    REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
-
     HM_CONFIG = 'health_monitor.yml'
     HM_CONF_TEMPLATE = File.join(ASSETS_DIR, 'health_monitor.yml.erb')
 
@@ -83,7 +80,6 @@ module Bosh::Dev::Sandbox
 
       FileUtils.mkdir_p(@logs_path)
 
-      setup_redis
       setup_nats
 
       @uaa_service = UaaService.new(@port_provider, base_log_path, @logger)
@@ -99,7 +95,6 @@ module Bosh::Dev::Sandbox
           database: @database,
           database_proxy: @database_proxy,
           director_port: director_ruby_port,
-          redis_port: redis_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
           director_config: director_config
@@ -139,9 +134,6 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(logs_path)
 
       @database_proxy && @database_proxy.start
-
-      @redis_process.start
-      @redis_socket_connector.try_to_connect
 
       @nginx_service.start
 
@@ -204,7 +196,6 @@ module Bosh::Dev::Sandbox
       @director_service.stop
 
       @nginx_service.stop
-      @redis_process.stop
       @nats_process.stop
 
       @health_monitor_process.stop
@@ -250,10 +241,6 @@ module Bosh::Dev::Sandbox
 
     def director_ruby_port
       @director_ruby_port ||= @port_provider.get_port(:director_ruby)
-    end
-
-    def redis_port
-      @redis_port ||= @port_provider.get_port(:redis)
     end
 
     def sandbox_root
@@ -303,10 +290,8 @@ module Bosh::Dev::Sandbox
 
     def setup_sandbox_root
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
-      write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
-      FileUtils.mkdir_p(sandbox_path('redis'))
       FileUtils.mkdir_p(blobstore_storage_dir)
     end
 
@@ -363,12 +348,6 @@ module Bosh::Dev::Sandbox
       )
 
       @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @nats_log_path, @logger)
-    end
-
-    def setup_redis
-      @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
-      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, 'unknown', @logger)
-      Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

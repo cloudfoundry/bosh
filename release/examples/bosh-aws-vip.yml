@@ -83,17 +83,6 @@ jobs:
         static_ips:
           - 54.241.246.11 # Change: Elastic IP 3
 
-  - name: redis
-    template: redis
-    instances: 1
-    resource_pool: small
-    networks:
-      - name: default
-        default: [dns, gateway]
-      - name: elastic
-        static_ips:
-          - 54.241.240.21 # Change: Elastic IP 4
-
   - name: director
     template: director
     instances: 1
@@ -164,10 +153,6 @@ properties:
     user: postgres
     password: postgres
     database: bosh
-
-  redis:
-    address: 54.241.240.21 # Change: Elastic IP 4
-    password: redis
 
   director:
     name: bosh

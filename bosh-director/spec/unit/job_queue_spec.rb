@@ -26,6 +26,7 @@ module Bosh::Director
 
         expect(task_helper).to receive(:create_task).with('whoami', :snow, 'busy doing something').and_return(task)
         expect(Jobs::DBJob).to receive(:new).with(job_class, task.id, ['foo', 'bar']).and_return(db_job)
+        cnt = Delayed::Job.count
         expect(Delayed::Job.count).to eq(0)
         retval = subject.enqueue('whoami', job_class, 'busy doing something', ['foo', 'bar'])
         expect(retval).to be(task)

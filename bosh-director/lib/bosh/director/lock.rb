@@ -1,6 +1,6 @@
 module Bosh::Director
 
-  # Distributed lock backed by Redis.
+  # Distributed lock backed by DB.
   class Lock
 
     # Error returned when Lock could not be acquired.
@@ -35,15 +35,15 @@ module Bosh::Director
           stopped = false
           until stopped
             @logger.debug("Renewing lock: #@name")
-            Models::Lock.db.transaction do
-              lock_record = Models::Lock.for_update[name: @name]
+            #Models::Lock.db.transaction do
+              lock_record = Models::Lock[name: @name]
               if lock_record.nil? || lock_record.uid != @id
                 stopped = true
                 raise Sequel::Rollback
               end
               lock_expiration = Time.now.to_f + @expiration + 1
               lock_record.update(expired_at: Time.at(lock_expiration))
-            end
+            #end
 
             sleep(sleep_interval) unless stopped
           end
@@ -78,8 +78,8 @@ module Bosh::Director
       lock_expiration = Time.now.to_f + @expiration + 1
       acquired = false
       until acquired
-        Models::Lock.db.transaction do
-          lock_record = Models::Lock.for_update[name: @name]
+        #Models::Lock.db.transaction do
+          lock_record = Models::Lock[name: @name]
           if lock_record.nil?
             lock_record =  Models::Lock.create(name: @name,
                                                uid: @id,
@@ -93,7 +93,7 @@ module Bosh::Director
                acquired = true
             end
           end
-        end
+        #end
         unless acquired
           raise TimeoutError if Time.now - started > @timeout
           sleep(0.5)
@@ -108,19 +108,19 @@ module Bosh::Director
 
     def delete
       @logger.debug("Deleting lock: #@name")
-      Models::Lock.db.transaction do
-        lock_record = Models::Lock.for_update[name: @name]
+      #Models::Lock.db.transaction do
+        lock_record = Models::Lock[name: @name]
         if lock_record.nil?
            @logger.debug("Can not find lock: #@name")
         else
           if lock_record.uid == @id
-            lock_record.destroy
+            lock_record.delete
             @logger.debug("Deleted lock: #@name")
           else
             @logger.debug("Lock: #@name was acquired by someone else")
           end
         end
-      end
+      #end
     end
 
     def lock_expired?(lock_record)

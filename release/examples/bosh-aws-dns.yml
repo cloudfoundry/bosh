@@ -77,14 +77,6 @@ jobs:
       - name: default
         default: [dns, gateway]
 
-  - name: redis
-    template: redis
-    instances: 1
-    resource_pool: small
-    networks:
-      - name: default
-        default: [dns, gateway]
-
   - name: director
     template: director
     instances: 1
@@ -149,10 +141,6 @@ properties:
     user: postgres
     password: postgres
     database: bosh
-
-  redis:
-    address: 0.redis.default.bosh.microbosh
-    password: redis
 
   director:
     name: bosh

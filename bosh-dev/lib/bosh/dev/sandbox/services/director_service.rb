@@ -14,7 +14,6 @@ module Bosh::Dev::Sandbox
 
     def initialize(options, logger)
       @database = options[:database]
-      @redis_port = options[:redis_port]
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
@@ -121,8 +120,6 @@ module Bosh::Dev::Sandbox
         sleep delay
       end
       @logger.debug('DJ queue drained')
-
-      Redis.new(host: 'localhost', port: @redis_port).flushdb
 
       # wait for workers in parallel for fastness
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)

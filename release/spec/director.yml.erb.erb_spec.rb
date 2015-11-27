@@ -28,10 +28,6 @@ describe 'director.yml.erb.erb' do
           'address' => '10.10.0.7',
           'port' => 4222
         },
-        'redis' => {
-          'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
-          'loglevel' => 'info',
-        },
         'director' => {
           'name' => 'vpc-bosh-idora',
           'backend_port' => 25556,

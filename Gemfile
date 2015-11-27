@@ -74,7 +74,6 @@ group :development, :test do
 
   # for root level specs
   gem 'rest-client'
-  gem 'redis'
   gem 'nats'
   gem 'rugged'
 

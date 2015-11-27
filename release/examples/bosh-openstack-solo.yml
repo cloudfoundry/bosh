@@ -54,7 +54,6 @@ jobs:
     - powerdns
     - nats
     - postgres
-    - redis
     - director
     - blobstore
     - registry
@@ -98,10 +97,6 @@ properties:
     address: 127.0.0.1
     user: nats
     password: nats
-
-  redis:
-    address: 127.0.0.1
-    password: redis
 
   director:
     name: bosh

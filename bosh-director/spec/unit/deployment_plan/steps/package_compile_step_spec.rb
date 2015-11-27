@@ -19,8 +19,6 @@ module Bosh::Director
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
 
-      allow(Config).to receive_messages(redis: double('fake-redis'))
-
       @cloud = double(:cpi)
       allow(Config).to receive(:cloud).and_return(@cloud)
 

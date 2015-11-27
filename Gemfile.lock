@@ -73,7 +73,6 @@ PATH
       netaddr (~> 1.5.0)
       rack-test (~> 0.6.2)
       rake (~> 10.0)
-      redis (~> 3.0.2)
       rufus-scheduler (~> 2.0.18)
       semi_semantic (~> 1.1.0)
       sequel (~> 3.43.0)
@@ -449,7 +448,6 @@ GEM
       rack (>= 1.0)
     rainbow (2.0.0)
     rake (10.3.2)
-    redis (3.0.3)
     rest-client (1.6.7)
       mime-types (>= 1.16)
     rspec (3.0.0)
@@ -570,7 +568,6 @@ DEPENDENCIES
   pry
   rack-test
   rake (~> 10.0)
-  redis
   rest-client
   rspec (~> 3.0.0)
   rspec-instafail

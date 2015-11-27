@@ -57,16 +57,6 @@ jobs:
         static_ips:
           - <ip_address_for_nats> # CHANGE
 
-  - name: redis
-    template: redis
-    instances: 1
-    resource_pool: common
-    networks:
-      - name: default
-        default: [dns, gateway]
-        static_ips:
-          - <ip_address_for_redis> # CHANGE
-
   - name: postgres
     template: postgres
     instances: 1
@@ -138,10 +128,6 @@ properties:
     address: <ip_address_for_nats> # CHANGE
     user: nats
     password: nats
-
-  redis:
-    address: <ip_address_for_redis> # CHANGE
-    password: redis
 
   postgres: &bosh_db
     host: <ip_address_for_postgres> # CHANGE

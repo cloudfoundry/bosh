@@ -55,7 +55,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
-  spec.add_dependency 'redis',            '~>3.0.2'
   spec.add_dependency 'rufus-scheduler',  '~>2.0.18'
   spec.add_dependency 'sequel',           '~>3.43.0'
   spec.add_dependency 'sinatra',          '~>1.4.2'

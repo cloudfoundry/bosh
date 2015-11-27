@@ -145,7 +145,7 @@ module Bosh::Director
             Assembler.new(planner, nil, cloud_config,  {}, Config.event_log, Config.logger).bind_releases
           end
 
-          it 'updates the release version on the deployment to be the ones from the provided manifest' do
+          it 'updates the release version on the deployment to be the ones from the provided manifest', focus: true do
             expect(deployment_model.release_versions).to include(stale_release_version)
             planner.persist_updates!
             expect(deployment_model.release_versions).to_not include(stale_release_version)

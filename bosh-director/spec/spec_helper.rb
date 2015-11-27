@@ -125,15 +125,23 @@ module SpecHelper
 
       if @db_dir && File.directory?(@db_dir)
         FileUtils.rm_rf(@db_dir)
+        #puts "Deleting db"
       end
 
       @db_dir = Dir.mktmpdir(nil, @temp_dir)
       FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
 
       connect_database(@db_dir)
+      #puts "connecting to db"
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
+        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Delayed::Backend::Sequel.constants.each do |e|
+        c = Delayed::Backend::Sequel.const_get(e)
+        #puts "DJ: #{e} #{c.db } #{@db}" if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
         c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
@@ -161,27 +169,6 @@ BD = Bosh::Director
 
 RSpec.configure do |rspec|
   rspec.before(:each) do
-    unless $redis_63790_started
-      redis_config = Tempfile.new('redis_config')
-      File.write(redis_config.path, 'port 63790')
-      redis_pid = Process.spawn('redis-server', redis_config.path, out: '/dev/null')
-      $redis_63790_started = true
-
-      at_exit do
-        begin
-          if $!
-            status = $!.is_a?(::SystemExit) ? $!.status : 1
-          else
-            status = 0
-          end
-          redis_config.delete
-          Process.kill("KILL", redis_pid)
-        ensure
-          exit status
-        end
-      end
-    end
-
     SpecHelper.reset(logger)
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
