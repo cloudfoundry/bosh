@@ -165,3 +165,7 @@ module Bosh::Director::Models
     end
   end
 end
+module Delayed
+  Job.blueprint do
+  end
+end

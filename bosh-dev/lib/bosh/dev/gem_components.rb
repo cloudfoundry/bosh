@@ -90,7 +90,6 @@ module Bosh::Dev
           Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
         else
           puts "Possible issue with gem git source. Will try to build from source."
-          #in case of no gem,migr check if there is source of the gem and build it. Bundler at this moment does not build gem if source is git in Gemfile
           #in case of no gem, check if there is source of the gem and build it. Bundler at this moment does not build gem if source is git in Gemfile
           spec = Bundler.load.specs.find { |s| s.name == dependency.name }
           raise Bundler::GemNotFound, "Could not find gem '#{dependency.name}' in the current bundle." unless spec

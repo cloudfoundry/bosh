@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'logging'
 require 'bosh/director/dns_helper'
+require 'redis'
 
 module Bosh::Director
 
