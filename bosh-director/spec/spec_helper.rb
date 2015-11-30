@@ -125,14 +125,12 @@ module SpecHelper
 
       if @db_dir && File.directory?(@db_dir)
         FileUtils.rm_rf(@db_dir)
-        #puts "Deleting db"
       end
 
       @db_dir = Dir.mktmpdir(nil, @temp_dir)
       FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
 
       connect_database(@db_dir)
-      #puts "connecting to db"
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
@@ -141,7 +139,6 @@ module SpecHelper
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        #puts "DJ: #{e} #{c.db } #{@db}" if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
         c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
