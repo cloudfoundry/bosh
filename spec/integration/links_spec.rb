@@ -117,7 +117,7 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => "#{mysql_0_vm.instance_id}.mysql.dynamic-network.simple.bosh"
+                  'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
                 }
               ]
             },
@@ -131,7 +131,7 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => "#{mysql_1_vm.instance_id}.mysql.dynamic-network.simple.bosh"
+                  'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
                 }
               ]
             }

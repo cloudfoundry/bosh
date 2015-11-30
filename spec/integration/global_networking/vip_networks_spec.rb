@@ -52,6 +52,6 @@ describe 'vip networks', type: :integration do
     new_vms = director.vms
     expect(new_vms.size).to eq(2)
     vm_with_original_vip_ip = new_vms.find { |new_vm| new_vm.ips.include?('69.69.69.69') }
-    expect(vm_with_original_vip_ip.instance_id).to eq(original_vms.first.instance_id)
+    expect(vm_with_original_vip_ip.instance_uuid).to eq(original_vms.first.instance_uuid)
   end
 end

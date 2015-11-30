@@ -342,7 +342,7 @@ describe 'availability zones', type: :integration do
           expect(new_vm.ips).to eq('192.168.1.51')
           expect(new_vm.availability_zone).to eq('my-az')
           expect(new_vm.cid).to_not eq(original_vm.cid)
-          expect(new_vm.instance_id).to_not eq(original_vm.instance_id)
+          expect(new_vm.instance_uuid).to_not eq(original_vm.instance_uuid)
         end
       end
     end

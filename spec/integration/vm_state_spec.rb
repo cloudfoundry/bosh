@@ -14,11 +14,11 @@ describe 'vm state', type: :integration do
       expect(bosh_runner.run('stop foobar 0 --hard')).to match %r{foobar/0 detached}
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
 
-      expect(director.vms.map(&:instance_id)).to eq(vms.map(&:instance_id) - [vm_with_index_0.instance_id])
+      expect(director.vms.map(&:instance_uuid)).to eq(vms.map(&:instance_uuid) - [vm_with_index_0.instance_uuid])
 
       bosh_runner.run('start foobar 0')
 
-      expect(director.vms.map(&:instance_id)).to eq(vms.map(&:instance_id))
+      expect(director.vms.map(&:instance_uuid)).to eq(vms.map(&:instance_uuid))
       expect(current_sandbox.cpi.disk_cids).to eq(disks_before_detaching)
     end
 
