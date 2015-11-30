@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `EZerQHXisZiL8zX0zpvivfmC.l6UDST7`
+  - update for USN-2820-1: dpkg vulnerability
+
 * `dVVR..kD6eL0RtkFO7d1yBOM6hcZCwkO`
   - update for USN-2815-1: libpng vulnerabilities
 
@@ -308,6 +311,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `yd6fohx_wzcBob_M.h7z66fpzk8tA3O9`
+  - (periodic) bump centos to match ubuntu update for USN-2820-1
+
 * `ib7we0khyue8vOIf7hP1fsyMDJwKGki0`
   - (periodic) bump centos to match ubuntu update
 
@@ -317,7 +323,7 @@ CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 * `70iKyO1XVyO23ci2JpztKdHMClFu6eVF`
   - (periodic) bump centos to match ubuntu update
 
-* `KJOs81.dHgRSBJ9CgcjOEgxd9I2gO7zF`
+* `KJOs81.dHgRSBJ9CgcjOEgxd9I2gO7zF`[USN-2820-1] dpkg vulnerability
   - (periodic) bump centos to match ubuntu update
 
 * `k.v0bPRcoftbZK2nREGM5J4kKmEIZXE5`
