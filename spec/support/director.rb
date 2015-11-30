@@ -51,7 +51,11 @@ module Bosh::Spec
     # vm always returns a vm
     def vm(job_name, index, options={})
       deployment_name = options.fetch(:deployment, '')
-      vm = vms(deployment_name, options).detect { |vm| vm.job_name == job_name && vm.index == index }
+      find_vm(vms(deployment_name, options), job_name, index)
+    end
+
+    def find_vm(vms, job_name, index)
+      vm = vms.detect { |vm| vm.job_name == job_name && vm.index == index }
       vm || raise("Failed to find vm #{job_name}/#{index}")
     end
 
