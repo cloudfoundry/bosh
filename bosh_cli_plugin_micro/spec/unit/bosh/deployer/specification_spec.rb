@@ -80,7 +80,6 @@ describe Bosh::Deployer::Specification do
         expect(spec.properties[service]['address']).to eq '1.1.1.1'
       end
       internal_services.each do |service|
-        puts service
         expect(spec.properties[service]['address']).to eq '2.2.2.2'
       end
     end
