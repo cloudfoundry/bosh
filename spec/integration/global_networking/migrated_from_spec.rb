@@ -13,8 +13,8 @@ describe 'migrated from', type: :integration do
   let(:cloud_config_hash_with_azs) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [
-      { 'name' => 'my-az-1' },
-      { 'name' => 'my-az-2' }
+      {'name' => 'my-az-1'},
+      {'name' => 'my-az-2'}
     ]
     cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2]
     cloud_config_hash['disk_pools'] = [disk_pool_spec]
@@ -27,9 +27,20 @@ describe 'migrated from', type: :integration do
     {
       'range' => '192.168.1.0/24',
       'gateway' => '192.168.1.1',
-      'dns' => ['192.168.1.1', '192.168.1.2'],
+      'dns' => ['8.8.8.8'],
       'reserved' => [],
       'static' => ['192.168.1.10'],
+      'cloud_properties' => {},
+    }
+  end
+
+  let(:subnet_with_1_available_ip) do
+    {
+      'range' => '192.168.1.0/30', # 192.168.1.2 the only available
+      'gateway' => '192.168.1.1',
+      'dns' => ['8.8.8.8'],
+      'reserved' => [],
+      'static' => [],
       'cloud_properties' => {},
     }
   end
@@ -42,7 +53,7 @@ describe 'migrated from', type: :integration do
     {
       'range' => '192.168.2.0/24',
       'gateway' => '192.168.2.1',
-      'dns' => ['192.168.2.1', '192.168.2.2'],
+      'dns' => ['8.8.8.8'],
       'reserved' => [],
       'static' => ['192.168.2.10'],
       'cloud_properties' => {},
@@ -57,7 +68,7 @@ describe 'migrated from', type: :integration do
     {
       'range' => '192.168.3.0/24',
       'gateway' => '192.168.3.1',
-      'dns' => ['192.168.3.1', '192.168.3.2'],
+      'dns' => ['8.8.8.8'],
       'reserved' => [],
       'static' => ['192.168.3.10'],
       'cloud_properties' => {},
@@ -73,7 +84,7 @@ describe 'migrated from', type: :integration do
     job_spec = etcd_job
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     job_spec['azs'] = ['my-az-1', 'my-az-2']
-    job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'az' => 'my-az-1'},{'name' => 'etcd_z2', 'az' => 'my-az-2'}]
+    job_spec['migrated_from'] = [{'name' => 'etcd_z1', 'az' => 'my-az-1'}, {'name' => 'etcd_z2', 'az' => 'my-az-2'}]
     manifest_hash['jobs'] = [job_spec]
     manifest_hash
   end
@@ -166,7 +177,7 @@ describe 'migrated from', type: :integration do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
-        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
 
         expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
         expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
@@ -178,6 +189,8 @@ describe 'migrated from', type: :integration do
     end
 
     context 'when using dynamic reservation without any other changes' do
+      # make it use 2nd subnet for etcd_z2 instance
+      let(:subnet1) { subnet_with_1_available_ip }
       let(:etcd_z1_job) do
         Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
       end
@@ -192,7 +205,7 @@ describe 'migrated from', type: :integration do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
-        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
 
         expect(new_vms.map(&:ips)).to match_array(original_vms.map(&:ips))
         expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
@@ -209,12 +222,10 @@ describe 'migrated from', type: :integration do
       end
 
       it 'updates job instances with new desired job templates keeping persistent disk' do
-        original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
+        _, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
-
-        expect(new_vms.map(&:cid)).to match_array(original_vms.map(&:cid))
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
@@ -236,7 +247,7 @@ describe 'migrated from', type: :integration do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
-        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
 
         expect(new_vms.map(&:ips)).to match_array(['192.168.1.10', '192.168.2.10'])
         expect(new_vms.map(&:cid)).not_to match_array(original_vms.map(&:cid))
@@ -257,7 +268,7 @@ describe 'migrated from', type: :integration do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
-        expect(new_vms.map(&:job_name)).to eq(['etcd','etcd'])
+        expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd'])
 
         expect(new_vms.map(&:cid)).not_to match_array(original_vms.map(&:cid))
 
@@ -272,10 +283,12 @@ describe 'migrated from', type: :integration do
       end
     end
 
-    context 'when number of migrated instances is greater than number of instances in new job' do
+    context 'when the number of original instances is greater than the number of new instances' do
       let(:etcd_z1_job) do
         Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
       end
+      # make it use 2nd subnet for 2nd instance
+      let(:subnet1) { subnet_with_1_available_ip }
 
       it 'deletes extra instances' do
         deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
@@ -300,9 +313,15 @@ describe 'migrated from', type: :integration do
       end
     end
 
-    context 'when number of migrated instances is less than number of instances in new job' do
+    context 'when the number of original instances is less than the number of new instances' do
       let(:etcd_job) do
         Bosh::Spec::Deployments.simple_job(instances: 3, name: 'etcd', persistent_disk_pool: 'fast_disks')
+      end
+      # make it use 2nd subnet for etcd_z2 instance
+      let(:subnet1) { subnet_with_1_available_ip }
+      # make room for 3rd instance in my-az-1
+      let(:subnet_with_az1) do
+        subnet1.merge('range' => '192.168.1.0/24', 'az' => 'my-az-1')
       end
 
       it 'creates extra instances' do
@@ -485,9 +504,9 @@ describe 'migrated from', type: :integration do
 
         cloud_config_hash = cloud_config_hash_with_azs
         cloud_config_hash['azs'] = [
-          { 'name' => 'my-az-1' },
-          { 'name' => 'my-az-2' },
-          { 'name' => 'my-az-3' }
+          {'name' => 'my-az-1'},
+          {'name' => 'my-az-2'},
+          {'name' => 'my-az-3'}
         ]
         cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2, subnet_with_az3]
 

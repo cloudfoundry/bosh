@@ -17,7 +17,7 @@ module Bosh::Director::DeploymentPlan
 
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)
-            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.az}'")
+            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.az.name}'")
             next
           end
 
@@ -68,6 +68,8 @@ module Bosh::Director::DeploymentPlan
         return true unless existing_reservation.network.supports_azs?
 
         ip_az_names = existing_reservation.network.find_az_names_for_ip(existing_reservation.ip)
+        @logger.debug("Reservation #{existing_reservation} belongs to azs: #{ip_az_names}")
+
         desired_az = @instance_plan.desired_instance.az
         return true if ip_az_names.to_a.compact.empty? && desired_az.nil?
         return false if desired_az.nil?
