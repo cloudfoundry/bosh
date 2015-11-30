@@ -11,6 +11,8 @@ describe 'cli: logs', type: :integration do
     id = director.vms.first.instance_id
 
     expect(bosh_runner.run('logs first-job 1')).to match /first-job\.1\..*\.tgz/
+
     expect(bosh_runner.run("logs first-job '#{id}'")).to match /first-job\.#{id}\..*\.tgz/
+    expect(bosh_runner.run("logs first-job '#{id}'")).to include "Started fetching logs for first-job/#{id} (0)"
   end
 end
