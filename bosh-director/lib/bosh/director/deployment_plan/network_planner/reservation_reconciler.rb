@@ -65,9 +65,11 @@ module Bosh::Director::DeploymentPlan
       end
 
       def az_is_desired(existing_reservation)
+        return true unless existing_reservation.network.supports_azs?
+
         ip_az_names = existing_reservation.network.find_az_names_for_ip(existing_reservation.ip)
         desired_az = @instance_plan.desired_instance.az
-        return true if ip_az_names.nil? && desired_az.nil?
+        return true if ip_az_names.to_a.compact.empty? && desired_az.nil?
         return false if desired_az.nil?
 
         ip_az_names.to_a.include?(desired_az.name)

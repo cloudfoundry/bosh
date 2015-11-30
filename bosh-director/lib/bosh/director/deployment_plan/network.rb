@@ -47,6 +47,10 @@ module Bosh::Director
 
       def validate_reference_from_job!(job_network_spec)
       end
+
+      def supports_azs?
+        false
+      end
     end
 
     class NetworkWithSubnets < Network
@@ -63,6 +67,10 @@ module Bosh::Director
         end
 
         false
+      end
+
+      def supports_azs?
+        true
       end
 
       def availability_zones
