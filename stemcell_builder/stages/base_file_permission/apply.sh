@@ -7,3 +7,7 @@ source $base_dir/lib/prelude_apply.bash
 
 chmod 0000 $chroot/etc/gshadow
 chown root:root $chroot/etc/gshadow
+
+# only for CentOS
+chmod 0755 $chroot/lib
+chmod 0755 $chroot/lib64
