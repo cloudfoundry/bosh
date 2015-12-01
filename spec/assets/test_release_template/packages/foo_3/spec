@@ -1,0 +1,7 @@
+---
+name: foo_3
+files:
+- foo
+- included_dir/*
+excluded_files:
+- included_dir/excluded_file

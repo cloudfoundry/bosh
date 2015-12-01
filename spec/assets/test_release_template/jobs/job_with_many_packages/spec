@@ -1,0 +1,17 @@
+---
+name: job_with_many_packages
+templates: {}
+
+packages:
+- foo_1
+- foo_2
+- foo_3
+- foo_4
+- foo_5
+- foo_6
+- foo_7
+- foo_8
+- foo_9
+- foo_10
+
+properties: {}

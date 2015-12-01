@@ -10,6 +10,41 @@ describe 'global networking', type: :integration do
     upload_stemcell
   end
 
+  describe 'IP allocation without cloud config' do
+    context 'when there are many compilation packages' do
+      let(:cloud_config_hash) do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['compilation']['reuse_compilation_vms'] = false
+        cloud_config_hash['compilation']['network'] = 'compilation'
+        cloud_config_hash['compilation']['workers'] = 5
+        cloud_config_hash['networks'] << {
+          'name' => 'compilation',
+          'subnets' => [
+            'range' => '192.168.2.0/24',
+            'gateway' => '192.168.2.1',
+            'dns' => ['8.8.8.8'],
+            'static' => [],
+            'reserved' => [],
+          ]
+        }
+        cloud_config_hash
+      end
+
+      it 'allocates new IP addresses without race conditions' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'job_with_many_packages')
+        legacy_manifest_hash = manifest_hash.merge(cloud_config_hash)
+
+        deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
+
+        compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
+          invocation.inputs['networks'].values.first['ip']
+        end
+
+        expect(compilation_vm_ips).to match_array(['192.168.2.2', '192.168.2.3', '192.168.2.4', '192.168.2.5', '192.168.2.6', '192.168.2.7', '192.168.2.8', '192.168.2.9', '192.168.2.10', '192.168.2.11', '192.168.1.2'])
+      end
+    end
+  end
+
   context 'when compilation pool configuration contains az information' do
 
     let(:cloud_config_hash) do
