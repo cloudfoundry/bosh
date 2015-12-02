@@ -65,11 +65,11 @@ module Bosh::Director
         expect(body.first['cloud_properties']).to eq({'cloud' => 'properties'})
 
         expect(body.last['disk_cid']).to eq('random-disk-cid-2')
-        expect(body.last['size']).to eq('n/a')
-        expect(body.last['az']).to eq('n/a')
+        expect(body.last['size']).to be_nil
+        expect(body.last['az']).to be_nil
         expect(body.last['instance_name']).to eq('fake-name-2')
         expect(body.last['orphaned_at']).to eq("#{orphaned_at}")
-        expect(body.last['cloud_properties']).to eq('n/a')
+        expect(body.last['cloud_properties']).to be_empty
       end
 
       it 'deletes an orphan disk' do

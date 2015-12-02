@@ -366,15 +366,15 @@ module Bosh::Director
               {
                 'disk_cid' => 'random-disk-cid-1',
                 'size' => 10,
-                'az' => 'n/a',
+                'az' => nil,
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-1',
-                'cloud_properties' => 'n/a',
+                'cloud_properties' => {},
                 'orphaned_at' => orphaned_at.to_s
               },
               {
                 'disk_cid' => 'random-disk-cid-2',
-                'size' => 'n/a',
+                'size' => nil,
                 'az' => 'az2',
                 'deployment_name' => 'fake-deployment',
                 'instance_name' => 'fake-name-2',

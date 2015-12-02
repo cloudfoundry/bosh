@@ -78,11 +78,11 @@ module Bosh::Director
       Models::OrphanDisk.all.map do |disk|
         {
           'disk_cid' => disk.disk_cid,
-          'size' => disk.size || 'n/a',
-          'az' => disk.availability_zone || 'n/a',
+          'size' => disk.size,
+          'az' => disk.availability_zone,
           'deployment_name' => disk.deployment_name,
           'instance_name' => disk.instance_name,
-          'cloud_properties' => disk.cloud_properties.any? ? disk.cloud_properties : 'n/a',
+          'cloud_properties' => disk.cloud_properties,
           'orphaned_at' => disk.created_at.to_s
         }
       end

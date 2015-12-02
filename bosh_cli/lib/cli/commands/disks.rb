@@ -29,10 +29,10 @@ module Bosh::Cli::Command
         disks.each do |disk|
           table << [
             disk['disk_cid'],
-            disk['size'],
+            disk['size'] || 'n/a',
             disk['deployment_name'],
             disk['instance_name'],
-            disk['az'],
+            disk['az'] || 'n/a',
             disk['orphaned_at']
           ]
         end
