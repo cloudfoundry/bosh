@@ -191,6 +191,7 @@ describe 'migrated from', type: :integration do
     context 'when using dynamic reservation without any other changes' do
       # make it use 2nd subnet for etcd_z2 instance
       let(:subnet1) { subnet_with_1_available_ip }
+      let(:subnet_with_az1) { subnet_with_1_available_ip.merge('az' => 'my-az-1') }
       let(:etcd_z1_job) do
         Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
       end
@@ -324,14 +325,13 @@ describe 'migrated from', type: :integration do
         subnet1.merge('range' => '192.168.1.0/24', 'az' => 'my-az-1')
       end
 
-      it 'creates extra instances' do
+      it 'creates one extra instance and recreate one of old instances due to netmask change' do
         original_vms, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_vms = director.vms
         expect(new_vms.size).to eq(3)
         expect(new_vms.map(&:job_name)).to eq(['etcd', 'etcd', 'etcd'])
-
-        expect(new_vms.map(&:cid)).to include(*original_vms.map(&:cid))
+        expect((new_vms.map(&:cid) & original_vms.map(&:cid)).size).to eq 1
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks.size).to eq(3)

@@ -40,7 +40,8 @@ module Bosh::Director
         'stemcell' => {
           'name' => 'stemcell-name',
           'version' => '2.0.6'
-        }
+        },
+        'networks' => {},
       }
     end
     before do

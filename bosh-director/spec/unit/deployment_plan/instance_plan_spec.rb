@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
       reservation.resolve_ip('192.168.1.3')
       reservation
     }
-    let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+    let(:network_plans) { [] }
     let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger) }
     let(:existing_instance) { instance_model }
 
@@ -112,6 +112,27 @@ module Bosh::Director::DeploymentPlan
 
           it 'should return true' do
             expect(instance_plan.networks_changed?).to be_truthy
+          end
+        end
+
+        context 'when network spec is changed during second deployment' do
+          let(:network_settings) do
+            {
+              'existing-network' =>{
+                'type' => 'dynamic',
+                'cloud_properties' =>{},
+                'dns' => '10.0.0.1',
+                'dns_record_name' => '1.foobar.existing-network.simple.bosh'
+              }
+            }
+          end
+          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', {}, ['foo-az']) }
+          let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
+
+          context 'when dns is changed' do
+            it 'should return true' do
+              expect(instance_plan.networks_changed?).to be_truthy
+            end
           end
         end
       end
@@ -331,6 +352,8 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#network_settings_hash' do
+      let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+
       it 'generates network settings from the job and desired reservations' do
         expect(instance_plan.network_settings_hash).to eq({
               'a' => {
@@ -422,6 +445,8 @@ module Bosh::Director::DeploymentPlan
 
     context 'when there have been changes on the instance' do
       describe '#dns_changed?' do
+        let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+
         describe 'when the index dns record for the instance is not found' do
           before do
             BD::Models::Dns::Record.create(:name => 'uuid-1.foobar.a.simple.fake-dns', :type => 'A', :content => '192.168.1.3')

@@ -84,10 +84,12 @@ module Bosh
         def networks_changed?
           desired_plans = network_plans.select(&:desired?)
           obsolete_plans = network_plans.select(&:obsolete?)
-          if obsolete_plans.any? || desired_plans.any?
-            network_settings_for_previous_reservations = new? ? {} : @existing_instance.spec['networks']
 
-            log_changes(__method__, network_settings_for_previous_reservations, network_settings.to_hash, @existing_instance)
+          old_network_settings = new? ? {} : @existing_instance.spec['networks']
+          new_network_settings = network_settings.to_hash
+
+          if obsolete_plans.any? || desired_plans.any? || network_settings_changed?(old_network_settings, new_network_settings)
+            log_changes(__method__, old_network_settings, new_network_settings, @existing_instance)
             true
           else
             false
@@ -173,7 +175,7 @@ module Bosh
         def needs_shutting_down?
           return true if obsolete?
 
-            vm_type_changed? ||
+          vm_type_changed? ||
             stemcell_changed? ||
             env_changed? ||
             needs_recreate?
@@ -235,6 +237,22 @@ module Bosh
         end
 
         private
+
+        def network_settings_changed?(old_network_settings, new_network_settings)
+          return false if old_network_settings == {}
+
+          old_network_settings = old_network_settings.dup
+          old_network_settings.each do |_, v|
+            v.delete('dns_record_name')
+          end
+
+          new_network_settings = new_network_settings.dup
+          new_network_settings.each do |_, v|
+            v.delete('dns_record_name')
+          end
+
+          old_network_settings != new_network_settings
+        end
 
         def env_changed?
           job = @desired_instance.job

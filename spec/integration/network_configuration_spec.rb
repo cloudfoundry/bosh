@@ -31,7 +31,7 @@ describe 'network configuration', type: :integration do
     expect(output).to match(/foobar.* 192\.168\.1\.17/)
   end
 
-  it 'recreates VM when networks change' do
+  it 'recreates VM when specifying static IP on job' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
     cloud_config_hash['resource_pools'].first['size'] = 1
@@ -46,6 +46,43 @@ describe 'network configuration', type: :integration do
 
     output = bosh_runner.run('vms')
     expect(output).to match(/192\.168\.1\.100/)
+  end
+
+  context 'Network settings are changed' do
+    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
+
+    it 'recreates VM when DNS nameservers are changed' do
+      cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8']
+
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8'])
+      end
+
+      cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8', '127.0.0.5']
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8', '127.0.0.5'])
+      end
+    end
+
+    it 'recreates VM when gateway is changed' do
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+      cloud_config_hash['networks'].first['subnets'].first['gateway'] = '192.168.1.254'
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['gateway']).to eq '192.168.1.254'
+      end
+    end
   end
 
   it 'preserves existing network reservations on a second deployment' do
