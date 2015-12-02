@@ -38,16 +38,19 @@ module Bosh::Cli
     end
 
     def fast_unpack(target)
-      if RUBY_PLATFORM =~ /linux/
-        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
-      elsif RUBY_PLATFORM =~ /darwin/
-        if target[-1, 1] == "/"
-          system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+      tar_version, _, _ = Open3.capture3('tar', '--version')
+
+      case tar_version
+        when /.*gnu.*/i
+            Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
+        when /.*bsd.*/i
+            if target[-1, 1] == "/"
+              Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+            else
+              Kernel.system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+            end
         else
-          system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
-        end
-      else
-        system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+          Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
       end
     end
 

@@ -30,6 +30,7 @@ autoload :YAML, 'yaml'
 require 'netaddr'
 require 'zlib'
 require 'archive/tar/minitar'
+require 'open3'
 include Archive::Tar
 
 require 'semi_semantic/version'
