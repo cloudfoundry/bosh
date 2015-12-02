@@ -41,11 +41,14 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
+
+      let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+
       let!(:deployment_model) do
         Models::Deployment.make(
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
-          cloud_config: Models::CloudConfig.make(manifest: Bosh::Spec::Deployments.simple_cloud_config)
+          cloud_config: Models::CloudConfig.make(manifest: cloud_config)
         )
       end
 
@@ -138,6 +141,44 @@ module Bosh::Director
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform
+          end
+
+          context 'when using vm_types, stemcells, and azs' do
+            let(:cloud_config) do
+              config = Bosh::Spec::Deployments.simple_cloud_config
+              config.delete('resource_pools')
+              config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
+              config['networks'].first['subnets'].first['az'] = 'z1'
+              config['vm_types'] =  [Bosh::Spec::Deployments.vm_type]
+              config['compilation']['az'] = 'z1'
+              config
+            end
+
+            let(:deployment_manifest) do
+              manifest = Bosh::Spec::Deployments.simple_manifest
+              stemcell = {
+                'alias' => 'ubuntu',
+                'os' => 'ubuntu',
+                'version' => '1',
+              }
+              manifest['stemcells'] = [stemcell]
+              job = manifest['jobs'].first
+              job.delete('resource_pool')
+              job['stemcell'] = stemcell['alias']
+              job['vm_type'] = Bosh::Spec::Deployments.vm_type['name']
+              job['azs'] = ['z1']
+              manifest
+            end
+
+            it 'succeeds' do
+              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
+                expect(job.first).to be_instance_of(DeploymentPlan::Job)
+                expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
+              end.and_return(package_compile_step)
+              expect(package_compile_step).to receive(:perform).with no_args
+
+              job.perform
+            end
           end
 
           context 'and multiple stemcells match the requested stemcell' do

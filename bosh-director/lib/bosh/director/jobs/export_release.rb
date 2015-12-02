@@ -27,29 +27,32 @@ module Bosh::Director
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
-        stemcell_manager = Bosh::Director::Api::StemcellManager.new
-        @stemcell = stemcell_manager.find_by_os_and_version(@stemcell_os, @stemcell_version)
-
-        logger.info "Will compile with stemcell: #{@stemcell.desc}"
+        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.new({
+            "os" => @stemcell_os,
+            "version" => @stemcell_version
+          })
 
         deployment_manager = Bosh::Director::Api::DeploymentManager.new
-        @targeted_deployment = deployment_manager.find_by_name(@deployment_name)
+        targeted_deployment = deployment_manager.find_by_name(@deployment_name)
 
         release_manager = Bosh::Director::Api::ReleaseManager.new
         release = release_manager.find_by_name(@release_name)
-        @release_version_model = release_manager.find_version(release, @release_version)
+        release_version_model = release_manager.find_version(release, @release_version)
 
-        unless deployment_manifest_has_release?
+        unless deployment_manifest_has_release?(targeted_deployment.manifest)
           raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
         end
 
-        planner_factory = DeploymentPlan::PlannerFactory.create(@logger)
-        planner = planner_factory.create_from_model(@targeted_deployment)
+        planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+        planner = planner_factory.create_from_model(targeted_deployment)
+        deployment_plan_stemcell.bind_model(planner)
 
-        network_name = planner.networks.first.name
-        resource_pool = create_resource_pool_with_the_right_stemcell(network_name)
-        planner.add_resource_pool(resource_pool)
-        export_release_job = create_job_with_all_the_templates_so_everything_compiles(planner, resource_pool.name, network_name)
+        stemcell_model = deployment_plan_stemcell.model
+        logger.info "Will compile with stemcell: #{stemcell_model.desc}"
+
+        release = planner.release(@release_name)
+
+        export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
         planner.add_job(export_release_job)
         planner.bind_models
 
@@ -57,10 +60,10 @@ module Bosh::Director
 
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
-            with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
+            with_stemcell_lock(stemcell_model.name, stemcell_model.version, :timeout => lock_timeout) do
               planner.compile_packages
 
-              tarball_state = create_tarball
+              tarball_state = create_tarball(release_version_model, stemcell_model)
               result_file.write(tarball_state.to_json + "\n")
             end
           end
@@ -70,8 +73,8 @@ module Bosh::Director
 
       private
 
-      def deployment_manifest_has_release?
-        deployment_manifest = Psych.load(@targeted_deployment.manifest)
+      def deployment_manifest_has_release?(manifest)
+        deployment_manifest = Psych.load(manifest)
         deployment_manifest['releases'].each do |release|
           if (release['name'] == @release_name) && (release['version'].to_s == @release_version.to_s)
             return true
@@ -80,16 +83,16 @@ module Bosh::Director
         false
       end
 
-      def create_tarball
+      def create_tarball(release_version_model, stemcell_model)
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(@release_version_model, @stemcell)
-        templates = @release_version_model.templates.map
+        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell_model)
+        templates = release_version_model.templates.map
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
 
-        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, @stemcell)
+        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, stemcell_model)
         manifest.write(File.join(download_dir, 'release.MF'))
 
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
@@ -108,28 +111,17 @@ module Bosh::Director
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
-      def create_resource_pool_with_the_right_stemcell(network_name)
-        fake_resource_pool_manifest = {
-          'name' => 'just_for_compiling',
-          'network' => network_name,
-          'stemcell' => {'name' => @stemcell.name, 'version' => @stemcell.version}
-        }
-        DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest)
-      end
+      def create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
+        job = DeploymentPlan::Job.new(logger)
 
-      def create_job_with_all_the_templates_so_everything_compiles(planner, fake_resource_pool_name, network_name)
-        fake_job_spec_for_compiling = {
-          'name' => 'dummy-job-for-compilation',
-          'release' => @release_name,
-          'instances' => 1,
-          'resource_pool' => fake_resource_pool_name,
-          'templates' => @release_version_model.templates.map do |template|
-            { 'name' => template.name, 'release' => @release_name }
-          end,
-          'networks' => [ 'name' => network_name ],
-        }
+        job.name = 'dummy-job-for-compilation'
+        job.stemcell = deployment_plan_stemcell
+        job.all_properties = planner.properties
+        release_version_model.templates.map do |template|
+          job.templates << release.get_or_create_template(template.name)
+        end
 
-        DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, @logger)
+        job
       end
     end
   end

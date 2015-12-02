@@ -132,17 +132,46 @@ Can't use release 'test_release/1'. It references packages without source code a
   end
 
   context 'with a cloud config manifest' do
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.multiple_release_manifest }
+
     before{
       target_and_login
-      upload_cloud_config
+      upload_cloud_config(:cloud_config_hash => cloud_config)
 
       bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload release #{spec_asset('test_release_2.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')}")
-      set_deployment({manifest_hash: Bosh::Spec::Deployments.multiple_release_manifest})
+      set_deployment({manifest_hash: manifest_hash})
       deploy({})
     }
+
+    context 'when using vm_types and stemcells and networks with azs' do
+      let(:cloud_config) do
+        config = Bosh::Spec::Deployments.simple_cloud_config
+        config.delete('resource_pools')
+        config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
+        config['networks'].first['subnets'].first['az'] = 'z1'
+        config['vm_types'] =  [Bosh::Spec::Deployments.vm_type]
+        config['compilation']['az'] = 'z1'
+        config
+      end
+
+      let(:manifest_hash) do
+        manifest = Bosh::Spec::Deployments.multiple_release_manifest
+        manifest['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+        manifest
+      end
+
+      it 'compiles all packages of the release against the requested stemcell' do
+        out = bosh_runner.run("export release test_release/1 toronto-os/1")
+        expect(out).to match /Started compiling packages/
+        expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+        expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
+        expect(out).to match /Task ([0-9]+) done/
+      end
+    end
 
     it 'compiles all packages of the release against the requested stemcell with cloud config' do
       out = bosh_runner.run("export release test_release/1 toronto-os/1")
