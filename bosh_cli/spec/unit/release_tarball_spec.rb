@@ -138,7 +138,7 @@ foo: bar
         allow(Open3).to receive(:capture3).and_return(bsd_tar_version)
         release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "--fast-read", "-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz", "./release.MF", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "--fast-read", "-xzf", anything, "./release.MF", anything)
       end
 
       it 'calls correct GNU tar command' do
@@ -147,7 +147,7 @@ foo: bar
         allow(Open3).to receive(:capture3).and_return(gnu_tar_version)
         release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything,"-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz","--occurrence", "./release.MF", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything,"-xzf", anything,"--occurrence", "./release.MF", anything)
       end
 
       it 'calls correct command for unrecognized tar' do
@@ -156,7 +156,7 @@ foo: bar
         allow(Open3).to receive(:capture3).and_return(unrecognized_tar_version)
         release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything,"-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz", "./release.MF", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything,"-xzf", anything, "./release.MF", anything)
       end
     end
 
@@ -169,7 +169,7 @@ foo: bar
 
         release_tarball.unpack_jobs
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz", "./jobs/", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", anything, "./jobs/", anything)
       end
 
       it 'calls correct GNU tar command' do
@@ -180,7 +180,7 @@ foo: bar
 
         release_tarball.unpack_jobs
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz", "--occurrence", "./jobs/", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", anything, "--occurrence", "./jobs/", anything)
       end
 
       it 'calls correct command for unrecognized tar' do
@@ -191,7 +191,7 @@ foo: bar
 
         release_tarball.unpack_jobs
 
-        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", "/Users/pivotal/bosh/bosh_cli/spec/assets/test_release.tgz", "./jobs/", anything)
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", anything, "./jobs/", anything)
       end
 
     end
