@@ -455,6 +455,28 @@ module Bosh::Director::DeploymentPlan
                   )
               end
             end
+
+            context 'when adding more instances' do
+              let(:desired_instance_count) { 4 }
+              let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13'] }
+              let(:existing_instances) do
+                [
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.12'])
+                ]
+              end
+              it 'should distribute the instances across the azs taking into account the existing instances' do
+                expect(obsolete_instance_plans).to eq([])
+
+                expect(existing_instance_plans.size).to eq(2)
+                expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+                expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
+
+                expect(new_instance_plans.size).to eq(2)
+                expect(new_instance_plans[0].desired_instance.az.name).to eq('zone2')
+                expect(new_instance_plans[1].desired_instance.az.name).to eq('zone2')
+              end
+            end
           end
         end
 

@@ -97,7 +97,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      describe '#take_next_ip_for_network' do
+      describe '#next_ip_for_network' do
         let(:deployment_subnets) do
           [
             ManualNetworkSubnet.new(
@@ -112,12 +112,13 @@ module Bosh::Director::DeploymentPlan
         let(:job_static_ips) { ['192.168.1.10', '192.168.1.11'] }
         let(:desired_azs) { [AvailabilityZone.new('zone_1', {})] }
         let(:subnet_azs) { ['zone_1'] }
-        it 'prefers first IPs' do
+        it 'finds first unclaimed IP in network' do
           networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
-          static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+          static_ip_to_azs = networks_to_static_ips.next_ip_for_network(job_networks[0])
           expect(static_ip_to_azs.ip).to eq('192.168.1.10')
+          networks_to_static_ips.claim_in_az(static_ip_to_azs.ip, 'zone_1')
 
-          static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+          static_ip_to_azs = networks_to_static_ips.next_ip_for_network(job_networks[0])
           expect(static_ip_to_azs.ip).to eq('192.168.1.11')
         end
 
@@ -136,7 +137,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'returns static ip in desired az' do
             networks_to_static_ips = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
-            static_ip_to_azs = networks_to_static_ips.take_next_ip_for_network(job_networks[0])
+            static_ip_to_azs = networks_to_static_ips.next_ip_for_network(job_networks[0])
             expect(static_ip_to_azs.ip).to eq('192.168.1.10')
             expect(static_ip_to_azs.az_names).to eq(['zone_1'])
           end

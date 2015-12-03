@@ -84,31 +84,40 @@ module Bosh
             @networks_to_static_ips = best_combination
           end
 
-          def take_next_ip_for_network(network)
-            @networks_to_static_ips[network.name].shift
+          def next_ip_for_network(network)
+            unclaimed_networks_to_static_ips[network.name].first
           end
 
-          def claim(ip)
-            @networks_to_static_ips.each do |_, static_ip_to_azs|
-              static_ip_to_azs.delete_if { |static_ip_to_azs| static_ip_to_azs.ip == ip }
+          def claim_in_az(ip, az_name)
+            @networks_to_static_ips.each do |_, static_ips_to_azs|
+              static_ips_to_azs.each do |static_ip_to_azs|
+                if static_ip_to_azs.ip == ip
+                  static_ip_to_azs.claimed = true
+                  static_ip_to_azs.az_names = [az_name]
+                end
+              end
             end
           end
 
-          def take_next_ip_for_network_and_az(network, az_name)
-            static_ip_to_azs = find_by_network_and_az(network, az_name)
-            @networks_to_static_ips[network.name].delete(static_ip_to_azs)
-            static_ip_to_azs
+          def delete(ip)
+            @networks_to_static_ips.each do |_, static_ip_to_azs|
+              static_ip_to_azs.delete_if { |static_ip_to_az| static_ip_to_az.ip == ip }
+            end
           end
 
           def find_by_network_and_ip(network, ip)
-            @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.ip == ip }
+            unclaimed_networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.ip == ip }
           end
 
           def find_by_network_and_az(network, az_name)
-            @networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.az_names.include?(az_name) }
+            unclaimed_networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.az_names.include?(az_name) }
           end
 
-          class StaticIpToAzs < Struct.new(:ip, :az_names); end
+          def unclaimed_networks_to_static_ips
+            Hash[@networks_to_static_ips.map { |network_name, static_ips_to_azs| [network_name, static_ips_to_azs.reject(&:claimed)] }]
+          end
+
+          class StaticIpToAzs < Struct.new(:ip, :az_names, :claimed); end
         end
       end
     end

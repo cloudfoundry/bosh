@@ -20,10 +20,8 @@ module Bosh
             @networks_to_static_ips.validate_ips_are_in_desired_azs(@desired_azs)
             desired_instances = desired_instances.dup
 
-            instance_plans = []
-            instance_plans += place_existing_instance_plans(desired_instances, existing_instance_models)
-            instance_plans += place_new_instance_plans(desired_instances)
-            instance_plans
+            instance_plans = place_existing_instance_plans(desired_instances, existing_instance_models)
+            place_new_instance_plans(desired_instances, instance_plans)
           end
 
           private
@@ -60,8 +58,7 @@ module Bosh
             instance_plans
           end
 
-          def place_new_instance_plans(desired_instances)
-            instance_plans = []
+          def place_new_instance_plans(desired_instances, instance_plans)
             @networks_to_static_ips.distribute_evenly_per_zone
 
             desired_instances.each do |desired_instance|
@@ -85,8 +82,7 @@ module Bosh
             desired_instance = instance_plan.desired_instance
             instance = instance_plan.instance
             if desired_instance.az.nil?
-              static_ip_to_azs = @networks_to_static_ips.take_next_ip_for_network(network)
-
+              static_ip_to_azs = @networks_to_static_ips.next_ip_for_network(network)
               if static_ip_to_azs.az_names.size == 1
                 az_name = static_ip_to_azs.az_names.first
                 @logger.debug("Assigning az '#{az_name}' to instance '#{instance}'")
@@ -96,7 +92,7 @@ module Bosh
               end
               desired_instance.az = to_az(az_name)
             else
-              static_ip_to_azs = @networks_to_static_ips.take_next_ip_for_network_and_az(network, desired_instance.availability_zone)
+              static_ip_to_azs = @networks_to_static_ips.find_by_network_and_az(network, desired_instance.availability_zone)
             end
             if static_ip_to_azs.nil?
               raise Bosh::Director::NetworkReservationError,
@@ -104,6 +100,7 @@ module Bosh
             end
 
             @logger.debug("Claiming IP '#{format_ip(static_ip_to_azs.ip)}' on network #{network.name} and az '#{desired_instance.availability_zone}' for instance '#{instance}'")
+            @networks_to_static_ips.claim_in_az(static_ip_to_azs.ip, desired_instance.availability_zone)
 
             @network_planner.network_plan_with_static_reservation(instance_plan, network, static_ip_to_azs.ip)
           end
@@ -129,8 +126,15 @@ module Bosh
                   create_network_plan_with_ip(instance_plan, network, ip_address)
                 end
 
-                # claim so that other instances not reusing ips of existing instance
-                @networks_to_static_ips.claim(ip_address)
+                if instance_plan.desired_instance.nil?
+                  # delete so that other instances not reusing ips of existing instance
+                  # obsolete instances should not affect distribution
+                  @networks_to_static_ips.delete(ip_address)
+                else
+                  # put ip in az where existing instance is so that
+                  # during distribution it will be taken into account
+                  @networks_to_static_ips.claim_in_az(ip_address, instance_plan.desired_instance.availability_zone)
+                end
               end
             end
 
