@@ -76,7 +76,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
-      branch: master
+      branch: global-net
 
   - name: aws-ubuntu-hvm-stemcell
     type: bosh-io-stemcell
