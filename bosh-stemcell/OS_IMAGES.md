@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `SxNhu4XpwGJ5O3e6qHMZH4OjIKfAmQxc`
+  - changes for stigs (V-38466, V-38465, V-38469, V-38472)
+
 * `Z2HxTjdbITWyRL7GCsY1rVe2OjR0oNRZ`
   - update for USN-2821-1: GnuTLS vulnerability
 
@@ -313,6 +316,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `llyRse5kYAebEAI4K9uaMJCzRBtr2wHY`
+  - changes for stigs (V-38466, V-38465, V-38469, V-38472)
 
 * `7.WUv.iIq4SW.ra1_zusQRTntKCI011_`
   - (periodic) bump centos to match ubuntu update for USN-2821-1
