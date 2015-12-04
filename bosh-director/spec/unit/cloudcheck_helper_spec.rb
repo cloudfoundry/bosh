@@ -154,7 +154,7 @@ module Bosh::Director
             expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
           end
 
-          expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:apply).with({'networks' => {'ip' => '192.1.3.4'}}).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 

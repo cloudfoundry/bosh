@@ -164,8 +164,6 @@ module Bosh::Director::DeploymentPlan
             'index' => 0,
             'id' => 'uuid-1',
             'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}},
-            'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}},
-            'stemcell' => {'name' => 'fake-stemcell-name', 'version' => '1.0'},
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test-domain',

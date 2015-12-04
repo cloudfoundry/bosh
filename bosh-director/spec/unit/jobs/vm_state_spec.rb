@@ -8,7 +8,7 @@ module Bosh::Director
           'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'resource_pool' => {},
           'processes' => [
             {'name' => 'fake-process-1', 'state' => 'running'},
             {'name' => 'fake-process-2', 'state' => 'failing'},
@@ -52,7 +52,7 @@ module Bosh::Director
           'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
-          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'resource_pool' => {}
         )
 
         expect(@result_file).to receive(:write) do |agent_status|
@@ -62,7 +62,7 @@ module Bosh::Director
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['agent_id']).to eq('fake-agent-id')
           expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['resource_pool']).to be_nil
           expect(status['vitals']).to be_nil
         end
 
@@ -81,7 +81,7 @@ module Bosh::Director
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['agent_id']).to eq('fake-agent-id')
           expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['resource_pool']).to be_nil
           expect(status['vitals']['load']).to eq(['1', '5', '15'])
           expect(status['vitals']['cpu']).to eq({ 'user' => 'u', 'sys' => 's', 'wait' => 'w' })
           expect(status['vitals']['mem']).to eq({ 'percent' => 'p', 'kb' => 'k' })
@@ -121,14 +121,7 @@ module Bosh::Director
       end
 
       it 'should handle unresponsive agents' do
-        Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '50',
-          state: 'started',
-          resurrection_paused: true,
-          vm: vm,
-        )
+        Models::Instance.make(deployment: @deployment, vm: vm, resurrection_paused: true, job: 'dea', index: 50)
 
         expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
 
@@ -147,14 +140,7 @@ module Bosh::Director
       end
 
       it 'should get the resurrection paused status' do
-        Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '0',
-          state: 'started',
-          resurrection_paused: true,
-          vm: vm,
-        )
+        Models::Instance.make(deployment: @deployment, vm: vm, resurrection_paused: true)
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
@@ -167,13 +153,7 @@ module Bosh::Director
       end
 
       it 'should return disk cid info when active disks found' do
-        instance = Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '0',
-          state: 'started',
-          vm: vm,
-        )
+        instance = Models::Instance.make(deployment: @deployment, vm: vm)
         Models::PersistentDisk.create(
           instance: instance,
           active: true,
@@ -192,13 +172,7 @@ module Bosh::Director
       end
 
       it 'should return disk cid info when NO active disks found' do
-        instance = Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '0',
-          state: 'started',
-          vm: vm,
-        )
+        instance = Models::Instance.make(deployment: @deployment, vm: vm)
         Models::PersistentDisk.create(
           instance: instance,
           active: false,
@@ -219,15 +193,7 @@ module Bosh::Director
       end
 
       it 'should return instance id' do
-        Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '0',
-          state: 'started',
-          resurrection_paused: true,
-          vm: vm,
-          uuid: 'blarg'
-        )
+        Models::Instance.make(deployment: @deployment, vm: vm, uuid: 'blarg')
         stub_agent_get_state_to_return_state_with_vitals
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -241,15 +207,7 @@ module Bosh::Director
       end
 
       it 'should return vm_type' do
-        Models::Instance.create(
-          deployment: @deployment,
-          job: 'dea',
-          index: '0',
-          state: 'started',
-          resurrection_paused: true,
-          vm: vm,
-          uuid: 'blarg'
-        )
+        Models::Instance.make(deployment: @deployment, vm: vm)
 
         set_vm_apply_spec(vm)
 
@@ -282,16 +240,7 @@ module Bosh::Director
 
           context 'when instance is a bootstrap node' do
         it 'should return is_bootstrap as true' do
-          Models::Instance.create(
-            deployment: @deployment,
-            job: 'dea',
-            index: '0',
-            state: 'started',
-            resurrection_paused: true,
-            vm: vm,
-            uuid: 'blarg',
-            bootstrap: true
-          )
+          Models::Instance.make(deployment: @deployment, vm: vm, bootstrap: true)
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
@@ -306,15 +255,7 @@ module Bosh::Director
 
       context 'when instance is NOT a bootstrap node' do
         it 'should return is_bootstrap as false' do
-          Models::Instance.create(
-            deployment: @deployment,
-            job: 'dea',
-            index: '1',
-            state: 'started',
-            resurrection_paused: true,
-            vm: vm,
-            uuid: 'blarg'
-          )
+          Models::Instance.make(deployment: @deployment, vm: vm, bootstrap: false)
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
@@ -328,7 +269,8 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        vm
+        Models::Instance.make(deployment: @deployment, vm: vm)
+        set_vm_apply_spec(vm)
 
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
@@ -341,7 +283,7 @@ module Bosh::Director
             {'name' => 'fake-process-1', 'state' => 'running' },
             {'name' => 'fake-process-2', 'state' => 'failing' },
           ],
-          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'resource_pool' => {}
         )
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -352,14 +294,13 @@ module Bosh::Director
           expect(status['vm_cid']).to eq('fake-vm-cid')
           expect(status['agent_id']).to eq('fake-agent-id')
           expect(status['job_state']).to eq('running')
-          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['resource_pool']).to eq('fake-vm-type')
           expect(status['vitals']).to be_nil
           expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running' },
                                              {'name' => 'fake-process-2', 'state' => 'failing' }])
         end
 
         job.perform
-
       end
     end
   end

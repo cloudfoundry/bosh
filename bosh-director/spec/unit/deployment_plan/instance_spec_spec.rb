@@ -67,9 +67,6 @@ module Bosh::Director::DeploymentPlan
             'dns_record_name' => expect_dns_name
             })
 
-        expect(spec['vm_type']).to eq(vm_type.spec)
-        expect(spec['stemcell']).to eq(stemcell.spec)
-        expect(spec['env']).to eq(env.spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['configuration_hash']).to be_nil

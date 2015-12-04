@@ -134,9 +134,6 @@ module Bosh::Director
           'index',
           'id',
           'networks',
-          'vm_type',
-          'stemcell',
-          'env',
           'packages',
           'dns_domain_name',
           'configuration_hash',
@@ -144,7 +141,7 @@ module Bosh::Director
           'template_hashes',
           'rendered_templates_archive',
         ]
-        @full_spec.select {|k,v| keys.include?(k) }
+        @full_spec.select {|k,_| keys.include?(k) }
       end
     end
   end

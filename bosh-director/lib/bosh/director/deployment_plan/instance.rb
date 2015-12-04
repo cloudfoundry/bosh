@@ -50,9 +50,6 @@ module Bosh::Director
         )
       end
 
-      # Creates a new instance specification based on the job and index.
-      # @param [DeploymentPlan::Job] job associated job
-      # @param [Integer] index index for this instance
       def initialize(
         job_name,
         index,
@@ -179,10 +176,14 @@ module Bosh::Director
       def apply_initial_vm_state(spec)
         # Agent will return dynamic network settings, we need to update spec with it
         # so that we can render templates with new spec later.
-        initial_spec_keys = ['networks', 'deployment', 'job', 'index', 'id', 'stemcell', 'vm_type']
-        partial_state = spec.as_apply_spec.select { |k, _| initial_spec_keys.include?(k) }
-        agent_client.apply(partial_state)
-        @current_state.merge!(partial_state)
+        agent_spec_keys = ['networks', 'deployment', 'job', 'index', 'id']
+        agent_partial_state = spec.as_apply_spec.select { |k, _| agent_spec_keys.include?(k) }
+        agent_client.apply(agent_partial_state)
+
+        instance_spec_keys = agent_spec_keys + ['stemcell', 'vm_type']
+        instance_partial_state = spec.full_spec.select { |k, _| instance_spec_keys.include?(k) }
+        @current_state.merge!(instance_partial_state)
+
         agent_state = agent_client.get_state
         unless agent_state.nil?
           @current_state['networks'] = agent_state['networks']

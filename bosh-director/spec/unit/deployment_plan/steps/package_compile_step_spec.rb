@@ -380,9 +380,7 @@ module Bosh::Director
           },
           'index' => 0,
           'id' => 'deadbeef',
-          'networks' => net,
-          'vm_type' => {},
-          'stemcell' => { 'name' => @stemcell_a.name, 'version' => @stemcell_a.version }
+          'networks' => net
         }
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }

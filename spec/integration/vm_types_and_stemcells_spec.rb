@@ -119,7 +119,7 @@ describe 'vm_types and stemcells', type: :integration do
     end
   end
 
-  it 're-creates instance when with vm_type changes' do
+  it 'recreates instance when with vm_type changes' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash.delete('resource_pools')
 
@@ -158,7 +158,7 @@ describe 'vm_types and stemcells', type: :integration do
 
   #TODO Remove this test when backward compatibility of resource pool is no longer required
   context 'when migrating from resource pool to vm_type and stemcell' do
-    it 'should not re-creates instance when with vm_type and stemcell do not change' do
+    it 'should not recreate instance when with vm_type and stemcell do not change' do
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       env_hash = {
         'env1' => 'env_value1',

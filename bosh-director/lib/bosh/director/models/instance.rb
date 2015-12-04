@@ -69,28 +69,27 @@ module Bosh::Director::Models
 
     def spec
       return nil if spec_json.nil?
-      result = Yajl::Parser.parse(spec_json)
 
-      unless result['resource_pool'].nil? && result['vm_type'].nil?
-        if result['resource_pool'] && result['vm_type'].nil?
+      result = Yajl::Parser.parse(spec_json)
+      if result['resource_pool'].nil?
+        result
+      else
+        if result['vm_type'].nil?
           result['vm_type'] = {
             'name' => result['resource_pool']['name'],
             'cloud_properties' => result['resource_pool']['cloud_properties']
           }
         end
 
-        if result['resource_pool'] && result['resource_pool']['stemcell'] && result['stemcell'].nil?
+        if result['resource_pool']['stemcell'] && result['stemcell'].nil?
           result['stemcell'] = result['resource_pool']['stemcell']
           result['stemcell']['alias'] = result['resource_pool']['name']
         end
 
-        if result['resource_pool']
-          result.delete('resource_pool')
-        end
+        result.delete('resource_pool')
 
+        result
       end
-
-      result
     end
 
     def spec=(spec)

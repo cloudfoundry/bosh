@@ -9,7 +9,6 @@ module Bosh::Director
         :vms
       end
 
-      # @param [Integer] deployment_id Deployment id
       def initialize(deployment_id, format)
         @deployment_id = deployment_id
         @format = format
@@ -34,7 +33,6 @@ module Bosh::Director
         ips = []
         dns_records = []
         job_state = nil
-        resource_pool = nil
         job_vitals = nil
         processes = []
 
@@ -46,9 +44,6 @@ module Bosh::Director
           end
 
           job_state = agent_state['job_state']
-          if agent_state['resource_pool']
-            resource_pool = agent_state['resource_pool']['name']
-          end
           if agent_state['vitals']
             job_vitals = agent_state['vitals']
           end
@@ -63,6 +58,7 @@ module Bosh::Director
         end
 
         vm_apply_spec = vm.instance ? vm.instance.spec : {}
+        vm_type_name = vm_apply_spec && vm_apply_spec['vm_type'] ? vm_apply_spec['vm_type']['name'] : nil
 
         {
           :vm_cid => vm.cid,
@@ -73,8 +69,8 @@ module Bosh::Director
           :job_name => vm.instance ? vm.instance.job : nil,
           :index => vm.instance ? vm.instance.index : nil,
           :job_state => job_state,
-          :resource_pool => resource_pool,
-          :vm_type => vm_apply_spec && vm_apply_spec['vm_type'] ? vm_apply_spec['vm_type']['name'] : nil,
+          :resource_pool => vm_type_name,
+          :vm_type => vm_type_name,
           :vitals => job_vitals,
           :processes => processes,
           :resurrection_paused => vm.instance ? vm.instance.resurrection_paused : nil,
