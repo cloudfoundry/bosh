@@ -66,7 +66,12 @@ module Bosh::Director
       end
 
       def create_instance_plan(stemcell)
-        vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        vm_type_spec = {
+          'name' => '',
+          'cloud_properties' => @deployment_plan.compilation.cloud_properties,
+          'stemcell' => stemcell.spec
+        }
+        vm_type = VmType.new(vm_type_spec)
         env = Env.new(@deployment_plan.compilation.env)
 
         @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan.compilation.network_name)
@@ -98,18 +103,6 @@ module Bosh::Director
     end
 
     private
-
-    class CompilationVmType
-      attr_reader :cloud_properties
-
-      def initialize(cloud_properties)
-        @cloud_properties = cloud_properties
-      end
-
-      def spec
-        {}
-      end
-    end
 
     class CompilationJob
       attr_reader :vm_type, :stemcell, :env, :name

@@ -83,11 +83,6 @@ module Bosh::Director::Models
           result['stemcell'] = result['resource_pool']['stemcell']
           result['stemcell']['alias'] = result['resource_pool']['name']
         end
-
-        if result['resource_pool']
-          result.delete('resource_pool')
-        end
-
       end
 
       result

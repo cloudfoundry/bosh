@@ -23,9 +23,6 @@ module Bosh::Director
 
       attr_reader :availability_zone
 
-      # Creates compilation configuration spec from the deployment manifest.
-      # @param [DeploymentPlan] deployment
-      # @param [Hash] compilation_config parsed compilation config YAML section
       def initialize(compilation_config, azs_list = {})
         @workers = safe_property(compilation_config, 'workers', class: Integer, min: 1)
 

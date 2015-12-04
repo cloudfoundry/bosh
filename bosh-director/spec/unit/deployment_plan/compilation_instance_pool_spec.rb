@@ -117,7 +117,8 @@ module Bosh::Director
           'id' => 'uuid-1',
           'networks' => expected_network_settings,
           'stemcell' => {'name' => 'stemcell-name'},
-          'vm_type' => {}
+          'vm_type' => {'name' => '', 'cloud_properties' =>{'cloud' => 'properties'}},
+          'resource_pool' => {'name' => '', 'cloud_properties' =>{'cloud' => 'properties'}, 'stemcell' =>{'name' => 'stemcell-name'}}
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 

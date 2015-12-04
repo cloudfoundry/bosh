@@ -381,7 +381,8 @@ module Bosh::Director
           'index' => 0,
           'id' => 'deadbeef',
           'networks' => net,
-          'vm_type' => {},
+          'vm_type' => {'name' => '', 'cloud_properties' =>{}},
+          'resource_pool' =>{'name' => '', 'cloud_properties' =>{}, 'stemcell' =>{'name' => @stemcell_a.name, 'version' => @stemcell_a.version}},
           'stemcell' => { 'name' => @stemcell_a.name, 'version' => @stemcell_a.version }
         }
       }
