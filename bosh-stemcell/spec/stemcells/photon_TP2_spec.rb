@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Photon 1 stemcell', stemcell_image: true do
+describe 'Photonos 1 stemcell', stemcell_image: true do
 
   it_behaves_like 'All Stemcells'
   

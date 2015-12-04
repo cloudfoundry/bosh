@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Photon 1 OS image', os_image: true do
+describe 'Photonos 1 OS image', os_image: true do
   it_behaves_like 'every OS image'
   it_behaves_like 'a systemd-based OS image'
 

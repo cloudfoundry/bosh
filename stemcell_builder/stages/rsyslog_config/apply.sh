@@ -65,7 +65,7 @@ then
     chmod 0755 /etc/init.d/rsyslog
     chkconfig --add rsyslog
   "
-elif [ -f $chroot/etc/photon-release ] # Photon
+elif [ -f $chroot/etc/photon-release ] # PhotonOS
 then
   sed -i "s@/dev/xconsole@/dev/console@g" $chroot/etc/rsyslog.d/50-default.conf
 else

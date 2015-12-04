@@ -25,6 +25,12 @@ module Bosh::Director
     def self.delete_blob(blobstore_id)
       blobstore.delete(blobstore_id)
     end
+    
+    def self.verify_blob(blobstore_id, sha1)
+      sha1 == Digest::SHA1.hexdigest(blobstore.get(blobstore_id))
+    rescue Bosh::Blobstore::BlobstoreError => e
+      return false
+    end
 
     def self.save_to_global_cache(compiled_package, cache_key)
       global_cache_filename = [compiled_package.package.name, cache_key].join('-')

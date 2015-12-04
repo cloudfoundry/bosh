@@ -57,38 +57,6 @@ describe Bosh::Cli::Command::Ssh do
         }.to raise_error(Bosh::Cli::CliError, 'Invalid job index, integer number expected')
       end
 
-      context 'when there is no instance with that job name in the deployment' do
-        let(:manifest) do
-          {
-              'name' => deployment,
-              'director_uuid' => 'director-uuid',
-              'releases' => [],
-              'jobs' => [
-                  {
-                      'name' => 'uaa',
-                      'instances' => 1
-                  }
-              ]
-          }
-        end
-
-        context 'when specifying incorrect the job index' do
-          it 'should fail to setup ssh' do
-            expect {
-              command.shell('dea/0')
-            }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
-          end
-        end
-
-        context 'when not specifying the job index' do
-          it 'should fail to setup ssh' do
-            expect {
-              command.shell('dea')
-            }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
-          end
-        end
-      end
-
       context 'when there is only one instance with that job name in the deployment' do
         let(:manifest) do
           {
@@ -102,12 +70,6 @@ describe Bosh::Cli::Command::Ssh do
                   }
               ]
           }
-        end
-
-        it 'should implicitly chooses the only instance if job index not provided' do
-          expect(command).not_to receive(:choose)
-          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
-          command.shell('dea')
         end
 
         it 'should implicitly chooses the only instance if job name not provided' do
@@ -130,13 +92,6 @@ describe Bosh::Cli::Command::Ssh do
                   }
               ]
           }
-        end
-
-        it 'should fail to setup ssh when a job index is not given' do
-          expect {
-            command.shell('dea')
-          }.to raise_error(Bosh::Cli::CliError,
-                           'You should specify the job index. There is more than one instance of this job type.')
         end
 
         it 'should prompt for an instance if job name not given' do
@@ -382,30 +337,6 @@ describe Bosh::Cli::Command::Ssh do
   end
 
   context '#scp' do
-    context 'when the job name does not exist' do
-      let(:manifest) do
-        {
-            'name' => deployment,
-            'director_uuid' => 'director-uuid',
-            'releases' => [],
-            'jobs' => [
-                {
-                    'name' => 'uaa',
-                    'instances' => 1
-                }
-            ]
-        }
-      end
-
-      it 'should fail to setup ssh when a job name does not exists in deployment' do
-        command.add_option(:upload, true)
-        allow(command).to receive(:job_exists_in_deployment?).and_return(false)
-        expect {
-          command.scp('dea/0')
-        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
-      end
-    end
-
     it 'sets up ssh to copy files' do
       allow(Net::SSH).to receive(:start)
       allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
@@ -421,31 +352,6 @@ describe Bosh::Cli::Command::Ssh do
       expect(ssh_session).to receive(:ssh_private_key_path)
 
       command.scp('dea', '0', 'test', 'test')
-    end
-  end
-
-  context '#cleanup' do
-    context 'when the job name does not exist' do
-      let(:manifest) do
-        {
-            'name' => deployment,
-            'director_uuid' => 'director-uuid',
-            'releases' => [],
-            'jobs' => [
-                {
-                    'name' => 'uaa',
-                    'instances' => 1
-                }
-            ]
-        }
-      end
-
-      it 'should fail to setup ssh when a job name does not exists in deployment' do
-        allow(command).to receive(:job_exists_in_deployment?).and_return(false)
-        expect {
-          command.cleanup('dea/0')
-        }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
-      end
     end
   end
 end

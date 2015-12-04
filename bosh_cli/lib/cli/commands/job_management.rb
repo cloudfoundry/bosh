@@ -9,9 +9,9 @@ module Bosh::Cli
 
       # bosh start
       usage 'start'
-      desc 'Start job/instance'
+      desc 'Start all jobs/job/instance'
       option '--force', FORCE
-      def start_job(job, index = nil)
+      def start_job(job = '*', index = nil)
         change_job_state(:start, job, index)
       end
 
@@ -32,19 +32,19 @@ module Bosh::Cli
 
       # bosh restart
       usage 'restart'
-      desc 'Restart job/instance (soft stop + start)'
+      desc 'Restart all jobs/job/instance (soft stop + start)'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def restart_job(job, index = nil)
+      def restart_job(job = '*', index = nil)
         change_job_state(:restart, job, index)
       end
 
       # bosh recreate
       usage 'recreate'
-      desc 'Recreate job/instance (hard stop + start)'
+      desc 'Recreate all jobs/job/instance (hard stop + start)'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def recreate_job(job, index = nil)
+      def recreate_job(job = '*', index = nil)
         change_job_state(:recreate, job, index)
       end
 
@@ -53,10 +53,6 @@ module Bosh::Cli
       def change_job_state(state, job, index = nil)
         auth_required
         manifest = parse_manifest(state)
-        unless job == '*'
-          job_must_exist_in_deployment(manifest.hash, job)
-          index = valid_index_for(manifest.hash, job, index) unless state == :stop || state  == :detach
-        end
         job_state = JobState.new(self, manifest, skip_drain: skip_drain?)
         status, task_id, completion_desc = job_state.change(state, job, index, force?)
         task_report(status, task_id, completion_desc)

@@ -27,9 +27,6 @@ module Bosh::Cli
         end
 
         manifest = prepare_deployment_manifest(show_state: true)
-        job_must_exist_in_deployment(manifest.hash, job)
-
-        index = valid_index_for(manifest.hash, job, index, integer_index: true)
 
         if command.empty?
           setup_interactive_shell(manifest.name, job, index)
@@ -60,7 +57,6 @@ module Bosh::Cli
         end
 
         manifest = prepare_deployment_manifest(show_state: true)
-        job_must_exist_in_deployment(manifest.hash, job)
 
         if args.size != 2
           err('Please enter valid source and destination paths')
@@ -79,7 +75,6 @@ module Bosh::Cli
         end
 
         manifest = prepare_deployment_manifest(show_state: true)
-        job_must_exist_in_deployment(manifest.hash, job)
 
         say("Cleaning up ssh artifacts from #{job}/#{index}")
         director.cleanup_ssh(manifest.name, job, "^#{SSH_USER_PREFIX}", [index])
