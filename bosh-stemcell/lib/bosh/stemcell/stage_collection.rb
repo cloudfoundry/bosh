@@ -163,6 +163,7 @@ module Bosh::Stemcell
         :bosh_enable_password_authentication,
         :bosh_clean_ssh,
         :image_create,
+        :image_install_grub,
       ]
     end
 

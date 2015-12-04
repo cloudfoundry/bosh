@@ -462,6 +462,48 @@ module Bosh::Stemcell
           end
         end
       end
+
+      context 'when using Warden' do
+        let(:infrastructure) { Infrastructure.for('warden') }
+
+        let(:build_stemcell_image_stages) {
+          [
+            :system_parameters,
+            :base_warden,
+            :bosh_clean,
+            :bosh_harden,
+            :bosh_enable_password_authentication,
+            :bosh_clean_ssh,
+            :image_create,
+            :image_install_grub,
+            :bosh_package_list
+          ]
+        }
+
+        let(:package_stemcell_stages) {
+          [
+            :prepare_files_image_stemcell,
+          ]
+        }
+
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('files')).to eq(package_stemcell_stages)
+          end
+        end
+
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('files')).to eq(package_stemcell_stages)
+          end
+        end
+      end
     end
   end
 end
