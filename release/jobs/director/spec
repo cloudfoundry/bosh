@@ -135,7 +135,7 @@ properties:
 
   # Director Database
   director.db.adapter:
-    description: The type of database used
+    description: The type of database used (mysql2|postgres|sqlite)
     default: postgres
   director.db.user:
     description: Username used for the director database
@@ -143,9 +143,11 @@ properties:
   director.db.password:
     description: Password used for the director database
   director.db.host:
-    description: Address of the director database
+    description: |
+      Address of the director database, for example, in the case of AWS RDS:
+      rds-instance-name.coqxxxxxxxxx.us-east-1.rds.amazonaws.com
   director.db.port:
-    description: Port of the director database
+    description: Port of the director database (e.g, msyql2 adapter would generally use 3306)
     default: 5432
   director.db.database:
     description: Name of the director database

@@ -19,8 +19,14 @@ gem 'pg'
 EOF
 
 bundle_cmd="/var/vcap/packages/ruby/bin/bundle"
-$bundle_cmd config build.mysql2 --with-mysql-dir=$mysqlclient_dir --with-mysql-include=$mysqlclient_dir/include/mysql
-$bundle_cmd config build.pg --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
+
+$bundle_cmd config build.mysql2 \
+  --with-mysql-config=$mysqlclient_dir/bin/mariadb_config \
+
+$bundle_cmd config build.pg \
+  --with-pg-lib=$libpq_dir/lib \
+  --with-pg-include=$libpq_dir/include
+
 $bundle_cmd install \
   --local \
   --no-prune \
