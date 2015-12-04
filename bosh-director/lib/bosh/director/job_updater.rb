@@ -20,7 +20,7 @@ module Bosh::Director
       instance_plans = @job.needed_instance_plans.select(&:changed?)
 
       if instance_plans.empty?
-        @logger.info("No instances to update for `#{@job.name}'")
+        @logger.info("No instances to update for '#{@job.name}'")
         return
       end
 
