@@ -78,12 +78,13 @@ module Bosh::Director
           deployment_model.add_stemcell(stemcell_model)
           cloud_planner = CloudPlanner.new({
               networks: [Network.new('default', logger)],
-              default_network: Network.new('default', logger),
+              global_network_resolver: GlobalNetworkResolver.new(planner),
               disk_types: [],
               availability_zones_list: [],
               vm_type: vm_type,
               resource_pools: resource_pools,
               compilation: nil,
+              logger: logger,
             })
           planner.cloud_planner = cloud_planner
           allow(Config).to receive(:dns_enabled?).and_return(false)

@@ -98,7 +98,7 @@ module Bosh::Director
       def_delegators :@cloud_planner,
         :networks,
         :network,
-        :default_network,
+        :deleted_network,
         :availability_zone,
         :availability_zones,
         :resource_pools,
@@ -311,20 +311,28 @@ module Bosh::Director
     class CloudPlanner
       attr_accessor :compilation
 
-      attr_reader :default_network
-
       def initialize(options)
         @networks = self.class.index_by_name(options.fetch(:networks))
-        @default_network = options.fetch(:default_network)
+        @global_network_resolver = options.fetch(:global_network_resolver)
         @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
         @vm_types = self.class.index_by_name(options.fetch(:vm_types, {}))
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
+        @logger = options.fetch(:logger)
       end
 
       def model
         nil
+      end
+
+      def deleted_network(name)
+        ManualNetwork.parse(
+          {'subnets' => [], 'name' => name},
+          [],
+          @global_network_resolver,
+          @logger
+        )
       end
 
       def availability_zone(name)

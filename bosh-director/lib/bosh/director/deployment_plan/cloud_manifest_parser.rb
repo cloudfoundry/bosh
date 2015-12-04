@@ -11,7 +11,6 @@ module Bosh::Director
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
         networks = parse_networks(cloud_manifest, global_network_resolver, azs)
-        default_network = default_network(global_network_resolver)
         compilation_config = parse_compilation(cloud_manifest, networks, az_list)
         resource_pools = parse_resource_pools(cloud_manifest)
         vm_types = parse_vm_types(cloud_manifest)
@@ -20,11 +19,12 @@ module Bosh::Director
         CloudPlanner.new({
           availability_zones_list: az_list,
           networks: networks,
-          default_network: default_network,
+          global_network_resolver: global_network_resolver,
           compilation: compilation_config,
           resource_pools: resource_pools,
           vm_types: vm_types,
           disk_types: disk_types,
+          logger: @logger,
         })
       end
 
@@ -72,16 +72,6 @@ module Bosh::Director
         end
 
         parsed_networks
-      end
-
-      def default_network(global_network_resolver)
-        # name does not matter, default network is used separately
-        ManualNetwork.parse(
-          {'subnets' => [], 'name' => 'default'},
-          [],
-          global_network_resolver,
-          @logger
-        )
       end
 
       def parse_compilation(cloud_manifest, networks, az_list)
