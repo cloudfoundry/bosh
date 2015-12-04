@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
     let(:properties) { {'key' => 'value'} }
     let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network) }
-    let(:network_spec) { {'name' => 'default', 'subnets' => [{'cloud_properties' => cloud_properties, 'az' => 'foo-az'}] } }
+    let(:network_spec) { {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}] } }
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
     let(:job) {
       job = instance_double('Bosh::Director::DeploymentPlan::Job',
@@ -29,9 +29,7 @@ module Bosh::Director::DeploymentPlan
     }
     let(:index) { 0 }
     let(:instance) { Instance.create_from_job(job, index, 'started', plan, {}, availability_zone, logger) }
-    let(:resource_pool) { ResourcePool.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties, 'stemcell' => stemcell.spec}) }
-    let(:cloud_properties) { {'foo' => 'bar'} }
-    let(:vm_type) { VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
+    let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
     let(:env) { Env.new({'key' => 'value'}) }
@@ -65,11 +63,10 @@ module Bosh::Director::DeploymentPlan
         expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
         expect(spec['networks'][network_name]).to eq({
             'type' => 'dynamic',
-            'cloud_properties' => cloud_properties,
+            'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
             'dns_record_name' => expect_dns_name
             })
 
-        expect(spec['resource_pool']).to eq(resource_pool.spec)
         expect(spec['vm_type']).to eq(vm_type.spec)
         expect(spec['stemcell']).to eq(stemcell.spec)
         expect(spec['env']).to eq(env.spec)

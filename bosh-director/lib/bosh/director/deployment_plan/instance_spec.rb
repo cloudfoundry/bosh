@@ -15,11 +15,6 @@ module Bosh::Director
         job = instance_plan.desired_instance.job
         instance_plan = instance_plan
         dns_manager = DnsManager.create
-        resource_pool_spec = {
-          'name' => job.vm_type.name,
-          'cloud_properties' => job.vm_type.cloud_properties,
-          'stemcell' => job.stemcell.spec
-        }
 
         spec = {
           'deployment' => deployment_name,
@@ -30,7 +25,6 @@ module Bosh::Director
           'az' => instance.availability_zone_name,
           'networks' => instance_plan.network_settings_hash,
           'vm_type' => job.vm_type.spec,
-          'resource_pool' => resource_pool_spec,
           'stemcell' => job.stemcell.spec,
           'env' => job.env.spec,
           'packages' => job.package_spec,
@@ -140,7 +134,6 @@ module Bosh::Director
           'index',
           'id',
           'networks',
-          'resource_pool',
           'vm_type',
           'stemcell',
           'env',

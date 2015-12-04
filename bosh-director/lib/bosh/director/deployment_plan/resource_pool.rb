@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director
   module DeploymentPlan
     class ResourcePool
@@ -15,6 +17,9 @@ module Bosh::Director
       # @return [Hash] Resource pool environment
       attr_reader :env
 
+      # @param [DeploymentPlan] deployment_plan Deployment plan
+      # @param [Hash] spec Raw resource pool spec from the deployment manifest
+      # @param [Logger] logger Director logger
       def initialize(spec)
 
         @name = safe_property(spec, "name", class: String)
