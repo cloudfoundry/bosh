@@ -115,12 +115,8 @@ module Bosh::Director::DeploymentPlan
             'dns_record_name' => expect_dns_name
           )
 
-        expect(spec['vm_type']).to eq(vm_type.spec)
-        expect(spec['stemcell']).to eq(stemcell.spec)
-        expect(spec['env']).to eq(env.spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
         expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq('bosh')
@@ -128,75 +124,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['id']).to eq('uuid-1')
         expect(spec['az']).to eq('foo-az')
         expect(spec['bootstrap']).to eq(true)
-      end
-
-      it 'does not require persistent_disk_pool' do
-        allow(job).to receive(:persistent_disk_type).and_return(nil)
-
-        spec = instance_spec.as_template_spec
-        expect(spec['persistent_disk']).to eq(0)
-        expect(spec['persistent_disk_pool']).to eq(nil)
-      end
-
-      context 'when persistent disk type' do
-        let(:job) {
-          job = instance_double('Bosh::Director::DeploymentPlan::Job',
-            name: 'fake-job',
-            spec: job_spec,
-            canonical_name: 'job',
-            instances: ['instance0'],
-            default_network: {},
-            vm_type: vm_type,
-            stemcell: stemcell,
-            env: env,
-            package_spec: packages,
-            persistent_disk_type: disk_type,
-            can_run_as_errand?: false,
-            link_spec: 'fake-link',
-            compilation?: false,
-            properties: properties)
-        }
-        let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType', disk_size: 0, spec: disk_type_spec) }
-        let(:disk_type_spec) { {'name' => 'default', 'disk_size' => 400, 'cloud_properties' => {}} }
-
-        it 'returns a valid instance template_spec' do
-          network_name = network_spec['name']
-          spec = instance_spec.as_template_spec
-          expect(spec['deployment']).to eq('fake-deployment')
-          expect(spec['job']).to eq(job_spec)
-          expect(spec['index']).to eq(index)
-          expect(spec['networks']).to include(network_name)
-
-          expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
-
-          expect(spec['networks'][network_name]).to eq({
-            'type' => 'dynamic',
-            'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
-            'dns_record_name' => expect_dns_name
-          })
-
-          expect(spec['vm_type']).to eq(vm_type.spec)
-          expect(spec['stemcell']).to eq(stemcell.spec)
-          expect(spec['env']).to eq(env.spec)
-          expect(spec['packages']).to eq(packages)
-          expect(spec['persistent_disk']).to eq(0)
-          expect(spec['persistent_disk_type']).to eq(disk_type_spec)
-          expect(spec['configuration_hash']).to be_nil
-          expect(spec['properties']).to eq(properties)
-          expect(spec['dns_domain_name']).to eq('bosh')
-          expect(spec['links']).to eq('fake-link')
-          expect(spec['id']).to eq('uuid-1')
-          expect(spec['az']).to eq('foo-az')
-          expect(spec['bootstrap']).to eq(true)
-        end
-
-        it 'does not require persistent_disk_type' do
-          allow(job).to receive(:persistent_disk_type).and_return(nil)
-
-          spec = instance_spec.as_template_spec
-          expect(spec['persistent_disk']).to eq(0)
-          expect(spec['persistent_disk_type']).to eq(nil)
-        end
+        expect(spec['resource_pool']).to eq('fake-vm-type')
       end
     end
   end

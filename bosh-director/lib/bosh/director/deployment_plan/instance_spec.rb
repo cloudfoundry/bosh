@@ -106,19 +106,15 @@ module Bosh::Director
           'id',
           'az',
           'networks',
-          'vm_type',
-          'stemcell',
-          'env',
           'packages',
           'properties',
           'dns_domain_name',
           'links',
           'persistent_disk',
-          'persistent_disk_pool',
-          'persistent_disk_type',
           'template_hashes'
         ]
-        @full_spec.select {|k,v| keys.include?(k) }
+        template_hash = @full_spec.select {|k,v| keys.include?(k) }
+        template_hash.merge({'resource_pool' => @full_spec['vm_type']['name']})
       end
     end
 

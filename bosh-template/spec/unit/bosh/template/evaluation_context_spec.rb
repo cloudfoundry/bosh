@@ -30,7 +30,8 @@ module Bosh
           'index' => 0,
           'id' => 'deadbeef',
           'bootstrap' => true,
-          'az' => 'foo-az'
+          'az' => 'foo-az',
+          'resource_pool' => 'a'
         }
 
         @context = make(@spec)
@@ -54,6 +55,10 @@ module Bosh
 
       it 'exposes an availability zone' do
         expect(eval_template('<%= az %>', @context)).to eq(@context.az)
+        end
+
+      it 'exposes an resource pool' do
+        expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
       end
 
       it 'exposes if the instance is bootstrap or not' do
