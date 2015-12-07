@@ -116,20 +116,22 @@ describe 'simultaneous deploys', type: :integration do
       deploy_simple_manifest(manifest_hash: second_errand_manifest)
 
       first_errand_succeeded = nil
+      first_errand_output = nil
       first_errand_thread = Thread.new do
-        _, first_errand_succeeded = run_errand('errand_job', manifest_hash: first_errand_manifest)
+        first_errand_output, first_errand_succeeded = run_errand('errand_job', manifest_hash: first_errand_manifest)
       end
 
       second_errand_succeeded = nil
+      second_errand_output = nil
       second_errand_thread = Thread.new do
-        _, second_errand_succeeded = run_errand('errand_job', manifest_hash: second_errand_manifest)
+        second_errand_output, second_errand_succeeded = run_errand('errand_job', manifest_hash: second_errand_manifest)
       end
 
       first_errand_thread.join
       second_errand_thread.join
 
-      expect(first_errand_succeeded).to be(true)
-      expect(second_errand_succeeded).to be(true)
+      expect(first_errand_succeeded).to be(true), "Failed to run first errand: #{first_errand_output}"
+      expect(second_errand_succeeded).to be(true), "Failed to run second errand: #{second_errand_output}"
     end
 
     it 'raises correct error message when we do not have enough IPs for the errands' do
