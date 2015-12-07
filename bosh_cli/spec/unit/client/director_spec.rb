@@ -606,6 +606,30 @@ describe Bosh::Cli::Client::Director do
         with(:delete, '/releases/fake-release-name?version=1%2Bdev.1', {}).and_return(true)
       @director.delete_release('fake-release-name', version: '1+dev.1')
     end
+
+    it 'uploads the database dump file to restore database' do
+      expect(@director).to receive(:upload_without_track).
+                               with('/restore', '/path',
+                                    { :content_type => 'application/x-compressed' }).
+                               and_return(true)
+      @director.restore_db('/path')
+    end
+
+    describe 'check_director_restart' do
+      it 'wait until the director is restarted successfully' do
+        expect(@director).to receive(:get).
+                                with('/info', 'application/json').twice.
+                                and_return([100, '{}'], [200, '{}'])
+        expect(@director.check_director_restart(1, 10)).to eql(true)
+      end
+
+      it 'reports timeout if the director can not be restarted in time' do
+        expect(@director).to receive(:get).
+                                 with('/info', 'application/json').twice.
+                                 and_return([200, '{}'])
+        expect(@director.check_director_restart(1, 1)).to eql(false)
+      end
+    end
   end
 
   describe 'create_backup' do

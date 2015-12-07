@@ -8,7 +8,7 @@ tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
   set -e
   mkdir -p ${BOSH_INSTALL_TARGET}/bin
   cd server-$MYSQL_VERSION
-  cp -a bin/mysqldump ${BOSH_INSTALL_TARGET}/bin/mysqldump
+  cp -a bin/mysqldump bin/mysql ${BOSH_INSTALL_TARGET}/bin
 )
 
 MARIADB_VERSION='2.2.1'
