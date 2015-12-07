@@ -110,7 +110,7 @@ foo: bar
     end
   end
 
-  describe 'when using fast unpack' do
+  describe 'unpacking using tar' do
     let(:bsd_tar_version) { 'bsdtar 2.8.3 - libarchive 2.8.3' }
     let(:gnu_tar_version) do
         <<-version
@@ -195,6 +195,32 @@ foo: bar
       end
 
     end
+    context 'when unpacking a file fails' do
+      it 'removes dot slash prefix and tries again' do
+        tarball_path = spec_asset('test_release.tgz')
 
+        allow(Kernel).to receive(:system).with("tar", "-C", anything, "-xzf", tarball_path, "--occurrence", "./jobs/", anything).and_return(false)
+
+        allow(Open3).to receive(:capture3).and_return(gnu_tar_version)
+        release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+
+        release_tarball.unpack_jobs
+
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", tarball_path,  "--occurrence", "jobs/", anything)
+      end
+
+      it 'adds dot slash prefix and tries again' do
+        tarball_path = spec_asset('test_release.tgz')
+
+        allow(Kernel).to receive(:system).with("tar", "-C", anything, "-xzf", tarball_path, "--occurrence", "jobs/", anything).and_return(false)
+
+        allow(Open3).to receive(:capture3).and_return(gnu_tar_version)
+        release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+
+        release_tarball.unpack_jobs
+
+        expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", tarball_path,  "--occurrence", "./jobs/", anything)
+      end
+    end
   end
 end

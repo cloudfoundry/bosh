@@ -21,23 +21,43 @@ module Bosh::Cli
 
     def unpack_manifest
       return @unpacked_manifest unless @unpacked_manifest.nil?
-      exit_success = fast_unpack('./release.MF')
+      exit_success = safe_fast_unpack('./release.MF')
       @unpacked_manifest = !!exit_success
     end
 
     def unpack_jobs
       return @unpacked_jobs unless @unpacked_jobs.nil?
-      exit_success = fast_unpack('./jobs/')
+      exit_success = safe_fast_unpack('./jobs/')
       @unpacked_jobs = !!exit_success
     end
 
     def unpack_license
       return @unpacked_license unless @unpacked_license.nil?
-      exit_success = fast_unpack('./license.tgz')
+      exit_success = safe_fast_unpack('./license.tgz')
       @unpacked_license = !!exit_success
     end
 
-    def fast_unpack(target)
+    # On machines using GNU based tar command, it should be able to unpack files irrespective of
+    # the ./ prefix in the file name
+    def safe_fast_unpack(target)
+      exit_status = raw_fast_unpack(target)
+      if !exit_status
+        processed_target = handle_dot_slash_prefix(target)
+        exit_status = raw_fast_unpack(processed_target)
+      end
+      exit_status
+    end
+
+    # This will [add or remove] the './' when trying to extract a specific file from archive
+    def handle_dot_slash_prefix(target)
+      if target =~ /^\.\/.*/
+        target.sub!(/^\.\//, '')
+      else
+        target.prepend("./")
+      end
+    end
+
+    def raw_fast_unpack(target)
       tar_version, _, _ = Open3.capture3('tar', '--version')
 
       case tar_version

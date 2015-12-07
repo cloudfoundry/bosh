@@ -43,6 +43,25 @@ describe 'upload release', type: :integration do
     end
   end
 
+  context 'when uploading a compiled release without "./" prefix in the tarball' do
+    before {
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+    }
+
+    it 'should upload successfully and not raise an error' do
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
+      }.to_not raise_error
+    end
+  end
+
+
   # ~33s
   it 'uploads the latest generated release if no release path given' do
     Dir.chdir(ClientSandbox.test_release_dir) do
