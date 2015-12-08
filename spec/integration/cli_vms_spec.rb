@@ -1,4 +1,4 @@
-spec/integration/cli_instances_spec.rbrequire 'spec_helper'
+require 'spec_helper'
 
 describe 'cli: vms', type: :integration do
   with_reset_sandbox_before_each
