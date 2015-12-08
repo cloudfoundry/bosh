@@ -103,4 +103,10 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
       its (:stdout) { should_not include('nosignature') }
     end
   end
+
+  context 'X Windows must not be enabled unless required (stig: V-38674)' do
+    describe package('xorg-x11-server-Xorg') do
+      it { should_not be_installed }
+    end
+  end
 end
