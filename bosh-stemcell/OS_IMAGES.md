@@ -7,6 +7,18 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `L6G9dXmF3gVQ2xH5_jTAcENCRGkHbqXB`
+  - update for USN-2829-1: OpenSSL vulnerability
+
+* `SxNhu4XpwGJ5O3e6qHMZH4OjIKfAmQxc`
+  - changes for stigs (V-38466, V-38465, V-38469, V-38472)
+
+* `Z2HxTjdbITWyRL7GCsY1rVe2OjR0oNRZ`
+  - update for USN-2821-1: GnuTLS vulnerability
+
+* `EZerQHXisZiL8zX0zpvivfmC.l6UDST7`
+  - update for USN-2820-1: dpkg vulnerability
+
 * `dVVR..kD6eL0RtkFO7d1yBOM6hcZCwkO`
   - update for USN-2815-1: libpng vulnerabilities
 
@@ -308,6 +320,18 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `VbEGV.FOd56pqHc.Gzw1z.26VkZUPLvA`
+  - (periodic) bump centos to match ubuntu update for USN-2829-1
+
+* `llyRse5kYAebEAI4K9uaMJCzRBtr2wHY`
+  - changes for stigs (V-38466, V-38465, V-38469, V-38472)
+
+* `7.WUv.iIq4SW.ra1_zusQRTntKCI011_`
+  - (periodic) bump centos to match ubuntu update for USN-2821-1
+
+* `yd6fohx_wzcBob_M.h7z66fpzk8tA3O9`
+  - (periodic) bump centos to match ubuntu update for USN-2820-1
+
 * `ib7we0khyue8vOIf7hP1fsyMDJwKGki0`
   - (periodic) bump centos to match ubuntu update
 
@@ -317,7 +341,7 @@ CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 * `70iKyO1XVyO23ci2JpztKdHMClFu6eVF`
   - (periodic) bump centos to match ubuntu update
 
-* `KJOs81.dHgRSBJ9CgcjOEgxd9I2gO7zF`
+* `KJOs81.dHgRSBJ9CgcjOEgxd9I2gO7zF`[USN-2820-1] dpkg vulnerability
   - (periodic) bump centos to match ubuntu update
 
 * `k.v0bPRcoftbZK2nREGM5J4kKmEIZXE5`

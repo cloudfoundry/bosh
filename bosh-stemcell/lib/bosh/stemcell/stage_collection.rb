@@ -18,8 +18,8 @@ module Bosh::Stemcell
           rhel_os_stages
         when OperatingSystem::Ubuntu then
           ubuntu_os_stages
-        when OperatingSystem::Photon then
-          photon_os_stages
+        when OperatingSystem::Photonos then
+          photonos_os_stages
       end
     end
 
@@ -223,9 +223,9 @@ module Bosh::Stemcell
       ].flatten
     end
 
-    def photon_os_stages
+    def photonos_os_stages
       [
-        :base_photon,
+        :base_photonos,
         :base_file_permission,
         bosh_steps,
         :base_ssh,

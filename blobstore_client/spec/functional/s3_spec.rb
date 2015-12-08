@@ -4,47 +4,36 @@ require 'net/http'
 
 module Bosh::Blobstore
 
-  describe S3BlobstoreClient, s3_credentials: true do
-    def access_key_id
+  describe S3BlobstoreClient do
+    let(:access_key_id) do
       key = ENV['AWS_ACCESS_KEY_ID']
       raise 'need to set AWS_ACCESS_KEY_ID environment variable' unless key
       key
     end
 
-    def secret_access_key
+    let(:secret_access_key) do
       key = ENV['AWS_SECRET_ACCESS_KEY']
       raise 'need to set AWS_SECRET_ACCESS_KEY environment variable' unless key
       key
     end
 
-    attr_reader :bucket_name
-
-    before(:all) do
-      s3 = AWS::S3.new(
-        access_key_id: access_key_id,
-        secret_access_key: secret_access_key,
-        use_ssl: true,
-        port: 443
-      )
-
-      @bucket_name = sprintf('bosh-blobstore-bucket-%08x', rand(2**32))
-
-      @bucket = s3.buckets.create(@bucket_name, acl: :public_read)
-
-      object = @bucket.objects['public']
-      object.write('foobar', acl: :public_read)
+    let(:s3_host) do
+      ENV.fetch('S3_HOST', 's3.amazonaws.com')
     end
 
-    after(:all) do
-      @bucket.delete!
+    let(:bucket_name) do
+      key = ENV['S3_BUCKET_NAME']
+      raise 'need to set S3_BUCKET_NAME environment variable' unless key
+      key
     end
 
-    context 'Read/Write' do
+    context 'External Endpoint', aws_s3: true do
       let(:s3_options) do
         {
           bucket_name: bucket_name,
           access_key_id: access_key_id,
           secret_access_key: secret_access_key,
+          host: 's3-external-1.amazonaws.com'
         }
       end
 
@@ -54,28 +43,108 @@ module Bosh::Blobstore
 
       after(:each) do
         s3.delete(@oid) if @oid
-        s3.delete(@oid2) if @oid2
       end
 
-      describe 'unencrypted' do
-        describe 'store object' do
-          it 'should upload a file' do
-            Tempfile.new('foo') do |file|
-              expect(s3.create(file)).to_not be_nil
-            end
-          end
+      describe 'get object' do
+        it 'should save to a file' do
+          @oid = s3.create('foobar')
+          file = Tempfile.new('contents')
+          s3.get(@oid, file)
+          file.rewind
+          expect(file.read).to eq 'foobar'
+        end
+      end
+    end
 
-          it 'should upload a string' do
-            expect(s3.create('foobar')).to_not be_nil
-          end
+    context 'External Frankfurt Endpoint', aws_frankfurt_s3: true do
+      let(:bucket_name) do
+        key = ENV['S3_FRANKFURT_BUCKET_NAME']
+        raise 'need to set S3_FRANKFURT_BUCKET_NAME environment variable' unless key
+        key
+      end
 
-          it 'should handle uploading the same object twice' do
-            @oid = s3.create('foobar')
-            expect(@oid).to_not be_nil
-            @oid2 = s3.create('foobar')
-            expect(@oid2).to_not be_nil
-            expect(@oid).to_not eq @oid2
-          end
+      let(:s3_options) do
+        {
+          bucket_name: bucket_name,
+          access_key_id: access_key_id,
+          secret_access_key: secret_access_key,
+          host: 's3-external-1.amazonaws.com',
+          region: 'eu-central-1'
+        }
+      end
+
+      let(:s3) do
+        Client.create('s3', s3_options)
+      end
+
+      after(:each) do
+        s3.delete(@oid) if @oid
+      end
+
+      describe 'get object' do
+        it 'should save to a file' do
+          @oid = s3.create('foobar')
+          file = Tempfile.new('contents')
+          s3.get(@oid, file)
+          file.rewind
+          expect(file.read).to eq 'foobar'
+        end
+      end
+    end
+
+    context 'Frankfurt Region', aws_frankfurt_s3: true do
+      let(:bucket_name) do
+        key = ENV['S3_FRANKFURT_BUCKET_NAME']
+        raise 'need to set S3_FRANKFURT_BUCKET_NAME environment variable' unless key
+        key
+      end
+
+      let(:s3_options) do
+        {
+          bucket_name: bucket_name,
+          access_key_id: access_key_id,
+          secret_access_key: secret_access_key,
+          region: 'eu-central-1'
+        }
+      end
+
+      let(:s3) do
+        Client.create('s3', s3_options)
+      end
+
+      after(:each) do
+        s3.delete(@oid) if @oid
+      end
+
+      describe 'get object' do
+        it 'should save to a file' do
+          @oid = s3.create('foobar')
+          file = Tempfile.new('contents')
+          s3.get(@oid, file)
+          file.rewind
+          expect(file.read).to eq 'foobar'
+        end
+      end
+    end
+
+    context 'General S3', general_s3: true do
+      context 'with force_path_style=true' do
+        let(:s3_options) do
+          {
+            bucket_name: bucket_name,
+            access_key_id: access_key_id,
+            secret_access_key: secret_access_key,
+            s3_force_path_style: true,
+            host: s3_host
+          }
+        end
+
+        let(:s3) do
+          Client.create('s3', s3_options)
+        end
+
+        after(:each) do
+          s3.delete(@oid) if @oid
         end
 
         describe 'get object' do
@@ -86,61 +155,105 @@ module Bosh::Blobstore
             file.rewind
             expect(file.read).to eq 'foobar'
           end
-
-          it 'should return the contents' do
-            @oid = s3.create('foobar')
-
-            expect(s3.get(@oid)).to eq 'foobar'
-          end
-
-          it 'should raise an error when the object is missing' do
-            id = 'foooooo'
-
-            expect { s3.get(id) }.to raise_error BlobstoreError, "S3 object '#{id}' not found"
-          end
         end
 
-        describe 'delete object' do
-          it 'should delete an object' do
-            @oid = s3.create('foobar')
-
-            expect { s3.delete(@oid) }.to_not raise_error
-
-            @oid = nil
-          end
-
-          it "should raise an error when object doesn't exist" do
-            expect { s3.delete('foobar') }.to raise_error Bosh::Blobstore::NotFound, /Object 'foobar' is not found/
-          end
-        end
       end
 
-      context 'encrypted' do
-        let(:unencrypted_s3) do
-          s3
+      context 'Read/Write' do
+        let(:s3_options) do
+          {
+            bucket_name: bucket_name,
+            access_key_id: access_key_id,
+            secret_access_key: secret_access_key,
+            host: s3_host
+          }
         end
 
-        let(:encrypted_s3) do
-          Client.create('s3', s3_options.merge(encryption_key: 'kjahsdjahsgdlahs'))
+        let(:s3) do
+          Client.create('s3', s3_options)
         end
 
-        describe 'backwards compatibility' do
-          it 'should work when a blob was uploaded by blobstore_client 0.5.0' do
-            @oid = unencrypted_s3.create(File.read(asset('encrypted_blob_from_blobstore_client_0.5.0')))
-            expect(encrypted_s3.get(@oid)).to eq 'skadim vadar'
+        after(:each) do
+          s3.delete(@oid) if @oid
+          s3.delete(@oid2) if @oid2
+        end
+
+        describe 'unencrypted' do
+          describe 'store object' do
+            it 'should upload a file' do
+              Tempfile.open('foo') do |file|
+                @oid = s3.create(file)
+                expect(@oid).to_not be_nil
+              end
+            end
+
+            it 'should upload a string' do
+              @oid = s3.create('foobar')
+              expect(@oid).to_not be_nil
+            end
+
+            it 'should handle uploading the same object twice' do
+              @oid = s3.create('foobar')
+              expect(@oid).to_not be_nil
+              @oid2 = s3.create('foobar')
+              expect(@oid2).to_not be_nil
+              expect(@oid).to_not eq @oid2
+            end
           end
-        end
 
-        describe 'create object' do
-          it 'should be encrypted' do
-            @oid = encrypted_s3.create('foobar')
-            expect(encrypted_s3.get(@oid)).to eq 'foobar'
+          describe 'get object' do
+            it 'should save to a file' do
+              @oid = s3.create('foobar')
+              file = Tempfile.new('contents')
+              s3.get(@oid, file)
+              file.rewind
+              expect(file.read).to eq 'foobar'
+            end
+
+            it 'should return the contents' do
+              @oid = s3.create('foobar')
+
+              expect(s3.get(@oid)).to eq 'foobar'
+            end
+
+            it 'should raise an error when the object is missing' do
+              id = 'foooooo'
+
+              expect { s3.get(id) }.to raise_error BlobstoreError, "S3 object '#{id}' not found"
+            end
           end
+
+          describe 'delete object' do
+            it 'should delete an object' do
+              @oid = s3.create('foobar')
+
+              expect { s3.delete(@oid) }.to_not raise_error
+
+              @oid = nil
+            end
+
+            it "should raise an error when object doesn't exist" do
+              expect { s3.delete('foobar') }.to raise_error Bosh::Blobstore::NotFound, /Object 'foobar' is not found/
+            end
+          end
+
+          describe 'object exists?' do
+            it 'should exist after create' do
+              @oid = s3.create('foobar')
+              expect(s3.exists?(@oid)).to be true
+            end
+
+            it 'should return false if object does not exist' do
+              expect(s3.exists?('foobar-fake')).to be false
+            end
+          end
+
         end
       end
     end
 
-    context 'Read-Only' do
+    # TODO: Make simple blobstore work with s3-compatible services
+    context 'Read-Only', aws_s3: true do
       let(:s3_options) do
         { bucket_name: bucket_name }
       end
@@ -181,6 +294,13 @@ module Bosh::Blobstore
           expect { s3.delete('public') }.to raise_error BlobstoreError, 'unsupported action'
         end
       end
+
+      describe 'object exists?' do
+        it 'the object should exist' do
+          expect(s3.exists?('public')).to be true
+        end
+      end
+
     end
   end
 end

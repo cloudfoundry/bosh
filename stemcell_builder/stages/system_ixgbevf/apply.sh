@@ -28,7 +28,7 @@ then
 elif [ -f ${chroot}/etc/redhat-release ] # Centos or RHEL
 then
   run_in_chroot $chroot "dracut --force --kver ${kernelver}"
-elif [ -f ${chroot}/etc/photon-release ] # Photon
+elif [ -f ${chroot}/etc/photon-release ] # PhotonOS
 then
   run_in_chroot $chroot "dracut --force --kver ${kernelver}"
 else

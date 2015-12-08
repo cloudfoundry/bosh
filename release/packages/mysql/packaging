@@ -1,12 +1,25 @@
 # abort script on any command that exit with a non zero value
 set -e
 
-VERSION=5.1.62-rel13.3-435-Linux-x86_64
-# Percona binary Linux build
-tar zxvf mysql/server-$VERSION.tar.gz
+MYSQL_VERSION='5.1.62-rel13.3-435-Linux-x86_64'
+# `mysqldump` (only) from Percona binary Linux build
+tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
 (
-  cd server-$VERSION
-  for x in bin include lib libexec share; do
-    cp -a ${x} ${BOSH_INSTALL_TARGET}
-  done
+  set -e
+  mkdir -p ${BOSH_INSTALL_TARGET}/bin
+  cd server-$MYSQL_VERSION
+  cp -a bin/mysqldump ${BOSH_INSTALL_TARGET}/bin/mysqldump
+)
+
+MARIADB_VERSION='2.2.1'
+(
+  set -e
+  mkdir mariadb-connector-c-${MARIADB_VERSION}-src
+  cd mariadb-connector-c-${MARIADB_VERSION}-src
+  tar xzf ../mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
+  mkdir bld
+  cd bld
+  cmake .. -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET}
+  make
+  make install
 )

@@ -79,3 +79,7 @@ postgres/postgresql-9.0.23.tar.gz:
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
   size: 19776342
+mysql/mariadb-connector-c-2.2.1-src.tar.gz:
+  object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
+  sha: 74dd87a9537f98fc93cace2252424ae1c6c46fbf
+  size: 519628
