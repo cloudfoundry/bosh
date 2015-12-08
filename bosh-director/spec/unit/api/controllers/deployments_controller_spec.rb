@@ -96,42 +96,46 @@ module Bosh::Director
         end
 
         describe 'job management' do
-          it 'allows putting all jobs of deployment into stopped/detached state' do
-            Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/foo/jobs/all?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'allows putting jobs into different states' do
-            Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/foo/jobs/nats?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'allows putting job instances into different states' do
-            Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/foo/jobs/dea/2?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'allows putting job instances into different states with content_length of 0' do
-            RSpec::Matchers.define :not_to_have_body do |unexpected|
-              match { |actual| actual.read != unexpected.read }
+          shared_examples 'change state' do
+            it 'allows to change state' do
+              Models::Deployment.
+                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect_redirect_to_queued_task(last_response)
             end
 
-            manifest = spec_asset('test_conf.yaml')
-            allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything()).
-                and_return(OpenStruct.new(:id => 'no_content_length'))
-            Models::Deployment.
-              create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/foo/jobs/dea/2?state=stopped', manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+            it 'allows to change state with content_length of 0' do
+              RSpec::Matchers.define :not_to_have_body do |unexpected|
+                match { |actual| actual.read != unexpected.read }
+              end
+              manifest = spec_asset('test_conf.yaml')
+              allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
+                  with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything()).
+                  and_return(OpenStruct.new(:id => 'no_content_length'))
+              Models::Deployment.
+                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+              match = last_response.location.match(%r{/tasks/no_content_length})
+              expect(match).to_not be_nil
+            end
 
-            match = last_response.location.match(%r{/tasks/no_content_length})
-            expect(match).to_not be_nil
+            it 'should return 404 if the manifest cannot be found' do
+              put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response.status).to eq(404)
+            end
+          end
+
+          context 'for all jobs in deployment' do
+            let (:path) {"/foo/jobs/*?state=stopped"}
+            it_behaves_like 'change state'
+          end
+          context 'for one job in deployment' do
+            let (:path) {"/foo/jobs/dea?state=stopped"}
+            it_behaves_like 'change state'
+          end
+          context 'for job instance in deployment' do
+            let (:path) {"/foo/jobs/dea/2?state=stopped"}
+            it_behaves_like 'change state'
           end
 
           it 'allows putting the job instance into different resurrection_paused values' do
