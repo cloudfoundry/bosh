@@ -73,7 +73,7 @@ module Bosh::Cli::Command
         if has_az
           headings << 'AZ'
         end
-        headings += ['Resource Pool', 'IPs']
+        headings += ['VM Type', 'IPs']
         if options[:details]
           headings << 'VM CID'
           if has_disk_cid
@@ -248,7 +248,6 @@ module Bosh::Cli::Command
         comparison = instance1['job_name'].to_s <=> instance2['job_name'].to_s
         comparison = instance1['az'].to_s <=> instance2['az'].to_s if comparison == 0
         comparison = instance1['index'].to_i <=> instance2['index'].to_i if comparison == 0
-        comparison = instance1['resource_pool'].to_s <=> instance2['resource_pool'].to_s if comparison == 0
         comparison
       end
     end

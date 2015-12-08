@@ -44,7 +44,7 @@ module Bosh::Cli::Command
         if has_az
           headings << 'AZ'
         end
-        headings += ['Resource Pool', 'IPs']
+        headings += ['VM Type', 'IPs']
 
         if options[:details]
           headings += ['CID', 'Agent ID', 'Resurrection']
@@ -134,7 +134,6 @@ module Bosh::Cli::Command
         comparison = a['job_name'].to_s <=> b['job_name'].to_s
         comparison = a['az'].to_s <=> b['az'].to_s if comparison == 0
         comparison = a['index'].to_i <=> b['index'].to_i if comparison == 0
-        comparison = a['resource_pool'].to_s <=> b['resource_pool'].to_s if comparison == 0
         comparison
       end
       sorted
