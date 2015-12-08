@@ -40,11 +40,11 @@ module Bosh::Director
           options['job_rename']['force'] = true if params['force'] == 'true'
         end
 
-        # we get the deployment here even though it isn't used here, to make sure
-        # the call returns a 404 if the deployment doesn't exist
-        @deployment_manager.find_by_name(params[:deployment])
+        deployment = @deployment_manager.find_by_name(params[:deployment])
+        manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
+
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -68,7 +68,7 @@ module Bosh::Director
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = (request.content_length.nil?  || request.content_length == 0) ? StringIO.new(deployment.manifest) : request.body
+        manifest = (request.content_length.nil?  || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
