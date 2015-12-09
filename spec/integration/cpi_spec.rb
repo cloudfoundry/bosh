@@ -134,6 +134,7 @@ describe 'CPI calls', type: :integration do
           'a' => {
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
+            'default' => ['dns', 'gateway'],
             'cloud_properties' =>{},
             'dns' =>['192.168.1.1', '192.168.1.2'],
             'gateway' => '192.168.1.1',
@@ -198,6 +199,7 @@ describe 'CPI calls', type: :integration do
               'ip' => '192.168.1.10',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
               'dns' => ['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
               'dns_record_name' => '0.first-job.a.simple.bosh'
@@ -270,6 +272,7 @@ describe 'CPI calls', type: :integration do
               'ip' => '192.168.1.11',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
               'dns' => ['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
               'dns_record_name' => '0.first-job.a.simple.bosh'

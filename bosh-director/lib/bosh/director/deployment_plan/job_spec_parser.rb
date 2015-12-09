@@ -351,7 +351,8 @@ module Bosh::Director
 
       def assign_default_networks(networks)
         Network::VALID_DEFAULTS.each do |property|
-          @job.default_network[property] = networks.find {|network| network.default_for?(property) }
+          network = networks.find { |network| network.default_for?(property) }
+          @job.default_network[property] = network.name if network
         end
       end
     end

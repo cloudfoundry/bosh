@@ -53,7 +53,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'networks_changed?' do
-      context 'when there are instance plan has network plans' do
+      context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network) }
@@ -94,6 +94,7 @@ module Bosh::Director::DeploymentPlan
               'ip' => '192.168.1.3',
               'netmask' => '255.255.255.0',
               'cloud_properties' =>{},
+              'default' => ['dns', 'gateway'],
               'dns' =>['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
               'dns_record_name' => '1.foobar.a.simple.bosh'
@@ -361,6 +362,7 @@ module Bosh::Director::DeploymentPlan
                 'netmask' => '255.255.255.0',
                 'cloud_properties' => {},
                 'dns' => ['192.168.1.1', '192.168.1.2'],
+                'default' => ['dns', 'gateway'],
                 'gateway' => '192.168.1.1',
                 'dns_record_name' => '1.foobar.a.simple.bosh'}
             }

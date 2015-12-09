@@ -851,6 +851,35 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             )
         end
       end
+
+      context 'when there are no networks specified as default for a property' do
+        context 'when there is only one network' do
+          it 'picks the only network as default' do
+            job_spec['instances'] = 3
+            allow(deployment_plan).to receive(:networks).and_return([network])
+            parsed_job = parser.parse(job_spec)
+
+            expect(parsed_job.default_network['dns']).to eq('fake-network-name')
+            expect(parsed_job.default_network['gateway']).to eq('fake-network-name')
+          end
+        end
+
+        context 'when there are two networks, each being a separate default' do
+          let(:network2) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name-2', [], logger) }
+
+          it 'picks the only network as default' do
+            job_spec['networks'].first['default'] = ['dns']
+            job_spec['networks'] << { 'name' => 'fake-network-name-2', 'default' => [ 'gateway' ] }
+            job_spec['instances'] = 3
+            allow(deployment_plan).to receive(:networks).and_return([network, network2])
+            parsed_job = parser.parse(job_spec)
+
+            expect(parsed_job.default_network['dns']).to eq('fake-network-name')
+            expect(parsed_job.default_network['gateway']).to eq('fake-network-name-2')
+          end
+        end
+
+      end
     end
 
     describe 'azs key' do

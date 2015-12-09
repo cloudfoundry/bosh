@@ -40,7 +40,6 @@ module Bosh::Director
       # @return [DeploymentPlan::Env]
       attr_accessor :env
 
-      # @return [DeploymentPlan::Network] Job default network
       attr_accessor :default_network
 
       # @return [Array<DeploymentPlan::Template] Templates included into the job
