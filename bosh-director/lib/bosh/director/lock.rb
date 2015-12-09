@@ -93,7 +93,7 @@ module Bosh::Director
           end
         end
 
-        raise TimeoutError if Time.now - started > @timeout
+        raise TimeoutError, "Redis lock #{@name} is acquired by another thread" if Time.now - started > @timeout
 
         sleep(0.5)
 
