@@ -81,7 +81,8 @@ module Bosh::Director::DeploymentPlan
     end
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
-    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, logger) }
+    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
+    let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:deployment_repo) { DeploymentRepo.new }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
@@ -99,7 +100,7 @@ module Bosh::Director::DeploymentPlan
 
     before do
       fake_job
-      allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
+      allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
     end
 
     describe '#place_and_match_in' do

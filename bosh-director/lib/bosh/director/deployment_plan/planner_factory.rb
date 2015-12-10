@@ -14,17 +14,20 @@ module Bosh
       class PlannerFactory
         def self.create(logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
+          manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
           deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new
 
           new(
             deployment_manifest_migrator,
+            manifest_validator,
             deployment_repo,
             logger
           )
         end
 
-        def initialize(deployment_manifest_migrator, deployment_repo, logger)
+        def initialize(deployment_manifest_migrator, manifest_validator, deployment_repo, logger)
           @deployment_manifest_migrator = deployment_manifest_migrator
+          @manifest_validator = manifest_validator
           @deployment_repo = deployment_repo
           @logger = logger
         end
@@ -42,7 +45,9 @@ module Bosh
         private
 
         def parse_from_manifest(manifest_hash, cloud_config, options)
-          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
+          cloud_config_hash = cloud_config.nil? ? nil : cloud_config.manifest
+          @manifest_validator.validate(manifest_hash, cloud_config_hash)
+          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config_hash)
           @logger.debug("Migrated deployment manifest:\n#{deployment_manifest}")
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
           name = deployment_manifest['name']

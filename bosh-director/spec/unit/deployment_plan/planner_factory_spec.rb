@@ -4,10 +4,11 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(deployment_manifest_migrator, deployment_repo, logger) }
+        subject { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
+        let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:plan_options) { {} }
@@ -27,7 +28,7 @@ module Bosh
         end
 
         before do
-          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
+          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
           upload_releases
           upload_stemcell
           configure_config
@@ -46,7 +47,7 @@ module Bosh
 
           it 'migrates the deployment manifest to handle legacy structure' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
-              [hash.merge({'name' => 'migrated_name'}), cloud_config.manifest]
+              [hash.merge({'name' => 'migrated_name'}), cloud_config]
             end
 
             expect(planner.name).to eq('migrated_name')
@@ -54,7 +55,7 @@ module Bosh
 
           it 'logs the migrated manifests' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
-              [hash.merge({'name' => 'migrated_name'}), cloud_config.manifest]
+              [hash.merge({'name' => 'migrated_name'}), cloud_config]
             end
 
             planner
@@ -70,6 +71,13 @@ LOGMESSAGE
 # rubocop:enable LineLength
             expect(logger_io.string).to include(expected_deployment_manifest_log)
             expect(logger_io.string).to include(expected_cloud_manifest_log)
+          end
+
+          it 'raises error when manifest has cloud_config properties' do
+            manifest_hash['vm_types'] = 'foo'
+            expect{
+              subject.create_from_manifest(manifest_hash, cloud_config_model, plan_options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
           describe 'attributes of the planner' do

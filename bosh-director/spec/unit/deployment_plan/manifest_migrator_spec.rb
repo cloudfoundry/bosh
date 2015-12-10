@@ -73,28 +73,10 @@ module Bosh
           end
 
           context 'when cloud config is set' do
-            let(:cloud_config) { double(:cloud_config, manifest: 'fake-cloud-config') }
+            let(:cloud_config) { 'fake-cloud-config' }
 
             it 'returns passed cloud config' do
               expect(migrated_cloud_config).to eq('fake-cloud-config')
-            end
-
-            context 'when deployment manifest contains properties from cloud config' do
-              let(:manifest_hash) do
-                {
-                  'resource_pools' => ['fake-resource-pool'],
-                  'compilation' => ['fake-compilation'],
-                }
-              end
-
-              it 'raises invalid property error' do
-                expect {
-                  subject.migrate(manifest_hash, cloud_config)
-                }.to raise_error(
-                    DeploymentInvalidProperty,
-                    'Deployment manifest should not contain cloud config properties: ["resource_pools", "compilation"]'
-                )
-              end
             end
           end
         end
