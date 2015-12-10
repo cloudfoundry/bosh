@@ -123,8 +123,8 @@ describe 'simultaneous deploys', type: :integration do
       first_errand_thread.join
       second_errand_thread.join
 
-      expect(first_result.fetch(:exit_code)).to eq(0)
-      expect(second_result.fetch(:exit_code)).to eq(0)
+      expect(first_result.fetch(:exit_code)).to eq(0), "Failed to run first errand: #{first_result.fetch(:output)}"
+      expect(second_result.fetch(:exit_code)).to eq(0), "Failed to run second errand: #{second_result.fetch(:output)}"
     end
 
     it 'raises correct error message when we do not have enough IPs for the errands' do
