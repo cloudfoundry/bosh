@@ -4,6 +4,13 @@ module Bosh::Blobstore
   describe S3BlobstoreClient do
     subject(:client) { described_class.new(options) }
     let(:options) { {} }
+    let(:default_options) do
+      {
+        bucket_name: 'test',
+        access_key_id: 'KEY',
+        secret_access_key: 'SECRET',
+      }
+    end
 
     before { allow(Aws::S3::Client).to receive(:new).and_return(s3) }
     let(:s3) { instance_double('Aws::S3::Client') }
@@ -24,25 +31,25 @@ module Bosh::Blobstore
     end
 
     describe 'options' do
+      let(:blob) { instance_double(Aws::S3::Object) }
+      let(:s3_client) { instance_double(Aws::S3::Client) }
+      before do
+        allow(blob).to receive(:upload_file)
+        allow(blob).to receive(:exists?)
+        allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+        allow(s3_client).to receive(:list_objects)
+      end
+
       context 'when advanced options are provided for customization' do
-        let(:blob) { instance_double(Aws::S3::Object) }
-        let(:s3_client) { instance_double(Aws::S3::Client) }
-        before do
-          options.merge!(
-            'bucket_name' => 'test',
-            'access_key_id' => 'KEY',
-            'secret_access_key' => 'SECRET',
-            'use_ssl' => false,
-            'ssl_verify_peer' => false,
-            's3_multipart_threshold' => 33333,
-            'port' => 8080,
-            'host' => 'our.userdefined.com',
-            's3_force_path_style' => true,
-          )
-          allow(blob).to receive(:upload_file)
-          allow(blob).to receive(:exists?)
-          allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
-          allow(s3_client).to receive(:list_objects)
+        let(:options) do
+          default_options.merge({
+              use_ssl: false,
+              ssl_verify_peer: false,
+              s3_multipart_threshold: 33333,
+              port: 8080,
+              host: 'our.userdefined.com',
+              s3_force_path_style: true,
+            })
         end
 
         it 'uses those options when building Aws::S3 client' do
@@ -60,19 +67,7 @@ module Bosh::Blobstore
       end
 
       context 'when advanced options are not provided for customization' do
-        let(:blob) { instance_double(Aws::S3::Object) }
-        let(:s3_client) { instance_double(Aws::S3::Client) }
-        before do
-          options.merge!(
-            'bucket_name' => 'test',
-            'access_key_id' => 'KEY',
-            'secret_access_key' => 'SECRET',
-          )
-          allow(blob).to receive(:upload_file)
-          allow(blob).to receive(:exists?)
-          allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
-          allow(s3_client).to receive(:list_objects)
-        end
+        let(:options) { default_options }
 
         it 'uses default options when building Aws::S3 client' do
           expect(Aws::S3::Object).to receive(:new).with(
@@ -88,7 +83,105 @@ module Bosh::Blobstore
 
           client.create_file('foo', 'file')
         end
+      end
 
+      context 'when using a region that does not require v4' do
+        let(:region) { 'us-east-1' }
+        let(:options) { default_options.merge({region: region}) }
+
+        it 'uses signature version v2' do
+          expect(Aws::S3::Object).to receive(:new).with(
+            hash_including(:signature_version => 's3')
+          ).twice.and_return(blob)
+
+          client.create_file('foo', 'file')
+        end
+
+        context 'when forcing v4 signature_version' do
+          let(:options) { default_options.merge({region: region, signature_version: '4'}) }
+
+          it 'uses signature version v4' do
+            expect(Aws::S3::Object).to receive(:new).with(
+              hash_excluding(:signature_version => 's3')
+            ).twice.and_return(blob)
+
+            client.create_file('foo', 'file')
+          end
+        end
+
+        context 'when using invalid signature_version' do
+          let(:options) { default_options.merge({region: region, signature_version: 'v4'}) }
+
+          it 'uses signature version v2' do
+            expect(Aws::S3::Object).to receive(:new).with(
+            hash_including(:signature_version => 's3')
+            ).twice.and_return(blob)
+
+            client.create_file('foo', 'file')
+          end
+        end
+      end
+
+      context 'when using the eu-central-1 region' do
+        let(:region) { 'eu-central-1' }
+        let(:options) { default_options.merge({region: region}) }
+
+        it 'uses signature version v4' do
+          expect(Aws::S3::Object).to receive(:new).with(
+            hash_excluding(:signature_version => 's3')
+          ).twice.and_return(blob)
+
+          client.create_file('foo', 'file')
+        end
+
+        context 'when forcing v2 signature_version' do
+          let(:options) { default_options.merge({region: region, signature_version: '2'}) }
+
+          it 'uses signature version v2' do
+            expect(Aws::S3::Object).to receive(:new).with(
+              hash_including(:signature_version => 's3')
+            ).twice.and_return(blob)
+
+            client.create_file('foo', 'file')
+          end
+        end
+
+        context 'when using invalid signature_version' do
+          let(:options) { default_options.merge({region: region, signature_version: 'v2'}) }
+
+          it 'uses signature version v4' do
+            expect(Aws::S3::Object).to receive(:new).with(
+            hash_excluding(:signature_version => 's3')
+            ).twice.and_return(blob)
+
+            client.create_file('foo', 'file')
+          end
+        end
+      end
+
+      context 'when using the cn-north-1 region' do
+        let(:region) { 'cn-north-1' }
+        let(:options) { default_options.merge({region: region}) }
+
+        it 'uses signature version v4' do
+          expect(Aws::S3::Object).to receive(:new).with(
+            hash_excluding(:signature_version => 's3')
+          ).twice.and_return(blob)
+
+          client.create_file('foo', 'file')
+        end
+
+        context 'when forcing v2 signature_version' do
+          let(:options) { default_options.merge({region: region, signature_version: '2'}) }
+
+          it 'uses signature version v2' do
+            expect(Aws::S3::Object).to receive(:new).with(
+              hash_including(:signature_version => 's3')
+            ).twice.and_return(blob)
+
+            client.create_file('foo', 'file')
+          end
+        end
       end
     end
 
@@ -174,7 +267,6 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET',
           }
         end
-
 
         before do
           allow(Aws::S3::Object).to receive(:new).and_return(blob)

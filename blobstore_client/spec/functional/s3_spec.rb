@@ -53,6 +53,24 @@ module Bosh::Blobstore
           file.rewind
           expect(file.read).to eq 'foobar'
         end
+
+        it 'should save a file using v2 signature version' do
+          custom_s3 = Client.create('s3', s3_options.merge({signature_version: "2"}))
+          @oid = custom_s3.create('foobar')
+          file = Tempfile.new('contents')
+          custom_s3.get(@oid, file)
+          file.rewind
+          expect(file.read).to eq 'foobar'
+        end
+
+        it 'should save a file using v4 signature version' do
+          custom_s3 = Client.create('s3', s3_options.merge({signature_version: "4"}))
+          @oid = custom_s3.create('foobar')
+          file = Tempfile.new('contents')
+          custom_s3.get(@oid, file)
+          file.rewind
+          expect(file.read).to eq 'foobar'
+        end
       end
     end
 
@@ -88,6 +106,15 @@ module Bosh::Blobstore
           s3.get(@oid, file)
           file.rewind
           expect(file.read).to eq 'foobar'
+        end
+
+        context 'when forcing the signature_version to v2' do
+          it 'should not be able to save a file' do
+            s3 = Client.create('s3', s3_options.merge({'signature_version' => "2"}))
+            expect {
+              @oid = s3.create('foobar')
+            }.to raise_error(/The authorization mechanism you have provided is not supported/)
+          end
         end
       end
     end
