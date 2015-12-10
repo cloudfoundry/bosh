@@ -17,7 +17,8 @@ module Bosh::Director
         json_encode(response)
       end
 
-      # PUT /deployments/foo/jobs/dea?new_name=dea_new
+      # PUT /deployments/foo/jobs/dea?new_name=dea_new or
+      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true
       put '/:deployment/jobs/:job', :consumes => :yaml do
         if params['state']
           options = {
@@ -27,6 +28,7 @@ module Bosh::Director
               }
             }
           }
+          options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
         else
           unless params['new_name']
             raise DirectorError, "Missing operation on job `#{params[:job]}'"
