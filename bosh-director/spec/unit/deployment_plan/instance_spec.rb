@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
-    let(:ip_provider) { IpProvider.new(in_memory_ip_repo, false, logger) }
+    let(:ip_provider) { IpProvider.new(in_memory_ip_repo, {}, logger) }
 
     before { allow(Bosh::Director::Config).to receive(:dns).and_return({'domain_name' => 'test_domain'}) }
     before do

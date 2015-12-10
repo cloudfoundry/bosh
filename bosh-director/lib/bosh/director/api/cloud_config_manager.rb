@@ -25,7 +25,7 @@ module Bosh
           global_network_resolver = Bosh::Director::DeploymentPlan::NullGlobalNetworkResolver.new
 
           parser = Bosh::Director::DeploymentPlan::CloudManifestParser.new(Config.logger)
-          _ = parser.parse(cloud_config.manifest, global_network_resolver) # valid if this doesn't blow up
+          _ = parser.parse(cloud_config.manifest, global_network_resolver, nil) # valid if this doesn't blow up
         end
       end
     end

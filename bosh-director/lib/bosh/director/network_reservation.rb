@@ -11,6 +11,10 @@ module Bosh::Director
       @reserved = false
     end
 
+    def resolve_network(network)
+      @network = network
+    end
+
     def reserved?
       @reserved
     end

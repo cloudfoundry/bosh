@@ -298,7 +298,7 @@ module Bosh
       end
 
       def all_ips
-        Dir.glob(File.join(@base_dir, 'dummy_cpi_networks', '**', '*'))
+        Dir.glob(File.join(@base_dir, 'dummy_cpi_networks', '*'))
           .reject { |path| File.directory?(path) }
           .map { |path| File.basename(path) }
       end
@@ -335,7 +335,7 @@ module Bosh
       def allocate_ips(ips)
         ips.each do |ip|
           begin
-            network_dir = File.join(@base_dir, 'dummy_cpi_networks', ip['network'])
+            network_dir = File.join(@base_dir, 'dummy_cpi_networks')
             FileUtils.makedirs(network_dir)
             open(File.join(network_dir, ip['ip']), File::WRONLY|File::CREAT|File::EXCL).close
           rescue Errno::EEXIST
@@ -350,7 +350,7 @@ module Bosh
         return unless @vm_repo.exists?(vm_cid)
         vm = @vm_repo.load(vm_cid)
         vm.ips.each do |ip|
-          FileUtils.rm_rf(File.join(@base_dir, 'dummy_cpi_networks', ip['network'], ip['ip']))
+          FileUtils.rm_rf(File.join(@base_dir, 'dummy_cpi_networks', ip['ip']))
         end
       end
 

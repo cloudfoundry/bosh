@@ -79,6 +79,7 @@ module Bosh::Director
           cloud_planner = CloudPlanner.new({
               networks: [Network.new('default', logger)],
               global_network_resolver: GlobalNetworkResolver.new(planner),
+              ip_provider_factory: IpProviderFactory.new(true, logger),
               disk_types: [],
               availability_zones_list: [],
               vm_type: vm_type,

@@ -56,8 +56,6 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      attr_reader :ip_provider
-
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
         @cloud_config = cloud_config
 
@@ -86,13 +84,6 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @logger = Config.logger
-
-        if using_global_networking?
-          @ip_repo = DatabaseIpRepo.new(@logger)
-        else
-          @ip_repo = InMemoryIpRepo.new(@logger)
-        end
-        @ip_provider = IpProvider.new(@ip_repo, using_global_networking?, @logger)
       end
 
       def_delegators :@cloud_planner,
@@ -108,7 +99,8 @@ module Bosh::Director
         :add_resource_pool,
         :disk_types,
         :disk_type,
-        :compilation
+        :compilation,
+        :ip_provider
 
       def canonical_name
         Canonicalizer.canonicalize(@name)
@@ -319,7 +311,12 @@ module Bosh::Director
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
+        @ip_provider_factory = options.fetch(:ip_provider_factory)
         @logger = options.fetch(:logger)
+      end
+
+      def ip_provider
+        @ip_provider ||= @ip_provider_factory.new_ip_provider(@networks)
       end
 
       def model

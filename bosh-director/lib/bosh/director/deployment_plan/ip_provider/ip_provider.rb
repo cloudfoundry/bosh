@@ -3,10 +3,10 @@ module Bosh::Director
     class IpProvider
       include IpUtil
 
-      def initialize(ip_repo, using_global_networking, logger)
+      def initialize(ip_repo, networks, logger)
         @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
         @ip_repo = ip_repo
-        @using_global_networking = using_global_networking
+        @networks = networks
       end
 
       def release(reservation)
@@ -58,15 +58,16 @@ module Bosh::Director
           cidr_ip = format_ip(reservation.ip)
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
-          subnet = find_subnet_containing(reservation)
-
+          network, subnet = find_network_and_subnet_containing(reservation.ip)
           if subnet
+
             if subnet.restricted_ips.include?(reservation.ip.to_i)
               message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
             end
 
+            reservation.resolve_network(network)
             reserve_manual(reservation, subnet)
           else
             raise NetworkReservationIpOutsideSubnet,
@@ -87,11 +88,12 @@ module Bosh::Director
         end
 
         @logger.debug('Reserving existing ips')
-        subnet = find_subnet_containing(reservation)
+        network, subnet = find_network_and_subnet_containing(reservation.ip)
         if subnet
           return if subnet.restricted_ips.include?(reservation.ip.to_i)
 
           @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
+          reservation.resolve_network(network)
           reserve_manual(reservation, subnet)
         end
       end
@@ -136,8 +138,11 @@ module Bosh::Director
         end
       end
 
-      def find_subnet_containing(reservation)
-        reservation.network.subnets.find { |subnet| subnet.range.contains?(reservation.ip) }
+      def find_network_and_subnet_containing(cidr_ip)
+        @networks.each do |_, network|
+          subnet = network.subnets.find { |subnet| subnet.range.contains?(cidr_ip) }
+          return network, subnet if subnet
+        end
       end
     end
   end

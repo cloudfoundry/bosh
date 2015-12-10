@@ -98,6 +98,7 @@ module Bosh::Director::DeploymentPlan
     let(:obsolete_instance_plans) { instance_plans.select(&:obsolete?) }
 
     before do
+      fake_job
       allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
     end
 
@@ -791,6 +792,28 @@ module Bosh::Director::DeploymentPlan
             end
           end
         end
+
+        context 'when network name was changed' do
+          let(:desired_instance_count) { 2 }
+          let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
+          let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
+          let(:existing_instances) do
+            [
+              existing_instance_with_az_and_ips('zone1', ['192.168.1.10'], 'old-network-name'),
+              existing_instance_with_az_and_ips('zone2', ['192.168.2.10'], 'old-network-name'),
+            ]
+          end
+
+          it 'assigns azs based on IP addresses regardless' do
+            expect(new_instance_plans).to eq([])
+            expect(obsolete_instance_plans).to eq([])
+            expect(existing_instance_plans.size).to eq(2)
+            expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+            expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+            expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+            expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.10')])
+          end
+        end
       end
     end
 
@@ -798,10 +821,10 @@ module Bosh::Director::DeploymentPlan
       DesiredInstance.new(job, 'started', planner)
     end
 
-    def existing_instance_with_az_and_ips(az, ips)
+    def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
       instance = Bosh::Director::Models::Instance.make(availability_zone: az, deployment: deployment_model, job: job.name)
       ips.each do |ip|
-        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i))
+        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i, network_name: network_name))
       end
       instance
     end

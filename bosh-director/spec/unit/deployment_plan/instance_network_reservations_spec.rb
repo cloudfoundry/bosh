@@ -31,9 +31,11 @@ module Bosh::Director
       DeploymentPlan::ManualNetwork.new('fake-network', [], logger)
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
     before do
       instance.bind_existing_instance_model(instance_model)
       allow(deployment).to receive(:network).with('fake-network').and_return(network)
+      allow(deployment).to receive(:ip_provider).and_return(ip_provider)
     end
 
     describe 'create_from_db' do

@@ -67,7 +67,8 @@ module Bosh
           deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment)
 
-          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver)
+          ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
+          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(deployment_manifest, plan_options)
           DeploymentValidator.new.validate(deployment)
           deployment

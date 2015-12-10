@@ -6,7 +6,7 @@ module Bosh::Director::Models
       validates_presence :instance_id
       validates_presence :task_id
       validates_presence :address
-      validates_unique [:address, :network_name]
+      validates_unique :address
     end
 
     def before_create

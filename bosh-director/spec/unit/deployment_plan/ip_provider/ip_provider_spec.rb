@@ -394,9 +394,8 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'with an in-memory repo' do
-      let(:using_global_networking) { false }
       let(:ip_repo) { InMemoryIpRepo.new(logger) }
-      let(:ip_provider) { IpProvider.new(ip_repo, using_global_networking, logger) }
+      let(:ip_provider) { IpProvider.new(ip_repo, {'my-manual-network' => manual_network}, logger) }
       it_should_behave_like 'an ip provider with any repo'
 
       describe :reserve_existing_ips do
@@ -415,9 +414,8 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'with a database-backed repo' do
-      let(:using_global_networking) { true }
       let(:ip_repo) { DatabaseIpRepo.new(logger) }
-      let(:ip_provider) { IpProvider.new(ip_repo, using_global_networking, logger) }
+      let(:ip_provider) { IpProvider.new(ip_repo, {'my-manual-network' => manual_network}, logger) }
       it_should_behave_like 'an ip provider with any repo'
 
       describe :reserve_existing_ips do

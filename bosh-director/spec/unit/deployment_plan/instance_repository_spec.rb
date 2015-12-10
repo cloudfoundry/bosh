@@ -4,7 +4,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:plan) do
     network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
-    ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, true, logger)
+    ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
     model = BD::Models::Deployment.make
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       network: network,

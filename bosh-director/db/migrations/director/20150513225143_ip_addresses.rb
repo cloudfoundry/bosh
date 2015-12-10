@@ -3,11 +3,9 @@ Sequel.migration do
     create_table :ip_addresses do
       primary_key :id
       String      :network_name
-      Bignum      :address
+      Bignum      :address, unique: true
       Boolean     :static
       foreign_key :instance_id, :instances
-
-      unique [:address, :network_name]
     end
   end
 end
