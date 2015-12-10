@@ -688,5 +688,70 @@ describe 'availability zones', type: :integration do
         expect(vms.map(&:ips)).to match_array(['192.168.1.2', '192.168.2.2'])
       end
     end
+
+    context 'when job has multiple manual networks' do
+      context 'when reusing existing instances with static IPs' do
+        it 'should not fail' do
+          cloud_config_hash['networks'] = [
+            {
+              'name' => 'a',
+              'subnets' => [{
+                'range' => '192.168.1.0/24',
+                'gateway' => '192.168.1.1',
+                'dns' => ['192.168.1.1', '192.168.1.2'],
+                'static' => ['192.168.1.10', '192.168.1.11'],
+                'reserved' => [],
+                'cloud_properties' => {},
+                'az' => 'my-az',
+                }]
+            },
+            {
+              'name' => 'b',
+              'subnets' => [{
+                  'range' => '192.168.21.0/24',
+                  'gateway' => '192.168.21.1',
+                  'dns' => ['192.168.21.1', '192.168.21.2'],
+                  'static' => ['192.168.21.10', '192.168.21.11'],
+                  'reserved' => [],
+                  'cloud_properties' => {},
+                  'az' => 'my-az',
+                }]
+            }
+          ]
+
+          simple_manifest['jobs'].first['networks']= [
+            {
+              'name' => 'a',
+              'default' => [ 'dns', 'gateway' ],
+              'static_ips' => [ '192.168.1.10' ],
+            },
+            {
+              'name' => 'b',
+              'static_ips' => [ '192.168.21.10' ],
+            }
+          ]
+
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config_hash)
+
+          simple_manifest['jobs'].first['networks']= [
+            {
+              'name' => 'a',
+              'default' => [ 'dns', 'gateway' ],
+              'static_ips' => [ '192.168.1.10', '192.168.1.11' ],
+            },
+            {
+              'name' => 'b',
+              'static_ips' => [ '192.168.21.10', '192.168.21.11' ],
+            }
+          ]
+
+          cloud_config_hash['networks']
+          simple_manifest['jobs'].first['instances'] = 2
+
+          deploy_simple_manifest(manifest_hash: simple_manifest)
+        end
+      end
+    end
   end
 end

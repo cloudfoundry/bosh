@@ -124,13 +124,12 @@ module Bosh::Director::DeploymentPlan
     end
 
     def save_ip(ip, reservation, is_static)
-      Bosh::Director::Models::IpAddress.new(
+      reservation.instance.model.add_ip_address(
         address: ip.to_i,
         network_name: reservation.network.name,
-        instance: reservation.instance.model,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static
-      ).save
+      )
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
       error_message = e.message.downcase
       if error_message.include?('unique') || error_message.include?('duplicate')
