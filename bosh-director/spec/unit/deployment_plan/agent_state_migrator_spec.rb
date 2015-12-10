@@ -163,63 +163,10 @@ module Bosh::Director
           })
       end
 
-      it 'should make sure VM and instance belong to the same deployment' do
-        other_deployment = Models::Deployment.make
-        Models::Instance.make(
-          :deployment => other_deployment, :vm => @vm_model, :job => 'bar',
-          :index => 11)
-        expect {
-          agent_state_migrator.verify_state(@vm_model, {
-              'deployment' => 'foo',
-              'job' => {'name' => 'bar'},
-              'index' => 11
-            })
-        }.to raise_error(VmInstanceOutOfSync,
-            "VM `foo' and instance `bar/11' " +
-              "don't belong to the same deployment")
-      end
-
       it 'should make sure the state is a Hash' do
         expect {
           agent_state_migrator.verify_state(@vm_model, 'state')
         }.to raise_error(AgentInvalidStateFormat, /expected Hash/)
-      end
-
-      it 'should make sure the deployment name is correct' do
-        expect {
-          agent_state_migrator.verify_state(@vm_model, {'deployment' => 'foz'})
-        }.to raise_error(AgentWrongDeployment,
-            "VM `foo' is out of sync: expected to be a part " +
-              "of deployment `foo' but is actually a part " +
-              "of deployment `foz'")
-      end
-
-      it 'should make sure the job and index exist' do
-        expect {
-          agent_state_migrator.verify_state(@vm_model, {
-              'deployment' => 'foo',
-              'job' => {'name' => 'bar'},
-              'index' => 11
-            })
-        }.to raise_error(AgentUnexpectedJob,
-            "VM `foo' is out of sync: it reports itself as " +
-              "`bar/11' but there is no instance reference in DB")
-      end
-
-      it 'should make sure the job and index are correct' do
-        expect {
-          allow(deployment_plan).to receive(:job_rename).and_return({})
-          allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
-          Models::Instance.make(
-            :deployment => @deployment, :vm => @vm_model, :job => 'bar', :index => 11)
-          agent_state_migrator.verify_state(@vm_model, {
-              'deployment' => 'foo',
-              'job' => {'name' => 'bar'},
-              'index' => 22
-            })
-        }.to raise_error(AgentJobMismatch,
-            "VM `foo' is out of sync: it reports itself as " +
-              "`bar/22' but according to DB it is `bar/11'")
       end
     end
   end
