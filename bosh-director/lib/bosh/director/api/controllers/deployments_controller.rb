@@ -114,12 +114,8 @@ module Bosh::Director
         @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index], payload['resurrection_paused'])
       end
 
-      post '/:deployment/jobs/:job/:index_or_id/snapshots' do
-        if params[:index_or_id].to_s =~ /^\d+$/
-          instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
-        else
-          instance = @instance_manager.filter_by(uuid: params[:index_or_id]).first
-        end
+      post '/:deployment/jobs/:job/:index/snapshots' do
+        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
 
