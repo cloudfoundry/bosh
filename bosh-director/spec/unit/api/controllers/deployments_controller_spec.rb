@@ -177,30 +177,49 @@ module Bosh::Director
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
 
-            context 'without the "skip_drain" param' do
+            shared_examples 'skip_drain' do
               it 'drains' do
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                  .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
-                  .and_return(OpenStruct.new(:id => 1))
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                            .and_return(OpenStruct.new(:id => 1))
 
-                put '/test_deployment/jobs/job_name/0', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                expect(last_response).to be_redirect
+              end
+
+              it 'skips draining' do
+                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
+                allow_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                            .and_return(OpenStruct.new(:id => 1))
+
+                put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
               end
             end
 
-            context 'with the "skip_drain" as "true"' do
-              it 'skips draining' do
-                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
-                allow_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                        .with(anything(), anything(), anything(), hash_including('skip_drain' => 'job_name'))
-                        .and_return(OpenStruct.new(:id => 1))
+            context 'when there is a job instance' do
+              let(:path) { "/test_deployment/jobs/job_name/0" }
+              let(:drain_option) {"?skip_drain=true"}
+              let(:drain_target) { "job_name" }
+              it_behaves_like 'skip_drain'
+            end
 
-                put '/test_deployment/jobs/job_name/0?skip_drain=true', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-                expect(last_response).to be_redirect
-              end
+            context 'when there is a  job' do
+              let(:path) { "/test_deployment/jobs/job_name?state=stop" }
+              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_target) { "job_name" }
+              it_behaves_like 'skip_drain'
+            end
+
+            context 'when  deployment' do
+              let(:path) { "/test_deployment/jobs/*?state=stop" }
+              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_target) { "*" }
+              it_behaves_like 'skip_drain'
             end
           end
         end
