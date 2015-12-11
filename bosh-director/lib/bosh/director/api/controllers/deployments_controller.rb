@@ -108,10 +108,10 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      put '/:deployment/jobs/:job/:index/resurrection', consumes: :json do
+      put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
         payload = json_decode(request.body)
 
-        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index], payload['resurrection_paused'])
+        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index_or_id], payload['resurrection_paused'])
       end
 
       post '/:deployment/jobs/:job/:index/snapshots' do

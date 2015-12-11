@@ -20,6 +20,7 @@ module Bosh::Spec
           vm_data[:state],
           vm_data[:cid],
           vm_data[:agent_id],
+          vm_data[:resurrection],
           vm_data[:ips],
           vm_data[:az],
           vm_data[:instance_id],

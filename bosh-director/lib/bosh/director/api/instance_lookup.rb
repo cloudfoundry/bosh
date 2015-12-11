@@ -31,6 +31,23 @@ module Bosh::Director
         instance
       end
 
+      def by_uuid(deployment_name, job_name, uuid)
+        deployment = DeploymentLookup.new.by_name(deployment_name)
+
+        filter = {
+            deployment_id: deployment.id,
+            job: job_name,
+            uuid: uuid
+        }
+
+        instance = Models::Instance.find(filter)
+        if instance.nil?
+          raise InstanceNotFound,
+                "`#{deployment_name}/#{job_name}/#{uuid}' doesn't exist"
+        end
+        instance
+      end
+
       def by_filter(filter)
         instances = Models::Instance.filter(filter).all
         if instances.empty?

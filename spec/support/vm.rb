@@ -1,12 +1,13 @@
 module Bosh::Spec
   class Vm
-    attr_reader :last_known_state, :cid, :agent_id, :ips, :availability_zone, :instance_uuid, :job_name, :index
+    attr_reader :last_known_state, :cid, :agent_id, :resurrection, :ips, :availability_zone, :instance_uuid, :job_name, :index
 
     def initialize(
       waiter,
       job_state,
       cid,
       agent_id,
+      resurrection,
       ips,
       availability_zone,
       instance_uuid,
@@ -20,6 +21,7 @@ module Bosh::Spec
       @last_known_state = job_state
       @cid = cid
       @agent_id = agent_id
+      @resurrection = resurrection
       @ips = ips
       @availability_zone = availability_zone
       @instance_uuid = instance_uuid
