@@ -141,6 +141,27 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      context 'when reservation changes network' do
+        it 'updates network name' do
+          network_spec['subnets'].first['static'] = ['192.168.1.5']
+          static_reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
+          ip_repo.add(static_reservation)
+
+          expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+          original_address = Bosh::Director::Models::IpAddress.first
+          expect(original_address.static).to eq(true)
+          expect(original_address.network_name).to eq(network.name)
+
+          static_reservation_on_another_network = BD::DesiredNetworkReservation.new_static(instance, other_network, '192.168.1.5')
+          ip_repo.add(static_reservation_on_another_network)
+
+          expect(Bosh::Director::Models::IpAddress.count).to eq(1)
+          original_address = Bosh::Director::Models::IpAddress.first
+          expect(original_address.static).to eq(true)
+          expect(original_address.network_name).to eq(other_network.name)
+        end
+      end
+
       context 'when IP is released by another deployment' do
         it 'retries to reserve it' do
           allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do

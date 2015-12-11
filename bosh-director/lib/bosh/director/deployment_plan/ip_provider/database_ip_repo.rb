@@ -96,16 +96,16 @@ module Bosh::Director::DeploymentPlan
 
       retry unless ip_address
 
-      validate_instance_and_update_reservation_type(instance, ip, ip_address, is_static)
+      validate_instance_and_update_reservation_type(instance, ip, ip_address, reservation.network.name, is_static)
     end
 
-    def validate_instance_and_update_reservation_type(instance, ip, ip_address, is_static)
+    def validate_instance_and_update_reservation_type(instance, ip, ip_address, network_name, is_static)
       reserved_instance = ip_address.instance
       if reserved_instance == instance.model
-        if ip_address.static != is_static
+        if ip_address.static != is_static || ip_address.network_name != network_name
           reservation_type = is_static ? 'static' : 'dynamic'
-          @logger.debug("Switching reservation type of IP: '#{ip}' to #{reservation_type}")
-          ip_address.update(static: is_static)
+          @logger.debug("Updating reservation for ip '#{ip}' with type '#{reservation_type}' and network '#{network_name}'")
+          ip_address.update(static: is_static, network_name: network_name)
         end
 
         return ip_address
