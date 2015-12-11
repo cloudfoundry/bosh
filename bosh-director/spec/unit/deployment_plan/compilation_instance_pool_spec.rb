@@ -49,7 +49,6 @@ module Bosh::Director
       {
         'network_name' => {
           'network_name' => {'property' => 'settings'},
-          'dns_record_name' => '0.compilation-deadbeef.network-name.mycloud.bosh'
         }
       }
     end

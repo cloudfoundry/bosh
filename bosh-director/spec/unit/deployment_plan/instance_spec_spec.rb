@@ -60,11 +60,9 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
         expect(spec['networks'][network_name]).to eq({
             'type' => 'dynamic',
             'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
-            'dns_record_name' => expect_dns_name
             })
 
         expect(spec['packages']).to eq(packages)
@@ -108,11 +106,9 @@ module Bosh::Director::DeploymentPlan
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
-        expect_dns_name = "#{index}.fake-job.#{network_name}.fake-deployment.bosh"
         expect(spec['networks'][network_name]).to include(
             'type' => 'dynamic',
             'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
-            'dns_record_name' => expect_dns_name
           )
 
         expect(spec['packages']).to eq(packages)

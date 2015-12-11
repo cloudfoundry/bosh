@@ -162,7 +162,6 @@ module Bosh::Director::DeploymentPlan
                 'type' => 'dynamic',
                 'cloud_properties' =>{},
                 'dns' => '10.0.0.1',
-                'dns_record_name' => '1.foobar.existing-network.simple.bosh'
               }
             }
           end
@@ -403,7 +402,7 @@ module Bosh::Director::DeploymentPlan
                 'dns' => ['192.168.1.1', '192.168.1.2'],
                 'default' => ['dns', 'gateway'],
                 'gateway' => '192.168.1.1',
-                'dns_record_name' => '1.foobar.a.simple.bosh'}
+              }
             }
           )
       end

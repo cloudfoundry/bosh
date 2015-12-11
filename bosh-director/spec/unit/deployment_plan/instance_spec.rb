@@ -163,7 +163,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job-spec',
             'index' => 0,
             'id' => 'uuid-1',
-            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}},
+            'networks' => {'fake-network' => {'fake-network-settings' => {}}},
             'packages' => {},
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test-domain',
@@ -183,7 +183,7 @@ module Bosh::Director::DeploymentPlan
       describe 'apply_initial_vm_state' do
         let(:apply_spec) do
           {
-            'networks' => {'fake-network' => {'fake-network-settings' => {}, 'dns_record_name' => '0.fake-job.fake-network.fake-deployment.test-domain'}},
+            'networks' => {'fake-network' => {'fake-network-settings' => {}}},
             'deployment' => 'fake-deployment',
             'job' => 'fake-job',
             'index' => 5,

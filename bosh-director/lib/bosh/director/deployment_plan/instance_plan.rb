@@ -86,10 +86,7 @@ module Bosh
           obsolete_network_plans = network_plans.select(&:obsolete?)
 
           old_network_settings = new? ? {} : @existing_instance.spec['networks']
-          old_network_settings.each { |_, v| v.delete('dns_record_name') }
-
           new_network_settings = network_settings.to_hash
-          new_network_settings.each { |_, v| v.delete('dns_record_name') }
 
           changed = false
           if obsolete_network_plans.any?

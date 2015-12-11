@@ -66,7 +66,6 @@ module Bosh::Director::DeploymentPlan
                     'foo' => 'bar'
                   },
                   'dns' => ['1.2.3.4'],
-                  'dns_record_name' => '3.fake-job.net-a.fake-deployment.bosh',
                   'ip' => '10.0.0.6',
                   'netmask' => '255.255.255.0',
                   'gateway' => '10.0.0.1'}

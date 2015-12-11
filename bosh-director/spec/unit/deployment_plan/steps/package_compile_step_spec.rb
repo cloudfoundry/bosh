@@ -36,7 +36,7 @@ module Bosh::Director
       thread_pool
     end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
-    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}, 'dns_record_name' => '0.compilation-deadbeef.default.mycloud.bosh'}} }
+    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
 
 
     before do

@@ -33,7 +33,6 @@ describe 'CPI calls', type: :integration do
             'default' => ['dns', 'gateway'],
             'dns' => ['192.168.1.1', '192.168.1.2'],
             'gateway' => '192.168.1.1',
-            'dns_record_name' => String
           }
         },
         'disk_cids' => [],
@@ -85,7 +84,6 @@ describe 'CPI calls', type: :integration do
             'default' => ['dns', 'gateway'],
             'dns' => ['192.168.1.1', '192.168.1.2'],
             'gateway' => '192.168.1.1',
-            'dns_record_name' => String
           }
         },
         'disk_cids' => [],
@@ -138,7 +136,6 @@ describe 'CPI calls', type: :integration do
             'cloud_properties' =>{},
             'dns' =>['192.168.1.1', '192.168.1.2'],
             'gateway' => '192.168.1.1',
-            'dns_record_name' => '0.foobar.a.simple.bosh'
           }
         },
         'disk_cids' => [],
@@ -202,7 +199,6 @@ describe 'CPI calls', type: :integration do
               'default' => ['dns', 'gateway'],
               'dns' => ['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
-              'dns_record_name' => '0.first-job.a.simple.bosh'
             }
           },
           'disk_cids' => [],
@@ -275,7 +271,6 @@ describe 'CPI calls', type: :integration do
               'default' => ['dns', 'gateway'],
               'dns' => ['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
-              'dns_record_name' => '0.first-job.a.simple.bosh'
             }
           },
           'disk_cids' => [disk_cid],
