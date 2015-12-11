@@ -8,6 +8,7 @@ module Bosh
         def validate(manifest, cloud_config)
           raise_if_has_key(manifest, 'vm_types')
           raise_if_has_key(manifest, 'azs')
+          raise_if_has_key(manifest, 'disk_types')
 
           if cloud_config.nil?
             if manifest.has_key?('jobs')

@@ -7,27 +7,38 @@ module Bosh
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
       describe '#validate_manifest' do
+
+        it 'raises error when disk_types is present' do
+          manifest_hash['disk_types'] = ['foo']
+          expect {
+            manifest_validator.validate(manifest_hash, nil)
+          }.to raise_error(
+              Bosh::Director::DeploymentInvalidProperty,
+              "Deployment manifest contains 'disk_types' section, but it can only be used in cloud-config."
+            )
+        end
+
+        it 'raises error when vm_type is present' do
+          manifest_hash['vm_types'] = ['foo']
+          expect {
+            manifest_validator.validate(manifest_hash, nil)
+          }.to raise_error(
+              Bosh::Director::DeploymentInvalidProperty,
+              "Deployment manifest contains 'vm_types' section, but it can only be used in cloud-config."
+            )
+        end
+
+        it 'raises error when azs is present' do
+          manifest_hash['azs'] = ['foo']
+          expect {
+            manifest_validator.validate(manifest_hash, nil)
+          }.to raise_error(
+              Bosh::Director::DeploymentInvalidProperty,
+              "Deployment manifest contains 'azs' section, but it can only be used in cloud-config."
+            )
+        end
+
         context 'without cloud-config' do
-          it 'raises error when vm_type is present' do
-            manifest_hash['vm_types'] = ['foo']
-            expect {
-              manifest_validator.validate(manifest_hash, nil)
-            }.to raise_error(
-                Bosh::Director::DeploymentInvalidProperty,
-                "Deployment manifest contains 'vm_types' section, but it can only be used in cloud-config."
-              )
-          end
-
-          it 'raises error when azs is present' do
-            manifest_hash['azs'] = ['foo']
-            expect {
-              manifest_validator.validate(manifest_hash, nil)
-            }.to raise_error(
-                Bosh::Director::DeploymentInvalidProperty,
-                "Deployment manifest contains 'azs' section, but it can only be used in cloud-config."
-              )
-          end
-
           it 'accepts a manifest without jobs' do
             manifest_hash.delete('jobs')
 
