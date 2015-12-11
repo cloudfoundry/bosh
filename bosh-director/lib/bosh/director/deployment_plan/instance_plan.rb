@@ -33,6 +33,7 @@ module Bosh
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
+          @changes << :vm_type if vm_type_changed?
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
           @changes << :network if networks_changed?
@@ -174,7 +175,7 @@ module Bosh
         def needs_shutting_down?
           return true if obsolete?
 
-          instance.cloud_properties_changed? ||
+          vm_type_changed? ||
             stemcell_changed? ||
             env_changed? ||
             needs_recreate?
@@ -274,6 +275,14 @@ module Bosh
             return true
           end
 
+          false
+        end
+
+        def vm_type_changed?
+          if @existing_instance && @instance.vm_type.spec != @existing_instance.spec['vm_type']
+            log_changes(__method__, @existing_instance.spec['vm_type'], @desired_instance.job.vm_type.spec, @existing_instance)
+            return true
+          end
           false
         end
 

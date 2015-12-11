@@ -3,21 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
     let(:job) { Job.parse(deployment_plan, job_spec, BD::Config.event_log, logger) }
-    let(:instance_model) do
-      instance_model = BD::Models::Instance.make(
-        bootstrap: true,
-        deployment: deployment_model,
-        uuid: 'uuid-1',
-        spec: { 'vm_type' => {
-                  'name' => 'original_vm_type_name',
-                  'cloud_properties' => {'old' => 'value'}
-                },
-                'networks' => network_settings,
-                'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
-      )
-      instance_model
-    end
-
+    let(:instance_model) { BD::Models::Instance.make(bootstrap: true, deployment: deployment_model, uuid: 'uuid-1') }
     let(:desired_instance) { DesiredInstance.new(job, current_state, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => job_spec } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
@@ -61,6 +47,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
+      instance_model.spec = ({'vm_type' => 'name', 'networks' => network_settings, 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}  })
       instance.bind_existing_instance_model(instance_model)
       job.add_instance_plans([instance_plan])
     end
@@ -167,26 +154,30 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when the vm name has changed' do
+      context 'when the vm type has changed' do
         before do
-          instance_plan.existing_instance.update(spec: {
-             'vm_type' => { 'name' => 'changed-name', 'cloud_properties' => {'a' => 'b'}},
-             'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-           })
-
-          #instance_plan.existing_instance.update(spec: {'vm_type' => { 'name' => 'old', 'cloud_properties' => {'old' => 'value'}}})
+          instance_plan.existing_instance.update(spec: {'vm_type' => { 'name' => 'old', 'cloud_properties' => {'old' => 'value'}}})
         end
 
-        it 'returns false' do
-          # because cloud_properties is the only part that matters
-          expect(instance_plan.needs_shutting_down?).to be(false)
+        it 'returns true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
+        it 'logs the change reason' do
+          expect(logger).to receive(:debug).with('vm_type_changed? changed FROM: ' +
+                '{"name"=>"old", "cloud_properties"=>{"old"=>"value"}} ' +
+                'TO: ' +
+                '{"name"=>"a", "cloud_properties"=>{}}' +
+                ' on instance ' + "#{instance_plan.existing_instance}"
+            )
+          instance_plan.needs_shutting_down?
         end
       end
 
       context 'when the stemcell type has changed' do
         before do
+          expect(instance_plan).to receive(:vm_type_changed?).and_return(false)
           instance_plan.existing_instance.update(spec: {
-              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
               'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
             })
         end
@@ -214,10 +205,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          instance_plan.existing_instance.update(spec: {
-                                                   'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
-                                                   'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-                                                 })
+          expect(instance_plan).to receive(:vm_type_changed?).and_return(false)
           instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
         end
 
