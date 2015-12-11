@@ -77,6 +77,10 @@ module Bosh::Director
         end
       end
 
+      def manual?
+        true
+      end
+
       private
 
       # @param [Integer, NetAddr::CIDR, String] ip

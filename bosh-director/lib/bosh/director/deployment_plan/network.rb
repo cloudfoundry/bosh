@@ -51,6 +51,10 @@ module Bosh::Director
       def supports_azs?
         false
       end
+
+      def manual?
+        false
+      end
     end
 
     class NetworkWithSubnets < Network

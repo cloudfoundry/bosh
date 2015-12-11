@@ -139,10 +139,12 @@ module Bosh::Director
       end
 
       def find_network_and_subnet_containing(cidr_ip)
-        @networks.each do |_, network|
+        @networks.values.select(&:manual?).each do |network|
           subnet = network.subnets.find { |subnet| subnet.range.contains?(cidr_ip) }
-          return network, subnet if subnet
+          return [network, subnet] if subnet
         end
+
+        return nil
       end
     end
   end
