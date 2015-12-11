@@ -770,141 +770,273 @@ module Bosh::Director
       end
     end
 
-    describe 'fixing broken packages' do
+    describe 'uploading release with --fix' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, 'fix' => true) }
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
-      let(:manifest) do
-        {
-          'name' => 'appcloud',
-          'version' => release_version,
-          'commit_hash' => '12345678',
-          'uncommitted_changes' => true,
-          'jobs' => manifest_jobs,
-          'packages' => manifest_packages,
-        }
-      end
-      let(:release_version) { '42+dev.1' }
       let!(:release) { Models::Release.make(name: 'appcloud') }
-      let(:manifest_packages) do
-        [
-          {
-            'sha1' => 'fake-sha-1',
-            'fingerprint' => 'fake-fingerprint-1',
-            'name' => 'fake-name-1',
-            'version' => 'fake-version-1',
-            'dependencies' => []
-          }
-        ]
-      end
-      let(:manifest_jobs) { [] }
-      let!(:release_version_model) { Models::ReleaseVersion.make(release: release, version: '42+dev.1', commit_hash: '12345678', uncommitted_changes: true) }
+
+      let!(:release_version_model) {
+        Models::ReleaseVersion.make(
+          release: release,
+          version: '42+dev.1',
+          commit_hash: '12345678',
+          uncommitted_changes: true
+        )
+      }
       before do
         allow(Dir).to receive(:mktmpdir).and_return(release_dir)
         allow(job).to receive(:with_release_lock).and_yield
       end
 
-      context 'when uploading existing release' do
-        let!(:package) do
-          package = Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1', blobstore_id: 'fake-blobstore-id-1', sha1: 'fake-sha-1')
-          release_version_model.add_package(package)
-          package
+      context 'when uploading source release' do
+        let(:manifest) do
+          {
+            'name' => 'appcloud',
+            'version' => '42+dev.1',
+            'commit_hash' => '12345678',
+            'uncommitted_changes' => true,
+            'jobs' => manifest_jobs,
+            'packages' => manifest_packages,
+          }
+        end
+        let(:manifest_jobs) { [] }
+        let(:manifest_packages) do
+          [
+            {
+              'sha1' => 'fake-sha-1',
+              'fingerprint' => 'fake-fingerprint-1',
+              'name' => 'fake-name-1',
+              'version' => 'fake-version-1',
+              'dependencies' => []
+            }
+          ]
         end
 
-        it 'verifies and fixes package' do
-          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
-          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
-          job.perform
-        end
-      end
+        context 'when release already exists' do
+          let!(:package) do
+            package = Models::Package.make(
+              release: release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1',
+              blobstore_id: 'fake-blobstore-id-1',
+              sha1: 'fake-sha-1'
+            )
+            release_version_model.add_package(package)
+            package
+          end
 
-      context 'when re-using existing packages' do
-        let!(:another_release) { Models::Release.make(name: 'foocloud') }
-        let!(:old_release_version_model) do
-          Models::ReleaseVersion.make(
-            release: another_release,
-            version: '41+dev.1',
-            commit_hash: '23456789',
-            uncommitted_changes: true
-          )
-        end
+          it 're-uploads all packages to replace old ones' do
+            expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'packages', 'fake-name-1.tgz')
+            ).and_return('new-blobstore-id-after-fix')
 
-        let!(:existing_pkg) do
-          package = Models::Package.make(
-            release: another_release,
-            name: 'fake-name-1',
-            version: 'fake-version-1',
-            fingerprint: 'fake-fingerprint-1',
-            blobstore_id: 'fake-blobstore-id-1',
-            sha1: 'fake-sha-1'
-          ).save
-
-          old_release_version_model.add_package(package)
-          package
-        end
-
-        it 'fixes existing package and copy blob' do
-          expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
-          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
-          expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
-          job.perform
-        end
-      end
-
-      context 'eliminates broken compiled packages' do
-        let!(:package) do
-          package = Models::Package.make(
-            release: release,
-            name: 'fake-name-1',
-            version: 'fake-version-1',
-            fingerprint: 'fake-fingerprint-1',
-            blobstore_id: 'fake-pkg-blobstore-id-1',
-            sha1: 'fake-pkg-sha-1'
-          )
-          release_version_model.add_package(package)
-          package
-        end
-        let!(:stemcell) { Models::Stemcell.make(
-          name: 'fake-stemcell-1',
-          version: 'fake-stemcell-version-1',
-          cid: 'fake-cid-1'
-        )}
-        let!(:compiled_package) { Models::CompiledPackage.make(
-          package: package,
-          stemcell: stemcell,
-          sha1: 'fake-compiled-sha-1',
-          blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
-          dependency_key: 'fake-dep-key-1'
-        )}
-
-        it 'verifies package' do
-          expect(BlobUtil).to receive(:verify_blob).with(
-            'fake-compiled-pkg-blobstore-id-1',
-            'fake-compiled-sha-1'
-          ).and_return(true)
-
-          expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
-          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
-
-          expect(BlobUtil).not_to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
-          expect(Models::CompiledPackage.dataset.count).to eql 1
-
-          job.perform
-        end
-
-        it 'eliminates package when broken or missing' do
-          expect(BlobUtil).to receive(:verify_blob).with(
-            'fake-compiled-pkg-blobstore-id-1',
-            'fake-compiled-sha-1'
-          ).and_return(false)
-
-          expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
-          expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
-
-          expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
-          expect {
             job.perform
-          }.to change { Models::CompiledPackage.dataset.count }.from(1).to(0)
+          end
+        end
+
+        context 'when re-using existing packages' do
+          let!(:another_release) { Models::Release.make(name: 'foocloud') }
+          let!(:old_release_version_model) do
+            Models::ReleaseVersion.make(
+              release: another_release,
+              version: '41+dev.1',
+              commit_hash: '23456789',
+              uncommitted_changes: true
+            )
+          end
+
+          let!(:existing_pkg) do
+            package = Models::Package.make(
+              release: another_release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1',
+              blobstore_id: 'fake-blobstore-id-1',
+              sha1: 'fake-sha-1'
+            ).save
+
+            old_release_version_model.add_package(package)
+            package
+          end
+
+          it 'replaces existing packages and copy blobs' do
+            expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+            expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
+            job.perform
+          end
+        end
+
+        context 'eliminates broken compiled packages' do
+          let!(:package) do
+            package = Models::Package.make(
+              release: release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1',
+              blobstore_id: 'fake-pkg-blobstore-id-1',
+              sha1: 'fake-pkg-sha-1'
+            )
+            release_version_model.add_package(package)
+            package
+          end
+          let!(:stemcell) { Models::Stemcell.make(
+            name: 'fake-stemcell-1',
+            version: 'fake-stemcell-version-1',
+            cid: 'fake-cid-1'
+          )}
+          let!(:compiled_package) { Models::CompiledPackage.make(
+            package: package,
+            stemcell: stemcell,
+            sha1: 'fake-compiled-sha-1',
+            blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
+            dependency_key: 'fake-dep-key-1'
+          )}
+
+          it 'verifies package' do
+            expect(BlobUtil).to receive(:verify_blob).with(
+              'fake-compiled-pkg-blobstore-id-1',
+              'fake-compiled-sha-1'
+            ).and_return(true)
+            expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'packages', 'fake-name-1.tgz')
+            ).and_return('new-pkg-blobstore-id-1')
+            expect(Models::CompiledPackage.dataset.count).to eql 1
+
+            job.perform
+          end
+
+          it 'eliminates package when broken or missing' do
+            expect(BlobUtil).to receive(:verify_blob).with(
+              'fake-compiled-pkg-blobstore-id-1',
+              'fake-compiled-sha-1'
+            ).and_return(false)
+            expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'packages', 'fake-name-1.tgz')
+            ).and_return('new-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
+            expect {
+              job.perform
+            }.to change { Models::CompiledPackage.dataset.count }.from(1).to(0)
+          end
+        end
+      end
+
+      context 'when uploading compiled release' do
+        let(:manifest_jobs) { [] }
+        let(:manifest_compiled_packages) do
+          [
+            {
+              'sha1' => 'fake-sha-1',
+              'fingerprint' => 'fake-fingerprint-1',
+              'name' => 'fake-name-1',
+              'version' => 'fake-version-1',
+              'stemcell' => 'fake-os-name-1/fake-stemcell-version-1'
+            }
+          ]
+        end
+        let(:manifest) do
+          {
+            'name' => 'appcloud',
+            'version' => '42+dev.1',
+            'commit_hash' => '12345678',
+            'uncommitted_changes' => true,
+            'jobs' => manifest_jobs,
+            'compiled_packages' => manifest_compiled_packages,
+          }
+        end
+        let!(:stemcell) do
+          Models::Stemcell.make(
+            name: 'fake-stemcell-name-1',
+            operating_system: 'fake-os-name-1',
+            version: 'fake-stemcell-version-1',
+            cid: 'fake-stemcell-cid-1'
+          )
+        end
+
+        context 'when release already exists' do
+          let!(:package) do
+            package = Models::Package.make(
+              release: release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1',
+            )
+            release_version_model.add_package(package)
+            package
+          end
+          let!(:compiled_package) do
+            compiled_package = Models::CompiledPackage.make(
+              stemcell: stemcell,
+              blobstore_id: 'fake-compiled-blobstore-id-1',
+              dependency_key: 'fake-compiled-dependency-key-1',
+              sha1: 'fake-compiled-sha-1',
+            )
+            package.add_compiled_package compiled_package
+            compiled_package
+          end
+
+          it 're-uploads all compiled packages to replace old ones' do
+            expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
+            ).and_return('new-compiled-blobstore-id-after-fix')
+            expect{
+              job.perform
+            }.to change { Models::CompiledPackage.dataset.first.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
+          end
+        end
+
+        context 'when re-using existing compiled packages from other releases' do
+          let!(:another_release) { Models::Release.make(name: 'foocloud') }
+          let!(:old_release_version_model) do
+            Models::ReleaseVersion.make(
+              release: another_release,
+              version: '41+dev.1',
+              commit_hash: '23456789',
+              uncommitted_changes: true
+            )
+          end
+          let!(:existing_package) do
+            package = Models::Package.make(
+              release: another_release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1'
+            ).save
+
+            old_release_version_model.add_package(package)
+            package
+          end
+          let!(:existing_compiled_package) do
+            existing_compiled_package = Models::CompiledPackage.make(
+              stemcell: stemcell,
+              blobstore_id: 'fake-existing-compiled-blobstore-id-1',
+              dependency_key: 'fake-existing-compiled-dependency-key-1',
+              sha1: 'fake-existing-compiled-sha-1',
+            )
+            existing_package.add_compiled_package existing_compiled_package
+            existing_compiled_package
+          end
+
+          it 'replaces existing compiled packages and copy blobs' do
+            expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
+            ).and_return('new-existing-compiled-blobstore-id-after-fix')
+            expect(BlobUtil).to receive(:copy_blob).with(
+               'new-existing-compiled-blobstore-id-after-fix').and_return('new-compiled-blobstore-id')
+            expect{
+              job.perform
+            }.to change {
+              Models::CompiledPackage.where(package_id: existing_compiled_package.package_id).first.blobstore_id
+            }.from('fake-existing-compiled-blobstore-id-1').to('new-existing-compiled-blobstore-id-after-fix')
+          end
         end
       end
     end
