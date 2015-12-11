@@ -67,13 +67,11 @@ module Bosh::Director::DeploymentPlan
               'type' => 'dynamic',
               'cloud_properties' =>{},
               'dns' => '10.0.0.1',
-              'dns_record_name' => '1.foobar.existing-network.simple.bosh'
             },
             'obsolete-network' =>{
               'type' => 'dynamic',
               'cloud_properties' =>{},
               'dns' => '10.0.0.1',
-              'dns_record_name' => '1.foobar.obsolete-network.simple.bosh'
             }
           }
         end
@@ -88,7 +86,6 @@ module Bosh::Director::DeploymentPlan
               'type' => 'dynamic',
               'cloud_properties' =>{},
               'dns' => '10.0.0.1',
-              'dns_record_name' => '1.foobar.existing-network.simple.bosh'
             },
             'a' =>{
               'ip' => '192.168.1.3',
@@ -97,15 +94,57 @@ module Bosh::Director::DeploymentPlan
               'default' => ['dns', 'gateway'],
               'dns' =>['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
-              'dns_record_name' => '1.foobar.a.simple.bosh'
             }
           }
 
+          allow(logger).to receive(:debug)
           expect(logger).to receive(:debug).with(
-              "networks_changed? changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
+              "networks_changed? network settings changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
             )
 
           instance_plan.networks_changed?
+        end
+
+        context 'when there are obsolete plans' do
+          let(:network_plans) do
+            [
+              NetworkPlanner::Plan.new(reservation: existing_reservation, obsolete: true),
+            ]
+          end
+          let(:existing_reservation) do
+            reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network)
+            reservation.resolve_ip('10.0.0.5')
+            reservation
+          end
+
+          it 'logs' do
+            allow(logger).to receive(:debug)
+            expect(logger).to receive(:debug).with(
+                "networks_changed? obsolete reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance}}]"
+              )
+            instance_plan.networks_changed?
+          end
+        end
+
+        context 'when there are desired plans' do
+          let(:network_plans) do
+            [
+              NetworkPlanner::Plan.new(reservation: desired_reservation),
+            ]
+          end
+          let(:desired_reservation) do
+            reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network)
+            reservation.resolve_ip('10.0.0.5')
+            reservation
+          end
+
+          it 'logs' do
+            allow(logger).to receive(:debug)
+            expect(logger).to receive(:debug).with(
+                "networks_changed? desired reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance}}]"
+              )
+            instance_plan.networks_changed?
+          end
         end
 
         context 'when instance is being deployed for the first time' do

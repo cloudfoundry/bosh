@@ -82,18 +82,32 @@ module Bosh
         end
 
         def networks_changed?
-          desired_plans = network_plans.select(&:desired?)
-          obsolete_plans = network_plans.select(&:obsolete?)
+          desired_network_plans = network_plans.select(&:desired?)
+          obsolete_network_plans = network_plans.select(&:obsolete?)
 
           old_network_settings = new? ? {} : @existing_instance.spec['networks']
-          new_network_settings = network_settings.to_hash
+          old_network_settings.each { |_, v| v.delete('dns_record_name') }
 
-          if obsolete_plans.any? || desired_plans.any? || network_settings_changed?(old_network_settings, new_network_settings)
-            log_changes(__method__, old_network_settings, new_network_settings, @existing_instance)
-            true
-          else
-            false
+          new_network_settings = network_settings.to_hash
+          new_network_settings.each { |_, v| v.delete('dns_record_name') }
+
+          changed = false
+          if obsolete_network_plans.any?
+            @logger.debug("#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            changed = true
           end
+
+          if desired_network_plans.any?
+            @logger.debug("#{__method__} desired reservations: [#{desired_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            changed = true
+          end
+
+          if network_settings_changed?(old_network_settings, new_network_settings)
+            @logger.debug("#{__method__} network settings changed FROM: #{old_network_settings} TO: #{new_network_settings} on instance #{@existing_instance}")
+            changed = true
+          end
+
+          changed
         end
 
         def state_changed?
@@ -240,17 +254,6 @@ module Bosh
 
         def network_settings_changed?(old_network_settings, new_network_settings)
           return false if old_network_settings == {}
-
-          old_network_settings = old_network_settings.dup
-          old_network_settings.each do |_, v|
-            v.delete('dns_record_name')
-          end
-
-          new_network_settings = new_network_settings.dup
-          new_network_settings.each do |_, v|
-            v.delete('dns_record_name')
-          end
-
           old_network_settings != new_network_settings
         end
 
