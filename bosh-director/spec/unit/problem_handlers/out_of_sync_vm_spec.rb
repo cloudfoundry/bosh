@@ -39,7 +39,7 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
   end
 
   it "has well-formed description" do
-    expect(@handler.description).to eq("VM `vm-cid' is out of sync: expected `mycloud: mysql_node/2', got `mycloud: mysql_node/0'")
+    expect(@handler.description).to eq("VM `vm-cid' is out of sync: expected `mysql_node/2', got `mysql_node/0'")
   end
 
   describe "delete_vm resolution" do

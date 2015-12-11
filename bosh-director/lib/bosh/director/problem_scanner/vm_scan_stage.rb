@@ -103,8 +103,7 @@ module Bosh::Director
     def is_out_of_sync_vm?(vm, instance, state)
       job = state['job'] ? state['job']['name'] : nil
       index = state['index']
-      if state['deployment'] != @deployment.name ||
-        (instance && (instance.job != job || instance.index != index))
+      if instance && (instance.job != job || instance.index != index)
         @problem_register.problem_found(:out_of_sync_vm, vm,
           deployment: state['deployment'],
           job: job, index: index)

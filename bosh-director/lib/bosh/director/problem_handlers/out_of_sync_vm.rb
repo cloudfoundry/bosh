@@ -26,12 +26,11 @@ module Bosh::Director
       end
 
       def description
-        actual_deployment = @data["deployment"] || "unknown deployment"
         actual_job = @data["job"] || "unknown job"
         actual_index = @data["index"] || "unknown index"
 
-        expected = "#{@deployment.name}: #{instance_name(@vm)}"
-        actual = "#{actual_deployment}: #{actual_job}/#{actual_index}"
+        expected = "#{instance_name(@vm)}"
+        actual = "#{actual_job}/#{actual_index}"
 
         "VM `#{@vm.cid}' is out of sync: expected `#{expected}', got `#{actual}'"
       end
@@ -48,7 +47,6 @@ module Bosh::Director
 
       def validate
         state = agent_timeout_guard(@vm) { |agent | agent.get_state }
-        return if state["deployment"] != @deployment.name
 
         # VM is no longer out of sync if no instance is referencing it,
         # as this situation can actually be handled by regular deployment
