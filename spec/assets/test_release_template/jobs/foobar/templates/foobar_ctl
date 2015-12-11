@@ -6,7 +6,7 @@ case $1 in
 
   start)
     echo "test_property=<%= p('test_property') %>"
-    echo "az=<%= az %>"
+    echo "az=<%= spec.az %>"
     echo "job_name=<%= spec.job.name %>"
     echo "index=<%= spec.index %>"
     echo "bootstrap=<%= spec.bootstrap %>"

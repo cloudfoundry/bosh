@@ -48,9 +48,6 @@ module Bosh
         end
 
         @index = spec['index']
-        @id = spec['id']
-        @bootstrap = spec['bootstrap']
-        @az = spec['az']
         @spec = openstruct(spec)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)

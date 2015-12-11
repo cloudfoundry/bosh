@@ -8,10 +8,6 @@ module Bosh
         ERB.new(erb).result(context.get_binding)
       end
 
-      def make(spec)
-        EvaluationContext.new(spec)
-      end
-
       before do
         @spec = {
           'job' => {
@@ -34,7 +30,7 @@ module Bosh
           'resource_pool' => 'a'
         }
 
-        @context = make(@spec)
+        @context = EvaluationContext.new(@spec)
       end
 
       it 'unrolls properties into OpenStruct' do
@@ -49,20 +45,20 @@ module Bosh
         expect(eval_template('<%= spec.index %>', @context)).to eq('0')
       end
 
-      it 'exposes an instance id' do
-        expect(eval_template('<%= id %>', @context)).to eq(@context.id)
+      it 'supports looking up template instance id' do
+        expect(eval_template('<%= spec.id %>', @context)).to eq(@context.spec.id)
       end
 
-      it 'exposes an availability zone' do
-        expect(eval_template('<%= az %>', @context)).to eq(@context.az)
+      it 'supports looking up template availability zone' do
+        expect(eval_template('<%= spec.az %>', @context)).to eq(@context.spec.az)
         end
 
       it 'exposes an resource pool' do
         expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
       end
 
-      it 'exposes if the instance is bootstrap or not' do
-        expect(eval_template('<%= bootstrap %>', @context)).to eq('true')
+      it 'supports looking up whether template is bootstrap or not' do
+        expect(eval_template('<%= spec.bootstrap %>', @context)).to eq('true')
       end
 
       it 'evaluates links' do
