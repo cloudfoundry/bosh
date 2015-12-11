@@ -19,6 +19,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'The sudo command must require authentication (stig: V-58901)' do
+    describe command("egrep -sh 'NOPASSWD|!authenticate' /etc/sudoers /etc/sudoers.d/* | egrep -v '^#|%bosh_sudoers' --") do
+      its (:stdout) { should eq('') }
+    end
+  end
+
   context 'installed by bosh_users' do
     describe command("grep -q 'export PATH=/var/vcap/bosh/bin:$PATH\n' /root/.bashrc") do
       it { should return_exit_status(0) }
