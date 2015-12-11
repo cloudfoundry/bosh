@@ -8,19 +8,16 @@ module Bosh::Director::DeploymentPlan
       @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
     end
 
-    def delete(ip, network_name)
+    def delete(ip, _)
       cidr_ip = CIDRIP.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(
-        address: cidr_ip.to_i,
-        network_name: network_name,
-      )
+      ip_address = Bosh::Director::Models::IpAddress.first(address: cidr_ip.to_i)
 
       if ip_address
         @logger.debug("Releasing ip '#{cidr_ip}'")
         ip_address.destroy
       else
-        @logger.debug("Skipping releasing ip '#{cidr_ip}' for #{network_name}: not reserved")
+        @logger.debug("Skipping releasing ip '#{cidr_ip}': not reserved")
       end
     end
 

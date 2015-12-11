@@ -39,6 +39,25 @@ module Bosh::Director::DeploymentPlan
       )
     end
 
+    let(:other_network_spec) { network_spec.merge('name' => 'my-other-manual-network') }
+    let(:other_network) do
+      ManualNetwork.parse(
+        other_network_spec,
+        availability_zones,
+        global_network_resolver,
+        logger
+      )
+    end
+    let(:other_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, other_network) }
+    let(:other_subnet) do
+      ManualNetworkSubnet.parse(
+        other_network.name,
+        other_network_spec['subnets'].first,
+        availability_zones,
+        []
+      )
+    end
+
     before { fake_job }
 
     def cidr_ip(ip)
@@ -246,25 +265,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there are IPs reserved by other networks with overlapping subnet' do
-        let(:other_network_spec) { network_spec.merge('name' => 'my-other-manual-network') }
-        let(:other_network) do
-          ManualNetwork.parse(
-            other_network_spec,
-            availability_zones,
-            global_network_resolver,
-            logger
-          )
-        end
-        let(:other_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, other_network) }
-        let(:other_subnet) do
-          ManualNetworkSubnet.parse(
-            other_network.name,
-            other_network_spec['subnets'].first,
-            availability_zones,
-            []
-          )
-        end
-
         it 'returns the next non-reserved IP' do
           ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
 
@@ -361,5 +361,21 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe :delete do
+      before do
+        network_spec['subnets'].first['static'] = ['192.168.1.5']
+
+        reservation = BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.5')
+        ip_repo.add(reservation)
+      end
+
+      it 'deletes IP address' do
+        expect {
+          ip_repo.delete('192.168.1.5', 'does not matter')
+        }.to change {
+            Bosh::Director::Models::IpAddress.all.size
+          }.by(-1)
+      end
+    end
   end
 end
