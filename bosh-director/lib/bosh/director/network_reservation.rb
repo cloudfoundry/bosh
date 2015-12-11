@@ -12,6 +12,7 @@ module Bosh::Director
     USED = :used
     CAPACITY = :capacity
     WRONG_TYPE = :wrong_type
+    NOT_IN_SUBNET = :not_in_subnet
 
     # @return [Integer, nil] ip
     attr_accessor :ip
@@ -98,6 +99,10 @@ module Bosh::Director
             raise NetworkReservationWrongType,
                   "#{origin} asked for a static IP #{formatted_ip} " +
                   "but it's in the dynamic pool"
+          when NetworkReservation::NOT_IN_SUBNET
+            raise NetworksReservationNotInSubnet,
+                  "#{origin} asked for a static IP #{formatted_ip}" +
+                  "but it's not in the network's subnet range"
           else
             raise NetworkReservationError,
                   "#{origin} failed to reserve static IP " +

@@ -45,7 +45,11 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.ip
-          find_subnet(reservation.ip) do |subnet|
+          subnet = find_subnet(reservation.ip)
+          puts subnet.class
+          if subnet.nil?
+            reservation.error = NetworkReservation::NOT_IN_SUBNET
+          else
             type = subnet.reserve_ip(reservation.ip)
             if type.nil?
               reservation.error = NetworkReservation::USED
@@ -85,9 +89,8 @@ module Bosh::Director
                 "Can't release reservation without an IP"
         end
 
-        find_subnet(reservation.ip) do |subnet|
-          subnet.release_ip(reservation.ip)
-        end
+        subnet = find_subnet(reservation.ip)
+        subnet.release_ip(reservation.ip)
       end
 
       ##
@@ -103,34 +106,30 @@ module Bosh::Director
         end
 
         config = nil
-        find_subnet(reservation.ip) do |subnet|
-          ip = ip_to_netaddr(reservation.ip)
-          config = {
-              "ip" => ip.ip,
-              "netmask" => subnet.netmask,
-              "cloud_properties" => subnet.cloud_properties
-          }
+        subnet = find_subnet(reservation.ip)
+        ip = ip_to_netaddr(reservation.ip)
+        config = {
+            "ip" => ip.ip,
+            "netmask" => subnet.netmask,
+            "cloud_properties" => subnet.cloud_properties
+        }
 
-          if default_properties
-            config["default"] = default_properties.sort
-          end
-
-          config["dns"] = subnet.dns if subnet.dns
-          config["gateway"] = subnet.gateway.ip if subnet.gateway
+        if default_properties
+          config["default"] = default_properties.sort
         end
+
+        config["dns"] = subnet.dns if subnet.dns
+        config["gateway"] = subnet.gateway.ip if subnet.gateway
         config
       end
 
       ##
+      # Returns the first subnet that contains the ip
+      #
       # @param [Integer, NetAddr::CIDR, String] ip
-      # @yield the subnet that contains the IP.
+      # @return [Array] First subnet that contains the given ip
       def find_subnet(ip)
-        @subnets.each do |subnet|
-          if subnet.range.contains?(ip)
-            yield subnet
-            break
-          end
-        end
+        @subnets.select{|s| s.range.contains?(ip)}.first
       end
     end
   end
