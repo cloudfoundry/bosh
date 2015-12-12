@@ -96,6 +96,7 @@ module Bosh::Director
       dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
       dns_manager.flush_dns_cache
 
+      @blobstore = App.instance.blobstores.blobstore
       cleaner = RenderedJobTemplatesCleaner.new(instance_model, @blobstore, @logger)
       InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.vm), cleaner).apply
     end
