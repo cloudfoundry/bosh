@@ -28,9 +28,10 @@ module Bosh::Director
       def description
         actual_job = @data["job"] || "unknown job"
         actual_index = @data["index"] || "unknown index"
+        actual_id = @data["id"] || "unknown id"
 
-        expected = "#{instance_name(@vm)}"
-        actual = "#{actual_job}/#{actual_index}"
+        expected = "#{instance_name(@vm)} (#{instance_uuid(@vm)})"
+        actual = "#{actual_job}/#{actual_index} (#{actual_id})"
 
         "VM `#{@vm.cid}' is out of sync: expected `#{expected}', got `#{actual}'"
       end

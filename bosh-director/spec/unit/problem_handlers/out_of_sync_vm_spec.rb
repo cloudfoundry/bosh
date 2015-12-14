@@ -18,8 +18,8 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
     @deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :deployment => @deployment)
     @instance = Bosh::Director::Models::Instance.make(:vm => @vm, :job => "mysql_node",
-                                                      :index => 2, :deployment => @deployment)
-    @handler = make_handler(@vm, @cloud, @agent, "job" => "mysql_node", "index" => 0, "deployment" => "mycloud")
+                                                      :index => 2, :deployment => @deployment, :uuid => "fake_uuid")
+    @handler = make_handler(@vm, @cloud, @agent, "job" => "mysql_node", "index" => 0, "deployment" => "mycloud", "id" => "fake_uuid")
   end
 
   it "registers under out_of_sync_vm type" do
@@ -39,7 +39,7 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
   end
 
   it "has well-formed description" do
-    expect(@handler.description).to eq("VM `vm-cid' is out of sync: expected `mysql_node/2', got `mysql_node/0'")
+    expect(@handler.description).to eq("VM `vm-cid' is out of sync: expected `mysql_node/2 (fake_uuid)', got `mysql_node/0 (fake_uuid)'")
   end
 
   describe "delete_vm resolution" do

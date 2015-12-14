@@ -31,35 +31,71 @@ module Bosh::Director
     end
 
     describe '#scan' do
-      it 'scans for out-of-sync VMs' do
-        vm = Models::Vm.make(agent_id: 'out-of-sync-agent-id', deployment: deployment)
-        Models::Instance.make(vm: vm, deployment: deployment, job: 'mysql_node', index: 3)
+      describe 'scans for out-of-sync VMs' do
+        it 'receives out of sync error due to non-matching index values' do
+          vm = Models::Vm.make(agent_id: 'out-of-sync-agent-id', deployment: deployment)
+          Models::Instance.make(vm: vm, deployment: deployment, job: 'mysql_node', index: 3, uuid: 'fake_uuid')
 
-        out_of_sync_agent = double('out_of_sync_agent-id')
+          out_of_sync_agent = double('out_of_sync_agent-id')
 
-        allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(out_of_sync_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(out_of_sync_agent)
 
-        out_of_sync_state = {
-          'deployment' => 'fake-deployment',
-          'job' => {'name' => 'mysql_node'},
-          'index' => 4
-        }
+          out_of_sync_state = {
+            'deployment' => 'fake-deployment',
+            'job' => {'name' => 'mysql_node'},
+            'index' => 4,
+            'id' => 'fake_uuid'
+          }
 
-        expect(out_of_sync_agent).to receive(:get_state).and_return(out_of_sync_state)
-        expect(out_of_sync_agent).to receive(:list_disk).and_return([])
+          expect(out_of_sync_agent).to receive(:get_state).and_return(out_of_sync_state)
+          expect(out_of_sync_agent).to receive(:list_disk).and_return([])
 
-        expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-        expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound, 1 out of sync')
+          expect(event_logger).to receive(:track_and_log).with('Checking VM states')
+          expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound, 1 out of sync')
 
-        expect(problem_register).to receive(:problem_found).with(
-          :out_of_sync_vm,
-          vm,
-          deployment: 'fake-deployment',
-          job: 'mysql_node',
-          index: 4
-        )
+          expect(problem_register).to receive(:problem_found).with(
+            :out_of_sync_vm,
+            vm,
+            deployment: 'fake-deployment',
+            job: 'mysql_node',
+            index: 4,
+            id: 'fake_uuid'
+          )
 
-        vm_scanner.scan
+          vm_scanner.scan
+        end
+        it 'receives out of sync error due to non-matching id values' do
+          vm = Models::Vm.make(agent_id: 'out-of-sync-agent-id', deployment: deployment)
+          Models::Instance.make(vm: vm, deployment: deployment, job: 'mysql_node', index: 4, uuid: 'fake_uuid')
+
+          out_of_sync_agent = double('out_of_sync_agent-id')
+
+          allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(out_of_sync_agent)
+
+          out_of_sync_state = {
+              'deployment' => 'fake-deployment',
+              'job' => {'name' => 'mysql_node'},
+              'index' => 4,
+              'id' => 'uuid_agent'
+          }
+
+          expect(out_of_sync_agent).to receive(:get_state).and_return(out_of_sync_state)
+          expect(out_of_sync_agent).to receive(:list_disk).and_return([])
+
+          expect(event_logger).to receive(:track_and_log).with('Checking VM states')
+          expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound, 1 out of sync')
+
+          expect(problem_register).to receive(:problem_found).with(
+              :out_of_sync_vm,
+              vm,
+              deployment: 'fake-deployment',
+              job: 'mysql_node',
+              index: 4,
+              id: 'uuid_agent'
+          )
+
+          vm_scanner.scan
+        end
       end
 
       it 'scans for unbound instance vms' do
