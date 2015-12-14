@@ -19,7 +19,7 @@ module Bosh::Dev
         finalize_release_directory(component)
       end
 
-      # FileUtils.rm_rf build_dir
+      FileUtils.rm_rf build_dir
     end
 
     def each(&block)
