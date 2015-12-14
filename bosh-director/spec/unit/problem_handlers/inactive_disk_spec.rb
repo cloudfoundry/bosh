@@ -13,7 +13,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
 
     @instance = Bosh::Director::Models::Instance.
-      make(:job => "mysql_node", :index => 3, :vm_id => @vm.id)
+      make(:job => "mysql_node", :index => 3, :vm_id => @vm.id, :uuid => "52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7")
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => "disk-cid", :instance_id => @instance.id,
@@ -30,7 +30,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   it "has well-formed description" do
-    expect(@handler.description).to eq("Disk `disk-cid' (mysql_node/3, 300M) is inactive")
+    expect(@handler.description).to eq("Disk `disk-cid' (300M) for instance `mysql_node/52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7 (3)' is inactive")
   end
 
   describe "invalid states" do

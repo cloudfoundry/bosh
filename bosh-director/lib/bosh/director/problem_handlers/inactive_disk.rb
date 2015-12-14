@@ -31,8 +31,9 @@ module Bosh::Director
 
       def description
         job = @instance.job || "unknown job"
+        uuid = @instance.uuid || "unknown id"
         index = @instance.index || "unknown index"
-        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        disk_label = "`#{@disk.disk_cid}' (#{@disk.size.to_i}M) for instance `#{job}/#{uuid} (#{index})'"
         "Disk #{disk_label} is inactive"
       end
 
