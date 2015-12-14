@@ -19,7 +19,7 @@ module Bosh::Dev
         finalize_release_directory(component)
       end
 
-      FileUtils.rm_rf build_dir
+      # FileUtils.rm_rf build_dir
     end
 
     def each(&block)
@@ -72,10 +72,6 @@ module Bosh::Dev
       Rake::FileUtilsExt.sh "cp #{root}/vendor/cache/*.gem #{build_dir}"
     end
 
-    def stage_dir
-      "#{root}/pkg/gems/"
-    end
-
     def finalize_release_directory(component)
       dirname = "#{root}/release/src/bosh/#{component.name}"
       if uses_bundler?(component.name)
@@ -85,8 +81,20 @@ module Bosh::Dev
       FileUtils.rm_rf dirname
       FileUtils.mkdir_p dirname
 
-      component.dependencies.each do |dependency|
-        Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
+      begin
+        component.dependencies.each do |dependency|
+          FileUtils.cp "#{build_dir}/#{dependency.name}-#{dependency.version}.gem", "#{dirname}"
+        end
+      rescue Errno::ENOENT => e
+        gemfile = e.message.sub(/^.+#{Regexp.escape(build_dir)}\//, '')
+        gemparts = gemfile.split('-')
+        version = gemparts.pop.sub(/\.gem$/, '')
+        gemname = gemparts.join('-')
+        puts
+        puts "ERROR! #{gemfile} was not found."
+        puts "Please run the following before rebuilding the release:"
+        puts "- `gem uninstall #{gemname} --version #{version}`"
+        exit 1
       end
 
       if has_db?(component.name)
@@ -97,6 +105,10 @@ module Bosh::Dev
 
     def build_dir
       @build_dir ||= "/tmp/all_the_gems/#{Process.pid}"
+    end
+
+    def stage_dir
+      "#{root}/pkg/gems/"
     end
   end
 end

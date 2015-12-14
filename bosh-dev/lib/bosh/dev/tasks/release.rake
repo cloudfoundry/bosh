@@ -7,7 +7,7 @@ namespace :release do
     build = Bosh::Dev::Build.candidate
     gem_components = Bosh::Dev::GemComponents.new(build.number)
     gem_components.build_release_gems
-    create_release
+    # create_release
   end
 
   desc 'Upload BOSH dev release'
