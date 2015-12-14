@@ -19,7 +19,7 @@
       ``` bash
       cd $BOSH_PATH
       git co master
-      git pull
+      git pull --ff-only
       git co -b $HOTFIX_NAME
       git push -u origin $HOTFIX_NAME
       ```
@@ -34,9 +34,9 @@
         lpass show --notes "OS image concourse secrets" > /tmp/hotfix-image-secrets.yml
 
         # Configure the pipeline
-        fly -t production configure -c /tmp/hotfix-image-pipeline.yml \
+        fly -t production set-pipeline -c /tmp/hotfix-image-pipeline.yml \
           --var branch=$HOTFIX_NAME \
-          --vf /tmp/hotfix-image-secrets.yml $HOTFIX_IMG_PIPELINE
+          --load-vars-from /tmp/hotfix-image-secrets.yml -p $HOTFIX_IMG_PIPELINE
         ```
   - [ ] B. Make any image-building changes and push those to the hotfix branch
   - [ ] C. Run the pipeline
@@ -56,7 +56,7 @@
          ``` bash
          git add bosh-stemcell
          git ci # Edit commit message appropriately, including the Tracker story ID
-         pit push origin $HOTFIX_NAME
+         git push origin $HOTFIX_NAME
          ```
   - [ ] B. **If there are BOSH code changes** (other than OS image building changes)
     - [ ] 1. Create a Concourse hotfix pipeline for BOSH
