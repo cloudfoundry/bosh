@@ -125,8 +125,11 @@ describe 'vm_types and stemcells', type: :integration do
 
     vm_type1 = Bosh::Spec::Deployments.vm_type
     vm_type2 = Bosh::Spec::Deployments.vm_type
-    vm_type2['name'] = 'new-vm-type-name'
-    cloud_config_hash['vm_types'] = [vm_type1, vm_type2]
+    vm_type2['name'] = 'renamed-vm-type'
+    vm_type3 = Bosh::Spec::Deployments.vm_type
+    vm_type3['name'] = 'changed-vm-type-cloud-properties'
+    vm_type3['cloud_properties']['blarg'] = ['ful']
+    cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash.delete('resource_pools')
@@ -147,7 +150,14 @@ describe 'vm_types and stemcells', type: :integration do
     create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
     expect(create_vm_invocations.count).to be > 0
 
-    manifest_hash['jobs'].first['vm_type'] = 'new-vm-type-name'
+    manifest_hash['jobs'].first['vm_type'] = 'renamed-vm-type'
+
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+    expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
+
+    manifest_hash['jobs'].first['vm_type'] = 'changed-vm-type-cloud-properties'
 
     deploy_simple_manifest(manifest_hash: manifest_hash)
 

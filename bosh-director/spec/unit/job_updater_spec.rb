@@ -50,6 +50,7 @@ describe Bosh::Director::JobUpdater do
         )
         allow(instance_plan).to receive(:changed?) { false }
         allow(instance_plan).to receive(:changes) { [] }
+        allow(instance_plan).to receive(:persist_current_spec)
         [instance_plan]
       end
 
@@ -59,6 +60,11 @@ describe Bosh::Director::JobUpdater do
         check_event_log do |events|
           expect(events).to be_empty
         end
+      end
+
+      it 'persists the full spec to the database in case something that is not sent to the vm changes' do
+        expect(needed_instance_plans.first).to receive(:persist_current_spec)
+        job_updater.update
       end
     end
 
@@ -96,6 +102,7 @@ describe Bosh::Director::JobUpdater do
         )
         allow(plan).to receive(:changed?) { false }
         allow(plan).to receive(:changes) { [] }
+        allow(plan).to receive(:persist_current_spec)
         plan
       end
 

@@ -17,7 +17,16 @@ module Bosh::Director
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
-      instance_plans = @job.needed_instance_plans.select(&:changed?)
+      instance_plans = @job.needed_instance_plans.select do | instance_plan |
+        if instance_plan.changed?
+          true
+        else
+          # no changes necessary for the agent, but some metadata may have
+          # changed (i.e. vm_type.name), so push state to the db regardless
+          instance_plan.persist_current_spec
+          false
+        end
+      end
 
       if instance_plans.empty?
         @logger.info("No instances to update for '#{@job.name}'")

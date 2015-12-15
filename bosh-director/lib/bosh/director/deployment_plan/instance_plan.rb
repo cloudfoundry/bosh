@@ -33,7 +33,6 @@ module Bosh
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
-          @changes << :vm_type if vm_type_changed?
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
           @changes << :network if networks_changed?
@@ -186,7 +185,7 @@ module Bosh
         def needs_shutting_down?
           return true if obsolete?
 
-          vm_type_changed? ||
+          instance.cloud_properties_changed? ||
             stemcell_changed? ||
             env_changed? ||
             needs_recreate?
@@ -247,6 +246,10 @@ module Bosh
           job && job.persistent_disk_type && job.persistent_disk_type.disk_size > 0
         end
 
+        def persist_current_spec
+          instance_model.update(spec: spec.full_spec)
+        end
+
         private
 
         def network_settings_changed?(old_network_settings, new_network_settings)
@@ -275,14 +278,6 @@ module Bosh
             return true
           end
 
-          false
-        end
-
-        def vm_type_changed?
-          if @existing_instance && @instance.vm_type.spec != @existing_instance.spec['vm_type']
-            log_changes(__method__, @existing_instance.spec['vm_type'], @desired_instance.job.vm_type.spec, @existing_instance)
-            return true
-          end
           false
         end
 
