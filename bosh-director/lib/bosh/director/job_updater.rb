@@ -81,10 +81,8 @@ module Bosh::Director
     end
 
     def update_canary_instance(instance_plan, event_log_stage)
-      instance = instance_plan.instance
-      desc = "#{@job.name}/#{instance.index}"
-      event_log_stage.advance_and_track("#{desc} (canary)") do
-        with_thread_name("canary_update(#{desc})") do
+      event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
+        with_thread_name("canary_update(#{instance_plan.instance.model})") do
           begin
             InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan, :canary => true)
           rescue Exception => e
@@ -102,9 +100,8 @@ module Bosh::Director
     end
 
     def update_instance(instance_plan, event_log_stage)
-      desc = "#{@job.name}/#{instance_plan.instance.index}"
-      event_log_stage.advance_and_track(desc) do
-        with_thread_name("instance_update(#{desc})") do
+      event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
+        with_thread_name("instance_update(#{instance_plan.instance.model})") do
           begin
             InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan)
           rescue Exception => e

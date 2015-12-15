@@ -69,8 +69,10 @@ describe Bosh::Director::JobUpdater do
     end
 
     context 'when job needs to be updated' do
-      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
-      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2) }
+      let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
+      let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
+      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1, model: canary_model) }
+      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2, model: changed_instance_model) }
       let(:unchanged_instance) do
         instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3)
       end
@@ -127,10 +129,10 @@ describe Bosh::Director::JobUpdater do
 
         check_event_log do |events|
           [
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'finished'),
-            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'started'),
-            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'finished'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/fake_uuid (2)', state: 'started'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/fake_uuid (2)', state: 'finished'),
           ].each_with_index do |expected_event, index|
             expect(events[index]).to include(expected_event)
           end
@@ -146,8 +148,8 @@ describe Bosh::Director::JobUpdater do
 
         check_event_log do |events|
           [
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'failed'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'failed'),
           ].each_with_index do |expected_event, index|
             expect(events[index]).to include(expected_event)
           end
@@ -163,10 +165,10 @@ describe Bosh::Director::JobUpdater do
 
         check_event_log do |events|
           [
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
-            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'finished'),
-            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'started'),
-            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'failed'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/fake_uuid (2)', state: 'started'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/fake_uuid (2)', state: 'failed'),
           ].each_with_index do |expected_event, index|
             expect(events[index]).to include(expected_event)
           end

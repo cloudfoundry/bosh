@@ -314,6 +314,7 @@ describe 'deploy', type: :integration do
     date_regex = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC'
     sha_regex = '[0-9a-z]+'
     task_regex = '\\d+'
+    uuid_regex = '[0-9a-f]{8}-[0-9a-f-]{27}'
 
     # order for creating missing vms is not guaranteed (running in parallel)
     expect(output).to match(strip_heredoc <<-OUT)
@@ -327,9 +328,9 @@ Director task #{task_regex}
   Started compiling packages > bar/#{sha_regex}. Done #{step_duration_regex}
      Done compiling packages #{step_duration_regex}
 
-  Started creating missing vms > foobar/0. Done #{step_duration_regex}
+  Started creating missing vms > foobar/#{uuid_regex} \\(0\\). Done #{step_duration_regex}
 
-  Started updating job foobar > foobar/0 \\(canary\\). Done #{step_duration_regex}
+  Started updating job foobar > foobar/#{uuid_regex} \\(0\\) \\(canary\\). Done #{step_duration_regex}
 
 Task #{task_regex} done
 
