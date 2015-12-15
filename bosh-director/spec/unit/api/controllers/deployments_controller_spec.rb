@@ -459,7 +459,7 @@ module Bosh::Director
           before do
             deployment = Models::Deployment.make(name: 'mycloud')
 
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
             disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
 
@@ -477,6 +477,11 @@ module Bosh::Director
 
             it 'should create a snapshot for a deployment' do
               post '/mycloud/snapshots'
+              expect_redirect_to_queued_task(last_response)
+            end
+
+            it 'should create a snapshot for a job and id' do
+              post '/mycloud/jobs/job/abc123/snapshots'
               expect_redirect_to_queued_task(last_response)
             end
           end
