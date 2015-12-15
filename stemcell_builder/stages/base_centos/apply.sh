@@ -50,9 +50,6 @@ touch ${chroot}/etc/sysconfig/network # must be present for network to be config
 echo 'READAHEAD_COLLECT="no"' >> ${chroot}/etc/sysconfig/readahead
 echo 'READAHEAD_COLLECT_ON_RPM="no"' >> ${chroot}/etc/sysconfig/readahead
 
-# Setting timezone
-cp ${chroot}/usr/share/zoneinfo/UTC ${chroot}/etc/localtime
-
 # Setting locale
 case "${stemcell_operating_system_version}" in
   "7")

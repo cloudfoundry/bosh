@@ -22,7 +22,6 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
     end
 
     describe file('/etc/localtime') do
-      it { should be_file }
       it { should contain 'UTC' }
     end
 
