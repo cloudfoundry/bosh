@@ -20,9 +20,9 @@
       lpass login $LASTPASS_USER
 
       # NOTE: if not configuring "bosh", remove the branch var...
-      fly -t production configure -c ci/pipeline.yml \
+      fly -t production set-pipeline -c ci/pipeline.yml \
         --var branch=$GIT_BRANCH \
-        --vf <(lpass show --notes "${LASTPASS_NOTE}") $PROJECT_NAME
+        --load-vars-from <(lpass show --notes "${LASTPASS_NOTE}") -p $PROJECT_NAME
 
       lpass logout
       ```
