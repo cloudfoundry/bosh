@@ -17,7 +17,7 @@ module Bosh::Director::DeploymentPlan
 
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)
-            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.az.name}'")
+            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.availability_zone}'")
             next
           end
 

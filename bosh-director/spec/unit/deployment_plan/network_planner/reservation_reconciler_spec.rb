@@ -115,6 +115,16 @@ module Bosh::Director::DeploymentPlan
           expect(desired_plans.count).to eq(1)
           expect(desired_plans.first.reservation.type).to eq(:dynamic)
         end
+
+        context 'when desired instance does not yet have an availability zone' do
+          let(:desired_az) { nil }
+          it 'does not raise an error' do
+            allow(logger).to receive(:debug)
+
+            expect(logger).to receive(:debug).with(/Can't reuse reservation .*, existing reservation az does not match desired az ''/)
+            network_planner.reconcile(existing_reservations)
+          end
+        end
       end
 
       context 'when existing reservation and job do not belong to any availability zone' do
