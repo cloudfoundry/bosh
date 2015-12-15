@@ -51,6 +51,19 @@ describe Bosh::Director::IpUtil do
       expect(counter).to eq(0)
     end
 
+    context 'when given invalid IP format' do
+      it 'should raise NetworkInvalidIpRangeFormat error when given invalid IP range format' do
+        range = '192.168.1.2-192.168.1.20,192.168.1.30-192.168.1.40'
+        expect{ @obj.each_ip(range) }.to raise_error Bosh::Director::NetworkInvalidIpRangeFormat,
+            "Invalid IP range format: #{range}"
+      end
+
+      it 'should raise NetAddr::ValidationError' do
+        range = '192.168.1.1-192.168.1.1/25'
+        expect{ @obj.each_ip(range) {} }.to raise_error Bosh::Director::NetworkInvalidIpRangeFormat,
+            "Invalid IP range format: #{range}"
+      end
+    end
   end
 
   describe 'format_ip' do

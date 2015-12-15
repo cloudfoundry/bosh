@@ -193,6 +193,7 @@ module Bosh::Director
   NetworkSubnetUnknownAvailabilityZone = err(160007)
   NetworkInvalidProperty = err(160008)
   NetworkSubnetInvalidAvailabilityZone = err(160009)
+  NetworkInvalidIpRangeFormat = err(160010)
 
   ResourcePoolUnknownNetwork = err(170001)
   ResourcePoolNotEnoughCapacity = err(170002)
