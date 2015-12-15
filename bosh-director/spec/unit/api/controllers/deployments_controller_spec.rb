@@ -156,7 +156,7 @@ module Bosh::Director
 
           it 'can get job information' do
             deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
-            instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', state: 'started')
+            instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', uuid: 'fake_uuid', state: 'started')
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
             get '/foo/jobs/nats/0', {}
@@ -166,6 +166,7 @@ module Bosh::Director
                 'deployment' => 'foo',
                 'job' => 'nats',
                 'index' => 0,
+                'id' => 'fake_uuid',
                 'state' => 'started',
                 'disks' => %w[disk_cid]
             }

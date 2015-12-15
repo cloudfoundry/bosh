@@ -10,10 +10,15 @@ module Bosh::Director
 
       # @param [String] deployment_name Deployment name
       # @param [String] job Job name
-      # @param [String] index Job index
+      # @param [String] index_or_id Job index or id
       # @return [Models::Instance]
-      def find_by_name(deployment_name, job, index)
-        InstanceLookup.new.by_attributes(deployment_name, job, index)
+      def find_by_name(deployment_name, job, index_or_id)
+        # This is for backwards compatibility and can be removed when we move to referencing job by instance id only.
+        if index_or_id.to_s =~ /^\d+$/
+          InstanceLookup.new.by_attributes(deployment_name, job, index_or_id)
+        else
+          InstanceLookup.new.by_uuid(deployment_name, job, index_or_id)
+        end
       end
 
       # @param [Hash] filter Sequel-style DB record filter

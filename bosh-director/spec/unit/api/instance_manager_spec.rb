@@ -70,11 +70,14 @@ module Bosh::Director
       let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
       let(:job) { 'FAKE_JOB' }
       let(:index) { 3 }
+      let(:id) { '9A0A5D0E-868A-431C-A6EA-9E8EDF4DBF81' }
 
-      it 'finds instance by deployment name, job name and index' do
+      it 'finds instance by deployment name, job name and index or id' do
         instance.update(index: index)
+        instance.update(uuid: id)
 
         expect(subject.find_by_name(deployment_name, job, index)).to eq instance
+        expect(subject.find_by_name(deployment_name, job, id)).to eq instance
       end
     end
 

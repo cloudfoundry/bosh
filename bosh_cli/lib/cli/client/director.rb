@@ -311,13 +311,13 @@ module Bosh
         end
 
         def change_job_state(deployment_name, manifest_yaml,
-          job, index, new_state, options = {})
+          job, index_or_id, new_state, options = {})
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
 
           url = "/deployments/#{deployment_name}/jobs/#{job}"
-          url += "/#{index}" if index
+          url += "/#{index_or_id}" if index_or_id
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
 

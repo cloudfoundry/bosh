@@ -3,13 +3,14 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class DeploymentsController < BaseController
-      get '/:deployment/jobs/:job/:index' do
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      get '/:deployment/jobs/:job/:index_or_id' do
+        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
 
         response = {
           deployment: params[:deployment],
           job: instance.job,
           index: instance.index,
+          id: instance.uuid,
           state: instance.state,
           disks: instance.persistent_disks.map {|d| d.disk_cid}
         }
@@ -49,12 +50,17 @@ module Bosh::Director
       end
 
       # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true
-      put '/:deployment/jobs/:job/:index', :consumes => :yaml do
+      put '/:deployment/jobs/:job/:index_or_id', :consumes => :yaml do
         begin
-          index = Integer(params[:index])
+          index_or_id = Integer(params[:index_or_id])
         rescue ArgumentError
-          raise InstanceInvalidIndex, "Invalid instance index `#{params[:index]}'"
+          if index_or_id.to_s !~ /^[a-z0-9]{8}-[a-z0-9-]{27}$/
+            raise InstanceInvalidIndex, "Invalid instance index or id `#{params[:index_or_id]}'"
+          end
         end
+
+        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+        index = instance.index
 
         options = {
           'job_states' => {

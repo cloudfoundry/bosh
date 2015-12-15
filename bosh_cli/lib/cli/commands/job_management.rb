@@ -11,8 +11,8 @@ module Bosh::Cli
       usage 'start'
       desc 'Start all jobs/job/instance'
       option '--force', FORCE
-      def start_job(job = '*', index = nil)
-        change_job_state(:start, job, index)
+      def start_job(job = '*', index_or_id = nil)
+        change_job_state(:start, job, index_or_id)
       end
 
       # bosh stop
@@ -22,11 +22,11 @@ module Bosh::Cli
       option '--hard', 'Power off VM'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def stop_job(job = '*', index = nil)
+      def stop_job(job = '*', index_or_id = nil)
         if hard?
-          change_job_state(:detach, job, index)
+          change_job_state(:detach, job, index_or_id)
         else
-          change_job_state(:stop, job, index)
+          change_job_state(:stop, job, index_or_id)
         end
       end
 
@@ -35,8 +35,8 @@ module Bosh::Cli
       desc 'Restart all jobs/job/instance (soft stop + start)'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def restart_job(job = '*', index = nil)
-        change_job_state(:restart, job, index)
+      def restart_job(job = '*', index_or_id = nil)
+        change_job_state(:restart, job, index_or_id)
       end
 
       # bosh recreate
@@ -44,17 +44,17 @@ module Bosh::Cli
       desc 'Recreate all jobs/job/instance (hard stop + start)'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
-      def recreate_job(job = '*', index = nil)
-        change_job_state(:recreate, job, index)
+      def recreate_job(job = '*', index_or_id = nil)
+        change_job_state(:recreate, job, index_or_id)
       end
 
       private
 
-      def change_job_state(state, job, index = nil)
+      def change_job_state(state, job, index_or_id = nil)
         auth_required
         manifest = parse_manifest(state)
         job_state = JobState.new(self, manifest, skip_drain: skip_drain?)
-        status, task_id, completion_desc = job_state.change(state, job, index, force?)
+        status, task_id, completion_desc = job_state.change(state, job, index_or_id, force?)
         task_report(status, task_id, completion_desc)
       end
 
