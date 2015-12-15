@@ -625,6 +625,32 @@ describe Bosh::Cli::Client::Director do
     end
   end
 
+  describe 'fetch_vm_state' do
+    let(:dummy_deployment_name) {"dummy_deployment"}
+    let(:dummy_vm_state) do
+      JSON.generate [{"agent_id" => "some-agent-id", "index" => "0", "job" => "dummy_deployment_job"}]
+    end
+
+    it 'fetches full vm state with a task by default' do
+      expect(@director).to receive(:request_and_track).
+          with(:get, "/deployments/#{dummy_deployment_name}/vms?format=full", {}).
+          and_return([:done, 14])
+
+      expect(@director).to receive(:get_task_result_log).with(14).
+          and_return(dummy_vm_state)
+
+      expect(@director.fetch_vm_state(dummy_deployment_name)).to eq(JSON.parse dummy_vm_state)
+    end
+
+    it 'fetches short form vm state without a task if full = false' do
+      expect(@director).to receive(:get).
+          with("/deployments/#{dummy_deployment_name}/vms", nil, nil, {}, {}).
+          and_return([200, "[#{dummy_vm_state}]", nil])
+
+      expect(@director.fetch_vm_state(dummy_deployment_name, {}, false)).to eq(JSON.parse dummy_vm_state)
+    end
+  end
+
   describe 'list_locks' do
     it 'lists current locks' do
       locks = %w(fake-lock-1 fake-lock-2)

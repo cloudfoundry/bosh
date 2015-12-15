@@ -53,7 +53,7 @@ describe Bosh::Cli::Command::Ssh do
 
       context 'when there is only one instance with that job name in the deployment' do
         before do
-          allow(director).to receive(:fetch_vm_state).and_return([{"instance_id" => "1234-5678-9012-3456", "index" => 0, "job_name" => "dea"}])
+          allow(director).to receive(:fetch_vm_state).and_return([{"agent_id" => "1234-5678-9012-3456", "index" => 0, "job" => "dea"}])
         end
 
         it 'implicitly chooses the only instance if job name not provided' do
@@ -66,11 +66,11 @@ describe Bosh::Cli::Command::Ssh do
       context 'when there are many instances with that job name in the deployment' do
         before do
           allow(director).to receive(:fetch_vm_state).and_return([
-            {"instance_id" => "1234-5678-9012-3456", "index" => 0, "job_name" => "dea"},
-            {"instance_id" => "1234-5678-9012-3457", "index" => 1, "job_name" => "dea"},
-            {"instance_id" => "1234-5678-9012-3458", "index" => 2, "job_name" => "dea"},
-            {"instance_id" => "1234-5678-9012-3459", "index" => 3, "job_name" => "dea"},
-            {"instance_id" => "1234-5678-9012-3450", "index" => 4, "job_name" => "dea"},
+            {"agent_id" => "1234-5678-9012-3456", "index" => 0, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3457", "index" => 1, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3458", "index" => 2, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3459", "index" => 3, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3450", "index" => 4, "job" => "dea"},
             ])
         end
 

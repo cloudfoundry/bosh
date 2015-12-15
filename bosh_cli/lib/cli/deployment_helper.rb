@@ -131,16 +131,15 @@ module Bosh::Cli
     def prompt_for_job_and_index
       manifest = prepare_deployment_manifest
       deployment_name = manifest.name
-      instances = director.fetch_vm_state(deployment_name)
-
-      return [instances.first['job_name'], instances.first['index'] ] if instances.size == 1
+      instances = director.fetch_vm_state(deployment_name, {}, false)
+      return [instances.first['job'], instances.first['index'] ] if instances.size == 1
 
       choose do |menu|
         menu.prompt = 'Choose an instance: '
         instances.each do |instance|
-          job_name = instance['job_name']
+          job_name = instance['job']
           index = instance['index']
-          id = instance['instance_id']
+          id = instance['agent_id']
           menu.choice("#{job_name}/#{index} (#{id})") { [job_name, index] }
         end
       end

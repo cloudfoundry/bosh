@@ -368,22 +368,28 @@ module Bosh
           get_task_result(task_id)
         end
 
-        def fetch_vm_state(deployment_name, options = {})
+        def fetch_vm_state(deployment_name, options = {}, full = true)
           options = options.dup
 
-          url = "/deployments/#{deployment_name}/vms?format=full"
+          url = "/deployments/#{deployment_name}/vms"
 
-          status, task_id = request_and_track(:get, url, options)
+          if full
+            status, task_id = request_and_track(:get, "#{url}?format=full", options)
 
-          if status != :done
-            raise DirectorError, 'Failed to fetch VMs information from director'
+            raise DirectorError, 'Failed to fetch VMs information from director' if status != :done
+
+            output = get_task_result_log(task_id)
+          else
+            status, output, _ = get(url, nil, nil, {}, options)
+
+            raise DirectorError, 'Failed to fetch VMs information from director' if status != 200
           end
 
-          output = get_task_result_log(task_id)
-
-          output.to_s.split("\n").map do |vm_state|
+          output = output.to_s.split("\n").map do |vm_state|
             JSON.parse(vm_state)
           end
+
+          output.flatten
         end
 
         def download_resource(id)
