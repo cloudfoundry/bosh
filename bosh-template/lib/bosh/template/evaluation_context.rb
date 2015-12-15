@@ -16,9 +16,6 @@ module Bosh
       # @return [Integer] Template instance index
       attr_reader :index
 
-      # @return [Integer] Template instance id
-      attr_reader :id
-
       # @return [Hash] Template properties
       attr_reader :properties
 
@@ -27,11 +24,6 @@ module Bosh
 
       # @return [Hash] Template spec
       attr_reader :spec
-
-      # @return [String] Template AZ
-      attr_reader :az
-
-      attr_reader :bootstrap
 
       # @param [Hash] spec Template spec
       def initialize(spec)
