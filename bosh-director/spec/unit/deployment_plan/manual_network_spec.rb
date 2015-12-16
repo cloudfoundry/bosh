@@ -121,6 +121,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect(reservation.reserved).to eq(false)
       expect(reservation.error).to eq(BD::NetworkReservation::CAPACITY)
     end
+
+    it 'it raises an error when the selected static ip is not in subnet range' do
+      reservation = BD::NetworkReservation.new(
+          :ip => '0.0.1.1', :type => BD::NetworkReservation::DYNAMIC)
+      @network.reserve(reservation)
+      expect(reservation.error).to eq(BD::NetworkReservation::NOT_IN_SUBNET)
+    end
   end
 
   describe :release do

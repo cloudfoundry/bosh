@@ -74,6 +74,14 @@ module Bosh::Director
           }.to raise_error(NetworkReservationWrongType)
         end
 
+        it 'handles not in subnet range errors' do
+          reservation.error = NetworkReservation::NOT_IN_SUBNET
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworksReservationNotInSubnet)
+        end
+
         it 'handles other reservation errors' do
           reservation.error = StandardError.new
 
