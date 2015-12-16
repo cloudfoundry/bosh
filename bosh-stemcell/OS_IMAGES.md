@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Rp2Py4vqFMAfGkz6mMoT5fu2F9SclVBu`
+  - update for USN-2836-1: GRUB vulnerability
+
 * `3Zf3rN5HdZX0nNupFQ8Z1VA2J7ueXzGR`
   - update for USN-2834-1: libxml2 vulnerabilities
 
