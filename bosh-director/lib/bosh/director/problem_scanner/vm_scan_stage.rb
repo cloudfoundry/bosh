@@ -45,8 +45,7 @@ module Bosh::Director
       @event_logger.track_and_log("#{results[:ok]} OK, " +
         "#{results[:unresponsive]} unresponsive, " +
         "#{results[:missing]} missing, " +
-        "#{results[:unbound]} unbound, " +
-        "#{results[:out_of_sync]} out of sync")
+        "#{results[:unbound]} unbound")
     end
 
     private
@@ -72,7 +71,6 @@ module Bosh::Director
         end
         add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
-        return :out_of_sync if is_out_of_sync_vm?(vm, instance, state)
         return :unbound if is_unbound_instance_vm?(vm, instance, state)
         :ok
       rescue Bosh::Director::RpcTimeout
@@ -98,20 +96,6 @@ module Bosh::Director
     def add_disk_owner(disk_cid, vm_cid)
       @agent_disks[disk_cid] ||= []
       @agent_disks[disk_cid] << vm_cid
-    end
-
-    def is_out_of_sync_vm?(vm, instance, state)
-      job = state['job'] ? state['job']['name'] : nil
-      index = state['index']
-      id = state['id']
-      if instance && (instance.job != job || instance.index != index || instance.uuid != id)
-        @problem_register.problem_found(:out_of_sync_vm, vm,
-          deployment: state['deployment'],
-          job: job, index: index, id: id)
-        true
-      else
-        false
-      end
     end
 
     def is_unbound_instance_vm?(vm, instance, state)
