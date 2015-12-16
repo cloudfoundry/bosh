@@ -51,13 +51,7 @@ module Bosh::Director
 
       # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true
       put '/:deployment/jobs/:job/:index_or_id', :consumes => :yaml do
-        begin
-          index_or_id = Integer(params[:index_or_id])
-        rescue ArgumentError
-          if index_or_id.to_s !~ /^[a-z0-9]{8}-[a-z0-9-]{27}$/
-            raise InstanceInvalidIndex, "Invalid instance index or id `#{params[:index_or_id]}'"
-          end
-        end
+        validate_instance_index_or_id(params[:index_or_id])
 
         instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
         index = instance.index
@@ -341,6 +335,16 @@ module Bosh::Director
         }
         instances = @instance_manager.filter_by(filter)
         instances.any?
+      end
+
+      def validate_instance_index_or_id(str)
+        begin
+          Integer(str)
+        rescue ArgumentError
+          if str !~ /^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{27}$/
+            raise InstanceInvalidIndex, "Invalid instance index or id `#{str}'"
+          end
+        end
       end
     end
   end

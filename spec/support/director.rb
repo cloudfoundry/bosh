@@ -55,9 +55,9 @@ module Bosh::Spec
       find_vm(vms(deployment_name, options), job_name, index)
     end
 
-    def find_vm(vms, job_name, index)
-      vm = vms.detect { |vm| vm.job_name == job_name && vm.index == index }
-      vm || raise("Failed to find vm #{job_name}/#{index}")
+    def find_vm(vms, job_name, index_or_id)
+      vm = vms.detect { |vm| vm.job_name == job_name && (vm.index == index_or_id || vm.instance_uuid == index_or_id)}
+      vm || raise("Failed to find vm #{job_name}/#{index_or_id}")
     end
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds

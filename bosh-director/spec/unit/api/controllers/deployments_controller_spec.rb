@@ -98,8 +98,9 @@ module Bosh::Director
         describe 'job management' do
           shared_examples 'change state' do
             it 'allows to change state' do
-              Models::Deployment.
-                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
             end
@@ -112,8 +113,9 @@ module Bosh::Director
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
                   with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
-              Models::Deployment.
-                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
               match = last_response.location.match(%r{/tasks/no_content_length})
               expect(match).to_not be_nil
@@ -137,6 +139,10 @@ module Bosh::Director
             let (:path) {"/foo/jobs/dea/2?state=stopped"}
             it_behaves_like 'change state'
           end
+          context 'for job instance in deployment' do
+            let (:path) {"/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped"}
+            it_behaves_like 'change state'
+          end
 
           it 'allows putting the job instance into different resurrection_paused values' do
             deployment = Models::Deployment.
@@ -149,9 +155,9 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
-          it 'does not like invalid indices' do
-            put '/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-           expect(last_response.status).to eq(400)
+          it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
+            put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            expect(last_response.status).to eq(400)
           end
 
           it 'can get job information' do
@@ -181,6 +187,10 @@ module Bosh::Director
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+            let(:instance) {Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')}
+            before do
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
+            end
 
             context 'without the "skip_drain" param' do
               it 'drains' do
@@ -191,6 +201,9 @@ module Bosh::Director
                   .and_return(OpenStruct.new(:id => 1))
 
                 put '/test_deployment/jobs/job_name/0', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                expect(last_response).to be_redirect
+
+                put '/test_deployment/jobs/job_name/0B949287-CDED-4761-9002-FC4035E11B21', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
                 expect(last_response).to be_redirect
               end
             end

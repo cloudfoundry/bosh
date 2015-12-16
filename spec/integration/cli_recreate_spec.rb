@@ -3,12 +3,26 @@ require 'spec_helper'
 describe 'recreate job', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'recreates a job instance only' do
+  it 'recreates a job instance only when using index' do
     deploy_from_scratch
 
     initial_vms = director.vms
     vm_to_be_recreated = director.find_vm(initial_vms, 'foobar', '0')
     expect(bosh_runner.run('recreate foobar 0')).to match %r{foobar/0 recreated}
+
+    vms_after_instance_recreate = director.vms
+    vm_was_recreated = director.find_vm(vms_after_instance_recreate, 'foobar', '0')
+    expect(vm_to_be_recreated.cid).not_to eq(vm_was_recreated.cid)
+    expect((initial_vms-[vm_to_be_recreated]).map(&:cid)).to match_array((vms_after_instance_recreate-[vm_was_recreated]).map(&:cid))
+  end
+
+  it 'recreates a job instance only when using instance uuid' do
+    deploy_from_scratch
+
+    initial_vms = director.vms
+    vm_to_be_recreated = director.find_vm(initial_vms, 'foobar', '0')
+    instance_uuid = vm_to_be_recreated.instance_uuid
+    expect(bosh_runner.run("recreate foobar #{instance_uuid}")).to include ("foobar/#{instance_uuid} recreated")
 
     vms_after_instance_recreate = director.vms
     vm_was_recreated = director.find_vm(vms_after_instance_recreate, 'foobar', '0')

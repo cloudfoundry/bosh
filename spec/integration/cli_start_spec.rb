@@ -5,6 +5,10 @@ describe 'start job', type: :integration do
 
   it 'starts a job instance only' do
     deploy_from_scratch
+
+    vm_before_with_index_1 = director.vms.find{ |vm| vm.index == '1'}
+    instance_uuid = vm_before_with_index_1.instance_uuid
+
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
     bosh_runner.run('stop')
     expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
@@ -14,6 +18,12 @@ describe 'start job', type: :integration do
     vm_was_started = director.find_vm(vms_after_instance_started, 'foobar', '0')
     expect(vm_was_started.last_known_state).to eq ('running')
     expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(['stopped'])
+
+    expect(bosh_runner.run("start foobar #{instance_uuid}")).to include("foobar/#{instance_uuid} started")
+    vms_after_instance_started = director.vms
+    vm_was_started = director.find_vm(vms_after_instance_started, 'foobar', instance_uuid)
+    expect(vm_was_started.last_known_state).to eq ('running')
+    expect((vms_after_instance_started -[vm_was_started]).map(&:last_known_state).uniq).to match_array(["running", "stopped"])
   end
 
   it 'starts vms for a given job / the whole deployment' do

@@ -20,7 +20,7 @@ describe 'stop command', type: :integration do
       deploy_from_scratch(manifest_hash: manifest_hash)
     end
 
-    context 'with an index' do
+    context 'with an index or id' do
       it 'stops the indexed job' do
         expect {
           output = bosh_runner.run('stop foobar 0')
@@ -38,10 +38,30 @@ describe 'stop command', type: :integration do
               'foobar/1' => 'running',
               'foobar/2' => 'running'
           })
+
+        vm_before_with_index_1 = director.vms.find{ |vm| vm.index == '1'}
+        instance_uuid = vm_before_with_index_1.instance_uuid
+
+        expect {
+          output = bosh_runner.run("stop foobar #{instance_uuid}")
+          expect(output).to include("foobar/#{instance_uuid} stopped, VM(s) still running")
+        }.to change { vm_states }
+                 .from({
+                           'another-job/0' => 'running',
+                           'foobar/0' => 'stopped',
+                           'foobar/1' => 'running',
+                           'foobar/2' => 'running'
+                       })
+                 .to({
+                         'another-job/0' => 'running',
+                         'foobar/0' => 'stopped',
+                         'foobar/1' => 'stopped',
+                         'foobar/2' => 'running'
+                     })
       end
     end
 
-    context 'without an index' do
+    context 'without an index or id' do
       it 'stops all instances of the job' do
         expect {
           output = bosh_runner.run('stop foobar')
