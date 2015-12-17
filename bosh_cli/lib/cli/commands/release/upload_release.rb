@@ -80,7 +80,7 @@ If --name & --version are provided, they will be used for checking if release ex
       private
 
       def upload_manifest(manifest_path, upload_options = {})
-        package_matches = match_remote_packages(File.read(manifest_path))
+        package_matches = upload_options[:fix] ? [] : match_remote_packages(File.read(manifest_path))
 
         find_release_dir(manifest_path)
 

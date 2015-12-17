@@ -12,7 +12,7 @@ namespace :fly do
   desc 'Fly integration specs'
   task :integration do
     env(DB: (ENV['DB'] || 'postgresql'))
-    execute('test-integration', '-p')
+    execute('test-integration', '-p --tag=bosh-integration')
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
@@ -36,7 +36,8 @@ namespace :fly do
     @env.to_a.map { |pair| pair.join('=') }.join(' ')
   end
 
-  def execute(task, command_options =  nil)
+  def execute(task, command_options = nil)
+    sh("#{env} fly #{concourse_target} sync")
     sh("#{env} fly #{concourse_target} execute #{command_options} -x -c ci/tasks/#{task}.yml -i bosh-src=$PWD")
   end
 end

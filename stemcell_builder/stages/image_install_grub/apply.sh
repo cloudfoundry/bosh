@@ -135,7 +135,7 @@ then
 # /etc/fstab Created by BOSH Stemcell Builder
 UUID=${uuid} / ext4 defaults 1 1
 FSTAB
-elif [ -f ${image_mount_point}/etc/photon-release ] # Photon
+elif [ -f ${image_mount_point}/etc/photon-release ] # PhotonOS
 then
   initrd_file="initramfs-${kernel_version}.img"
   os_name=$(cat ${image_mount_point}/etc/photon-release)
@@ -170,7 +170,7 @@ title ${os_name} (${kernel_version})
   initrd /boot/${initrd_file}
 GRUB_CONF
 
-elif [ -f ${image_mount_point}/etc/photon-release ] # Photon
+elif [ -f ${image_mount_point}/etc/photon-release ] # PhotonOS
 then
   cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
 default=0

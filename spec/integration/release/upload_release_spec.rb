@@ -43,6 +43,25 @@ describe 'upload release', type: :integration do
     end
   end
 
+  context 'when uploading a compiled release without "./" prefix in the tarball' do
+    before {
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+    }
+
+    it 'should upload successfully and not raise an error' do
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
+      }.to_not raise_error
+    end
+  end
+
+
   # ~33s
   it 'uploads the latest generated release if no release path given' do
     Dir.chdir(ClientSandbox.test_release_dir) do
@@ -545,31 +564,65 @@ describe 'upload release', type: :integration do
   end
 
   describe 'uploading release with --fix' do
-    it 'fixes packages in blobstore that are broken or missing' do
-      release_filename = spec_asset('test_release.tgz')
-
-      target_and_login
-      out = bosh_runner.run("upload release #{release_filename}")
-      expect(out).to match /release uploaded/i
-
-      inspect1 = bosh_runner.run('inspect release test_release/1')
-      old_pkg_inspect = Bosh::Dev::TableParser.new(inspect1.split(/\n\n/)[1]).to_a
-
-      FileUtils.rm_rf(Dir.glob(File.join(current_sandbox.blobstore_storage_dir, "*")))
-
-      out = bosh_runner.run("upload release #{release_filename} --fix")
-
-      inspect2 = bosh_runner.run('inspect release test_release/1')
-      new_pkg_inspect = Bosh::Dev::TableParser.new(inspect2.split(/\n\n/)[1]).to_a
-
-      new_pkg_inspect.each { |new_pkg|
-        old_pkg_inspect.each { |old_pkg|
-          if new_pkg[:package] == old_pkg[:package]
-            expect(new_pkg[:blobstore_id]).to_not eq(old_pkg[:blobstore_id])
-            break
-          end
-        }
+    def get_blob_files(table_string)
+      blobs = []
+      table = table_string.lines.grep(/^\| /).map { |line| line.gsub(/\s+/, "")}
+      table.each { |line|
+        blobs << line.split('|')[4]
       }
+      blobs.shift
+      blobs
+    end
+
+    def search_and_delete_files(file_path, blob_files)
+      if File.directory? file_path
+        Dir.foreach(file_path) do |file|
+          if file !="." and file !=".."
+            search_and_delete_files(file_path+"/"+file, blob_files)
+          end
+        end
+      else
+        if blob_files.include? File.basename(file_path)
+          FileUtils.rm_rf(File.realpath(file_path))
+        end
+      end
+    end
+
+    it 'fixes packages in blobstore that are broken or missing' do
+      target_and_login
+
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        bosh_runner.run_in_current_dir('create release')
+        bosh_runner.run_in_current_dir('upload release')
+      end
+
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+
+      expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
+
+      inspect1 = bosh_runner.run('inspect release bosh-release/0+dev.1')
+      blob_files_1 = get_blob_files(inspect1.split(/\n\n/)[1])
+
+      # Delete all package and compiled package blob files
+      search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
+
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        out = bosh_runner.run_in_current_dir('upload release --fix')
+      end
+
+      expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
+
+      inspect2 = bosh_runner.run('inspect release bosh-release/0+dev.1')
+      blob_files_2 = get_blob_files(inspect2.split(/\n\n/)[1])
+
+      expect(blob_files_2 - blob_files_1).to eq blob_files_2
     end
   end
+
 end

@@ -51,10 +51,10 @@
       - Retrieve the OS image S3 keys from the end of the OS image build output
       - Update the following files:
         - `bosh-stemcell/OS_IMAGES.md`
-        - `bosh-dev/lib/bosh/dev/config/os_image_versions.json`
+        - `bosh-stemcell/os_image_versions.json`
       - Commit and push those changes to the hotfix branch
          ``` bash
-         git add bosh-stemcell/OS_IMAGES.md bosh-dev/lib/bosh/dev/config/os_image_versions.json
+         git add bosh-stemcell
          git ci # Edit commit message appropriately, including the Tracker story ID
          pit push origin $HOTFIX_NAME
          ```
