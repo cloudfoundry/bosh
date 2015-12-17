@@ -134,7 +134,7 @@ module Bosh::Director::DeploymentPlan
               ip_provider.reserve(reservation)
 
               dynamic_network = DynamicNetwork.new('my-manual-network', [], logger)
-              reservation = BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2')
+              reservation = BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2', 'manual')
               ip_provider.reserve_existing_ips(reservation)
 
               other_instance = double(:instance, model: Bosh::Director::Models::Instance.make, availability_zone: BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
@@ -365,17 +365,31 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when dynamic network' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2') }
           let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], logger) }
 
-          it 'does not reserve the reservation' do
-            ip_provider.reserve_existing_ips(existing_network_reservation)
-            expect(existing_network_reservation.reserved?).to be_falsey
+          context 'when existing network type was dynamic' do
+            let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2', 'dynamic') }
+
+            it 'does not reserve the reservation' do
+              ip_provider.reserve_existing_ips(existing_network_reservation)
+              expect(existing_network_reservation.dynamic?).to be_truthy
+              expect(existing_network_reservation.reserved?).to be_truthy
+            end
+          end
+
+          context 'when existing network type was not dynamic' do
+            let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2', 'manual') }
+
+            it 'does not reserve the reservation' do
+              ip_provider.reserve_existing_ips(existing_network_reservation)
+              expect(existing_network_reservation.dynamic?).to be_falsey
+              expect(existing_network_reservation.reserved?).to be_falsey
+            end
           end
         end
 
         context 'when vip network' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, vip_network, '69.69.69.69') }
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, vip_network, '69.69.69.69', 'vip') }
           let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
 
           it 'marks reservation as reserved' do
@@ -386,7 +400,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when manual network' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2', 'manual') }
           context 'when IP is a static IP' do
             it 'should reserve IP as a StaticNetworkReservation' do
               manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
@@ -415,7 +429,7 @@ module Bosh::Director::DeploymentPlan
 
           context 'when IP is not in any subnet' do
             it 'should not reserve IP' do
-              reservation_outside_subnet = BD::ExistingNetworkReservation.new(instance, manual_network, '10.0.0.1')
+              reservation_outside_subnet = BD::ExistingNetworkReservation.new(instance, manual_network, '10.0.0.1', 'manual')
               ip_provider.reserve_existing_ips(reservation_outside_subnet)
 
               expect(reservation_outside_subnet).not_to be_reserved
@@ -432,7 +446,7 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when ExistingNetworkReservation' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2', 'manual') }
 
           it 'should add existing IP to list of reserved IPs' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
@@ -452,7 +466,7 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when ExistingNetworkReservation' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2') }
+          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, manual_network, '192.168.1.2', 'manual') }
 
           it 'fails when trying to reserve for another instance' do
             ip_provider.reserve_existing_ips(existing_network_reservation)

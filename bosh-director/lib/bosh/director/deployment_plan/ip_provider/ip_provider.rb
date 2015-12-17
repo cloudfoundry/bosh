@@ -78,7 +78,13 @@ module Bosh::Director
 
       def reserve_existing_ips(reservation)
         if reservation.network.is_a?(DynamicNetwork)
-          # We should not keep reservation that belong to dynamic network
+          if reservation.network_type == 'dynamic'
+            # Marking reservation as reserved so that it keeps existing reservation and
+            # does not recreate VM
+            reserve_dynamic(reservation)
+          end
+
+          # If previous network type was not dynamic we should release reservation from DB
           return
         end
 

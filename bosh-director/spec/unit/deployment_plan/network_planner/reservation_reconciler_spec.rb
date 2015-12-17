@@ -33,8 +33,8 @@ module Bosh::Director::DeploymentPlan
       let(:desired_az) { AvailabilityZone.new('zone_1', {}) }
       let(:existing_reservations) {
         [
-          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2'),
-          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.3')
+          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual'),
+          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.3', 'manual')
         ]
       }
 
@@ -99,7 +99,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when existing reservation availability zones do not match job availability zones' do
         let(:desired_az) { AvailabilityZone.new('zone_2', {}) }
-        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2')] }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual')] }
         before { existing_reservations[0].resolve_type(:dynamic) }
         let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
 
@@ -129,7 +129,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when existing reservation and job do not belong to any availability zone' do
         let(:desired_az) { nil }
-        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2')] }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual')] }
         before { existing_reservations[0].resolve_type(:dynamic) }
         let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
         let(:subnets) do

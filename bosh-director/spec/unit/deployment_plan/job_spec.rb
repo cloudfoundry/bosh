@@ -411,7 +411,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1, network)
-      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1, network, '10.0.0.1')
+      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1, network, '10.0.0.1', 'manual')
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
           desired_instance: BD::DeploymentPlan::DesiredInstance.new,
           existing_instance: nil,

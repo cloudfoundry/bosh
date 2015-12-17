@@ -130,7 +130,7 @@ module Bosh::Director::DeploymentPlan
             expect(original_address.static).to eq(false)
 
             network_spec['subnets'].first['static'] = ['192.168.1.5']
-            existing_reservation = BD::ExistingNetworkReservation.new(instance, network, '192.168.1.5')
+            existing_reservation = BD::ExistingNetworkReservation.new(instance, network, '192.168.1.5', 'manual')
             ip_repo.add(existing_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)

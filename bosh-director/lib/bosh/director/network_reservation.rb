@@ -39,9 +39,12 @@ module Bosh::Director
   end
 
   class ExistingNetworkReservation < NetworkReservation
-    def initialize(instance, network, ip)
+    attr_reader :network_type
+
+    def initialize(instance, network, ip, network_type)
       super(instance, network)
       @ip = ip_to_i(ip) if ip
+      @network_type = network_type
     end
 
     def resolve_type(type)
