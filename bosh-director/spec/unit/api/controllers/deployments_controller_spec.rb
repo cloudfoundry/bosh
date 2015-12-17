@@ -363,7 +363,8 @@ module Bosh::Director
                   'vm_id' => vm.id,
                   'job' => "job-#{i}",
                   'index' => i,
-                  'state' => 'started'
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}"
               }
               Models::Instance.create(instance_params)
             end
@@ -380,6 +381,7 @@ module Bosh::Director
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
+                  'instance_id' => "instance-#{i}"
               )
             end
           end
