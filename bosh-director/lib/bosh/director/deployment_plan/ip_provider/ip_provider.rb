@@ -11,6 +11,8 @@ module Bosh::Director
 
       def release(reservation)
         if reservation.ip.nil?
+          return if reservation.network.is_a?(DynamicNetwork)
+
           @logger.error("Failed to release IP for manual network '#{reservation.network.name}': IP must be provided")
           raise Bosh::Director::NetworkReservationIpMissing, "Can't release reservation without an IP"
         else

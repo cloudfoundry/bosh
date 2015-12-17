@@ -148,6 +148,17 @@ module Bosh::Director::DeploymentPlan
               expect { ip_provider.reserve(other_reservation_with_same_ip) }.not_to raise_error
             end
           end
+
+          context 'when reservation is on dynamic network without IP address' do
+            it 'does not fail to release it' do
+              dynamic_network = DynamicNetwork.new('my-manual-network', [], logger)
+              reservation = BD::DesiredNetworkReservation.new_dynamic(instance, dynamic_network)
+
+              expect {
+                ip_provider.release(reservation)
+              }.to_not raise_error
+            end
+          end
         end
       end
 
