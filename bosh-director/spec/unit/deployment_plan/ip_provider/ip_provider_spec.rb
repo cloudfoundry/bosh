@@ -368,10 +368,9 @@ module Bosh::Director::DeploymentPlan
           let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2') }
           let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], logger) }
 
-          it 'marks reservation as reserved' do
+          it 'does not reserve the reservation' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
-            expect(existing_network_reservation.dynamic?).to be_truthy
-            expect(existing_network_reservation.reserved?).to be_truthy
+            expect(existing_network_reservation.reserved?).to be_falsey
           end
         end
 

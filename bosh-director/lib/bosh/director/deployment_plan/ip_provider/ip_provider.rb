@@ -78,7 +78,7 @@ module Bosh::Director
 
       def reserve_existing_ips(reservation)
         if reservation.network.is_a?(DynamicNetwork)
-          reserve_dynamic(reservation)
+          # We should not keep reservation that belong to dynamic network
           return
         end
 
