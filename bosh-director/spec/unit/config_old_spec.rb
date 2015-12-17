@@ -19,7 +19,7 @@ describe Bosh::Director::Config do
     it "sets a default" do
       described_class.configure(test_config)
 
-      expect(described_class.max_tasks).to eq(500)
+      expect(described_class.max_tasks).to eq(100)
     end
   end
 
