@@ -79,7 +79,6 @@ module Bosh::Director
         it 'creates reservations for dynamic networks' do
           reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance, deployment, logger)
           expect(reservations.first).to_not be_nil
-          expect(reservations.first.dynamic?).to eq(true)
           expect(reservations.first.ip).to eq(NetAddr::CIDR.create('10.10.0.10').to_i)
         end
       end
