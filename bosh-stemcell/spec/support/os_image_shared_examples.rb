@@ -84,6 +84,10 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^Banner/)
     end
 
+    it 'disallows root login (stig: V-38613)' do
+      expect(sshd_config).to contain(/^PermitRootLogin no$/)
+    end
+
     it 'allows PrintLastLog (stig: V-38484)' do
       expect(sshd_config).to contain(/^PrintLastLog yes$/)
     end
