@@ -339,16 +339,32 @@ describe 'global networking', type: :integration do
       expect(first_deploy_vms.size).to eq(1)
       expect(first_deploy_vms.first.ips).to eq('192.168.1.10')
 
-      cloud_config_hash['networks'].first['subnets'].delete('static')
+      cloud_config_hash['networks'].first['subnets'].first.delete('static')
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
+      simple_manifest['jobs'].first['networks'].first.delete('static_ips')
       deploy_simple_manifest(manifest_hash: simple_manifest)
       second_deploy_vms = director.vms
       expect(second_deploy_vms.size).to eq(1)
       expect(second_deploy_vms.first.ips).to eq('192.168.1.10')
 
       expect(second_deploy_vms.first.cid).to eq(first_deploy_vms.first.cid)
-      end
+    end
+
+    it 'releases IP if reservation is changed to dynamic, but IP still belongs to static range' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_with_ip(simple_manifest, '192.168.1.10')
+      first_deploy_vms = director.vms
+      expect(first_deploy_vms.size).to eq(1)
+      expect(first_deploy_vms.first.ips).to eq('192.168.1.10')
+
+      simple_manifest['jobs'].first['networks'].first.delete('static_ips')
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+      second_deploy_vms = director.vms
+      expect(second_deploy_vms.size).to eq(1)
+      expect(second_deploy_vms.first.ips).to eq('192.168.1.2')
+    end
   end
 
   context 'when allocating dynamic IPs' do
