@@ -2,7 +2,7 @@
 
 ## Important!!!:
 
-- Upon completion of the steps below, **do not** kick off another Jenkins pipeline build (off of the `candidate` branch)
+- Upon completion of the steps below, **do not** kick off another Jenkins pipeline build (of the `candidate` branch)
   until the changes from the steps below have made it through the Concourse pipeline.
 
 ## For OS image builds...
@@ -19,7 +19,7 @@
       # Log in to LastPass (for pipeline configuration)
       lpass login $LASTPASS_USER
       ```
-- [ ] 1. Create a hotfix branch off of `master`
+- [ ] 1. Create a hotfix branch from the `master` branch
 
       ```bash
       cd $BOSH_PATH
@@ -83,7 +83,7 @@
           # 2. Un-pause the pipeline
           # 3. Trigger the "start-job" job
           ```
-- [ ] 4. Run the Jenkins pipeline based on the hotfix branch, setting `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as $HOTFIX_NAME.
+- [ ] 4. Run the [Jenkins pipeline](http://bosh-jenkins.cf-app.com:8080/job/bosh_build_flow/) based on the hotfix branch. Click **Rebuild Last** and set `BUILD_FLOW_GIT_COMMIT` **and** `FEATURE_BRANCH` as $HOTFIX_NAME.
       NOTE: The final step of the Jenkins pipeline will commit a release bump to `master` and merge that to the hotfix branch.
 - [ ] 5. Upon successful completion of the Jenkins pipeline, merge the changes into develop
 
