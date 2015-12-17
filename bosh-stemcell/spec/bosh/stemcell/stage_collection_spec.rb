@@ -398,10 +398,10 @@ module Bosh::Stemcell
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_network,
-                :disable_blank_passwords,
-                :system_parameters,
                 :system_softlayer_open_iscsi,
                 :system_softlayer_multipath_tools,
+                :disable_blank_passwords,
+                :system_parameters,
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_enable_password_authentication,
