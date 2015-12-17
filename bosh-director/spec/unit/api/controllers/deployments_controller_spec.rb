@@ -128,19 +128,22 @@ module Bosh::Director
           end
 
           context 'for all jobs in deployment' do
-            let (:path) {"/foo/jobs/*?state=stopped"}
+            let (:path) { '/foo/jobs/*?state=stopped'
+            }
             it_behaves_like 'change state'
           end
           context 'for one job in deployment' do
-            let (:path) {"/foo/jobs/dea?state=stopped"}
+            let (:path) { '/foo/jobs/dea?state=stopped'
+            }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment' do
-            let (:path) {"/foo/jobs/dea/2?state=stopped"}
+            let (:path) { '/foo/jobs/dea/2?state=stopped'
+            }
             it_behaves_like 'change state'
-          end
-          context 'for job instance in deployment' do
-            let (:path) {"/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped"}
+
+            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped'
+            }
             it_behaves_like 'change state'
           end
 
@@ -252,25 +255,25 @@ module Bosh::Director
         describe 'listing deployments' do
           it 'lists deployment info in deployment name order' do
 
-            release_1 = Models::Release.create(:name => "release-1")
+            release_1 = Models::Release.create(:name => 'release-1')
             release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
             release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
-            release_2 = Models::Release.create(:name => "release-2")
+            release_2 = Models::Release.create(:name => 'release-2')
             release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
 
-            stemcell_1_1 = Models::Stemcell.create(name: "stemcell-1", version: 1, cid: 123)
-            stemcell_1_2 = Models::Stemcell.create(name: "stemcell-1", version: 2, cid: 123)
-            stemcell_2_1 = Models::Stemcell.create(name: "stemcell-2", version: 1, cid: 124)
+            stemcell_1_1 = Models::Stemcell.create(name: 'stemcell-1', version: 1, cid: 123)
+            stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
+            stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
 
             old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
             new_cloud_config = Models::CloudConfig.make(manifest: {})
 
             deployment_3 = Models::Deployment.create(
-              name: "deployment-3",
+              name: 'deployment-3',
             )
 
             deployment_2 = Models::Deployment.create(
-              name: "deployment-2",
+              name: 'deployment-2',
               cloud_config: new_cloud_config,
             ).tap do |deployment|
               deployment.add_stemcell(stemcell_1_1)
@@ -280,7 +283,7 @@ module Bosh::Director
             end
 
             deployment_1 = Models::Deployment.create(
-              name: "deployment-1",
+              name: 'deployment-1',
               cloud_config: old_cloud_config,
             ).tap do |deployment|
               deployment.add_stemcell(stemcell_1_1)

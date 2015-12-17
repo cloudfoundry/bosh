@@ -10,7 +10,7 @@ mkdir -p $chroot/var/lib/rpm
 rpm --root $chroot --initdb
 case "${stemcell_operating_system_version}" in
   "7")
-    centos_release_package_url="http://mirror.centos.org/centos/7/os/x86_64/Packages/centos-release-7-1.1503.el7.centos.2.8.x86_64.rpm"
+    centos_release_package_url="http://mirror.centos.org/centos/7/os/x86_64/Packages/centos-release-7-2.1511.el7.centos.2.10.x86_64.rpm"
     epel_package_url="http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm"
     ;;
   *)
@@ -49,9 +49,6 @@ touch ${chroot}/etc/sysconfig/network # must be present for network to be config
 
 echo 'READAHEAD_COLLECT="no"' >> ${chroot}/etc/sysconfig/readahead
 echo 'READAHEAD_COLLECT_ON_RPM="no"' >> ${chroot}/etc/sysconfig/readahead
-
-# Setting timezone
-cp ${chroot}/usr/share/zoneinfo/UTC ${chroot}/etc/localtime
 
 # Setting locale
 case "${stemcell_operating_system_version}" in

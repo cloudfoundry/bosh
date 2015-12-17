@@ -15,11 +15,17 @@
       export HOTFIX_IMG_PIPELINE="bosh:os-image:$HOTFIX_NAME"
       export HOTFIX_BOSH_PIPELINE="bosh:$HOTFIX_NAME"
       ```
+
+      ``` bash
+      # Log in to LastPass (for pipeline configuration)
+      lpass login $LASTPASS_USER
+      ```
+
 - [ ] 1. Create a hotfix branch off of `master`
       ``` bash
       cd $BOSH_PATH
       git co master
-      git pull
+      git pull --ff-only
       git co -b $HOTFIX_NAME
       git push -u origin $HOTFIX_NAME
       ```
@@ -29,14 +35,10 @@
         cd $BOSH_PATH
         cp ci/pipelines/os-image/pipeline.yml /tmp/hotfix-image-pipeline.yml
 
-        # Get pipeline secrets (see "lpass" installation notes below)
-        lpass login $LASTPASS_USER
-        lpass show --notes "OS image concourse secrets" > /tmp/hotfix-image-secrets.yml
-
         # Configure the pipeline
-        fly -t production configure -c /tmp/hotfix-image-pipeline.yml \
+        fly -t production set-pipeline -c /tmp/hotfix-image-pipeline.yml \
           --var branch=$HOTFIX_NAME \
-          --vf /tmp/hotfix-image-secrets.yml $HOTFIX_IMG_PIPELINE
+          --load-vars-from <( lpass show --notes "OS image concourse secrets" ) -p $HOTFIX_IMG_PIPELINE
         ```
   - [ ] B. Make any image-building changes and push those to the hotfix branch
   - [ ] C. Run the pipeline
@@ -56,7 +58,7 @@
          ``` bash
          git add bosh-stemcell
          git ci # Edit commit message appropriately, including the Tracker story ID
-         pit push origin $HOTFIX_NAME
+         git push origin $HOTFIX_NAME
          ```
   - [ ] B. **If there are BOSH code changes** (other than OS image building changes)
     - [ ] 1. Create a Concourse hotfix pipeline for BOSH
@@ -64,17 +66,10 @@
           cd $BOSH_PATH
           cp ci/pipeline.yml /tmp/hotfix-bosh-pipeline.yml
 
-          # Configure...
-          # TODO:
-          # - How to get the secrets and put them in /tmp/hotfix-bosh-secrets.yml
-          # - How to update the bosh-src resource via vars or editing the
-          #   pipeline file to point to the $HOTFIX_NAME branch
-          # - Remove the "promote-candidate" and "publish-coverage"
-
           # Configure the pipeline
-          fly -t production configure -c /tmp/hotfix-bosh-pipeline.yml \
+          fly -t production set-pipeline -c /tmp/hotfix-bosh-pipeline.yml \
             --var branch=$HOTFIX_NAME \
-            --vf /tmp/hotfix-bosh-secrets.yml $HOTFIX_BOSH_PIPELINE
+            --load-vars-from <( lpass show --notes "bosh concourse secrets" ) -p $HOTFIX_BOSH_PIPELINE
           ```
     - [ ] 2. Make code changes and push those to the hotfix branch
     - [ ] 3. Run the pipeline
@@ -96,8 +91,8 @@
 - [ ] 6. Clean up
       ``` bash
       # Tear down the Concourse hotfix pipelines
-      fly -t production destroy-pipeline $HOTFIX_IMG_PIPELINE
-      fly -t production destroy-pipeline $HOTFIX_BOSH_PIPELINE
+      fly -t production destroy-pipeline -p $HOTFIX_IMG_PIPELINE
+      fly -t production destroy-pipeline -p $HOTFIX_BOSH_PIPELINE
       ```
 
 ## Notes
