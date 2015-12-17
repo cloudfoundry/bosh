@@ -87,12 +87,14 @@ foo: bar
       manifest["extra_stuff"] = "it's here!"
       release_tarball.replace_manifest(manifest)
 
-      new_tar_path = Tempfile.new('newly-packed.tgz').path
+      # ruby 1.9.3 garbage-collects tmp_file if not assigned to a variable
+      tmp_file = Tempfile.new('newly-packed.tgz')
+      new_tar_path = tmp_file.path
       release_tarball.create_from_unpacked(new_tar_path)
       expect(File.exist?(new_tar_path)).to be(true)
 
       new_tarball = Bosh::Cli::ReleaseTarball.new(new_tar_path)
-      expect(new_tarball).to be_valid, "Tarball is not valid, errors: #{new_tarball.errors} \n Release Tarball: #{new_tarball.pretty_inspect}"
+      expect(new_tarball).to be_valid
       expect(new_tarball.manifest).to match release_tarball.manifest
     end
   end
