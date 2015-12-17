@@ -8,7 +8,7 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
 {
   "Platform": {
     "Linux": {
-      "CreatePartitionIfNoEphemeralDisk": false
+      "CreatePartitionIfNoEphemeralDisk": true
     }
   },
   "Infrastructure": {

@@ -164,13 +164,13 @@ module Bosh::Stemcell
     def softlayer_stages
       [
           :system_network,
-          :system_open_vm_tools,
+          :system_softlayer_open_iscsi,
+          :system_softlayer_multipath_tools,
           :disable_blank_passwords,
           :system_parameters,
           :bosh_clean,
           :bosh_harden,
           :bosh_enable_password_authentication,
-          :bosh_enable_permit_root_login,
           :bosh_softlayer_agent_settings,
           :bosh_clean_ssh,
           :image_create,

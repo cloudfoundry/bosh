@@ -15,13 +15,4 @@ describe 'Softlayer Stemcell', stemcell_image: true do
       it { should contain /^PasswordAuthentication yes$/ }
     end
   end
-
-  describe 'ssh permit root login' do
-    describe 'permit root login' do
-      subject { file('/etc/ssh/sshd_config') }
-
-      it { should_not contain /^PermitRootLogin no$/ }
-      it { should contain /^PermitRootLogin yes$/ }
-    end
-  end
 end

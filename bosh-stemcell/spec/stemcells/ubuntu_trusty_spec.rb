@@ -85,6 +85,32 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
+  context 'installed by system_softlayer_open_iscsi', {
+      exclude_on_aws: true,
+      exclude_on_vsphere: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+      exclude_on_openstack: true,
+      exclude_on_azure: true,
+  } do
+    describe package('open-iscsi') do
+      it { should be_installed }
+    end
+  end
+
+  context 'installed by system_softlayer_multipath_tools', {
+      exclude_on_aws: true,
+      exclude_on_vsphere: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+      exclude_on_openstack: true,
+      exclude_on_azure: true,
+  } do
+    describe package('multipath-tools') do
+      it { should be_installed }
+    end
+  end
+
   context 'installed by image_vsphere_cdrom stage', {
     exclude_on_aws: true,
     exclude_on_vcloud: true,
@@ -195,8 +221,6 @@ HERE
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
       it { should contain('"Type": "File"') }
-      it { should contain('"MetaDataPath": ""') }
-      it { should contain('"UserDataPath": "/var/vcap/bosh/user_data.json"') }
       it { should contain('"SettingsPath": "/var/vcap/bosh/user_data.json"') }
       it { should contain('"UseRegistry": true') }
     end
