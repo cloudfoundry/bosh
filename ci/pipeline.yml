@@ -103,7 +103,7 @@ jobs:
       - task: test
         privileged: true
         file:  bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration"]
+        tags: ["bosh-integration-1"]
         config:
           params:
             DB:           postgresql
@@ -119,7 +119,7 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration"]
+        tags: ["bosh-integration-2"]
         config:
           params:
             DB:           mysql
@@ -135,7 +135,7 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration"]
+        tags: ["bosh-integration-3"]
         config:
           params:
             DB:           postgresql
