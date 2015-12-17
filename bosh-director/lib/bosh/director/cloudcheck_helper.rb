@@ -149,14 +149,6 @@ module Bosh::Director
       "#{job}/#{index}"
     end
 
-    def instance_uuid(vm)
-      instance = vm.instance
-      return "Unknown VM" if instance.nil?
-
-      id = instance.uuid || "unknown uuid"
-      "#{id}"
-    end
-
     def agent_client(vm, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         :timeout => timeout,
