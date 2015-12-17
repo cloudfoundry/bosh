@@ -8,10 +8,6 @@ module Bosh
         ERB.new(erb).result(context.get_binding)
       end
 
-      def make(spec)
-        EvaluationContext.new(spec)
-      end
-
       before do
         @spec = {
           'job' => {
@@ -23,10 +19,18 @@ module Bosh
             'vtrue' => true,
             'vfalse' => false
           },
+          'links' => {
+            'fake-link-1' => {'a' => 'b'},
+            'fake-link-2' => {'c' => 'd'}
+          },
           'index' => 0,
+          'id' => 'deadbeef',
+          'bootstrap' => true,
+          'az' => 'foo-az',
+          'resource_pool' => 'a'
         }
 
-        @context = make(@spec)
+        @context = EvaluationContext.new(@spec)
       end
 
       it 'unrolls properties into OpenStruct' do
@@ -39,6 +43,32 @@ module Bosh
 
       it 'supports looking up template index' do
         expect(eval_template('<%= spec.index %>', @context)).to eq('0')
+      end
+
+      it 'supports looking up template instance id' do
+        expect(eval_template('<%= spec.id %>', @context)).to eq(@context.spec.id)
+      end
+
+      it 'supports looking up template availability zone' do
+        expect(eval_template('<%= spec.az %>', @context)).to eq(@context.spec.az)
+        end
+
+      it 'exposes an resource pool' do
+        expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
+      end
+
+      it 'supports looking up whether template is bootstrap or not' do
+        expect(eval_template('<%= spec.bootstrap %>', @context)).to eq('true')
+      end
+
+      it 'evaluates links' do
+        expect(eval_template("<%= link('fake-link-1.a') %>", @context)).to eq('b')
+        expect(eval_template("<%= link('fake-link-2.c') %>", @context)).to eq('d')
+        expect(eval_template("<%= link('fake-link-2')['c'] %>", @context)).to eq('d')
+
+        expect {
+          eval_template("<%= link('fake-link-1.z') %>", @context)
+        }.to raise_error(UnknownLink, "Can't find link 'fake-link-1.z'")
       end
 
       describe 'p' do

@@ -16,5 +16,12 @@ module Bosh::Director
         @all || @jobs.include?(job_name)
       end
     end
+
+    class AlwaysSkipDrain
+      def for_job(_)
+        true
+      end
+    end
+
   end
 end

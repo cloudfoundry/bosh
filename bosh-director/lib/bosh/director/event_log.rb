@@ -112,6 +112,12 @@ module Bosh::Director
       end
     end
 
+    class NullStage
+      def advance_and_track(_, &blk)
+        blk.call
+      end
+    end
+
     class Task
       def initialize(stage, name, index)
         @stage = stage

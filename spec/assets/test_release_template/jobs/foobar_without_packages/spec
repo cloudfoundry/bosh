@@ -1,0 +1,8 @@
+---
+name: foobar_without_packages
+templates:
+  foobar_ctl: bin/foobar_ctl
+
+packages: []
+
+properties: {}

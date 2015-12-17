@@ -7,7 +7,7 @@ describe 'fetching logs', type: :integration do
   it 'can fetch job (default) and agent logs' do
     deploy_from_scratch
 
-    vm_0 = director.vm('foobar/0')
+    vm_0 = director.vm('foobar', '0')
     vm_0.write_job_log('toplevel.log', 'some top level log contents')
     vm_0.write_job_log('jobname/nested.log', 'some subdirector log contents')
     vm_0.write_job_log('logwithnoextension', 'some logfile with no extension contents')

@@ -12,10 +12,10 @@ check_param() {
 print_git_state() {
   if [ -d ".git" ] ; then
     echo "--> last commit..."
-    TERM=xterm-256color git log -1
+    TERM=xterm-256color git --no-pager log -1
     echo "---"
     echo "--> local changes (e.g., from 'fly execute')..."
-    TERM=xterm-256color git status --verbose
+    TERM=xterm-256color git --no-pager status --verbose
     echo "---"
   fi
 }

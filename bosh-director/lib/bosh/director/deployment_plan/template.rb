@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class Template
@@ -32,6 +30,10 @@ module Bosh::Director
         @package_models = @model.package_names.map do |name|
           @release.get_package_model_by_name(name)
         end
+      end
+
+      def bind_existing_model(model)
+        @model = model
       end
 
       # Downloads template blob to a given path
@@ -78,6 +80,16 @@ module Bosh::Director
         present_model.properties
       end
 
+      # return [Array]
+      def required_links
+        present_model.requires.to_a.map { |l| TemplateLink.parse(l) }
+      end
+
+      # return [Array]
+      def provided_links
+        present_model.provides.to_a.map { |l| TemplateLink.parse(l) }
+      end
+
       private
 
       # Returns model only if it's present, fails otherwise
@@ -88,7 +100,6 @@ module Bosh::Director
         end
         @model
       end
-
     end
   end
 end

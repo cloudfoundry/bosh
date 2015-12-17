@@ -25,22 +25,7 @@ module Bosh::Director
       end
 
       get '/', scope: :read do
-        releases = Models::Release.order_by(:name.asc).map do |release|
-          release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
-            {
-              'version' => rv.version.to_s,
-              'commit_hash' => rv.commit_hash,
-              'uncommitted_changes' => rv.uncommitted_changes,
-              'currently_deployed' => !rv.deployments.empty?,
-              'job_names' => rv.templates.map(&:name),
-            }
-          end
-
-          {
-            'name' => release.name,
-            'release_versions' => release_versions,
-          }
-        end
+        releases = @release_manager.get_all_releases
 
         json_encode(releases)
       end

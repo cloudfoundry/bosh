@@ -6,23 +6,9 @@ describe 'cli: cloudcheck', type: :integration do
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
   before do
-    target_and_login
-    runner.run('reset release')
-    runner.run('create release --force')
-    runner.run('upload release')
-
-    runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
-
     manifest = Bosh::Spec::Deployments.simple_manifest
     manifest['jobs'][0]['persistent_disk'] = 100
-    deployment_manifest = yaml_file('deployment_manifest', manifest)
-
-    runner.run("deployment #{deployment_manifest.path}")
-
-    runner.run('deploy')
+    deploy_from_scratch(manifest_hash: manifest)
 
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
@@ -101,7 +87,7 @@ describe 'cli: cloudcheck', type: :integration do
     resolution_selections = "#{option}\n"*num_errors + "yes"
     output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
     if $?.exitstatus != 0
-      puts output
+      fail("Cloud check failed, output: #{output}")
     end
     output
   end
@@ -109,7 +95,7 @@ describe 'cli: cloudcheck', type: :integration do
   def bosh_run_cck_with_auto
     output = `bosh -c #{ClientSandbox.bosh_config} cloudcheck --auto`
     if $?.exitstatus != 0
-      puts output
+      fail("Cloud check failed, output: #{output}")
     end
     output
   end

@@ -29,7 +29,7 @@ module Bosh::Director
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
       let(:vm) { Models::Vm.make(deployment: deployment) }
 
-      before { allow(AgentClient).to receive(:with_defaults).with(vm.agent_id).and_return(agent_client) }
+      before { allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent_client) }
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do
@@ -226,7 +226,7 @@ module Bosh::Director
           before { instance1_model.update(vm: nil) }
 
           it 'raises an error' do
-            expect { subject.run }.to raise_error(InstanceVmMissing, %r{fake-job-name/0.*doesn't reference a VM})
+            expect { subject.run }.to raise_error(InstanceVmMissing, "`fake-job-name/#{instance1_model.uuid} (#{instance1_model.index})' doesn't reference a VM")
           end
         end
       end

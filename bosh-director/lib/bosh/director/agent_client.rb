@@ -19,11 +19,6 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_defaults(id, options = {})
-      vm = Bosh::Director::Models::Vm.find(:agent_id => id)
-      with_vm(vm, options)
-    end
-
     def self.with_vm(vm, options = {})
       defaults = {
         retry_methods: {
@@ -68,14 +63,6 @@ module Bosh::Director
 
     def list_disk(*args)
       send_message(:list_disk, *args)
-    end
-
-    def prepare_configure_networks(*args)
-      send_message(:prepare_configure_networks, *args)
-    end
-
-    def prepare_network_change(*args)
-      send_message(:prepare_network_change, *args)
     end
 
     def start(*args)
@@ -156,10 +143,6 @@ module Bosh::Director
       end
 
       task['value']
-    end
-
-    def configure_networks(*args)
-      send_message(:configure_networks, *args)
     end
 
     def wait_until_ready(deadline = 600)

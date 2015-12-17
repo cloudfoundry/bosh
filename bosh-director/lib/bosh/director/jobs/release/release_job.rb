@@ -33,6 +33,8 @@ module Bosh::Director
       template.properties = job_manifest['properties'] if job_manifest['properties']
 
       validate_links(job_manifest)
+      template.provides = job_manifest['provides'] if job_manifest['provides']
+      template.requires = job_manifest['requires'] if job_manifest['requires']
 
       template.save
     end
@@ -146,16 +148,25 @@ module Bosh::Director
     end
 
     def validate_links(job_manifest)
-      if job_manifest['provides']
-        if !job_manifest['provides'].is_a?(Array) || job_manifest['provides'].find { |p| !p.is_a?(String) }
-          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'provides' needs to be an array of strings"
-        end
+      parse_links(job_manifest['provides'], 'provides') if job_manifest['provides']
+      parse_links(job_manifest['requires'], 'requires') if job_manifest['requires']
+    end
+
+    def parse_links(links, desc)
+      if !links.is_a?(Array)
+        raise JobInvalidLinkSpec,
+          "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of strings or hashes with name and type"
       end
 
-      if job_manifest['requires']
-        if !job_manifest['requires'].is_a?(Array) || job_manifest['requires'].find { |p| !p.is_a?(String) }
-          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'requires' needs to be an array of strings"
+      parsed_links = {}
+      links.each do |link_spec|
+        parsed_link = DeploymentPlan::TemplateLink.parse(link_spec)
+        if parsed_links[parsed_link.name]
+          raise JobDuplicateLinkName,
+            "Job '#{@name}' '#{desc}' specifies links with duplicate name '#{parsed_link.name}'"
         end
+
+        parsed_links[parsed_link.name] = true
       end
     end
   end

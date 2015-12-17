@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Jobs
     class Ssh < BaseJob
@@ -13,7 +11,7 @@ module Bosh::Director
 
       def initialize(deployment_id, options = {})
         @deployment_id = deployment_id
-        @target = options["target"]
+        @target_payload = options["target"]
         @command = options["command"]
         @params = options["params"]
         @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
@@ -21,29 +19,25 @@ module Bosh::Director
       end
 
       def perform
-        job = @target["job"]
-        indexes = @target["indexes"]
+        target = Target.new(@target_payload)
 
-        filter = {
-          :deployment_id => @deployment_id
-        }
+        filter = { deployment_id: @deployment_id }
+        filter[:job] = target.job if target.job
 
-        if indexes && indexes.size > 0
-          filter[:index] = indexes
-        end
-
-        if job
-          filter[:job] = job
-        end
+        filter.merge!(target.id_filter)
 
         instances = @instance_manager.filter_by(filter)
 
         ssh_info = instances.map do |instance|
           agent = @instance_manager.agent_client_for(instance)
 
-          logger.info("ssh #{@command} `#{instance.job}/#{instance.index}'")
+          logger.info("ssh #{@command} `#{instance.job}/#{instance.uuid}'")
           result = agent.ssh(@command, @params)
-          result["index"] = instance.index
+          if target.ids_provided?
+            result["id"] = instance.uuid
+          else
+            result["index"] = instance.index
+          end
 
           if Config.default_ssh_options
             result["gateway_host"] = Config.default_ssh_options["gateway_host"]
@@ -58,6 +52,45 @@ module Bosh::Director
 
         # task result
         nil
+      end
+
+      private
+
+      class Target
+        attr_reader :job, :indexes, :ids
+
+        def initialize(target_payload)
+          @job = target_payload['job']
+          @ids = target_payload['ids']
+          @indexes = target_payload['indexes']
+        end
+
+        def ids_provided?
+          @ids && @ids.size > 0
+        end
+
+        def indexes_provided?
+          @indexes && @indexes.size > 0
+        end
+
+        def id_filter
+          if !ids_provided? && indexes_provided?
+            # for backwards compatibility with old cli
+            return {index: @indexes}
+          end
+
+          filter = Hash.new { |h,k| h[k] = [] }
+
+          @ids.each do |id|
+            if id.to_s =~ /^\d+$/
+              filter[:index] << id.to_i
+            else
+              filter[:uuid] << id
+            end
+          end
+
+          filter
+        end
       end
     end
   end

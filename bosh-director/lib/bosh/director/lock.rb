@@ -93,7 +93,7 @@ module Bosh::Director
           end
         end
 
-        raise TimeoutError if Time.now - started > @timeout
+        raise TimeoutError, "Redis lock #{@name} is acquired by another thread" if Time.now - started > @timeout
 
         sleep(0.5)
 
@@ -110,15 +110,20 @@ module Bosh::Director
 
       redis.watch(@name)
       existing_lock = redis.get(@name)
-      lock_id = existing_lock.split(":")[1]
-      if lock_id == @id
-        redis.multi do
-          redis.del(@name)
-        end
-      else
+      if existing_lock.nil?
+        @logger.debug("Lost lock #@name")
         redis.unwatch
+      else
+        lock_id = existing_lock.split(":")[1]
+        if lock_id == @id
+          redis.multi do
+            redis.del(@name)
+          end
+        else
+          redis.unwatch
+        end
+        @logger.debug("Deleted lock: #@name")
       end
-      @logger.debug("Deleted lock: #@name")
     end
 
     def lock_expired?(lock)

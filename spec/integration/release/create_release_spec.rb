@@ -18,11 +18,14 @@ describe 'create release', type: :integration do
           './jobs/errand_without_package.tgz',
           './jobs/fails_with_too_much_output.tgz',
           './jobs/foobar.tgz',
+          './jobs/job_with_many_packages.tgz',
+          './jobs/foobar_without_packages.tgz',
           './jobs/has_drain_script.tgz',
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/job_1_with_pre_start_script.tgz',
           './jobs/job_2_with_pre_start_script.tgz',
           './jobs/transitive_deps.tgz',
+          './jobs/id_job.tgz',
           './packages/a.tgz',
           './packages/b.tgz',
           './packages/bar.tgz',
@@ -31,6 +34,16 @@ describe 'create release', type: :integration do
           './packages/errand1.tgz',
           './packages/fails_with_too_much_output.tgz',
           './packages/foo.tgz',
+          './packages/foo_1.tgz',
+          './packages/foo_2.tgz',
+          './packages/foo_3.tgz',
+          './packages/foo_4.tgz',
+          './packages/foo_5.tgz',
+          './packages/foo_6.tgz',
+          './packages/foo_7.tgz',
+          './packages/foo_8.tgz',
+          './packages/foo_9.tgz',
+          './packages/foo_10.tgz',
           './release.MF'
         ]
 
@@ -70,8 +83,10 @@ describe 'create release', type: :integration do
           'errand_without_package' => ['./templates/run', './monit', './job.MF'],
           'fails_with_too_much_output' => ['./monit', './job.MF'],
           'foobar' => ['./templates/drain.erb', './templates/foobar_ctl', './monit', './job.MF'],
+          'foobar_without_packages' => ['./templates/foobar_ctl', './monit', './job.MF'],
           'job_with_blocking_compilation' => ['./monit', './job.MF'],
           'transitive_deps' => ['./monit', './job.MF'],
+          'id_job' => ['./monit', './templates/config.yml.erb', './job.MF']
         }
 
         job_files.each do |job_name, files|
@@ -94,18 +109,31 @@ describe 'create release', type: :integration do
               package_desc('c', []),
               package_desc('errand1', []),
               package_desc('fails_with_too_much_output', []),
-              package_desc('foo', [])
+              package_desc('foo', []),
+              package_desc('foo_1', []),
+              package_desc('foo_2', []),
+              package_desc('foo_3', []),
+              package_desc('foo_4', []),
+              package_desc('foo_5', []),
+              package_desc('foo_6', []),
+              package_desc('foo_7', []),
+              package_desc('foo_8', []),
+              package_desc('foo_9', []),
+              package_desc('foo_10', []),
             ),
             'jobs' => a_collection_containing_exactly(
               job_desc('errand1'),
               job_desc('errand_without_package'),
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
+              job_desc('foobar_without_packages'),
+              job_desc('job_with_many_packages'),
               job_desc('has_drain_script'),
               job_desc('job_with_blocking_compilation'),
               job_desc('job_1_with_pre_start_script'),
               job_desc('job_2_with_pre_start_script'),
-              job_desc('transitive_deps')
+              job_desc('transitive_deps'),
+              job_desc('id_job')
             ),
             'license' => license_desc,
 

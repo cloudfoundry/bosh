@@ -5,9 +5,19 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment) }
-  let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', reserve_capacity: nil) }
-  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+  let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider, reserve: nil, reserve_existing_ips: nil) }
+  let(:plan) do
+    instance_double('Bosh::Director::DeploymentPlan::Planner',
+      model: deployment,
+      name: 'fake-deployment',
+      ip_provider: fake_ip_provider,
+    )
+  end
+  let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
+  let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
+  let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
+
+  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name', validate_reference_from_job!: true, has_azs?: true) }
 
   let(:foo_properties) do
     {
@@ -35,27 +45,29 @@ describe Bosh::Director::DeploymentPlan::Job do
     properties: bar_properties,
   ) }
 
+  let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+  let(:logger) { double(:logger).as_null_object }
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
-    allow(plan).to receive(:network).and_return(network)
-    allow(plan).to receive(:resource_pool).with('dea').and_return resource_pool
+    allow(plan).to receive(:networks).and_return([network])
+    allow(plan).to receive(:vm_type).with('dea').and_return vm_type
+    allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
+
+    allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
+    allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
   end
 
   describe '#bind_properties' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
-    end
-
     let(:spec) do
       {
         'name' => 'foobar',
         'template' => 'foo',
         'release' => 'appcloud',
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'instances' => 1,
         'networks'  => [{'name' => 'fake-network-name'}],
         'properties' => props,
@@ -126,11 +138,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe 'property mappings' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-    end
-
     let(:foo_properties) do
       {
         'db.user' => {'default' => 'root'},
@@ -158,7 +165,9 @@ describe Bosh::Director::DeploymentPlan::Job do
         'name' => 'foobar',
         'template' => 'foo',
         'release' => 'appcloud',
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'instances' => 1,
         'networks' => [{'name' => 'fake-network-name'}],
         'properties' => props,
@@ -170,8 +179,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     it 'supports property mappings' do
       allow(plan).to receive(:properties).and_return(props)
       expect(plan).to receive(:release).with('appcloud').and_return(release)
-
-      expect(release).to receive(:use_template_named).with('foo').and_return(foo_template)
 
       job.bind_properties
 
@@ -188,11 +195,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
   describe '#validate_package_names_do_not_collide!' do
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
-    end
-
     before { allow(plan).to receive(:properties).and_return({}) }
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -211,7 +213,9 @@ describe Bosh::Director::DeploymentPlan::Job do
             { 'name' => 'foo', 'release' => 'release1' },
             { 'name' => 'bar', 'release' => 'release1' },
           ],
-          'resource_pool' => 'dea',
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'env' => {'key' => 'value'},
           'instances' => 1,
           'networks' => [{ 'name' => 'fake-network-name' }],
         }
@@ -235,9 +239,11 @@ describe Bosh::Director::DeploymentPlan::Job do
           'name' => 'foobar',
           'templates' => [
             { 'name' => 'foo', 'release' => 'release1' },
-            { 'name' => 'bar', 'release' => 'bar_release' },
+            { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'x.y.z.zz'}},
           ],
-          'resource_pool' => 'dea',
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'env' => {'key' => 'value'},
           'instances' => 1,
           'networks' => [{'name' => 'fake-network-name'}],
         }
@@ -248,7 +254,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
       let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
 
-      before { allow(bar_release).to receive(:use_template_named).with('bar').and_return(bar_template) }
+      before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_template) }
       let(:bar_template) do
         instance_double('Bosh::Director::DeploymentPlan::Template', {
           name: 'bar',
@@ -284,18 +290,15 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#spec' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-    end
-
     let(:spec) do
       {
         'name' => 'job1',
         'template' => 'foo',
         'release' => 'release1',
         'instances' => 1,
-        'resource_pool' => 'dea',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
         'networks'  => [{'name' => 'fake-network-name'}],
       }
     end
@@ -376,77 +379,80 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_unallocated_vms' do
-    subject(:job) { described_class.new(deployment) }
+    subject(:job) { described_class.new(logger) }
 
-    it 'allocates a VM to all instances if they are not already bound to a VM' do
-      instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[0] = instance0
+    it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
+      az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
+      instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance_plan0 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
+      obsolete_plan = BD::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
-      instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
-      job.instances[1] = instance1
+      job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
 
       [instance0, instance1].each do |instance|
-        expect(instance).to receive(:bind_unallocated_vm).with(no_args).ordered
-        expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
+        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
       end
 
       job.bind_unallocated_vms
     end
   end
 
-  describe '#bind_instance_networks' do
-    subject(:job) { described_class.new(plan) }
+  describe '#bind_instances' do
+    subject(:job) { described_class.new(logger) }
 
-    before { job.name = 'job-name' }
+    it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
+      az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
+      instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
+      instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
+      instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
+      instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1, network)
+      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1, network, '10.0.0.1', 'manual')
+      instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
+          desired_instance: BD::DeploymentPlan::DesiredInstance.new,
+          existing_instance: nil,
+          instance: instance0,
+        })
+      instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new({
+          desired_instance: BD::DeploymentPlan::DesiredInstance.new,
+          existing_instance: nil,
+          instance: instance1,
+        })
+      instance_plan0.network_plans = [
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_reservation),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_obsolete_reservation, obsolete: true),
+      ]
+      instance_plan1.network_plans = [
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_reservation),
+        BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_existing_reservation),
+      ]
 
-    before { job.instances[0] = instance }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, vm: nil) }
+      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
-    before { allow(plan).to receive(:network).with('network-name').and_return(network) }
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
+      job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
 
-    before do
-      allow(instance).to receive(:network_reservations).
-        with(no_args).
-        and_return('network-name' => network_reservation)
-    end
-    let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic }
-
-    context 'when network reservation is already reserved' do
-      before { network_reservation.reserved = true }
-
-      it 'does not reserve network reservation again' do
-        expect(network).to_not receive(:reserve!)
-        job.bind_instance_networks
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:ensure_model_bound).with(no_args).ordered
       end
-    end
-
-    context 'when network reservation is not reserved' do
-      before { network_reservation.reserved = false }
-
-      it 'reserves network reservation with the network' do
-        expect(network).to receive(:reserve!).
-          with(network_reservation, "`job-name/3'")
-
-        job.bind_instance_networks
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
       end
 
-      context 'when instance has idle vm' do
-        let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm') }
-        before { allow(instance).to receive(:vm).and_return(vm) }
+      job.bind_instances(fake_ip_provider)
 
-        it 'sets network reservation for idle vm' do
-          expect(network).to receive(:reserve!)
-          expect(vm).to receive(:use_reservation).with(network_reservation)
-
-          job.bind_instance_networks
-        end
-      end
+      expect(fake_ip_provider).to have_received(:reserve).with(instance0_reservation)
+      expect(fake_ip_provider).to have_received(:reserve).with(instance1_reservation)
+      expect(fake_ip_provider).to_not have_received(:reserve).with(instance0_obsolete_reservation)
+      expect(fake_ip_provider).to_not have_received(:reserve_existing_ips).with(instance1_existing_reservation)
     end
   end
 
   describe '#starts_on_deploy?' do
-    subject { described_class.new(plan) }
+    subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
@@ -460,7 +466,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#can_run_as_errand?' do
-    subject { described_class.new(plan) }
+    subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }
@@ -470,6 +476,49 @@ describe Bosh::Director::DeploymentPlan::Job do
     context "when lifecycle profile is not errand" do
       before { subject.lifecycle = 'other' }
       its(:can_run_as_errand?) { should be(false) }
+    end
+  end
+
+  describe '#add_instance_plans' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'template' => 'foo',
+        'release' => 'appcloud',
+        'instances' => 1,
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => {},
+        'template' => %w(foo bar),
+      }
+    end
+
+    it 'should sort instance plans on adding them' do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
+
+      instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 1, 'started', deployment, {}, nil, logger)
+      instance1.bind_new_instance_model
+      instance1.mark_as_bootstrap
+      instance2 = BD::DeploymentPlan::Instance.create_from_job(job, 2, 'started', deployment, {}, nil, logger)
+      instance2.bind_new_instance_model
+      instance3 = BD::DeploymentPlan::Instance.create_from_job(job, 3, 'started', deployment, {}, nil, logger)
+      instance3.bind_new_instance_model
+
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan3 = BD::DeploymentPlan::InstancePlan.new(instance: instance3, existing_instance: nil, desired_instance: nil)
+
+      unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
+      job.add_instance_plans(unsorted_plans)
+
+      needed_instance_plans = [instance_plan1, instance_plan2]
+
+      expect(job.needed_instance_plans).to eq(needed_instance_plans)
+      expect(job.obsolete_instance_plans).to eq([instance_plan3])
     end
   end
 end

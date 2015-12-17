@@ -1,11 +1,26 @@
 require 'spec_helper'
-require 'logger'
-require 'bosh/director/instance_updater/preparer'
 
 module Bosh::Director
   describe InstanceUpdater::Preparer do
-    subject(:preparer) { described_class.new(instance, agent_client, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+    subject(:preparer) { described_class.new(instance_plan, agent_client, logger) }
+    let(:instance) do
+      instance_double(
+        'Bosh::Director::DeploymentPlan::Instance',
+        deployment_model: Models::Deployment.make,
+        rendered_templates_archive: nil,
+        configuration_hash: {'fake-spec' => true},
+        template_hashes: []
+      )
+    end
+    let(:instance_plan) do
+      job = DeploymentPlan::Job.new(logger)
+      Bosh::Director::DeploymentPlan::InstancePlan.new(
+        desired_instance: DeploymentPlan::DesiredInstance.new(job),
+        existing_instance: nil,
+        instance: instance,
+        needs_recreate?: false
+      )
+    end
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
     describe '#prepare' do
@@ -15,17 +30,28 @@ module Bosh::Director
           preparer.prepare
         end
       end
+      before do
+        allow(instance_plan).to receive(:needs_shutting_down?).with(no_args).and_return(false)
+      end
 
-      context "when instance's resource pool has not changed" do
-        before { allow(instance).to receive(:resource_pool_changed?).with(no_args).and_return(false) }
-
+      context 'when nothing has changed' do
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          before { allow(instance).to receive_messages(spec: 'fake-spec') }
+          before do
+            expected_instance_spec = DeploymentPlan::InstanceSpec.new(apply_spec, instance)
+            allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).with(instance_plan).and_return(expected_instance_spec)
+          end
+          let(:apply_spec) do
+            {'template_hashes' =>[], 'configuration_hash' =>{'fake-spec' =>true}}
+          end
 
-          it 'sends prepare message to the instance' do
-            expect(agent_client).to receive(:prepare).with('fake-spec')
-            preparer.prepare
+          context 'when instance does not need to be recreated' do
+            before { allow(instance_plan).to receive_messages(needs_recreate?: false) }
+
+            it 'sends prepare message to the instance' do
+              expect(agent_client).to receive(:prepare).with(apply_spec)
+              preparer.prepare
+            end
           end
 
           context "and agent responds to 'prepare' message successfully" do
@@ -60,18 +86,9 @@ module Bosh::Director
           before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
           it_does_not_send_prepare
         end
-      end
 
-      context "when instance's resource pool has changed" do
-        before { allow(instance).to receive(:resource_pool_changed?).with(no_args).and_return(true) }
-
-        context "when state of the instance is not 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          it_does_not_send_prepare
-        end
-
-        context "when state of the instance is 'detached'" do
-          before { allow(instance).to receive(:state).with(no_args).and_return('detached') }
+        context 'when instance needs to be shut down' do
+          before { allow(instance_plan).to receive_messages(needs_shutting_down?: true) }
           it_does_not_send_prepare
         end
       end

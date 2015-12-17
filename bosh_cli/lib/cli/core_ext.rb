@@ -5,7 +5,7 @@ module BoshExtensions
   def say(message, sep = "\n")
     return unless Bosh::Cli::Config.output && message
     message = message.dup.to_s
-    sep = "" if message[-1..-1] == sep
+    sep = "" if message[-1] == sep
     Bosh::Cli::Config.output.print("#{$indent}#{message}#{sep}")
   end
 

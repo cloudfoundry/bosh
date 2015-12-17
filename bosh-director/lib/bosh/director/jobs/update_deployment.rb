@@ -18,17 +18,34 @@ module Bosh::Director
 
       def perform
         logger.info('Reading deployment manifest')
+
         manifest_text = File.read(@manifest_file_path)
         logger.debug("Manifest:\n#{manifest_text}")
         deployment_manifest_hash = Psych.load(manifest_text)
+
+        cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+        if cloud_config_model.nil?
+          logger.debug("No cloud config uploaded yet.")
+        else
+          logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
+        end
+
         deployment_name = deployment_manifest_hash['name']
         with_deployment_lock(deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
 
-          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
-          planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-          deployment_plan = planner_factory.planner(deployment_manifest_hash, cloud_config_model, @options)
+          deployment_plan = nil
+
+          event_log.begin_stage('Preparing deployment', 1)
+          event_log.track('Preparing deployment') do
+            planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+            deployment_plan.bind_models
+            render_job_templates(deployment_plan.jobs_starting_on_deploy)
+          end
+
+          deployment_plan.compile_packages
 
           update_step(deployment_plan).perform
           @notifier.send_end_event
@@ -53,18 +70,12 @@ module Bosh::Director
       # Job tasks
 
       def update_step(deployment_plan)
-        resource_pool_updaters = deployment_plan.resource_pools.map do |resource_pool|
-          ResourcePoolUpdater.new(resource_pool)
-        end
-        resource_pools = DeploymentPlan::ResourcePools.new(event_log, resource_pool_updaters)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           event_log,
-          resource_pools,
           deployment_plan,
           multi_job_updater,
-          Config.cloud,
-          App.instance.blobstores.blobstore
+          Config.cloud
         )
       end
 
@@ -72,7 +83,14 @@ module Bosh::Director
 
       def multi_job_updater
         @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(@blobstore))
+          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(Config.cloud, logger))
+        end
+      end
+
+      def render_job_templates(jobs)
+        job_renderer = JobRenderer.create
+        jobs.each do |job|
+          job_renderer.render_job_instances(job.needed_instance_plans)
         end
       end
     end

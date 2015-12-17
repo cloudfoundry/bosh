@@ -3,7 +3,10 @@ require 'spec_helper'
 describe 'cli: stemcell', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:expected_id) { Digest::SHA1.hexdigest("STEMCELL\n") } # this is the contents of image file
+  # NOTE: The dummy CPI derives stemcell IDs from the SHA1 of the contained
+  # "image" file. If that file changes, update the value here using:
+  # `shasum image`
+  let(:expected_id) { '68aab7c44c857217641784806e2eeac4a3a99d1c' }
 
   it 'verifies a sample valid stemcell', no_reset: true do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
@@ -141,7 +144,7 @@ describe 'cli: stemcell', type: :integration do
           expect(File).to be_exists(stemcell_path)
 
           # Upload a new stemcell with same version and name as the existing one, but is of different image content
-          new_id = Digest::SHA1.hexdigest("STEMCELL_1\n")
+          new_id = 'adc4232dcd3e06779c058224054d3d3238041367'
           new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
           output = bosh_runner.run("upload stemcell #{new_local_stemcell_path} --fix")
           expect(output).to match /Stemcell uploaded and created/
@@ -239,7 +242,7 @@ describe 'cli: stemcell', type: :integration do
             expect(File).to be_exists(stemcell_path)
 
             # Upload a new stemcell with same version and name as the existing one, but is of different image content
-            new_id = Digest::SHA1.hexdigest("STEMCELL_1\n")
+            new_id = 'adc4232dcd3e06779c058224054d3d3238041367'
             new_stemcell_url = file_server.http_url("valid_stemcell_with_different_content.tgz")
             output = bosh_runner.run("upload stemcell #{new_stemcell_url} --fix")
             expect(output).to match /Stemcell uploaded and created/
@@ -263,7 +266,7 @@ describe 'cli: stemcell', type: :integration do
 
       context 'when a sha1 is provided' do
         it 'accepts shas' do
-          output = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 2ff0f2c5aac7ec46e0482d764fe8effed930bf0a")
+          output = bosh_runner.run("upload stemcell #{stemcell_url} --sha1 73b51e1285240898f34b0fac22aba7ad4cc6ac65")
           expect(output).to include("Stemcell uploaded and created.")
         end
 
@@ -272,7 +275,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to include("Error 50005")
+          expect(output).to include("Error 50007")
           expect(exit_code).to eq(1)
         end
       end

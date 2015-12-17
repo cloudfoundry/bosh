@@ -180,6 +180,15 @@ module Bosh
           body
         end
 
+        def delete_orphan_disk_by_disk_cid(orphan_disk_cid)
+          request_and_track(:delete, "/disks/#{orphan_disk_cid}")
+        end
+
+        def list_orphan_disks
+          _, body = get_json_with_status('/disks')
+          body
+        end
+
         def upload_release(filename, options = {})
           options                = options.dup
           options[:content_type] = 'application/x-compressed'
@@ -251,7 +260,7 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
-        def setup_ssh(deployment_name, job, index, user,
+        def setup_ssh(deployment_name, job, id, user,
           public_key, password, options = {})
           options = options.dup
 
@@ -262,7 +271,8 @@ module Bosh
             'deployment_name' => deployment_name,
             'target'          => {
               'job'     => job,
-              'indexes' => [index].compact
+              'indexes' => [id].compact, # for backwards compatibility with old director
+              'ids' => [id].compact,
             },
             'params'          => {
               'user'       => user,
@@ -277,7 +287,7 @@ module Bosh
           request_and_track(:post, url, options)
         end
 
-        def cleanup_ssh(deployment_name, job, user_regex, indexes, options = {})
+        def cleanup_ssh(deployment_name, job, user_regex, id, options = {})
           options = options.dup
 
           url = "/deployments/#{deployment_name}/ssh"
@@ -287,7 +297,8 @@ module Bosh
             'deployment_name' => deployment_name,
             'target'          => {
               'job'     => job,
-              'indexes' => (indexes || []).compact
+              'indexes' => (id || []).compact,
+              'ids' => (id || []).compact,
             },
             'params'          => { 'user_regex' => user_regex }
           }
@@ -300,13 +311,13 @@ module Bosh
         end
 
         def change_job_state(deployment_name, manifest_yaml,
-          job, index, new_state, options = {})
+          job, index_or_id, new_state, options = {})
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
 
           url = "/deployments/#{deployment_name}/jobs/#{job}"
-          url += "/#{index}" if index
+          url += "/#{index_or_id}" if index_or_id
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
 
@@ -357,22 +368,28 @@ module Bosh
           get_task_result(task_id)
         end
 
-        def fetch_vm_state(deployment_name, options = {})
+        def fetch_vm_state(deployment_name, options = {}, full = true)
           options = options.dup
 
-          url = "/deployments/#{deployment_name}/vms?format=full"
+          url = "/deployments/#{deployment_name}/vms"
 
-          status, task_id = request_and_track(:get, url, options)
+          if full
+            status, task_id = request_and_track(:get, "#{url}?format=full", options)
 
-          if status != :done
-            raise DirectorError, 'Failed to fetch VMs information from director'
+            raise DirectorError, 'Failed to fetch VMs information from director' if status != :done
+
+            output = get_task_result_log(task_id)
+          else
+            status, output, _ = get(url, nil, nil, {}, options)
+
+            raise DirectorError, 'Failed to fetch VMs information from director' if status != 200
           end
 
-          output = get_task_result_log(task_id)
-
-          output.to_s.split("\n").map do |vm_state|
+          output = output.to_s.split("\n").map do |vm_state|
             JSON.parse(vm_state)
           end
+
+          output.flatten
         end
 
         def download_resource(id)
@@ -615,6 +632,13 @@ module Bosh
         def update_cloud_config(cloud_config_yaml)
           status, _ = post('/cloud_configs', 'text/yaml', cloud_config_yaml)
           status == 201
+        end
+
+        def cleanup(config = {})
+          options = {}
+          options[:payload] = JSON.generate('config' => config)
+          options[:content_type] = 'application/json'
+          request_and_track(:post, '/cleanup', options)
         end
 
         def post(uri, content_type = nil, payload = nil, headers = {}, options = {})

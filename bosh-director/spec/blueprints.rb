@@ -88,8 +88,17 @@ module Bosh::Director::Models
     deployment  { Deployment.make }
     job         { Sham.job }
     index       { Sham.index }
-    vm          { Vm.make }
+    vm          { Vm.make(deployment: object.deployment) }
     state       { "started" }
+  end
+
+  IpAddress.blueprint do
+    address { NetAddr::CIDR.create(Sham.ip) }
+    instance  { Instance.make }
+    static { false }
+    network_name { Sham.name }
+    task_id { Sham.name }
+    created_at { Time.now }
   end
 
   Task.blueprint do
@@ -117,6 +126,18 @@ module Bosh::Director::Models
     snapshot_cid    { Sham.snapshot_cid }
   end
 
+  OrphanDisk.blueprint do
+    deployment_name { Sham.name }
+    disk_cid        { Sham.disk_cid }
+    instance_name   { Sham.name }
+  end
+
+  OrphanSnapshot.blueprint do
+    orphan_disk         { OrphanDisk.make }
+    snapshot_cid        { Sham.snapshot_cid }
+    snapshot_created_at { Time.now }
+  end
+
   DeploymentProblem.blueprint do
     deployment  { Deployment.make }
     type        { "inactive_disk" }
@@ -135,6 +156,12 @@ module Bosh::Director::Models
 
   CloudConfig.blueprint do
     manifest { Bosh::Spec::Deployments.simple_cloud_config }
+  end
+
+  DeploymentProperty.blueprint do
+    deployment { Deployment.make }
+    name { Sham.name }
+    value { "value" }
   end
 
   module Dns

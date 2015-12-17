@@ -19,6 +19,7 @@ module Bosh::Director::Jobs
       let(:compile_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep') }
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
+      let(:job_renderer) { Bosh::Director::JobRenderer.new(instance_double(Bosh::Blobstore::BaseClient), logger) }
 
       before do
         allow(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new)
@@ -27,6 +28,7 @@ module Bosh::Director::Jobs
             .and_return(update_step)
         allow(Bosh::Director::DeploymentPlan::Notifier).to receive(:new)
             .and_return(notifier)
+        allow(Bosh::Director::JobRenderer).to receive(:create).and_return(job_renderer)
       end
 
       context 'when all steps complete' do
@@ -37,19 +39,30 @@ module Bosh::Director::Jobs
         let(:planner_factory) do
           instance_double(
             'Bosh::Director::DeploymentPlan::PlannerFactory',
-            planner: planner,
+            create_from_manifest: planner,
           )
         end
         let(:planner) do
-          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', resource_pools: [])
+          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
         end
+        let(:deployment_job) { Bosh::Director::DeploymentPlan::Job.new(logger) }
 
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
-          expect(planner_factory).to receive(:planner).and_return(planner).ordered
           expect(update_step).to receive(:perform).ordered
           expect(notifier).to receive(:send_end_event).ordered
+          allow(planner).to receive(:bind_models)
+          allow(planner).to receive(:validate_packages)
+          allow(planner).to receive(:compile_packages)
+        end
+
+        it 'binds models, renders templates, compiles packages' do
+          expect(planner).to receive(:bind_models)
+          expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
+          expect(planner).to receive(:compile_packages)
+
+          job.perform
         end
 
         context 'when a cloud_config is passed in' do

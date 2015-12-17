@@ -4,11 +4,11 @@ module Bosh::Director
       class BaseController < Sinatra::Base
         include ApiHelper
         include Http
-        include DnsHelper
 
         def initialize(config)
           super()
           @config = config
+          @logger = Config.logger
           @identity_provider = config.identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
@@ -21,7 +21,8 @@ module Bosh::Director
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
-          @logger = Config.logger
+          @dns_manager = DnsManager.create
+          @disk_manager = DiskManager.new(nil, @logger)
         end
 
         register Bosh::Director::Api::Extensions::Scoping

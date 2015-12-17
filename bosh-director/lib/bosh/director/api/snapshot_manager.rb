@@ -29,8 +29,10 @@ module Bosh::Director
       def snapshots(deployment, job=nil, index=nil)
         filter = { deployment: deployment }
         filter[:job] = job if job
-        filter[:index] = index if index
-
+        if index
+          filter_key = index.to_s =~ /^\d+$/ ? :index : :uuid
+          filter[filter_key] = index
+        end
         result = []
         instances = Models::Instance.filter(filter).all
 
@@ -51,9 +53,10 @@ module Bosh::Director
         result
       end
 
-      def self.delete_snapshots(snapshots)
+      def self.delete_snapshots(snapshots, options={})
+        keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
         snapshots.each do |snapshot|
-          Config.cloud.delete_snapshot(snapshot.snapshot_cid)
+          Config.cloud.delete_snapshot(snapshot.snapshot_cid) unless keep_snapshots_in_the_cloud
           snapshot.delete
         end
       end

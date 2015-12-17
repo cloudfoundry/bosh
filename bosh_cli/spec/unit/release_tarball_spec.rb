@@ -66,7 +66,7 @@ foo: bar
       tarball_path = spec_asset('release_no_version.tgz')
       release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
       release_tarball.unpack
-      new_tar_path = File.join(Dir.mktmpdir, "newly-packed.tgz")
+      new_tar_path = Tempfile.new('newly-packed.tgz').path
       release_tarball.create_from_unpacked(new_tar_path)
 
       expect(new_tar_path).to have_same_tarball_contents tarball_path
@@ -76,8 +76,7 @@ foo: bar
       tarball_path = spec_asset('release_no_version.tgz')
       release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
       release_tarball.unpack
-      new_tar_path = File.join(Dir.mktmpdir, "newly-  packed.tgz")
-
+      new_tar_path = Tempfile.new('newly-  packed.tgz').path
       release_tarball.create_from_unpacked(new_tar_path)
 
       expect(new_tar_path).to have_same_tarball_contents tarball_path
@@ -88,12 +87,14 @@ foo: bar
       manifest["extra_stuff"] = "it's here!"
       release_tarball.replace_manifest(manifest)
 
-      new_tar_path = File.join(Dir.mktmpdir, "newly-packed.tgz")
+      # ruby 1.9.3 garbage-collects tmp_file if not assigned to a variable
+      tmp_file = Tempfile.new('newly-packed.tgz')
+      new_tar_path = tmp_file.path
       release_tarball.create_from_unpacked(new_tar_path)
       expect(File.exist?(new_tar_path)).to be(true)
 
       new_tarball = Bosh::Cli::ReleaseTarball.new(new_tar_path)
-      expect(new_tarball).to be_valid, "Tarball is not valid, errors: #{new_tarball.errors}"
+      expect(new_tarball).to be_valid
       expect(new_tarball.manifest).to match release_tarball.manifest
     end
   end

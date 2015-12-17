@@ -262,8 +262,18 @@ module ManifestHelper
       { 'name' => 'network-name', 'subnets' => [] }.merge(overrides)
     end
 
+    def manual_network(overrides = {})
+      ManifestHelper::network({
+          'type' => 'manual',
+          'subnets' => [{
+              'range' => '10.0.0.1/24',
+              'gateway' => '10.0.0.1'
+            }]
+        }).merge(overrides)
+    end
+
     def disk_pool(name='dp-name')
-      {'name' => name, 'disk_size' => 10000}.merge(overrides)
+      {'name' => name, 'disk_size' => 10000}
     end
 
     def job(overrides = {})

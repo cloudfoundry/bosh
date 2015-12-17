@@ -41,9 +41,7 @@ module Bosh::Director
       end
 
       def delete_disk_reference
-        @disk.db.transaction do
-          @disk.update(active: false)
-        end
+        @disk.update(active: false)
 
         # If VM is present we try to unmount and detach disk from VM
         if @vm && @vm.cid && cloud.has_vm?(@vm.cid)
@@ -74,17 +72,8 @@ module Bosh::Director
           end
         end
 
-        @logger.debug('Deleting disk snapshots')
-        Api::SnapshotManager.delete_snapshots(@disk.snapshots)
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
 
-        begin
-          @logger.debug('Sending cpi request: delete_disk')
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound
-        end
-
-        @logger.debug('Removing disk reference from database')
-        @disk.destroy
       end
     end
   end

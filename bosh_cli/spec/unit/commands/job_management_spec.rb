@@ -138,8 +138,8 @@ describe Bosh::Cli::Command::JobManagement do
         expect(command).to receive(:say).with("Performing `#{verb} dea/*#{operation_description_extra}'...")
         expect(command).to receive(:say).with %r{\ndea/\* #{past_verb}}
         command.public_send(method_name, 'dea')
-
       end
+
       it 'changes the job state' do
         expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', nil, new_state, {skip_drain: false})
         command.public_send(method_name, 'dea')

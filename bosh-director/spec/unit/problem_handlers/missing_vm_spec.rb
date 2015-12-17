@@ -1,18 +1,33 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
-
-    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007') }
+    let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
+    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model) }
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
+    let(:spec) do
+      {
+        'vm_type' => {
+          'name' => 'steve',
+          'cloud_properties' => { 'foo' => 'bar' },
+        },
+        'stemcell' => manifest['resource_pools'].first['stemcell'],
+        'networks' => networks
+      }
+    end
+    let(:networks) { {'a' => {'ip' => '192.168.1.2'}} }
+
+    before do
+      fake_app
+      allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
+    end
 
     it 'registers under missing_vm type' do
       expect(handler).to be_kind_of(described_class)
     end
 
-    it 'should call recreate_vm when set to auto' do 
+    it 'should call recreate_vm when set to auto' do
       allow(handler).to receive(:recreate_vm)
       expect(handler).to receive(:recreate_vm).with(vm)
       handler.auto_resolve
@@ -23,18 +38,6 @@ module Bosh::Director
     end
 
     describe 'Resolutions:' do
-      let(:spec) do
-        {
-          'resource_pool' => {
-            'stemcell' => {
-              'name' => 'stemcell-name',
-              'version' => '3.0.2'
-            },
-            'cloud_properties' => { 'foo' => 'bar' },
-          },
-          'networks' => ['A', 'B', 'C']
-        }
-      end
       let(:fake_cloud) { instance_double('Bosh::Cloud') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
@@ -44,23 +47,27 @@ module Bosh::Director
       end
 
       it 'recreates a VM' do
-        vm.update(:apply_spec => spec, env: { 'key1' => 'value1' })
-        Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id)
-        Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+        prepare_deploy(manifest, manifest)
+
+        instance_model = Models::Instance.make(job: manifest['jobs'].first['name'], index: 0, vm: vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' }, spec: spec)
+        vm.update(env: { 'key1' => 'value1' }, :instance => instance_model)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
-        allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+        allow(AgentClient).to receive(:with_vm).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered
-        expect(fake_new_agent).to receive(:apply).with(spec).ordered
+        expect(fake_new_agent).to receive(:apply).with(anything).ordered
+        expect(fake_new_agent).to receive(:get_state).and_return(spec).ordered
+        expect(fake_new_agent).to receive(:apply).with(anything).ordered
         expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
         expect(fake_new_agent).to receive(:start).ordered
 
         expect(fake_cloud).to receive(:delete_vm).with('vm-cid')
         expect(fake_cloud).
           to receive(:create_vm).
-          with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+          with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, { 'foo' => 'bar' }, anything, [], { 'key1' => 'value1' }).
+          and_return(vm.cid)
 
         fake_job_context
 

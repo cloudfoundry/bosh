@@ -31,8 +31,9 @@ module Bosh::Director
 
       def description
         job = @instance.job || "unknown job"
+        uuid = @instance.uuid || "unknown id"
         index = @instance.index || "unknown index"
-        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        disk_label = "`#{@disk.disk_cid}' (#{@disk.size.to_i}M) for instance `#{job}/#{uuid} (#{index})'"
         "Disk #{disk_label} is inactive"
       end
 
@@ -82,29 +83,13 @@ module Bosh::Director
           end
         end
 
-        # FIXME: Currently there is no good way to know if delete_disk
-        # failed because of cloud error or because disk doesn't exist
-        # in vsphere_disks.
-        begin
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound, RuntimeError => e # FIXME
-          @logger.warn(e)
-        end
-
-        @disk.destroy
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
       end
 
       def disk_mounted?
         return false if @vm.nil?
-
-        begin
-          agent_timeout_guard(@vm) do |agent|
-            agent.list_disk.include?(@disk.disk_cid)
-          end
-        rescue RuntimeError
-          # old stemcells without 'list_disk' support. We need to play
-          # conservative and assume that the disk is mounted.
-          true
+        agent_timeout_guard(@vm) do |agent|
+          agent.list_disk.include?(@disk.disk_cid)
         end
       end
     end

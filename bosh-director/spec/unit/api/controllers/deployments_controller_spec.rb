@@ -98,8 +98,9 @@ module Bosh::Director
         describe 'job management' do
           shared_examples 'change state' do
             it 'allows to change state' do
-              Models::Deployment.
-                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
             end
@@ -112,8 +113,9 @@ module Bosh::Director
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
                   with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
-              Models::Deployment.
-                  create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+              deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+              instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
               match = last_response.location.match(%r{/tasks/no_content_length})
               expect(match).to_not be_nil
@@ -126,15 +128,22 @@ module Bosh::Director
           end
 
           context 'for all jobs in deployment' do
-            let (:path) {"/foo/jobs/*?state=stopped"}
+            let (:path) { '/foo/jobs/*?state=stopped'
+            }
             it_behaves_like 'change state'
           end
           context 'for one job in deployment' do
-            let (:path) {"/foo/jobs/dea?state=stopped"}
+            let (:path) { '/foo/jobs/dea?state=stopped'
+            }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment' do
-            let (:path) {"/foo/jobs/dea/2?state=stopped"}
+            let (:path) { '/foo/jobs/dea/2?state=stopped'
+            }
+            it_behaves_like 'change state'
+
+            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped'
+            }
             it_behaves_like 'change state'
           end
 
@@ -149,14 +158,14 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
-          it 'does not like invalid indices' do
-            put '/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-           expect(last_response.status).to eq(400)
+          it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
+            put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            expect(last_response.status).to eq(400)
           end
 
           it 'can get job information' do
             deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
-            instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', state: 'started')
+            instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', uuid: 'fake_uuid', state: 'started')
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
             get '/foo/jobs/nats/0', {}
@@ -166,6 +175,7 @@ module Bosh::Director
                 'deployment' => 'foo',
                 'job' => 'nats',
                 'index' => 0,
+                'id' => 'fake_uuid',
                 'state' => 'started',
                 'disks' => %w[disk_cid]
             }
@@ -180,6 +190,10 @@ module Bosh::Director
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
+            let(:instance) {Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')}
+            before do
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
+            end
 
             context 'without the "skip_drain" param' do
               it 'drains' do
@@ -190,6 +204,9 @@ module Bosh::Director
                   .and_return(OpenStruct.new(:id => 1))
 
                 put '/test_deployment/jobs/job_name/0', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                expect(last_response).to be_redirect
+
+                put '/test_deployment/jobs/job_name/0B949287-CDED-4761-9002-FC4035E11B21', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
                 expect(last_response).to be_redirect
               end
             end
@@ -238,25 +255,25 @@ module Bosh::Director
         describe 'listing deployments' do
           it 'lists deployment info in deployment name order' do
 
-            release_1 = Models::Release.create(:name => "release-1")
+            release_1 = Models::Release.create(:name => 'release-1')
             release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
             release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
-            release_2 = Models::Release.create(:name => "release-2")
+            release_2 = Models::Release.create(:name => 'release-2')
             release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
 
-            stemcell_1_1 = Models::Stemcell.create(name: "stemcell-1", version: 1, cid: 123)
-            stemcell_1_2 = Models::Stemcell.create(name: "stemcell-1", version: 2, cid: 123)
-            stemcell_2_1 = Models::Stemcell.create(name: "stemcell-2", version: 1, cid: 124)
+            stemcell_1_1 = Models::Stemcell.create(name: 'stemcell-1', version: 1, cid: 123)
+            stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
+            stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
 
             old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
             new_cloud_config = Models::CloudConfig.make(manifest: {})
 
             deployment_3 = Models::Deployment.create(
-              name: "deployment-3",
+              name: 'deployment-3',
             )
 
             deployment_2 = Models::Deployment.create(
-              name: "deployment-2",
+              name: 'deployment-2',
               cloud_config: new_cloud_config,
             ).tap do |deployment|
               deployment.add_stemcell(stemcell_1_1)
@@ -266,7 +283,7 @@ module Bosh::Director
             end
 
             deployment_1 = Models::Deployment.create(
-              name: "deployment-1",
+              name: 'deployment-1',
               cloud_config: old_cloud_config,
             ).tap do |deployment|
               deployment.add_stemcell(stemcell_1_1)
@@ -459,7 +476,7 @@ module Bosh::Director
           before do
             deployment = Models::Deployment.make(name: 'mycloud')
 
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
             disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
 
@@ -477,6 +494,11 @@ module Bosh::Director
 
             it 'should create a snapshot for a deployment' do
               post '/mycloud/snapshots'
+              expect_redirect_to_queued_task(last_response)
+            end
+
+            it 'should create a snapshot for a job and id' do
+              post '/mycloud/jobs/job/abc123/snapshots'
               expect_redirect_to_queued_task(last_response)
             end
           end
@@ -526,7 +548,6 @@ module Bosh::Director
             end
 
             let!(:deployment_model) do
-
               manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
               manifest_hash['jobs'] << {
                 'name' => 'another-errand',
@@ -543,11 +564,6 @@ module Bosh::Director
               )
             end
             let(:cloud_config) { Models::CloudConfig.make }
-
-            before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-            let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil) }
-
-            before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
 
             context 'authenticated access' do
               before { authorize 'admin', 'admin' }

@@ -14,8 +14,8 @@ describe 'health_monitor: 2', type: :integration do
       deploy_from_scratch(manifest_hash: deployment_hash)
 
       # wait_for_vm will wait here maximum amount of time!
-      director.vm('foobar/0').kill_agent
-      expect(director.wait_for_vm('foobar/0', 150)).to be_nil
+      director.vm('foobar', '0').kill_agent
+      expect(director.wait_for_vm('foobar', '0', 150)).to be_nil
     end
   end
 
@@ -31,9 +31,9 @@ describe 'health_monitor: 2', type: :integration do
       deployment_hash['jobs'][0]['persistent_disk'] = 20_480
       deploy_from_scratch(manifest_hash: deployment_hash)
 
-      original_vm = director.vm('foobar/0')
+      original_vm = director.vm('foobar', '0')
       original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar/0', 150)
+      resurrected_vm = director.wait_for_vm('foobar', '0', 150)
       expect(resurrected_vm.cid).to_not eq(original_vm.cid)
     end
   end

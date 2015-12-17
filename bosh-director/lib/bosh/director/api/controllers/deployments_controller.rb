@@ -3,13 +3,14 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class DeploymentsController < BaseController
-      get '/:deployment/jobs/:job/:index' do
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      get '/:deployment/jobs/:job/:index_or_id' do
+        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
 
         response = {
           deployment: params[:deployment],
           job: instance.job,
           index: instance.index,
+          id: instance.uuid,
           state: instance.state,
           disks: instance.persistent_disks.map {|d| d.disk_cid}
         }
@@ -49,12 +50,11 @@ module Bosh::Director
       end
 
       # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}&skip_drain=true
-      put '/:deployment/jobs/:job/:index', :consumes => :yaml do
-        begin
-          index = Integer(params[:index])
-        rescue ArgumentError
-          raise InstanceInvalidIndex, "Invalid instance index `#{params[:index]}'"
-        end
+      put '/:deployment/jobs/:job/:index_or_id', :consumes => :yaml do
+        validate_instance_index_or_id(params[:index_or_id])
+
+        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+        index = instance.index
 
         options = {
           'job_states' => {
@@ -75,17 +75,17 @@ module Bosh::Director
       end
 
       # GET /deployments/foo/jobs/dea/2/logs
-      get '/:deployment/jobs/:job/:index/logs' do
+      get '/:deployment/jobs/:job/:index_or_id/logs' do
         deployment = params[:deployment]
         job = params[:job]
-        index = params[:index]
+        index_or_id = params[:index_or_id]
 
         options = {
           'type' => params[:type].to_s.strip,
           'filters' => params[:filters].to_s.strip.split(/[\s\,]+/)
         }
 
-        task = @instance_manager.fetch_logs(current_user, deployment, job, index, options)
+        task = @instance_manager.fetch_logs(current_user, deployment, job, index_or_id, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -108,14 +108,18 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      put '/:deployment/jobs/:job/:index/resurrection', consumes: :json do
+      put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
         payload = json_decode(request.body)
 
-        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index], payload['resurrection_paused'])
+        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index_or_id], payload['resurrection_paused'])
       end
 
-      post '/:deployment/jobs/:job/:index/snapshots' do
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index])
+      post '/:deployment/jobs/:job/:index_or_id/snapshots' do
+        if params[:index_or_id].to_s =~ /^\d+$/
+          instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+        else
+          instance = @instance_manager.filter_by(uuid: params[:index_or_id]).first
+        end
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
 
@@ -296,7 +300,7 @@ module Bosh::Director
       end
 
       get '/:deployment_name/errands', scope: :read do
-        deployment_plan = load_deployment_plan_without_binding
+        deployment_plan = load_deployment_plan
 
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)
 
@@ -309,13 +313,11 @@ module Bosh::Director
 
       private
 
-      def load_deployment_plan_without_binding
+      def load_deployment_plan
         deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
-        manifest_hash = Psych.load(deployment_model.manifest)
-        cloud_config_model = deployment_model.cloud_config
 
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
-        planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
+        planner_factory.create_from_model(deployment_model)
       end
 
       def convert_job_instance_hash(hash)
@@ -333,6 +335,16 @@ module Bosh::Director
         }
         instances = @instance_manager.filter_by(filter)
         instances.any?
+      end
+
+      def validate_instance_index_or_id(str)
+        begin
+          Integer(str)
+        rescue ArgumentError
+          if str !~ /^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{27}$/
+            raise InstanceInvalidIndex, "Invalid instance index or id `#{str}'"
+          end
+        end
       end
     end
   end

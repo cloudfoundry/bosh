@@ -148,7 +148,7 @@ module Bosh::Director
           if BlobUtil.exists_in_global_cache?(package, cache_key)
             event_log.track("Downloading '#{package.desc}' from global cache") do
               # has side effect of putting CompiledPackage model in db
-              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
+              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell.model, cache_key, dependency_key)
             end
           end
         end

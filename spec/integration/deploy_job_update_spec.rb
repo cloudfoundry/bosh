@@ -10,10 +10,10 @@ describe 'deploy job update', type: :integration do
     manifest_hash['properties'] = { 'test_property' => 2 }
     deploy_from_scratch(manifest_hash: manifest_hash)
 
-    times = start_and_finish_times_for_job_updates('last')
-    expect(times['foobar/1']['started']).to be >= times['foobar/0']['started']
-    expect(times['foobar/1']['started']).to be <= times['foobar/0']['finished']
-    expect(times['foobar/2']['started']).to be >= [times['foobar/0']['finished'], times['foobar/1']['finished']].min
+    updating_job_events = events('last').select { |e| e['stage'] == 'Updating job' }
+    expect(updating_job_events[0]['state']).to eq('started')
+    expect(updating_job_events[1]['state']).to eq('started')
+    expect(updating_job_events[2]['state']).to eq('finished')
   end
 
   describe 'Displaying manifest diffs' do
@@ -106,7 +106,7 @@ describe 'deploy job update', type: :integration do
   it 'stops deployment when a job update fails' do
     deploy_from_scratch
 
-    director.vm('foobar/0').fail_job
+    director.vm('foobar', '0').fail_job
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['resource_pools'][0]['size'] = 2
@@ -126,7 +126,7 @@ describe 'deploy job update', type: :integration do
     failing_job_event = task_events[-2]
     expect(failing_job_event['stage']).to eq('Updating job')
     expect(failing_job_event['state']).to eq('failed')
-    expect(failing_job_event['task']).to eq('foobar/0 (canary)')
+    expect(scrub_random_ids(failing_job_event['task'])).to eq('foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
 
     started_job_events = task_events.select do |e|
       e['stage'] == 'Updating job' && e['state'] == "started"

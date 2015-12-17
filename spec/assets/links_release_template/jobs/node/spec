@@ -1,0 +1,14 @@
+---
+name: node
+templates:
+  config.yml.erb: config.yml
+
+packages: []
+
+provides:
+- node1
+- node2
+
+requires:
+- node1
+- node2

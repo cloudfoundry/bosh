@@ -13,23 +13,18 @@ module Bosh::Director
       end
 
       describe '.by_id' do
-        let(:instance_id) { 5 }
-
-        before do
-          allow(Models::Instance).to receive(:[]).and_return(instance)
-        end
-
         it 'finds instance for id' do
-          expect(instance_lookup.by_id(instance_id)).to eq instance
+          instance = Models::Instance.make
+          expect(instance_lookup.by_id(instance.id)).to eq instance
         end
 
         context 'no instance exists for id' do
-          let(:instance) { nil }
+          let(:instance_id) { 'badId' }
 
           it 'raises' do
             expect {
               instance_lookup.by_id(instance_id)
-            }.to raise_error(InstanceNotFound, "Instance 5 doesn't exist")
+            }.to raise_error(InstanceNotFound, "Instance badId doesn't exist")
           end
         end
       end

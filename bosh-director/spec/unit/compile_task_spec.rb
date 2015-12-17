@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CompileTask do
+    include Support::StemcellHelpers
+
     let(:job) { double('job').as_null_object }
 
     def make(package, stemcell)
@@ -193,7 +195,7 @@ module Bosh::Director
       let(:event_log) { double("event_log") }
       let(:logger) { double("logger", info:nil) }
       let(:package) { Models::Package.make }
-      let(:stemcell) { Models::Stemcell.make }
+      let(:stemcell) { make_stemcell }
       let(:dependency_key) { 'fake-dependency-key' }
       let(:cache_key) { 'fake-cache-key' }
 
@@ -203,7 +205,7 @@ module Bosh::Director
         before { allow(Config).to receive(:use_compiled_package_cache?).and_return(false) }
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell.model, dependency_key: dependency_key)
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
@@ -232,9 +234,9 @@ module Bosh::Director
             it 'returns the compiled package' do
               allow(event_log).to receive(:track).with(anything).and_yield
 
-              compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: dependency_key)
+              compiled_package = double('compiled package', package: package, stemcell: stemcell.model, dependency_key: dependency_key)
               allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
-              expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell, task.cache_key, task.dependency_key).and_return(compiled_package)
+              expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell.model, task.cache_key, task.dependency_key).and_return(compiled_package)
               expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
             end
           end
@@ -242,7 +244,7 @@ module Bosh::Director
 
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell.model, dependency_key: dependency_key)
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end

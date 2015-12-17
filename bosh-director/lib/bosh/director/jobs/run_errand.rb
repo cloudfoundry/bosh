@@ -15,9 +15,9 @@ module Bosh::Director
       @errand_name = errand_name
       @deployment_manager = Api::DeploymentManager.new
       @instance_manager = Api::InstanceManager.new
-      @blobstore = App.instance.blobstores.blobstore
       @keep_alive = keep_alive
-      log_bundles_cleaner = LogBundlesCleaner.new(@blobstore, 60 * 60 * 24 * 10, logger) # 10 days
+      blobstore = App.instance.blobstores.blobstore
+      log_bundles_cleaner = LogBundlesCleaner.new(blobstore, 60 * 60 * 24 * 10, logger) # 10 days
       @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
     end
 
@@ -28,23 +28,37 @@ module Bosh::Director
       with_deployment_lock(deployment_name) do
         cloud_config_model = deployment_model.cloud_config
 
-        planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
-        deployment = planner_factory.planner(deployment_manifest_hash, cloud_config_model, {})
+        deployment = nil
+        job = nil
 
-        job = deployment.job(@errand_name)
-        if job.nil?
-          raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
+        event_log.begin_stage('Preparing deployment', 1)
+        event_log.track('Preparing deployment') do
+          planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+          deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+          deployment.bind_models
+          job = deployment.job(@errand_name)
+
+          if job.nil?
+            raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
+          end
+
+          unless job.can_run_as_errand?
+            raise RunErrandError,
+              "Job `#{job.name}' is not an errand. To mark a job as an errand " +
+                "set its lifecycle to 'errand' in the deployment manifest."
+          end
+
+          if job.instances.empty?
+            raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
+          end
+
+          logger.info('Starting to prepare for deployment')
+          job.bind_instances(deployment.ip_provider)
+
+          JobRenderer.create.render_job_instances(job.needed_instance_plans)
         end
 
-        unless job.can_run_as_errand?
-          raise RunErrandError,
-                "Job `#{job.name}' is not an errand. To mark a job as an errand " +
-                  "set its lifecycle to 'errand' in the deployment manifest."
-        end
-
-        if job.instances.empty?
-          raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
-        end
+        deployment.compile_packages
 
         runner = Errand::Runner.new(job, result_file, @instance_manager, event_log, @logs_fetcher)
 
@@ -71,43 +85,50 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
-      resource_pools = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
-
-      job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log, logger)
+      job_manager = Errand::JobManager.new(deployment, job, Config.cloud, event_log, logger)
 
       begin
-        update_instances(resource_pools, job_manager)
-        blk.call
-      ensure
-        if @keep_alive
-          logger.info('Skipping instances deletion, keep-alive is set')
-        else
-          logger.info('Deleting instances')
-          delete_instances(resource_pools, job_manager)
-        end
+        update_instances(job_manager)
+        block_result = blk.call
+      rescue Exception
+        cleanup_instances_and_log_error(job_manager)
+        raise
+      else
+        cleanup_instances_and_raise_error(job_manager)
+        return block_result
       end
     end
 
-    def update_instances(resource_pools, job_manager)
-      logger.info('Starting to prepare for deployment')
-      job_manager.prepare
+    def cleanup_instances_and_log_error(job_manager)
+      begin
+        cleanup_instances_and_raise_error(job_manager)
+      rescue Exception => e
+        logger.warn("Failed to delete instances: #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}")
+      end
+    end
 
-      logger.info('Starting to update resource pool')
-      resource_pools.update
+    def cleanup_instances_and_raise_error(job_manager)
+      if @keep_alive
+        logger.info('Skipping instances deletion, keep-alive is set')
+      else
+        logger.info('Deleting instances')
+        delete_instances(job_manager)
+      end
+    end
+
+    def update_instances(job_manager)
+      logger.info('Starting to create missing vms')
+      job_manager.create_missing_vms
 
       logger.info('Starting to update job instances')
       job_manager.update_instances
     end
 
-    def delete_instances(resource_pools, job_manager)
+    def delete_instances(job_manager)
       @ignore_cancellation = true
 
       logger.info('Starting to delete job instances')
       job_manager.delete_instances
-
-      logger.info('Starting to refill resource pool')
-      resource_pools.refill
 
       @ignore_cancellation = false
     end

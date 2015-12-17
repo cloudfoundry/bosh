@@ -277,7 +277,7 @@ module Bosh::Cli
         uri.port = DEFAULT_DIRECTOR_PORT
         uri.to_s
       end
+      end
     end
   end
-end
 end

@@ -16,7 +16,7 @@ describe 'inspect release', type: :integration do
 
     it 'shows jobs and source pacakges' do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      out = scrub_blobstore_ids(bosh_runner.run("inspect release test_release/1"))
+      out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
 
       expect(out).to match_output %(
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
@@ -45,7 +45,7 @@ describe 'inspect release', type: :integration do
     it 'shows jobs and pacakges compiled against multiple stemcells' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-      out = scrub_blobstore_ids(bosh_runner.run("inspect release test_release/1"))
+      out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
 
       expect(out).to match_output %(
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+

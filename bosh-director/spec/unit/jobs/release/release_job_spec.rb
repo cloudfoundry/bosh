@@ -121,11 +121,39 @@ module Bosh::Director
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
-        it 'verifies that it is an array of string' do
+        it 'verifies that it is an array of string or hashes' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies hash contains name and type' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies names are unique' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(
+            JobDuplicateLinkName,
+            "Job 'foo' 'provides' specifies links with duplicate name 'db'"
+          )
+        end
+
+        it 'saves them on template' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect(Models::Template.count).to eq(0)
+          release_job.create
+
+          template = Models::Template.first
+          expect(template.provides).to eq(['db1', {'name' => 'db2', 'type' =>'db'}])
         end
       end
 
@@ -144,6 +172,34 @@ module Bosh::Director
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies hash contains name and type' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => [{'name' => 'db'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies names are unique' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(
+              JobDuplicateLinkName,
+              "Job 'foo' 'requires' specifies links with duplicate name 'db'"
+            )
+        end
+
+        it 'saves them on template' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect(Models::Template.count).to eq(0)
+          release_job.create
+
+          template = Models::Template.first
+          expect(template.requires).to eq(['db1', {'name' => 'db2', 'type' =>'db'} ])
         end
       end
     end

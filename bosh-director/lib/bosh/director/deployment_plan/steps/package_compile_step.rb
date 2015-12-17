@@ -10,31 +10,23 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         # @param [DeploymentPlan] deployment_plan Deployment plan
-        def initialize(deployment_plan, cloud, logger, event_log, director_job)
-          @deployment_plan = deployment_plan
-
-          @cloud = cloud
+        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
           @event_log = event_log
           @logger = logger
           @director_job = director_job
 
           @tasks_mutex = Mutex.new
-          @network_mutex = Mutex.new
           @counter_mutex = Mutex.new
 
-          compilation_config = @deployment_plan.compilation
-
-          @network = compilation_config.network
-          @compilation_resources = compilation_config.cloud_properties
-          @compilation_env = compilation_config.env
-
-          @vm_reuser = VmReuser.new
+          @compilation_instance_pool = compilation_instance_pool
 
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
 
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
+          @jobs_to_compile = jobs_to_compile
+          @compilation_config = compilation_config
         end
 
         def perform
@@ -64,8 +56,6 @@ module Bosh::Director
           @tasks_mutex.synchronize { @ready_tasks.size }
         end
 
-
-
         def compile_package(task)
           package = task.package
           stemcell = task.stemcell
@@ -74,22 +64,26 @@ module Bosh::Director
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log)
             if compiled_package.nil?
-              build = Models::CompiledPackage.generate_build_number(package, stemcell)
+              build = Models::CompiledPackage.generate_build_number(package, stemcell.model)
               task_result = nil
 
-              prepare_vm(stemcell) do |vm_data|
-                vm_metadata_updater.update(vm_data.vm, :compiling => package.name)
+              prepare_vm(stemcell) do |instance|
+                vm_metadata_updater.update(instance.vm.model, :compiling => package.name)
                 agent_task =
-                  vm_data.agent.compile_package(package.blobstore_id,
-                                                package.sha1, package.name,
-                                                "#{package.version}.#{build}",
-                                                task.dependency_spec)
+                  instance.agent_client.compile_package(
+                    package.blobstore_id,
+                    package.sha1,
+                    package.name,
+                    "#{package.version}.#{build}",
+                    task.dependency_spec
+                  )
+
                 task_result = agent_task['result']
               end
 
               compiled_package = Models::CompiledPackage.create do |p|
                 p.package = package
-                p.stemcell = stemcell
+                p.stemcell = stemcell.model
                 p.sha1 = task_result['sha1']
                 p.build = build
                 p.blobstore_id = task_result['blobstore_id']
@@ -118,65 +112,12 @@ module Bosh::Director
         # passed in.  The VMs are yielded and their destruction is ensured.
         # @param [Models::Stemcell] stemcell The stemcells that need to have
         #     compilation VMs created.
-        # @yield [VmData] Yields a VmData object that contains all the data for the
-        #     VM that should be used for compilation.  This may be a reused VM or a
-        #     freshly created VM.
+        # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
         def prepare_vm(stemcell)
-          # If we're reusing VMs, try to just return an already-created VM.
-          if @deployment_plan.compilation.reuse_compilation_vms
-            vm_data = @vm_reuser.get_vm(stemcell)
-            if vm_data
-              @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
-              begin
-                yield vm_data
-              ensure
-                vm_data.release
-              end
-              return
-            end
-            # This shouldn't happen. If it does there's a bug.
-            if @vm_reuser.get_num_vms(stemcell) >=
-              @deployment_plan.compilation.workers
-              raise PackageCompilationNotEnoughWorkersForReuse,
-                    'There should never be more VMs for a stemcell than the number of workers in reuse_compilation_vms mode'
-            end
-          end
-
-          @logger.info("Creating compilation VM for stemcell `#{stemcell.desc}'")
-
-          reservation = reserve_network
-
-          network_settings = {
-            @network.name => @network.network_settings(reservation)
-          }
-
-          vm = VmCreator.create(@deployment_plan.model, stemcell,
-                                @compilation_resources, network_settings,
-                                nil, @compilation_env)
-          vm_data = @vm_reuser.add_vm(reservation, vm, stemcell, network_settings)
-
-          @logger.info("Configuring compilation VM: #{vm.cid}")
-
-          begin
-            agent = AgentClient.with_defaults(vm.agent_id)
-            agent.wait_until_ready
-            agent.update_settings(Bosh::Director::Config.trusted_certs)
-            vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
-
-            configure_vm(vm, agent, network_settings)
-            vm_data.agent = agent
-            yield vm_data
-          rescue RpcTimeout, TaskCancelled => e
-            # if we time out waiting for the agent or task was cancelled, we should clean up the the VM
-            # as it will leave us in an unrecoverable state otherwise
-            @vm_reuser.remove_vm(vm_data)
-            tear_down_vm(vm_data)
-            raise e
-          ensure
-            vm_data.release
-            unless @deployment_plan.compilation.reuse_compilation_vms
-              tear_down_vm(vm_data)
-            end
+          if @compilation_config.reuse_compilation_vms
+            @compilation_instance_pool.with_reused_vm(stemcell, &Proc.new)
+          else
+            @compilation_instance_pool.with_single_use_vm(stemcell, &Proc.new)
           end
         end
 
@@ -186,8 +127,8 @@ module Bosh::Director
           @event_log.begin_stage('Preparing package compilation', 1)
 
           @event_log.track('Finding packages to compile') do
-            @deployment_plan.jobs.each do |job|
-              stemcell = job.resource_pool.stemcell
+            @jobs_to_compile.each do |job|
+              stemcell = job.stemcell
 
               template_descs = job.templates.map do |t|
                 # we purposefully did NOT inline those because
@@ -197,55 +138,22 @@ module Bosh::Director
                 template_name = t.name
                 "`#{release_name}/#{template_name}'"
               end
-              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.model.desc}'")
+              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.desc}'")
 
               job.templates.each do |template|
                 template.package_models.each do |package|
-                  @compile_task_generator.generate!(@compile_tasks, job, template, package, stemcell.model)
+                  @compile_task_generator.generate!(@compile_tasks, job, template, package, stemcell)
                 end
               end
             end
           end
         end
 
-        def tear_down_vm(vm_data)
-          vm = vm_data.vm
-          if vm.exists?
-            reservation = vm_data.reservation
-            @logger.info("Deleting compilation VM: #{vm.cid}")
-            @cloud.delete_vm(vm.cid)
-            vm.destroy
-            release_network(reservation)
-          end
-        end
-
-        def reserve_network
-          reservation = NetworkReservation.new_dynamic
-
-          @network_mutex.synchronize do
-            @network.reserve(reservation)
-          end
-
-          unless reservation.reserved?
-            raise PackageCompilationNetworkNotReserved,
-                  "Could not reserve network for package compilation: #{reservation.error}"
-          end
-
-          reservation
-        end
-
-        def release_network(reservation)
-          @network_mutex.synchronize do
-            @network.release(reservation)
-          end
-        end
-
         def compile_packages
           @event_log.begin_stage('Compiling packages', compilation_count)
-          number_of_workers = @deployment_plan.compilation.workers
 
           begin
-            ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
+            ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
               loop do
                 # process as many tasks without waiting
                 loop do
@@ -263,15 +171,11 @@ module Bosh::Director
           ensure
             # Delete all of the VMs if we were reusing compilation VMs. This can't
             # happen until everything was done compiling.
-            if @deployment_plan.compilation.reuse_compilation_vms
+            if @compilation_config.reuse_compilation_vms
               # Using a new ThreadPool instead of reusing the previous one,
               # as if there's a failed compilation, the thread pool will stop
               # processing any new thread.
-              ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-                @vm_reuser.each do |vm_data|
-                  pool.process { tear_down_vm(vm_data) }
-                end
-              end
+              @compilation_instance_pool.delete_instances(@compilation_config.workers)
             end
           end
         end
@@ -313,17 +217,6 @@ module Bosh::Director
 
         def director_job_checkpoint
           @director_job.task_checkpoint if @director_job
-        end
-
-        def configure_vm(vm, agent, network_settings)
-          state = {
-            'deployment' => @deployment_plan.name,
-            'resource_pool' => {},
-            'networks' => network_settings
-          }
-
-          vm.update(:apply_spec => state)
-          agent.apply(state)
         end
 
         def compilation_count

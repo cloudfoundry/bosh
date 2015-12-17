@@ -37,10 +37,10 @@ module Bosh::Director::Models
       package.version
     end
 
-    def self.generate_build_number(package, stemcell)
+    def self.generate_build_number(package_model, stemcell_model)
       attrs = {
-        :package_id => package.id,
-        :stemcell_id => stemcell.id
+        :package_id => package_model.id,
+        :stemcell_id => stemcell_model.id
       }
 
       filter(attrs).max(:build).to_i + 1

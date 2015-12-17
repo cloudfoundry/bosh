@@ -35,6 +35,7 @@ module Bosh::Dev
       components.each do |component|
         finalize(component)
       end
+      FileUtils.rm_rf build_dir
     end
 
     def each(&block)

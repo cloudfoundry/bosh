@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/dns_helper'
 
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
@@ -45,6 +44,103 @@ module Bosh::Director
           manifest_hash.merge!('name' => 'Name with spaces')
           expect(parsed_deployment.canonical_name).to eq('namewithspaces')
         end
+      end
+
+      describe 'stemcells' do
+        context 'when no top level stemcells' do
+          before do
+            manifest_hash.delete('stemcells')
+          end
+
+          it 'should not error out' do
+            expect(parsed_deployment.stemcells).to eq({})
+          end
+        end
+
+        context 'when there 1 stemcell' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'should not error out' do
+            expect(parsed_deployment.stemcells.count).to eq(1)
+          end
+
+          it 'should error out if stemcell hash does not have alias' do
+            manifest_hash['stemcells'].first.delete('alias')
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::ValidationMissingField,
+                "Required property `alias' was not specified in object " +
+                  '({"name"=>"bosh-aws-xen-hvm-ubuntu-trusty-go_agent", "version"=>"1234"})'
+          end
+        end
+
+        context 'when there are stemcells with duplicate alias' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1, stemcell_hash1]
+          end
+
+          it 'errors out when alias of stemcells are not unique' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::StemcellAliasAlreadyExists, "Duplicate stemcell alias 'stemcell1'"
+          end
+        end
+
+        context 'when there are stemcells with no OS nor name' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'errors out' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::ValidationMissingField
+          end
+        end
+
+        context 'when there are stemcells with OS' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'os' => 'ubuntu-trusty', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'should not errors out' do
+            expect(parsed_deployment.stemcells.count).to eq(1)
+            expect(parsed_deployment.stemcells['stemcell1'].os).to eq('ubuntu-trusty')
+          end
+        end
+
+        context 'when there are stemcells with both name and OS' do
+          before do
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'os' => 'ubuntu-trusty', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash1]
+          end
+
+          it 'errors out' do
+            expect {
+              parsed_deployment.stemcells
+            }.to raise_error Bosh::Director::StemcellBothNameAndOS
+          end
+        end
+
+        context 'when there are 2 stemcells' do
+          before do
+            stemcell_hash0 = {'alias' => 'stemcell0', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            stemcell_hash1 = {'alias' => 'stemcell1', 'name' => 'bosh-aws-xen-hvm-ubuntu-trusty-go_agent', 'version' => '1234' }
+            manifest_hash['stemcells'] = [stemcell_hash0, stemcell_hash1]
+          end
+
+          it 'should add stemcells to deployment plan' do
+            expect(parsed_deployment.stemcells.count).to eq(2)
+          end
+        end
+
+
       end
 
       describe 'properties key' do

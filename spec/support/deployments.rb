@@ -19,20 +19,27 @@ module Bosh::Spec
 
     def self.simple_cloud_config
       minimal_cloud_config.merge({
-          'networks' => [{
-              'name' => 'a',
-              'subnets' => [{
-                  'range' => '192.168.1.0/24',
-                  'gateway' => '192.168.1.1',
-                  'dns' => ['192.168.1.1', '192.168.1.2'],
-                  'static' => ['192.168.1.10'],
-                  'reserved' => [],
-                  'cloud_properties' => {},
-                }],
-            }],
-
+          'networks' => [network],
           'resource_pools' => [resource_pool]
         })
+    end
+
+    def self.network(options = {})
+      {
+        'name' => 'a',
+        'subnets' => [subnet],
+      }.merge!(options)
+    end
+
+    def self.subnet(options = {})
+      {
+        'range' => '192.168.1.0/24',
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1', '192.168.1.2'],
+        'static' => ['192.168.1.10'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }.merge!(options)
     end
 
     def self.remote_stemcell_manifest(stemcell_url, stemcell_sha1)
@@ -111,7 +118,6 @@ module Bosh::Spec
         'name' => 'a',
         'size' => 3,
         'cloud_properties' => {},
-        'network' => 'a',
         'stemcell' => {
           'name' => 'ubuntu-stemcell',
           'version' => '1',
@@ -119,7 +125,29 @@ module Bosh::Spec
       }
     end
 
+    def self.stemcell
+      {
+        'alias' => 'default',
+        'os' => 'toronto-os',
+        'version' => '1',
+      }
+    end
+
+    def self.vm_type
+      {
+        'name' => 'vm-type-name',
+        'cloud_properties' => {},
+      }
+    end
+
     def self.disk_pool
+      {
+        'name' => 'disk_a',
+        'disk_size' => 123
+      }
+    end
+
+    def self.disk_type
       {
         'name' => 'disk_a',
         'disk_size' => 123
@@ -147,31 +175,31 @@ module Bosh::Spec
 
     def self.manifest_with_jobs
       {
-          'name' => 'minimal',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'minimal',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-                             'name'    => 'appcloud',
-                             'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-                         }],
+        'releases' => [{
+            'name' => 'appcloud',
+            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+          }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          },
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 1,
+          'update_watch_time' => 20
+        },
 
-          'jobs' => [{
-                         'name'          => 'cacher',
-                         'templates'      => [{
-                                                  'name'    => 'cacher',
-                                                  'release' => 'appcloud'
-                                              }],
-                         'resource_pool' => 'a',
-                         'instances'     => 3,
-                         'networks'      => [{ 'name' => 'a' }],
-                     }]
+        'jobs' => [{
+            'name' => 'cacher',
+            'templates' => [{
+                'name' => 'cacher',
+                'release' => 'appcloud'
+              }],
+            'resource_pool' => 'a',
+            'instances' => 3,
+            'networks' => [{'name' => 'a'}],
+          }]
       }
     end
 
@@ -310,51 +338,62 @@ module Bosh::Spec
 
     def self.remote_release_manifest(remote_release_url, sha1, version='latest')
       minimal_manifest.merge({
-        'jobs' => [
-          {
-            'name' => 'job',
-            'template' => 'job_using_pkg_1',
-            'instances' => 1,
-            'resource_pool' => 'a',
-            'networks' => [{'name' => 'a'}]
-          }
-        ],
-        'releases' => [{
-            'name'    => 'test_release',
-            'version' => version,
-            'url' => remote_release_url,
-            'sha1' => sha1
-        }]
-      })
+          'jobs' => [
+            {
+              'name' => 'job',
+              'templates' => [{ 'name' => 'job_using_pkg_1' }],
+              'instances' => 1,
+              'resource_pool' => 'a',
+              'networks' => [{'name' => 'a'}]
+            }
+          ],
+          'releases' => [{
+              'name'    => 'test_release',
+              'version' => version,
+              'url' => remote_release_url,
+              'sha1' => sha1
+            }]
+        })
     end
 
     def self.local_release_manifest(local_release_path, version = 'latest')
       minimal_manifest.merge({
-        'jobs' => [
-          {
-            'name' => 'job',
-            'template' => 'job_using_pkg_1',
-            'instances' => 1,
-            'resource_pool' => 'a',
-            'networks' => [{'name' => 'a'}]
-          }
-        ],
-        'releases' => [{
-            'name'    => 'test_release',
-            'version' => version,
-            'url' => local_release_path,
-        }]
-      })
+          'jobs' => [
+            {
+              'name' => 'job',
+              'templates' => [{ 'name' => 'job_using_pkg_1' }],
+              'instances' => 1,
+              'resource_pool' => 'a',
+              'networks' => [{'name' => 'a'}]
+            }
+          ],
+          'releases' => [{
+              'name'    => 'test_release',
+              'version' => version,
+              'url' => local_release_path,
+            }]
+        })
     end
 
-    def self.simple_job(options={})
-      {
-        'name'          => options.fetch(:name, 'foobar'),
-        'template'      => 'foobar',
+    def self.simple_job(opts = {})
+      job_hash = {
+        'name' => opts.fetch(:name, 'foobar'),
+        'templates' => opts.fetch(:templates, ['name' => 'foobar']),
         'resource_pool' => 'a',
-        'instances'     => options.fetch(:instances, 3),
-        'networks'      => [{ 'name' => 'a' }],
+        'instances' => opts.fetch(:instances, 3),
+        'networks' => [{ 'name' => 'a' }],
+        'properties' => {},
       }
+
+      if opts.has_key?(:static_ips)
+        job_hash['networks'].first['static_ips'] = opts[:static_ips]
+      end
+
+      if opts[:persistent_disk_pool]
+        job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
+      end
+
+      job_hash
     end
 
     def self.job_with_many_templates(options={})
@@ -370,8 +409,12 @@ module Bosh::Spec
     def self.manifest_with_errand
       manifest = simple_manifest.merge('name' => 'errand')
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
+      manifest['jobs'] << simple_errand_job
+      manifest
+    end
 
-      manifest['jobs'] << {
+    def self.simple_errand_job
+      {
         'name' => 'fake-errand-name',
         'template' => 'errand1',
         'lifecycle' => 'errand',
@@ -387,8 +430,6 @@ module Bosh::Spec
           },
         },
       }
-
-      manifest
     end
   end
 end

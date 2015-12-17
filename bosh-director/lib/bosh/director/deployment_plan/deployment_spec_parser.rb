@@ -1,7 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
     class DeploymentSpecParser
-      include DnsHelper
       include ValidationHelper
 
       def initialize(deployment, event_log, logger)
@@ -16,6 +15,7 @@ module Bosh::Director
         @deployment_manifest = deployment_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
+        parse_stemcells
         parse_properties
         parse_releases
         parse_update
@@ -25,6 +25,18 @@ module Bosh::Director
       end
 
       private
+
+      def parse_stemcells
+        if @deployment_manifest.has_key?('stemcells')
+          safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
+            alias_val = safe_property(stemcell_hash, 'alias', :class=> String)
+            if @deployment.stemcells.has_key?(alias_val)
+              raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
+            end
+            @deployment.add_stemcell(Stemcell.new(stemcell_hash))
+          end
+        end
+      end
 
       def parse_name
         safe_property(@deployment_manifest, 'name', :class => String)

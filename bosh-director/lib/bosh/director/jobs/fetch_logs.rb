@@ -22,14 +22,8 @@ module Bosh::Director
 
       def perform
         instance = @instance_manager.find_instance(@instance_id)
-        desc = "#{instance.job}/#{instance.index}"
 
         deployment = instance.deployment
-        if deployment.nil?
-          raise InstanceDeploymentMissing,
-                "`#{desc}' doesn't belong to any deployment"
-        end
-
         with_deployment_lock(deployment) do
           @logs_fetcher.fetch(instance, @log_type, @filters)
         end

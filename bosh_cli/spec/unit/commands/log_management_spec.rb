@@ -7,6 +7,8 @@ describe Bosh::Cli::Command::LogManagement do
   let(:deployment) { 'mycloud' }
   let(:job) { 'dea' }
   let(:index) { '6' }
+  let(:id) { 'jobId123' }
+  let(:instance_count) { 5 }
 
   let(:manifest) do
     {
@@ -14,7 +16,7 @@ describe Bosh::Cli::Command::LogManagement do
       'uuid' => 'totally-and-universally-unique',
       'jobs' => [{
         'name' => 'dea',
-        'instances' => 5
+        'instances' => instance_count
       }]
     }
   end
@@ -99,7 +101,12 @@ describe Bosh::Cli::Command::LogManagement do
         context 'when fetching job logs' do
           before { command.options[:job] = true }
 
-          it 'successfully retrieves the log resource id' do
+          it 'successfully retrieves the log resource id when fetching logs by job id' do
+            expect(director).to receive(:fetch_logs).with(deployment, job, id, 'job', nil).and_return('resource_id')
+            command.fetch_logs(job, id)
+          end
+
+          it 'successfully retrieves the log resource id when fetching logs by job index' do
             expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
             command.fetch_logs(job, index)
           end
@@ -169,25 +176,6 @@ describe Bosh::Cli::Command::LogManagement do
             expect {
               command.fetch_logs(job, index)
             }.to raise_error(Bosh::Cli::CliError, /Unable to download logs from director:/)
-          end
-
-          context 'when we do not specify the job index' do
-            let(:manifest) do
-              {
-                'name' => deployment,
-                'uuid' => 'totally-and-universally-unique',
-                'jobs' => [{
-                  'name' => 'dea',
-                  'instances' => 52735
-                }]
-              }
-            end
-
-            it 'complains' do
-              expect {
-                command.fetch_logs(job, nil)
-              }.to raise_error(Bosh::Cli::CliError, 'Job index is expected to be a positive integer')
-            end
           end
         end
       end

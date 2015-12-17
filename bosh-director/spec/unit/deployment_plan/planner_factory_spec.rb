@@ -4,11 +4,11 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger) }
-        let(:deployment_repo) { DeploymentRepo.new(canonicalizer) }
-        let(:canonicalizer) { Class.new { include Bosh::Director::DnsHelper }.new }
+        subject { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
+        let(:deployment_repo) { DeploymentRepo.new }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
+        let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:plan_options) { {} }
@@ -28,16 +28,16 @@ module Bosh
         end
 
         before do
-          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
+          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
           upload_releases
           upload_stemcell
           configure_config
           fake_locks
         end
 
-        describe '#planner' do
+        describe '#create_from_manifest' do
           let(:planner) do
-            subject.planner(manifest_hash, cloud_config_model, plan_options)
+            subject.create_from_manifest(manifest_hash, cloud_config_model, plan_options)
           end
 
           it 'returns a planner' do
@@ -47,10 +47,37 @@ module Bosh
 
           it 'migrates the deployment manifest to handle legacy structure' do
             allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
-              [hash.merge({'name' => 'migrated_name'}), cloud_config.manifest]
+              [hash.merge({'name' => 'migrated_name'}), cloud_config]
             end
 
             expect(planner.name).to eq('migrated_name')
+          end
+
+          it 'logs the migrated manifests' do
+            allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
+              [hash.merge({'name' => 'migrated_name'}), cloud_config]
+            end
+
+            planner
+# rubocop:disable LineLength
+            expected_deployment_manifest_log = <<LOGMESSAGE
+Migrated deployment manifest:
+{"name"=>"migrated_name", "director_uuid"=>"deadbeef", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "jobs"=>[{"name"=>"foobar", "templates"=>[{"name"=>"foobar"}], "resource_pool"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "properties"=>{}}]}
+LOGMESSAGE
+            expected_cloud_manifest_log = <<LOGMESSAGE
+Migrated cloud config manifest:
+{"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "resource_pools"=>[{"name"=>"a", "size"=>3, "cloud_properties"=>{}, "stemcell"=>{"name"=>"ubuntu-stemcell", "version"=>"1"}}]}
+LOGMESSAGE
+# rubocop:enable LineLength
+            expect(logger_io.string).to include(expected_deployment_manifest_log)
+            expect(logger_io.string).to include(expected_cloud_manifest_log)
+          end
+
+          it 'raises error when manifest has cloud_config properties' do
+            manifest_hash['vm_types'] = 'foo'
+            expect{
+              subject.create_from_manifest(manifest_hash, cloud_config_model, plan_options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
           describe 'attributes of the planner' do
@@ -110,32 +137,85 @@ module Bosh
               end
 
               it 'has disk_pools from the cloud config manifest' do
-                expect(planner.disk_pools.length).to eq(2)
-                expect(planner.disk_pool('disk_pool1').disk_size).to eq(3000)
-                expect(planner.disk_pool('disk_pool2').disk_size).to eq(1000)
+                expect(planner.disk_types.length).to eq(2)
+                expect(planner.disk_type('disk_pool1').disk_size).to eq(3000)
+                expect(planner.disk_type('disk_pool2').disk_size).to eq(1000)
+              end
+            end
+
+            describe 'jobs' do
+              let(:cloud_config_hash) do
+                hash = Bosh::Spec::Deployments.simple_cloud_config.merge(
+                  'azs' => [
+                    {'name' => 'zone1', 'cloud_properties' => {foo: 'bar'}},
+                    {'name' => 'zone2', 'cloud_properties' => {foo: 'baz'}},
+                  ]
+                )
+                hash['compilation']['az'] = 'zone1'
+                hash['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
+                    'range' => '192.168.2.0/24',
+                    'gateway' => '192.168.2.1',
+                    'dns' => ['192.168.2.1', '192.168.2.2'],
+                    'static' => ['192.168.2.10'],
+                    'reserved' => [],
+                    'cloud_properties' => {},
+                  })
+
+                hash['networks'].first['subnets'][0]['az'] = 'zone1'
+                hash['networks'].first['subnets'][1]['az'] = 'zone2'
+                hash
+              end
+              let(:manifest_hash) do
+                Bosh::Spec::Deployments.simple_manifest.merge(
+                  'jobs' => [
+                    Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1', 'zone2'])
+                  ]
+                )
+              end
+
+              context 'when there is one job with two availability zones' do
+                it 'has azs as specified by users' do
+                  expect(planner.jobs.length).to eq(1)
+                  expect(planner.jobs.first.availability_zones.map(&:name)).to eq(['zone1', 'zone2'])
+                  expect(planner.jobs.first.availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}, {foo: 'baz'}])
+                end
+              end
+
+              context 'when there are two jobs with two availability zones' do
+                let(:manifest_hash) do
+                  Bosh::Spec::Deployments.simple_manifest.merge(
+                    'jobs' => [
+                      Bosh::Spec::Deployments.simple_job().merge('azs' => ['zone1']),
+                      Bosh::Spec::Deployments.simple_job(name:'bar').merge('azs' => ['zone2'])
+                    ]
+                  )
+                end
+                it 'has azs as specified by users' do
+                  expect(planner.jobs.length).to eq(2)
+                  expect(planner.jobs[0].availability_zones.map(&:name)).to eq(['zone1'])
+                  expect(planner.jobs[0].availability_zones.map(&:cloud_properties)).to eq([{foo: 'bar'}])
+
+                  expect(planner.jobs.length).to eq(2)
+                  expect(planner.jobs[1].availability_zones.map(&:name)).to eq(['zone2'])
+                  expect(planner.jobs[1].availability_zones.map(&:cloud_properties)).to eq([{foo: 'baz'}])
+                end
               end
             end
           end
         end
 
         def configure_config
-          allow(Config).to receive(:dns_domain_name).and_return('some-dns-domain-name')
           allow(Config).to receive(:dns).and_return({'address' => 'foo'})
           allow(Config).to receive(:cloud).and_return(double('cloud'))
-        end
-
-        def fake_locks
-          lock = instance_double('Bosh::Director::Lock')
-          allow(Lock).to receive(:new).and_return(lock)
-          allow(lock).to receive(:release)
-          allow(lock).to receive(:lock)
+          Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+          Bosh::Director::Config.current_job.task_id = 'fake-task-id'
         end
 
         def upload_releases
           manifest_hash['releases'].each do |release_entry|
             job = manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
-            template = Models::Template.make(name: job['template'], release: release)
+            template = Models::Template.make(name: job['templates'].first['name'], release: release)
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
           end

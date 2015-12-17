@@ -2,8 +2,8 @@
 module Bosh::Cli::Command
   class Deployment < Base
     # bosh deployment
-    usage "deployment"
-    desc "Get/set current deployment"
+    usage 'deployment'
+    desc 'Get/set current deployment'
     def set_current(filename = nil)
       if filename.nil?
         show_current
@@ -19,34 +19,34 @@ module Bosh::Cli::Command
       manifest = load_yaml_file(manifest_filename)
 
       unless manifest.is_a?(Hash)
-        err("Invalid manifest format")
+        err('Invalid manifest format')
       end
 
-      unless manifest["target"].blank?
+      unless manifest['target'].blank?
         err(Bosh::Cli::Manifest::MANIFEST_TARGET_UPGRADE_NOTICE)
       end
 
-      if manifest["director_uuid"].blank?
-        err("Director UUID is not defined in deployment manifest")
+      if manifest['director_uuid'].blank?
+        err('Director UUID is not defined in deployment manifest')
       end
 
       if target
         old_director = Bosh::Cli::Client::Director.new(target, credentials, ca_cert: config.ca_cert)
-        old_director_uuid = old_director.get_status["uuid"] rescue nil
+        old_director_uuid = old_director.get_status['uuid'] rescue nil
       else
         old_director_uuid = nil
       end
 
-      new_director_uuid = manifest["director_uuid"]
+      new_director_uuid = manifest['director_uuid']
 
       if old_director_uuid != new_director_uuid
         new_target_url = config.resolve_alias(:target, new_director_uuid)
 
         if new_target_url.blank?
-          err("This manifest references director with UUID " +
+          err('This manifest references director with UUID ' +
               "#{new_director_uuid}.\n" +
               "You've never targeted it before.\n" +
-              "Please find your director IP or hostname and target it first.")
+              'Please find your director IP or hostname and target it first.')
         end
 
         target_ca_cert = config.ca_cert(new_target_url)
@@ -56,10 +56,10 @@ module Bosh::Cli::Command
         status = new_director.get_status
 
         config.target = new_target_url
-        config.target_name = status["name"]
-        config.target_version = status["version"]
-        config.target_uuid = status["uuid"]
-        say("#{"WARNING!".make_red} Your target has been " +
+        config.target_name = status['name']
+        config.target_version = status['version']
+        config.target_uuid = status['uuid']
+        say("#{'WARNING!'.make_red} Your target has been " +
             "changed to `#{target.make_red}'!")
       end
 
@@ -69,20 +69,20 @@ module Bosh::Cli::Command
     end
 
     # bosh edit deployment
-    usage "edit deployment"
-    desc "Edit current deployment manifest"
+    usage 'edit deployment'
+    desc 'Edit current deployment manifest'
     def edit
       deployment_required
-      editor = ENV['EDITOR'] || "vi"
+      editor = ENV['EDITOR'] || 'vi'
       system("#{editor} #{deployment}")
     end
 
     # bosh deploy
-    usage "deploy"
-    desc "Deploy according to the currently selected deployment manifest"
-    option "--recreate", "Recreate all VMs in deployment"
-    option "--redact-diff", "Redact manifest value changes in deployment"
-    option "--skip-drain [job1,job2]", String, "Skip drain script for either specific or all jobs"
+    usage 'deploy'
+    desc 'Deploy according to the currently selected deployment manifest'
+    option '--recreate', 'Recreate all VMs in deployment'
+    option '--redact-diff', 'Redact manifest value changes in deployment'
+    option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
     def perform
       auth_required
       recreate = !!options[:recreate]
@@ -166,9 +166,9 @@ module Bosh::Cli::Command
     end
 
     # bosh delete deployment
-    usage "delete deployment"
-    desc "Delete deployment"
-    option "--force", "ignore errors while deleting"
+    usage 'delete deployment'
+    desc 'Delete deployment'
+    option '--force', 'ignore errors while deleting'
     def delete(deployment_name)
       auth_required
       show_current_state(deployment_name)
@@ -180,7 +180,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
 
       unless confirmed?
-        say("Canceled deleting deployment".make_green)
+        say('Canceled deleting deployment'.make_green)
         return
       end
 
@@ -193,44 +193,44 @@ module Bosh::Cli::Command
     end
 
     # bosh validate jobs
-    usage "validate jobs"
-    desc "Validates all jobs in the current release using current " +
-         "deployment manifest as the source of properties"
+    usage 'validate jobs'
+    desc 'Validates all jobs in the current release using current ' +
+        'deployment manifest as the source of properties'
     def validate_jobs
       check_if_release_dir
       manifest = prepare_deployment_manifest(:resolve_properties => true, show_state: true)
 
-      if manifest.hash["release"]
-        release_name = manifest.hash["release"]["name"]
-      elsif manifest.hash["releases"].count > 1
-        err("Cannot validate a deployment manifest with more than 1 release")
+      if manifest.hash['release']
+        release_name = manifest.hash['release']['name']
+      elsif manifest.hash['releases'].count > 1
+        err('Cannot validate a deployment manifest with more than 1 release')
       else
-        release_name = manifest.hash["releases"].first["name"]
+        release_name = manifest.hash['releases'].first['name']
       end
       if release_name == release.dev_name || release_name == release.final_name
         nl
-        say("Analyzing release directory...".make_yellow)
+        say('Analyzing release directory...'.make_yellow)
       else
-        err("This release was not found in deployment manifest")
+        err('This release was not found in deployment manifest')
       end
 
-      say(" - discovering packages")
+      say(' - discovering packages')
       packages = Bosh::Cli::Resources::Package.discover(work_dir)
 
-      say(" - discovering jobs")
+      say(' - discovering jobs')
       jobs = Bosh::Cli::Resources::Job.discover(
         work_dir,
         # TODO: be sure this is covered in integration
         packages.map {|package| package['name']}
       )
 
-      say(" - validating properties")
+      say(' - validating properties')
       validator = Bosh::Cli::JobPropertyValidator.new(jobs, manifest.hash)
       validator.validate
 
       unless validator.jobs_without_properties.empty?
         nl
-        say("Legacy jobs (no properties defined): ".make_yellow)
+        say('Legacy jobs (no properties defined): '.make_yellow)
         validator.jobs_without_properties.sort { |a, b|
           a.name <=> b.name
         }.each do |job|
@@ -240,10 +240,10 @@ module Bosh::Cli::Command
 
       if validator.template_errors.empty?
         nl
-        say("No template errors found".make_green)
+        say('No template errors found'.make_green)
       else
         nl
-        say("Template errors: ".make_yellow)
+        say('Template errors: '.make_yellow)
         validator.template_errors.each do |error|
           nl
           path = Pathname.new(error.template_path)
@@ -256,15 +256,15 @@ module Bosh::Cli::Command
     end
 
     # bosh deployments
-    usage "deployments"
-    desc "Show the list of available deployments"
+    usage 'deployments'
+    desc 'Show the list of available deployments'
     def list
       auth_required
       show_current_state
 
       deployments = director.list_deployments
 
-      err("No deployments") if deployments.empty?
+      err('No deployments') if deployments.empty?
 
       deployments_table = table do |t|
         t.headings = ['Name', 'Release(s)', 'Stemcell(s)', 'Cloud Config']
@@ -277,30 +277,30 @@ module Bosh::Cli::Command
       nl
       say(deployments_table)
       nl
-      say("Deployments total: %d" % deployments.size)
+      say('Deployments total: %d' % deployments.size)
     end
 
     # bosh download manifest
-    usage "download manifest"
-    desc "Download deployment manifest locally"
+    usage 'download manifest'
+    desc 'Download deployment manifest locally'
     def download_manifest(deployment_name, save_as = nil)
       auth_required
       show_current_state(deployment_name)
 
       if save_as && File.exists?(save_as) &&
          !confirmed?("Overwrite `#{save_as}'?")
-        err("Please choose another file to save the manifest to")
+        err('Please choose another file to save the manifest to')
       end
 
       deployment = director.get_deployment(deployment_name)
 
       if save_as
-        File.open(save_as, "w") do |f|
-          f.write(deployment["manifest"])
+        File.open(save_as, 'w') do |f|
+          f.write(deployment['manifest'])
         end
         say("Deployment manifest saved to `#{save_as}'".make_green)
       else
-        say(deployment["manifest"])
+        say(deployment['manifest'])
       end
     end
 
@@ -314,20 +314,20 @@ module Bosh::Cli::Command
           say(config.deployment)
         end
       else
-        err("Deployment not set")
+        err('Deployment not set')
       end
     end
 
     def row_for_deployments_table(deployment)
-      stemcells = names_and_versions_from(deployment["stemcells"])
-      releases  = names_and_versions_from(deployment["releases"])
+      stemcells = names_and_versions_from(deployment['stemcells'])
+      releases  = names_and_versions_from(deployment['releases'])
 
-      [deployment["name"], releases.join("\n"), stemcells.join("\n"), deployment.fetch("cloud_config", "none")]
+      [deployment['name'], releases.join("\n"), stemcells.join("\n"), deployment.fetch('cloud_config', 'none')]
     end
 
     def names_and_versions_from(arr)
       arr.map { |hash|
-        hash.values_at("name", "version").join("/")
+        hash.values_at('name', 'version').join('/')
       }.sort
     end
 

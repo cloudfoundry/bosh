@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DeploymentPlan::DiskPool do
+  describe DeploymentPlan::DiskType do
     describe 'parse' do
       describe 'disk_size' do
         context 'when size is negative' do

@@ -1,6 +1,5 @@
 require 'fileutils'
 require 'logging'
-require 'bosh/director/dns_helper'
 
 module Bosh::Director
 
@@ -8,8 +7,6 @@ module Bosh::Director
 
   class Config
     class << self
-      include DnsHelper
-
       attr_accessor(
         :base_dir,
         :cloud_options,
@@ -133,12 +130,25 @@ module Bosh::Director
         @db_config = config['db']
         @db = configure_db(config['db'])
         @dns = config['dns']
-        @dns_domain_name = 'bosh'
-        if @dns
-          @dns_db = configure_db(@dns['db']) if @dns['db']
-          @dns_domain_name = canonical(@dns['domain_name']) if @dns['domain_name']
+        if @dns && @dns['db']
+          @dns_db = configure_db(@dns['db'])
+          if @dns_db
+            # Load these constants early.
+            # These constants are not 'require'd, they are 'autoload'ed
+            # in models.rb. We're seeing that in 1.9.3 that sometimes
+            # the constants loaded from one thread are not visible to other threads,
+            # causing failures.
+            # These constants cannot be required because they are Sequel model classes
+            # that refer to database configuration that is only present when the (optional)
+            # powerdns job is present and configured and points to a valid DB.
+            # This is an attempt to make sure the constants are loaded
+            # before forking off to other threads, hopefully eliminating the errors.
+            Bosh::Director::Models::Dns::Record.class
+            Bosh::Director::Models::Dns::Domain.class
+          end
         end
 
+        @dns_manager = DnsManager.create
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
@@ -279,10 +289,6 @@ module Bosh::Director
 
       def redis?
         !threaded[:redis].nil?
-      end
-
-      def dns_enabled?
-        !@dns_db.nil?
       end
 
       def encryption?

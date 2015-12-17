@@ -1,0 +1,8 @@
+---
+name: database
+templates: {}
+packages: []
+
+provides:
+- db
+- {name: backup_db, type: db}

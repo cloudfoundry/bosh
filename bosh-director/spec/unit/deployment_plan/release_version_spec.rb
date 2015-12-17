@@ -86,7 +86,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       release = make(nil, spec)
       expect(release.templates).to eq([])
-      release.use_template_named('foobar')
+      release.get_or_create_template('foobar')
       expect(release.templates.size).to eq(1)
       template = release.templates[0]
       expect(release.template('foobar')).to eq(template)
@@ -153,7 +153,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       bar_42.add_package(p_node)
 
       release = make(deployment, {'name' => 'bar', 'version' => '42'})
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
 
       release.bind_model
       release.bind_templates
@@ -163,7 +163,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       # Making sure once bound template stays bound if we call
       # #use_template_named again
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
       expect(release.template('dea').model).to eq(t_dea)
     end
 
@@ -187,7 +187,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       bar_42.add_template(t_dea)
 
       release = make(make_deployment('mycloud'), {'name' => 'bar', 'version' => 42})
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
       template = release.template('dea')
 
       [:version, :blobstore, :sha1, :logs].each do |method|

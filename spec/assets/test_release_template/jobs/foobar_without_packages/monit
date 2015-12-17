@@ -1,0 +1,5 @@
+check process foobar
+  with pidfile /var/vcap/sys/run/foobar.pid
+  start program "/var/vcap/jobs/foobar/bin/foobar_ctl start"
+  stop program "/var/vcap/jobs/foobar/bin/foobar_ctl stop"
+  group vcap

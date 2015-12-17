@@ -24,11 +24,13 @@ module Bosh::Monitor
         @agent_id = @attributes["agent_id"]
         @job = @attributes["job"]
         @index = @attributes["index"].to_s
+        @node_id = @attributes["node_id"]
         @job_state = @attributes["job_state"]
 
         @tags = {}
         @tags["job"] = @job if @job
         @tags["index"] = @index if @index
+        @tags["node_id"] = @node_id if @node_id
         @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
@@ -58,7 +60,7 @@ module Bosh::Monitor
       end
 
       def short_description
-        "Heartbeat from #{@job}/#{@index} (#{@agent_id}) @ #{@timestamp.utc}"
+        "Heartbeat from #{@job}/#{@index} (agent_id=#{@agent_id} node_id=#{@node_id}) @ #{@timestamp.utc}"
       end
 
       def to_s
@@ -74,6 +76,7 @@ module Bosh::Monitor
           :agent_id => @agent_id,
           :job => @job,
           :index => @index,
+          :node_id => @node_id,
           :job_state => @job_state,
           :vitals => @vitals
         }

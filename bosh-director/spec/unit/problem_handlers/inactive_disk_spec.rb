@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::ProblemHandlers::InactiveDisk do
@@ -15,7 +13,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
 
     @instance = Bosh::Director::Models::Instance.
-      make(:job => "mysql_node", :index => 3, :vm_id => @vm.id)
+      make(:job => "mysql_node", :index => 3, :vm_id => @vm.id, :uuid => "52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7")
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => "disk-cid", :instance_id => @instance.id,
@@ -32,7 +30,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   it "has well-formed description" do
-    expect(@handler.description).to eq("Disk `disk-cid' (mysql_node/3, 300M) is inactive")
+    expect(@handler.description).to eq("Disk `disk-cid' (300M) for instance `mysql_node/52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7 (3)' is inactive")
   end
 
   describe "invalid states" do
@@ -80,6 +78,10 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   describe "delete disk solution" do
+    before do
+      @disk.add_snapshot(Bosh::Director::Models::Snapshot.make)
+    end
+
     it "fails if disk is mounted" do
       expect(@agent).to receive(:list_disk).and_return(["disk-cid"])
       expect {
@@ -87,15 +89,13 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       }.to raise_error(Bosh::Director::ProblemHandlerError, "Disk is currently in use")
     end
 
-    it "detaches disk from VM and deletes it from DB and cloud (if instance has VM)" do
-      expect(@agent).to receive(:list_disk).and_return(["other-disk"])
-      expect(@cloud).to receive(:detach_disk).with("vm-cid", "disk-cid")
-      expect(@cloud).to receive(:delete_disk).with("disk-cid")
+    it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
+      expect(@agent).to receive(:list_disk).and_return(['other-disk'])
+      expect(@cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid')
       @handler.apply_resolution(:delete_disk)
 
-      expect {
-        @disk.reload
-      }.to raise_error(Sequel::Error, "Record not found")
+      expect(Bosh::Director::Models::PersistentDisk[@disk.id]).to be_nil
+      expect(Bosh::Director::Models::Snapshot.all).to be_empty
     end
 
     it "ignores cloud errors and proceeds with deletion from DB" do
@@ -103,8 +103,6 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
       expect(@cloud).to receive(:detach_disk).with("vm-cid", "disk-cid").
         and_raise(RuntimeError.new("Cannot detach disk"))
-      expect(@cloud).to receive(:delete_disk).with("disk-cid").
-        and_raise(RuntimeError.new("Cannot delete disk"))
 
       @handler.apply_resolution(:delete_disk)
 

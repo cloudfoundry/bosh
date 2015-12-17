@@ -3,6 +3,8 @@ require 'bosh/director/compile_task_generator'
 
 module Bosh::Director
   describe CompileTaskGenerator do
+    include Support::StemcellHelpers
+
     describe '#generate!' do
       subject(:generator) { described_class.new(logger, event_log) }
 
@@ -16,7 +18,7 @@ module Bosh::Director
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b') }
       let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c') }
 
-      let(:stemcell) { Bosh::Director::Models::Stemcell.make }
+      let(:stemcell) { make_stemcell }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }
@@ -25,7 +27,7 @@ module Bosh::Director
         expect(release_version_model).to receive(:dependencies).with(package).and_return(dependencies)
         expect(release_version_model).to receive(:transitive_dependencies).with(package).and_return(transitive_dependencies)
         expect(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies).and_return(dependency_key)
-        expect(Bosh::Director::Models::CompiledPackage).to receive(:create_cache_key).with(package, transitive_dependencies, stemcell).and_return(cache_key)
+        expect(Bosh::Director::Models::CompiledPackage).to receive(:create_cache_key).with(package, transitive_dependencies, stemcell.model).and_return(cache_key)
       end
 
       context 'when existing compiled packages do not exist' do
@@ -59,9 +61,9 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.id]]
+            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
+            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
+            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
 
             expect(task_a.dependencies).to eq([task_b])
             expect(task_b.dependencies).to eq([task_c])
@@ -116,10 +118,10 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.id]]
-            task_d = compile_tasks[[package_d.id, stemcell.id]]
+            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
+            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
+            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
+            task_d = compile_tasks[[package_d.id, stemcell.model.id]]
 
             expect(task_a.dependencies).to eq([task_b, task_c])
             expect(task_b.dependencies).to eq([task_d])
@@ -140,7 +142,7 @@ module Bosh::Director
       end
 
       context 'when existing compiled packages exist' do
-        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell: stemcell, dependency_key: 'dependency-key-c') }
+        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell: stemcell.model, dependency_key: 'dependency-key-c') }
 
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
@@ -172,9 +174,9 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.id]]
+            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
+            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
+            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
 
             expect(task_a.dependencies).to eq([task_b])
             expect(task_b.dependencies).to eq([task_c])
@@ -231,10 +233,10 @@ module Bosh::Director
               expect(task.jobs).to eq([job])
             end
 
-            task_a = compile_tasks[[package_a.id, stemcell.id]]
-            task_b = compile_tasks[[package_b.id, stemcell.id]]
-            task_c = compile_tasks[[package_c.id, stemcell.id]]
-            task_d = compile_tasks[[package_d.id, stemcell.id]]
+            task_a = compile_tasks[[package_a.id, stemcell.model.id]]
+            task_b = compile_tasks[[package_b.id, stemcell.model.id]]
+            task_c = compile_tasks[[package_c.id, stemcell.model.id]]
+            task_d = compile_tasks[[package_d.id, stemcell.model.id]]
 
             expect(task_a.dependencies).to eq([task_b, task_c])
             expect(task_b.dependencies).to eq([task_d])
@@ -278,11 +280,11 @@ module Bosh::Director
 
         it 'logs at each step of dependency resolution' do
           allow(logger).to receive(:info)
-          expect(logger).to receive(:info).with("Checking whether package `#{package_a.desc}' needs to be compiled for stemcell `#{stemcell.desc}'").ordered
+          expect(logger).to receive(:info).with("Checking whether package `#{package_a.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package `#{package_a.desc}' dependencies").ordered
           expect(logger).to receive(:info).with("Package `#{package_a.desc}' depends on package `#{package_b.desc}'").ordered
 
-          expect(logger).to receive(:info).with("Checking whether package `#{package_b.desc}' needs to be compiled for stemcell `#{stemcell.desc}'").ordered
+          expect(logger).to receive(:info).with("Checking whether package `#{package_b.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package `#{package_b.desc}' dependencies").ordered
 
           generator.generate!(compile_tasks, job, template, package_a, stemcell)

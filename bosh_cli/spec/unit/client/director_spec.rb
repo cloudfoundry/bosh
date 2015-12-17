@@ -523,7 +523,8 @@ describe Bosh::Cli::Client::Director do
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => {
               'user'       => 'user',
@@ -537,7 +538,7 @@ describe Bosh::Cli::Client::Director do
                                                               :content_type => 'application/json'})
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.setup_ssh('foo', 'bar', 0, 'user', 'public_key', 'password')
+      @director.setup_ssh('foo', 'bar', 'fake-id', 'user', 'public_key', 'password')
     end
 
     it 'ssh cleanup' do
@@ -547,7 +548,8 @@ describe Bosh::Cli::Client::Director do
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => { 'user_regex' => 'bosh_' }
       }
@@ -559,7 +561,7 @@ describe Bosh::Cli::Client::Director do
                                                             )
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.cleanup_ssh('foo', 'bar', 'bosh_', [0])
+      @director.cleanup_ssh('foo', 'bar', 'bosh_', ['fake-id'])
     end
 
     context 'when director returns 404' do
@@ -620,6 +622,32 @@ describe Bosh::Cli::Client::Director do
       expect(@director).to receive(:get).with('/backups', nil, nil, {}, :file => true)
       .and_return([200, '/some/path', {}])
       expect(@director.fetch_backup).to eq('/some/path')
+    end
+  end
+
+  describe 'fetch_vm_state' do
+    let(:dummy_deployment_name) {"dummy_deployment"}
+    let(:dummy_vm_state) do
+      JSON.generate [{"agent_id" => "some-agent-id", "index" => "0", "job" => "dummy_deployment_job"}]
+    end
+
+    it 'fetches full vm state with a task by default' do
+      expect(@director).to receive(:request_and_track).
+          with(:get, "/deployments/#{dummy_deployment_name}/vms?format=full", {}).
+          and_return([:done, 14])
+
+      expect(@director).to receive(:get_task_result_log).with(14).
+          and_return(dummy_vm_state)
+
+      expect(@director.fetch_vm_state(dummy_deployment_name)).to eq(JSON.parse dummy_vm_state)
+    end
+
+    it 'fetches short form vm state without a task if full = false' do
+      expect(@director).to receive(:get).
+          with("/deployments/#{dummy_deployment_name}/vms", nil, nil, {}, {}).
+          and_return([200, "[#{dummy_vm_state}]", nil])
+
+      expect(@director.fetch_vm_state(dummy_deployment_name, {}, false)).to eq(JSON.parse dummy_vm_state)
     end
   end
 

@@ -10,9 +10,9 @@ describe 'health_monitor: 1', type: :integration do
   it 'resurrects stateless nodes' do
     deploy_from_scratch
 
-    original_vm = director.vm('foobar/0')
+    original_vm = director.vm('foobar', '0')
     original_vm.kill_agent
-    resurrected_vm = director.wait_for_vm('foobar/0', 300)
+    resurrected_vm = director.wait_for_vm('foobar', '0', 300)
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
   end
 
@@ -29,9 +29,9 @@ describe 'health_monitor: 1', type: :integration do
 
     deploy_from_scratch({:manifest_hash => manifest_hash})
 
-    original_vm = director.vm('job_with_templates_having_prestart_scripts/0')
+    original_vm = director.vm('job_with_templates_having_prestart_scripts', '0')
     original_vm.kill_agent
-    resurrected_vm = director.wait_for_vm('job_with_templates_having_prestart_scripts/0', 300)
+    resurrected_vm = director.wait_for_vm('job_with_templates_having_prestart_scripts', '0', 300)
     expect(resurrected_vm.cid).to_not eq(original_vm.cid)
 
     waiter = Bosh::Spec::Waiter.new(logger)
@@ -58,9 +58,9 @@ describe 'health_monitor: 1', type: :integration do
     deploy_from_scratch
 
     bosh_runner.run('vm resurrection foobar 0 off')
-    original_vm = director.vm('foobar/0')
+    original_vm = director.vm('foobar', '0')
     original_vm.kill_agent
-    expect(director.wait_for_vm('foobar/0', 150)).to be_nil
+    expect(director.wait_for_vm('foobar', '0', 150)).to be_nil
   end
 
   # ~4m
@@ -73,20 +73,20 @@ describe 'health_monitor: 1', type: :integration do
 
     bosh_runner.run('vm resurrection foobar 1 off')
 
-    original_0_vm = director.vm('foobar/0')
-    original_1_vm = director.vm('foobar/1')
+    original_0_vm = director.vm('foobar', '0')
+    original_1_vm = director.vm('foobar', '1')
 
     # Kill VMs as close as possible
     original_0_vm.kill_agent
     original_1_vm.kill_agent
 
-    new_0_vm = director.wait_for_vm('foobar/0', 150)
+    new_0_vm = director.wait_for_vm('foobar', '0', 150)
     expect(new_0_vm.cid).to_not eq(original_0_vm.cid)
 
     # Since at this point 0th VM is back up, assume that
     # if 1st VM would be resurrected it would've already happened
     # (i.e do not wait for long time)
-    new_1_vm = director.wait_for_vm('foobar/1', 10)
+    new_1_vm = director.wait_for_vm('foobar', '1', 10)
     expect(new_1_vm).to be_nil
   end
 
@@ -99,8 +99,8 @@ describe 'health_monitor: 1', type: :integration do
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_from_scratch(manifest_hash: deployment_hash)
 
-    director.vm('foobar/0').kill_agent
-    director.vm('foobar/1').kill_agent
+    director.vm('foobar', '0').kill_agent
+    director.vm('foobar', '1').kill_agent
 
     _, exit_code = bosh_runner.run('cck --report', failure_expected: true, return_exit_code: true)
     expect(exit_code).to eq(1)
@@ -108,8 +108,8 @@ describe 'health_monitor: 1', type: :integration do
     # Turn resurrector back on
     current_sandbox.reconfigure_health_monitor('health_monitor.yml.erb')
 
-    expect(director.wait_for_vm('foobar/0', 150)).to_not be_nil
-    expect(director.wait_for_vm('foobar/1', 150)).to_not be_nil
+    expect(director.wait_for_vm('foobar', '0', 150)).to_not be_nil
+    expect(director.wait_for_vm('foobar', '1', 150)).to_not be_nil
   end
 
   # ~50s
@@ -118,7 +118,36 @@ describe 'health_monitor: 1', type: :integration do
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_from_scratch(manifest_hash: deployment_hash)
 
-    director.vm('foobar/0').fail_job
+    director.vm('foobar', '0').fail_job
     waiter.wait(20) { expect(health_monitor.read_log).to match(%r{\[ALERT\] Alert @ .* fake-monit-description}) }
+  end
+
+  it 're-renders templates with new dynamic network IPs' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
+    manifest_hash['jobs'].first['properties'] = { 'networks' => ['a', 'b'] }
+
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config['networks'] << {
+      'name' => 'b',
+      'type' => 'dynamic',
+      'cloud_properties' => {}
+    }
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+    original_vm = director.vm('foobar', '0')
+    template = original_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=192.168.1.2')
+    expect(template).to include('b_ip=127.0.0.101')
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
+    resurrected_vm = director.kill_vm_and_wait_for_resurrection(original_vm)
+
+    template = resurrected_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=192.168.1.2')
+    expect(template).to include('b_ip=127.0.0.102')
   end
 end

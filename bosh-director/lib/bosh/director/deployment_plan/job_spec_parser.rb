@@ -3,7 +3,6 @@ require 'bosh/template/property_helper'
 module Bosh::Director
   module DeploymentPlan
     class JobSpecParser
-      include DnsHelper
       include ValidationHelper
       include Bosh::Template::PropertyHelper
       include IpUtil
@@ -19,24 +18,34 @@ module Bosh::Director
       # @return [DeploymentPlan::Job] Job as build from job_spec
       def parse(job_spec)
         @job_spec = job_spec
-        @job = Job.new(@deployment)
+        @job = Job.new(@logger)
 
         parse_name
         parse_lifecycle
 
         parse_release
+        validate_templates
+
         parse_template
         parse_templates
-
-        validate_templates
 
         check_template_uniqueness
         parse_disk
         parse_properties
         parse_resource_pool
         parse_update_config
-        parse_instances
-        parse_networks
+
+        networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
+        @job.networks = networks
+        assign_default_networks(networks)
+
+        availability_zones = JobAvailabilityZoneParser.new.parse(@job_spec, @job, @deployment, networks)
+        @job.availability_zones = availability_zones
+
+        parse_migrated_from
+
+        desired_instances = parse_desired_instances(availability_zones, networks)
+        @job.desired_instances = desired_instances
 
         @job
       end
@@ -45,7 +54,7 @@ module Bosh::Director
 
       def parse_name
         @job.name = safe_property(@job_spec, "name", :class => String)
-        @job.canonical_name = canonical(@job.name)
+        @job.canonical_name = Canonicalizer.canonicalize(@job.name)
       end
 
       def parse_lifecycle
@@ -100,7 +109,7 @@ module Bosh::Director
           end
 
           Array(template_names).each do |template_name|
-            @job.templates << @job.release.use_template_named(template_name)
+            @job.templates << @job.release.get_or_create_template(template_name)
           end
         end
       end
@@ -109,11 +118,9 @@ module Bosh::Director
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
 
         if templates
-          templates.each do |template|
-            template_name = safe_property(template, 'name', class: String)
-            release_name = safe_property(template, 'release', class: String, optional: true)
-
-            release = nil
+          templates.each do |template_spec|
+            template_name = safe_property(template_spec, 'name', class: String)
+            release_name = safe_property(template_spec, 'release', class: String, optional: true)
 
             if release_name
               release = @deployment.release(release_name)
@@ -128,7 +135,15 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.use_template_named(template_name)
+            @job.templates << release.get_or_create_template(template_name)
+
+            links = safe_property(template_spec, 'links', class: Hash, optional: true)
+            @logger.debug("Parsing template links: #{links.inspect}")
+
+            links.to_a.each do |name, path|
+              link_path = LinkPath.parse(@deployment.name, path, @logger)
+              @job.add_link_path(template_name, name, link_path)
+            end
           end
         end
       end
@@ -146,30 +161,45 @@ module Bosh::Director
 
       def parse_disk
         disk_size = safe_property(@job_spec, 'persistent_disk', :class => Integer, :optional => true)
+        disk_type_name = safe_property(@job_spec, 'persistent_disk_type', :class => String, :optional => true)
         disk_pool_name = safe_property(@job_spec, 'persistent_disk_pool', :class => String, :optional => true)
 
-        if disk_size && disk_pool_name
+        if disk_type_name && disk_pool_name
           raise JobInvalidPersistentDisk,
-            "Job `#{@job.name}' references both a peristent disk size `#{disk_size}' " +
-              "and a peristent disk pool `#{disk_pool_name}'"
+            "Job `#{@job.name}' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
+              "'disk_pools' key will be DEPRECATED in the future."
+        end
+
+        if disk_type_name
+            disk_name = disk_type_name
+            disk_source = 'type'
+        else
+          disk_name = disk_pool_name
+          disk_source = 'pool'
+        end
+
+        if disk_size && disk_name
+          raise JobInvalidPersistentDisk,
+            "Job `#{@job.name}' references both a persistent disk size `#{disk_size}' " +
+              "and a persistent disk #{disk_source} `#{disk_name}'"
         end
 
         if disk_size
           if disk_size < 0
             raise JobInvalidPersistentDisk,
-              "Job `#{@job.name}' references an invalid peristent disk size `#{disk_size}'"
+              "Job `#{@job.name}' references an invalid persistent disk size `#{disk_size}'"
           else
             @job.persistent_disk = disk_size
           end
         end
 
-        if disk_pool_name
-          disk_pool = @deployment.disk_pool(disk_pool_name)
-          if disk_pool.nil?
-            raise JobUnknownDiskPool,
-                  "Job `#{@job.name}' references an unknown disk pool `#{disk_pool_name}'"
+        if disk_name
+          disk_type = @deployment.disk_type(disk_name)
+          if disk_type.nil?
+            raise JobUnknownDiskType,
+                  "Job `#{@job.name}' references an unknown disk #{disk_source} `#{disk_name}'"
           else
-            @job.persistent_disk_pool = disk_pool
+            @job.persistent_disk_type = disk_type
           end
         end
       end
@@ -195,11 +225,46 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String)
-        @job.resource_pool = @deployment.resource_pool(resource_pool_name)
-        if @job.resource_pool.nil?
-          raise JobUnknownResourcePool,
-                "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
+        job_env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
+        @job.env = Env.new(job_env_hash)
+
+        resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
+        if resource_pool_name
+          resource_pool = @deployment.resource_pool(resource_pool_name)
+          if resource_pool.nil?
+            raise JobUnknownResourcePool,
+              "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
+          end
+
+          @job.vm_type = VmType.new({
+              'name' => resource_pool.name,
+              'cloud_properties' => resource_pool.cloud_properties
+            })
+
+          @job.stemcell = resource_pool.stemcell
+
+          if  !job_env_hash.empty? && !resource_pool.env.empty?
+            raise JobAmbiguousEnv,
+              "Job '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
+          end
+
+          @job.env = Env.new(resource_pool.env)
+
+          return
+        end
+
+        vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
+        @job.vm_type = @deployment.vm_type(vm_type_name)
+        if @job.vm_type.nil?
+          raise JobUnknownVmType,
+            "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
+        end
+
+        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
+        @job.stemcell = @deployment.stemcell(stemcell_name)
+        if @job.stemcell.nil?
+          raise JobUnknownStemcell,
+            "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
         end
       end
 
@@ -208,10 +273,18 @@ module Bosh::Director
         @job.update = UpdateConfig.new(update_spec, @deployment.update)
       end
 
-      def parse_instances
+      def parse_desired_instances(availability_zones, networks)
         @job.state = safe_property(@job_spec, "state", class: String, optional: true)
         job_size = safe_property(@job_spec, "instances", class: Integer)
         instance_states = safe_property(@job_spec, "instance_states", class: Hash, default: {})
+
+        networks.each do |network|
+          static_ips = network.static_ips
+          if static_ips && static_ips.size != job_size
+            raise JobNetworkInstanceIpMismatch,
+              "Job `#{@job.name}' has #{job_size} instances but was allocated #{static_ips.size} static IPs"
+          end
+        end
 
         instance_states.each_pair do |index, state|
           begin
@@ -239,93 +312,25 @@ module Bosh::Director
             "Invalid state `#{@job.state}' for `#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
         end
 
-        if @job.lifecycle == 'errand'
-          @job.resource_pool.reserve_errand_capacity(job_size)
-        else
-          @job.resource_pool.reserve_capacity(job_size)
-        end
-        job_size.times do |index|
-          @job.instances[index] = Instance.new(@job, index, @logger)
+        job_size.times.map do |index|
+          instance_state = @job.instance_state(index)
+          DesiredInstance.new(@job, instance_state, @deployment)
         end
       end
 
-      def parse_networks
-        @job.default_network = {}
-
-        network_specs = safe_property(@job_spec, "networks", :class => Array)
-        if network_specs.empty?
-          raise JobMissingNetwork,
-                "Job `#{@job.name}' must specify at least one network"
-        end
-
-        network_specs.each do |network_spec|
-          network_name = safe_property(network_spec, "name", :class => String)
-          network = @deployment.network(network_name)
-          if network.nil?
-            raise JobUnknownNetwork,
-                  "Job `#{@job.name}' references an unknown network `#{network_name}'"
-          end
-
-          static_ips = nil
-          if network_spec["static_ips"]
-            static_ips = []
-            each_ip(network_spec["static_ips"]) do |ip|
-              static_ips << ip
-            end
-            if static_ips.size != @job.instances.size
-              raise JobNetworkInstanceIpMismatch,
-                    "Job `#{@job.name}' has #{@job.instances.size} instances but was allocated #{static_ips.size} static IPs"
+      def parse_migrated_from
+        migrated_from = safe_property(@job_spec, 'migrated_from', class: Array, optional: true, :default => [])
+        migrated_from.each do |migrated_from_job_spec|
+          name = safe_property(migrated_from_job_spec, 'name', class: String)
+          az = safe_property(migrated_from_job_spec, 'az', class: String, optional: true)
+          unless az.nil?
+            unless @job.availability_zones.to_a.map(&:name).include?(az)
+              raise DeploymentInvalidMigratedFromJob,
+              "Job '#{name}' specified for migration to job '#{@job.name}' refers to availability zone '#{az}'. " +
+                "Az '#{az}' is not in the list of availability zones of job '#{@job.name}'."
             end
           end
-
-          default_network = safe_property(network_spec, "default", :class => Array, :optional => true)
-          if default_network
-            default_network.each do |property|
-              unless Network::VALID_DEFAULTS.include?(property)
-                raise JobNetworkInvalidDefault,
-                      "Job `#{@job.name}' specified an invalid default network property `#{property}', " +
-                      "valid properties are: " + Network::VALID_DEFAULTS.join(", ")
-              end
-
-              if @job.default_network[property]
-                raise JobNetworkMultipleDefaults,
-                      "Job `#{@job.name}' specified more than one network to contain default #{property}"
-              else
-                @job.default_network[property] = network_name
-              end
-            end
-          end
-
-          @job.instances.each_with_index do |instance, index|
-            reservation = NetworkReservation.new
-            if static_ips
-              reservation.ip = static_ips[index]
-              reservation.type = NetworkReservation::STATIC
-            else
-              reservation.type = NetworkReservation::DYNAMIC
-            end
-            instance.add_network_reservation(network_name, reservation)
-          end
-        end
-
-        if network_specs.size > 1
-          missing_default_properties = Network::VALID_DEFAULTS.dup
-          @job.default_network.each_key do |key|
-            missing_default_properties.delete(key)
-          end
-
-          unless missing_default_properties.empty?
-            raise JobNetworkMissingDefault,
-                  "Job `#{@job.name}' must specify which network is default for " +
-                  missing_default_properties.sort.join(", ") + ", since it has more than one network configured"
-          end
-        else
-          # Set the default network to the one and only available network
-          # (if not specified already)
-          network = safe_property(network_specs[0], "name", :class => String)
-          Network::VALID_DEFAULTS.each do |property|
-            @job.default_network[property] ||= network
-          end
+          @job.migrated_from << MigratedFromJob.new(name, az)
         end
       end
 
@@ -341,6 +346,13 @@ module Bosh::Director
         if [template_property, templates_property].compact.empty?
           raise ValidationMissingField,
                 "Job `#{@job.name}' does not specify template or templates keys, one is required"
+        end
+      end
+
+      def assign_default_networks(networks)
+        Network::VALID_DEFAULTS.each do |property|
+          network = networks.find { |network| network.default_for?(property) }
+          @job.default_network[property] = network.name if network
         end
       end
     end

@@ -3,21 +3,32 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemHandlers::UnresponsiveAgent do
 
-    def make_handler(vm, cloud, agent, data = {})
+    RSpec::Matchers.define :vm_with_agent_id do |agent_id|
+      match do |actual|
+        actual.agent_id == agent_id
+      end
+    end
+
+    def make_handler(vm, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_defaults).with(vm.agent_id, anything).and_return(agent)
+      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id), anything).and_return(@agent)
+      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id)).and_return(@agent)
       handler
     end
 
     before(:each) do
       @cloud = instance_double('Bosh::Cloud')
-      @agent = double('agent')
+      @agent = double(Bosh::Director::AgentClient)
       allow(Config).to receive(:cloud).and_return(@cloud)
 
-      @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007')
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id)
+      deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
+
+      @vm = Models::Vm.create(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
+      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm: @vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' }, spec: {'networks' => networks})
     end
+
+    let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
     let :handler do
       make_handler(@vm, @cloud, @agent)
@@ -90,37 +101,53 @@ module Bosh::Director
       context 'when no errors' do
         let(:spec) do
           {
-            'resource_pool' => {
-              'stemcell' => {
-                'name' => 'stemcell-name',
-                'version' => '3.0.2'
-              },
+            'vm_type' => {
+              'name' => 'fake-vm-type',
               'cloud_properties' => { 'foo' => 'bar' },
             },
-            'networks' => ['A', 'B', 'C']
+            'stemcell' => {
+              'name' => 'stemcell-name',
+              'version' => '3.0.2'
+            },
+            'networks' => networks,
+            'template_hashes' => {},
+            'configuration_hash' => {'configuration' => 'hash'},
+            'rendered_templates_archive' => {'some' => 'template'}
+          }
+        end
+        let(:agent_spec) do
+          {
+            'networks' => networks,
+            'template_hashes' => {},
+            'configuration_hash' => {'configuration' => 'hash'},
+            'rendered_templates_archive' => {'some' => 'template'}
           }
         end
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
-          allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+          @instance.update(spec: spec)
+          @vm.update(env: { 'key1' => 'value1' })
+          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222'), anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222')).and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
+          fake_app
+          allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
         end
-
 
         it 'recreates the VM' do
           allow(@agent).to receive(:ping).and_raise(RpcTimeout)
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).
-            with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], { 'key1' => 'value1' })
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
-          expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:apply).with({'networks' => networks}).ordered
+          expect(fake_new_agent).to receive(:get_state).and_return(agent_spec).ordered
+          expect(fake_new_agent).to receive(:apply).with(agent_spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 

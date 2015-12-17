@@ -61,6 +61,7 @@ jobs:
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
+
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
         config:

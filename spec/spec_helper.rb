@@ -16,6 +16,7 @@ Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f)
 
 ASSETS_DIR = File.expand_path('../assets', __FILE__)
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
+LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_release_template')
 BOSH_WORK_TEMPLATE    = File.join(ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true

@@ -92,5 +92,93 @@ module Bosh::Director::Models
         end
       end
     end
+
+    context 'apply' do
+      before do
+        subject.spec=({
+          'resource_pool' =>
+            {'name' => 'a',
+              'cloud_properties' => {},
+              'stemcell' => {
+                'name' => 'ubuntu-stemcell',
+                'version' => '1'
+              }
+            }
+        })
+      end
+
+      it 'should have vm_type' do
+        expect(subject.spec['vm_type']).to eq({'name' => 'a', 'cloud_properties' => {}})
+      end
+
+      it 'should have stemcell' do
+        expect(subject.spec['stemcell']).to eq({
+              'alias' => 'a',
+              'name' => 'ubuntu-stemcell',
+              'version' => '1'
+            })
+      end
+    end
+
+    context 'spec' do
+      context 'when spec_json persisted in database has no resource pool' do
+        it 'returns spec_json as is' do
+          subject.spec=({
+            'vm_type' => 'stuff',
+            'stemcell' => 'stuff'
+          })
+
+          expect(subject.spec).to eq({'vm_type' => 'stuff', 'stemcell' => 'stuff'})
+        end
+      end
+
+      context 'when spec_json has resource pool persisted in database' do
+        context 'when resource_pool has vm_type and stemcell information' do
+          it 'returns vm_type and stemcell values' do
+            subject.spec=({
+              'resource_pool' =>
+                {'name' => 'a',
+                  'cloud_properties' => {},
+                  'stemcell' => {
+                    'name' => 'ubuntu-stemcell',
+                    'version' => '1'
+                  }
+                }
+            })
+            expect(subject.spec).to eq(
+                {
+                  'vm_type' =>
+                    {'name' => 'a',
+                      'cloud_properties' => {}
+                    },
+                  'stemcell' =>
+                    {'name' => 'ubuntu-stemcell',
+                      'version' => '1',
+                      'alias' => 'a'
+                    }
+                })
+          end
+        end
+
+        context 'when resource_pool DOES NOT have vm_type and stemcell information' do
+          it 'returns vm_type only' do
+            subject.spec=({
+              'resource_pool' =>
+                {'name' => 'a',
+                  'cloud_properties' => {},
+                }
+            })
+            expect(subject.spec).to eq(
+                {
+                  'vm_type' =>
+                    {'name' => 'a',
+                      'cloud_properties' => {}
+                    }
+                }
+              )
+          end
+        end
+      end
+    end
   end
 end

@@ -48,7 +48,6 @@ module Bosh::Director
       end
     end
 
-
     def self.it_acts_as_synchronous_message(message_name)
       describe "##{message_name}" do
         let(:task) do
@@ -80,7 +79,7 @@ module Bosh::Director
 
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
-        subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+        subject(:client) { AgentClient.with_vm(vm_model) }
         let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
         let(:task) do
           {
@@ -95,7 +94,6 @@ module Bosh::Director
         end
 
         describe 'send asynchronous messages' do
-
           before do
             allow(Config).to receive(:nats_rpc)
             allow(Api::ResourceManager).to receive(:new)
@@ -109,12 +107,9 @@ module Bosh::Director
           it_acts_as_asynchronous_message :migrate_disk
           it_acts_as_asynchronous_message :mount_disk
           it_acts_as_asynchronous_message :unmount_disk
-          it_acts_as_asynchronous_message :configure_networks
           it_acts_as_asynchronous_message :stop
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
-          it_acts_as_asynchronous_message :prepare_network_change
-          it_acts_as_asynchronous_message :prepare_configure_networks
           it_acts_as_asynchronous_message :start
         end
 
@@ -199,7 +194,7 @@ module Bosh::Director
 
     context 'task is synchronous' do
       describe 'it does not have agent_task_id' do
-        subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+        subject(:client) { AgentClient.with_vm(vm_model) }
 
         before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
         let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
@@ -213,11 +208,9 @@ module Bosh::Director
         it_acts_as_synchronous_message :cancel_task
         it_acts_as_synchronous_message :get_state
         it_acts_as_synchronous_message :list_disk
-        it_acts_as_synchronous_message :prepare_network_change
         it_acts_as_synchronous_message :start
       end
     end
-
 
     describe 'ping <=> pong' do
       let(:stemcell) do
@@ -229,25 +222,11 @@ module Bosh::Director
       end
 
       let(:vm_model) do
-        cloud = instance_double('Bosh::Cloud')
-        allow(Config).to receive(:cloud).and_return(cloud)
-        env = {}
-        deployment = Models::Deployment.make
-        cloud_properties = { 'ram' => '2gb' }
-        allow(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
-                                    { 'ram' => '2gb' }, network_settings, [99],
-                                    { 'bosh' =>
-                                        { 'credentials' =>
-                                            { 'crypt_key' => kind_of(String),
-                                              'sign_key' => kind_of(String) } } })
-        VmCreator.new.create(deployment, stemcell,
-                             cloud_properties,
-                             network_settings, Array(99),
-                             env)
+        Models::Vm.make(credentials: Bosh::Core::EncryptionHandler.generate_credentials)
       end
 
       subject(:client) do
-        AgentClient.with_defaults(vm_model.agent_id)
+        AgentClient.with_vm(vm_model)
       end
 
       it 'should use vm credentials' do

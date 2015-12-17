@@ -31,37 +31,6 @@ module Bosh::Director
     end
 
     describe '#scan' do
-      it 'scans for out-of-sync VMs' do
-        vm = Models::Vm.make(agent_id: 'out-of-sync-agent-id', deployment: deployment)
-        Models::Instance.make(vm: vm, deployment: deployment, job: 'mysql_node', index: 3)
-
-        out_of_sync_agent = double('out_of_sync_agent-id')
-
-        allow(AgentClient).to receive(:with_defaults).with('out-of-sync-agent-id', anything).and_return(out_of_sync_agent)
-
-        out_of_sync_state = {
-          'deployment' => 'fake-deployment',
-          'job' => {'name' => 'mysql_node'},
-          'index' => 4
-        }
-
-        expect(out_of_sync_agent).to receive(:get_state).and_return(out_of_sync_state)
-        expect(out_of_sync_agent).to receive(:list_disk).and_return([])
-
-        expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-        expect(event_logger).to receive(:track_and_log).with('0 OK, 0 unresponsive, 0 missing, 0 unbound, 1 out of sync')
-
-        expect(problem_register).to receive(:problem_found).with(
-          :out_of_sync_vm,
-          vm,
-          deployment: 'fake-deployment',
-          job: 'mysql_node',
-          index: 4
-        )
-
-        vm_scanner.scan
-      end
-
       it 'scans for unbound instance vms' do
         vms = (1..3).collect do |i|
           Models::Vm.make(agent_id: "agent-#{i}", deployment: deployment)
@@ -72,9 +41,9 @@ module Bosh::Director
         agent_1 = double('agent-1')
         agent_2 = double('agent-2')
         agent_3 = double('agent-3')
-        allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(agent_1)
-        allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(agent_2)
-        allow(AgentClient).to receive(:with_defaults).with('agent-3', anything).and_return(agent_3)
+        allow(AgentClient).to receive(:with_vm).with(vms[0], anything).and_return(agent_1)
+        allow(AgentClient).to receive(:with_vm).with(vms[1], anything).and_return(agent_2)
+        allow(AgentClient).to receive(:with_vm).with(vms[2], anything).and_return(agent_3)
 
         # valid idle resource pool VM
         expect(agent_1).to receive(:get_state).and_return({'deployment' => 'fake-deployment'})
@@ -99,7 +68,7 @@ module Bosh::Director
         expect(agent_3).to receive(:list_disk).and_return([])
 
         expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-        expect(event_logger).to receive(:track_and_log).with('2 OK, 0 unresponsive, 0 missing, 1 unbound, 0 out of sync')
+        expect(event_logger).to receive(:track_and_log).with('2 OK, 0 unresponsive, 0 missing, 1 unbound')
 
         expect(problem_register).to receive(:problem_found).with(
           :unbound_instance_vm,
@@ -122,10 +91,10 @@ module Bosh::Director
         allow(instance_manager).to receive(:find_by_name).with('fake-deployment', 'job-3', 3).and_return(instances[2])
 
         expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-        expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync')
+        expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 0 missing, 0 unbound')
 
         good_agent_client = double(:agent_client, list_disk: [])
-        allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(good_agent_client)
+        allow(AgentClient).to receive(:with_vm).with(instances[1].vm, anything).and_return(good_agent_client)
         good_state = {
           'deployment' => 'fake-deployment',
           'job' => {'name' => 'job-2'},
@@ -134,7 +103,7 @@ module Bosh::Director
         expect(good_agent_client).to receive(:get_state).and_return(good_state)
 
         unresponsive_agent_client = double(:agent_client)
-        allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(unresponsive_agent_client)
+        allow(AgentClient).to receive(:with_vm).with(instances[0].vm, anything).and_return(unresponsive_agent_client)
         expect(unresponsive_agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
         allow(cloud).to receive(:has_vm?).and_raise(Bosh::Clouds::NotImplemented)
 
@@ -143,7 +112,7 @@ module Bosh::Director
           instances[0].vm
         )
 
-        expect(AgentClient).to_not receive(:with_defaults).with('agent-3', anything)
+        expect(AgentClient).to_not receive(:with_vm).with(instances[2].vm, anything)
 
         vm_scanner.scan([['job-1', 1], ['job-2', 2]])
       end
@@ -165,9 +134,9 @@ module Bosh::Director
           responsive_agent = double(AgentClient)
           agent_options = { timeout: 10, retry_methods: { get_state: 0}}
 
-          allow(AgentClient).to receive(:with_defaults).with('agent-0', agent_options).and_return(unresponsive_agent1)
-          allow(AgentClient).to receive(:with_defaults).with('agent-1', agent_options).and_return(unresponsive_agent2)
-          allow(AgentClient).to receive(:with_defaults).with('agent-2', agent_options).and_return(responsive_agent)
+          allow(AgentClient).to receive(:with_vm).with(unresponsive_vm1, agent_options).and_return(unresponsive_agent1)
+          allow(AgentClient).to receive(:with_vm).with(unresponsive_vm2, agent_options).and_return(unresponsive_agent2)
+          allow(AgentClient).to receive(:with_vm).with(responsive_vm, agent_options).and_return(responsive_agent)
 
           # Unresponsive agent
           allow(unresponsive_agent1).to receive(:get_state).and_raise(RpcTimeout)
@@ -191,7 +160,7 @@ module Bosh::Director
           context 'when cloud has VM' do
             it 'registers unresponsive agent problem' do
               expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-              expect(event_logger).to receive(:track_and_log).with('1 OK, 2 unresponsive, 0 missing, 0 unbound, 0 out of sync')
+              expect(event_logger).to receive(:track_and_log).with('1 OK, 2 unresponsive, 0 missing, 0 unbound')
 
               expect(problem_register).to receive(:problem_found).with(
                 :unresponsive_agent,
@@ -214,7 +183,7 @@ module Bosh::Director
 
             it 'registers missing VM problem' do
               expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-              expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 1 missing, 0 unbound, 0 out of sync')
+              expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 1 missing, 0 unbound')
 
               expect(problem_register).to receive(:problem_found).with(
                 :missing_vm,
@@ -238,7 +207,7 @@ module Bosh::Director
 
           it 'registers unresponsive agent problem' do
             expect(event_logger).to receive(:track_and_log).with('Checking VM states')
-            expect(event_logger).to receive(:track_and_log).with('1 OK, 2 unresponsive, 0 missing, 0 unbound, 0 out of sync')
+            expect(event_logger).to receive(:track_and_log).with('1 OK, 2 unresponsive, 0 missing, 0 unbound')
 
             expect(problem_register).to receive(:problem_found).with(
               :unresponsive_agent,
@@ -262,7 +231,7 @@ module Bosh::Director
       before { allow(cloud).to receive(:has_vm?).and_return(true) }
 
       let(:agent) { double('Bosh::Director::AgentClient') }
-      before { allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent) }
 
       before do
         Models::PersistentDisk.make(instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
@@ -285,18 +254,6 @@ module Bosh::Director
 
         it 'returns disk cid registered on vm' do
           expect(problem_register).to receive(:problem_found).with(:unresponsive_agent, vm)
-          vm_scanner.scan
-          expect(vm_scanner.agent_disks['fake-disk-cid']).to eq(['vm-cid'])
-        end
-      end
-
-      context 'when agent does not support list_disk' do
-        before do
-          allow(agent).to receive(:list_disk).and_raise(RuntimeError.new('unknown command list_disk'))
-        end
-
-        it 'returns disk cid registered on vm' do
-          expect(problem_register).to_not receive(:problem_found)
           vm_scanner.scan
           expect(vm_scanner.agent_disks['fake-disk-cid']).to eq(['vm-cid'])
         end
@@ -332,7 +289,7 @@ module Bosh::Director
           Models::Instance.make(vm: second_vm, deployment: deployment, job: 'job-2', index: 2)
 
           agent_2 = double('agent-2')
-          allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(agent_2)
+          allow(AgentClient).to receive(:with_vm).with(second_vm, anything).and_return(agent_2)
 
           good_state_2 = {
             'deployment' => 'fake-deployment',

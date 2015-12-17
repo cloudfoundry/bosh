@@ -21,7 +21,7 @@ module Bosh::Director
       agent = @instance_manager.agent_client_for(instance)
       blobstore_id = nil
 
-      stage = @event_log.begin_stage("Fetching logs for #{instance.job}/#{instance.index}", 1)
+      stage = @event_log.begin_stage("Fetching logs for #{instance.job}/#{instance.uuid} (#{instance.index})", 1)
       stage.advance_and_track('Finding and packing log files') do
         fetch_logs_result = agent.fetch_logs(log_type, filters)
         blobstore_id = fetch_logs_result['blobstore_id']

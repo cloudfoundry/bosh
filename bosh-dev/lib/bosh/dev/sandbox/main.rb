@@ -232,6 +232,10 @@ module Bosh::Dev::Sandbox
       @logger.info('Stopped sandbox')
     end
 
+    def db
+      Sequel.connect(@director_service.db_config)
+    end
+
     def nats_port
       @nats_port ||= @port_provider.get_port(:nats)
     end
@@ -273,6 +277,13 @@ module Bosh::Dev::Sandbox
       File.join(ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
+    def with_health_monitor_running
+      health_monitor_process.start
+      yield
+    ensure
+      health_monitor_process.stop
+    end
+
     private
 
     def external_cpi_config
@@ -299,6 +310,8 @@ module Bosh::Dev::Sandbox
       @director_service.start(director_config)
 
       @nginx_service.restart_if_needed
+
+      @cpi.reset
     end
 
     def setup_sandbox_root

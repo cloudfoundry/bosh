@@ -40,6 +40,10 @@ describe 'director.yml.erb.erb' do
           'max_threads' => 32,
           'enable_snapshots' => true,
           'ignore_missing_gateway' => false,
+          'disks' => {
+            'max_orphaned_age_in_days' => 3,
+            'cleanup_schedule' => '0 0,30 * * * * UTC',
+          },
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',

@@ -6,16 +6,10 @@ module Bosh::Director::Models
     def validate
       validates_presence [:deployment_id, :agent_id]
       validates_unique :agent_id
-
     end
 
-    def apply_spec
-      return nil if apply_spec_json.nil?
-      Yajl::Parser.parse(apply_spec_json)
-    end
-
-    def apply_spec=(spec)
-      self.apply_spec_json = Yajl::Encoder.encode(spec)
+    def vm_exists?
+      !(cid.nil? || cid.empty?)
     end
 
     # @param [Hash] env_hash Environment hash
@@ -38,4 +32,7 @@ module Bosh::Director::Models
       self.credentials_json = Yajl::Encoder.encode(spec)
     end
   end
+
+  Vm.plugin :association_dependencies
+  Vm.add_association_dependencies :instance => :nullify
 end

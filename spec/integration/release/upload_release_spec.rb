@@ -106,8 +106,8 @@ describe 'upload release', type: :integration do
       expect(out).to match /bar\s*\(.*\)\s*UPLOAD/
       expect(out).to match /Release repacked/
       expect(out).to match /Started creating new packages > bar.*Done/
-      expect(out).to match /Started processing 7 existing packages > Processing 7 existing packages.*Done/
-      expect(out).to match /Started processing 9 existing jobs > Processing 9 existing jobs.*Done/
+      expect(out).to match /Started processing 17 existing packages > Processing 17 existing packages.*Done/
+      expect(out).to match /Started processing 12 existing jobs > Processing 12 existing jobs.*Done/
       expect(out).to match /Release uploaded/
 
       out = bosh_runner.run('releases')
@@ -272,9 +272,8 @@ describe 'upload release', type: :integration do
         Releases total: 1
       )
 
-      inspect_release_out = scrub_blobstore_ids(bosh_runner.run("inspect release test_release/1"))
+      inspect_release_out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
       expect(inspect_release_out).to match_output %(
-        Acting as user 'test' on 'Test Director'
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
         | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
@@ -320,7 +319,7 @@ describe 'upload release', type: :integration do
       shared_release_desc = bosh_runner.run("inspect release release_with_shared_blobs/1")
 
       expect(test_release_desc).to_not eq(shared_release_desc)
-      expect(scrub_blobstore_ids(test_release_desc)).to eq(scrub_blobstore_ids(shared_release_desc))
+      expect(scrub_random_ids(test_release_desc)).to eq(scrub_random_ids(shared_release_desc))
     end
 
     it 'raises an error if the uploaded release version already exists but there are packages with different fingerprints' do
@@ -468,19 +467,7 @@ describe 'upload release', type: :integration do
       inspect_release_with_other_name_out = bosh_runner.run("inspect release test_release_with_other_name/1")
       inspect_release_out = bosh_runner.run("inspect release test_release/1")
 
-      expect(scrub_blobstore_ids(inspect_release_out)).to match_output %(
-        Acting as user 'test' on 'Test Director'
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |
-        | job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |
-        | job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |
-        | job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |
-        | job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |
-        | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-
+      expect(scrub_random_ids(inspect_release_out)).to match_output %(
         +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
         | Package                  | Fingerprint                              | Compiled For                            | Blobstore ID                         | SHA1                                     |
         +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
@@ -520,9 +507,8 @@ describe 'upload release', type: :integration do
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       expect(output).to include('Release uploaded')
 
-      output = scrub_blobstore_ids(bosh_runner.run('inspect release test_release/1'))
+      output = scrub_random_ids(bosh_runner.run('inspect release test_release/1'))
       expect(output).to match_output %(
-        Acting as user 'test' on 'Test Director'
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
         | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+

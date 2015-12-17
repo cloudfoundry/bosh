@@ -8,19 +8,19 @@ describe Bosh::Cli::Command::Ssh do
   let(:net_ssh) { double('ssh') }
   let(:director) { double(Bosh::Cli::Client::Director, uuid: 'director-uuid') }
   let(:deployment) { 'mycloud' }
-  let(:ssh_session) {instance_double(Bosh::Cli::SSHSession)}
+  let(:ssh_session) { instance_double(Bosh::Cli::SSHSession) }
 
   let(:manifest) do
     {
-        'name' => deployment,
-        'director_uuid' => 'director-uuid',
-        'releases' => [],
-        'jobs' => [
-            {
-                'name' => 'dea',
-                'instances' => 1
-            }
-        ]
+      'name' => deployment,
+      'director_uuid' => 'director-uuid',
+      'releases' => [],
+      'jobs' => [
+        {
+          'name' => 'dea',
+          'instances' => 1
+        }
+      ]
     }
   end
 
@@ -51,28 +51,12 @@ describe Bosh::Cli::Command::Ssh do
         }.to raise_error(Bosh::Cli::CliError, 'Please choose deployment first')
       end
 
-      it 'should fail to setup ssh when a job index is not an Integer' do
-        expect {
-          command.shell('dea/dea')
-        }.to raise_error(Bosh::Cli::CliError, 'Invalid job index, integer number expected')
-      end
-
       context 'when there is only one instance with that job name in the deployment' do
-        let(:manifest) do
-          {
-              'name' => deployment,
-              'director_uuid' => 'director-uuid',
-              'releases' => [],
-              'jobs' => [
-                  {
-                      'name' => 'dea',
-                      'instances' => 1
-                  }
-              ]
-          }
+        before do
+          allow(director).to receive(:fetch_vm_state).and_return([{"agent_id" => "1234-5678-9012-3456", "index" => 0, "job" => "dea"}])
         end
 
-        it 'should implicitly chooses the only instance if job name not provided' do
+        it 'implicitly chooses the only instance if job name not provided' do
           expect(command).not_to receive(:choose)
           expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
           command.shell
@@ -80,18 +64,14 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       context 'when there are many instances with that job name in the deployment' do
-        let(:manifest) do
-          {
-              'name' => deployment,
-              'director_uuid' => 'director-uuid',
-              'releases' => [],
-              'jobs' => [
-                  {
-                      'name' => 'dea',
-                      'instances' => 5
-                  }
-              ]
-          }
+        before do
+          allow(director).to receive(:fetch_vm_state).and_return([
+            {"agent_id" => "1234-5678-9012-3456", "index" => 0, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3457", "index" => 1, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3458", "index" => 2, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3459", "index" => 3, "job" => "dea"},
+            {"agent_id" => "1234-5678-9012-3450", "index" => 4, "job" => "dea"},
+            ])
         end
 
         it 'should prompt for an instance if job name not given' do
@@ -108,7 +88,7 @@ describe Bosh::Cli::Command::Ssh do
         allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         allow(director).to receive(:cleanup_ssh)
         expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
+          with('mycloud', 'dea', '0', 'testable_user', 'public_key', 'encrypted_password').
           and_return([:done, 1234])
 
         expect(ssh_session).to receive(:ssh_known_host_path).and_return("fake_path")
@@ -120,12 +100,18 @@ describe Bosh::Cli::Command::Ssh do
 
     describe 'session' do
       it 'should try to setup interactive shell when a job index is given' do
-        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
         command.shell('dea', '0')
       end
 
+      it 'should try to setup interactive shell when a job id is given' do
+        uuid = SecureRandom.uuid
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', uuid)
+        command.shell('dea', uuid)
+      end
+
       it 'should try to setup interactive shell when a job index is given as part of the job name' do
-        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', '0')
         command.shell('dea/0')
       end
 
@@ -134,7 +120,7 @@ describe Bosh::Cli::Command::Ssh do
 
         expect(director).to receive(:setup_ssh).and_return([:done, 42])
         expect(director).to receive(:get_task_result_log).with(42).
-            and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+          and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
         expect(ssh_session).to receive(:set_host_session).with({'status' => 'success', 'ip' => '127.0.0.1'})
         expect(director).to receive(:cleanup_ssh)
         expect(ssh_session).to receive(:cleanup)
@@ -153,7 +139,7 @@ describe Bosh::Cli::Command::Ssh do
 
           allow(director).to receive(:setup_ssh).and_return([:done, 42])
           allow(director).to receive(:get_task_result_log).with(42).
-                                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+            and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
           allow(director).to receive(:cleanup_ssh)
 
           command.shell('dea/0')
@@ -167,7 +153,7 @@ describe Bosh::Cli::Command::Ssh do
 
         expect(director).to receive(:setup_ssh).and_return([:done, 42])
         expect(director).to receive(:get_task_result_log).with(42).
-                                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap' }]))
+          and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap'}]))
         expect(director).to receive(:cleanup_ssh)
         expect(ssh_session).to receive(:cleanup)
 
@@ -178,12 +164,12 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should not setup ssh with gateway from bosh director when no_gateway is specified' do
-        allow(Net::SSH::Gateway).to receive(:new){expect(true).to equal?(false)}
+        allow(Net::SSH::Gateway).to receive(:new) { expect(true).to equal?(false) }
         expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1', "-i/tmp/.bosh/tmp/random_uuid_key", "-o StrictHostKeyChecking=yes", "")
 
         expect(director).to receive(:setup_ssh).and_return([:done, 42])
         expect(director).to receive(:get_task_result_log).with(42).
-                                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap' }]))
+          and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1', 'gateway_host' => 'dummy-host', 'gateway_user' => 'vcap'}]))
         expect(director).to receive(:cleanup_ssh)
         expect(ssh_session).to receive(:cleanup)
 
@@ -206,7 +192,7 @@ describe Bosh::Cli::Command::Ssh do
 
           expect(director).to receive(:setup_ssh).and_return([:done, 42])
           expect(director).to receive(:get_task_result_log).with(42).
-              and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+            and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
           expect(director).to receive(:cleanup_ssh)
           expect(ssh_session).to receive(:cleanup)
 
@@ -225,7 +211,7 @@ describe Bosh::Cli::Command::Ssh do
 
           expect(director).to receive(:setup_ssh).and_return([:done, 42])
           expect(director).to receive(:get_task_result_log).with(42).
-                                  and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+            and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
           expect(director).to receive(:cleanup_ssh)
           expect(ssh_session).to receive(:cleanup)
 
@@ -249,7 +235,7 @@ describe Bosh::Cli::Command::Ssh do
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
-                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+              and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
             expect(ssh_session).to receive(:cleanup)
 
@@ -266,7 +252,7 @@ describe Bosh::Cli::Command::Ssh do
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
-                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+              and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
             expect(ssh_session).to receive(:cleanup)
 
@@ -282,14 +268,14 @@ describe Bosh::Cli::Command::Ssh do
 
             expect(director).to receive(:setup_ssh).and_return([:done, 42])
             expect(director).to receive(:get_task_result_log).with(42).
-                and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+              and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
             expect(director).to receive(:cleanup_ssh)
             expect(ssh_session).to receive(:cleanup)
 
             expect {
               command.shell('dea/0')
             }.to raise_error(Bosh::Cli::CliError,
-                             "Authentication failed with gateway #{gateway_host} and user #{gateway_user}.")
+              "Authentication failed with gateway #{gateway_host} and user #{gateway_user}.")
           end
 
           context 'when ssh gateway is setup' do
@@ -310,7 +296,7 @@ describe Bosh::Cli::Command::Ssh do
               it 'should disable strict host key checking' do
                 expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', "-o StrictHostKeyChecking=no", "")
                 allow(director).to receive(:get_task_result_log).with(42).
-                                        and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+                  and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
                 command.shell('dea/0')
               end
             end
@@ -326,11 +312,11 @@ describe Bosh::Cli::Command::Ssh do
               end
 
               it 'should call ssh with bosh known hosts path' do
-                expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost','-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', '-o StrictHostKeyChecking=yes', "-o UserKnownHostsFile=/tmp/.bosh/tmp/random_uuid_known_hosts")
+                expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345', '-i/tmp/.bosh/tmp/random_uuid_key', '-o StrictHostKeyChecking=yes', "-o UserKnownHostsFile=/tmp/.bosh/tmp/random_uuid_known_hosts")
                 command.shell('dea/0')
               end
             end
-        end
+          end
         end
       end
     end
@@ -342,8 +328,8 @@ describe Bosh::Cli::Command::Ssh do
       allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
       allow(director).to receive(:cleanup_ssh)
       expect(director).to receive(:setup_ssh).
-          with('mycloud', 'dea', 0, 'testable_user', 'public_key', 'encrypted_password').
-          and_return([:done, 1234])
+        with('mycloud', 'dea', '0', 'testable_user', 'public_key', 'encrypted_password').
+        and_return([:done, 1234])
 
       command.add_option(:upload, false)
       allow(command).to receive(:job_exists_in_deployment?).and_return(true)

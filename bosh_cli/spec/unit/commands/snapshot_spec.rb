@@ -109,6 +109,14 @@ describe Bosh::Cli::Command::Snapshot do
           command.take('foo', '0')
         end
       end
+
+      context 'for a job and id' do
+        it 'takes the snapshot' do
+          expect(director).to receive(:take_snapshot).with('bosh', 'foo', 'abc123')
+
+          command.take('foo', 'abc123')
+        end
+      end
     end
   end
 

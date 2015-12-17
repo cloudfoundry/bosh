@@ -7,20 +7,83 @@ describe 'deploy', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['name'] = 'fake-name1'
     deploy_from_scratch(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
+    expect_running_vms_with_names_and_count('fake-name1' => 3)
 
     manifest_hash['jobs'].first['name'] = 'fake-name2'
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name2/0 fake-name2/1 fake-name2/2))
+    expect_running_vms_with_names_and_count('fake-name2' => 3)
 
     manifest_hash['jobs'].first['name'] = 'fake-name1'
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
+    expect_running_vms_with_names_and_count('fake-name1' => 3)
+  end
+
+  context 'when stemcell is specified with an OS' do
+    it 'deploys with the stemcell with specified OS and version' do
+      target_and_login
+      create_and_upload_test_release
+
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['resource_pools'].first['stemcell'].delete('name')
+      cloud_config_hash['resource_pools'].first['stemcell']['os'] = 'toronto-os'
+      cloud_config_hash['resource_pools'].first['stemcell']['version'] = '1'
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      stemcell_id = current_sandbox.cpi.all_stemcells[0]['id']
+
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_v2.tgz')} --skip-if-exists")
+
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'].first['instances'] = 1
+      deploy_simple_manifest(manifest_hash)
+
+      create_vm_invocations = current_sandbox.cpi.invocations_for_method("create_vm")
+      expect(create_vm_invocations.count).to be > 0
+
+      create_vm_invocations.each do |invocation|
+        expect(invocation['inputs']['stemcell_id']).to eq(stemcell_id)
+      end
+
+    end
+  end
+
+  context 'when stemcell is using latest version' do
+    it 'redeploys with latest version of stemcell' do
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config['resource_pools'].first['stemcell']['version'] = 'latest'
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'].first['instances'] = 1
+
+      target_and_login
+      create_and_upload_test_release
+      upload_cloud_config(cloud_config_hash: cloud_config)
+
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      stemcell_1 = table(bosh_runner.run('stemcells')).last
+      expect(stemcell_1['Version']).to eq('1')
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+      initial_count = invocations.count
+      expect(initial_count).to be > 1
+      expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_1['CID'])
+
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_v2.tgz')} --skip-if-exists")
+      stemcell_2 = table(bosh_runner.run('stemcells')).last
+      expect(stemcell_2['Version']).to eq('2')
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+      expect(invocations.count).to be > initial_count
+      expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell_2['CID'])
+    end
   end
 
   it 'deployment fails when starting task fails' do
     deploy_from_scratch
-    director.vm('foobar/0').fail_start_task
+    director.vm('foobar', '0').fail_start_task
     _, exit_code = deploy(failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
   end
@@ -53,17 +116,13 @@ describe 'deploy', type: :integration do
       it 'respects the cloud related configurations in the deployment manifest' do
         deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
 
-        expect_running_vms(%w(foobar/0 foobar/1 foobar/2 unknown/unknown unknown/unknown))
+        expect_running_vms_with_names_and_count('foobar' => 3)
         expect_table('deployments', %(
-          Acting as user 'test' on 'Test Director'
-
           +--------+----------------------+-------------------+--------------+
           | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
           +--------+----------------------+-------------------+--------------+
           | simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | none         |
           +--------+----------------------+-------------------+--------------+
-
-          Deployments total: 1
         ))
       end
     end
@@ -95,7 +154,7 @@ describe 'deploy', type: :integration do
       it 'runs the pre-start scripts on the agent vm, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
         deploy({})
 
-        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+        agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
         expect(agent_log).to include("/jobs/job_1_with_pre_start_script/bin/pre-start' script has successfully executed")
@@ -137,7 +196,7 @@ describe 'deploy', type: :integration do
       bosh_runner.run("upload release #{spec_asset('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
       deploy({})
 
-      agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+      agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
       job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
       job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_pre_start_script/pre-start.stderr.log")
 
@@ -180,7 +239,7 @@ describe 'deploy', type: :integration do
           deploy({})
         }.to raise_error(RuntimeError, /result: 1 of 2 pre-start scripts failed. Failed Jobs: job_with_corrupted_pre_start_script. Successful Jobs: job_with_valid_pre_start_script./)
 
-        agent_id = director.vm('job_with_templates_having_prestart_scripts/0').agent_id
+        agent_id = director.vm('job_with_templates_having_prestart_scripts', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
         expect(agent_log).to include("/jobs/job_with_valid_pre_start_script/bin/pre-start' script has successfully executed")
@@ -202,56 +261,17 @@ describe 'deploy', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
 
-    cloud_config_hash['resource_pools'].first['size'] = 3
     manifest_hash['jobs'].first['instances'] = 3
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
-
-    # scale down
-    cloud_config_hash['resource_pools'].first['size'] = 2
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    expect_running_vms_with_names_and_count('foobar' => 3)
 
     manifest_hash['jobs'].first['instances'] = 2
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1))
-
-    # scale up, above original size
-    cloud_config_hash['resource_pools'].first['size'] = 4
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    expect_running_vms_with_names_and_count('foobar' => 2)
 
     manifest_hash['jobs'].first['instances'] = 4
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
-  end
-
-  it 'supports fixed size resource pools' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first['size'] = 3
-
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['instances'] = 3
-
-    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
-
-    # scale down
-    manifest_hash['jobs'].first['instances'] = 1
-    deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
-
-    # scale up, below original size
-    manifest_hash['jobs'].first['instances'] = 2
-    deploy_simple_manifest(manifest_hash: manifest_hash)
-
-    expect_running_vms(%w(foobar/0 foobar/1 unknown/unknown))
-
-    # scale up, above original size
-    cloud_config_hash['resource_pools'].first['size'] = 4
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
-
-    manifest_hash['jobs'].first['instances'] = 4
-    deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
+    expect_running_vms_with_names_and_count('foobar' => 4)
   end
 
   it 'supports dynamically sized resource pools' do
@@ -262,38 +282,64 @@ describe 'deploy', type: :integration do
     manifest_hash['jobs'].first['instances'] = 3
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2))
+    expect_running_vms_with_names_and_count('foobar' => 3)
 
     # scale down
     manifest_hash['jobs'].first['instances'] = 1
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0))
+    expect_running_vms_with_names_and_count('foobar' => 1)
 
     # scale up, below original size
     manifest_hash['jobs'].first['instances'] = 2
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1))
+    expect_running_vms_with_names_and_count('foobar' => 2)
 
     # scale up, above original size
     manifest_hash['jobs'].first['instances'] = 4
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
+    expect_running_vms_with_names_and_count('foobar' => 4)
   end
 
-  it 'deletes extra vms when switching from fixed-size to dynamically-sized resource pools' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first['size'] = 2
+  it 'outputs properly formatted deploy information' do
+    # We need to keep this test since the output is not tested and
+    # keeps breaking.
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['instances'] = 1
 
-    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0 unknown/unknown))
+    output = deploy_from_scratch(manifest_hash: manifest_hash)
 
-    cloud_config_hash['resource_pools'].first.delete('size')
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
-    deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect_running_vms(%w(foobar/0))
+    duration_regex = '\\d\\d:\\d\\d:\\d\\d'
+    step_duration_regex = '\\(' + duration_regex + '\\)'
+    date_regex = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC'
+    sha_regex = '[0-9a-z]+'
+    task_regex = '\\d+'
+    uuid_regex = '[0-9a-f]{8}-[0-9a-f-]{27}'
+
+    # order for creating missing vms is not guaranteed (running in parallel)
+    expect(output).to match(strip_heredoc <<-OUT)
+Director task #{task_regex}
+  Started preparing deployment > Preparing deployment. Done #{step_duration_regex}
+
+  Started preparing package compilation > Finding packages to compile. Done #{step_duration_regex}
+
+  Started compiling packages
+  Started compiling packages > foo/#{sha_regex}. Done #{step_duration_regex}
+  Started compiling packages > bar/#{sha_regex}. Done #{step_duration_regex}
+     Done compiling packages #{step_duration_regex}
+
+  Started creating missing vms > foobar/#{uuid_regex} \\(0\\). Done #{step_duration_regex}
+
+  Started updating job foobar > foobar/#{uuid_regex} \\(0\\) \\(canary\\). Done #{step_duration_regex}
+
+Task #{task_regex} done
+
+Started		#{date_regex}
+Finished	#{date_regex}
+Duration	#{duration_regex}
+
+Deployed `simple' to `Test Director'
+    OUT
   end
 
   context 'it supports compiled releases' do
@@ -357,13 +403,14 @@ describe 'deploy', type: :integration do
         it 'fails with an error message saying there is no way to compile for that stemcell' do
           out = deploy(failure_expected: true)
           expect(out).to include("Error 60001:")
+
           expect(out).to match_output %(
-            Can't deploy release `test_release/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
-             - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
-             - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
-             - `pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c' against `ubuntu-stemcell/1'
-             - `pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4' against `ubuntu-stemcell/1'
-             - `pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4' against `ubuntu-stemcell/1'
+            Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+             - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+             - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+             - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+             - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+             - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
           )
         end
 
@@ -375,40 +422,25 @@ describe 'deploy', type: :integration do
 
           it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
             out = deploy(failure_expected: true)
-
             expect(out).to include("Error 60001:")
 
             expect(out).to match_output %(
-              Can't deploy release `test_release/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
-               - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
-               - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
+              Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
             )
 
             expect(out).to match_output %(
-              Can't deploy release `test_release_a/1'. It references packages (see below) without source code and are not compiled against intended stemcells:
-               - `pkg_1/16b4c8ef1574b3f98303307caad40227c208371f' against `ubuntu-stemcell/1'
-               - `pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154' against `ubuntu-stemcell/1'
-               - `pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c' against `ubuntu-stemcell/1'
-               - `pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4' against `ubuntu-stemcell/1'
-               - `pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4' against `ubuntu-stemcell/1'
+              Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+               - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+               - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+               - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
             )
           end
         end
       end
-    end
-  end
-
-  def expect_running_vms(job_name_index_list)
-    vms = director.vms
-    check_for_unknowns(vms)
-    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
-    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
-  end
-
-  def check_for_unknowns(vms)
-    uniq_vm_names = vms.map(&:job_name_index).uniq
-    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown/unknown'
-      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
     end
   end
 end

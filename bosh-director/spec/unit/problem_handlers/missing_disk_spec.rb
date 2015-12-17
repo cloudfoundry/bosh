@@ -39,8 +39,6 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
       before do
         Bosh::Director::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snapshot-cid')
         allow(agent_client).to receive(:list_disk).and_return({})
-        allow(cloud).to receive(:delete_snapshot)
-        allow(cloud).to receive(:delete_disk)
       end
 
       def self.it_ignores_cloud_disk_errors
@@ -78,15 +76,13 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
             it_ignores_cloud_disk_errors
 
-            it 'deactivates, unmounts, detaches, deletes snapshots, deletes disk from cloud, deletes disk reference' do
+            it 'deactivates, unmounts, detaches, deletes snapshots, deletes disk reference' do
               expect(agent_client).to receive(:unmount_disk) do
                 db_disk = Bosh::Director::Models::PersistentDisk[disk.id]
                 expect(db_disk.active).to be(false)
               end.ordered
 
               expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
-              expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-              expect(cloud).to receive(:delete_disk).ordered
 
               handler.apply_resolution(:delete_disk_reference)
 
@@ -102,10 +98,8 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
                 )
               end
 
-              it 'detaches disk, deletes snapshots, deletes disk, deletes disk reference' do
+              it 'detaches disk, deletes snapshots, deletes disk reference' do
                 expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
-                expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-                expect(cloud).to receive(:delete_disk).ordered
 
                 handler.apply_resolution(:delete_disk_reference)
 
@@ -142,16 +136,13 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
             it_ignores_cloud_disk_errors
 
-            it 'deactivates, detaches, deletes snapshots, deletes disk from cloud, deletes disk reference' do
+            it 'deactivates, detaches, deletes snapshots, deletes disk reference' do
               expect(agent_client).to_not receive(:unmount_disk)
 
               expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid') do
                 db_disk = Bosh::Director::Models::PersistentDisk[disk.id]
                 expect(db_disk.active).to be(false)
               end.ordered
-
-              expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-              expect(cloud).to receive(:delete_disk).ordered
 
               handler.apply_resolution(:delete_disk_reference)
 
@@ -168,11 +159,9 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
           it_ignores_cloud_disk_errors
 
-          it 'detaches disk, delete disk from cloud, deletes snapshots, deletes disk reference' do
+          it 'detaches disk, deletes snapshots, deletes disk reference' do
             expect(agent_client).to_not receive(:unmount_disk)
             expect(cloud).to receive(:detach_disk).ordered
-            expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-            expect(cloud).to receive(:delete_disk).ordered
 
             handler.apply_resolution(:delete_disk_reference)
 
@@ -189,11 +178,9 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
         it_ignores_cloud_disk_errors
 
-        it 'deletes disk from cloud, deletes snapshots, deletes disk reference' do
+        it 'deletes snapshots, deletes disk reference' do
           expect(agent_client).to_not receive(:unmount_disk)
           expect(cloud).to_not receive(:detach_disk)
-          expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-          expect(cloud).to receive(:delete_disk).ordered
 
           handler.apply_resolution(:delete_disk_reference)
 
@@ -208,12 +195,9 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
           vm.destroy
         end
 
-        it 'deletes disk related info from cloud and database directly' do
+        it 'deletes disk related info from database directly' do
           handler = described_class.new(disk.id, {})
           allow(handler).to receive(:cloud).and_return(cloud)
-
-          expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
-          expect(cloud).to receive(:delete_disk).ordered
 
           expect {
             handler.apply_resolution(:delete_disk_reference)

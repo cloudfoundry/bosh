@@ -223,7 +223,7 @@ describe 'cli: deploy uploading', type: :integration do
     after { file_server.stop }
 
     let(:stemcell_url) { file_server.http_url("valid_stemcell.tgz") }
-    let(:stemcell_sha) { '2ff0f2c5aac7ec46e0482d764fe8effed930bf0a' }
+    let(:stemcell_sha) { '73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
 
     it 'uploads the stemcell from the remote url in the manifest' do
       deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_stemcell_manifest(stemcell_url, stemcell_sha))
