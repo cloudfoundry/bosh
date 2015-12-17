@@ -126,6 +126,28 @@ module Bosh::Director::DeploymentPlan
               expect { ip_provider.reserve(other_reservation_with_same_ip) }.not_to raise_error
             end
           end
+
+          context 'when user switches network type from manual to dynamic AND deployment had a previous static IP reservation' do
+            it 'releases IP' do
+              manual_network_spec['subnets'].first['static'] = ['192.168.1.2']
+              reservation = BD::DesiredNetworkReservation.new_static(instance, manual_network, '192.168.1.2')
+              ip_provider.reserve(reservation)
+
+              dynamic_network = DynamicNetwork.new('my-manual-network', [], logger)
+              reservation = BD::ExistingNetworkReservation.new(instance, dynamic_network, '192.168.1.2')
+              ip_provider.reserve_existing_ips(reservation)
+
+              other_instance = double(:instance, model: Bosh::Director::Models::Instance.make, availability_zone: BD::DeploymentPlan::AvailabilityZone.new('az-2', {}))
+              other_reservation_with_same_ip = BD::DesiredNetworkReservation.new_static(other_instance, manual_network, '192.168.1.2')
+
+              expect {
+                ip_provider.reserve(other_reservation_with_same_ip)
+              }.to raise_error
+
+              ip_provider.release(reservation)
+              expect { ip_provider.reserve(other_reservation_with_same_ip) }.not_to raise_error
+            end
+          end
         end
       end
 
