@@ -111,7 +111,7 @@ jobs:
           params:
             DB:           postgresql
             RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
   - name: integration-2.1-mysql
     public: true
@@ -127,7 +127,7 @@ jobs:
           params:
             DB:           mysql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
   - name: integration-2.1-postgres
     public: true
@@ -143,7 +143,7 @@ jobs:
           params:
             DB:           postgresql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
   - name: load-tests
     public: true
