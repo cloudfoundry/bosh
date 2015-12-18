@@ -49,7 +49,7 @@ module Bosh::Director
             'cid' => vm.cid,
             'job' => instance ? instance.job : nil,
             'index' => instance ? instance.index : nil,
-            'instance_id' => instance ? instance.uuid : nil
+            'id' => instance ? instance.uuid : nil
           }
         end
 

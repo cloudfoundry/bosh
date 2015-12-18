@@ -247,9 +247,9 @@ describe Bosh::Cli::Command::Instances do
 
     context 'when the server returns instance ids' do
       before {
-        vm1_state['instance_id'] = 'abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        vm1_state['id'] = 'abcdefgh-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         vm_state2 = vm1_state.clone
-        vm_state2['instance_id'] = 'stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        vm_state2['id'] = 'stuvwxyz-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         vm_state2['index'] = 1
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm1_state, vm_state2] }
       }

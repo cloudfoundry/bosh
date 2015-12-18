@@ -23,7 +23,7 @@ module Bosh::Spec
           vm_data[:resurrection],
           vm_data[:ips],
           vm_data[:az],
-          vm_data[:instance_id],
+          vm_data[:id],
           vm_data[:job_name],
           vm_data[:index],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
@@ -39,7 +39,7 @@ module Bosh::Spec
 
       instances.map do |instance_data|
         Bosh::Spec::Instance.new(
-          instance_data[:instance_id],
+          instance_data[:id],
           instance_data[:job_name],
           instance_data[:index],
           !instance_data[:bootstrap].empty?,
@@ -212,7 +212,7 @@ module Bosh::Spec
           vm[:is_ip_address_for_previous_row] = true
         else
           vm[:job_name] = match_data[job_name_match_index]
-          vm[:instance_id] = match_data[instance_id_match_index]
+          vm[:id] = match_data[instance_id_match_index]
           vm[:bootstrap] = match_data[bootstrap_match_index]
           vm[:index] = match_data[index_match_index]
         end

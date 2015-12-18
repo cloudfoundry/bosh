@@ -200,7 +200,7 @@ module Bosh::Director
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['instance_id']).to eq('blarg')
+          expect(status['id']).to eq('blarg')
         end
 
         job.perform

@@ -381,7 +381,7 @@ module Bosh::Director
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
-                  'instance_id' => "instance-#{i}"
+                  'id' => "instance-#{i}"
               )
             end
           end

@@ -160,8 +160,8 @@ describe Bosh::Cli::DeploymentHelper do
       jobs: [{'name' => 'job', 'instances' => 2}]))
 
       allow(director).to receive(:fetch_vm_state).and_return([
-        {'instance_id' => '1234-5678-9012-3456', 'index' => 0, 'job' => 'job'},
-        {'instance_id' => '1234-5678-9012-3457', 'index' => 1, 'job' => 'job'}
+        {'id' => '1234-5678-9012-3456', 'index' => 0, 'job' => 'job'},
+        {'id' => '1234-5678-9012-3457', 'index' => 1, 'job' => 'job'}
       ])
     end
 

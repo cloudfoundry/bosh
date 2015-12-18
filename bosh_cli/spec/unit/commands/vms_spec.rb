@@ -185,9 +185,9 @@ describe Bosh::Cli::Command::Vms do
       end
     end
 
-    context 'when instance_id is present' do
+    context 'when id is present' do
       before do
-        vm_state['instance_id'] = 'my_instance_id'
+        vm_state['id'] = 'my_instance_id'
         allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state] }
       end
 
