@@ -9,6 +9,8 @@ groups:
       - integration-1.9-postgres
       - integration-2.1-mysql
       - integration-2.1-postgres
+      - load-tests
+      - fuzz-tests
       - publish-coverage
       - promote-candidate
 
@@ -143,6 +145,37 @@ jobs:
             RUBY_VERSION: 2.1.7
             NUM_GROUPS: 16
 
+  - name: load-tests
+    public: true
+    serial: true
+    plan:
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+
+  - name: fuzz-tests
+    public: true
+    serial: true
+    plan:
+    - { get: fuzz-interval-trigger, trigger: true }
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-fuzz-tests }
+
+    - task: test
+      privileged: true
+      file: bosh-fuzz-tests/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+
   - name: publish-coverage
     public: true
     serial: true
@@ -178,9 +211,26 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: {{branch}}
 
+  - name: bosh-fuzz-tests
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
+      branch: master
+
+  - name: bosh-load-tests-workspace
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+      branch: master
+
   - name: bosh-candidate
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh.git
       branch: candidate
       private_key: {{github_deployment_key}}
+
+  - name: fuzz-interval-trigger
+    type: time
+    source:
+      interval: 15m
