@@ -79,6 +79,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     exclude_on_warden: true,
     exclude_on_openstack: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe package('open-vm-tools') do
       it { should be_installed }
