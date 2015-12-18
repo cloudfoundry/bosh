@@ -238,15 +238,15 @@ module Bosh::Director
         job.perform
       end
 
-          context 'when instance is a bootstrap node' do
-        it 'should return is_bootstrap as true' do
+      context 'when instance is a bootstrap node' do
+        it 'should return bootstrap as true' do
           Models::Instance.make(deployment: @deployment, vm: vm, bootstrap: true)
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
-            expect(status['is_bootstrap']).to be_truthy
+            expect(status['bootstrap']).to be_truthy
           end
 
           job.perform
@@ -254,14 +254,14 @@ module Bosh::Director
       end
 
       context 'when instance is NOT a bootstrap node' do
-        it 'should return is_bootstrap as false' do
+        it 'should return bootstrap as false' do
           Models::Instance.make(deployment: @deployment, vm: vm, bootstrap: false)
           stub_agent_get_state_to_return_state_with_vitals
           job = Jobs::VmState.new(@deployment.id, 'full')
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
-            expect(status['is_bootstrap']).to be_falsey
+            expect(status['bootstrap']).to be_falsey
           end
 
           job.perform

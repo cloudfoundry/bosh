@@ -76,7 +76,7 @@ module Bosh::Director
           :resurrection_paused => vm.instance ? vm.instance.resurrection_paused : nil,
           :az => vm.instance ? vm.instance.availability_zone : nil,
           :id => vm.instance ? vm.instance.uuid : nil,
-          :is_bootstrap => vm.instance ? vm.instance.bootstrap : false
+          :bootstrap => vm.instance ? vm.instance.bootstrap : false
         }
       end
 

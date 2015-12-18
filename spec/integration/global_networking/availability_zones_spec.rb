@@ -629,18 +629,18 @@ describe 'availability zones', type: :integration do
         simple_manifest['jobs'].first['instances'] = 2
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
-        bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+        bootstrap_node = director.instances.find { |instance| instance.bootstrap }
 
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2'] - [bootstrap_node.az]
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        new_bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+        new_bootstrap_node = director.instances.find { |instance| instance.bootstrap }
         expect(bootstrap_node.id).not_to eq(new_bootstrap_node.id)
 
         simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
-        current_bootstrap_node = director.instances.find { |instance| instance.is_bootstrap }
+        current_bootstrap_node = director.instances.find { |instance| instance.bootstrap }
         expect(current_bootstrap_node.id).to eq(new_bootstrap_node.id)
       end
     end

@@ -394,12 +394,12 @@ describe 'migrated from', type: :integration do
         puts new_instances.map(&:inspect)
         etcd_instance_1 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '0' }
         expect(etcd_instance_1).to_not be_nil
-        expect(etcd_instance_1.is_bootstrap).to be_truthy
+        expect(etcd_instance_1.bootstrap).to be_truthy
         expect(etcd_instance_1.az).to eq('my-az-1')
 
         etcd_instance_2 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '1' }
         expect(etcd_instance_2).to_not be_nil
-        expect(etcd_instance_2.is_bootstrap).to be_falsey
+        expect(etcd_instance_2.bootstrap).to be_falsey
         expect(etcd_instance_2.az).to eq('my-az-2')
       end
     end
@@ -587,12 +587,12 @@ describe 'migrated from', type: :integration do
       it 'picks only one bootstrap instance' do
         deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1_and_etcd_z2_in_az2, cloud_config_hash: cloud_config_hash_with_azs)
         original_instances = director.instances
-        expect(original_instances.select(&:is_bootstrap).size).to eq(2)
+        expect(original_instances.select(&:bootstrap).size).to eq(2)
 
         deploy_simple_manifest(manifest_hash: manifest_with_azs)
 
         new_instances = director.instances
-        expect(new_instances.select(&:is_bootstrap).size).to eq(1)
+        expect(new_instances.select(&:bootstrap).size).to eq(1)
       end
     end
   end
