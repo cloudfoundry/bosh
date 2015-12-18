@@ -139,8 +139,10 @@ module Bosh::Cli
         instances.each do |instance|
           job_name = instance['job']
           index = instance['index']
-          id = instance['instance_id']
-          menu.choice("#{job_name}/#{index} (#{id})") { [job_name, index] }
+          instance_id = instance['instance_id']
+          name = "#{job_name}/#{index}"
+          name = "#{name} (#{instance_id})" if instance_id
+          menu.choice(name) { [job_name, index] }
         end
       end
     end

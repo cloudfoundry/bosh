@@ -64,27 +64,52 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       context 'when there are many instances with that job name in the deployment' do
-        before do
-          allow(director).to receive(:fetch_vm_state).and_return([
-                {'instance_id' => '1234-5678-9012-3456', 'index' => 0, 'job' => 'dea'},
-                {'instance_id' => '1234-5678-9012-3457', 'index' => 1, 'job' => 'dea'},
-                {'instance_id' => '1234-5678-9012-3458', 'index' => 2, 'job' => 'dea'},
-                {'instance_id' => '1234-5678-9012-3459', 'index' => 3, 'job' => 'dea'},
-                {'instance_id' => '1234-5678-9012-3450', 'index' => 4, 'job' => 'dea'},
+        let(:menu) { HighLine::Menu.new }
+
+        context 'when response contains instance_id' do
+          before do
+            allow(director).to receive(:fetch_vm_state).and_return([
+              {'instance_id' => '1234-5678-9012-3456', 'index' => 0, 'job' => 'dea'},
+              {'instance_id' => '1234-5678-9012-3457', 'index' => 1, 'job' => 'dea'},
+              {'instance_id' => '1234-5678-9012-3458', 'index' => 2, 'job' => 'dea'},
+              {'instance_id' => '1234-5678-9012-3459', 'index' => 3, 'job' => 'dea'},
+              {'instance_id' => '1234-5678-9012-3450', 'index' => 4, 'job' => 'dea'},
             ])
+          end
+
+          it 'prompts for an instance if job name not given with instance id' do
+            expect(command).to receive(:choose).and_yield(menu).and_return(['dea', 3])
+            expect(menu).to receive(:choice).with('dea/0 (1234-5678-9012-3456)')
+            expect(menu).to receive(:choice).with('dea/1 (1234-5678-9012-3457)')
+            expect(menu).to receive(:choice).with('dea/2 (1234-5678-9012-3458)')
+            expect(menu).to receive(:choice).with('dea/3 (1234-5678-9012-3459)')
+            expect(menu).to receive(:choice).with('dea/4 (1234-5678-9012-3450)')
+            expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 3)
+            command.shell
+          end
         end
 
-        it 'should prompt for an instance if job name not given' do
-          menu = HighLine::Menu.new
+        context 'when response does not contain instance_id' do
+          before do
+            allow(director).to receive(:fetch_vm_state).and_return([
+              {'index' => 0, 'job' => 'dea'},
+              {'index' => 1, 'job' => 'dea'},
+              {'index' => 2, 'job' => 'dea'},
+              {'index' => 3, 'job' => 'dea'},
+              {'index' => 4, 'job' => 'dea'},
+            ])
+          end
 
-          expect(command).to receive(:choose).and_yield(menu).and_return(['dea', 3])
-          expect(menu).to receive(:choice).with('dea/0 (1234-5678-9012-3456)')
-          expect(menu).to receive(:choice).with('dea/1 (1234-5678-9012-3457)')
-          expect(menu).to receive(:choice).with('dea/2 (1234-5678-9012-3458)')
-          expect(menu).to receive(:choice).with('dea/3 (1234-5678-9012-3459)')
-          expect(menu).to receive(:choice).with('dea/4 (1234-5678-9012-3450)')
-          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 3)
-          command.shell
+          it 'prompts for an instance if job name not given with instance id' do
+            expect(command).to receive(:choose).and_yield(menu).and_return(['dea', 3])
+            expect(menu).to receive(:choice).with('dea/0')
+            expect(menu).to receive(:choice).with('dea/1')
+            expect(menu).to receive(:choice).with('dea/2')
+            expect(menu).to receive(:choice).with('dea/3')
+            expect(menu).to receive(:choice).with('dea/4')
+            expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 3)
+            command.shell
+          end
         end
       end
     end
