@@ -99,6 +99,7 @@
       # Tear down the Concourse hotfix pipelines
       fly -t production destroy-pipeline -p $HOTFIX_IMG_PIPELINE
       fly -t production destroy-pipeline -p $HOTFIX_BOSH_PIPELINE
+      git push origin :$HOTFIX_NAME
       ```
 
 ## Notes
