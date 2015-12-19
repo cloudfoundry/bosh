@@ -20,7 +20,7 @@ module Bosh::Director::DeploymentPlan
       job
     end
 
-    let(:desired) { [DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment), DesiredInstance.new(job, nil, deployment)] }
+    let(:desired) { [DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment)] }
     let(:existing) {
       [
         existing_instance_with_az(2, zone_1.name),

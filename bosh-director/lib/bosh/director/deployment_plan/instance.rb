@@ -23,7 +23,7 @@ module Bosh::Director
       attr_accessor :rendered_templates_archive
 
       # @return [String] job state
-      attr_reader :state
+      attr_reader :virtual_state
 
       attr_reader :current_state
 
@@ -34,11 +34,11 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
-      def self.create_from_job(job, index, state, deployment_model, instance_state, availability_zone, logger)
+      def self.create_from_job(job, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
         new(
           job.name,
           index,
-          state,
+          virtual_state,
           job.vm_type,
           job.stemcell,
           job.env,
@@ -53,7 +53,7 @@ module Bosh::Director
       def initialize(
         job_name,
         index,
-        state,
+        virtual_state,
         vm_type,
         stemcell,
         env,
@@ -83,7 +83,7 @@ module Bosh::Director
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
         @dns_manager = DnsManager.create
 
-        @state = state
+        @virtual_state = virtual_state
       end
 
       def bootstrap?
@@ -121,7 +121,7 @@ module Bosh::Director
             deployment_id: @deployment_model.id,
             job: @job_name,
             index: index,
-            state: @state,
+            state: state,
             compilation: @compilation,
             uuid: SecureRandom.uuid,
             bootstrap: false
@@ -238,7 +238,7 @@ module Bosh::Director
       end
 
       def update_state
-        @model.update(state: @state)
+        @model.update(state: state)
       end
 
       def update_description
@@ -256,6 +256,17 @@ module Bosh::Director
       def assign_availability_zone(availability_zone)
         @availability_zone = availability_zone
         @model.update(availability_zone: availability_zone_name)
+      end
+
+      def state
+        case @virtual_state
+          when 'recreate'
+            'started'
+          when 'restart'
+            'started'
+          else
+            @virtual_state
+        end
       end
 
       ##

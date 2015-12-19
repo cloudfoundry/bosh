@@ -31,6 +31,7 @@ module Bosh::Cli
     end
 
     def change(state, job, index_or_id, force)
+      job, index_or_id = job.split('/') if index_or_id.nil?
       description = job_description(job, index_or_id)
       op_desc = OPERATION_DESCRIPTIONS.fetch(state) % description
       new_state = NEW_STATES.fetch(state)
@@ -68,6 +69,5 @@ module Bosh::Cli
       return 'all jobs' if job == '*'
       index_or_id ? "#{job}/#{index_or_id}" : "#{job}/*"
     end
-
   end
 end

@@ -210,8 +210,8 @@ module Bosh::Director
       # Returns the state state of job instance by its index
       # @param [Integer] index Instance index
       # @return [String, nil] Instance state (nil if not specified)
-      def instance_state(index)
-        @instance_states[index] || @state
+      def state_for_instance(instance_model)
+        @instance_states[instance_model.uuid] || @instance_states[instance_model.index.to_s] || @state
       end
 
       # Registers compiled package with this job.

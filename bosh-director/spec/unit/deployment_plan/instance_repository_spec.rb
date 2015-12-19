@@ -40,7 +40,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     let(:instance_spec) { {} }
 
     it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
-      desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, plan)
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, plan)
       instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {})
 
       expect(instance.model).to eq(existing_instance)
@@ -48,19 +48,20 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.state).to eq(existing_instance.state)
     end
 
-    context 'when DesiredInstance has a state set on it' do
+    context 'when job has instance state' do
       it 'returns a DeploymentPlan::Instance with the state of the DesiredInstance' do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, 'stopped', plan)
+        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, plan)
+        job.instance_states[existing_instance.uuid] = 'job-state'
         instance = BD::DeploymentPlan::InstanceRepository.new(logger).fetch_existing(desired_instance, existing_instance, {})
 
-        expect(instance.state).to eq(desired_instance.state)
+        expect(instance.state).to eq('job-state')
         expect(instance.uuid).to eq(existing_instance.uuid)
       end
     end
 
     describe 'binding existing reservations' do
       let(:desired_instance) do
-        BD::DeploymentPlan::DesiredInstance.new(job, nil, plan)
+        BD::DeploymentPlan::DesiredInstance.new(job, plan)
       end
 
       context 'when instance has reservations in db' do
@@ -104,7 +105,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   describe '#create' do
     it 'should persist an instance with attributes from the desired_instance' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az-name', {})
-      desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, nil, plan, az)
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, plan, az)
 
       BD::DeploymentPlan::InstanceRepository.new(logger).create(desired_instance, 1)
 
@@ -115,17 +116,6 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(persisted_instance.state).to eq('started')
       expect(persisted_instance.compilation).to eq(job.compilation?)
       expect(persisted_instance.uuid).to eq('uuid-1')
-    end
-
-    context 'when DesiredInstance has a state set on it' do
-      it 'uses the state from the DesiredInstance' do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, 'stopped', plan)
-
-        BD::DeploymentPlan::InstanceRepository.new(logger).create(desired_instance, 1)
-
-        persisted_instance = BD::Models::Instance.find(uuid: 'uuid-1')
-        expect(persisted_instance.state).to eq(desired_instance.state)
-      end
     end
   end
 end

@@ -794,7 +794,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         job = parser.parse(job_spec)
 
         expect(job.desired_instances).to eq([
-              Bosh::Director::DeploymentPlan::DesiredInstance.new(job, nil, deployment_plan),
+              Bosh::Director::DeploymentPlan::DesiredInstance.new(job, deployment_plan),
             ])
       end
     end

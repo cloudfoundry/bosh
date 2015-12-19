@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
       let(:instance_plan) do
         network_plans = desired_reservations.map { |r| NetworkPlanner::Plan.new(reservation: r) }
         InstancePlan.new(
-          desired_instance: DesiredInstance.new(nil, nil, nil, desired_az),
+          desired_instance: DesiredInstance.new(nil, nil, desired_az),
           network_plans: network_plans,
           existing_instance: nil,
           instance: nil

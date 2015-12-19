@@ -37,9 +37,6 @@ module Bosh::Director::DeploymentPlan
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:vm) { Vm.new }
-    before do
-      allow(job).to receive(:instance_state).with(0).and_return('started')
-    end
 
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:vm_model) { Bosh::Director::Models::Vm.make }
@@ -79,7 +76,6 @@ module Bosh::Director::DeploymentPlan
       let(:vm) { Vm.new }
 
       before do
-        allow(job).to receive(:instance_state).with(2).and_return('started')
         allow(job).to receive(:vm_type).and_return(vm_type)
         allow(job).to receive(:stemcell).and_return(stemcell)
       end

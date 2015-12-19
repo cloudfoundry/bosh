@@ -18,10 +18,11 @@ module Bosh::Director::DeploymentPlan
       instance_model
     end
 
-    let(:desired_instance) { DesiredInstance.new(job, current_state, deployment_plan, availability_zone) }
+    let(:desired_instance) { DesiredInstance.new(job, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => job_spec } }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { Instance.create_from_job(job, 1, 'started', deployment_plan, current_state, availability_zone, logger) }
+    let(:instance) { Instance.create_from_job(job, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
+    let(:instance_state) { 'started' }
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
     let(:reservation) {
@@ -307,7 +308,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is being recreated' do
-        let(:desired_instance) { DesiredInstance.new(job, 'recreate') }
+        let(:instance_state) { 'recreate' }
 
         it 'should return true when desired instance is in "recreate" state' do
           expect(instance_plan.needs_recreate?).to be_truthy
@@ -315,7 +316,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is not being recreated' do
-        let(:desired_instance) { DesiredInstance.new(job, 'stopped') }
+        let(:instance_state) { 'stopped' }
 
         it 'should return false when desired instance is in any another state' do
           expect(instance_plan.needs_recreate?).to be_falsey

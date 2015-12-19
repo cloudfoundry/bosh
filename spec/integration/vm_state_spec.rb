@@ -71,4 +71,100 @@ describe 'vm state', type: :integration do
       expect(vms.map(&:ips)).to eq(['192.168.1.10'])
     end
   end
+
+  context 'instances have gaps in indexes' do
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
+      cloud_config_hash['networks'].first['subnets'] = [
+        {
+          'range' => '192.168.1.0/24',
+          'gateway' => '192.168.1.1',
+          'dns' => ['8.8.8.8'],
+          'static' => ['192.168.1.51', '192.168.1.52'],
+          'az' => 'my-az'
+        },
+        {
+          'range' => '192.168.2.0/24',
+          'gateway' => '192.168.2.1',
+          'dns' => ['8.8.8.8'],
+          'static' => ['192.168.2.51', '192.168.2.52'],
+          'az' => 'my-az2'
+        }
+      ]
+      cloud_config_hash['compilation']['az'] = 'my-az'
+      cloud_config_hash
+    end
+
+    it 'it keeps instances with left static IP and deletes instances with removed IPs' do
+      simple_manifest = Bosh::Spec::Deployments.simple_manifest
+      simple_manifest['jobs'].first['instances'] = 3
+      simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.51', '192.168.2.52']
+
+      simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config_hash)
+
+      simple_manifest['jobs'].first['instances'] = 2
+      simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.51', '192.168.2.52']
+      simple_manifest['jobs'].first['azs'] = ['my-az2']
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      vms = director.vms
+      prev_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      prev_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+
+      bosh_runner.run('recreate foobar 1')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(prev_foobar_1_vm.cid).to_not eq(new_foobar_1_vm.cid)
+      expect(prev_foobar_2_vm.cid).to eq(new_foobar_2_vm.cid)
+      prev_foobar_1_vm, prev_foobar_2_vm = new_foobar_1_vm, new_foobar_2_vm
+
+      bosh_runner.run('recreate foobar 2')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(prev_foobar_1_vm.cid).to eq(new_foobar_1_vm.cid)
+      expect(prev_foobar_2_vm.cid).to_not eq(new_foobar_2_vm.cid)
+
+      bosh_runner.run('stop foobar 1')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(new_foobar_1_vm.last_known_state).to eq('stopped')
+      expect(new_foobar_2_vm.last_known_state).to eq('running')
+
+      bosh_runner.run('start foobar 1')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(new_foobar_1_vm.last_known_state).to eq('running')
+      expect(new_foobar_2_vm.last_known_state).to eq('running')
+
+      bosh_runner.run('stop foobar 2')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(new_foobar_1_vm.last_known_state).to eq('running')
+      expect(new_foobar_2_vm.last_known_state).to eq('stopped')
+
+      bosh_runner.run('start foobar 2')
+      vms = director.vms
+      new_foobar_1_vm = director.find_vm(vms, 'foobar', '1')
+      new_foobar_2_vm = director.find_vm(vms, 'foobar', '2')
+      expect(new_foobar_1_vm.last_known_state).to eq('running')
+      expect(new_foobar_2_vm.last_known_state).to eq('running')
+
+      bosh_runner.run('restart foobar 1')
+      event_log = bosh_runner.run('task last --event --raw')
+      expect(event_log).to match(/foobar\/.* \(1\)/)
+      expect(event_log).to_not match(/foobar\/.* \(2\)/)
+
+      bosh_runner.run('restart foobar 2')
+      event_log = bosh_runner.run('task last --event --raw')
+      expect(event_log).to_not match(/foobar\/.* \(1\)/)
+      expect(event_log).to match(/foobar\/.* \(2\)/)
+    end
+  end
 end

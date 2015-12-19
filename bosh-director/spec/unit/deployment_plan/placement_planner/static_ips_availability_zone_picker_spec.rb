@@ -819,7 +819,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def new_desired_instance
-      DesiredInstance.new(job, 'started', planner)
+      DesiredInstance.new(job, planner)
     end
 
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')

@@ -286,25 +286,13 @@ module Bosh::Director
           end
         end
 
-        instance_states.each_pair do |index, state|
-          begin
-            index = Integer(index)
-          rescue ArgumentError
-            raise JobInvalidInstanceIndex,
-              "Invalid job index `#{index}', integer expected"
-          end
-
-          unless (0...job_size).include?(index)
-            raise JobInvalidInstanceIndex,
-              "`#{@job.name}/#{index}' is outside of (0..#{job_size-1}) range"
-          end
-
+        instance_states.each_pair do |index_or_id, state|
           unless Job::VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-              "Invalid state `#{state}' for `#{@job.name}/#{index}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
+              "Invalid state `#{state}' for `#{@job.name}/#{index_or_id}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
           end
 
-          @job.instance_states[index] = state
+          @job.instance_states[index_or_id] = state
         end
 
         if @job.state && !Job::VALID_JOB_STATES.include?(@job.state)
@@ -312,10 +300,7 @@ module Bosh::Director
             "Invalid state `#{@job.state}' for `#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
         end
 
-        job_size.times.map do |index|
-          instance_state = @job.instance_state(index)
-          DesiredInstance.new(@job, instance_state, @deployment)
-        end
+        job_size.times.map { DesiredInstance.new(@job, @deployment) }
       end
 
       def parse_migrated_from

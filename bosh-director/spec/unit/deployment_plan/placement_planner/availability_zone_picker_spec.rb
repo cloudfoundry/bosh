@@ -31,11 +31,10 @@ module Bosh::Director::DeploymentPlan
     let(:az3) { AvailabilityZone.new('3', {}) }
 
     let(:deployment) { nil }
-    let(:state) { 'started' }
     let(:job) { instance_double(Job, name: 'fake-job') }
 
     def desired_instance(zone = nil)
-      DesiredInstance.new(job, state, deployment, zone, 0)
+      DesiredInstance.new(job, deployment, zone, 0)
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])

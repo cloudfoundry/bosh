@@ -68,7 +68,7 @@ module Bosh
         end
 
         def needs_restart?
-          @desired_instance.virtual_state == 'restart'
+          @instance.virtual_state == 'restart'
         end
 
         def needs_recreate?
@@ -76,7 +76,7 @@ module Bosh
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             true
           else
-            @desired_instance.virtual_state == 'recreate'
+            @instance.virtual_state == 'recreate'
           end
         end
 
@@ -107,8 +107,8 @@ module Bosh
         end
 
         def state_changed?
-          if desired_instance.state == 'detached' &&
-            existing_instance.state != desired_instance.state
+          if instance.state == 'detached' &&
+            existing_instance.state != instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
