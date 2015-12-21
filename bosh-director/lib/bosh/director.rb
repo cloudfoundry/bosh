@@ -101,7 +101,6 @@ require 'bosh/director/problem_handlers/invalid_problem'
 require 'bosh/director/problem_handlers/inactive_disk'
 require 'bosh/director/problem_handlers/missing_disk'
 require 'bosh/director/problem_handlers/unresponsive_agent'
-require 'bosh/director/problem_handlers/unbound_instance_vm'
 require 'bosh/director/problem_handlers/mount_info_mismatch'
 require 'bosh/director/problem_handlers/missing_vm'
 
