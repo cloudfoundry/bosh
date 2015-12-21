@@ -51,7 +51,22 @@ module Bosh::Director::DeploymentPlan
       it 'raises JobStaticIPNotSupportedOnDynamicNetwork' do
         expect {
           job_networks_parser.parse(job_spec, 'job-name', [dynamic_network])
-        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Job using dynamic network 'a' cannot specify static IP(s)"
+        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Job 'job-name' using dynamic network 'a' cannot specify static IP(s)"
+      end
+    end
+
+    context 'when job uses the same static IP more than once' do
+      let(:job_spec) do
+        job = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+        job_network = job['networks'].first
+        job_network['static_ips'] = ['192.168.1.2', '192.168.1.2']
+        job
+      end
+
+      it 'raises an error' do
+        expect {
+          job_networks_parser.parse(job_spec, 'job-name', manifest_networks)
+        }.to raise_error BD::JobInvalidStaticIPs, "Job 'job-name' specifies static IP '192.168.1.2' more than once"
       end
     end
 

@@ -121,10 +121,10 @@ module Bosh::Director
         config
       end
 
-      def validate_reference_from_job!(job_network_spec)
+      def validate_reference_from_job!(job_network_spec, job_name)
         if job_network_spec.has_key?('static_ips')
           raise JobStaticIPNotSupportedOnDynamicNetwork,
-            "Job using dynamic network '#{name}' cannot specify static IP(s)"
+            "Job '#{job_name}' using dynamic network '#{name}' cannot specify static IP(s)"
         end
       end
 

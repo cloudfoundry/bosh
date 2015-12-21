@@ -45,7 +45,7 @@ module Bosh::Director
         raise NotImplementedError
       end
 
-      def validate_reference_from_job!(job_network_spec)
+      def validate_reference_from_job!(job_network_spec, job_name)
       end
 
       def supports_azs?

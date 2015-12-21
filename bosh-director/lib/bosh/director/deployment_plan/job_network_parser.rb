@@ -31,10 +31,10 @@ module Bosh::Director
         network_specs.map do |network_spec|
           network_name = safe_property(network_spec, "name", :class => String)
           default_for = safe_property(network_spec, "default", :class => Array, :default => [])
-          static_ips = parse_static_ips(network_spec['static_ips'])
+          static_ips = parse_static_ips(network_spec['static_ips'], job_name)
 
           deployment_network = look_up_deployment_network(manifest_networks, job_name, network_name)
-          deployment_network.validate_reference_from_job!(network_spec)
+          deployment_network.validate_reference_from_job!(network_spec, job_name)
 
           JobNetwork.new(network_name, static_ips, default_for, deployment_network)
         end
@@ -48,11 +48,15 @@ module Bosh::Director
         deployment_network
       end
 
-      def parse_static_ips(static_ips_raw)
+      def parse_static_ips(static_ips_raw, job_name)
         static_ips = nil
         if static_ips_raw
           static_ips = []
           each_ip(static_ips_raw) do |ip|
+            if static_ips.include?(ip)
+              raise JobInvalidStaticIPs, "Job '#{job_name}' specifies static IP '#{format_ip(ip)}' more than once"
+            end
+
             static_ips.push(ip)
           end
         end
