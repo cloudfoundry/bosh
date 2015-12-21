@@ -92,9 +92,9 @@ module Bosh::Director
     describe '#snapshots' do
       it 'should list all snapshots for a given deployment' do
         response = [
-          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
-          { 'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
-          { 'job' => 'job', 'index' => 1, 'snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 0, 'uuid' => '12abdc456','snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true },
+          { 'job' => 'job', 'index' => 0, 'uuid' => '12abdc456','snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
+          { 'job' => 'job', 'index' => 1, 'uuid' => '12xyz456','snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
         ]
         expect(subject.snapshots(deployment)).to eq response
       end
@@ -102,8 +102,8 @@ module Bosh::Director
       describe 'when index is supplied' do
         it 'should list all snapshots for a given instance' do
           response = [
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
+            {'job' => 'job', 'index' => 0, 'uuid' => '12abdc456', 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
+            {'job' => 'job', 'index' => 0, 'uuid' => '12abdc456', 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
           ]
           expect(subject.snapshots(deployment, 'job', 0)).to eq response
         end
@@ -112,8 +112,8 @@ module Bosh::Director
       describe 'when id is supplied' do
         it 'should list all snapshots for a given instance' do
           response = [
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
-            {'job' => 'job', 'index' => 0, 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
+            {'job' => 'job', 'index' => 0, 'uuid' => '12abdc456', 'snapshot_cid' => 'snap0a', 'created_at' => time, 'clean' => true},
+            {'job' => 'job', 'index' => 0, 'uuid' => '12abdc456', 'snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false},
           ]
           expect(subject.snapshots(deployment, 'job', @instance.uuid)).to eq response
         end
