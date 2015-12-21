@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-director-drain-workers'
   spec.executables << 'bosh-director-migrate'
   spec.executables << 'bosh-director-scheduler'
-  spec.executables << 'bosh-director-worker'
+  spec.executables << 'bosh-director-worker-dj'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
   # external CPIs, in order to ensure appropriate versions are installed.
@@ -55,9 +55,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
-  spec.add_dependency 'redis',            '~>3.0.2'
-  spec.add_dependency 'resque',           '~>1.25.0'
-  spec.add_dependency 'resque-backtrace', '~>0.0.1'
   spec.add_dependency 'rufus-scheduler',  '~>2.0.18'
   spec.add_dependency 'sequel',           '~>3.43.0'
   spec.add_dependency 'sinatra',          '~>1.4.2'
@@ -67,6 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.1.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
+  spec.add_dependency 'delayed_job_sequel', '~>4.0.1'
 
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'rspec'

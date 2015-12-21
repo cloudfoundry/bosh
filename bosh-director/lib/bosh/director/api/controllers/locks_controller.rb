@@ -2,19 +2,13 @@ module Bosh::Director
   module Api::Controllers
     class LocksController < BaseController
       get '/', scope: :read do
-        redis = Config.redis
-
         locks = []
-        lock_keys = redis.keys('lock:*')
-        # Deliberatelly not using redis futures here as we expect that the number of lock keys will be very small
-        lock_keys.each do |lock_key|
-          lock_value = redis.get(lock_key)
-          unless lock_value.nil?
-            lock_type     = lock_key.split(':')[1]
-            lock_resource = lock_key.split(':')[2..-1]
-            lock_timeout  = lock_value.split(':')[0]
-            locks << { type: lock_type, resource: lock_resource, timeout: lock_timeout }
-          end
+        lock_records = Models::Lock.dataset.all
+        lock_records.each do |lock_record|
+          lock_type     = lock_record.name.split(':')[1]
+          lock_resource = lock_record.name.split(':')[2..-1]
+          lock_timeout  = lock_record.expired_at.to_f.to_s
+          locks << { type: lock_type, resource: lock_resource, timeout: lock_timeout }
         end
 
         content_type(:json)

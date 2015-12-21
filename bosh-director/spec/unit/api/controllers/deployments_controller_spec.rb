@@ -426,6 +426,15 @@ module Bosh::Director
 
         describe 'problem management' do
           let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
+          let(:job_class) do
+            Class.new(Jobs::CloudCheck::ScanAndFix) do
+              define_method :perform do
+                'foo'
+              end
+              @queue = :normal
+            end
+          end
+          let (:db_job) { Jobs::DBJob.new(job_class, task.id, args)}
 
           it 'exposes problem managent REST API' do
             get '/mycloud/problems'
@@ -448,13 +457,18 @@ module Bosh::Director
 
           it 'scans and fixes problems' do
             instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
-            expect(Resque).to receive(:enqueue).with(
-                Jobs::CloudCheck::ScanAndFix,
-                kind_of(Numeric),
-                'mycloud',
-                [['job', 0], ['job', 1], ['job', 6]],
-                false
-              )
+
+            db_job = Bosh::Director::Jobs::DBJob.new(job_class, 0, ['mycloud',
+                                                                    [['job', 0], ['job', 1], ['job', 6]], false])
+
+            expect(Bosh::Director::Jobs::DBJob).to receive(:new).with(
+                                                       Jobs::CloudCheck::ScanAndFix,
+                                                       kind_of(Numeric),
+                                                       ['mycloud',
+                                                        [['job', 0], ['job', 1], ['job', 6]], false]).and_return(db_job)
+            expect(Delayed::Job).to receive(:enqueue).with(
+                                        db_job)
+
             put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
             expect_redirect_to_queued_task(last_response)
           end
@@ -463,11 +477,16 @@ module Bosh::Director
             it 'does not run scan_and_fix task' do
               instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
               instance1 = Models::Instance.make(deployment: deployment, job: 'job', index: 1, resurrection_paused: true)
-              expect(Resque).not_to receive(:enqueue).with(
-                                        Jobs::CloudCheck::ScanAndFix,
-                                        kind_of(Numeric),
-                                        'mycloud',
-                                        [['job', 0], ['job', 1]], false)
+
+              db_job = Bosh::Director::Jobs::DBJob.new(job_class, 0, ['mycloud',
+                                                                      [['job', 0], ['job', 1]], false])
+
+              expect(Bosh::Director::Jobs::DBJob).not_to receive(:new).with(
+                                                         Jobs::CloudCheck::ScanAndFix,
+                                                         kind_of(Numeric),
+                                                         ['mycloud',
+                                                          [['job', 0], ['job', 1]], false])
+              expect(Delayed::Job).not_to receive(:enqueue)
               put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1]}), {'CONTENT_TYPE' => 'application/json'}
               expect(last_response).not_to be_redirect
             end

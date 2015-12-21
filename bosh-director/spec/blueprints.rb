@@ -27,6 +27,7 @@ Sham.define do
                   octet = index % 255
                   "#{octet}.#{octet}.#{octet}.in-addr.arpa"
                 }
+  lock_name     { |index| "lock-resource-entity#{index}"}
 end
 
 module Bosh::Director::Models
@@ -164,6 +165,12 @@ module Bosh::Director::Models
     value { "value" }
   end
 
+  Lock.blueprint do
+    name        { Sham.lock_name }
+    expired_at  { Time.now }
+    uid         { SecureRandom.uuid }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }
@@ -183,5 +190,9 @@ module Bosh::Director::Models
       type     { "PTR" }
       content  { Sham.name }
     end
+  end
+end
+module Delayed
+  Job.blueprint do
   end
 end
