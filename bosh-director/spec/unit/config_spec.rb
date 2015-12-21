@@ -49,6 +49,24 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#keep_unreachable_vms' do
+    context 'when hash has value set' do
+      it 'returns the configuration value' do
+        test_config['keep_unreachable_vms'] = true
+        described_class.configure(test_config)
+        expect(described_class.keep_unreachable_vms).to eq(true)
+      end
+    end
+
+    context 'when hash does not have value set' do
+      it 'returns default value of false' do
+        test_config.delete('keep_unreachable_vms')
+        described_class.configure(test_config)
+        expect(described_class.keep_unreachable_vms).to eq(false)
+      end
+    end
+  end
+
   describe '#cloud' do
     before { described_class.configure(test_config) }
 

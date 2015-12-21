@@ -31,7 +31,8 @@ module Bosh::Director
         :enable_snapshots,
         :max_vm_create_tries,
         :nats_uri,
-        :default_ssh_options
+        :default_ssh_options,
+        :keep_unreachable_vms
       )
 
       attr_reader(
@@ -159,6 +160,8 @@ module Bosh::Director
 
         @trusted_certs = config['trusted_certs'] || ''
         @ignore_missing_gateway = config['ignore_missing_gateway']
+
+        @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
 
         Bosh::Clouds::Config.configure(self)
 
