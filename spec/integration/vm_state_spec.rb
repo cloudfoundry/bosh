@@ -167,4 +167,17 @@ describe 'vm state', type: :integration do
       expect(event_log).to match(/foobar\/.* \(2\)/)
     end
   end
+
+  describe 'recreate' do
+    it 'does not update deployment on recreate' do
+      deploy_from_scratch
+
+      bosh_runner.run('recreate foobar 1')
+
+      deploy_simple_manifest
+
+      event_log = bosh_runner.run('task last --event --raw')
+      expect(event_log).to_not match(/Updating job/)
+    end
+  end
 end

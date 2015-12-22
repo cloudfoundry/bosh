@@ -111,8 +111,7 @@ module Bosh::Director
           'properties',
           'dns_domain_name',
           'links',
-          'persistent_disk',
-          'template_hashes'
+          'persistent_disk'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 
