@@ -104,6 +104,10 @@ module Bosh::Director
           subnet.range.contains?(range)
       end
 
+      def is_reservable?(ip)
+        range.contains?(ip) && !restricted_ips.include?(ip.to_i)
+      end
+
       private
 
       def self.parse_availability_zones(subnet_spec, network_name, availability_zones)
