@@ -154,10 +154,14 @@ SPEC
         }
       end
 
-      it 'raises' do
-        expect { job.validate! }.to raise_error(Bosh::Cli::InvalidJob,
-          "Incorrect templates section in '#{name}' job spec (Hash expected, NilClass given)")
+      before do
+        release_source.remove_dir("#{base}/templates")
       end
+
+      it 'does not raise' do
+        expect { job.validate! }.to_not raise_error
+      end
+
     end
 
     context 'when templates on the filesystem are not found in the spec' do
