@@ -42,11 +42,11 @@ module Bosh::Director
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
             deployment_plan.bind_models
-            render_job_templates(deployment_plan.jobs_starting_on_deploy)
           end
 
           deployment_plan.compile_packages
 
+          render_job_templates(deployment_plan.jobs_starting_on_deploy)
           update_step(deployment_plan).perform
           @notifier.send_end_event
           logger.info('Finished updating deployment')
