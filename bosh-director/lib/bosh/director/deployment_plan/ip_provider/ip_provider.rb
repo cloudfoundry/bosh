@@ -55,23 +55,21 @@ module Bosh::Director
 
         else
 
-          cidr_ip = format_ip(reservation.ip)
+          ip_string = format_ip(reservation.ip)
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
-          network, subnet = find_network_and_subnet_containing(reservation.ip)
+          subnet = reservation.network.find_subnet_containing(reservation.ip)
           if subnet
-
             if subnet.restricted_ips.include?(reservation.ip.to_i)
-              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
+              message = "Failed to reserve IP '#{ip_string}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
             end
 
-            reservation.resolve_network(network)
             reserve_manual(reservation, subnet)
           else
             raise NetworkReservationIpOutsideSubnet,
-              "Provided static IP '#{cidr_ip}' does not belong to any subnet in network '#{reservation.network.name}'"
+              "Provided static IP '#{ip_string}' does not belong to any subnet in network '#{reservation.network.name}'"
           end
         end
       end
@@ -96,8 +94,6 @@ module Bosh::Director
         @logger.debug('Reserving existing ips')
         network, subnet = find_network_and_subnet_containing(reservation.ip)
         if subnet
-          return if subnet.restricted_ips.include?(reservation.ip.to_i)
-
           @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
           reservation.resolve_network(network)
           reserve_manual(reservation, subnet)
@@ -146,7 +142,7 @@ module Bosh::Director
 
       def find_network_and_subnet_containing(cidr_ip)
         @networks.values.select(&:manual?).each do |network|
-          subnet = network.subnets.find { |subnet| subnet.range.contains?(cidr_ip) }
+          subnet = network.subnets.find { |subnet| subnet.is_reservable?(cidr_ip) }
           return [network, subnet] if subnet
         end
 

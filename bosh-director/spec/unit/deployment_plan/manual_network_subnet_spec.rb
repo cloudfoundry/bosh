@@ -412,4 +412,40 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       expect(@subnet.overlaps?(other)).to eq(true)
     end
   end
+
+  describe :is_reservable? do
+    let(:subnet) do
+      make_subnet(
+        {
+          'range' => '192.168.0.1/24',
+          'gateway' => '192.168.0.254',
+          'reserved' => reserved
+        },
+        []
+      )
+    end
+    let(:reserved) { [] }
+
+    context 'when subnet range includes IP' do
+      context 'when subnet reserved includes IP' do
+        let(:reserved) { ['192.168.0.50-192.168.0.60'] }
+
+        it 'returns false' do
+          expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.0.55'))).to be_falsey
+        end
+      end
+
+      context 'when subnet reserved does not include IP' do
+        it 'returns true' do
+          expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.0.55'))).to be_truthy
+        end
+      end
+    end
+
+    context 'when subnet range does not include IP' do
+      it 'returns false' do
+        expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.10.55'))).to be_falsey
+      end
+    end
+  end
 end
