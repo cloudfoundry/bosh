@@ -121,7 +121,7 @@ module Bosh::Director
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
-        it 'verifies that it is an array of string or hashes' do
+        it 'verifies that it is an array of hashes' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
@@ -136,7 +136,7 @@ module Bosh::Director
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db', 'type' => 'first'}, {'name' => 'db', 'type' => 'second'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(
@@ -146,14 +146,14 @@ module Bosh::Director
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
           release_job.create
 
           template = Models::Template.first
-          expect(template.provides).to eq(['db1', {'name' => 'db2', 'type' =>'db'}])
+          expect(template.provides).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}])
         end
       end
 
@@ -182,7 +182,7 @@ module Bosh::Director
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => [{'name' => 'db', 'type' => 'one'}, {'name' => 'db', 'type' => 'two'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(
@@ -192,14 +192,14 @@ module Bosh::Director
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
           release_job.create
 
           template = Models::Template.first
-          expect(template.requires).to eq(['db1', {'name' => 'db2', 'type' =>'db'} ])
+          expect(template.requires).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'} ])
         end
       end
     end

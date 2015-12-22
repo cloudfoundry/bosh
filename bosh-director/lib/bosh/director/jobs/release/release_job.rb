@@ -155,7 +155,7 @@ module Bosh::Director
     def parse_links(links, desc)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-          "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of strings or hashes with name and type"
+              "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}
