@@ -8,6 +8,9 @@ module Bosh::Director
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
     let(:spec) do
       {
+        'deployment' => 'simple',
+        'job' => {'name' => 'job'},
+        'index' => 0,
         'vm_type' => {
           'name' => 'steve',
           'cloud_properties' => { 'foo' => 'bar' },

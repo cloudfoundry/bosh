@@ -101,6 +101,9 @@ module Bosh::Director
       context 'when no errors' do
         let(:spec) do
           {
+            'deployment' => 'simple',
+            'job' => {'name' => 'job'},
+            'index' => 0,
             'vm_type' => {
               'name' => 'fake-vm-type',
               'cloud_properties' => { 'foo' => 'bar' },
@@ -117,6 +120,9 @@ module Bosh::Director
         end
         let(:agent_spec) do
           {
+            'deployment' => 'simple',
+            'job' => {'name' => 'job'},
+            'index' => 0,
             'networks' => networks,
             'template_hashes' => {},
             'configuration_hash' => {'configuration' => 'hash'},
@@ -145,7 +151,7 @@ module Bosh::Director
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
-          expect(fake_new_agent).to receive(:apply).with({'networks' => networks}).ordered
+          expect(fake_new_agent).to receive(:apply).with({'deployment' => 'simple', 'job' => {'name' => 'job'}, 'index' => 0, 'networks' => networks}).ordered
           expect(fake_new_agent).to receive(:get_state).and_return(agent_spec).ordered
           expect(fake_new_agent).to receive(:apply).with(agent_spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
