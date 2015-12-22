@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version      = version
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH Director'
-  spec.description  = "BOSH Director"
+  spec.description  = 'BOSH Director'
   spec.author       = 'VMware'
   spec.homepage     = 'https://github.com/cloudfoundry/bosh'
   spec.license      = 'Apache 2.0'
@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-director-drain-workers'
   spec.executables << 'bosh-director-migrate'
   spec.executables << 'bosh-director-scheduler'
-  spec.executables << 'bosh-director-worker-dj'
+  spec.executables << 'bosh-director-worker'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
   # external CPIs, in order to ensure appropriate versions are installed.
@@ -40,9 +40,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bosh_openstack_cpi', "=2.1.0"
-  spec.add_dependency 'bosh_aws_cpi',       "=2.1.0"
-  spec.add_dependency 'bosh_vsphere_cpi',   "=2.2.0"
+  spec.add_dependency 'bosh_openstack_cpi', '=2.1.0'
+  spec.add_dependency 'bosh_aws_cpi',       '=2.1.0'
+  spec.add_dependency 'bosh_vsphere_cpi',   '=2.2.0'
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'

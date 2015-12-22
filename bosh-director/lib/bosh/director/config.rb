@@ -370,7 +370,7 @@ module Bosh::Director
 
     def worker_logger
       logger = Logging::Logger.new('DirectorWorker')
-      worker_logging = hash.fetch('dj', {}).fetch('logging', {})
+      worker_logging = hash.fetch('delayed_job', {}).fetch('logging', {})
       if worker_logging.has_key?('file')
         logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: worker_logging.fetch('file'), layout: ThreadFormatter.layout))
       else

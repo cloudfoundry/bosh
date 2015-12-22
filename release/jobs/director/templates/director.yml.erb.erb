@@ -26,8 +26,8 @@ params = {
   'max_vm_create_tries' => p('director.max_vm_create_tries')
 }
 
-if_p('dj.loglevel') do |worker_loglevel|
-  params['dj'] = {'logging' => {'level' => worker_loglevel}}
+if_p('delayed_job.loglevel') do |worker_loglevel|
+  params['delayed_job'] = {'logging' => {'level' => worker_loglevel}}
 end
 
 params['scheduled_jobs'] = []
