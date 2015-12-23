@@ -167,13 +167,13 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
+      branch: no-redis-no-cry
 
   - name: bosh-load-tests-workspace
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-      branch: master
+      branch: no-redis-no-cry
 
   - name: fuzz-interval-trigger
     type: time
