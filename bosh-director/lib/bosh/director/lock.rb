@@ -14,7 +14,7 @@ module Bosh::Director
     #   lock
     def initialize(name, opts = {})
       @name = name
-      @id = SecureRandom.uuid
+      @uid = SecureRandom.uuid
       @timeout = opts[:timeout] || 1.0
       @expiration = opts[:expiration] || 10.0
       @logger = Config.logger
@@ -36,7 +36,7 @@ module Bosh::Director
           until stopped
             @logger.debug("Renewing lock: #@name")
             lock_record = Models::Lock[name: @name]
-            if lock_record.nil? || lock_record.uid != @id
+            if lock_record.nil? || lock_record.uid != @uid
               stopped = true
               raise Sequel::Rollback
             end
@@ -78,17 +78,12 @@ module Bosh::Director
       until acquired
         lock_record = Models::Lock[name: @name]
         if lock_record.nil?
-          lock_record =  Models::Lock.create(name: @name,
-                                             uid: @id,
-                                             expired_at: Time.at(lock_expiration))
+          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
           acquired = true
-        else
-          if lock_expired?(lock_record)
-             @logger.debug("Lock #@name is already expired, " +
-                          "taking it")
-             lock_record.update(id: @id, expired_at: Time.at(lock_expiration))
-             acquired = true
-          end
+        elsif lock_expired?(lock_record)
+          @logger.debug("Lock #@name is already expired, taking it")
+          lock_record.update(uid: @uid, expired_at: Time.at(lock_expiration))
+          acquired = true
         end
         unless acquired
           raise TimeoutError if Time.now - started > @timeout
@@ -108,7 +103,7 @@ module Bosh::Director
       if lock_record.nil?
          @logger.debug("Can not find lock: #@name")
       else
-        if lock_record.uid == @id
+        if lock_record.uid == @uid
           lock_record.delete
           @logger.debug("Deleted lock: #@name")
         else
