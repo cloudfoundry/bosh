@@ -50,9 +50,9 @@ module Bosh::Spec
     end
 
     # vm always returns a vm
-    def vm(job_name, index, options={})
+    def vm(job_name, index_or_id, options={})
       deployment_name = options.fetch(:deployment, '')
-      find_vm(vms(deployment_name, options), job_name, index)
+      find_vm(vms(deployment_name, options), job_name, index_or_id)
     end
 
     def find_vm(vms, job_name, index_or_id)
