@@ -488,7 +488,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1')
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1 (uuid-1)')
           instance_plan.packages_changed?
         end
       end
