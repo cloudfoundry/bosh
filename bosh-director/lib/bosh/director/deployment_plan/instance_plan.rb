@@ -182,6 +182,10 @@ module Bosh
           network_settings.network_addresses
         end
 
+        def network_gateway_address
+          network_settings.network_gateway_address
+        end
+
         def needs_shutting_down?
           return true if obsolete?
 

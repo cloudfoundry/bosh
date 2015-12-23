@@ -127,8 +127,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version.add_template(template_model)
   end
 
-  let(:requires_links) { ['db'] }
-  let(:provided_links) { ['db'] }
+  let(:requires_links) { [{name: "db", type: "db"}] }
+  let(:provided_links) { [{name: "db", type: "db"}] }
 
   describe '#resolve' do
     context 'when job requires link from the same deployment' do
@@ -150,9 +150,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                         }
                       }
                     },
@@ -164,9 +161,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                         }
                       }
                     }
@@ -211,9 +205,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.other-deployment.bosh",
                         }
                       }
                     },
@@ -225,9 +216,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'networks' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.5',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.other-deployment.bosh",
                         }
                       }
                     }
@@ -253,7 +241,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
 
       let(:requires_links) { [{'name' => 'db', 'type' => 'other'}] }
-      let(:provided_links) { ['db'] } # name and type is implicitly db
+      let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
 
       it 'fails to find link' do
         expect {
@@ -268,7 +256,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let (:links) { {'backup_db' => 'fake-deployment.mysql.mysql-template.db'} }
 
       let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { ['db'] }
+      let(:provided_links) { [{name: "db", type: "db"}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
@@ -286,9 +274,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3'
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
                       }
                     }
                   },
@@ -300,9 +285,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4'
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
                       }
                     }
                   }
@@ -512,9 +494,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3',
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                       }
                     }
                   },
@@ -526,9 +505,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'networks' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4',
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                       }
                     }
                   }

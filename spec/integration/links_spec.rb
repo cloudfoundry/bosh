@@ -112,10 +112,6 @@ describe 'Links', type: :integration do
               'index' => 0,
               'networks' => [
                 {
-                  'name' => 'a',
-                  'address' => '192.168.1.10',
-                },
-                {
                   'name' => 'dynamic-network',
                   'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
                 }
@@ -125,10 +121,6 @@ describe 'Links', type: :integration do
               'name' => 'mysql',
               'index' => 1,
               'networks' => [
-                {
-                  'name' => 'a',
-                  'address' => '192.168.1.11',
-                },
                 {
                   'name' => 'dynamic-network',
                   'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
