@@ -6,6 +6,7 @@ module Bosh::Dev
   describe ReleaseChangePromoter do
     let!(:patch_file) { Tempfile.new("#{build_number}-final-release") }
     before { allow(Tempfile).to receive(:new).and_return(patch_file) }
+    before { allow(Dir).to receive(:pwd).and_return('fake-dir') }
 
     let(:build_number) { rand(1000) }
     let(:candidate_sha) { 'some-candidate-sha' }
@@ -35,20 +36,20 @@ module Bosh::Dev
         allow(download_adapter).to receive(:download).and_return(patch_file.path)
 
         success = ['', '', instance_double('Process::Status', success?: true)]
-        expect(Open3).to receive(:capture3).with("git checkout #{candidate_sha}").and_return(success).ordered
-        expect(Open3).to receive(:capture3).with('git checkout .').and_return(success).ordered
-        expect(Open3).to receive(:capture3).with('git clean --force').and_return(success).ordered
-        expect(Open3).to receive(:capture3).with("git apply #{patch_file.path}").and_return(success).ordered
-        expect(Open3).to receive(:capture3).with('git add -A :/').and_return(success).ordered
-        expect(Open3).to receive(:capture3).with("git commit -m 'Adding final release for build #{build_number}'").and_return(success).ordered
+        expect(Open3).to receive(:capture3).with("git checkout #{candidate_sha}", chdir: 'fake-dir').and_return(success).ordered
+        expect(Open3).to receive(:capture3).with('git checkout .', chdir: 'fake-dir').and_return(success).ordered
+        expect(Open3).to receive(:capture3).with('git clean --force', chdir: 'fake-dir').and_return(success).ordered
+        expect(Open3).to receive(:capture3).with("git apply #{patch_file.path}", chdir: 'fake-dir').and_return(success).ordered
+        expect(Open3).to receive(:capture3).with('git add -A :/', chdir: 'fake-dir').and_return(success).ordered
+        expect(Open3).to receive(:capture3).with("git commit -m 'Adding final release for build #{build_number}'", chdir: 'fake-dir').and_return(success).ordered
 
         release_changes.promote
       end
 
       it 'returns the sha after committing release changes' do
-        expect(Open3).to receive(:capture3).with("git commit -m 'Adding final release for build #{build_number}'").
+        expect(Open3).to receive(:capture3).with("git commit -m 'Adding final release for build #{build_number}'", chdir: 'fake-dir').
           and_return(['', '', instance_double('Process::Status', success?: true)]).ordered
-        expect(Open3).to receive(:capture3).with('git rev-parse HEAD').
+        expect(Open3).to receive(:capture3).with('git rev-parse HEAD', chdir: 'fake-dir').
           and_return(["#{final_release_sha}\n", nil, instance_double('Process::Status', success?: true)]).ordered
 
         expect(release_changes.promote).to eq(final_release_sha)
