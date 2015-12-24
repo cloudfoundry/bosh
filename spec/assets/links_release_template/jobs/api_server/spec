@@ -5,7 +5,7 @@ templates:
 
 packages: []
 
-requires:
+consumes:
   - {name: db, type: db}
   - { name: backup_db, type: db }
 

@@ -117,7 +117,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', requires: requires_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
@@ -127,11 +127,11 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version.add_template(template_model)
   end
 
-  let(:requires_links) { [{name: "db", type: "db"}] }
+  let(:consumes_links) { [{name: "db", type: "db"}] }
   let(:provided_links) { [{name: "db", type: "db"}] }
 
   describe '#resolve' do
-    context 'when job requires link from the same deployment' do
+    context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
         let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
 
@@ -147,7 +147,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
                         }
@@ -158,7 +158,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
                         }
@@ -171,7 +171,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
     end
 
-    context 'when job requires link from another deployment' do
+    context 'when job consumes link from another deployment' do
       let(:links) { {'db' => 'other-deployment.mysql.mysql-template.db'} }
 
       context 'when another deployment has link source' do
@@ -202,7 +202,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
                         }
@@ -213,7 +213,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.5',
                         }
@@ -240,7 +240,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when provided link type does not match required link type' do
       let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
 
-      let(:requires_links) { [{'name' => 'db', 'type' => 'other'}] }
+      let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
       let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
 
       it 'fails to find link' do
@@ -255,7 +255,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when provided link name matches links name' do
       let (:links) { {'backup_db' => 'fake-deployment.mysql.mysql-template.db'} }
 
-      let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+      let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
       let(:provided_links) { [{name: "db", type: "db"}] }
 
       it 'adds link to job' do
@@ -271,7 +271,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 0,
                     'id' => instance1.uuid,
                     'az' => nil,
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3'
                       }
@@ -282,7 +282,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 1,
                     'id' => instance2.uuid,
                     'az' => nil,
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4'
                       }
@@ -345,7 +345,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
 
-      let(:requires_links) { [] }
+      let(:consumes_links) { [] }
       let(:provided_links) { ['db'] } # name and type is implicitly db
 
       it 'raises unused link error' do
@@ -353,7 +353,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
             "Template 'api-server-template' in job 'api-server' specifies link 'db', " +
-              "but the release job does not require it."
+              "but the release job does not consume it."
       end
     end
 
@@ -491,7 +491,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 0,
                     'id' => instance1.uuid,
                     'az' => 'az1',
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3',
                       }
@@ -502,7 +502,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 1,
                     'id' => instance2.uuid,
                     'az' => 'az1',
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4',
                       }

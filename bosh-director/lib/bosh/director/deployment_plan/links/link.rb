@@ -20,7 +20,7 @@ module Bosh::Director
               'index' => instance.index,
               'id' => instance.uuid,
               'az' => availability_zone,
-              'networks' => instance_plan.network_gateway_address
+              'address' => instance_plan.network_gateway_address
             }
           end
         }

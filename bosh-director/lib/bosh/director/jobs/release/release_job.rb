@@ -34,7 +34,7 @@ module Bosh::Director
 
       validate_links(job_manifest)
       template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.requires = job_manifest['requires'] if job_manifest['requires']
+      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
 
       template.save
     end
@@ -149,7 +149,7 @@ module Bosh::Director
 
     def validate_links(job_manifest)
       parse_links(job_manifest['provides'], 'provides') if job_manifest['provides']
-      parse_links(job_manifest['requires'], 'requires') if job_manifest['requires']
+      parse_links(job_manifest['consumes'], 'consumes') if job_manifest['consumes']
     end
 
     def parse_links(links, desc)

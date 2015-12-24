@@ -62,16 +62,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     def network_gateway_address
+      gateway_network_name = @default_network['gateway']
       network_address = {}
-      to_hash.each do |network_name, network|
-        if network['default'] && network['default'].include?("gateway")
-          network_address[network_name] = {
-              'address' => network['type'] == 'dynamic' ? @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name) : network['ip']
-          }
-          return network_address
-        end
-      end
-      network_addresses
+      network_hash = to_hash
+
+      network_address[gateway_network_name] = {
+        'address' => network_hash[gateway_network_name]['type'] == 'dynamic' ? @dns_manager.dns_record_name(@instance_id, @job_name, gateway_network_name, @deployment_name) : network_hash[gateway_network_name]['ip']
+      }
+      return network_address
     end
   end
 end

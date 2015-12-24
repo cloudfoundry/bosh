@@ -9,6 +9,6 @@ provides:
 - {name: node1, type: node1}
 - {name: node2, type: node2}
 
-requires:
+consumes:
 - {name: node1, type: node1}
 - {name: node2, type: node2}

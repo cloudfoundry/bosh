@@ -10,16 +10,16 @@ module Bosh::Director
         @logger.debug("Resolving links for job '#{job.name}'")
 
         job.templates.each do |template|
-          resolve_required_links(job, template)
+          resolve_consumed_links(job, template)
           save_provided_links(job, template)
         end
       end
 
       private
 
-      def resolve_required_links(job, template)
-        template.required_links.each do |required_link|
-          link_name = required_link.name
+      def resolve_consumed_links(job, template)
+        template.consumed_links.each do |consumed_link|
+          link_name = consumed_link.name
 
           @logger.debug("Looking for link '#{link_name}' for job '#{job.name}'")
 
@@ -29,7 +29,7 @@ module Bosh::Director
               "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
           end
 
-          link_lookup = LinkLookupFactory.create(required_link, link_path, @deployment_plan)
+          link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan)
           link_spec = link_lookup.find_link_spec
 
           unless link_spec
@@ -58,10 +58,10 @@ module Bosh::Director
       def ensure_provided_links_are_used(job, template)
         return if job.link_paths.empty?
         job.link_paths[template.name].to_a.each do |link_name, _|
-          unless template.required_links.map(&:name).include?(link_name)
+          unless template.consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
               "Template '#{template.name}' in job '#{job.name}' specifies link '#{link_name}', " +
-                "but the release job does not require it."
+                "but the release job does not consume it."
           end
         end
       end

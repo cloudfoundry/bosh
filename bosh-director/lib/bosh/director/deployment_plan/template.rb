@@ -81,8 +81,8 @@ module Bosh::Director
       end
 
       # return [Array]
-      def required_links
-        present_model.requires.to_a.map { |l| TemplateLink.parse(l) }
+      def consumed_links
+        present_model.consumes.to_a.map { |l| TemplateLink.parse(l) }
       end
 
       # return [Array]
