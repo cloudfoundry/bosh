@@ -36,6 +36,7 @@ RUN apt-get install -y redis-server; apt-get clean
 RUN apt-get install -y mercurial; apt-get clean
 RUN apt-get install -y lsof; apt-get clean
 RUN apt-get install -y unzip; apt-get clean
+RUN apt-get install -y realpath; apt-get clean
 
 # UAA dependencies
 RUN mkdir -p /tmp/integration-uaa/cloudfoundry-identity-uaa-2.0.3
