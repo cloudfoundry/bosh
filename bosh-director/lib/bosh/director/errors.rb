@@ -137,6 +137,8 @@ module Bosh::Director
 
   CompilationConfigUnknownNetwork = err(120001)
   CompilationConfigInvalidAvailabilityZone = err(120002)
+  CompilationConfigInvalidVmType = err(120003)
+  CompilationConfigCloudPropertiesNotAllowed = err(120004)
 
   # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)

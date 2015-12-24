@@ -11,7 +11,9 @@ module Bosh::Director
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
-    let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
+    let(:compilation_config) do
+      instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
+    end
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
@@ -64,7 +66,8 @@ module Bosh::Director
           cloud_properties: {},
           workers: @n_workers,
           reuse_compilation_vms: false,
-          availability_zone: nil
+          availability_zone: nil,
+          vm_type: nil
         )
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)

@@ -66,7 +66,12 @@ module Bosh::Director
       end
 
       def create_instance_plan(stemcell)
-        vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        if @deployment_plan.compilation.vm_type
+          vm_type = @deployment_plan.compilation.vm_type
+        else
+          vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        end
+
         env = Env.new(@deployment_plan.compilation.env)
 
         @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan.compilation.network_name)

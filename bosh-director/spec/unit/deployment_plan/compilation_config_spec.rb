@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe Bosh::Director::DeploymentPlan::CompilationConfig do
@@ -35,6 +33,73 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
     end
 
+    context 'when cloud_properties are configured' do
+      it 'should parse the property' do
+        config = BD::DeploymentPlan::CompilationConfig.new(
+          {
+            'workers' => 2,
+            'network' => 'foo',
+            'cloud_properties' => {'instance_type' => 'super-large'}
+          },
+          {},
+          []
+        )
+
+        expect(config.cloud_properties).to eq({'instance_type' => 'super-large'})
+      end
+    end
+
+    context 'when vm_type is configured' do
+      let(:vm_type) { BD::DeploymentPlan::VmType.new({'name' => 'my-foo-compilation'}) }
+
+      it 'should parse the property' do
+        config = BD::DeploymentPlan::CompilationConfig.new(
+          {
+            'workers' => 2,
+            'network' => 'foo',
+            'vm_type' => 'my-foo-compilation',
+          },
+          {},
+          [vm_type]
+        )
+
+        expect(config.vm_type).to eq(vm_type)
+      end
+
+      it 'it should error if the vm_type is not actually configured' do
+        expect {
+          BD::DeploymentPlan::CompilationConfig.new(
+            {
+              'workers' => 2,
+              'network' => 'foo',
+              'vm_type' => 'undefined-vm',
+            },
+            {},
+            [vm_type]
+          )
+        }.to raise_error BD::CompilationConfigInvalidVmType,
+          "Compilation config references unknown vm type 'undefined-vm'. Known vm types are: my-foo-compilation"
+      end
+
+      it 'it should error if both vm_type and cloud_properties are configured' do
+        expect {
+          BD::DeploymentPlan::CompilationConfig.new(
+            {
+              'workers' => 2,
+              'network' => 'foo',
+              'vm_type' => 'my-foo-compilation',
+              'cloud_properties' => {
+                'instance_type' => 'super-large',
+              },
+            },
+            {},
+            [vm_type]
+          )
+        }.to raise_error BD::CompilationConfigCloudPropertiesNotAllowed,
+          "Compilation config is using vm type 'my-foo-compilation' and should not be configuring cloud_properties."
+      end
+    end
+
     context 'when availability zone is not specified' do
       it 'should parse the basic properties' do
         config = BD::DeploymentPlan::CompilationConfig.new({
@@ -43,7 +108,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             'cloud_properties' => {
               'foo' => 'bar'
             }
-          })
+          }, {})
 
         expect(config.workers).to eq(2)
         expect(config.cloud_properties).to eq({'foo' => 'bar'})
@@ -57,7 +122,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               'cloud_properties' => {
                 'foo' => 'bar'
               }
-            })
+            }, {})
         }.to raise_error(BD::ValidationMissingField)
       end
 
@@ -69,7 +134,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               'cloud_properties' => {
                 'foo' => 'bar'
               }
-            })
+            }, {})
         }.to raise_error(BD::ValidationViolatedMin)
       end
 
@@ -80,7 +145,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               'cloud_properties' => {
                 'foo' => 'bar'
               }
-            })
+            }, {})
         }.to raise_error(BD::ValidationMissingField)
       end
 
@@ -88,7 +153,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         config = BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
             'network' => 'foo'
-          })
+          }, {})
         expect(config.cloud_properties).to eq({})
       end
 
@@ -102,7 +167,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             'env' => {
               'password' => 'password1'
             }
-          })
+          }, {})
         expect(config.env).to eq({'password' => 'password1'})
       end
 
@@ -114,7 +179,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               'foo' => 'bar'
             },
             'reuse_compilation_vms' => true
-          })
+          }, {})
         expect(config.reuse_compilation_vms).to eq(true)
       end
 
@@ -128,7 +193,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               },
               # the non-boolean boolean
               'reuse_compilation_vms' => 1
-            })
+            }, {})
         }.to raise_error(Bosh::Director::ValidationInvalidType)
 
       end
