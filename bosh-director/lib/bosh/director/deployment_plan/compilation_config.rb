@@ -9,7 +9,7 @@ module Bosh::Director
       attr_accessor :workers
 
       # @return [Hash] cloud properties to use when creating VMs. (optional)
-      attr_accessor :cloud_properties
+      attr_reader :cloud_properties
 
       # @return [Hash] environment to use when creating VMs. (optional)
       attr_accessor :env
