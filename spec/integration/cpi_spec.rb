@@ -40,6 +40,7 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
@@ -53,6 +54,7 @@ describe 'CPI calls', type: :integration do
         'metadata' => {
           'compiling' => 'foo',
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
@@ -85,6 +87,7 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
@@ -97,6 +100,7 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => compilation_vm_id,
         'metadata' => {
           'compiling' => 'bar',
+          'created_at' => kind_of(String),
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
@@ -131,6 +135,7 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => 'foobar',
           'index' => '0',
@@ -191,6 +196,7 @@ describe 'CPI calls', type: :integration do
           'vm_cid' => String,
           'metadata' => {
             'director' => 'Test Director',
+            'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',
@@ -259,6 +265,7 @@ describe 'CPI calls', type: :integration do
           'vm_cid' => String,
           'metadata' => {
             'director' => 'Test Director',
+            'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',

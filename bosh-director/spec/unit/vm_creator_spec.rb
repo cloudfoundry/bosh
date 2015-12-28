@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'timecop'
 
 describe Bosh::Director::VmCreator do
 
@@ -107,18 +108,20 @@ describe Bosh::Director::VmCreator do
       ).and_return('new-vm-cid')
 
     allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
+    Timecop.freeze do
+      expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
+        expect(vm_cid).to eq('new-vm-cid')
+        expect(metadata).to match({
+          deployment: 'deployment_name',
+          created_at: Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
+          job: 'fake-job',
+          index: '5',
+          director: 'fake-director-name',
+        })
+      end
 
-    expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
-      expect(vm_cid).to eq('new-vm-cid')
-      expect(metadata).to match({
-        deployment: 'deployment_name',
-        job: 'fake-job',
-        index: '5',
-        director: 'fake-director-name',
-      })
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
     end
-
-    subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
   end
 
   it 'updates instance job templates with new IP' do
