@@ -58,9 +58,10 @@ module Bosh::Director
         allow(rendered_job_templates_cleaner).to receive(:clean)
       end
 
-      it 'runs the start script' do
+      it 'runs the pre-start and start scripts in order' do
         expect(agent_client).to receive(:run_script).with('pre-start', {}).ordered
         expect(agent_client).to receive(:start).ordered
+
         state_applier.apply
       end
 

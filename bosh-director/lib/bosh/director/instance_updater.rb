@@ -107,6 +107,8 @@ module Bosh::Director
       if instance.state == "stopped" && current_state["job_state"] == "running"
         raise AgentJobNotStopped, "`#{instance}' is still running despite the stop command"
       end
+
+      agent(instance).run_script('post-start', {})
     end
 
     private
