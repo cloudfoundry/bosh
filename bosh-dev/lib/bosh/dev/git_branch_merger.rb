@@ -6,6 +6,7 @@ module Bosh::Dev
 
     def self.build
       new(
+        Dir.pwd,
         Logging.logger(STDERR),
       )
     end
