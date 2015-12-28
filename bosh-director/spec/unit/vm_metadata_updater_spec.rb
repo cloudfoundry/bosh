@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'logger'
+require 'timecop'
 
 describe Bosh::Director::VmMetadataUpdater do
   describe '.build' do
@@ -36,6 +37,14 @@ describe Bosh::Director::VmMetadataUpdater do
         director_metadata.merge!(expected_vm_metadata)
         expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
         vm_metadata_updater.update(instance, {})
+      end
+
+      it 'updates vm metadata with creation time' do
+        Timecop.freeze do
+          expected_vm_metadata = {:created_at => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
+          vm_metadata_updater.update(instance, {})
+        end
       end
 
       it 'does not mutate passed metadata' do

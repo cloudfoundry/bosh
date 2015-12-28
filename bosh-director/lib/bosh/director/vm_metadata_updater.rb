@@ -18,6 +18,8 @@ module Bosh::Director
         metadata[:job] = instance.job
         metadata[:index] = instance.index.to_s
 
+        metadata[:created_at] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
+
         @cloud.set_vm_metadata(instance.vm_cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
