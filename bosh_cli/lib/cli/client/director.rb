@@ -339,22 +339,6 @@ module Bosh
           put(url, 'application/json', payload)
         end
 
-        def rename_job(deployment_name, manifest_yaml, old_name, new_name,
-          force = false, options = {})
-          options = options.dup
-
-          url = "/deployments/#{deployment_name}/jobs/#{old_name}"
-
-          extras = []
-          extras << ['new_name', new_name]
-          extras << ['force', 'true'] if force
-
-          options[:content_type] = 'text/yaml'
-          options[:payload]      = manifest_yaml
-
-          request_and_track(:put, add_query_string(url, extras), options)
-        end
-
         def fetch_logs(deployment_name, job_name, index, log_type,
           filters = nil, options = {})
           options = options.dup

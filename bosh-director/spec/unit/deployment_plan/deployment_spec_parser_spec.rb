@@ -403,41 +403,6 @@ module Bosh::Director
           end
         end
       end
-
-      describe 'job_rename option' do
-        context 'when old_name from job_rename option is referencing a job in jobs section' do
-          before { manifest_hash.merge!('jobs' => [{'name' => 'job-old-name'}]) }
-
-          let(:job) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
-              name: 'job-old-name',
-              canonical_name: 'job-canonical-name',
-            })
-          end
-
-          let(:planner_options) do
-            {
-              'job_rename' => {
-                'old_name' => 'job-old-name',
-                'new_name' => 'job-new-name',
-              }
-            }
-          end
-
-          it 'raises an error because only new_name should reference a job' do
-            allow(DeploymentPlan::Job).to receive(:parse).
-              with(be_a(DeploymentPlan::Planner), {'name' => 'job-old-name'}, event_log, logger).
-              and_return(job)
-
-            expect {
-              parsed_deployment
-            }.to raise_error(
-              DeploymentRenamedJobNameStillUsed,
-              "Renamed job `job-old-name' is still referenced in deployment manifest",
-            )
-          end
-        end
-      end
     end
   end
 end

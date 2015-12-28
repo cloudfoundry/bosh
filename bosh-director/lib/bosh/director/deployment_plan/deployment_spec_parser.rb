@@ -38,10 +38,6 @@ module Bosh::Director
         end
       end
 
-      def parse_name
-        safe_property(@deployment_manifest, 'name', :class => String)
-      end
-
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})

@@ -46,8 +46,6 @@ module Bosh::Director
       # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms
 
-      attr_reader :job_rename
-
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
@@ -74,9 +72,6 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
-
-        @job_rename = safe_property(options, 'job_rename',
-          :class => Hash, :default => {})
 
         @recreate = !!options['recreate']
 
@@ -221,12 +216,6 @@ module Bosh::Director
       # Adds a job by name
       # @param [Bosh::Director::DeploymentPlan::Job] job
       def add_job(job)
-        if rename_in_progress? && @job_rename['old_name'] == job.name
-          raise DeploymentRenamedJobNameStillUsed,
-            "Renamed job `#{job.name}' is still referenced in " +
-              'deployment manifest'
-        end
-
         if @jobs_canonical_name_index.include?(job.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
             "Invalid job name `#{job.name}', canonical name already taken"
@@ -246,10 +235,6 @@ module Bosh::Director
 
       def jobs_starting_on_deploy
         @jobs.select(&:starts_on_deploy?)
-      end
-
-      def rename_in_progress?
-        @job_rename['old_name'] && @job_rename['new_name']
       end
 
       def persist_updates!

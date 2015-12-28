@@ -18,7 +18,6 @@ module Bosh::Director
       bind_releases
 
       migrate_legacy_dns_records
-      bind_job_renames
 
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger)
       states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
@@ -167,27 +166,9 @@ module Bosh::Director
       @dns_manager.configure_nameserver
     end
 
-    def bind_job_renames
-      @deployment_plan.instance_models.each do |instance_model|
-        update_instance_if_rename(instance_model)
-      end
-    end
-
     def migrate_legacy_dns_records
       @deployment_plan.instance_models.each do |instance_model|
         @dns_manager.migrate_legacy_records(instance_model)
-      end
-    end
-
-    def update_instance_if_rename(instance_model)
-      if @deployment_plan.rename_in_progress?
-        old_name = @deployment_plan.job_rename['old_name']
-        new_name = @deployment_plan.job_rename['new_name']
-
-        if instance_model.job == old_name
-          @logger.info("Renaming `#{old_name}' to `#{new_name}'")
-          instance_model.update(:job => new_name)
-        end
       end
     end
   end

@@ -207,7 +207,6 @@ module Bosh::Director
   DeploymentDuplicateReleaseName = err(190002)
   DeploymentDuplicateResourcePoolName = err(190003)
   DeploymentDuplicateVmTypeName = err(190004)
-  DeploymentRenamedJobNameStillUsed = err(190005)
   DeploymentCanonicalJobNameTaken = err(190006)
   DeploymentCanonicalNetworkNameTaken = err(190007)
   DeploymentNoNetworks = err(190008)

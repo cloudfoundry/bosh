@@ -63,7 +63,6 @@ module Bosh
             'recreate' => !!options['recreate'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
-            'job_rename' => options['job_rename'] || {}
           }
 
           @logger.info('Creating deployment plan')
