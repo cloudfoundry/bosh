@@ -2,10 +2,7 @@ require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   class InstanceUpdater
-    WATCH_INTERVALS = 10
     MAX_RECREATE_ATTEMPTS = 3
-
-    attr_reader :current_state
 
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
@@ -38,8 +35,8 @@ module Bosh::Director
       @dns_manager = dns_manager
       @disk_manager = disk_manager
       @ip_provider = ip_provider
-      @current_state = {}
       @vm_recreator = vm_recreator
+      @current_state = {}
     end
 
     def update(instance_plan, options = {})
@@ -94,21 +91,13 @@ module Bosh::Director
       end
 
       cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
-      InstanceUpdater::StateApplier.new(instance_plan, agent(instance), cleaner).apply
+      state_applier = InstanceUpdater::StateApplier.new(instance_plan, agent(instance), cleaner, @logger)
+      state_applier.apply
 
-      instance.update_state
-
-      wait_until_running(instance_plan)
-
-      if instance.state == "started" && current_state["job_state"] != "running"
-        raise AgentJobNotRunning, "`#{instance}' is not running after update"
-      end
-
-      if instance.state == "stopped" && current_state["job_state"] == "running"
-        raise AgentJobNotStopped, "`#{instance}' is still running despite the stop command"
-      end
-
-      agent(instance).run_script('post-start', {})
+      job = instance_plan.desired_instance.job
+      min_watch_time = get_min_watch_time(job.update)
+      max_watch_time = get_max_watch_time(job.update)
+      state_applier.post_start(min_watch_time, max_watch_time)
     end
 
     private
@@ -142,24 +131,6 @@ module Bosh::Director
       @dns_manager.flush_dns_cache
     end
 
-    # Returns an array of wait times distributed
-    # on the [min_watch_time..max_watch_time] interval.
-    #
-    # Tries to respect intervals but doesn't allow an interval to
-    # fall under 1 second.
-    # All times are in milliseconds.
-    # @param [Numeric] min_watch_time minimum time to watch the jobs
-    # @param [Numeric] max_watch_time maximum time to watch the jobs
-    # @param [Numeric] intervals number of intervals between polling
-    #   the state of the jobs
-    # @return [Array<Numeric>] watch schedule
-    def watch_schedule(min_watch_time, max_watch_time, intervals = WATCH_INTERVALS)
-      delta = (max_watch_time - min_watch_time).to_f
-      step = [1000, delta / (intervals - 1)].max
-
-      [min_watch_time] + ([step] * (delta / step).floor)
-    end
-
     def get_min_watch_time(update_config)
       canary? ? update_config.min_canary_watch_time : update_config.min_update_watch_time
     end
@@ -174,30 +145,6 @@ module Bosh::Director
 
     def dns_change_only?(instance_plan)
       instance_plan.changes.include?(:dns) && instance_plan.changes.size == 1
-    end
-
-    # Watch times don't include the get_state roundtrip time, so effective
-    # max watch time is roughly:
-    # max_watch_time + N_WATCH_INTERVALS * avg_roundtrip_time
-    def wait_until_running(instance_plan)
-      instance = instance_plan.instance
-      job = instance_plan.desired_instance.job
-      min_watch_time = get_min_watch_time(job.update)
-      max_watch_time = get_max_watch_time(job.update)
-      watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
-        sleep_time = watch_time.to_f / 1000
-        @logger.info("Waiting for #{sleep_time} seconds to check #{instance} status")
-        sleep(sleep_time)
-        @logger.info("Checking if #{instance} has been updated after #{sleep_time} seconds")
-
-        @current_state = agent(instance).get_state
-
-        if instance.state == "started"
-          break if current_state["job_state"] == "running"
-        elsif instance.state == "stopped"
-          break if current_state["job_state"] != "running"
-        end
-      end
     end
 
     def needs_recreate?(instance_plan)

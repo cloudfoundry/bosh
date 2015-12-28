@@ -4,7 +4,7 @@ module Bosh::Director
   describe InstanceUpdater::StateApplier do
     include Support::StemcellHelpers
 
-    subject(:state_applier) { InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner) }
+    subject(:state_applier) { InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger) }
 
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new({
@@ -40,7 +40,7 @@ module Bosh::Director
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, nil, logger) }
-    let(:instance_model) { Models::Instance.make(vm: vm_model) }
+    let(:instance_model) { Models::Instance.make(vm: vm_model, state: 'stopped') }
     let(:vm_model) { Models::Vm.make(cid: 'vm234') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -84,6 +84,109 @@ module Bosh::Director
           expect(agent_client).to_not receive(:run_script)
           expect(agent_client).to_not receive(:start)
           state_applier.apply
+        end
+      end
+    end
+
+    describe 'post_start' do
+      before do
+        allow(state_applier).to receive(:sleep)
+      end
+
+      it 'updates the model with the state' do
+        allow(agent_client).to receive(:run_script)
+        allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
+        expect {
+          state_applier.post_start(1000, 8_000)
+        }.to change(instance.model, :state)
+               .from('stopped')
+               .to('started')
+      end
+
+      context 'scheduling' do
+        before do
+          allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'})
+        end
+
+        it 'divides the range into 10 equal steps' do
+          expect(state_applier).to receive(:sleep).with(10.0).exactly(9).times
+          expect { state_applier.post_start(1000, 91_000) }.to raise_error
+        end
+
+        context 'when the interval length is less than 10 seconds' do
+          it 'divides the interval into 1 second steps' do
+            expect(state_applier).to receive(:sleep).with(1.0).exactly(8).times
+            expect { state_applier.post_start(1000, 8_000) }.to raise_error
+          end
+        end
+      end
+
+      context 'when trying to start a job' do
+        context 'when job does not start within max_watch_time' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'}, {'job_state' => 'stopped'})
+          end
+
+          it 'raises AgentJobNotRunning' do
+            expect(state_applier).to receive(:sleep).with(1.0).twice
+            expect(agent_client).to_not receive(:run_script).with('post-start', {})
+
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0' is not running after update"
+          end
+        end
+
+        context 'when the job successfully starts' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'}, {'job_state' => 'running'})
+            allow(state_applier).to receive(:sleep)
+            allow(agent_client).to receive(:run_script)
+          end
+
+          it 'runs the post-start script after instance is in desired state' do
+            expect(state_applier).to receive(:sleep).with(1.0).twice
+            expect(agent_client).to receive(:run_script).with('post-start', {})
+
+            state_applier.post_start(1000, 2000)
+          end
+
+          it 'logs while waiting until instance is in desired state' do
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/0 has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/0 has been updated after 1.0 seconds').ordered
+
+            state_applier.post_start(1000, 2000)
+          end
+        end
+      end
+
+      context 'when trying to stop a job' do
+        let(:instance_state) { 'stopped' }
+
+        context 'when job does not stop within max_watch_time' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}, {'job_state' => 'running'})
+          end
+
+          it 'raises AgentJobNotStopped' do
+            expect(state_applier).to receive(:sleep).with(1.0).twice
+            expect(agent_client).to_not receive(:run_script).with('post-start', {})
+
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotStopped, "`fake-job/0' is still running despite the stop command"
+          end
+        end
+
+        context 'when the job successfully stops' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}, {'job_state' => 'stopped'})
+          end
+
+          it 'does not run the post-start script after instance is in desired state' do
+            expect(state_applier).to receive(:sleep).with(1.0).twice
+            expect(agent_client).to_not receive(:run_script).with('post-start', {})
+
+            state_applier.post_start(1000, 2000)
+          end
         end
       end
     end
