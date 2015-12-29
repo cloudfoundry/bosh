@@ -37,11 +37,11 @@ module Bosh::Director::Models
     end
 
     def consumes=(consumes_spec)
-      self.requires_json = json_encode(consumes_spec)
+      self.consumes_json = json_encode(consumes_spec)
     end
 
     def consumes
-      object_or_nil(self.requires_json)
+      object_or_nil(self.consumes_json)
     end
 
     def provides=(provides_spec)

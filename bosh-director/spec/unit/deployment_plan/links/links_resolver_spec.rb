@@ -117,7 +117,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: requires_links)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
