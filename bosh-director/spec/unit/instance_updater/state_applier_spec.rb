@@ -40,12 +40,13 @@ module Bosh::Director
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, nil, logger) }
-    let(:instance_model) { Models::Instance.make(vm: vm_model, state: 'stopped') }
+    let(:instance_model) { Models::Instance.make(vm: vm_model, state: instance_model_state) }
     let(:vm_model) { Models::Vm.make(cid: 'vm234') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }
     let(:instance_state) { 'started' }
+    let(:instance_model_state) { 'stopped' }
 
     before { instance.bind_existing_instance_model(instance_model) }
 
@@ -93,16 +94,6 @@ module Bosh::Director
         allow(state_applier).to receive(:sleep)
       end
 
-      it 'updates the model with the state' do
-        allow(agent_client).to receive(:run_script)
-        allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
-        expect {
-          state_applier.post_start(1000, 8_000)
-        }.to change(instance.model, :state)
-               .from('stopped')
-               .to('started')
-      end
-
       context 'scheduling' do
         before do
           allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'})
@@ -133,6 +124,13 @@ module Bosh::Director
 
             expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0' is not running after update"
           end
+
+          it 'does not update state on the instance model' do
+            expect(instance.model.state).to eq('stopped')
+
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning
+            expect(instance.model.state).to eq('stopped')
+          end
         end
 
         context 'when the job successfully starts' do
@@ -157,11 +155,22 @@ module Bosh::Director
 
             state_applier.post_start(1000, 2000)
           end
+
+          it 'updates state on the instance model after agent reports that job is in desired state' do
+            allow(agent_client).to receive(:run_script)
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}).ordered
+            expect {
+              state_applier.post_start(1000, 8_000)
+            }.to change(instance.model, :state)
+                   .from('stopped')
+                   .to('started')
+          end
         end
       end
 
       context 'when trying to stop a job' do
         let(:instance_state) { 'stopped' }
+        let(:instance_model_state) { 'started' }
 
         context 'when job does not stop within max_watch_time' do
           before do
@@ -173,6 +182,13 @@ module Bosh::Director
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
             expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotStopped, "`fake-job/0' is still running despite the stop command"
+          end
+
+          it 'does not update state on the instance model' do
+            expect(instance.model.state).to eq('started')
+
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotStopped
+            expect(instance.model.state).to eq('started')
           end
         end
 

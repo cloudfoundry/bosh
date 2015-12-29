@@ -20,8 +20,6 @@ module Bosh::Director
     end
 
     def post_start(min_watch_time, max_watch_time)
-      @instance.update_state
-
       current_state = wait_until_desired_state(min_watch_time, max_watch_time)
 
       if @instance.state == 'started'
@@ -35,6 +33,8 @@ module Bosh::Director
       if @instance.state == 'stopped' && current_state['job_state'] == 'running'
         raise AgentJobNotStopped, "`#{@instance}' is still running despite the stop command"
       end
+
+      @instance.update_state
     end
 
     private
