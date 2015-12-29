@@ -41,21 +41,31 @@ module Bosh::Director
       @logger.info("Found #{instance_plans.size} instances to update")
       event_log_stage = @event_log.begin_stage('Updating job', instance_plans.size, [ @job.name ])
 
-      ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-        num_canaries = [ @job.update.canaries, instance_plans.size ].min
-        @logger.info("Starting canary update num_canaries=#{num_canaries}")
-        update_canaries(pool, instance_plans, num_canaries, event_log_stage)
+      instance_plans_by_az = instance_plans.group_by{ |instance_plan| instance_plan.instance.availability_zone }
+      canaries_done = false
 
-        @logger.info('Waiting for canaries to update')
-        pool.wait
+      instance_plans_by_az.each do |az, az_instance_plans|
+        @logger.info("Starting to update az '#{az}'")
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
+          unless canaries_done
+            num_canaries = [@job.update.canaries, az_instance_plans.size].min
+            @logger.info("Starting canary update num_canaries=#{num_canaries}")
+            update_canaries(pool, az_instance_plans, num_canaries, event_log_stage)
 
-        @logger.info('Finished canary update')
+            @logger.info('Waiting for canaries to update')
+            pool.wait
 
-        @logger.info('Continuing the rest of the update')
-        update_instances(pool, instance_plans, event_log_stage)
+            @logger.info('Finished canary update')
+
+            canaries_done = true
+          end
+
+          @logger.info('Continuing the rest of the update')
+          update_instances(pool, az_instance_plans, event_log_stage)
+          @logger.info('Finished the rest of the update')
+        end
+        @logger.info("Finished updating az '#{az}'")
       end
-
-      @logger.info('Finished the rest of the update')
     end
 
     private
