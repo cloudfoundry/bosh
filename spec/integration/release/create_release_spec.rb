@@ -24,6 +24,7 @@ describe 'create release', type: :integration do
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/job_1_with_pre_start_script.tgz',
           './jobs/job_2_with_pre_start_script.tgz',
+          './jobs/job_with_post_start_script.tgz',
           './jobs/transitive_deps.tgz',
           './jobs/id_job.tgz',
           './packages/a.tgz',
@@ -132,6 +133,7 @@ describe 'create release', type: :integration do
               job_desc('job_with_blocking_compilation'),
               job_desc('job_1_with_pre_start_script'),
               job_desc('job_2_with_pre_start_script'),
+              job_desc('job_with_post_start_script'),
               job_desc('transitive_deps'),
               job_desc('id_job')
             ),
