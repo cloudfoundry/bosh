@@ -96,10 +96,6 @@ module Bosh::Director::Models
       self.spec_json = Yajl::Encoder.encode(spec)
     end
 
-    def bind_to_vm_model(vm)
-      self.vm = vm
-    end
-
     def env
       if vm
         @env = vm.env
