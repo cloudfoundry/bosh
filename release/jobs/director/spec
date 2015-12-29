@@ -124,6 +124,7 @@ properties:
 
   redis.address:
     description: Address of the redis server
+    default: 127.0.0.1
   redis.port:
     description: Port that the redis server listens on
     default: 25255
@@ -157,6 +158,7 @@ properties:
     description: |
       Address of the director database, for example, in the case of AWS RDS:
       rds-instance-name.coqxxxxxxxxx.us-east-1.rds.amazonaws.com
+    default: 127.0.0.1
   director.db.port:
     description: Port of the director database (e.g, msyql2 adapter would generally use 3306)
     default: 5432
@@ -185,6 +187,7 @@ properties:
     description: DNS Database password
   dns.db.host:
     description: DNS Database host
+    default: 127.0.0.1
   dns.db.port:
     description: Port that the powerdns database listens on
     default: 5432

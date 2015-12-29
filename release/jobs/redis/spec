@@ -15,4 +15,5 @@ properties:
     description: TCP port Redis server listens on
     default: 25255
   redis.listen_address:
-    description: IP address Redis server listens on (optional)
+    description: IP address Redis server listens on; use 0.0.0.0 to listen on all IP addresses
+    default: 127.0.0.1
