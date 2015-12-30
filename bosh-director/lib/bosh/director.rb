@@ -90,6 +90,7 @@ require 'bosh/director/error_ignorer'
 require 'bosh/director/deployment_deleter'
 require 'bosh/director/transactor'
 require 'bosh/director/sequel'
+require 'bosh/director/changeset'
 require 'common/thread_pool'
 
 require 'bosh/director/log_bundles_cleaner'

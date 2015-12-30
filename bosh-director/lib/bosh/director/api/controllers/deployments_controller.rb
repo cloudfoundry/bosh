@@ -205,7 +205,7 @@ module Bosh::Director
 
       post '/:deployment/properties', :consumes => [:json] do
         payload = json_decode(request.body)
-        @property_manager.create_property(params[:deployment], payload['name'], payload['value'])
+        @property_manager.create_property(params[:deployment], payload['name'], payload['value']  )
         status(204)
       end
 
@@ -267,10 +267,32 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
-        latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        if params['cloud_config_id']
+          cloud_config = Bosh::Director::Api::CloudConfigManager.find_by_id(params['cloud_config_id'])
+        else
+          cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        end
 
-        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, options)
         redirect "/tasks/#{task.id}"
+      end
+
+      post '/:deployment/diff', :consumes => [:json] do
+        payload = json_decode(request.body)
+        manifest_yaml = payload['manifest']
+
+        after = Psych.load(manifest_yaml).merge(Bosh::Director::Api::CloudConfigManager.new.latest)
+
+        deployment = Models::Deployment.find(id: params[:deployment])
+        cloud_config = Models::CloudConfig.find(id: deployment.cloud_config)
+        before = deployment.manifest.merge(cloud_config.manifest)
+
+        diff = Changeset.new(before, after)
+
+        {
+          'cloud_config_id' => cloud_config.id,
+          'diff' => diff
+        }
       end
 
       post '/:deployment_name/errands/:errand_name/runs' do
