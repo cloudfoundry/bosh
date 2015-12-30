@@ -50,8 +50,8 @@ module Bosh::Director
           end
 
         elsif @before[key] != @after[key]
-          lines << Line.new(indent, @before[key], 'removed')
-          lines << Line.new(indent, @after[key], 'added')
+          lines << Line.new(indent, "#{key}:", 'removed')
+          lines << Line.new(indent, "#{key}: #{@after[key]}", 'added')
         end
       end
       lines
@@ -71,10 +71,9 @@ module Bosh::Director
 
       lines = []
 
-      using_names = (added+removed).all? { |e| e['name'] }
-
       added.each do |elem|
         if elem.is_a?(Hash)
+          using_names = (added+removed).all? { |e| e['name'] }
           if using_names
             removed_same_name_element = removed.find { |e| e['name'] == elem['name'] }
             removed.delete(removed_same_name_element)
@@ -95,10 +94,8 @@ module Bosh::Director
           else
             lines += yaml_lines([elem], indent, 'added')
           end
-        elsif elem.is_a?(Array)
+        else elem.is_a?(Array)
           lines += yaml_lines([elem], indent, 'added')
-        else
-          lines << Line.new(indent, "#{elem}", 'added')
         end
       end
 

@@ -277,22 +277,18 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/diff', :consumes => [:json] do
-        payload = json_decode(request.body)
-        manifest_yaml = payload['manifest']
+      post '/:deployment/diff', :consumes => :yaml do
+        deployment = @deployment_manager.find_by_name(params[:deployment])
+        before = Psych.load(deployment.manifest).merge(deployment.cloud_config.manifest) if deployment.cloud_config
 
-        after = Psych.load(manifest_yaml).merge(Bosh::Director::Api::CloudConfigManager.new.latest)
+        after = Psych.load(request.body).merge(Bosh::Director::Api::CloudConfigManager.new.latest.manifest)
 
-        deployment = Models::Deployment.find(id: params[:deployment])
-        cloud_config = Models::CloudConfig.find(id: deployment.cloud_config)
-        before = deployment.manifest.merge(cloud_config.manifest)
+        diff = Changeset.new(before, after).diff
 
-        diff = Changeset.new(before, after)
-
-        {
-          'cloud_config_id' => cloud_config.id,
-          'diff' => diff
-        }
+        json_encode({
+          'cloud_config_id' => deployment.cloud_config.id,
+          'diff' => diff.map { |l| [l.to_s, l.status] }
+        })
       end
 
       post '/:deployment_name/errands/:errand_name/runs' do

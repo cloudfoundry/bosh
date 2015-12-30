@@ -141,6 +141,25 @@ module Bosh::Director
           ])
         end
       end
+
+      context 'when property added to array' do
+        let(:old) do
+          {
+            'azs' => ['az1', 'az2']
+          }
+        end
+        let(:new) do
+          {
+            'azs' => ['az1', 'az2', 'az3']
+          }
+        end
+        it 'returns added property' do
+          expect(changeset).to eq([
+                                    ['azs:', nil],
+                                    ['- az3', 'added']
+                                  ])
+        end
+      end
     end
 
     context 'when array element was added' do
@@ -208,6 +227,49 @@ module Bosh::Director
           ])
         end
       end
+
+      context 'when array was added' do
+        let(:old) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    ['dc1', 'dc2']
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        let(:new) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    ['dc1', 'dc2'], ['dc3', 'dc4'], ['dc5'], ['dc6']
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        it 'returns added property' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- name: z1', nil],
+            ['  cloud_properties:', nil],
+            ['    datacenters:', nil],
+            ['    - - dc3', 'added'],
+            ['      - dc4', 'added'],
+            ['    - - dc5', 'added'],
+            ['    - - dc6', 'added'],
+          ])
+        end
+      end
     end
 
     context 'when property was removed' do
@@ -271,6 +333,25 @@ module Bosh::Director
             ['  cloud_properties:', 'removed'],
             ['    datacenters:', 'removed'],
             ['    - name: dc1', 'removed'],
+          ])
+        end
+      end
+
+      context 'when property removed from array' do
+        let(:old) do
+          {
+            'azs' => ['az1', 'az2', 'az3']
+          }
+        end
+        let(:new) do
+          {
+            'azs' => ['az1', 'az2']
+          }
+        end
+        it 'returns added property' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- az3', 'removed']
           ])
         end
       end
@@ -384,6 +465,49 @@ module Bosh::Director
           ])
         end
       end
+
+      context 'when array was removed' do
+        let(:old) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    ['dc1', 'dc2'], ['dc3', 'dc4'], ['dc5'], ['dc6']
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        let(:new) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    ['dc1', 'dc2']
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        it 'returns added property' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- name: z1', nil],
+            ['  cloud_properties:', nil],
+            ['    datacenters:', nil],
+            ['    - - dc3', 'removed'],
+            ['      - dc4', 'removed'],
+            ['    - - dc5', 'removed'],
+            ['    - - dc6', 'removed'],
+          ])
+        end
+      end
     end
 
     context 'when property was changed' do
@@ -445,6 +569,125 @@ module Bosh::Director
             ['    datacenters:', 'added'],
             ['    - name: dc1', 'added'],
             ['    - name: dc2', 'added'],
+          ])
+        end
+      end
+
+      context 'when name changes' do
+        let(:new) do
+          {
+            'azs' => [
+              {
+                'name' => 'z2',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    {'name' => 'dc1'},
+                    {'name' => 'dc2'},
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        it 'assumes the node has been removed and a new one (with the new name) has been added' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- name: z2', 'added'],
+            ['  cloud_properties:', 'added'],
+            ['    datacenters:', 'added'],
+            ['    - name: dc1', 'added'],
+            ['    - name: dc2', 'added'],
+            ['- name: z1', 'removed'],
+            ['  cloud_properties:', 'removed'],
+            ['    datacenters:', 'removed'],
+            ['    - name: dc1', 'removed'],
+            ['    - name: dc2', 'removed']
+          ])
+        end
+      end
+
+      context 'when property (that is not a Hash or Array) changes' do
+        let(:old) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'location' => 'Tashkent',
+                  'datacenters' => [
+                    {'name' => 'dc1'},
+                    {'name' => 'dc2'},
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        let(:new) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'location' => 'Delhi',
+                  'datacenters' => [
+                    {'name' => 'dc1'},
+                    {'name' => 'dc2'},
+                  ]
+                }
+              }
+            ]
+          }
+        end
+        it 'returns changed property' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- name: z1', nil],
+            ['  cloud_properties:', nil],
+            ['    location:', 'removed'],
+            ['    location: Delhi', 'added'],
+          ])
+        end
+      end
+
+      context 'when in array changes' do
+        let(:old) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    'dc1', 'dc2'
+                  ],
+                }
+              }
+            ]
+          }
+        end
+
+        let(:new) do
+          {
+            'azs' => [
+              {
+                'name' => 'z1',
+                'cloud_properties' => {
+                  'datacenters' => [
+                    'dc3', 'dc2'
+                  ],
+                }
+              }
+            ]
+          }
+        end
+        it 'shows changed property as added and removed' do
+          expect(changeset).to eq([
+            ['azs:', nil],
+            ['- name: z1', nil],
+            ['  cloud_properties:', nil],
+            ['    datacenters:', nil],
+            ['    - dc3', 'added'],
+            ['    - dc1', 'removed'],
           ])
         end
       end
