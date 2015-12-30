@@ -157,7 +157,7 @@ module Bosh::Director
         end
       end
 
-      context 'when job spec file includes requires' do
+      context 'when job spec file includes consumes' do
         it 'verifies it is an array' do
           allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
 
