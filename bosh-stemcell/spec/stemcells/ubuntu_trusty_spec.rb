@@ -55,6 +55,11 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should contain 'auto lo' }
       it { should contain 'iface lo inet loopback' }
     end
+
+    describe file('/etc/hostname') do
+      it { should be_file }
+      it { should contain 'localhost' }
+    end
   end
 
   context 'installed by system-azure-network', {

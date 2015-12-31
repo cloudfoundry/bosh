@@ -9,6 +9,8 @@ source $base_dir/lib/prelude_apply.bash
 rm -fr $chroot/etc/udev/rules.d/70-persistent-net.rules
 
 if [ -e "$chroot/etc/network/interfaces" ]; then # ubuntu
+  echo -n "localhost" > $chroot/etc/hostname
+
   cat >> $chroot/etc/network/interfaces <<EOS
 auto lo
 iface lo inet loopback
