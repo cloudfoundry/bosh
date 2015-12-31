@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `TTmPhUs6RDJUlQmZ.RYMu0ItfOS6FNtx`
+  - update monit from 5.2.4 to 5.2.5
+
 * `3mZuzYe8vUwy3L1YhZihMvJ3OEzpDkj.`
   - update for USN-2854-1
 
@@ -334,6 +337,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `qmKgGt1iOX84M.hR8ZVI0887DEvnKPHV`
+  - update monit from 5.2.4 to 5.2.5
 
 * `VdAETz96I1jsDYh.Qf8_UgrYTexAmX7U`
   - (periodic) bump centos to match ubuntu update for USN-2854-1
