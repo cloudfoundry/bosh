@@ -1,3 +1,6 @@
+*2015-04-27: We are now documenting release changes on our GitHub project's [Releases page](https://github.com/cloudfoundry/bosh/releases).*
+
+
 ## 2941
 
 New Features:
