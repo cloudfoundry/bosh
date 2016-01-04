@@ -204,7 +204,7 @@ module Bosh::Director
       end
 
       def agent_client
-        @agent_client ||= AgentClient.with_vm(@model.vm)
+        @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@model.vm.credentials, @model.vm.agent_id)
       end
 
       ##

@@ -155,7 +155,7 @@ module Bosh::Director
         :retry_methods => { :get_state => retries }
       }
       @clients ||= {}
-      @clients[vm.agent_id] ||= AgentClient.with_vm(vm, options)
+      @clients[vm.agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm.credentials, vm.agent_id, options)
     end
 
     def agent_timeout_guard(vm, &block)

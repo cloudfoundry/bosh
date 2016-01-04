@@ -60,7 +60,7 @@ module Bosh::Director
         instance.bind_to_vm_model(vm_model)
         VmMetadataUpdater.build.update(vm_model, {})
 
-        agent_client = AgentClient.with_vm(vm_model)
+        agent_client = AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id)
         agent_client.wait_until_ready
         instance.update_trusted_certs
         instance.update_cloud_properties!

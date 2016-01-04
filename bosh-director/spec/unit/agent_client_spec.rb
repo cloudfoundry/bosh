@@ -79,7 +79,7 @@ module Bosh::Director
 
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
-        subject(:client) { AgentClient.with_vm(vm_model) }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id) }
         let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
         let(:task) do
           {
@@ -194,7 +194,7 @@ module Bosh::Director
 
     context 'task is synchronous' do
       describe 'it does not have agent_task_id' do
-        subject(:client) { AgentClient.with_vm(vm_model) }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id) }
 
         before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
         let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
@@ -226,7 +226,7 @@ module Bosh::Director
       end
 
       subject(:client) do
-        AgentClient.with_vm(vm_model)
+        AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id)
       end
 
       it 'should use vm credentials' do

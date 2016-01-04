@@ -208,7 +208,10 @@ module Bosh::Director
           @director_job
         )
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times do |instance_plan, _|
+          vm_model = Models::Vm.make
+          instance_plan.instance.bind_to_vm_model(vm_model)
+        end
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
 
@@ -216,26 +219,26 @@ module Bosh::Director
         expect(vm_metadata_updater).to receive(:update).with(anything, {compiling: 'common'})
         expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
-          agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
-          expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
-            name = args[2]
-            dot = args[3].rindex('.')
-            version, build = args[3][0..dot-1], args[3][dot+1..-1]
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
+          name = args[2]
+          dot = args[3].rindex('.')
+          version, build = args[3][0..dot-1], args[3][dot+1..-1]
 
-            package = Models::Package.find(name: name, version: version)
-            expect(args[0]).to eq(package.blobstore_id)
-            expect(args[1]).to eq(package.sha1)
+          package = Models::Package.find(name: name, version: version)
+          expect(args[0]).to eq(package.blobstore_id)
+          expect(args[1]).to eq(package.sha1)
 
-            expect(args[4]).to be_a(Hash)
+          expect(args[4]).to be_a(Hash)
 
-            {
-              'result' => {
-                'sha1' => "compiled #{package.id}",
-                'blobstore_id' => "blob #{package.id}"
-              }
+          {
+            'result' => {
+              'sha1' => "compiled #{package.id}",
+              'blobstore_id' => "blob #{package.id}"
             }
-          end
+          }
+        end
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -284,7 +287,7 @@ module Bosh::Director
             'networks' => net
         }
 
-        allow(AgentClient).to receive(:with_vm).and_return(agent)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
         allow(agent).to receive(:wait_until_ready)
         allow(agent).to receive(:update_settings)
         allow(agent).to receive(:apply).with(initial_state)
@@ -301,7 +304,10 @@ module Bosh::Director
         allow(@director_job).to receive(:task_checkpoint)
         allow(compiler).to receive(:with_compile_lock).and_yield
         allow(cloud).to receive(:delete_vm)
-        allow(vm_creator).to receive(:create_for_instance_plan)
+        allow(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, _|
+          vm_model = Models::Vm.make
+          instance_plan.instance.bind_to_vm_model(vm_model)
+        end
       end
 
       it 'sends information about immediate dependencies of the package being compiled' do
@@ -401,7 +407,7 @@ module Bosh::Director
         end
 
         agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
@@ -459,7 +465,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm).and_return(agent)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
@@ -514,7 +520,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient')
           expect(agent).to receive(:wait_until_ready).and_raise(exception)
-          expect(AgentClient).to receive(:with_vm).and_return(agent)
+          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
 
@@ -663,7 +669,7 @@ module Bosh::Director
 
           allow(vm_creator).to receive(:create).and_return(vm)
           allow(vm_creator).to receive(:apply_state)
-          allow(AgentClient).to receive_messages(with_vm: client)
+          allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
           allow(client).to receive(:wait_until_ready)

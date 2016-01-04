@@ -79,7 +79,7 @@ describe Bosh::Director::VmCreator do
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
-    allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
+    allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
     allow(job).to receive(:instance_plans).and_return([instance_plan])
     allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
   end
@@ -89,7 +89,10 @@ describe Bosh::Director::VmCreator do
       kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
     ).and_return('new-vm-cid')
 
-    expect(instance).to receive(:bind_to_vm_model)
+    expect(instance).to receive(:bind_to_vm_model) do
+      vm = Bosh::Director::Models::Vm.first
+      instance_model.update(vm: vm)
+    end
     expect(agent_client).to receive(:wait_until_ready)
     expect(instance).to receive(:update_trusted_certs)
     expect(instance).to receive(:update_cloud_properties!)

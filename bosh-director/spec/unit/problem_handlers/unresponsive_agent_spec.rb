@@ -12,8 +12,8 @@ module Bosh::Director
     def make_handler(vm, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id), anything).and_return(@agent)
-      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id)).and_return(@agent)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@vm.credentials, @vm.agent_id, anything).and_return(@agent)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@vm.credentials, @vm.agent_id).and_return(@agent)
       handler
     end
 
@@ -135,8 +135,8 @@ module Bosh::Director
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @instance.update(spec: spec)
           @vm.update(env: { 'key1' => 'value1' })
-          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222'), anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222')).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@vm.credentials, 'agent-222', anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@vm.credentials, 'agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
           fake_app
           allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')

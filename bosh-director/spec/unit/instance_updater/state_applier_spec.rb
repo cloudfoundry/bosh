@@ -52,7 +52,7 @@ module Bosh::Director
 
     describe 'applying state' do
       before do
-        allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
         allow(agent_client).to receive(:apply)
         allow(agent_client).to receive(:run_script)
         allow(agent_client).to receive(:start)

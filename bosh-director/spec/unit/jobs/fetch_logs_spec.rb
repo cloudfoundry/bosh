@@ -29,7 +29,7 @@ module Bosh::Director
         before { instance.update(vm: vm) }
         let(:vm) { Models::Vm.make(deployment: deployment, agent_id: 'fake-agent-id', cid: 'vm-1') }
 
-        before { allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent) }
+        before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm.credentials, vm.agent_id).and_return(agent) }
         let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'fake-blobstore-id'}) }
 
         it 'cleans old log bundles' do

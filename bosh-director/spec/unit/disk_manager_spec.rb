@@ -33,7 +33,7 @@ module Bosh::Director
 
     before do
       instance.bind_existing_instance_model(instance_model)
-      allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
       allow(agent_client).to receive(:list_disk).and_return(['disk123'])
       allow(cloud).to receive(:create_disk).and_return('new-disk-cid')
       allow(cloud).to receive(:attach_disk)

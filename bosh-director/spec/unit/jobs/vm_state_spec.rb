@@ -42,7 +42,7 @@ module Bosh::Director
     let(:vm) { Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid') }
 
     describe '#perform' do
-      before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(anything, anything, timeout: 5).and_return(agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
