@@ -65,6 +65,30 @@ describe 'cli: deployment process', type: :integration do
         ))
       end
     end
+
+    it 'shows a diff of the manifest with cloud config changes' do
+      deploy_from_scratch
+
+      new_manifest = Bosh::Spec::Deployments.simple_manifest
+      new_manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'new_job', templates: 'xyz')]
+
+      new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      new_cloud_config['resource_pools'] = [
+        {
+          'name' => 'a',
+          'size' => 3,
+          'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
+          'stemcell' => {
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+          },
+        }
+      ]
+
+      output = deploy_from_scratch(manifest_hash: new_manifest, cloud_config_hash: new_cloud_config)
+
+      expect(output).to match /some stuff/
+    end
   end
 
   describe 'bosh deployments' do

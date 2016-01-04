@@ -138,11 +138,7 @@ module Bosh::Cli::Command
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      inspect_deployment_changes(
-        manifest.hash,
-        interactive: interactive?,
-        redact_diff: redact_diff
-      )
+      DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')

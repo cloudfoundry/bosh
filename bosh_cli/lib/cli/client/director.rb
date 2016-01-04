@@ -260,6 +260,15 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
+        def diff_deployment(name, manifest_yaml)
+          status, body = post("/deployments/#{name}/diff", 'text/yaml', manifest_yaml)
+          if status == 200
+            JSON.parse(body)
+          else
+            err(parse_error_message(status, body))
+          end
+        end
+
         def setup_ssh(deployment_name, job, id, user,
           public_key, password, options = {})
           options = options.dup
