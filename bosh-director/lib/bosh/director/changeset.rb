@@ -94,7 +94,7 @@ module Bosh::Director
           else
             lines += yaml_lines([elem], indent, 'added')
           end
-        else elem.is_a?(Array)
+        else
           lines += yaml_lines([elem], indent, 'added')
         end
       end
