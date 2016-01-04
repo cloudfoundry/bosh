@@ -18,6 +18,8 @@ module Bosh::Director
         json_encode(response)
       end
 
+      # PUT /deployments/foo/jobs/dea?new_name=dea_new or
+      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true
       put '/:deployment/jobs/:job', :consumes => :yaml do
         options = {
           'job_states' => {
@@ -26,6 +28,7 @@ module Bosh::Director
             }
           }
         }
+        options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
