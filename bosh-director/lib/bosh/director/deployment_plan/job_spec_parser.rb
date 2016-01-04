@@ -137,11 +137,11 @@ module Bosh::Director
 
             @job.templates << release.get_or_create_template(template_name)
 
-            links = safe_property(template_spec, 'links', class: Hash, optional: true)
+            links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
             @logger.debug("Parsing template links: #{links.inspect}")
 
-            links.to_a.each do |name, path|
-              link_path = LinkPath.parse(@deployment.name, path, @logger)
+            links.to_a.each do |name, source|
+              link_path = LinkPath.parse(source)
               @job.add_link_path(template_name, name, link_path)
             end
           end

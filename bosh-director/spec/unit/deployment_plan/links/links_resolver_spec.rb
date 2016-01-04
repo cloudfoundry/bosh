@@ -21,7 +21,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'api-server',
           'templates' => [
-            {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links},
+            {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links},
             {'name' => 'template-without-links', 'release' => 'fake-release'}
           ],
           'resource_pool' => 'fake-resource-pool',
@@ -133,7 +133,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
-        let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+        let(:links) { {'db' => {from: 'db'}} }
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
