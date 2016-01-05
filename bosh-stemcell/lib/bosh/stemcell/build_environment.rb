@@ -178,8 +178,7 @@ module Bosh::Stemcell
     end
 
     def exclude_arch_exclusions
-      case RbConfig::CONFIG['host_cpu']
-      when 'powerpc64le'
+      if Bosh::Stemcell::Arch.ppc64le?
         ' --tag ~exclude_on_ppc64le'
       else
         ''
