@@ -6,6 +6,7 @@ set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
+source $base_dir/lib/helpers.sh
 
 assert_available debootstrap
 
@@ -20,6 +21,9 @@ then
 fi
 
 base_debootstrap_arch=amd64
+if is_ppc64le; then
+  base_debootstrap_arch=ppc64el
+fi
 
 if [ -z "${base_debootstrap_suite:-}" ]
 then

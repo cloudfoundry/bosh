@@ -46,6 +46,11 @@ module Bosh
       end
 
       def manifest_cloud_properties(disk_format, infrastructure, stemcell_name)
+        architecture = 'x86_64'
+        if Bosh::Stemcell::Arch.ppc64le?
+          architecture = 'ppc64le'
+        end
+
         {
             'name' => stemcell_name,
             'version' => version.to_s,
@@ -56,7 +61,7 @@ module Bosh
             'container_format' => 'bare',
             'os_type' => 'linux',
             'os_distro' => definition.operating_system.name,
-            'architecture' => 'x86_64',
+            'architecture' => architecture,
         }.merge(infrastructure.additional_cloud_properties)
       end
 

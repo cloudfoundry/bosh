@@ -79,6 +79,7 @@ describe Bosh::Stemcell::StemcellPackager do
 
   describe '#package' do
     let(:disk_format) { 'qcow2' }
+    let(:arch) { Bosh::Stemcell::Arch.ppc64le? ? 'ppc64le-' : '' }
 
     it 'invokes packaging stages appropriate for the disk format' do
       allow(collection).to receive(:package_stemcell_stages).with('qcow2').and_return([:package_qcow2])
@@ -90,6 +91,12 @@ describe Bosh::Stemcell::StemcellPackager do
       packager.package('raw')
 
       actual_manifest = YAML.load_file(File.join(work_dir, 'stemcell/stemcell.MF'))
+
+      architecture = 'x86_64'
+      if Bosh::Stemcell::Arch.ppc64le?
+        architecture = 'ppc64le'
+      end
+
       expect(actual_manifest).to eq({
         'name' => 'bosh-fake_infra-fake_hypervisor-centos-7-go_agent-raw',
         'version' => '1234',
@@ -106,7 +113,7 @@ describe Bosh::Stemcell::StemcellPackager do
           'container_format' => 'bare',
           'os_type' => 'linux',
           'os_distro' => 'centos',
-          'architecture' => 'x86_64',
+          'architecture' => architecture,
           'fake_infra_specific_property' => 'some_value'
         }
       })
@@ -114,7 +121,7 @@ describe Bosh::Stemcell::StemcellPackager do
 
     it 'returns the path of the created tarball' do
       expect(packager.package(disk_format)).to eq(
-        File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz'))
+        File.join(tarball_dir, "bosh-stemcell-#{arch}1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz"))
     end
 
     context 'if an image already exist in the stemcell dir' do
@@ -131,7 +138,7 @@ describe Bosh::Stemcell::StemcellPackager do
     it 'archives the working dir' do
       packager.package(disk_format)
 
-      tarball_path = File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz')
+      tarball_path = File.join(tarball_dir, "bosh-stemcell-#{arch}1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz")
       expect(File.exist?(tarball_path)).to eq(true)
 
       stemcell_contents_path = File.join(tmp_dir, 'stemcell-contents')
@@ -153,7 +160,7 @@ describe Bosh::Stemcell::StemcellPackager do
         packager.package(disk_format)
 
         tarball_path = File.join(tarball_dir,
-                                 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent-raw.tgz')
+                                 "bosh-stemcell-#{arch}1234-fake_infra-fake_hypervisor-centos-7-go_agent-raw.tgz")
         expect(File.exist?(tarball_path)).to eq(true)
       end
     end

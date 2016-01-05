@@ -1,3 +1,4 @@
+require 'bosh/stemcell/arch'
 require 'forwardable'
 
 module Bosh::Stemcell
@@ -24,7 +25,12 @@ module Bosh::Stemcell
     private
 
     def name
-      definition.light? ? "light-#{base_name}" : base_name
+      mod_name = definition.light? ? "light-#{base_name}" : base_name
+      if Bosh::Stemcell::Arch.ppc64le?
+        "#{mod_name}-ppc64le"
+      else
+        mod_name
+      end
     end
 
     attr_reader(

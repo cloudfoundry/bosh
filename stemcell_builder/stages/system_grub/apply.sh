@@ -8,8 +8,10 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
 # Install grub or grub2 (check existence of classic grub package first because Ubuntu Trusty has a transitional grub2 dummy package)
-
-if pkg_exists grub; then
+if is_ppc64le; then
+  # ppc64le uses grub2
+  pkg_mgr install grub2
+elif pkg_exists grub; then
   pkg_mgr install grub
 elif pkg_exists grub2; then
   pkg_mgr install grub2
@@ -18,7 +20,12 @@ else
   exit 2
 fi
 
-if [ -d $chroot/usr/lib/grub/x86* ] # classic GRUB on Ubuntu
+if [ -d $chroot/usr/lib/grub/powerpc* ] # GRUB on ppc64le
+then
+
+  rsync -a $chroot/usr/lib/grub/powerpc*/ $chroot/boot/grub/
+
+elif [ -d $chroot/usr/lib/grub/x86* ] # classic GRUB on Ubuntu
 then
 
   rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/

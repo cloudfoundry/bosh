@@ -9,13 +9,28 @@ source $base_dir/lib/prelude_apply.bash
 
 disk_image=${work}/${stemcell_image_name}
 
-# Reserve the first 63 sectors for grub
-part_offset=63s
-part_size=$((${image_create_disk_size} - 1))
+if is_ppc64le; then
+  # ppc64le guest images have a PReP partition
+  # this and other code changes for ppc64le with input from Paulo Flabiano Smorigo @ IBM
+  part_offset=2048s
+  part_size=9MiB
+else
+  # Reserve the first 63 sectors for grub
+  part_offset=63s
+  part_size=$((${image_create_disk_size} - 1))
+fi
 
 dd if=/dev/null of=${disk_image} bs=1M seek=${image_create_disk_size} 2> /dev/null
 parted --script ${disk_image} mklabel msdos
-parted --script ${disk_image} mkpart primary ext2 $part_offset $part_size
+if is_ppc64le; then
+  parted --script ${disk_image} mkpart primary $part_offset $part_size
+  parted --script ${disk_image} set 1 boot on
+  parted --script ${disk_image} set 1 prep on
+  parted --script ${disk_image} mkpart primary ext4 $part_size 100%
+else
+  parted --script ${disk_image} mkpart primary ext2 $part_offset $part_size
+fi
+
 
 # unmap the loop device in case it's already mapped
 kpartx -dv ${disk_image}
@@ -24,7 +39,11 @@ kpartx -dv ${disk_image}
 device=$(losetup --show --find ${disk_image})
 add_on_exit "losetup --verbose --detach ${device}"
 
-device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
+if is_ppc64le; then
+  device_partition=$(kpartx -av ${device} | grep "^add" | grep "p2 " | grep -v "p1" | cut -d" " -f3)
+else
+  device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
+fi
 add_on_exit "kpartx -dv ${device}"
 
 loopback_dev="/dev/mapper/${device_partition}"
