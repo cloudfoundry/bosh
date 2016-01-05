@@ -70,7 +70,7 @@ shared_examples_for 'every OS image' do
       it { should exist }
     end
 
-    describe command('rsyslogd -N 1') do
+    describe command('rsyslogd -N 1'), exclude_on_ppc64le: true do
       it { should return_stdout /version 8/ }
       it { should return_exit_status(0) }
     end

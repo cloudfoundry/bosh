@@ -67,3 +67,11 @@ function add_on_exit {
     on_exit_items=("$*" "${on_exit_items[@]}")
   fi
 }
+
+function is_ppc64le() {
+  if [ `uname -m` == "ppc64le" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
