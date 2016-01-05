@@ -112,7 +112,7 @@ module Bosh::Director
           instances[0].vm
         )
 
-        expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id).with(instances[2].vm.credentials, instances[2].agent_id, anything)
+        expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id).with(instances[2].vm.credentials, instances[2].vm.agent_id, anything)
 
         vm_scanner.scan([['job-1', 1], ['job-2', 2]])
       end
