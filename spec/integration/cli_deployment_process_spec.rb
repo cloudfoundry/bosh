@@ -70,13 +70,16 @@ describe 'cli: deployment process', type: :integration do
       deploy_from_scratch
 
       new_manifest = Bosh::Spec::Deployments.simple_manifest
-      new_manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'new_job', templates: 'xyz')]
+      new_manifest['jobs'] = [
+        Bosh::Spec::Deployments.simple_job(
+          name: 'new_job',
+          templates: [{'name' => 'foobar_without_packages'}]
+      )]
 
       new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       new_cloud_config['resource_pools'] = [
         {
           'name' => 'a',
-          'size' => 3,
           'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
           'stemcell' => {
             'name' => 'ubuntu-stemcell',
@@ -85,9 +88,35 @@ describe 'cli: deployment process', type: :integration do
         }
       ]
 
-      output = deploy_from_scratch(manifest_hash: new_manifest, cloud_config_hash: new_cloud_config)
+      upload_cloud_config(cloud_config_hash: new_cloud_config)
+      output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
-      expect(output).to match /some stuff/
+      expect(output).to include(<<-DIFF
+  jobs:
++ - name: new_job
++   templates:
++   - name: foobar_without_packages
++   resource_pool: a
++   instances: 3
++   networks:
++   - name: a
++   properties: {}
+- - name: foobar
+-   templates:
+-   - name: foobar
+-   resource_pool: a
+-   instances: 3
+-   networks:
+-   - name: a
+-   properties: {}
+  resource_pools:
+  - name: a
+-   size: 3
+    cloud_properties:
++     name: new_property
++     size: large
+DIFF
+)
     end
   end
 

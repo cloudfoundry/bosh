@@ -18,6 +18,48 @@ describe Bosh::Cli::Config do
     Bosh::Cli::Config.new(@config)
   end
 
+  describe 'colorize' do
+    before do
+      Bosh::Cli::Config.colorize = nil
+    end
+
+    context 'when colorize is set to false' do
+      it 'returns false' do
+        Bosh::Cli::Config.colorize = false
+        expect(Bosh::Cli::Config.use_color?).to eq(false)
+      end
+    end
+
+    context 'when colorize is set to true' do
+      it 'returns true' do
+        Bosh::Cli::Config.colorize = true
+        expect(Bosh::Cli::Config.use_color?).to eq(true)
+      end
+    end
+
+    context 'when output is tty' do
+      it 'returns true' do
+        Bosh::Cli::Config.output = double(:output, :tty? => true)
+        expect(Bosh::Cli::Config.use_color?).to eq(true)
+      end
+    end
+
+    context 'when output is tty but colorized is forced to false' do
+      it 'returns false' do
+        Bosh::Cli::Config.colorize = false
+        Bosh::Cli::Config.output = double(:output, :tty? => true)
+        expect(Bosh::Cli::Config.use_color?).to eq(false)
+      end
+    end
+
+    context 'when output is not tty' do
+      it 'returns false' do
+        Bosh::Cli::Config.output = double(:output, :tty? => false)
+        expect(Bosh::Cli::Config.use_color?).to eq(false)
+      end
+    end
+  end
+
   it "should convert old deployment configs to the new config " +
      "when set_deployment is called" do
     add_config("target" => "localhost:8080", "deployment" => "test")
