@@ -61,7 +61,9 @@ describe 'drain', type: :integration do
   context 'when skip-drain flag is not provided' do
     before do
       deploy_from_scratch
-      expect(File).to_not exist(drain_file)
+      director.vms.each do |vm|
+        expect(File).not_to exist( vm.file_path('drain-test.log'))
+      end
     end
 
     def drain_file
@@ -82,6 +84,20 @@ describe 'drain', type: :integration do
     it 'runs drain script for restart' do
       bosh_runner.run('restart foobar 0')
       expect(File).to exist(drain_file)
+    end
+
+    it 'runs drain scripts for change state of the deployment' do
+      bosh_runner.run('stop')
+      director.vms.each do |vm|
+        expect(File).to exist( vm.file_path('drain-test.log'))
+      end
+    end
+
+    it 'runs drain scripts for change state of the job' do
+      bosh_runner.run('restart foobar')
+      director.vms.each do |vm|
+        expect(File).to exist( vm.file_path('drain-test.log'))
+      end
     end
   end
 
@@ -142,6 +158,19 @@ describe 'drain', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_with_drain, recreate: true, skip_drain: true)
         expect(File).not_to exist(foobar_drain_file)
         expect(File).not_to exist(second_drain_file)
+      end
+
+      it 'does not run drain scripts for change state of the specified job' do
+        bosh_runner.run('stop foobar --skip-drain')
+        foobar_drain_file = director.vm('foobar', '0').file_path('drain-test.log')
+        expect(File).not_to exist(foobar_drain_file)
+      end
+
+      it 'does not run drain scripts for change state of the deployment' do
+        bosh_runner.run('stop --skip-drain')
+        director.vms.each do |vm|
+          expect(File).not_to exist( vm.file_path('drain-test.log'))
+        end
       end
     end
   end
