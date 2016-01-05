@@ -9,6 +9,7 @@ module Bosh::Cli
     before do
       allow(command).to receive(:show_current_state)
       allow(command).to receive_messages(:logged_in? => true)
+      command.options[:target] = 'http://bosh-target.example.com'
       command.add_option(:non_interactive, true)
     end
 
