@@ -317,6 +317,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `qmKgGt1iOX84M.hR8ZVI0887DEvnKPHV`
+  - (periodic) bump centos to match ubuntu update
+
 * `7.WUv.iIq4SW.ra1_zusQRTntKCI011_`
   - (periodic) bump centos to match ubuntu update for USN-2821-1
 
