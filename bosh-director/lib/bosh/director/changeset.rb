@@ -50,7 +50,7 @@ module Bosh::Director
           end
 
         elsif @before[key] != @after[key]
-          lines << Line.new(indent, "#{key}:", 'removed')
+          lines << Line.new(indent, "#{key}: #{@before[key]}", 'removed')
           lines << Line.new(indent, "#{key}: #{@after[key]}", 'added')
         end
       end

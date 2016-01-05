@@ -644,7 +644,7 @@ module Bosh::Director
             ['azs:', nil],
             ['- name: z1', nil],
             ['  cloud_properties:', nil],
-            ['    location:', 'removed'],
+            ['    location: Tashkent', 'removed'],
             ['    location: Delhi', 'added'],
           ])
         end
