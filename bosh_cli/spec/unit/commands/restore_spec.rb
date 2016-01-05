@@ -3,8 +3,10 @@ require 'spec_helper'
 module Bosh::Cli
   describe Command::Restore do
     subject(:command) do
-      Bosh::Cli::Command::Restore.new
+      Bosh::Cli::Command::Restore.new(nil, director)
     end
+
+    let(:director) { double(Bosh::Cli::Client::Director) }
 
     before do
       allow(command).to receive(:show_current_state)
@@ -22,12 +24,7 @@ module Bosh::Cli
     end
 
     describe 'restore the director database' do
-      let(:director) { double(Bosh::Cli::Client::Director) }
       let(:dump_file) { spec_asset('db_restore/db_dump_file') }
-
-      before do
-        allow(command).to receive(:director).and_return(director)
-      end
 
       it 'needs confirmation to restore database' do
         expect(director).not_to receive(:restore_db)

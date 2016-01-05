@@ -554,10 +554,8 @@ module Bosh
           path
         end
 
-        def restore_db(filename, options={})
-          options[:content_type] = 'application/x-compressed'
-
-          upload_without_track('/restore', filename, options)
+        def restore_db(filename)
+          upload_without_track('/restore', filename, { content_type: 'application/x-compressed' })
         end
 
         def check_director_restart(poll_interval, timeout)
