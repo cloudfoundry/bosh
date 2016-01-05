@@ -129,7 +129,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment', link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
     version.add_deployment(deployment_model)
 
-    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment', manifest: deployment_manifest, link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment', manifest: deployment_manifest.to_json, link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
     version.add_deployment(deployment_model)
   end
 
@@ -437,7 +437,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {
               'name' => 'api-server',
               'templates' => [
-                {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links}
+                {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links}
               ],
               'resource_pool' => 'fake-resource-pool',
               'azs' => ['az1'],
