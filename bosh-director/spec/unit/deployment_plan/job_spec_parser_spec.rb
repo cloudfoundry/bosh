@@ -36,19 +36,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     before { allow(deployment_plan).to receive(:disk_type).and_return(disk_type) }
 
     before { allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new) }
-
     before { allow(deployment_plan).to receive(:release).and_return(job_rel_ver) }
-    let (:deployment_model) do
-      instance_double(
-          'Bosh::Director::Models::Deployment',
-          link_spec_json: "{'job_name':{'template_name':{'link_name':{'name':'link_name','type':'link_type'}}}}"
-      )
-    end
-    # let(:rel_ver) do
-    #   instance_double(
-    #       'Bosh::Director::Models::ReleaseVersion',
-    #   )
-    # end
     let(:job_rel_ver) do
       instance_double(
         'Bosh::Director::DeploymentPlan::ReleaseVersion',
@@ -264,24 +252,26 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             job_spec['templates'] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
-              'consumes' => {'a' => {'from' => 'zz'}}
+              'consumes' => {'a' => {'from' => 'link_name'}}
             }]
+            release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
+            version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+            release_model.add_version(version)
+
+            deployment_model = Bosh::Director::Models::Deployment.make(name: 'deployment', link_spec_json: "{\"job_name\":{\"template_name\":{\"link_name\":{\"name\":\"link_name\",\"type\":\"link_type\"}}}}")
+            version.add_deployment(deployment_model)
           end
 
           let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
 
           context 'when job specifies a release' do
-            before { job_spec['release'] = 'fake-job-release' }
+            before do
+              job_spec['release'] = 'fake-job-release'
+
+            end
             let(:template) { make_template('fake-template-name', template_rel_ver) }
-            let(:provides_link) { instance_double('Bosh::Director::DeploymentPlan::Link',name: 'zz') }
-            let(:provides_template) { instance_double('Bosh::Director::DeploymentPlan::Template',name: 'z') }
-            let(:provides_job) { instance_double('Bosh::Director::DeploymentPlan::Job',name: 'y') }
 
             before do
-              allow(job_rel_ver).to receive(:deployments).and_return([deployment_model])
-              allow(provides_template).to receive(:provided_links).and_return([provides_link])
-              allow(provides_job).to receive(:templates).and_return([provides_template])
-              allow(deployment_plan).to receive(:jobs).and_return([provides_job])
               allow(deployment_plan).to receive(:release)
                                            .with('fake-template-release')
                                            .and_return(template_rel_ver)
@@ -298,7 +288,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             it 'sets link paths specified in templates' do
               job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('fake-deployment.y.z.zz')
+              expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
             end
           end
 
@@ -336,7 +326,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             it 'sets link paths specified in templates' do
               job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('fake-deployment.y.z.zz')
+              expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
             end
           end
         end
