@@ -634,7 +634,7 @@ module Bosh
 
         def upload_without_track(uri, filename, options = {})
           file = FileWithProgressBar.open(filename, 'r')
-          status, _ = post(uri, options[:content_type] || {}, file, options[:headers] || {}, options)
+          status, _ = post(uri, options[:content_type], file, {}, options)
           status
         ensure
           file.stop_progress_bar if file
