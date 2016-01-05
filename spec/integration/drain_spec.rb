@@ -162,7 +162,7 @@ describe 'drain', type: :integration do
 
       it 'does not run drain scripts for change state of the specified job' do
         bosh_runner.run('stop foobar --skip-drain')
-        foobar_drain_file = director.vm('foobar/0').file_path('drain-test.log')
+        foobar_drain_file = director.vm('foobar', '0').file_path('drain-test.log')
         expect(File).not_to exist(foobar_drain_file)
       end
 
