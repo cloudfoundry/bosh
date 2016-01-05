@@ -7,6 +7,7 @@ templates:
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  restore-db: bin/restore-db
   task_logrotate.sh: bin/task_logrotate
   task_logrotate.cron: config/task_logrotate.cron
   director.pem.erb: config/ssl/director.pem

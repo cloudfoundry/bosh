@@ -1,1 +1,1 @@
-vcap ALL= NOPASSWD: /var/vcap/jobs/director/bin/stemcell-copy
+vcap ALL= NOPASSWD: SETENV: /var/vcap/jobs/director/bin/stemcell-copy, /var/vcap/jobs/director/bin/restore-db
