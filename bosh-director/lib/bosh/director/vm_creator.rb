@@ -23,7 +23,7 @@ module Bosh::Director
           instance = instance_plan.instance
 
           pool.process do
-            with_thread_name("create_missing_vm(#{instance}/#{total})") do
+            with_thread_name("create_missing_vm(#{instance.model.to_s}/#{total})") do
               event_log.track(instance.model.to_s) do
                 @logger.info('Creating missing VM')
                 disks = [instance.model.persistent_disk_cid].compact
@@ -47,8 +47,8 @@ module Bosh::Director
       instance = instance_plan.instance
       @logger.info('Creating VM')
 
-      vm_model = create(
-        instance.deployment_model,
+      create(
+        instance.model,
         instance.stemcell,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
@@ -57,17 +57,16 @@ module Bosh::Director
       )
 
       begin
-        instance.bind_to_vm_model(vm_model)
-        VmMetadataUpdater.build.update(vm_model, {})
+        VmMetadataUpdater.build.update(instance.model, {})
 
-        agent_client = AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id)
+        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
         agent_client.wait_until_ready
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e
-        @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
+        @logger.error("Failed to create/contact VM #{instance.model.vm_cid}: #{e.inspect}")
         if Config.keep_unreachable_vms
-          @logger.info("Keeping the VM for debugging")
+          @logger.info('Keeping the VM for debugging')
         else
           @vm_deleter.delete_for_instance_plan(instance_plan)
         end
@@ -93,19 +92,10 @@ module Bosh::Director
       end
     end
 
-    def create(deployment, stemcell, cloud_properties, network_settings, disks, env)
-      vm = nil
-      vm_cid = nil
-
-      env = Bosh::Common::DeepCopy.copy(env)
-
+    def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
       agent_id = self.class.generate_agent_id
-
-      options = {
-        :deployment => deployment,
-        :agent_id => agent_id,
-        :env => env
-      }
+      env = Bosh::Common::DeepCopy.copy(env)
+      options = {:agent_id => agent_id, :vm_env => env }
 
       if Config.encryption?
         credentials = generate_agent_credentials
@@ -124,22 +114,13 @@ module Bosh::Director
         raise e
       end
 
-      options[:cid] = vm_cid
-      vm = Models::Vm.new(options)
+      options[:vm_cid] = vm_cid
 
-      vm.save
-      vm
+      instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")
-      delete_vm(vm_cid) if vm_cid
-      vm.destroy if vm
+      @vm_deleter.delete_vm(vm_cid) if vm_cid
       raise e
-    end
-
-    def delete_vm(vm_cid)
-      @cloud.delete_vm(vm_cid)
-    rescue => e
-      @logger.error("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
     def self.generate_agent_id

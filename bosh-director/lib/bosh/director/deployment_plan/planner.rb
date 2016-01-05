@@ -43,9 +43,6 @@ module Bosh::Director
       # Job instances from the old manifest that are not in the new manifest
       attr_reader :unneeded_instances
 
-      # VMs from the old manifest that are not in the new manifest
-      attr_accessor :unneeded_vms
-
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
@@ -157,12 +154,6 @@ module Bosh::Director
         end
       end
 
-      # Returns a list of Vms in the deployment (according to DB)
-      # @return [Array<Models::Vm>]
-      def vm_models
-        @model.vms
-      end
-
       def skip_drain_for_job?(name)
         @skip_drain.nil? ? false : @skip_drain.for_job(name)
       end
@@ -195,12 +186,6 @@ module Bosh::Director
       # @return [Bosh::Director::DeploymentPlan::ReleaseVersion]
       def release(name)
         @releases[name]
-      end
-
-      # Adds a VM to deletion queue
-      # @param [Bosh::Director::Models::Vm] vm VM DB model
-      def mark_vm_for_deletion(vm)
-        @unneeded_vms << vm
       end
 
       def instance_plans_with_missing_vms

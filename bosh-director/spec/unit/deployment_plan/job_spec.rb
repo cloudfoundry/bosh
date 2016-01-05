@@ -391,19 +391,13 @@ describe Bosh::Director::DeploymentPlan::Job do
       obsolete_plan = BD::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
       job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
-
-      [instance0, instance1].each do |instance|
-        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-      end
-
-      job.bind_unallocated_vms
     end
   end
 
   describe '#bind_instances' do
     subject(:job) { described_class.new(logger) }
 
-    it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
+    it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
@@ -438,9 +432,6 @@ describe Bosh::Director::DeploymentPlan::Job do
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_model_bound).with(no_args).ordered
       end
-      [instance0, instance1].each do |instance|
-        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-      end
 
       job.bind_instances(fake_ip_provider)
 
@@ -459,7 +450,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:starts_on_deploy?) { should be(true) }
     end
 
-    context "when lifecycle profile is not service" do
+    context 'when lifecycle profile is not service' do
       before { subject.lifecycle = 'other' }
       its(:starts_on_deploy?) { should be(false) }
     end
@@ -473,7 +464,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:can_run_as_errand?) { should be(true) }
     end
 
-    context "when lifecycle profile is not errand" do
+    context 'when lifecycle profile is not errand' do
       before { subject.lifecycle = 'other' }
       its(:can_run_as_errand?) { should be(false) }
     end

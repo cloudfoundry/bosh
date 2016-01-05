@@ -3,7 +3,7 @@ module Bosh::Director
     ##
     # Represents a resource pool VM.
     #
-    # It represents a VM until it's officially bound to an instance. It can be
+    # It represents a VM unt il it's officially bound to an instance. It can be
     # reserved for an instance to minimize the number of CPI operations
     # (network & storage) required for the VM to match the instance
     # requirements.

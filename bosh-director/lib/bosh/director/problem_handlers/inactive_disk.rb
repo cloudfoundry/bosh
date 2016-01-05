@@ -25,8 +25,6 @@ module Bosh::Director
         if @instance.nil?
           handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
         end
-
-        @vm = @instance.vm
       end
 
       def description
@@ -72,9 +70,9 @@ module Bosh::Director
           handler_error("Disk is currently in use")
         end
 
-        if @vm
+        if @instance.vm_cid
           begin
-            cloud.detach_disk(@vm.cid, @disk.disk_cid)
+            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
           rescue => e
             # We are going to delete this disk anyway
             # and we know it's not in use, so we can ignore
@@ -87,8 +85,8 @@ module Bosh::Director
       end
 
       def disk_mounted?
-        return false if @vm.nil?
-        agent_timeout_guard(@vm) do |agent|
+        return false unless @instance.vm_cid
+        agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
           agent.list_disk.include?(@disk.disk_cid)
         end
       end

@@ -38,22 +38,20 @@ module Bosh::Director
         Yajl::Encoder.encode(result)
       end
 
-      def deployment_vms_to_json(deployment)
-        vms = []
+      def deployment_instances_to_json(deployment)
+        instances = []
         filters = {:deployment_id => deployment.id}
-        Models::Vm.eager(:instance).filter(filters).all.each do |vm|
-          instance = vm.instance
-
-          vms << {
-            'agent_id' => vm.agent_id,
-            'cid' => vm.cid,
-            'job' => instance ? instance.job : nil,
-            'index' => instance ? instance.index : nil,
-            'id' => instance ? instance.uuid : nil
+        Models::Instance.filter(filters).exclude(vm_cid: nil).each do |instance|
+          instances << {
+            'agent_id' => instance.agent_id,
+            'cid' => instance.vm_cid,
+            'job' => instance.job,
+            'index' => instance.index,
+            'id' => instance.uuid
           }
         end
 
-        Yajl::Encoder.encode(vms)
+        Yajl::Encoder.encode(instances)
       end
     end
   end

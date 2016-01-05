@@ -52,10 +52,7 @@ module Bosh::Director::ProblemScanner
       end
 
       disk_cid = disk.disk_cid
-      vm_cid = nil
-      if disk.instance && disk.instance.vm
-        vm_cid = disk.instance.vm.cid
-      end
+      vm_cid = disk.instance.vm_cid if disk.instance
 
       if vm_cid.nil?
         # With the db dependencies this should not happen.

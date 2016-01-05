@@ -31,9 +31,6 @@ module Bosh::Director
         private
 
         def assemble
-          @logger.info('Deleting no longer needed VMs')
-          delete_unneeded_vms
-
           @logger.info('Deleting no longer needed instances')
           delete_unneeded_instances
 
@@ -51,23 +48,6 @@ module Bosh::Director
             @deployment_plan,
             @deployment_plan.jobs_starting_on_deploy,
           )
-        end
-
-        def delete_unneeded_vms
-          unneeded_vms = @deployment_plan.unneeded_vms
-          return @logger.info('No unneeded vms to delete') if unneeded_vms.empty?
-
-          @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
-          ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-            unneeded_vms.each do |vm_model|
-              pool.process do
-                @event_log.track(vm_model.cid) do
-                  @logger.info("Delete unneeded VM #{vm_model.cid}")
-                  @vm_deleter.delete_vm(vm_model)
-                end
-              end
-            end
-          end
         end
 
         def delete_unneeded_instances

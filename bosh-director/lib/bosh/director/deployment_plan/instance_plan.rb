@@ -261,7 +261,7 @@ module Bosh
           job = @desired_instance.job
 
           if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
-            log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
+            log_changes(__method__, @existing_instance.env, job.env.spec, @existing_instance)
             return true
           end
           false

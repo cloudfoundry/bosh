@@ -17,7 +17,7 @@ module Bosh::Director
             configure_instance_plan(instance_plan)
             @instance_reuser.add_in_use_instance(instance_plan.instance, stemcell)
           else
-            @logger.info("Reusing compilation VM `#{instance.vm.model.cid}' for stemcell `#{stemcell.model.desc}'")
+            @logger.info("Reusing compilation VM `#{instance.model.vm_cid}' for stemcell `#{stemcell.model.desc}'")
           end
 
           yield instance
@@ -95,8 +95,6 @@ module Bosh::Director
       end
 
       def configure_instance_plan(instance_plan)
-        instance_plan.instance.bind_unallocated_vm
-
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
         @vm_creator.create_for_instance_plan(instance_plan, [])
       end
