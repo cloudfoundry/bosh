@@ -1,12 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::DynamicNetwork do
-  before(:each) do
-    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-  end
 
   let(:logger) { Logging::Logger.new('TestLogger') }
-  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
+  let(:instance_model) { Bosh::Director::Models::Instance.make }
 
   describe '.parse' do
     context 'with a manifest using the old format without explicit subnets' do

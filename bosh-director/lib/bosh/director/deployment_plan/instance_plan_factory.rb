@@ -21,8 +21,7 @@ module Bosh
         end
 
         def desired_existing_instance_plan(existing_instance_model, desired_instance)
-          existing_instance_state = @states_by_existing_instance[existing_instance_model]
-
+          existing_instance_state = instance_state(existing_instance_model)
           desired_instance.index = @index_assigner.assign_index(desired_instance.job.name, existing_instance_model)
 
           instance = @instance_repo.fetch_existing(existing_instance_model, existing_instance_state, desired_instance.job, desired_instance.index, desired_instance.deployment)
@@ -47,6 +46,12 @@ module Bosh
             skip_drain: @skip_drain_decider.for_job(desired_instance.job.name),
             recreate_deployment: @recreate_deployment
           )
+        end
+
+        private
+
+        def instance_state(existing_instance_model)
+          @states_by_existing_instance[existing_instance_model]
         end
       end
     end

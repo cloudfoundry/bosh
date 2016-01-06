@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
       it 'creates network plan for requested instance plan and network' do
         network_plan = planner.network_plan_with_dynamic_reservation(instance_plan, job_network)
         expect(network_plan.reservation.dynamic?).to be_truthy
-        expect(network_plan.reservation.instance).to eq(instance)
+        expect(network_plan.reservation.instance_model).to eq(instance_model)
         expect(network_plan.reservation.network).to eq(deployment_network)
       end
     end
@@ -36,7 +36,7 @@ module Bosh::Director::DeploymentPlan
       it 'creates network plan with provided IP' do
         network_plan = planner.network_plan_with_static_reservation(instance_plan, job_network, '192.168.2.10')
         expect(network_plan.reservation.static?).to be_truthy
-        expect(network_plan.reservation.instance).to eq(instance)
+        expect(network_plan.reservation.instance_model).to eq(instance_model)
         expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.2.10'))
         expect(network_plan.reservation.network).to eq(deployment_network)
       end
