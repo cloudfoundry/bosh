@@ -23,6 +23,8 @@ module Bosh::Cli::Command
       before do
         allow(director).to receive(:diff_deployment).with('test', manifest.yaml).and_raise(Bosh::Cli::ResourceNotFound)
         allow(director).to receive(:get_deployment).with('test').and_return({'manifest' => File.read(old_manifest)})
+        allow(director).to receive(:list_releases).and_return([{'name' => 'simple', 'versions' => ['1', '2']}])
+        allow(director).to receive(:list_stemcells).and_return([{'name' => 'ubuntu', 'version' => '1'}])
       end
 
       it 'uses the deprecated CLI differ' do
@@ -76,6 +78,16 @@ No changes
 
       it 'returns nil' do
         expect(deployment_diff.print(options)).to eq(nil)
+      end
+
+      it 'resolves release aliases' do
+        expect(director).to receive(:list_releases).and_return([{'name' => 'simple', 'versions' => ['1', '2']}])
+        deployment_diff.print(options)
+      end
+
+      it 'resolves stemcell aliases' do
+        expect(director).to receive(:list_stemcells).and_return([{'name' => 'ubuntu', 'version' => '1'}])
+        deployment_diff.print(options)
       end
     end
 

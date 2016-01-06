@@ -71,42 +71,6 @@ describe Bosh::Cli::DeploymentHelper do
 
       expect(manifest_warnings).to have_received(:report)
     end
-
-    it "resolves 'latest' release alias for multiple stemcells" do
-      cmd = make_cmd
-      manifest = {
-        'name' => 'mycloud',
-        'director_uuid' => 'deadbeef',
-        'release' => {'name' => 'appcloud', 'version' => 42},
-        'resource_pools' => [
-          {'stemcell' => {'name' => 'foo', 'version' => 'latest'}},
-          {'stemcell' => {'name' => 'foo', 'version' => 22}},
-          {'stemcell' => {'name' => 'bar', 'version' => 'latest'}},
-        ]
-      }
-
-      manifest_file = Tempfile.new('manifest')
-      Psych.dump(manifest, manifest_file)
-      manifest_file.close
-      director = double(Bosh::Cli::Client::Director, :uuid => 'deadbeef')
-
-      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
-      allow(cmd).to receive(:director).and_return(director)
-
-      stemcells = [
-        {'name' => 'foo', 'version' => '22.6.4'},
-        {'name' => 'foo', 'version' => '22'},
-        {'name' => 'bar', 'version' => '4.0.8'},
-        {'name' => 'bar', 'version' => '4.1'}
-      ]
-
-      expect(director).to receive(:list_stemcells).and_return(stemcells)
-
-      manifest = cmd.prepare_deployment_manifest(manifest)
-      expect(manifest.hash['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
-      expect(manifest.hash['resource_pools'][1]['stemcell']['version']).to eq(22)
-      expect(manifest.hash['resource_pools'][2]['stemcell']['version']).to eq(4.1)
-    end
   end
 
   describe '#job_exists_in_deployment?' do
