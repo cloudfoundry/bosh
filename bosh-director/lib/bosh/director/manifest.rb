@@ -1,8 +1,11 @@
 module Bosh::Director
   class Manifest
-    def self.load_from_text(manifest_text, cloud_config_hash)
+    def self.load_from_text(manifest_text, cloud_config)
+      cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       new(Psych.load(manifest_text), cloud_config_hash)
     end
+
+    attr_reader :manifest_hash, :cloud_config_hash
 
     def initialize(manifest_hash, cloud_config_hash)
       @manifest_hash = manifest_hash
@@ -25,7 +28,7 @@ module Bosh::Director
     end
 
     def to_hash
-      @manifest_hash.merge(@cloud_config_hash)
+      @manifest_hash.merge(@cloud_config_hash.to_h)
     end
 
     private

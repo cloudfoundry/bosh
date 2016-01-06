@@ -67,7 +67,9 @@ describe 'cli: deployment process', type: :integration do
     end
 
     it 'shows a diff of the manifest with cloud config changes' do
-      deploy_from_scratch
+      old_manifest = Bosh::Spec::Deployments.simple_manifest
+      old_manifest['releases'].first['version'] = '0+dev.1' # latest is converted to release version in new format
+      deploy_from_scratch(manifest_hash: old_manifest)
 
       new_manifest = Bosh::Spec::Deployments.simple_manifest
       new_manifest['jobs'] = [

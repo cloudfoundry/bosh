@@ -1,16 +1,17 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
-  let(:manifest) do
-   manifest = Bosh::Spec::Deployments.legacy_manifest
-   manifest['networks'].first['subnets'].first['range'] = network_range
-   manifest['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
-   manifest['networks'].first['subnets'].first['static'] = static_ips
-   manifest
+  let(:manifest_hash) do
+   manifest_hash = Bosh::Spec::Deployments.legacy_manifest
+   manifest_hash['networks'].first['subnets'].first['range'] = network_range
+   manifest_hash['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
+   manifest_hash['networks'].first['subnets'].first['static'] = static_ips
+   manifest_hash
   end
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
-  let(:network_spec) { manifest['networks'].first }
+  let(:network_spec) { manifest_hash['networks'].first }
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger) }
   let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
@@ -43,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         manifest['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
             'range' => '192.168.1.0/28',
           })
-        manifest
+        Bosh::Director::Manifest.new(manifest, nil)
       end
 
       it 'should raise an error' do

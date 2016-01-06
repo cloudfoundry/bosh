@@ -33,21 +33,20 @@ module Bosh
         end
 
         def create_from_model(deployment_model, options={})
-          manifest_hash = Psych.load(deployment_model.manifest)
-          cloud_config_model = deployment_model.cloud_config
-          create_from_manifest(manifest_hash, cloud_config_model, options)
+          manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config)
+          create_from_manifest(manifest, deployment_model.cloud_config, options)
         end
 
-        def create_from_manifest(manifest_hash, cloud_config, options)
-          parse_from_manifest(manifest_hash, cloud_config, options)
+        def create_from_manifest(manifest, cloud_config, options)
+          parse_from_manifest(manifest, cloud_config, options)
         end
 
         private
 
-        def parse_from_manifest(manifest_hash, cloud_config, options)
-          cloud_config_hash = cloud_config.nil? ? nil : cloud_config.manifest
-          @manifest_validator.validate(manifest_hash, cloud_config_hash)
-          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config_hash)
+        def parse_from_manifest(manifest, cloud_config, options)
+          manifest.resolve_aliases
+          @manifest_validator.validate(manifest.manifest_hash, manifest.cloud_config_hash)
+          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest.manifest_hash, manifest.cloud_config_hash)
           @logger.debug("Migrated deployment manifest:\n#{deployment_manifest}")
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
           name = deployment_manifest['name']

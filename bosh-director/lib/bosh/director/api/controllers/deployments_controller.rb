@@ -280,12 +280,11 @@ module Bosh::Director
       post '/:deployment/diff', :consumes => :yaml do
         deployment = @deployment_manager.find_by_name(params[:deployment])
 
-        cloud_config_hash = deployment.cloud_config ? deployment.cloud_config.manifest : {}
-        before_manifest = Manifest.load_from_text(deployment.manifest, cloud_config_hash)
+        before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
 
         after_manifest = Manifest.load_from_text(
           request.body,
-          Bosh::Director::Api::CloudConfigManager.new.latest.manifest
+          Bosh::Director::Api::CloudConfigManager.new.latest
         )
         after_manifest.resolve_aliases
 
