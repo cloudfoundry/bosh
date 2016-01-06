@@ -58,9 +58,9 @@ module Bosh::Dev
 
     def stages
       [
-        ApplyPromoteTagPushStage.new(@logger),
+        # ApplyPromoteTagPushStage.new(@logger),
         BuildCandidateArtifactPromotionStage.new(@logger),
-        GitBranchMergeStage.new(@logger),
+        # GitBranchMergeStage.new(@logger),
       ]
     end
 
