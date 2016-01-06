@@ -11,10 +11,6 @@ describe 'migrating to cloud config', type: :integration do
 
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    # remove size from resource pools due to bug #94220432
-    # where resource pools with specified size reserve extra IPs
-    cloud_config_hash['resource_pools'].first.delete('size')
-
     cloud_config_hash['networks'].first['subnets'].first['static'] =  ['192.168.1.10', '192.168.1.11']
     cloud_config_hash
   end

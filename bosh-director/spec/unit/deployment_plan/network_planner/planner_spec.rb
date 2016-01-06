@@ -6,10 +6,11 @@ module Bosh::Director::DeploymentPlan
 
     subject(:planner) { NetworkPlanner::Planner.new(logger) }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance) }
-    let(:desired_instance) { DesiredInstance.new(job, instance_double(Planner, model:  Bosh::Director::Models::Deployment.make)) }
+    let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
+    let(:desired_instance) { DesiredInstance.new(job, deployment) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:job) { Job.new(logger) }
-    let(:instance) { InstanceRepository.new(logger).fetch_existing(desired_instance, instance_model, {}) }
+    let(:instance) { InstanceRepository.new(logger).fetch_existing(instance_model, {}, job, desired_instance.index, deployment) }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(

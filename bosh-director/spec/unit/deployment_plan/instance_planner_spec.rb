@@ -80,7 +80,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       it 'creates instance plans for new instances with no az' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0)
 
-        allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { tracer_instance }
+        allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
 
         instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
 
@@ -132,7 +132,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     it 'creates instance plans for existing instances' do
       existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
 
-      allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { tracer_instance }
+      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
 
       instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
 
@@ -159,7 +159,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     it 'updates descriptions for existing instances' do
       existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name)
-      allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { tracer_instance }
+      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { tracer_instance }
       expect(tracer_instance).to receive(:update_description)
 
       instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
@@ -192,7 +192,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       undesired_existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: auto_picked_index, availability_zone: undesired_az.name)
       existing_instances = [undesired_existing_instance_model, desired_existing_instance_model]
-      allow(instance_repo).to receive(:fetch_existing).with(desired_instance, desired_existing_instance_model, nil) do
+      allow(instance_repo).to receive(:fetch_existing).with(desired_existing_instance_model, nil, job, out_of_typical_range_index, deployment) do
         make_instance(out_of_typical_range_index)
       end
 
@@ -223,7 +223,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, bootstrap: true, availability_zone: az.name)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(desired_instance, existing_instance_model, nil) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, job, 0, deployment) { existing_tracer_instance }
 
           instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
 
@@ -244,7 +244,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, 1)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(another_desired_instance, another_existing_instance_model, nil) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing).with(another_existing_instance_model, nil, job, another_desired_instance.index, deployment) { existing_tracer_instance }
           allow(instance_repo).to receive(:create).with(desired_instance, 2) { make_instance(2) }
 
           instance_plans = instance_planner.plan_job_instances(job, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model])
@@ -268,8 +268,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_model_2 = BD::Models::Instance.make(job: 'foo-job-z2', index: 0, bootstrap: true, availability_zone: az.name)
           desired_instance_2 = BD::DeploymentPlan::DesiredInstance.new(job, deployment, az, 1)
 
-          allow(instance_repo).to receive(:fetch_existing).with(desired_instance_1, existing_instance_model_1, nil) { make_instance(0) }
-          allow(instance_repo).to receive(:fetch_existing).with(desired_instance_2, existing_instance_model_2, nil) { make_instance(1) }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_1, nil, job, desired_instance_1.index, deployment) { make_instance(0) }
+          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_2, nil, job, desired_instance_2.index, deployment) { make_instance(1) }
 
           instance_plans = instance_planner.plan_job_instances(job, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2])
 
