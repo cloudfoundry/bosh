@@ -33,7 +33,7 @@ module Bosh::Director
 
     before do
       instance.bind_existing_instance_model(instance_model)
-      allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
       allow(agent_client).to receive(:list_disk).and_return(['disk123'])
       allow(cloud).to receive(:create_disk).and_return('new-disk-cid')
       allow(cloud).to receive(:attach_disk)
@@ -51,10 +51,34 @@ module Bosh::Director
           allow(agent_client).to receive(:list_disk).and_return(['random-disk-cid'])
         end
 
-        it 'raises' do
-          expect {
-            disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-          }.to raise_error AgentDiskOutOfSync, "`job-name/1' has invalid disks: agent reports `random-disk-cid' while director record shows `disk123'"
+        context 'when uuid has not been set' do
+          it 'raises' do
+            expect {
+              disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+            }.to raise_error AgentDiskOutOfSync, "`job-name/1' has invalid disks: agent reports `random-disk-cid' while director record shows `disk123'"
+          end
+        end
+
+        context 'when uuid has been set' do
+
+          let(:instance_plan) {
+            instance_model.uuid = "123-456-789"
+            instance = DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger)
+            instance.bind_existing_instance_model(instance_model)
+
+            DeploymentPlan::InstancePlan.new({
+               existing_instance: instance_model,
+               desired_instance: DeploymentPlan::DesiredInstance.new(job),
+               instance: instance,
+               network_plans: [],
+            })
+          }
+
+          it 'raises' do
+            expect {
+              disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+            }.to raise_error AgentDiskOutOfSync, "`job-name/1 (123-456-789)' has invalid disks: agent reports `random-disk-cid' while director record shows `disk123'"
+          end
         end
       end
 

@@ -168,4 +168,40 @@ describe 'global networking', type: :integration do
       end
     end
   end
+
+  context 'when vm_type is specified for compilation' do
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash['vm_types'] = [{
+          'name' => 'foo-compilation',
+          'cloud_properties' => {
+            'instance_type' => 'something',
+          }
+        }]
+
+      cloud_config_hash['compilation']['vm_type'] = 'foo-compilation'
+
+      cloud_config_hash
+    end
+
+    it 'should use the cloud_properties from the compilation vm_type' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+
+      job_hash = manifest_hash['jobs'].first
+      job_hash['vm_type'] = 'foo-compilation'
+      job_hash['stemcell'] = 'default'
+      job_hash.delete('resource_pool')
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]
+
+      expect(create_vm_invocation.inputs['cloud_properties']).to eq({
+        'instance_type' => 'something'
+      })
+    end
+  end
 end

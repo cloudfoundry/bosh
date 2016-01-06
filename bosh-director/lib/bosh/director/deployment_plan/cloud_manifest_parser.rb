@@ -11,10 +11,10 @@ module Bosh::Director
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
         networks = parse_networks(cloud_manifest, global_network_resolver, azs)
-        compilation_config = parse_compilation(cloud_manifest, networks, az_list)
         resource_pools = parse_resource_pools(cloud_manifest)
         vm_types = parse_vm_types(cloud_manifest)
         disk_types = parse_disk_types(cloud_manifest)
+        compilation_config = parse_compilation(cloud_manifest, networks, az_list, vm_types)
 
         CloudPlanner.new({
           availability_zones_list: az_list,
@@ -75,9 +75,9 @@ module Bosh::Director
         parsed_networks
       end
 
-      def parse_compilation(cloud_manifest, networks, az_list)
+      def parse_compilation(cloud_manifest, networks, az_list, vm_types)
         compilation_spec = safe_property(cloud_manifest, 'compilation', :class => Hash)
-        config = CompilationConfig.new(compilation_spec, az_list)
+        config = CompilationConfig.new(compilation_spec, az_list, vm_types)
 
         compilation_network = networks.find { |network| network.name == config.network_name }
         if compilation_network.nil?

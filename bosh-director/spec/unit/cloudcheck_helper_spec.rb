@@ -27,7 +27,7 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
 
     before do
-      allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm.credentials, vm.agent_id, anything).and_return(agent_client)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(fake_cloud).to receive(:create_vm)
@@ -134,8 +134,8 @@ module Bosh::Director
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           vm.instance.update(spec: spec)
           vm.update(env: {'key1' => 'value1'})
-          allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm).with(vm).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm.credentials, vm.agent_id, anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm.credentials, vm.agent_id).and_return(fake_new_agent)
 
           allow(DnsManager).to receive(:create).and_return(dns_manager)
         end

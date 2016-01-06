@@ -59,6 +59,10 @@ params['scheduled_jobs'] << {
   'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
 }
 
+if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
+  params['keep_unreachable_vms'] = keep_unreachable_vms
+end
+
 params['scan_and_fix'] = {
   'auto_fix_stateful_nodes' => p('director.auto_fix_stateful_nodes')
 }
@@ -90,7 +94,8 @@ if p('blobstore.provider') == 's3'
     'bucket_name' => p('blobstore.bucket_name'),
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'access_key_id' => p('blobstore.access_key_id', nil),
-    'secret_access_key' => p('blobstore.secret_access_key', nil)
+    'secret_access_key' => p('blobstore.secret_access_key', nil),
+    'region' => p('blobstore.s3_region', nil)
   }
 
   if_p('blobstore.use_ssl') do |use_ssl|
@@ -163,7 +168,8 @@ if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
       'bucket_name' => bucket_name,
       'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
       'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
-      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil)
+      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
+      'region' => p('blobstore.s3_region', nil)
     }
   }
 
@@ -476,6 +482,7 @@ if p('blobstore.provider') == "s3"
   options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
   options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
   options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
+  options['region'] = p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil)
 
   port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil)
   unless port.nil?

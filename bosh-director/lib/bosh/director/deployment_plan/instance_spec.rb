@@ -95,6 +95,7 @@ module Bosh::Director
     class TemplateSpec
       def initialize(full_spec)
         @full_spec = full_spec
+        @dns_manager = DnsManager.create
       end
 
       def spec
@@ -110,11 +111,20 @@ module Bosh::Director
           'properties',
           'dns_domain_name',
           'links',
-          'persistent_disk',
-          'template_hashes'
+          'persistent_disk'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
-        template_hash.merge({'resource_pool' => @full_spec['vm_type']['name']})
+
+        networks_hash = template_hash['networks']
+        networks_hash_with_dns = networks_hash.each_pair do |network_name, network_settings|
+          settings_with_dns = network_settings.merge({'dns_record_name' => @dns_manager.dns_record_name(@full_spec['index'], @full_spec['job']['name'], network_name, @full_spec['deployment'])})
+          networks_hash[network_name] = settings_with_dns
+        end
+
+        template_hash.merge({
+        'resource_pool' => @full_spec['vm_type']['name'],
+        'networks' => networks_hash_with_dns
+        })
       end
     end
 

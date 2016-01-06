@@ -146,7 +146,7 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
-        allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
         instance.bind_existing_instance_model(instance_model)
         instance.bind_unallocated_vm
         instance.bind_to_vm_model(vm_model)

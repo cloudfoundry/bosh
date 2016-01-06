@@ -37,7 +37,7 @@ module Bosh::Director
         processes = []
 
         begin
-          agent = AgentClient.with_vm(vm, :timeout => TIMEOUT)
+          agent = AgentClient.with_vm_credentials_and_agent_id(vm.credentials, vm.agent_id, :timeout => TIMEOUT)
           agent_state = agent.get_state(@format)
           agent_state['networks'].each_value do |network|
             ips << network['ip']

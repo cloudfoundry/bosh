@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 module Bosh::Cli::Command
   class Snapshot < Base
     usage 'snapshots'
@@ -11,18 +9,29 @@ module Bosh::Cli::Command
 
       snapshots = director.list_snapshots(deployment_name, job, index)
 
+      if snapshots.empty?
+        nl
+        say('No snapshots')
+        nl
+        return
+      end
+
       sorted = snapshots.sort do |a, b|
         s = a['job'].to_s <=> b['job'].to_s
-        s = a['index'].to_i <=> b['index'].to_i if s == 0
+        if a['uuid']
+          s = a['uuid'].to_i <=> b['uuid'].to_i if s == 0
+        else
+          s = a['index'].to_i <=> b['index'].to_i if s == 0
+        end
         s = a['created_at'].to_s <=> b['created_at'].to_s if s == 0
         s
       end
 
       snapshots_table = table do |t|
-        t.headings = ['Job/index', 'Snapshot CID', 'Created at', 'Clean']
+        t.headings = ['Job/ID', 'Snapshot CID', 'Created at', 'Clean']
 
         sorted.each do |snapshot|
-          job = "#{snapshot['job'] || 'unknown'}/#{snapshot['index'] || 'unknown'}"
+          job = "#{snapshot['job'] || 'unknown'}/#{snapshot['uuid'] || 'unknown'} (#{snapshot['index'] || 'unknown'})"
           t << [job, snapshot['snapshot_cid'], snapshot['created_at'], snapshot['clean']]
         end
       end

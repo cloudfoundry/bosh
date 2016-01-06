@@ -33,7 +33,7 @@ module Bosh::Director
       end
 
       resolution :recreate_vm do
-        plan { 'Recreate VM' }
+        plan { "Recreate VM for '#{@vm.instance.job}/#{@vm.instance.index}'" }
         action { validate; ensure_cid; recreate_vm(@vm) }
       end
 

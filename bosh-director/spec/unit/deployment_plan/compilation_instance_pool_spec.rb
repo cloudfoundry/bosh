@@ -10,7 +10,17 @@ module Bosh::Director
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
-    let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
+    let(:compilation_config) do
+      compilation_spec = {
+        'workers' => n_workers,
+        'network' => 'a',
+        'env' => compilation_env,
+        'cloud_properties' => cloud_properties,
+        'reuse_compilation_vms' => false,
+        'az' => '',
+      }
+      DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [])
+    end
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
     let(:deployment_plan) do
       instance_double(Bosh::Director::DeploymentPlan::Planner,
@@ -23,7 +33,7 @@ module Bosh::Director
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
     let(:network) do
-      instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'network_name', subnets: [subnet])
+      instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'a', subnets: [subnet])
     end
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
@@ -32,7 +42,7 @@ module Bosh::Director
     let(:compilation_env) { { 'compilation' => 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:network_settings) { {'network_name' => {'property' => 'settings'}} }
+    let(:network_settings) { {'a' => {'property' => 'settings'}} }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -47,27 +57,19 @@ module Bosh::Director
     let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
     let(:expected_network_settings) do
       {
-        'network_name' => {
-          'network_name' => {'property' => 'settings'},
+        'a' => {
+          'a' => {'property' => 'settings'},
         }
       }
     end
 
     before do
-      allow(compilation_config).to receive_messages(
-          network_name: 'network_name',
-          env: compilation_env,
-          cloud_properties: cloud_properties,
-          workers: n_workers,
-          reuse_compilation_vms: false,
-          availability_zone: availability_zone
-        )
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
-      allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
-      allow(AgentClient).to receive(:with_vm).with(another_vm_model).and_return(another_agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(another_vm_model.credentials, another_vm_model.agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
@@ -77,7 +79,7 @@ module Bosh::Director
       allow(another_agent_client).to receive(:get_state)
       allow(another_agent_client).to receive(:apply)
       allow(ThreadPool).to receive_messages(new: thread_pool)
-      allow(deployment_plan).to receive(:network).with('network_name').and_return(network)
+      allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
     end
     let(:availability_zone) { nil }
@@ -155,29 +157,64 @@ module Bosh::Director
       end
 
       context 'when az is specified' do
-        before do
-          allow(compilation_config).to receive_messages(
-              network_name: 'network_name',
-              env: compilation_env,
-              cloud_properties: cloud_properties,
-              workers: n_workers,
-              reuse_compilation_vms: false,
-              availability_zone: availability_zone
-            )
+        let(:compilation_config) do
+          compilation_spec = {
+            'workers' => n_workers,
+            'network' => 'a',
+            'env' => compilation_env,
+            'cloud_properties' => cloud_properties,
+            'reuse_compilation_vms' => false,
+            'az' => 'foo-az',
+          }
+          DeploymentPlan::CompilationConfig.new(compilation_spec, {'foo-az' => availability_zone }, [])
         end
 
         let(:compilation_instance_pool) do
           DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
         end
-        let(:availability_zone) { instance_double('Bosh::Director::DeploymentPlan::AvailabilityZone', name: 'foo-az') }
-        it 'spins up vm in the az' do
-          allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
 
+        let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
+
+        it 'spins up vm in the az' do
           vm_instance = nil
           compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             vm_instance = instance
           end
           expect(vm_instance.availability_zone_name).to eq('foo-az')
+        end
+      end
+
+      context 'when vm_type is specified' do
+        let(:compilation_config) do
+          compilation_spec = {
+              'workers' => n_workers,
+              'network' => 'a',
+              'vm_type' => 'type-a'
+          }
+          vm_type_spec = {
+            'name' => 'type-a',
+            'cloud_properties' => {
+              'instance_type' => 'big'
+            }
+          }
+          DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [DeploymentPlan::VmType.new(vm_type_spec)])
+        end
+
+        let(:compilation_instance_pool) do
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+        end
+
+        it 'spins up vm with the correct VM type' do
+          expect(vm_creator).to receive(:create).with(
+              anything,
+              anything,
+              {'instance_type' => 'big'},
+              anything,
+              anything,
+              anything
+            )
+
+          compilation_instance_pool.with_reused_vm(stemcell) {}
         end
       end
 

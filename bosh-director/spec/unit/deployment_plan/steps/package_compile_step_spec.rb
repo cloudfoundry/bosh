@@ -11,7 +11,19 @@ module Bosh::Director
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
-    let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
+    let(:reuse_compilation_vms) { false }
+    let(:number_of_workers) { 3 }
+    let(:compilation_config) do
+      compilation_spec = {
+        'workers' => number_of_workers,
+        'network' => 'default',
+        'env' => {},
+        'cloud_properties' => {},
+        'reuse_compilation_vms' => reuse_compilation_vms,
+        'az' => '',
+      }
+      DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [])
+    end
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
     let(:plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
@@ -54,16 +66,6 @@ module Bosh::Director
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
       allow(plan).to receive(:network).with('default').and_return(network)
-
-      @n_workers = 3
-      allow(compilation_config).to receive_messages(
-          network_name: 'default',
-          env: {},
-          cloud_properties: {},
-          workers: @n_workers,
-          reuse_compilation_vms: false,
-          availability_zone: nil
-        )
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
       @all_packages = []
@@ -204,7 +206,10 @@ module Bosh::Director
           @director_job
         )
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times do |instance_plan, _|
+          vm_model = Models::Vm.make
+          instance_plan.instance.bind_to_vm_model(vm_model)
+        end
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
 
@@ -212,26 +217,26 @@ module Bosh::Director
         expect(vm_metadata_updater).to receive(:update).with(anything, {compiling: 'common'})
         expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
-          agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
-          expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
-            name = args[2]
-            dot = args[3].rindex('.')
-            version, build = args[3][0..dot-1], args[3][dot+1..-1]
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+        expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
+          name = args[2]
+          dot = args[3].rindex('.')
+          version, build = args[3][0..dot-1], args[3][dot+1..-1]
 
-            package = Models::Package.find(name: name, version: version)
-            expect(args[0]).to eq(package.blobstore_id)
-            expect(args[1]).to eq(package.sha1)
+          package = Models::Package.find(name: name, version: version)
+          expect(args[0]).to eq(package.blobstore_id)
+          expect(args[1]).to eq(package.sha1)
 
-            expect(args[4]).to be_a(Hash)
+          expect(args[4]).to be_a(Hash)
 
-            {
-              'result' => {
-                'sha1' => "compiled #{package.id}",
-                'blobstore_id' => "blob #{package.id}"
-              }
+          {
+            'result' => {
+              'sha1' => "compiled #{package.id}",
+              'blobstore_id' => "blob #{package.id}"
             }
-          end
+          }
+        end
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -280,7 +285,7 @@ module Bosh::Director
             'networks' => net
         }
 
-        allow(AgentClient).to receive(:with_vm).and_return(agent)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
         allow(agent).to receive(:wait_until_ready)
         allow(agent).to receive(:update_settings)
         allow(agent).to receive(:apply).with(initial_state)
@@ -297,7 +302,10 @@ module Bosh::Director
         allow(@director_job).to receive(:task_checkpoint)
         allow(compiler).to receive(:with_compile_lock).and_yield
         allow(cloud).to receive(:delete_vm)
-        allow(vm_creator).to receive(:create_for_instance_plan)
+        allow(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, _|
+          vm_model = Models::Vm.make
+          instance_plan.instance.bind_to_vm_model(vm_model)
+        end
       end
 
       it 'sends information about immediate dependencies of the package being compiled' do
@@ -331,6 +339,8 @@ module Bosh::Director
     end
 
     context 'when the deploy is cancelled and there is a pending compilation' do
+      let(:reuse_compilation_vms) { true }
+      let(:number_of_workers) { 1 }
       # this can happen when the cancellation comes in when there is a package to be compiled,
       # and the compilation is not even in-flight. e.g.
       # - you have 3 compilation workers, but you've got 5 packages to compile; or
@@ -351,7 +361,6 @@ module Bosh::Director
         )
 
         network = double('network', name: 'network_name')
-        compilation_config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig', cloud_properties: {}, env: {}, workers: 1, reuse_compilation_vms: true, network_name: 'network_name')
         release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell = make_stemcell
@@ -370,6 +379,7 @@ module Bosh::Director
     end
 
     describe 'with reuse_compilation_vms option set' do
+      let(:reuse_compilation_vms) { true }
       let(:initial_state) {
         {
           'deployment' => 'mycloud',
@@ -388,7 +398,6 @@ module Bosh::Director
 
       it 'reuses compilation VMs' do
         prepare_samples
-        allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan, _|
           vm_model = Models::Vm.make
@@ -396,7 +405,7 @@ module Bosh::Director
         end
 
         agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_vm).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
@@ -447,9 +456,6 @@ module Bosh::Director
       it 'cleans up compilation vms if there is a failing compilation' do
         prepare_samples
 
-        allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
-        allow(compilation_config).to receive_messages(workers: 1)
-
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
 
@@ -457,7 +463,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {}).
           and_return(vm_cid)
 
-        allow(AgentClient).to receive(:with_vm).and_return(agent)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
@@ -512,7 +518,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient')
           expect(agent).to receive(:wait_until_ready).and_raise(exception)
-          expect(AgentClient).to receive(:with_vm).and_return(agent)
+          expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent)
 
           expect(cloud).to receive(:delete_vm).once
 
@@ -523,13 +529,12 @@ module Bosh::Director
       end
 
       context 'reuse_compilation_vms is true' do
-        before { allow(compilation_config).to receive_messages(reuse_compilation_vms: true) }
         it_tears_down_vm_exactly_once(RpcTimeout)
         it_tears_down_vm_exactly_once(TaskCancelled)
       end
 
       context 'reuse_compilation_vms is false' do
-        before { allow(compilation_config).to receive_messages(reuse_compilation_vms: false) }
+        let(:reuse_compilation_vms) { false }
         it_tears_down_vm_exactly_once(RpcTimeout)
         it_tears_down_vm_exactly_once(TaskCancelled)
       end
@@ -609,16 +614,9 @@ module Bosh::Director
     end
 
     describe '#prepare_vm' do
-      let(:compilation_config) do
-        config = double('compilation_config')
-        allow(config).to receive_messages(network_name: 'default')
-        allow(config).to receive_messages(cloud_properties: double('cloud_properties'))
-        allow(config).to receive_messages(env: double('env'))
-        allow(config).to receive_messages(workers: 2)
-        config
-      end
+      let(:number_of_workers) { 2 }
       let(:plan) do
-        double('Bosh::Director::DeploymentPlan',
+        instance_double('Bosh::Director::DeploymentPlan::Planner',
           compilation: compilation_config,
           model: Models::Deployment.make,
           name: 'fake-deployment',
@@ -630,11 +628,11 @@ module Bosh::Director
       let(:instance) { instance_double(DeploymentPlan::Instance, vm: vm) }
 
       context 'with reuse_compilation_vms' do
-        let(:network) { double('network', name: 'default', network_settings: nil) }
+        let(:reuse_compilation_vms) { true }
+        let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'default', network_settings: nil) }
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
 
         before do
-          allow(compilation_config).to receive_messages(reuse_compilation_vms: true)
           allow(plan).to receive(:network).with('default').and_return(network)
         end
 
@@ -646,11 +644,11 @@ module Bosh::Director
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
           allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
-          allow(network).to receive(:reserve).with(instance_of(Bosh::Director::DesiredNetworkReservation))
+          allow(ip_provider).to receive(:reserve).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
           expect(instance_deleter).to receive(:delete_instance_plan).ordered
-          allow(network).to receive(:release)
+          allow(ip_provider).to receive(:release)
 
           expect {
             compiler.prepare_vm(stemcell) do
@@ -669,7 +667,7 @@ module Bosh::Director
 
           allow(vm_creator).to receive(:create).and_return(vm)
           allow(vm_creator).to receive(:apply_state)
-          allow(AgentClient).to receive_messages(with_vm: client)
+          allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
           allow(cloud).to receive(:delete_vm)
           allow(client).to receive(:update_settings)
           allow(client).to receive(:wait_until_ready)

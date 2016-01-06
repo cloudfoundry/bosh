@@ -32,9 +32,9 @@ module Bosh::Director
         }.from(0).to(1)
       end
 
-      it 'should clean up old tasks' do
+      it 'should clean up old tasks of the given type' do
         expect(Api::TaskRemover).to receive(:new).with(Config.max_tasks).and_return(task_remover)
-        expect(task_remover).to receive(:remove)
+        expect(task_remover).to receive(:remove).with(type)
 
         described_class.new.create_task('fake-user', type, description)
       end

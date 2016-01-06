@@ -97,7 +97,7 @@ module Bosh::Director
       dns_manager.flush_dns_cache
 
       cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
-      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.vm), cleaner).apply
+      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.vm), cleaner, @logger).apply
     end
 
     private
@@ -155,7 +155,7 @@ module Bosh::Director
         :retry_methods => { :get_state => retries }
       }
       @clients ||= {}
-      @clients[vm.agent_id] ||= AgentClient.with_vm(vm, options)
+      @clients[vm.agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm.credentials, vm.agent_id, options)
     end
 
     def agent_timeout_guard(vm, &block)

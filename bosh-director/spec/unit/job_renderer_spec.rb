@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       before do
-        allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.new({'vm_type' => {'name' => 'a'}, 'template_hashes' => []}, instance))
+        allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return({'template' => 'spec'})
         allow(instance_plan).to receive(:templates).and_return([template_1, template_2])
         instance.bind_existing_instance_model(instance_model)
       end
@@ -211,7 +211,7 @@ module Bosh::Director
       end
 
       it 'renders all templates for all instances of a job' do
-        expect(job_instance_renderer).to receive(:render).with({'template_hashes' => [], 'resource_pool' => 'a'})
+        expect(job_instance_renderer).to receive(:render).with({'template' => 'spec'})
         perform
       end
 

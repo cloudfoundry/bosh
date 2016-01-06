@@ -68,7 +68,6 @@ module Bosh::Director
         @logger = logger
         @deployment_model = deployment_model
         @job_name = job_name
-        @name = "#{job_name}/#{@index}"
         @vm_type = vm_type
         @stemcell = stemcell
         @env = env
@@ -99,7 +98,11 @@ module Bosh::Director
       end
 
       def to_s
-        @name
+        if @uuid.nil?
+          "#{@job_name}/#{@index}"
+        else
+          "#{@job_name}/#{@index} (#{@uuid})"
+        end
       end
 
       # Looks up instance model in DB and binds it to this instance spec.
@@ -201,7 +204,7 @@ module Bosh::Director
       end
 
       def agent_client
-        @agent_client ||= AgentClient.with_vm(@model.vm)
+        @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@model.vm.credentials, @model.vm.agent_id)
       end
 
       ##

@@ -24,6 +24,9 @@ describe 'promotion' do
       File.write('initial-file.go', 'initial-code')
       exec_cmd('git add -A')
       exec_cmd("git commit -m 'initial commit'")
+      exec_cmd("git submodule add file://#{workspace_path} bat")
+      exec_cmd('git add -A')
+      exec_cmd('git commit -m "bat"')
       exec_cmd('git push origin master')
     end
     # recreate workspace dir
@@ -92,7 +95,7 @@ describe 'promotion' do
       expect(tag_sha).to_not be_empty
 
       # expect sha of tag to be in feature_branch and master
-      merger = Bosh::Dev::GitBranchMerger.new(logger)
+      merger = Bosh::Dev::GitBranchMerger.new(Dir.pwd, logger)
       expect(merger.branch_contains?('master', tag_sha)).to be(true)
       expect(merger.branch_contains?('feature_branch', tag_sha)).to be(true)
     end

@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# This script runs as root through sudo without the need for a password,
+# so it needs to make sure it can't be abused.
+#
+
+set -x
+
+adapter=$1
+host=$2
+user=$3
+pass=$4
+db_name=$5
+backup_file=$6
+
+PATH=/var/vcap/bosh/bin:$PATH
+
+monit stop director
+monit stop director_scheduler
+monit stop registry
+
+for i in $(seq 60)
+do
+    sleep 10
+
+    if [ -z "$(monit summary | grep '^Process.*director.*not monitored$')" ];then
+        continue
+    fi
+
+    if [ -z "$(monit summary | grep '^Process.*director_scheduler.*not monitored$')" ];then
+        continue
+    fi
+
+    if [ -z "$(monit summary | grep '^Process.*registry.*not monitored$')" ];then
+       continue
+    fi
+
+    break
+done
+
+if [ "$adapter" = 'postgres' ];then
+    export PGPASSWORD=$pass
+    monit restart postgres
+
+    for i in $(seq 60)
+    do
+        sleep 10
+        if [ -n "$(monit summary | grep '^Process.*postgres.*running$')" ];then
+            break
+        fi
+    done
+
+    dropdb -U$user -h$host $db_name
+    createdb -U$user -h$host $db_name
+    tar -xzvf $backup_file -O | psql -U$user -h$host $db_name
+
+elif [ "$adapter" = 'mysql2' ];then
+    export MYSQL_PWD=$pass
+    monit restart mysql
+
+    for i in $(seq 60)
+    do
+        sleep 10
+        if [ -n '$(monit summary | grep "^Process.*mysql.*running$")' ];then
+            break
+        fi
+    done
+
+    mysql -u$user -h$host -e "drop database $db_name"
+    mysql -u$user -h$host -e "create database $db_name"
+    tar -xzvf $backup_file -O | mysql -u$user -h$host $db_name
+fi
+
+monit start director
+monit start director_scheduler
+monit start registry

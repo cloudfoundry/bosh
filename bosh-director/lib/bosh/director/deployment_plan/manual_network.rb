@@ -81,13 +81,13 @@ module Bosh::Director
         true
       end
 
-      private
-
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
         @subnets.find { |subnet| subnet.range.contains?(ip) }
       end
+
+      private
 
       def self.validate_all_subnets_use_azs(subnets, network_name)
         subnets_with_azs = []

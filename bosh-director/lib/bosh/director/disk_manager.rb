@@ -42,7 +42,7 @@ module Bosh::Director
       vm_model = instance.vm.model
       begin
         @cloud.attach_disk(vm_model.cid, disk_cid)
-        AgentClient.with_vm(vm_model).mount_disk(disk_cid)
+        AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id).mount_disk(disk_cid)
       rescue => e
         @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
         raise e
@@ -212,7 +212,7 @@ module Bosh::Director
     end
 
     def agent(instance)
-      AgentClient.with_vm(instance.vm.model)
+      AgentClient.with_vm_credentials_and_agent_id(instance.vm.model.credentials, instance.vm.model.agent_id)
     end
 
     def create_and_attach_disk(instance_plan, vm_recreator)

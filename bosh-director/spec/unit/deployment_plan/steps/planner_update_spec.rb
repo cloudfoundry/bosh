@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         before do
-          allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
+          allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
           allow(agent_client).to receive(:apply)
           allow(agent_client).to receive(:drain).with('shutdown').and_return(0)
           allow(agent_client).to receive(:stop)

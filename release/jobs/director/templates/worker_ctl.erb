@@ -66,7 +66,15 @@ case $1 in
     if [ ! -z $PID ] && pid_exists $PID; then
      kill $PID
     fi
-    while [ -e /proc/$PID ]; do sleep 0.1; done
+    TRIES=0
+    while [ -e /proc/$PID ]
+    do
+      TRIES=$(( $TRIES + 1 ))
+      if [ $TRIES -gt 100 ]; then
+        kill -9 $PID
+      fi
+      sleep 0.1
+    done
     rm -f $PIDFILE
     ;;
 

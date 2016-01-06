@@ -23,7 +23,7 @@ module Bosh::Director
     private
 
     def agent_client
-      @agent_client ||= AgentClient.with_vm(@instance_model.vm)
+      @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@instance_model.vm.credentials, @instance_model.vm.agent_id)
     end
 
     def perform_drain

@@ -60,13 +60,17 @@ module Bosh::Director
         instance.bind_to_vm_model(vm_model)
         VmMetadataUpdater.build.update(vm_model, {})
 
-        agent_client = AgentClient.with_vm(vm_model)
+        agent_client = AgentClient.with_vm_credentials_and_agent_id(vm_model.credentials, vm_model.agent_id)
         agent_client.wait_until_ready
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
-        @vm_deleter.delete_for_instance_plan(instance_plan)
+        if Config.keep_unreachable_vms
+          @logger.info("Keeping the VM for debugging")
+        else
+          @vm_deleter.delete_for_instance_plan(instance_plan)
+        end
         raise e
       end
 

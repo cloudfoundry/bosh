@@ -37,10 +37,10 @@ module Bosh::Dev
       let(:push_cmd) { "gem push #{local_gem_path}" }
 
       before do
-        allow(Open3).to receive(:capture3).with(download_cmd).
+        allow(Open3).to receive(:capture3).with(download_cmd, chdir: Dir.pwd).
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
-        allow(Open3).to receive(:capture3).with(push_cmd).
+        allow(Open3).to receive(:capture3).with(push_cmd, chdir: Dir.pwd).
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
       end
 
@@ -55,14 +55,14 @@ module Bosh::Dev
       end
 
       it 'downloads the gem from the pipeline bucket' do
-        expect(Open3).to receive(:capture3).with(download_cmd).
+        expect(Open3).to receive(:capture3).with(download_cmd, chdir: Dir.pwd).
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         gem_artifact.promote
       end
 
       it 'pushes the downloaded gem' do
-        expect(Open3).to receive(:capture3).with(push_cmd).
+        expect(Open3).to receive(:capture3).with(push_cmd, chdir: Dir.pwd).
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         gem_artifact.promote
@@ -71,7 +71,7 @@ module Bosh::Dev
       it 'avoids bleeding bundler ENV stuff into the gem push' do
         stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
 
-        expect(Open3).to receive(:capture3).with(push_cmd) do
+        expect(Open3).to receive(:capture3).with(push_cmd, chdir: Dir.pwd) do
           expect(ENV.keys.grep(/BUNDLE/)).to eq([])
           [ nil, nil, instance_double('Process::Status', success?: true) ]
         end
@@ -105,7 +105,7 @@ bosh-foo (1.5.0.pre.789, 1.5.0.pre.788, 1.4.9)
 not-bosh-foo (1.5.0, 1.4.9)
 bosh-foo-plus-plus (1.0.0)
 EOS
-        expect(Open3).to receive(:capture3).with(query_cmd).
+        expect(Open3).to receive(:capture3).with(query_cmd, chdir: Dir.pwd).
           and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
 
         expect(gem_artifact.promoted?).to be(true)
@@ -115,7 +115,7 @@ EOS
         stdout = <<-EOS
 not-bosh-foo (1.5.0.pre.789)
 EOS
-        expect(Open3).to receive(:capture3).with(query_cmd).
+        expect(Open3).to receive(:capture3).with(query_cmd, chdir: Dir.pwd).
           and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
 
         expect(gem_artifact.promoted?).to be(false)
@@ -125,7 +125,7 @@ EOS
         stdout = <<-EOS
 bosh-foo (0.2.3, 0.2.2, 0.2.1, 0.2.0)
 EOS
-        expect(Open3).to receive(:capture3).with(query_cmd).
+        expect(Open3).to receive(:capture3).with(query_cmd, chdir: Dir.pwd).
           and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
 
         expect(gem_artifact.promoted?).to be(false)
@@ -134,7 +134,7 @@ EOS
       it 'avoids bleeding bundler ENV stuff into the gem query' do
         stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
 
-        expect(Open3).to receive(:capture3).with(query_cmd) do
+        expect(Open3).to receive(:capture3).with(query_cmd, chdir: Dir.pwd) do
           expect(ENV.keys.grep(/BUNDLE/)).to eq([])
           [ '', nil, instance_double('Process::Status', success?: true) ]
         end

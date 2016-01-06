@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bosh/stemcell/arch'
 require 'bosh/stemcell/stage_collection'
 
 module Bosh::Stemcell
@@ -46,7 +47,7 @@ module Bosh::Stemcell
               :vim_tiny,
               :cron_config,
               :escape_ctrl_alt_del,
-            ]
+            ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
           )
         end
       end
@@ -119,7 +120,7 @@ module Bosh::Stemcell
           :bosh_micro_go,
           :aws_cli,
           :logrotate_config,
-        ]
+        ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and [:bosh_ruby, :bosh_micro_go].include?(s) }
       end
 
       it 'returns the correct stages' do

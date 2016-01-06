@@ -31,7 +31,8 @@ module Bosh::Director
         :enable_snapshots,
         :max_vm_create_tries,
         :nats_uri,
-        :default_ssh_options
+        :default_ssh_options,
+        :keep_unreachable_vms
       )
 
       attr_reader(
@@ -92,8 +93,8 @@ module Bosh::Director
         # the default one does nothing
         @event_log = EventLog::Log.new
 
-        # by default keep only last 500 tasks in disk
-        @max_tasks = config.fetch('max_tasks', 500).to_i
+        # by default keep only last 100 tasks of each type in disk
+        @max_tasks = config.fetch('max_tasks', 100).to_i
 
         @max_threads = config.fetch('max_threads', 32).to_i
 
@@ -144,6 +145,8 @@ module Bosh::Director
 
         @trusted_certs = config['trusted_certs'] || ''
         @ignore_missing_gateway = config['ignore_missing_gateway']
+
+        @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
 
         Bosh::Clouds::Config.configure(self)
 

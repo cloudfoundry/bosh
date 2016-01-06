@@ -9,7 +9,6 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        # @param [DeploymentPlan] deployment_plan Deployment plan
         def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
           @event_log = event_log
           @logger = logger

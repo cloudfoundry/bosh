@@ -79,7 +79,7 @@ describe Bosh::Director::VmCreator do
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
-    allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
+    allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
     allow(job).to receive(:instance_plans).and_return([instance_plan])
     allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
   end
@@ -89,7 +89,10 @@ describe Bosh::Director::VmCreator do
       kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
     ).and_return('new-vm-cid')
 
-    expect(instance).to receive(:bind_to_vm_model)
+    expect(instance).to receive(:bind_to_vm_model) do
+      vm = Bosh::Director::Models::Vm.first
+      instance_model.update(vm: vm)
+    end
     expect(agent_client).to receive(:wait_until_ready)
     expect(instance).to receive(:update_trusted_certs)
     expect(instance).to receive(:update_cloud_properties!)
@@ -114,8 +117,6 @@ describe Bosh::Director::VmCreator do
         job: 'fake-job',
         index: '5',
         director: 'fake-director-name',
-        id: instance_model.uuid,
-        name: "fake-job/#{instance_model.uuid}"
       })
     end
 
@@ -198,5 +199,29 @@ describe Bosh::Director::VmCreator do
     end
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+  end
+
+  it 'should not destroy the VM if the Config.keep_unreachable_vms flag is true' do
+    Bosh::Director::Config.keep_unreachable_vms = true
+    expect(cloud).to receive(:create_vm)
+    expect(cloud).to_not receive(:delete_vm)
+
+    expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+
+    expect {
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
+  end
+
+  it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
+    Bosh::Director::Config.keep_unreachable_vms = false
+    expect(cloud).to receive(:create_vm)
+    expect(cloud).to receive(:delete_vm)
+
+    expect(instance).to receive(:update_trusted_certs).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+
+    expect {
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+    }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 end

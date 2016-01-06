@@ -30,6 +30,7 @@ module Bosh::Director
       allow(base_job).to receive(:logger).and_return(logger)
       allow(base_job).to receive(:track_and_log).and_yield
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
+      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
       fake_app
     end
 

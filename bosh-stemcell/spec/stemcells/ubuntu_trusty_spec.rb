@@ -4,7 +4,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   it_behaves_like 'All Stemcells'
 
-  context 'installed by image_install_grub', exclude_on_warden: true do
+  context 'installed by image_install_grub', {exclude_on_warden: true, exclude_on_ppc64le: true} do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
       it { should contain 'default=0' }
@@ -54,6 +54,11 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should be_file }
       it { should contain 'auto lo' }
       it { should contain 'iface lo inet loopback' }
+    end
+
+    describe file('/etc/hostname') do
+      it { should be_file }
+      it { should contain 'localhost' }
     end
   end
 

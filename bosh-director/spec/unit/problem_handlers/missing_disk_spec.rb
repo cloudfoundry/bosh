@@ -53,7 +53,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
         end
 
         it 'ignores the error if disk is not found' do
-          allow(cloud).to receive(:delete_disk).with('disk-cid') do
+          allow(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid') do
             raise Bosh::Clouds::DiskNotFound.new(false)
           end
 

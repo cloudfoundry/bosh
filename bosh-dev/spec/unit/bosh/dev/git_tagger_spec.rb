@@ -4,6 +4,7 @@ require 'bosh/dev/git_tagger'
 module Bosh::Dev
   describe GitTagger do
     subject(:git_tagger) { described_class.new(logger) }
+    before { allow(Dir).to receive(:pwd).and_return('fake-dir') }
 
     describe '#tag_and_push' do
       let(:sha)            { 'fake-sha' }
@@ -15,12 +16,12 @@ module Bosh::Dev
       context 'when tagging and pushing succeeds' do
         it 'tags stable_branch with jenkins build number' do
           tag_name = 'stable-fake-build-id'
-          expect(Open3).to receive(:capture3).with("git tag -a #{tag_name} -m ci-tagged #{sha}").and_return(success)
+          expect(Open3).to receive(:capture3).with("git tag -a #{tag_name} -m ci-tagged #{sha}", chdir: 'fake-dir').and_return(success)
           git_tagger.tag_and_push(sha, build_number)
         end
 
         it 'pushes tags' do
-          expect(Open3).to receive(:capture3).with('git push origin --tags').and_return(success)
+          expect(Open3).to receive(:capture3).with('git push origin --tags', chdir: 'fake-dir').and_return(success)
           git_tagger.tag_and_push(sha, build_number)
         end
       end
@@ -86,13 +87,13 @@ module Bosh::Dev
       let(:commit_sha) { 'some-subjected-sha' }
 
       before do
-        allow(Open3).to receive(:capture3).with('git fetch --tags').and_return(
+        allow(Open3).to receive(:capture3).with('git fetch --tags', chdir: 'fake-dir').and_return(
           [ '', nil, instance_double('Process::Status', success?: true) ]
         )
       end
 
       it 'returns true when there is a stable tag for the given sha' do
-        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}").and_return(
+        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}", chdir: 'fake-dir').and_return(
           [ 'stable-123', nil, instance_double('Process::Status', success?: true) ]
         )
 
@@ -100,7 +101,7 @@ module Bosh::Dev
       end
 
       it 'returns false when there is not a stable tag for the given sha' do
-        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}").and_return(
+        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}", chdir: 'fake-dir').and_return(
           [ '', nil, instance_double('Process::Status', success?: true) ]
         )
 
@@ -113,11 +114,11 @@ module Bosh::Dev
       let(:tag_sha) { 'fake-tag-sha' }
 
       it 'returns the sha when there is a tag with the given name' do
-        expect(Open3).to receive(:capture3).with('git fetch --tags').and_return(
+        expect(Open3).to receive(:capture3).with('git fetch --tags', chdir: 'fake-dir').and_return(
           [ '', nil, instance_double('Process::Status', success?: true) ]
         )
 
-        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}^{}").and_return(
+        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}^{}", chdir: 'fake-dir').and_return(
           [ tag_sha, nil, instance_double('Process::Status', success?: true) ]
         )
 
@@ -125,11 +126,11 @@ module Bosh::Dev
       end
 
       it 'errors when there is not a tag with the given name' do
-        expect(Open3).to receive(:capture3).with('git fetch --tags').and_return(
+        expect(Open3).to receive(:capture3).with('git fetch --tags', chdir: 'fake-dir').and_return(
           [ '', nil, instance_double('Process::Status', success?: true) ]
         )
 
-        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}^{}").and_return(
+        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}^{}", chdir: 'fake-dir').and_return(
           [ 'fake-error', nil, instance_double('Process::Status', success?: false) ]
         )
 

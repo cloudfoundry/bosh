@@ -1,3 +1,4 @@
+require 'bosh/stemcell/arch'
 require 'spec_helper'
 
 describe 'Ubuntu 14.04 OS image', os_image: true do
@@ -77,9 +78,23 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
-      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse' }
-      it { should contain 'deb http://security.ubuntu.com/ubuntu trusty-security main universe multiverse' }
+      if Bosh::Stemcell::Arch.ppc64le?
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty multiverse' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates multiverse' }
+
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security multiverse' }
+
+      else
+        it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
+        it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse' }
+        it { should contain 'deb http://security.ubuntu.com/ubuntu trusty-security main universe multiverse' }
+      end
     end
 
     describe package('upstart') do
@@ -94,6 +109,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by base_ubuntu_packages' do
+    # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
     %w(
       anacron
       apparmor-utils
@@ -146,7 +162,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).each do |pkg|
+    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
@@ -188,17 +204,31 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_grub' do
-    %w(
-      grub
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
+    if Bosh::Stemcell::Arch.ppc64le?
+      %w(
+        grub2
+      ).each do |pkg|
+        describe package(pkg) do
+          it { should be_installed }
+        end
       end
-    end
-
-    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
-      describe file("/boot/grub/#{grub_stage}") do
-        it { should be_file }
+      %w(grub grubenv grub.chrp).each do |grub_file|
+        describe file("/boot/grub/#{grub_file}") do
+          it { should be_file }
+        end
+      end
+    else
+      %w(
+        grub
+      ).each do |pkg|
+        describe package(pkg) do
+          it { should be_installed }
+        end
+      end
+      %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+        describe file("/boot/grub/#{grub_stage}") do
+          it { should be_file }
+        end
       end
     end
   end
