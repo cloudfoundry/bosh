@@ -279,11 +279,17 @@ module Bosh::Director
 
       post '/:deployment/diff', :consumes => :yaml do
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        before = Psych.load(deployment.manifest).merge(deployment.cloud_config.manifest) if deployment.cloud_config
 
-        after = Psych.load(request.body).merge(Bosh::Director::Api::CloudConfigManager.new.latest.manifest)
+        cloud_config_hash = deployment.cloud_config ? deployment.cloud_config.manifest : {}
+        before_manifest = Manifest.load_from_text(deployment.manifest, cloud_config_hash)
 
-        diff = Changeset.new(before, after).diff
+        after_manifest = Manifest.load_from_text(
+          request.body,
+          Bosh::Director::Api::CloudConfigManager.new.latest.manifest
+        )
+        after_manifest.resolve_aliases
+
+        diff = Changeset.new(before_manifest.to_hash, after_manifest.to_hash).diff
 
         json_encode({
           'cloud_config_id' => deployment.cloud_config.id,
