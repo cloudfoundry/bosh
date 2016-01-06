@@ -26,99 +26,100 @@ add_on_exit "losetup --verbose --detach ${device}"
 
 if ! is_ppc64le; then
 
-device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
-add_on_exit "kpartx -dv ${device}"
+  device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
+  add_on_exit "kpartx -dv ${device}"
 
-loopback_dev="/dev/mapper/${device_partition}"
+  loopback_dev="/dev/mapper/${device_partition}"
 
-# Mount partition
-image_mount_point=${work}/mnt
-mkdir -p ${image_mount_point}
+  # Mount partition
+  image_mount_point=${work}/mnt
+  mkdir -p ${image_mount_point}
 
-mount ${loopback_dev} ${image_mount_point}
-add_on_exit "umount ${image_mount_point}"
+  mount ${loopback_dev} ${image_mount_point}
+  add_on_exit "umount ${image_mount_point}"
 
-# == Guide to variables in this script (all paths are defined relative to the real root dir, not the chroot)
+  # == Guide to variables in this script (all paths are defined relative to the real root dir, not the chroot)
 
-# work: the base working directory outside the chroot
-#      eg: /mnt/stemcells/aws/xen/centos/work/work
-# disk_image: path to the stemcell disk image
-#      eg: /mnt/stemcells/aws/xen/centos/work/work/aws-xen-centos.raw
-# device: path to the loopback devide mapped to the entire disk image
-#      eg: /dev/loop0
-# loopback_dev: device node mapped to the main partition in disk_image
-#      eg: /dev/mapper/loop0p1
-# image_mount_point: place where loopback_dev is mounted as a filesystem
-#      eg: /mnt/stemcells/aws/xen/centos/work/work/mnt
+  # work: the base working directory outside the chroot
+  #      eg: /mnt/stemcells/aws/xen/centos/work/work
+  # disk_image: path to the stemcell disk image
+  #      eg: /mnt/stemcells/aws/xen/centos/work/work/aws-xen-centos.raw
+  # device: path to the loopback devide mapped to the entire disk image
+  #      eg: /dev/loop0
+  # loopback_dev: device node mapped to the main partition in disk_image
+  #      eg: /dev/mapper/loop0p1
+  # image_mount_point: place where loopback_dev is mounted as a filesystem
+  #      eg: /mnt/stemcells/aws/xen/centos/work/work/mnt
 
-# Generate random password
-random_password=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c 16)
+  # Generate random password
+  random_password=$(tr -dc A-Za-z0-9_ < /dev/urandom | head -c 16)
 
-# Install bootloader
-if [ -x ${image_mount_point}/usr/sbin/grub2-install ] # GRUB 2
-then
+  # Install bootloader
+  if [ -x ${image_mount_point}/usr/sbin/grub2-install ]; then # GRUB 2
 
-  # GRUB 2 needs to operate on the loopback block device for the whole FS image, so we map it into the chroot environment
-  touch ${image_mount_point}${device}
-  mount --bind ${device} ${image_mount_point}${device}
-  add_on_exit "umount ${image_mount_point}${device}"
+    # GRUB 2 needs to operate on the loopback block device for the whole FS image, so we map it into the chroot environment
+    touch ${image_mount_point}${device}
+    mount --bind ${device} ${image_mount_point}${device}
+    add_on_exit "umount ${image_mount_point}${device}"
 
-  mkdir -p `dirname ${image_mount_point}${loopback_dev}`
-  touch ${image_mount_point}${loopback_dev}
-  mount --bind ${loopback_dev} ${image_mount_point}${loopback_dev}
-  add_on_exit "umount ${image_mount_point}${loopback_dev}"
+    mkdir -p `dirname ${image_mount_point}${loopback_dev}`
+    touch ${image_mount_point}${loopback_dev}
+    mount --bind ${loopback_dev} ${image_mount_point}${loopback_dev}
+    add_on_exit "umount ${image_mount_point}${loopback_dev}"
 
-  # GRUB 2 needs /sys and /proc to do its job
-  mount -t proc none ${image_mount_point}/proc
-  add_on_exit "umount ${image_mount_point}/proc"
+    # GRUB 2 needs /sys and /proc to do its job
+    mount -t proc none ${image_mount_point}/proc
+    add_on_exit "umount ${image_mount_point}/proc"
 
-  mount -t sysfs none ${image_mount_point}/sys
-  add_on_exit "umount ${image_mount_point}/sys"
+    mount -t sysfs none ${image_mount_point}/sys
+    add_on_exit "umount ${image_mount_point}/sys"
 
-  echo "(hd0) ${device}" > ${image_mount_point}/device.map
+    echo "(hd0) ${device}" > ${image_mount_point}/device.map
 
-  # install bootsector into disk image file
-  run_in_chroot ${image_mount_point} "grub2-install -v --no-floppy --grub-mkdevicemap=/device.map ${device}"
+    # install bootsector into disk image file
+    run_in_chroot ${image_mount_point} "grub2-install -v --no-floppy --grub-mkdevicemap=/device.map ${device}"
 
-  cat >${image_mount_point}/etc/default/grub <<EOF
+    cat >${image_mount_point}/etc/default/grub <<EOF
 GRUB_CMDLINE_LINUX="vconsole.keymap=us net.ifnames=0 crashkernel=auto selinux=0 plymouth.enable=0 console=ttyS0,115200n8 earlyprintk=ttyS0 rootdelay=300"
 EOF
 
-  # we use a random password to prevent user from editing the boot menu
-  pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | grub2-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
-  echo "\
+    # we use a random password to prevent user from editing the boot menu
+    pbkdf2_password=`run_in_chroot ${image_mount_point} "echo -e '${random_password}\n${random_password}' | grub2-mkpasswd-pbkdf2 | grep -Eo 'grub.pbkdf2.sha512.*'"`
+    echo "\
 
 cat << EOF
 set superusers=vcap
 password_pbkdf2 vcap $pbkdf2_password
 EOF" >> ${image_mount_point}/etc/grub.d/00_header
 
-  # assemble config file that is read by grub2 at boot time
-  run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
+    # assemble config file that is read by grub2 at boot time
+    run_in_chroot ${image_mount_point} "GRUB_DISABLE_RECOVERY=true grub2-mkconfig -o /boot/grub2/grub.cfg"
 
-  rm ${image_mount_point}/device.map
-else # Classic GRUB
+    rm ${image_mount_point}/device.map
 
-  mkdir -p ${image_mount_point}/tmp/grub
-  add_on_exit "rm -rf ${image_mount_point}/tmp/grub"
+  else # Classic GRUB
 
-  touch ${image_mount_point}/tmp/grub/${stemcell_image_name}
+    mkdir -p ${image_mount_point}/tmp/grub
+    add_on_exit "rm -rf ${image_mount_point}/tmp/grub"
 
-  mount --bind $work/${stemcell_image_name} ${image_mount_point}/tmp/grub/${stemcell_image_name}
-  add_on_exit "umount ${image_mount_point}/tmp/grub/${stemcell_image_name}"
+    touch ${image_mount_point}/tmp/grub/${stemcell_image_name}
 
-  cat > ${image_mount_point}/tmp/grub/device.map <<EOS
+    mount --bind $work/${stemcell_image_name} ${image_mount_point}/tmp/grub/${stemcell_image_name}
+    add_on_exit "umount ${image_mount_point}/tmp/grub/${stemcell_image_name}"
+
+    cat > ${image_mount_point}/tmp/grub/device.map <<EOS
 (hd0) ${stemcell_image_name}
 EOS
 
-run_in_chroot ${image_mount_point} "
+    run_in_chroot ${image_mount_point} "
 cd /tmp/grub
 grub --device-map=device.map --batch <<EOF
 root (hd0,0)
 setup (hd0)
 EOF
 "
-fi # end of GRUB and GRUB 2 bootsector installation
+  fi # end of GRUB and GRUB 2 bootsector installation
+
 else
   # ppc64le guest images have a PReP partition followed by the file system
   # This and following changes in this file made with the help of Paulo Flabio Smorigo @ IBM
@@ -140,8 +141,6 @@ else
   mount ${loopback_dev} /mnt/
   grub-install -v ${loopback_boot_dev} --boot-directory=/mnt/boot
   "
-
-
 fi
 
 # Figure out uuid of partition
