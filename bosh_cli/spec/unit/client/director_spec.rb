@@ -266,6 +266,32 @@ describe Bosh::Cli::Client::Director do
       @director.list_stemcells
     end
 
+    it 'retrieves latest cloud config' do
+      expect(@director).to receive(:get).with('/cloud_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_cloud_config
+    end
+
+    it 'updates cloud config' do
+      expect(@director).to receive(:post).
+          with('/cloud_configs', 'text/yaml', 'cloud config manifest').
+          and_return(true)
+      @director.update_cloud_config('cloud config manifest')
+    end
+
+    it 'retrieves latest runtime config' do
+      expect(@director).to receive(:get).with('/runtime_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_runtime_config
+    end
+
+    it 'updates runtime config' do
+      expect(@director).to receive(:post).
+          with('/runtime_configs', 'text/yaml', 'runtime config manifest').
+          and_return(true)
+      @director.update_runtime_config('runtime config manifest')
+    end
+
     it 'lists releases' do
       expect(@director).to receive(:get).with('/releases', 'application/json').
         and_return([200, JSON.generate([]), {}])

@@ -2,6 +2,7 @@
 #
 
 require 'bosh/director/models/cloud_config'
+require 'bosh/director/models/runtime_config'
 require 'bosh/director/models/compiled_package'
 require 'bosh/director/models/deployment'
 require 'bosh/director/models/deployment_problem'
