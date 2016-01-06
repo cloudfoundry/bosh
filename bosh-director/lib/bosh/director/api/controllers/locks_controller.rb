@@ -7,7 +7,7 @@ module Bosh::Director
         lock_records.each do |lock_record|
           lock_type     = lock_record.name.split(':')[1]
           lock_resource = lock_record.name.split(':')[2..-1]
-          lock_timeout  = lock_record.expired_at.to_f.to_s
+          lock_timeout  = lock_record.expired_at.strftime('%s.%6N')
           locks << { type: lock_type, resource: lock_resource, timeout: lock_timeout }
         end
 

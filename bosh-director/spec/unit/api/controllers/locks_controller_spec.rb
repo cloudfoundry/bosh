@@ -42,7 +42,7 @@ module Bosh::Director
           expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
-          timeout_str = lock_timeout.to_f.to_s
+          timeout_str = lock_timeout.strftime('%s.%6N')
           expect(body).to eq([
             { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' =>timeout_str },
             { 'type' => 'stemcells', 'resource' => %w(test-stemcell), 'timeout' => timeout_str},
