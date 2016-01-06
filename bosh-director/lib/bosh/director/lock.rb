@@ -35,15 +35,12 @@ module Bosh::Director
           stopped = false
           until stopped
             @logger.debug("Renewing lock: #@name")
-            Models::Lock.db.transaction do
-              lock_record = Models::Lock.for_update.first(name: @name)
-              if lock_record.nil? || lock_record.uid != @uid
-                stopped = true
-              else
-                lock_expiration = Time.now.to_f + @expiration + 1
-                lock_record.update(expired_at: Time.at(lock_expiration))
-              end
+            lock_expiration = Time.now.to_f + @expiration + 1
+
+            if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
+              stopped = true
             end
+
             sleep(sleep_interval) unless stopped
           end
         ensure
@@ -77,17 +74,16 @@ module Bosh::Director
       lock_expiration = Time.now.to_f + @expiration + 1
       acquired = false
       until acquired
-        Models::Lock.db.transaction do
-          lock_record = Models::Lock.for_update.first(name: @name)
-          if lock_record.nil?
-            Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
-            acquired = true
-          elsif lock_expired?(lock_record)
-            @logger.debug("Lock #@name is already expired, taking it")
-            lock_record.update(uid: @uid, expired_at: Time.at(lock_expiration))
+        begin
+          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
+          acquired = true
+        rescue Sequel::DatabaseError
+          affected_locks = Models::Lock.where(name: @name).where{ expired_at < Time.now }.update(uid: @uid, expired_at: Time.at(lock_expiration))
+          if affected_locks == 1
             acquired = true
           end
         end
+
         unless acquired
           raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}" if Time.now - started > @timeout
           sleep(0.5)
