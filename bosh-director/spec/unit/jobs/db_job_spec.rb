@@ -43,6 +43,11 @@ module Bosh::Director
       }.to raise_error(DirectorError, /invalid director job/i)
     end
 
+    it 'raises error when task is not in queue state' do
+      task.update(state: 'processing')
+      expect{db_job.perform}.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+    end
+
     it "performs new job" do
       expect(Jobs::BaseJob).to receive(:perform).with(task.id, *args)
       db_job.perform

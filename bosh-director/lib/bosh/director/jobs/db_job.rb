@@ -16,6 +16,10 @@ module Bosh::Director
       end
 
       def perform
+        if Models::Task.first(id: @task_id, state: 'queued').nil?
+          raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
+        end
+
         @job_class.perform(@task_id, *decode(encode(@args)))
       end
 
