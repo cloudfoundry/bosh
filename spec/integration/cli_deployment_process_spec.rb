@@ -76,6 +76,8 @@ describe 'cli: deployment process', type: :integration do
           templates: [{'name' => 'foobar_without_packages'}]
       )]
 
+      new_manifest['releases'].first['version'] = 'latest'
+
       new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       new_cloud_config['resource_pools'] = [
         {
@@ -83,7 +85,7 @@ describe 'cli: deployment process', type: :integration do
           'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
           'stemcell' => {
             'name' => 'ubuntu-stemcell',
-            'version' => '1',
+            'version' => 'latest',
           },
         }
       ]
@@ -117,6 +119,8 @@ describe 'cli: deployment process', type: :integration do
 +     size: large
 DIFF
 )
+      expect(output).to_not include('stemcell')
+      expect(output).to_not include('releases')
     end
   end
 
