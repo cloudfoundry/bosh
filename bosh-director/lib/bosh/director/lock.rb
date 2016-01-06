@@ -35,14 +35,15 @@ module Bosh::Director
           stopped = false
           until stopped
             @logger.debug("Renewing lock: #@name")
-            lock_record = Models::Lock[name: @name]
-            if lock_record.nil? || lock_record.uid != @uid
-              stopped = true
-              raise Sequel::Rollback
+            Models::Lock.db.transaction do
+              lock_record = Models::Lock.for_update.first(name: @name)
+              if lock_record.nil? || lock_record.uid != @uid
+                stopped = true
+              else
+                lock_expiration = Time.now.to_f + @expiration + 1
+                lock_record.update(expired_at: Time.at(lock_expiration))
+              end
             end
-            lock_expiration = Time.now.to_f + @expiration + 1
-            lock_record.update(expired_at: Time.at(lock_expiration))
-
             sleep(sleep_interval) unless stopped
           end
         ensure
@@ -76,17 +77,19 @@ module Bosh::Director
       lock_expiration = Time.now.to_f + @expiration + 1
       acquired = false
       until acquired
-        lock_record = Models::Lock[name: @name]
-        if lock_record.nil?
-          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
-          acquired = true
-        elsif lock_expired?(lock_record)
-          @logger.debug("Lock #@name is already expired, taking it")
-          lock_record.update(uid: @uid, expired_at: Time.at(lock_expiration))
-          acquired = true
+        Models::Lock.db.transaction do
+          lock_record = Models::Lock.for_update.first(name: @name)
+          if lock_record.nil?
+            Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration))
+            acquired = true
+          elsif lock_expired?(lock_record)
+            @logger.debug("Lock #@name is already expired, taking it")
+            lock_record.update(uid: @uid, expired_at: Time.at(lock_expiration))
+            acquired = true
+          end
         end
         unless acquired
-          raise TimeoutError if Time.now - started > @timeout
+          raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}" if Time.now - started > @timeout
           sleep(0.5)
           lock_expiration = Time.now.to_f + @expiration + 1
         end
@@ -98,17 +101,10 @@ module Bosh::Director
 
 
     def delete
-      @logger.debug("Deleting lock: #@name")
-      lock_record = Models::Lock[name: @name]
-      if lock_record.nil?
-         @logger.debug("Can not find lock: #@name")
+      if Models::Lock.where(name: @name, uid: @uid).delete > 0
+        @logger.debug("Deleted lock: #{@name} uid: #{@uid}")
       else
-        if lock_record.uid == @uid
-          lock_record.delete
-          @logger.debug("Deleted lock: #@name")
-        else
-          @logger.debug("Lock: #@name was acquired by someone else")
-        end
+        @logger.debug("Can not find lock: #{@name} - uid: #{@uid}")
       end
     end
 
