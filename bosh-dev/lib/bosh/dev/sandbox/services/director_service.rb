@@ -80,8 +80,6 @@ module Bosh::Dev::Sandbox
     end
 
     def wait_for_tasks_to_finish
-      @logger.debug('Waiting for Resque queue to drain...')
-
       @logger.debug('Waiting for Delayed Job queue to drain...')
       attempt = 0
       delay = 0.1

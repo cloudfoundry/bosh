@@ -42,8 +42,7 @@ module Bosh::Dev::Sandbox
 
     def current_locked_jobs
       jobs_cmd = %Q{psql -U postgres #{db_name} -c "select * from delayed_jobs where locked_by is not null;"}
-      job_lines = `#{jobs_cmd}`.lines.to_a[2...-2] || []
-      job_lines
+      `#{jobs_cmd}`.lines.to_a[2...-2] || []
     end
 
     def truncate_db
