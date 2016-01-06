@@ -80,9 +80,10 @@ begin
   Delayed::Worker.backend = :sequel
   Bosh::Director::App.new(config)
 
-  Delayed::Worker.destroy_failed_jobs = false
+  Delayed::Worker.destroy_failed_jobs = true
   Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 5
   Delayed::Worker.max_attempts = 0
+  Delayed::Worker.max_run_time = 31536000
 
   worker = nil
   queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
