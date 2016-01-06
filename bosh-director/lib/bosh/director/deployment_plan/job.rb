@@ -80,6 +80,8 @@ module Bosh::Director
 
       attr_reader :link_paths
 
+      attr_reader :link_infos
+
       def self.parse(plan, job_spec, event_log, logger)
         parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)
@@ -101,6 +103,7 @@ module Bosh::Director
 
         @packages = {}
         @link_paths = {}
+        @link_infos = {}
         @resolved_links = {}
         @migrated_from = []
         @availability_zones = []
@@ -314,6 +317,15 @@ module Bosh::Director
       def add_link_path(template_name, link_name, link_path)
         @link_paths[template_name] ||= {}
         @link_paths[template_name][link_name] = link_path
+      end
+
+      def add_link_info(template_name, kind, link_name, source)
+        @link_infos[template_name] ||= {}
+        @link_infos[template_name][kind] ||= {}
+        @link_infos[template_name][kind][link_name] ||= {}
+        source.to_a.each do |key, value|
+          @link_infos[template_name][kind][link_name][key] = value
+        end
       end
 
       def compilation?

@@ -137,12 +137,36 @@ module Bosh::Director
 
             @job.templates << release.get_or_create_template(template_name)
 
-            links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
-            @logger.debug("Parsing template links: #{links.inspect}")
+            provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
+            @logger.debug("Parsing template provides links: #{provides_links.inspect}")
+            provides_links.to_a.each do |link_name, source|
+              @job.add_link_info(template_name, "provides", link_name, source)
+            end
 
-            links.to_a.each do |name, source|
-              link_path = LinkPath.parse(source)
-              @job.add_link_path(template_name, name, link_path)
+            consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
+            @logger.debug("Parsing template links: #{consumes_links.inspect}")
+            consumes_links.to_a.each do |link_name, source|
+              @job.add_link_info(template_name, 'consumes', link_name, source)
+            end
+
+            # TODO - change this each to a find or map or something so we don't have to loop so much
+            Models::Template.each do |template|
+              if template.name == template_name
+                @deployment.releases.each do |release|
+                  if release.name == template.release.name
+                    if template.consumes_json != nil
+                      JSON.parse(template.consumes_json).each do |consumes_json|
+                        @job.add_link_info(template_name, 'consumes', consumes_json["name"], consumes_json)
+                      end
+                    end
+                    if template.provides_json != nil
+                      JSON.parse(template.provides_json).each do |provides_json|
+                        @job.add_link_info(template_name, 'provides', provides_json["name"], provides_json)
+                      end
+                    end
+                  end
+                end
+              end
             end
           end
         end

@@ -20,6 +20,7 @@ module Bosh::Director
         parse_releases
         parse_update
         parse_jobs
+        parse_links
 
         @deployment
       end
@@ -82,6 +83,20 @@ module Bosh::Director
           @deployment.add_job(Job.parse(@deployment, job_spec, @event_log, @logger))
         end
       end
+
+      def parse_links
+        @deployment.jobs.each do |current_job|
+          current_job.link_infos.each do |template_name, template|
+            if template.has_key?('consumes')
+              template['consumes'].to_a.each do |name, source|
+                link_path = LinkPath.parse(@deployment, source)
+                current_job.add_link_path(template_name, name, link_path)
+              end
+            end
+          end
+        end
+      end
+
     end
   end
 end
