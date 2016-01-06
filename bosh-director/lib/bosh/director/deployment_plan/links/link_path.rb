@@ -17,13 +17,10 @@ module Bosh::Director
           if deployment_name == deployment_plan.name
             link_path = self.get_link_path_from_deployment_plan(deployment_plan, link_name)
           else
-            link_path = self.find_deployment_and_get_link_path(deployment_name)
+            link_path = self.find_deployment_and_get_link_path(deployment_name, link_name)
           end
         else  # given no deployment name
           link_path = self.get_link_path_from_deployment_plan(deployment_plan, link_name)   # search the jobs for the current deployment for a provides
-          if link_path == nil                                                               # if that fails, search other deployments
-            link_path = self.search_deployments_for_link_path(link_name)
-          end
         end
 
         new(link_path[:deployment], link_path[:job], link_path[:template], link_name, "#{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_name}")
@@ -47,10 +44,10 @@ module Bosh::Director
             end
           end
         end
-        return nil
+        raise "Can't find link with name: #{name} in deployment #{deployment_plan.name}"
       end
 
-      def self.find_deployment_and_get_link_path(deployment_name)
+      def self.find_deployment_and_get_link_path(deployment_name, link_name)
         deployment_model = nil
         Models::Deployment.each do |dep|
           # find the named deployment
