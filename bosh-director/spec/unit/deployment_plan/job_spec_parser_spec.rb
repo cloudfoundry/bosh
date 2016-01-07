@@ -286,10 +286,10 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               expect(job.templates).to eq([template])
             end
 
-            it 'sets link paths specified in templates' do
-              job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
-            end
+            # it 'sets link paths specified in templates' do
+            #   job = parser.parse(job_spec)
+            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
+            # end
           end
 
           context 'when job does not specify a release' do
@@ -324,10 +324,10 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               expect(job.templates).to eq([template])
             end
 
-            it 'sets link paths specified in templates' do
-              job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
-            end
+            # it 'sets link paths specified in templates' do
+            #   job = parser.parse(job_spec)
+            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
+            # end
           end
         end
 

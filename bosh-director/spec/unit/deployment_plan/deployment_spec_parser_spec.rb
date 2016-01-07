@@ -304,6 +304,8 @@ module Bosh::Director
                 { 'name' => 'job1-name' },
                 { 'name' => 'job2-name' },
               ])
+              expect(job1).to receive(:link_infos).and_return({})
+              expect(job2).to receive(:link_infos).and_return({})
             end
 
             let(:job1) do
@@ -317,6 +319,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job2-name',
                 canonical_name: 'job2-canonical-name',
+                link_infos: nil
               })
             end
 
@@ -340,6 +343,7 @@ module Bosh::Director
               allow(DeploymentPlan::Job).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
                 and_return(job2)
+
 
               expect(parsed_deployment.job('job1-name')).to eq(job1)
               expect(parsed_deployment.job('job2-name')).to eq(job2)
@@ -400,6 +404,48 @@ module Bosh::Director
 
           it 'parses jobs and return empty array' do
             expect(parsed_deployment.jobs).to eq([])
+          end
+        end
+      end
+
+      describe 'links' do
+        context 'when a job consumes a link' do
+          before do
+            manifest_hash.merge!('jobs' => [
+                                     { 'name' => 'job1-name',
+                                       'templates' => {
+                                           'name' => 'provides_template',
+                                           'consumes' => {
+                                               'link_name' => {'from' => 'link_name'}
+                                           }
+                                       }
+                                     }
+                                 ])
+          end
+          let(:job1) do
+            instance_double('Bosh::Director::DeploymentPlan::Job',
+              {
+                  name: 'job1-name',
+                  canonical_name: 'job1-canonical-name',
+                  link_infos: {
+                      'provides_template' => {
+                          'consumes' => {
+                              'link_name' => {
+                                  'name' => 'link_name',
+                                  'type' => 'link_type'
+                              }
+                          }
+                      }
+                  },
+              })
+          end
+          let(:link_path) {DeploymentPlan::LinkPath.new('deployment_name', 'job_name', 'provides_template', 'link_name', 'deployment_name.job_name.provides_template.link_name')}
+          it 'should have a link_path' do
+            allow(DeploymentPlan::Job).to receive(:parse).
+              and_return(job1)
+            expect(DeploymentPlan::LinkPath).to receive(:parse).and_return(link_path)
+            expect(job1).to receive(:add_link_path).with("provides_template", 'link_name', link_path)
+            expect(parsed_deployment.job('job1-name').name).to eq('job1-name')
           end
         end
       end

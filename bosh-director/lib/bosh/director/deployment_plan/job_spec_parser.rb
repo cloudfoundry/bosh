@@ -116,7 +116,6 @@ module Bosh::Director
 
       def parse_templates
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
-
         if templates
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)

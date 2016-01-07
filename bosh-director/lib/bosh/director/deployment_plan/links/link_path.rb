@@ -11,7 +11,7 @@ module Bosh::Director
           deployment_name = link_name
           link_name = parts.shift
           if parts.size >= 1
-            raise "From string #{from_where} is porrshould look like 'link_name' or 'deployment_name.link_name'."
+            raise "From string #{from_where} is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'"
           end
 
           if deployment_name == deployment_plan.name

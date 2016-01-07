@@ -36,7 +36,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'mysql',
           'templates' => [
-            {'name' => 'mysql-template', 'release' => 'fake-release'}
+            {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db'}}}
           ],
           'resource_pool' => 'fake-resource-pool',
           'instances' => 2,
@@ -324,7 +324,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("From string one.two.three is poorly formated. It should look like 'link_name' or 'deployment_name.link_name'")
+        }.to raise_error("From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'")
       end
     end
 
@@ -334,7 +334,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("Can't find link with name c in any deployment")
+        }.to raise_error("Can't find link with name: c in deployment fake-deployment")
       end
     end
 
@@ -452,7 +452,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {
               'name' => 'mysql',
               'templates' => [
-                {'name' => 'mysql-template', 'release' => 'fake-release'}
+                {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db'}}}
               ],
               'resource_pool' => 'fake-resource-pool',
               'instances' => 2,
