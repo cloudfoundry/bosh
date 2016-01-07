@@ -14,6 +14,15 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       expect(runtime_config.created_at).to_not be_nil
       expect(runtime_config.properties).to eq(valid_runtime_manifest)
     end
+
+    it "throws an error if the version of a release is `latest'" do
+      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.simple_runtime_config_latest_release)
+      expect {
+        manager.update(invalid_manifest)
+      }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
+           "Runtime manifest contains the release `release1' with version as `latest'. " +
+               "Please specify the actual version string."
+    end
   end
 
   describe '#list' do

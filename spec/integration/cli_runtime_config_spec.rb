@@ -48,4 +48,16 @@ describe "cli runtime config", type: :integration do
       expect(bosh_runner.run("runtime-config")).to include(runtime_config)
     end
   end
+
+  it "gives an error when release version is `latest'" do
+    bosh_runner.run("target #{current_sandbox.director_url}")
+    bosh_runner.run("login test test")
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config_latest_release))
+      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530001: Runtime " +
+        "manifest contains the release `release1' with version as `latest'. Please specify the actual version string.")
+    end
+  end
+
 end

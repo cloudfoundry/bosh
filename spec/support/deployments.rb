@@ -30,6 +30,12 @@ module Bosh::Spec
        })
     end
 
+    def self.simple_runtime_config_latest_release
+      minimal_cloud_config.merge({
+           'releases' => [{"name" => 'release1', "version" => "latest"}]
+       })
+    end
+
     def self.network(options = {})
       {
         'name' => 'a',

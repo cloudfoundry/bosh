@@ -264,4 +264,9 @@ module Bosh::Director
 
   #Deleting Disk
   DeletingPersistentDiskError = err(520000)
+
+  # Addons
+  RuntimeAmbiguousReleaseSpec = err(530000)
+  RuntimeInvalidReleaseVersion = err(530001)
+
 end
