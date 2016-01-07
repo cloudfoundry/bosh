@@ -23,7 +23,7 @@ module Bosh::Director
           instance = instance_plan.instance
 
           pool.process do
-            with_thread_name("create_missing_vm(#{instance.model.to_s}/#{total})") do
+            with_thread_name("create_missing_vm(#{instance.model}/#{total})") do
               event_log.track(instance.model.to_s) do
                 @logger.info('Creating missing VM')
                 disks = [instance.model.persistent_disk_cid].compact

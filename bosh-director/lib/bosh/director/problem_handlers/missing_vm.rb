@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       resolution :recreate_vm do
-        plan { "Recreate VM for '#{@instance.to_s}'" }
+        plan { "Recreate VM for '#{@instance}'" }
         action { recreate_vm(@instance) }
       end
 

@@ -40,7 +40,7 @@ module Bosh::Director
     end
 
     def recreate_vm(instance)
-      @logger.debug("Recreating Vm: #{@instance.to_s})")
+      @logger.debug("Recreating Vm: #{@instance})")
       existing_vm_env = instance.vm_env
 
       validate_spec(instance.spec)

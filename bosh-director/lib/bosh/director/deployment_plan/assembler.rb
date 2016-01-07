@@ -66,7 +66,7 @@ module Bosh::Director
         existing_instances.each do |existing_instance|
           if existing_instance.vm_cid
             pool.process do
-              with_thread_name("binding agent state for (#{existing_instance.to_s}") do
+              with_thread_name("binding agent state for (#{existing_instance}") do
                 # getting current state to obtain IP of dynamic networks
                 state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
                 lock.synchronize do

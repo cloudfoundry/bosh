@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       def description
-        "#{@instance.to_s} (#{@instance.vm_cid}) is not responding"
+        "#{@instance} (#{@instance.vm_cid}) is not responding"
       end
 
       resolution :ignore do
@@ -33,7 +33,7 @@ module Bosh::Director
       end
 
       resolution :recreate_vm do
-        plan { "Recreate VM for '#{@instance.to_s}'" }
+        plan { "Recreate VM for '#{@instance}'" }
         action { validate; recreate_vm(@instance) }
       end
 
