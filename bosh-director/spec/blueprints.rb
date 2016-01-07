@@ -79,12 +79,6 @@ module Bosh::Director::Models
     manifest  { Sham.manifest }
   end
 
-  Vm.blueprint do
-    deployment  { Deployment.make }
-    agent_id    { Sham.agent_id }
-    cid         { Sham.vm_cid }
-  end
-
   Instance.blueprint do
     deployment  { Deployment.make }
     job         { Sham.job }
