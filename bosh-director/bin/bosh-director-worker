@@ -81,7 +81,7 @@ begin
   Bosh::Director::App.new(config)
 
   Delayed::Worker.destroy_failed_jobs = true
-  Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 5
+  Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 1
   Delayed::Worker.max_attempts = 0
   Delayed::Worker.max_run_time = 31536000
 
