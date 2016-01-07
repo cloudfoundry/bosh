@@ -35,6 +35,7 @@ require 'securerandom'
 require 'yajl'
 require 'nats/client'
 require 'securerandom'
+require 'delayed_job_sequel'
 
 require 'common/thread_formatter'
 require 'bosh/core/encryption_handler'

@@ -117,7 +117,7 @@ module Bosh::Dev
               end
               allow(FileUtils).to receive(:cp).with(%r{/tmp/all_the_gems/\d+/fake-dep-name-for-bosh-director-#{Regexp.escape('1.2.3.gem')}}, %r{.*/release/src/bosh/bosh-director/vendor/cache}).and_raise(Errno::ENOENT)
 
-              expect { gem_components.build_release_gems }.to raise_error(Bundler::GemNotFound, "Could not find gem 'fake-dep-name-for-agent_client' in the current bundle.")
+              expect { gem_components.build_release_gems }.to raise_error(SystemExit)
             end
           end
         end

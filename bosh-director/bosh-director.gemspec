@@ -64,7 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.1.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
-  spec.add_dependency 'delayed_job_sequel', '~>4.0.1'
+  spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.1.0'
 
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'rspec'

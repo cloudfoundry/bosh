@@ -84,6 +84,7 @@ module SpecHelper
       Sequel.extension :migration
 
       connect_database(@temp_dir)
+      Delayed::Worker.backend = :sequel
 
       run_migrations
     end
