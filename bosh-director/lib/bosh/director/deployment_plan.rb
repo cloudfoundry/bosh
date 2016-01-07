@@ -5,7 +5,6 @@ end
 
 require 'bosh/director/deployment_plan/availability_zone'
 require 'bosh/director/deployment_plan/compilation_config'
-require 'bosh/director/deployment_plan/vm'
 require 'bosh/director/deployment_plan/desired_instance'
 require 'bosh/director/deployment_plan/deployment_validator'
 require 'bosh/director/deployment_plan/instance'
