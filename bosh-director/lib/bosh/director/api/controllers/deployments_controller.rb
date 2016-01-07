@@ -281,6 +281,7 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment])
 
         before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+        before_manifest.resolve_aliases
 
         after_manifest = Manifest.load_from_text(
           request.body,

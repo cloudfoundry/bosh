@@ -664,7 +664,7 @@ module Bosh::Director
           def perform
             post(
               '/fake-dep-name/diff',
-              "---\nname: fake-dep-name",
+              "---\nname: fake-dep-name\nreleases: [{'name':'simple','version':5}]",
               { 'CONTENT_TYPE' => 'text/yaml' },
             )
           end
@@ -672,7 +672,7 @@ module Bosh::Director
           before do
             Models::Deployment.create(
               :name => 'fake-dep-name',
-              :manifest => Psych.dump({'jobs' => []}),
+              :manifest => Psych.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
               cloud_config: cloud_config
             )
           end
@@ -680,7 +680,7 @@ module Bosh::Director
           context 'authenticated access' do
             before { authorize 'admin', 'admin' }
 
-            it 'returns diff' do
+            it 'returns diff with resolved aliases' do
               perform
               expect(last_response.body).to eq('{"cloud_config_id":1,"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
             end
