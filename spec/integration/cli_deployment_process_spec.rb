@@ -96,6 +96,12 @@ describe 'cli: deployment process', type: :integration do
       output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
       expect(output).to include(<<-DIFF
+  resource_pools:
+  - name: a
+-   size: 3
+    cloud_properties:
++     name: new_property
++     size: large
   jobs:
 + - name: new_job
 +   templates:
@@ -113,12 +119,6 @@ describe 'cli: deployment process', type: :integration do
 -   networks:
 -   - name: a
 -   properties: {}
-  resource_pools:
-  - name: a
--   size: 3
-    cloud_properties:
-+     name: new_property
-+     size: large
 DIFF
 )
       expect(output).to_not include('stemcell')

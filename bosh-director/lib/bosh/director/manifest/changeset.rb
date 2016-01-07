@@ -8,13 +8,6 @@ end
 module Bosh::Director
   class Changeset
     KEY_NAME = 'name'
-    INDENT = 2
-
-    class Line < Struct.new(:indent, :text, :status)
-      def to_s
-        "#{' ' * INDENT * indent}#{text}"
-      end
-    end
 
     def initialize(before, after)
       @before = before
@@ -29,24 +22,24 @@ module Bosh::Director
     end
 
     def diff(indent = 0)
-      lines = []
+      lines = DiffLines.new
 
       @merged.each_pair do |key, value|
         if @before.nil? || @before[key].nil?
-          lines += yaml_lines({key => value}, indent, 'added')
+          lines.concat(yaml_lines({key => value}, indent, 'added'))
 
         elsif @after.nil? || @after[key].nil?
-          lines += yaml_lines({key => value}, indent, 'removed')
+          lines.concat(yaml_lines({key => value}, indent, 'removed'))
 
         elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
-          lines += compare_arrays(@before[key], @after[key], key, indent)
+          lines.concat(compare_arrays(@before[key], @after[key], key, indent))
 
         elsif value.is_a?(Hash)
           changeset = Changeset.new(@before[key], @after[key])
           diff_lines = changeset.diff(indent+1)
           unless diff_lines.empty?
             lines << Line.new(indent, "#{key}:", nil)
-            lines += diff_lines
+            lines.concat(diff_lines)
           end
 
         elsif @before[key] != @after[key]
@@ -58,18 +51,18 @@ module Bosh::Director
     end
 
     def yaml_lines(value, indent, state)
-      lines = []
-      value.to_yaml(indent: INDENT).gsub("---\n", '').split("\n"). each do |line|
+      lines = DiffLines.new
+      value.to_yaml(indent: Line::INDENT).gsub("---\n", '').split("\n").each do |line|
         lines << Line.new(indent, line, state)
       end
       lines
     end
 
     def compare_arrays(old_value, new_value, parent_name, indent)
-      added   = new_value - old_value
+      added = new_value - old_value
       removed = old_value - new_value
 
-      lines = []
+      lines = DiffLines.new
 
       added.each do |elem|
         if elem.is_a?(Hash)
@@ -84,23 +77,23 @@ module Bosh::Director
 
               unless diff_lines.empty?
                 # write name if elem has been changed
-                lines += yaml_lines([{'name' => elem['name']}], indent, nil)
-                lines += diff_lines
+                lines.concat(yaml_lines([{'name' => elem['name']}], indent, nil))
+                lines.concat(diff_lines)
               end
             else
-              lines += yaml_lines([elem], indent, 'added')
+              lines.concat(yaml_lines([elem], indent, 'added'))
             end
 
           else
-            lines += yaml_lines([elem], indent, 'added')
+            lines.concat(yaml_lines([elem], indent, 'added'))
           end
         else
-          lines += yaml_lines([elem], indent, 'added')
+          lines.concat(yaml_lines([elem], indent, 'added'))
         end
       end
 
       unless removed.empty?
-        lines += yaml_lines(removed, indent, 'removed')
+        lines.concat(yaml_lines(removed, indent, 'removed'))
       end
 
       unless lines.empty?

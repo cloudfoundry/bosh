@@ -27,7 +27,7 @@ module Bosh::Director
       let(:new) { old }
 
       it 'returns no changes' do
-        expect(changeset).to be_empty
+        described_class.new({'foo'=>['bar']}, {'foo'=>['bar']}).diff.order
       end
     end
 

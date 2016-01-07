@@ -289,7 +289,7 @@ module Bosh::Director
         )
         after_manifest.resolve_aliases
 
-        diff = Changeset.new(before_manifest.to_hash, after_manifest.to_hash).diff
+        diff = before_manifest.diff(after_manifest)
 
         json_encode({
           'cloud_config_id' => deployment.cloud_config.id,
