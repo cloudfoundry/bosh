@@ -28,7 +28,7 @@ run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
 # needed to remove rsyslog-mmjsonparse on ppc64le
 # because of this issue https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
 pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
-if [ ! is_ppc64le ]; then
+if ! is_ppc64le; then
   pkg_mgr install "rsyslog-mmjsonparse"
 fi
 

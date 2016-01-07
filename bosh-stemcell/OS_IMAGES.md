@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `YeywOPDDPX0mn3WgSqpxl1gBXcQhtvWv`
+  - bump kernel to 3.19.0-43
+
 * `TTmPhUs6RDJUlQmZ.RYMu0ItfOS6FNtx`
   - update monit from 5.2.4 to 5.2.5
 
