@@ -373,13 +373,14 @@ module Bosh::Director
 
     def worker_logger
       logger = Logging::Logger.new('DirectorWorker')
+      logging_config = hash.fetch('logging', {})
       worker_logging = hash.fetch('delayed_job', {}).fetch('logging', {})
       if worker_logging.has_key?('file')
         logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: worker_logging.fetch('file'), layout: ThreadFormatter.layout))
       else
         logger.add_appenders(Logging.appenders.stdout('DirectorWorkerIO', layout: ThreadFormatter.layout))
       end
-      logger.level = Logging.levelify(worker_logging.fetch('level', 'info'))
+      logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
       logger
     end
 
