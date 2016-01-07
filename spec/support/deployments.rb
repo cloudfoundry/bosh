@@ -25,15 +25,22 @@ module Bosh::Spec
     end
 
     def self.simple_runtime_config
-      minimal_cloud_config.merge({
-           'releases' => [{"name" => 'release1', "version" => "1"}]
-       })
+      {
+        'releases' => [{"name" => 'release1', "version" => "1"}]
+      }
     end
 
-    def self.simple_runtime_config_latest_release
-      minimal_cloud_config.merge({
-           'releases' => [{"name" => 'release1', "version" => "latest"}]
-       })
+    def self.runtime_config_latest_release
+      {
+        'releases' => [{"name" => 'release1', "version" => "latest"}]
+      }
+    end
+
+    def self.runtime_config_release_missing
+      {
+        'releases' => [{"name" => 'release1', "version" => "1"}],
+        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "job1", "release" => "release2"}]}]
+      }
     end
 
     def self.network(options = {})

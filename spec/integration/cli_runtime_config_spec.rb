@@ -54,9 +54,20 @@ describe "cli runtime config", type: :integration do
     bosh_runner.run("login test test")
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config_latest_release))
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release))
       expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530001: Runtime " +
         "manifest contains the release `release1' with version as `latest'. Please specify the actual version string.")
+    end
+  end
+
+  it "gives an error when release for addon does not exist in releases section" do
+    bosh_runner.run("target #{current_sandbox.director_url}")
+    bosh_runner.run("login test test")
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing))
+      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530002: Runtime " +
+        "manifest specifies job `job1' which is defined in `release2', but `release2' is not listed in the releases section.")
     end
   end
 

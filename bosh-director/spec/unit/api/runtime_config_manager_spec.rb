@@ -16,12 +16,21 @@ describe Bosh::Director::Api::RuntimeConfigManager do
     end
 
     it "throws an error if the version of a release is `latest'" do
-      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.simple_runtime_config_latest_release)
+      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release)
       expect {
         manager.update(invalid_manifest)
       }.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
            "Runtime manifest contains the release `release1' with version as `latest'. " +
                "Please specify the actual version string."
+    end
+
+    it "throws an error if the a release used by an addon is not listed in the releases section" do
+      invalid_manifest = Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing)
+      expect {
+        manager.update(invalid_manifest)
+      }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,
+           "Runtime manifest specifies job `job1' which is defined in `release2', " +
+               "but `release2' is not listed in the releases section."
     end
   end
 
