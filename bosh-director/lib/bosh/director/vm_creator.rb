@@ -45,10 +45,11 @@ module Bosh::Director
 
     def create_for_instance_plan(instance_plan, disks)
       instance = instance_plan.instance
+      instance_model = instance.model
       @logger.info('Creating VM')
 
       create(
-        instance.model,
+        instance_model,
         instance.stemcell,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
@@ -57,18 +58,18 @@ module Bosh::Director
       )
 
       begin
-        VmMetadataUpdater.build.update(instance.model, {})
+        VmMetadataUpdater.build.update(instance_model, {})
 
-        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
+        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
         agent_client.wait_until_ready
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e
-        @logger.error("Failed to create/contact VM #{instance.model.vm_cid}: #{e.inspect}")
+        @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
         if Config.keep_unreachable_vms
           @logger.info('Keeping the VM for debugging')
         else
-          @vm_deleter.delete_for_instance_plan(instance_plan)
+          @vm_deleter.delete_for_instance(instance_model)
         end
         raise e
       end

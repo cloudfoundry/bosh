@@ -63,7 +63,8 @@ module Bosh::Director
         @logger.info("Detaching instance #{instance}")
         unless instance_plan.currently_detached?
           @disk_manager.unmount_disk_for(instance_plan)
-          @vm_deleter.delete_for_instance_plan(instance_plan)
+          instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+          @vm_deleter.delete_for_instance(instance_model)
         end
         release_obsolete_ips(instance_plan)
         instance.update_state

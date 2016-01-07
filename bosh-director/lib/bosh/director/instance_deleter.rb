@@ -22,7 +22,7 @@ module Bosh::Director
           stop(instance_plan)
         end
 
-        vm_deleter.delete_for_instance_plan(instance_plan)
+        vm_deleter.delete_for_instance(instance_model)
 
         unless instance_model.compilation
           error_ignorer.with_force_check do

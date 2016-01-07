@@ -8,12 +8,10 @@ module Bosh::Director
       @error_ignorer = ErrorIgnorer.new(force, @logger)
     end
 
-    def delete_for_instance_plan(instance_plan)
-      instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
-
-      if instance_model.vm_cid
-        delete_vm(instance_model.vm_cid)
-        instance_model.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil, vm_env_json: nil)
+    def delete_for_instance(instance)
+      if instance.vm_cid
+        delete_vm(instance.vm_cid)
+        instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
       end
     end
 

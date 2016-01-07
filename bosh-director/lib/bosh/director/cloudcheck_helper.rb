@@ -31,12 +31,11 @@ module Bosh::Director
         handler_error('VM has persistent disk attached')
       end
 
-      vm_deleter.delete_vm(instance.vm_cid)
-      delete_vm_reference(instance)
+      vm_deleter.delete_for_instance(instance)
     end
 
     def delete_vm_reference(instance)
-      instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil, vm_env_json: nil)
+      instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
     end
 
     def recreate_vm(instance)
@@ -54,7 +53,7 @@ module Bosh::Director
       )
 
       begin
-        vm_deleter.delete_for_instance_plan(instance_plan_to_delete)
+        vm_deleter.delete_for_instance(instance_plan_to_delete.existing_instance)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
