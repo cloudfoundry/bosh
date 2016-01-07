@@ -177,7 +177,7 @@ module Bosh::Director
 
           subnet = DeploymentPlan::DynamicNetworkSubnet.new('a.b.c.d', {}, ['az'])
           network = DeploymentPlan::DynamicNetwork.new('dynamic', [subnet], logger)
-          reservation = DesiredNetworkReservation.new_dynamic(instance, network)
+          reservation = DesiredNetworkReservation.new_dynamic(instance_model, network)
           instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         end
 

@@ -42,8 +42,7 @@ module Bosh::Director::DeploymentPlan
     let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
     let(:network_name) { network_spec['name'] }
     let(:instance_model) { BD::Models::Instance.make }
-    let(:instance) { instance_double(BD::DeploymentPlan::Instance, availability_zone: nil, model: instance_model) }
-    let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, network) }
+    let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
 
     describe :add do
       context 'when IP was already added in that subnet' do

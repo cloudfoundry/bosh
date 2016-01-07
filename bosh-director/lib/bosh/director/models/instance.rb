@@ -62,7 +62,7 @@ module Bosh::Director::Models
     end
 
     def to_s
-      "#{self.job}/#{self.uuid} (#{self.index})"
+      "#{self.job}/#{self.index} (#{self.uuid})"
     end
 
     def spec
