@@ -11,7 +11,6 @@ Sequel.migration do
       table.Time :failed_at                        # Set when all retries have failed (actually, by default, the record is deleted instead)
       table.String :locked_by                          # Who is working on this object (if locked)
       table.String :queue                              # The name of the queue this job is in
-      table.Time null: true
     end
 
     add_index :delayed_jobs, [:priority, :run_at], name: "delayed_jobs_priority"
