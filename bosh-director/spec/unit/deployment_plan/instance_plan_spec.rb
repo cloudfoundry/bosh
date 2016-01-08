@@ -251,7 +251,7 @@ module Bosh::Director::DeploymentPlan
                                                    'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
                                                    'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
                                                  })
-          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
+          instance_plan.existing_instance.update(vm_env: {'key' => 'previous-value'})
         end
 
         it 'returns true' do

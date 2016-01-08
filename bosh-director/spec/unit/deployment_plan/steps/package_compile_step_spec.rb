@@ -208,10 +208,7 @@ module Bosh::Director
           @director_job
         )
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times do |instance_plan, _|
-          vm_model = Models::Vm.make
-          instance_plan.instance.bind_to_vm_model(vm_model)
-        end
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
 
@@ -304,10 +301,7 @@ module Bosh::Director
         allow(@director_job).to receive(:task_checkpoint)
         allow(compiler).to receive(:with_compile_lock).and_yield
         allow(cloud).to receive(:delete_vm)
-        allow(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, _|
-          vm_model = Models::Vm.make
-          instance_plan.instance.bind_to_vm_model(vm_model)
-        end
+        allow(vm_creator).to receive(:create_for_instance_plan)
       end
 
       it 'sends information about immediate dependencies of the package being compiled' do
@@ -401,10 +395,7 @@ module Bosh::Director
       it 'reuses compilation VMs' do
         prepare_samples
 
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan, _|
-          vm_model = Models::Vm.make
-          instance_plan.instance.bind_to_vm_model(vm_model)
-        end
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times
 
         agent_client = instance_double('BD::AgentClient')
         allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
@@ -625,9 +616,8 @@ module Bosh::Director
           ip_provider: ip_provider
         )
       end
-      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {}) }
-      let(:vm) { Models::Vm.make }
-      let(:instance) { instance_double(DeploymentPlan::Instance, vm: vm) }
+      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {}, cid: 'stemcell-cid') }
+      let(:instance) { instance_double(DeploymentPlan::Instance) }
 
       context 'with reuse_compilation_vms' do
         let(:reuse_compilation_vms) { true }
@@ -667,7 +657,7 @@ module Bosh::Director
         before do
           Bosh::Director::Config.trusted_certs = DIRECTOR_TEST_CERTS
 
-          allow(vm_creator).to receive(:create).and_return(vm)
+          allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
           allow(vm_creator).to receive(:apply_state)
           allow(AgentClient).to receive_messages(with_vm_credentials_and_agent_id: client)
           allow(cloud).to receive(:delete_vm)
@@ -687,13 +677,15 @@ module Bosh::Director
               #
             end
 
-            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+            expect(Models::Instance.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)).to be_nil
           end
         end
 
         it 'should update the database with the new VM' 's trusted certs' do
-          compiler.prepare_vm(stemcell, &Proc.new {})
-          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: vm.agent_id).count).to eq(1)
+          expect {
+            compiler.prepare_vm(stemcell, &Proc.new {})
+          }.to change {
+              Models::Instance.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count}.from(0).to(1)
         end
 
         context 'when the new vm fails to start' do

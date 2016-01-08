@@ -24,7 +24,7 @@ module Bosh::Director
 
             Models::DeploymentProblem.where(
               deployment: @deployment,
-              resource_id: instance.vm.id,
+              resource_id: instance.id,
               state: 'open'
             ).update(state: 'closed')
 

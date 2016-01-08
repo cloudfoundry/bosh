@@ -29,7 +29,7 @@ module Bosh::Director
       end
 
       def dns_manager
-        @dns_manager ||= DnsManager.create
+        @dns_manager ||= DnsManagerProvider.create
       end
 
       # @return [Boolean] Has task been cancelled?

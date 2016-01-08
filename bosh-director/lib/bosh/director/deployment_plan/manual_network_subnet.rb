@@ -42,7 +42,7 @@ module Bosh::Director
           end
         end
 
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         dns_spec = safe_property(subnet_spec, 'dns', :class => Array, :optional => true)
         dns = dns_manager.dns_servers(network_name, dns_spec)
 

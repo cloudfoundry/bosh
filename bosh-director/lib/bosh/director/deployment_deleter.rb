@@ -19,10 +19,6 @@ module Bosh::Director
       event_log_stage = @event_log.begin_stage('Deleting instances', instance_plans.size)
       instance_deleter.delete_instance_plans(instance_plans, event_log_stage, max_threads: @max_threads)
 
-      # For backwards compatibility for VMs that did not have instances
-      deployment_model.reload
-      delete_vms(vm_deleter, deployment_model.vms)
-
       @event_log.begin_stage('Removing deployment artifacts', 3)
 
       @event_log.track('Detaching stemcells') do
@@ -46,23 +42,6 @@ module Bosh::Director
       @event_log.track('Destroying deployment') do
         @logger.info('Destroying deployment')
         deployment_model.destroy
-      end
-    end
-
-    private
-
-    def delete_vms(vm_deleter, vms)
-      ThreadPool.new(max_threads: @max_threads).wrap do |pool|
-        @event_log.begin_stage('Deleting idle VMs', vms.count)
-
-        vms.each do |vm|
-          pool.process do
-            @event_log.track("#{vm.cid}") do
-              @logger.info("Deleting idle vm #{vm.cid}")
-              vm_deleter.delete_vm(vm)
-            end
-          end
-        end
       end
     end
   end

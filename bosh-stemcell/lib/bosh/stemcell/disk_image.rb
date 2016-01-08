@@ -1,4 +1,5 @@
 require 'bosh/core/shell'
+require 'bosh/stemcell/arch'
 require 'tmpdir'
 
 module Bosh::Stemcell
@@ -18,6 +19,7 @@ module Bosh::Stemcell
       mount_command = "sudo mount #{device_path} #{image_mount_point}"
       shell.run(mount_command, output_command: verbose)
     rescue => e
+      puts "Failed to mount with error #{e.inspect}"
       raise e unless e.message.include?(mount_command)
 
       sleep 0.5
@@ -50,7 +52,7 @@ module Bosh::Stemcell
 
     def map_image
       @device = shell.run("sudo losetup --show --find #{image_file_path}", output_command: verbose)
-      if  Bosh::Stemcell::Arch.ppc64le?
+      if Bosh::Stemcell::Arch.ppc64le?
         # power8 guest images have a p1: PReP partition and p2: file system, we need loopp2 here
         shell.run("sudo kpartx -av #{device} | grep \"^add\" | grep \"p2 \"", output_command: verbose)
       else

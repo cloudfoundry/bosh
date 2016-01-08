@@ -22,7 +22,7 @@ module Bosh::Director
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
-          @dns_manager = DnsManager.create
+          @dns_manager = DnsManagerProvider.create
           @disk_manager = DiskManager.new(nil, @logger)
         end
 

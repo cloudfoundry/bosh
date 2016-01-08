@@ -14,7 +14,7 @@ module Bosh::Director::DeploymentPlan
         az,
         3,
         'uuid-1',
-        Bosh::Director::DnsManager.create
+        Bosh::Director::DnsManagerProvider.create
       )
     end
 

@@ -101,11 +101,11 @@ module Bosh::Director
           context 'when migrating_to job does not have existing instances' do
             let!(:migrated_job_instances) do
               instances = []
-              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, uuid: 'uuid-1')
-              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, vm: nil, uuid: 'uuid-2')
-              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, vm: nil, uuid: 'uuid-3')
-              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, vm: nil, uuid: 'uuid-4')
-              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, vm: nil, uuid: 'uuid-5')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3')
+              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4')
+              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5')
               instances
             end
 
@@ -133,19 +133,19 @@ module Bosh::Director
           context 'when migrating_to job already has existing instances' do
             let!(:existing_job_instances) do
               job_instances = []
-              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, vm: nil, index: 0, bootstrap: true, uuid: 'uuid-7')
-              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, vm: nil, index: 1, uuid: 'uuid-8')
+              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, index: 0, bootstrap: true, uuid: 'uuid-7')
+              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, index: 1, uuid: 'uuid-8')
               job_instances
             end
 
             let!(:migrated_job_instances) do
               instances = []
-              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, uuid: 'uuid-1')
-              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, vm: nil, uuid: 'uuid-2')
-              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, vm: nil, uuid: 'uuid-3')
-              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, vm: nil, uuid: 'uuid-4')
-              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, vm: nil, uuid: 'uuid-5')
-              instances << Models::Instance.make(job: 'etcd_z2', index: 2, deployment: deployment_model, vm: nil, uuid: 'uuid-6')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2')
+              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3')
+              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4')
+              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5')
+              instances << Models::Instance.make(job: 'etcd_z2', index: 2, deployment: deployment_model, uuid: 'uuid-6')
 
               instances
             end
@@ -222,7 +222,7 @@ module Bosh::Director
 
         context 'when migrated from section contains availability zone and instance models have different az' do
           before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: 'z10')
+            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: 'z10')
           end
 
           it 'raises an error' do
@@ -237,7 +237,7 @@ module Bosh::Director
 
         context 'when migrated from section contains availability zone and instance models do not have az (legacy instances)' do
           before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil)
           end
 
           it 'updates instance az' do
@@ -259,7 +259,7 @@ module Bosh::Director
             end
 
             before do
-              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil)
             end
 
             it 'raises an error' do
@@ -281,7 +281,7 @@ module Bosh::Director
             end
 
             before do
-              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, vm: nil, availability_zone: nil)
+              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil)
             end
 
             it 'succeeds' do
@@ -296,8 +296,8 @@ module Bosh::Director
       context 'when job does not need to be migrated' do
         let!(:existing_job_instances) do
           job_instances = []
-          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, vm: nil)
-          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, vm: nil)
+          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model)
+          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model)
           job_instances
         end
 

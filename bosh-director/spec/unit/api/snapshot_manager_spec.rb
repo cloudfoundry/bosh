@@ -14,23 +14,20 @@ module Bosh::Director
       allow(Config).to receive_messages(cloud: cloud)
 
       # instance 1: one disk with two snapshots
-      vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment)
-      @instance = Models::Instance.make(vm: vm, deployment: deployment, job: 'job', index: 0, uuid: '12abdc456')
+      @instance = Models::Instance.make(vm_cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment, job: 'job', index: 0, uuid: '12abdc456')
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
-      vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment)
-      instance = Models::Instance.make(vm: vm, deployment: deployment, job: 'job', index: 1, uuid: '12xyz456')
+      instance = Models::Instance.make(vm_cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment, job: 'job', index: 1, uuid: '12xyz456')
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
-      vm = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment)
-      @instance2 = Models::Instance.make(vm: vm, deployment: deployment, job: 'job2', index: 0, uuid: '12def456')
+      @instance2 = Models::Instance.make(vm_cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment, job: 'job2', index: 0, uuid: '12def456')
 
       # snapshot from another deployment
       Models::Snapshot.make
@@ -153,7 +150,6 @@ module Bosh::Director
         let(:metadata) {
           {
             agent_id: 'agent0',
-            instance_id: 1,
             director_name: 'Test Director',
             director_uuid: Config.uuid,
             deployment: 'deployment',

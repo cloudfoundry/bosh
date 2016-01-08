@@ -176,7 +176,7 @@ module Bosh::Director
           task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
-          @deployment_manager.deployment_vms_to_json(deployment)
+          @deployment_manager.deployment_instances_to_json(deployment)
         end
       end
 

@@ -12,7 +12,7 @@ module Bosh::Director
       job_renderer = JobRenderer.create
       vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
-      dns_manager = DnsManager.create
+      dns_manager = DnsManagerProvider.create
       new(
         cloud,
         logger,
@@ -63,7 +63,8 @@ module Bosh::Director
         @logger.info("Detaching instance #{instance}")
         unless instance_plan.currently_detached?
           @disk_manager.unmount_disk_for(instance_plan)
-          @vm_deleter.delete_for_instance_plan(instance_plan)
+          instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+          @vm_deleter.delete_for_instance(instance_model)
         end
         release_obsolete_ips(instance_plan)
         instance.update_state
@@ -169,7 +170,7 @@ module Bosh::Director
     end
 
     def agent(instance)
-      AgentClient.with_vm_credentials_and_agent_id(instance.model.vm.credentials, instance.model.vm.agent_id)
+      AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
     end
   end
 end

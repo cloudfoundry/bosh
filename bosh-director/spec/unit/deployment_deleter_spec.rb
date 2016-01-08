@@ -20,24 +20,17 @@ module Bosh::Director
 
       let!(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
 
-      let!(:orphaned_vm) do
-        vm = Models::Vm.make
-        vm.instance = nil
-        vm
-      end
       let!(:deployment_stemcell) { Models::Stemcell.make }
       let!(:deployment_release_version) { Models::ReleaseVersion.make }
       before do
         deployment_model.add_instance(instance_1)
         deployment_model.add_instance(instance_2)
 
-        deployment_model.add_vm(orphaned_vm)
         deployment_model.add_stemcell(deployment_stemcell)
         deployment_model.add_release_version(deployment_release_version)
         deployment_model.add_property(Models::DeploymentProperty.make)
 
         allow(instance_deleter).to receive(:delete_instance_plans)
-        allow(vm_deleter).to receive(:delete_vm).with(orphaned_vm)
         allow(deployment_model).to receive(:destroy)
       end
 
@@ -48,11 +41,6 @@ module Bosh::Director
           expect(options).to eq(max_threads: 3)
         end
 
-        deleter.delete(deployment_model, instance_deleter, vm_deleter)
-      end
-
-      it 'deletes vms without instances' do
-        expect(vm_deleter).to receive(:delete_vm).with(orphaned_vm)
         deleter.delete(deployment_model, instance_deleter, vm_deleter)
       end
 
