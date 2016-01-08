@@ -21,8 +21,7 @@ module Bosh::Director
         job: 'mysql_node',
         index: 0,
         vm_cid: 'vm-cid',
-        spec_json: '{"apply" : "spec"}',
-        vm_env: '{"vm_env" => "json"}',
+        spec: {'apply' => 'spec', 'env' => {'vm_env' => 'json'}}
       )
     end
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
@@ -79,14 +78,6 @@ module Bosh::Director
           }.to raise_error(ProblemHandlerError, 'Unable to look up VM apply spec')
         end
 
-        it "doesn't recreate VM if environment is unknown" do
-          instance.update(vm_env: nil)
-
-          expect {
-            test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, 'Unable to look up VM environment')
-        end
-
         it 'whines on invalid spec format' do
           instance.update(spec: :foo)
 
@@ -128,7 +119,6 @@ module Bosh::Director
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
-          instance.update(vm_env: {'key1' => 'value1'})
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(fake_new_agent)
 

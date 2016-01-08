@@ -260,8 +260,8 @@ module Bosh
         def env_changed?
           job = @desired_instance.job
 
-          if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
-            log_changes(__method__, @existing_instance.env, job.env.spec, @existing_instance)
+          if @existing_instance && @existing_instance.vm_env && job.env.spec != @existing_instance.vm_env
+            log_changes(__method__, @existing_instance.vm_env, job.env.spec, @existing_instance)
             return true
           end
           false

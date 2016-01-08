@@ -94,17 +94,13 @@ module Bosh::Director::Models
       self.spec_json = Yajl::Encoder.encode(spec)
     end
 
-    def env
-      vm_env
-    end
-
     def vm_env
-      return {} if vm_env_json.nil?
-      Yajl::Parser.parse(vm_env_json)
+      return {} if spec.nil?
+      spec['env'] || {}
     end
 
     def vm_env=(vm_env_hash)
-      self.vm_env_json = Yajl::Encoder.encode(vm_env_hash)
+      self.spec = (spec || {}).merge(env: vm_env_hash)
     end
 
     def credentials
