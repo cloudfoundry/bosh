@@ -132,7 +132,7 @@ module Bosh::Director
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(fake_new_agent)
 
-          allow(DnsManager).to receive(:create).and_return(dns_manager)
+          allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
         end
 
         it 'recreates the VM' do

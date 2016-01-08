@@ -12,7 +12,7 @@ module Bosh::Director
       job_renderer = JobRenderer.create
       vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
-      dns_manager = DnsManager.create
+      dns_manager = DnsManagerProvider.create
       new(
         cloud,
         logger,

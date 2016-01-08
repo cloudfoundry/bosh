@@ -77,7 +77,7 @@ module Bosh::Director
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
-        @dns_manager = DnsManager.create
+        @dns_manager = DnsManagerProvider.create
 
         @virtual_state = virtual_state
       end

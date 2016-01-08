@@ -13,6 +13,7 @@ module Bosh::Director
         :db,
         :dns,
         :dns_db,
+        # @todo @for-a-refactorer according to grep of "Config.dns_domain_name" I'm pretty sure this can be removed
         :dns_domain_name,
         :event_log,
         :logger,
@@ -149,7 +150,7 @@ module Bosh::Director
           end
         end
 
-        @dns_manager = DnsManager.create
+        @dns_manager = DnsManagerProvider.create
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 

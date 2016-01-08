@@ -10,7 +10,7 @@ module Bosh::Director
       model: BD::Models::Deployment.make
     ) }
     let(:stemcell_manager) { nil }
-    let(:dns_manager) { DnsManager.create }
+    let(:dns_manager) { DnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
     let(:cloud) { instance_double('Bosh::Cloud') }

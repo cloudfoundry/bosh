@@ -100,7 +100,7 @@ module Bosh::Director
 
       def bind_models
         stemcell_manager = Api::StemcellManager.new
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
           self,
           stemcell_manager,
@@ -120,7 +120,7 @@ module Bosh::Director
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(

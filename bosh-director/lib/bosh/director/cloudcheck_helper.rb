@@ -71,7 +71,7 @@ module Bosh::Director
         Array(instance.persistent_disk_cid)
       )
 
-      dns_manager = DnsManager.create
+      dns_manager = DnsManagerProvider.create
       dns_names_to_ip = {}
 
       instance_plan_to_create.existing_instance.spec['networks'].each do |network_name, network|
