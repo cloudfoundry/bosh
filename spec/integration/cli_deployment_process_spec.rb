@@ -72,11 +72,12 @@ describe 'cli: deployment process', type: :integration do
       deploy_from_scratch(manifest_hash: old_manifest)
 
       new_manifest = Bosh::Spec::Deployments.simple_manifest
-      new_manifest['jobs'] = [
-        Bosh::Spec::Deployments.simple_job(
-          name: 'new_job',
-          templates: [{'name' => 'foobar_without_packages'}]
-      )]
+      job_spec = Bosh::Spec::Deployments.simple_job(
+        name: 'new_job',
+        templates: [{'name' => 'foobar_without_packages'}]
+      )
+      job_spec['properties'] = {'foo' => 'bar'}
+      new_manifest['jobs'] = [job_spec]
 
       new_manifest['releases'].first['version'] = 'latest'
 
@@ -110,7 +111,8 @@ describe 'cli: deployment process', type: :integration do
 +   instances: 3
 +   networks:
 +   - name: a
-+   properties: {}
++   properties:
++     foo: <redacted>
 - - name: foobar
 -   templates:
 -   - name: foobar

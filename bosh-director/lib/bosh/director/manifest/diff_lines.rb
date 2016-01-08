@@ -5,6 +5,10 @@ module Bosh::Director
     def to_s
       "#{' ' * INDENT * indent}#{text}"
     end
+
+    def full_indent
+      indent + text[/^ */].size / INDENT
+    end
   end
 
   class DiffLines < Array
@@ -51,6 +55,28 @@ module Bosh::Director
       end
 
       self.replace(ordered_lines)
+    end
+
+    def redact_properties
+      i = 0
+      while i < self.size
+        line = self[i]
+
+        if line.text =~ /\bproperties:/
+          properties_indent = line.full_indent
+          i += 1
+          line = self[i]
+
+          while line && line.full_indent > properties_indent
+            line.text.gsub!(/: .+/, ': <redacted>') # readact hash values
+            line.text.gsub!(/- [^:]+$/, '- <redacted>') # redact array values
+            i += 1
+            line = self[i]
+          end
+        end
+        i += 1
+      end
+      self
     end
   end
 end
