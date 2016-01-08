@@ -121,7 +121,7 @@ describe 'health_monitor.yml.erb' do
               'smtp' => {
                 'from' => 'bosh@example.com',
                 'host' => '127.0.0.90',
-                'port' => '25',
+                'port' => 25,
                 'domain' => 'example.com',
                 'tls' => true,
                 'auth' => 'tls',
