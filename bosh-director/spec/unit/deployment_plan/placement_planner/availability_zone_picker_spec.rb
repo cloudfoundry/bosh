@@ -4,7 +4,9 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
+    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
+    let(:skip_drain_decider) { SkipDrain.new(true) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
     let(:deployment_subnets) do

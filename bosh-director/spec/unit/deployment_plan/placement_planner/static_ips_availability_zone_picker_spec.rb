@@ -6,10 +6,12 @@ module Bosh::Director::DeploymentPlan
 
     subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
+    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
+    let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {}) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger) }
+    let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,
@@ -86,13 +88,13 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_repo) { DeploymentRepo.new }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
-    let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {}) }
+
     let(:job) { planner.jobs.first }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
 
-    let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances)}
+    let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
     let(:availability_zones) { job.availability_zones }
     let(:new_instance_plans) { instance_plans.select(&:new?) }
     let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }

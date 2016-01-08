@@ -2,21 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
-    let(:instance) do
-      DeploymentPlan::Instance.new(
-        'fake-job-name',
-        5,
-        'started',
-        nil,
-        nil,
-        nil,
-        false,
-        deployment_model,
-        {},
-        nil,
-        logger
-      )
-    end
     let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
     let(:cloud_config) { Models::CloudConfig.make }
     let(:deployment) do
@@ -33,7 +18,6 @@ module Bosh::Director
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
     before do
-      instance.bind_existing_instance_model(instance_model)
       allow(deployment).to receive(:network).with('fake-network').and_return(network)
       allow(deployment).to receive(:ip_provider).and_return(ip_provider)
     end
@@ -51,7 +35,7 @@ module Bosh::Director
         end
 
         it 'creates reservations based on IP addresses' do
-          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance, deployment, logger)
+          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
           expect(reservations.map(&:ip)).to eq([ip1, ip2])
         end
       end
@@ -77,7 +61,7 @@ module Bosh::Director
         end
 
         it 'creates reservations for dynamic networks' do
-          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance, deployment, logger)
+          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
           expect(reservations.first).to_not be_nil
           expect(reservations.first.ip).to eq(NetAddr::CIDR.create('10.10.0.10').to_i)
         end

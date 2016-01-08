@@ -1,6 +1,7 @@
 module Bosh::Director::DeploymentPlan
   class InstanceRepository
-    def initialize(logger)
+    def initialize(network_reservation_repostory, logger)
+      @network_reservation_repository = network_reservation_repostory
       @logger = logger
     end
 
@@ -13,15 +14,7 @@ module Bosh::Director::DeploymentPlan
       instance = Instance.create_from_job(job, index, job_state, deployment.model, existing_instance_state, existing_instance_model.availability_zone, @logger)
       instance.bind_existing_instance_model(existing_instance_model)
 
-      if existing_instance_model.ip_addresses.any?
-        existing_network_reservations = InstanceNetworkReservations.create_from_db(instance, deployment, @logger)
-      elsif existing_instance_state
-        # This is for backwards compatibility when we did not store
-        # network reservations in DB and constructed them from instance state
-        existing_network_reservations = InstanceNetworkReservations.create_from_state(instance, existing_instance_state, deployment, @logger)
-      else
-        existing_network_reservations = InstanceNetworkReservations.new(@logger)
-      end
+      existing_network_reservations = @network_reservation_repository.fetch_network_reservations(existing_instance_model, existing_instance_state)
       instance.bind_existing_reservations(existing_network_reservations)
       instance
     end

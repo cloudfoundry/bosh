@@ -4,12 +4,13 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   include BD::IpUtil
 
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
-  let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, options) }
+  let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
+  let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, options) }
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
   let(:options) { {} }
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
-  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger) }
+  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
   let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model) }
   let(:deployment_model) { BD::Models::Deployment.make }
   let(:az) do
@@ -42,7 +43,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = BD::DeploymentPlan::Instance.create_from_job(job, existing_instance_model.index, 'started', deployment, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_job(job, existing_instance_model.index, 'started', deployment_model, {}, az, logger)
     instance.bind_existing_instance_model(existing_instance_model)
     instance
   end
