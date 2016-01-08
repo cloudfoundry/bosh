@@ -67,8 +67,13 @@ module Bosh::Director
       added.each do |elem|
         if elem.is_a?(Hash)
           using_names = (added+removed).all? { |e| e['name'] }
-          if using_names
-            removed_same_name_element = removed.find { |e| e['name'] == elem['name'] }
+          using_ranges = (added+removed).all? { |e| e['range'] }
+          if using_names || using_ranges
+            if using_names
+              removed_same_name_element = removed.find { |e| e['name'] == elem['name'] }
+            elsif using_ranges
+              removed_same_name_element = removed.find { |e| e['range'] == elem['range'] }
+            end
             removed.delete(removed_same_name_element)
 
             if removed_same_name_element
@@ -77,7 +82,11 @@ module Bosh::Director
 
               unless diff_lines.empty?
                 # write name if elem has been changed
-                lines.concat(yaml_lines([{'name' => elem['name']}], indent, nil))
+                if using_names
+                  lines.concat(yaml_lines([{'name' => elem['name']}], indent, nil))
+                elsif using_ranges
+                  lines.concat(yaml_lines([{'range' => elem['range']}], indent, nil))
+                end
                 lines.concat(diff_lines)
               end
             else

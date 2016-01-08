@@ -692,5 +692,51 @@ module Bosh::Director
         end
       end
     end
+
+    context 'subnet ranges' do
+      let(:old) do
+        {
+          'networks' => [
+            {
+              'name' => 'default',
+              'subnets' => [
+                {
+                  'range' => '10.10.10.0/24',
+                  'reserved' => ['10.10.10.11']
+                }
+              ]
+            }
+          ]
+        }
+      end
+
+      let(:new) do
+        {
+          'networks' => [
+            {
+              'name' => 'default',
+              'subnets' => [
+                {
+                  'range' => '10.10.10.0/24',
+                  'reserved' => ['10.10.10.15']
+                }
+              ]
+            }
+          ]
+        }
+      end
+
+      it 'treats subnets with the same range as equivalent' do
+        expect(changeset).to eq([
+          ['networks:', nil],
+          ['- name: default', nil],
+          ['  subnets:', nil],
+          ['  - range: 10.10.10.0/24', nil],
+          ['    reserved:', nil],
+          ['    - 10.10.10.15', 'added'],
+          ['    - 10.10.10.11', 'removed'],
+        ])
+      end
+    end
   end
 end
