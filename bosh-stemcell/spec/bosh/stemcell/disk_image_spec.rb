@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/stemcell/arch'
 require 'bosh/stemcell/disk_image'
 
 module Bosh::Stemcell

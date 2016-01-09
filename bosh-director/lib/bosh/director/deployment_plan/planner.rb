@@ -43,9 +43,6 @@ module Bosh::Director
       # Job instances from the old manifest that are not in the new manifest
       attr_reader :unneeded_instances
 
-      # VMs from the old manifest that are not in the new manifest
-      attr_accessor :unneeded_vms
-
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
@@ -103,7 +100,7 @@ module Bosh::Director
 
       def bind_models
         stemcell_manager = Api::StemcellManager.new
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
           self,
           stemcell_manager,
@@ -123,7 +120,7 @@ module Bosh::Director
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
@@ -155,12 +152,6 @@ module Bosh::Director
           desired_job_names.include?(instance.job) ||
             migrating_job_names.include?(instance.job)
         end
-      end
-
-      # Returns a list of Vms in the deployment (according to DB)
-      # @return [Array<Models::Vm>]
-      def vm_models
-        @model.vms
       end
 
       def skip_drain_for_job?(name)
@@ -195,12 +186,6 @@ module Bosh::Director
       # @return [Bosh::Director::DeploymentPlan::ReleaseVersion]
       def release(name)
         @releases[name]
-      end
-
-      # Adds a VM to deletion queue
-      # @param [Bosh::Director::Models::Vm] vm VM DB model
-      def mark_vm_for_deletion(vm)
-        @unneeded_vms << vm
       end
 
       def instance_plans_with_missing_vms

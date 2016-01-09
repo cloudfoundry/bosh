@@ -256,15 +256,8 @@ module Bosh::Director
         end
       end
 
-      def bind_unallocated_vms
-        instances.each do |instance|
-          instance.ensure_vm_allocated
-        end
-      end
-
       def bind_instances(ip_provider)
         instances.each(&:ensure_model_bound)
-        bind_unallocated_vms
         bind_instance_networks(ip_provider)
       end
 

@@ -112,7 +112,6 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
-          instance.bind_unallocated_vm
           spec = instance_spec.as_template_spec
 
           expect(spec['deployment']).to eq('fake-deployment')
@@ -144,7 +143,6 @@ module Bosh::Director::DeploymentPlan
       context 'when job has dynamic network' do
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
-          instance.bind_unallocated_vm
           spec = instance_spec.as_template_spec
           expect(spec['deployment']).to eq('fake-deployment')
           expect(spec['job']).to eq(job_spec)

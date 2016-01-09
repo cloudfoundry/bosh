@@ -370,20 +370,14 @@ module Bosh::Director
                        :manifest => Psych.dump({'foo' => 'bar'}))
 
             15.times do |i|
-              vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                  'deployment_id' => deployment.id
-              }
-              vm = Models::Vm.create(vm_params)
-
               instance_params = {
-                  'deployment_id' => deployment.id,
-                  'vm_id' => vm.id,
-                  'job' => "job-#{i}",
-                  'index' => i,
-                  'state' => 'started',
-                  'uuid' => "instance-#{i}"
+                'deployment_id' => deployment.id,
+                'job' => "job-#{i}",
+                'index' => i,
+                'state' => 'started',
+                'uuid' => "instance-#{i}",
+                'agent_id' => "agent-#{i}",
+                'vm_cid' => "cid-#{i}",
               }
               Models::Instance.create(instance_params)
             end

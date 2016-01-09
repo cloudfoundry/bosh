@@ -10,7 +10,7 @@ module Bosh
           @skip_drain = attrs.fetch(:skip_drain, false)
           @recreate_deployment = attrs.fetch(:recreate_deployment, false)
           @logger = attrs.fetch(:logger, Config.logger)
-          @dns_manager = DnsManager.create
+          @dns_manager = DnsManagerProvider.create
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment
@@ -261,7 +261,7 @@ module Bosh
           job = @desired_instance.job
 
           if @existing_instance && @existing_instance.env && job.env.spec != @existing_instance.env
-            log_changes(__method__, @existing_instance.vm.env, job.env.spec, @existing_instance)
+            log_changes(__method__, @existing_instance.env, job.env.spec, @existing_instance)
             return true
           end
           false

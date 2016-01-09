@@ -1,22 +1,76 @@
 module Bosh::Director
-  class DnsManager
-    attr_reader :dns_domain_name
-
+  class DnsManagerProvider
     def self.create
-      dns_config = Config.dns || {}
       dns_enabled = !!Config.dns_db # to be consistent with current behavior
-      logger = Config.logger
-      local_dns_repo = LocalDnsRepo.new(logger)
-      dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
-      dns_provider = PowerDns.new(dns_domain_name, logger)
+      if dns_enabled
+        dns_config = Config.dns || {}
+        logger = Config.logger
+        local_dns_repo = LocalDnsRepo.new(logger)
+        dns_domain_name = Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
+        dns_provider = PowerDns.new(dns_domain_name, logger)
 
-      new(dns_domain_name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger)
+        EnabledDnsManager.new(dns_domain_name, dns_config, dns_provider, local_dns_repo, logger)
+      else
+        DisabledDnsManager.new
+      end
+    end
+  end
+
+  private
+
+  class DnsManager
+    def configure_nameserver ; end
+
+    def delete_dns_for_instance(instance_model) ; end
+
+    def dns_record_name(hostname, job_name, network_name, deployment_name) ; end
+
+    # build a list of dns servers to use
+    def dns_servers(network, dns_spec, add_default_dns = true)
+      servers = nil
+
+      if dns_spec
+        servers = []
+        dns_spec.each do |dns|
+          dns = NetAddr::CIDR.create(dns)
+          unless dns.size == 1
+            raise NetworkInvalidDns,
+              "Invalid DNS for network `#{network}': must be a single IP"
+          end
+
+          servers << dns.ip
+        end
+      end
+
+      return servers unless add_default_dns
+      add_default_dns_server(servers)
     end
 
-    def initialize(dns_domain_name, dns_config, dns_enabled, dns_provider, local_dns_repo, logger)
+    def find_dns_record(dns_record_name, ip_address) ; end
+
+    def find_dns_record_names_by_instance(instance_model) ; end
+
+    def flush_dns_cache ; end
+
+    def migrate_legacy_records(instance_model) ; end
+
+    def update_dns_record_for_instance(instance_model, dns_names_to_ip) ; end
+
+    private
+
+    def add_default_dns_server(servers)
+      servers
+    end
+  end
+
+  public
+
+  class EnabledDnsManager < DnsManager
+    attr_reader :dns_domain_name
+
+    def initialize(dns_domain_name, dns_config, dns_provider, local_dns_repo, logger)
       @dns_domain_name = dns_domain_name
       @dns_provider = dns_provider
-      @dns_enabled = dns_enabled
       @default_server = dns_config['server']
       @flush_command = dns_config['flush_command']
       @ip_address = dns_config['address']
@@ -25,12 +79,10 @@ module Bosh::Director
     end
 
     def dns_enabled?
-      @dns_enabled
+      true
     end
 
     def configure_nameserver
-      return unless dns_enabled?
-
       @dns_provider.create_or_update_nameserver(@ip_address)
     end
 
@@ -55,8 +107,6 @@ module Bosh::Director
     end
 
     def migrate_legacy_records(instance_model)
-      return unless dns_enabled?
-
       return if @local_dns_repo.find(instance_model).any?
 
       index_pattern_for_all_networks = dns_record_name(
@@ -81,8 +131,6 @@ module Bosh::Director
     end
 
     def delete_dns_for_instance(instance_model)
-      return unless dns_enabled?
-
       current_dns_records = @local_dns_repo.find(instance_model)
       if current_dns_records.empty?
         # for backwards compatibility when old instances
@@ -150,14 +198,22 @@ module Bosh::Director
 
     # add default dns server to an array of dns servers
     def add_default_dns_server(servers)
-      return servers unless dns_enabled?
-
       unless @default_server.to_s.empty? || @default_server == '127.0.0.1'
         (servers ||= []) << @default_server
         servers.uniq!
       end
 
       servers
+    end
+  end
+
+  class DisabledDnsManager < DnsManager
+    def dns_domain_name
+      nil
+    end
+
+    def dns_enabled?
+      false
     end
   end
 end

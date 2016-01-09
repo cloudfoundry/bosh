@@ -40,8 +40,7 @@ module Bosh::Director
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, nil, logger) }
-    let(:instance_model) { Models::Instance.make(vm: vm_model, state: instance_model_state) }
-    let(:vm_model) { Models::Vm.make(cid: 'vm234') }
+    let(:instance_model) { Models::Instance.make(state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }
@@ -52,7 +51,7 @@ module Bosh::Director
 
     describe 'applying state' do
       before do
-        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
         allow(agent_client).to receive(:apply)
         allow(agent_client).to receive(:run_script)
         allow(agent_client).to receive(:start)
@@ -122,7 +121,7 @@ module Bosh::Director
             expect(state_applier).to receive(:sleep).with(1.0).twice
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0' is not running after update"
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0 (uuid-1)' is not running after update"
           end
 
           it 'does not update state on the instance model' do
@@ -148,10 +147,10 @@ module Bosh::Director
           end
 
           it 'logs while waiting until instance is in desired state' do
-            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 status').ordered
-            expect(logger).to receive(:info).with('Checking if fake-job/0 has been updated after 1.0 seconds').ordered
-            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 status').ordered
-            expect(logger).to receive(:info).with('Checking if fake-job/0 has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
+            expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
 
             state_applier.post_start(1000, 2000)
           end
@@ -181,7 +180,7 @@ module Bosh::Director
             expect(state_applier).to receive(:sleep).with(1.0).twice
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotStopped, "`fake-job/0' is still running despite the stop command"
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotStopped, "`fake-job/0 (uuid-1)' is still running despite the stop command"
           end
 
           it 'does not update state on the instance model' do

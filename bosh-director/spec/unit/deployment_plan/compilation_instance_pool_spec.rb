@@ -4,8 +4,8 @@ module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
-    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}) }
+    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}, cid: 'stemcell-cid') }
+    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}, cid: 'another-stemcell-cid') }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
@@ -36,8 +36,6 @@ module Bosh::Director
       instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'a', subnets: [subnet])
     end
     let(:n_workers) { 3 }
-    let(:vm_model) { Models::Vm.make }
-    let(:another_vm_model) { Models::Vm.make }
     let(:cloud_properties) { { 'cloud' => 'properties'} }
     let(:compilation_env) { { 'compilation' => 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
@@ -64,12 +62,11 @@ module Bosh::Director
     end
 
     before do
+      allow(cloud).to receive(:create_vm)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
-      allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:cloud).and_return(instance_double('Bosh::Cloud'))
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(vm_model.credentials, vm_model.agent_id).and_return(agent_client)
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(another_vm_model.credentials, another_vm_model.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
@@ -95,33 +92,35 @@ module Bosh::Director
       end
 
       it 'defers to the vm creator to create a vm' do
-        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
-        expect(vm_creator).to receive(:create).with(
-            deployment_model,
-            stemcell,
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1', 'agent-id')
+        expect(cloud).to receive(:create_vm).with(
+            'agent-id',
+            stemcell.cid,
             cloud_properties,
             expected_network_settings,
             [],
             compilation_env
-          ).and_return(vm_model)
+          )
         action
       end
 
       it 'applies initial vm state' do
-        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'uuid-1')
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1')
         expected_apply_spec = {
           'deployment' => 'mycloud',
           'job' => {
             'name' => 'compilation-deadbeef'
           },
           'index' => 0,
-          'id' => 'uuid-1',
+          'id' => 'instance-uuid-1',
           'networks' => expected_network_settings,
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
         action
-        expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
+
+        compilation_instance = Models::Instance.find(uuid: 'instance-uuid-1')
+        expect(compilation_instance.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 
       context 'when instance creation fails' do
@@ -205,7 +204,7 @@ module Bosh::Director
         end
 
         it 'spins up vm with the correct VM type' do
-          expect(vm_creator).to receive(:create).with(
+          expect(cloud).to receive(:create_vm).with(
               anything,
               anything,
               {'instance_type' => 'big'},

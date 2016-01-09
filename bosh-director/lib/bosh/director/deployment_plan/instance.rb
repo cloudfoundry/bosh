@@ -29,9 +29,6 @@ module Bosh::Director
 
       attr_reader :availability_zone
 
-      # @return [DeploymentPlan::Vm] Associated resource pool VM
-      attr_reader :vm
-
       attr_reader :existing_network_reservations
 
       def self.create_from_job(job, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
@@ -80,7 +77,7 @@ module Bosh::Director
 
         # reservation generated from current state/DB
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
-        @dns_manager = DnsManager.create
+        @dns_manager = DnsManagerProvider.create
 
         @virtual_state = virtual_state
       end
@@ -105,16 +102,6 @@ module Bosh::Director
         end
       end
 
-      # Looks up instance model in DB and binds it to this instance spec.
-      # Instance model is created if it's not found in DB. New VM is
-      # allocated if instance DB record doesn't reference one.
-      # @return [void]
-      # TODO: This should just be responsible to allocating the VMs and not creating instance_models
-      def bind_unallocated_vm
-        ensure_model_bound
-        ensure_vm_allocated
-      end
-
       def ensure_model_bound
         @model ||= find_or_create_model
       end
@@ -130,13 +117,6 @@ module Bosh::Director
             bootstrap: false
           })
         @uuid = @model.uuid
-      end
-
-      def ensure_vm_allocated
-        @uuid = @model.uuid
-        if @model.vm.nil?
-          allocate_vm
-        end
       end
 
       def vm_type
@@ -160,8 +140,6 @@ module Bosh::Director
         @uuid = existing_instance_model.uuid
         check_model_not_bound
         @model = existing_instance_model
-        allocate_vm
-        @vm.model = existing_instance_model.vm
       end
 
       def bind_existing_reservations(reservations)
@@ -196,7 +174,7 @@ module Bosh::Director
 
       def update_trusted_certs
         agent_client.update_settings(Config.trusted_certs)
-        @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -204,7 +182,7 @@ module Bosh::Director
       end
 
       def agent_client
-        @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@model.vm.credentials, @model.vm.agent_id)
+        @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@model.credentials, @model.agent_id)
       end
 
       ##
@@ -279,32 +257,14 @@ module Bosh::Director
       #
       # @return [Boolean] true if the VM needs to be sent a new set of trusted certificates
       def trusted_certs_changed?
-        model_trusted_certs = @model.vm ? @model.vm.trusted_certs_sha1 : nil
         config_trusted_certs = Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs)
-        changed = config_trusted_certs != model_trusted_certs
-        log_changes(__method__, model_trusted_certs, config_trusted_certs) if changed
+        changed = config_trusted_certs != @model.trusted_certs_sha1
+        log_changes(__method__, @model.trusted_certs_sha1, config_trusted_certs) if changed
         changed
       end
 
       def vm_created?
-        !@vm.model.nil? && @vm.model.vm_exists?
-      end
-
-      def bind_to_vm_model(vm_model)
-        @model.update(vm: vm_model)
-        @vm.model = vm_model
-        @vm.bound_instance = self
-      end
-
-      # Allocates an VM in this job resource pool and binds current instance to that VM.
-      # @return [void]
-      def allocate_vm
-        vm = Vm.new
-
-        # VM is not created yet: let's just make it reference this instance
-        # so later it knows what it needs to become
-        vm.bound_instance = self
-        @vm = vm
+        !@model.vm_cid.nil?
       end
 
       def cloud_properties

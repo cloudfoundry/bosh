@@ -69,13 +69,11 @@ module Bosh::Director
       end
     end
 
-    describe '#get_vm_instance_and_disk' do
+    describe '#get_disk' do
       let(:instance) { double(:instance, persistent_disk_cid: 'fake-disk-cid') }
-      let(:vm) { double(:vm, instance: instance) }
 
       it 'returns vm instance and disk' do
-        vm_instance, mounted_disk_cid = problem_register.get_vm_instance_and_disk(vm)
-        expect(vm_instance).to eq(instance)
+        mounted_disk_cid = problem_register.get_disk(instance)
         expect(mounted_disk_cid).to eq('fake-disk-cid')
       end
     end

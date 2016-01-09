@@ -75,7 +75,7 @@ module Bosh::Director
 
           expect(Bosh::Director::Config.logger).to receive(:error) do |message|
             expect(message).to include("#{instance1.job}/#{instance1.index}")
-            expect(message).to include(instance1.vm.cid)
+            expect(message).to include(instance1.vm_cid)
             expect(message).to include('a helpful message')
           end
 

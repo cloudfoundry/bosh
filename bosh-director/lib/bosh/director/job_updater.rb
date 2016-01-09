@@ -41,10 +41,18 @@ module Bosh::Director
       @logger.info("Found #{instance_plans.size} instances to update")
       event_log_stage = @event_log.begin_stage('Updating job', instance_plans.size, [ @job.name ])
 
+      ordered_azs = []
+      instance_plans.each do | instance_plan |
+        unless ordered_azs.include?(instance_plan.instance.availability_zone)
+          ordered_azs.push(instance_plan.instance.availability_zone)
+        end
+      end
+
       instance_plans_by_az = instance_plans.group_by{ |instance_plan| instance_plan.instance.availability_zone }
       canaries_done = false
 
-      instance_plans_by_az.each do |az, az_instance_plans|
+      ordered_azs.each do | az |
+        az_instance_plans = instance_plans_by_az[az]
         @logger.info("Starting to update az '#{az}'")
         ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
           unless canaries_done
@@ -76,7 +84,7 @@ module Bosh::Director
       return if unneeded_instances.empty?
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
-      dns_manager = DnsManager.create
+      dns_manager = DnsManagerProvider.create
       deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
       deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight)
 

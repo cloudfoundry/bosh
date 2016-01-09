@@ -10,7 +10,7 @@ module Bosh::Director
       model: BD::Models::Deployment.make
     ) }
     let(:stemcell_manager) { nil }
-    let(:dns_manager) { DnsManager.create }
+    let(:dns_manager) { DnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
     let(:cloud) { instance_double('Bosh::Cloud') }
@@ -24,7 +24,6 @@ module Bosh::Director
         allow(deployment_plan).to receive(:jobs).and_return([])
         allow(deployment_plan).to receive(:existing_instances).and_return([])
         allow(deployment_plan).to receive(:candidate_existing_instances).and_return([])
-        allow(deployment_plan).to receive(:vm_models).and_return([])
         allow(deployment_plan).to receive(:resource_pools).and_return(nil)
         allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
@@ -99,18 +98,6 @@ module Bosh::Director
             expect { assembler.bind_models }.to raise_error('Unable to deploy manifest')
           end
         end
-      end
-
-      it 'binds unallocated VMs for each job' do
-        j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
-        j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
-        expect(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([j1, j2])
-
-        [j1, j2].each do |job|
-          expect(job).to receive(:bind_unallocated_vms).with(no_args).ordered
-        end
-
-        assembler.bind_models
       end
 
       it 'configures dns' do

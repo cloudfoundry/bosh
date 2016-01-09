@@ -8,7 +8,7 @@ module Bosh::Director
         name = safe_property(network_spec, 'name', :class => String)
         Canonicalizer.canonicalize(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
 
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
