@@ -202,7 +202,8 @@ module Bosh
 
           def create_existing_instance_plan(desired_instance, existing_instance_model)
             if desired_instance.nil?
-              @instance_plan_factory.obsolete_instance_plan(existing_instance_model, desired_instance)
+              # potentially a code path that never happens. It had been sending 2 for 1 which should have EXPLODED!!!
+              @instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             else
               @instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end

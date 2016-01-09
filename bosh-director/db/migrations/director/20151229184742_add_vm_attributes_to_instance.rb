@@ -8,12 +8,12 @@ Sequel.migration do
       add_column :trusted_certs_sha1, String, { :default => Digest::SHA1.hexdigest('') }
     end
     self[:instances].each do |row|
-      if row.vm
-        vm_cid = row.vm.cid
-        agent_id = row.vm.agent_id
-        credentials_json = row.vm.credentials_json
-        trusted_certs_sha1 = row.trusted_certs_sha1
-        vm_env_json = row.vm.env_json
+      if row[:vm]
+        vm_cid = row[:vm][:cid]
+        agent_id = row[:vm][:agent_id]
+        credentials_json = row[:vm][:credentials_json]
+        trusted_certs_sha1 = row[:vm][:trusted_certs_sha1]
+        vm_env_json = row[:vm][:env_json]
 
         row.update(
           vm_cid: vm_cid,

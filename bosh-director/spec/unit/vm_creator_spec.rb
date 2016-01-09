@@ -52,12 +52,12 @@ describe Bosh::Director::VmCreator do
   let(:reservation) do
     subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', {'ram' => '2gb'}, ['az-1'])
     network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
-    reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+    reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
   end
   let(:instance_plan) do
     desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, {}, nil)
     network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-    BD::DeploymentPlan::InstancePlan.new(existing_instance: instance.model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
+    BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
   end
 
   let(:job) do

@@ -2,10 +2,10 @@ module Bosh::Director
   class NetworkReservation
     include IpUtil
 
-    attr_reader :ip, :instance, :network, :type
+    attr_reader :ip, :instance_model, :network, :type
 
-    def initialize(instance, network)
-      @instance = instance
+    def initialize(instance_model, network)
+      @instance_model = instance_model
       @network = network
       @ip = nil
       @reserved = false
@@ -41,8 +41,8 @@ module Bosh::Director
   class ExistingNetworkReservation < NetworkReservation
     attr_reader :network_type
 
-    def initialize(instance, network, ip, network_type)
-      super(instance, network)
+    def initialize(instance_model, network, ip, network_type)
+      super(instance_model, network)
       @ip = ip_to_i(ip) if ip
       @network_type = network_type
     end
@@ -52,26 +52,25 @@ module Bosh::Director
     end
 
     def desc
-      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}' for instance #{@instance}"}"
+      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}' for instance #{@instance_model}"}"
     end
 
     def to_s
-      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}, reserved=#{reserved?}, type=#{type}}"
+      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}, reserved=#{reserved?}, type=#{type}}"
     end
   end
 
   class DesiredNetworkReservation < NetworkReservation
-    def self.new_dynamic(instance, network)
-      new(instance, network, nil, :dynamic)
+    def self.new_dynamic(instance_model, network)
+      new(instance_model, network, nil, :dynamic)
     end
 
-    def self.new_static(instance, network, ip)
-      new(instance, network, ip, :static)
+    def self.new_static(instance_model, network, ip)
+      new(instance_model, network, ip, :static)
     end
 
-    def initialize(instance, network, ip, type)
-      @instance = instance
-      @network = network
+    def initialize(instance_model, network, ip, type)
+      super(instance_model, network)
       @ip = ip_to_i(ip) if ip
       @type = type
     end
@@ -90,11 +89,11 @@ module Bosh::Director
     end
 
     def desc
-      "#{type} reservation with IP '#{formatted_ip}' for instance #{@instance}"
+      "#{type} reservation with IP '#{formatted_ip}' for instance #{@instance_model}"
     end
 
     def to_s
-      "{type=#{type}, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance}}"
+      "{type=#{type}, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}}"
     end
   end
 end

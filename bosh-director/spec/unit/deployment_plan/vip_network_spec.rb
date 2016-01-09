@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
   before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
-  let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
+  let(:instance_model) { BD::Models::Instance.make }
 
   describe :initialize do
     it "defaults cloud properties to empty hash" do
@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it "should provide the VIP network settings" do
-      reservation = BD::DesiredNetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::DesiredNetworkReservation.new_static(instance_model, @network, "0.0.0.1")
 
       expect(@network.network_settings(reservation, [])).to eq({
           "type" => "vip",
@@ -36,7 +36,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it "should fail if there are any defaults" do
-      reservation = BD::DesiredNetworkReservation.new_static(instance, @network, "0.0.0.1")
+      reservation = BD::DesiredNetworkReservation.new_static(instance_model, @network, "0.0.0.1")
 
       expect {
         @network.network_settings(reservation)
@@ -46,7 +46,5 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
         @network.network_settings(reservation, nil)
       }.not_to raise_error
     end
-
-
   end
 end

@@ -47,7 +47,7 @@ module Bosh::Director::DeploymentPlan
     let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {}} }
 
     before do
-      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, network)
       reservation.resolve_ip('192.168.0.10')
 
       instance_plan.network_plans << NetworkPlanner::Plan.new(reservation: reservation)

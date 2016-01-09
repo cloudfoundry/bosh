@@ -10,9 +10,8 @@ module Bosh::Director
         index: 0,
         deployment: deployment_model,
         cloud_properties_hash: {'foo' => 'bar'},
-        spec: spec,
+        spec: spec.merge({env: {'key1' => 'value1'}}),
         agent_id: 'agent-007',
-        vm_env_json: '{"key1": "value1"}',
         vm_cid: 'vm-cid'
       )
     end

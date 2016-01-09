@@ -163,8 +163,6 @@ module Bosh::Director
     end
 
     def validate_env(env)
-      handler_error('Unable to look up VM environment') unless env
-
       unless env.kind_of?(Hash)
         handler_error('Invalid VM environment format')
       end

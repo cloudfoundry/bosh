@@ -51,7 +51,7 @@ module Bosh::Director
           end
 
           raise NetworkReservationNotEnoughCapacity,
-            "Failed to reserve IP for '#{reservation.instance}' for manual network '#{reservation.network.name}': no more available"
+            "Failed to reserve IP for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
 
         else
 
@@ -130,12 +130,12 @@ module Bosh::Director
       end
 
       def filter_subnet_by_instance_az(reservation)
-        instance_az = reservation.instance.availability_zone
-        if instance_az.nil?
+        instance_az_name = reservation.instance_model.availability_zone
+        if instance_az_name.nil?
           reservation.network.subnets
         else
           reservation.network.subnets.select do |subnet|
-            subnet.availability_zone_names.include?(instance_az.name)
+            subnet.availability_zone_names.include?(instance_az_name)
           end
         end
       end

@@ -6,10 +6,13 @@ module Bosh::Director::DeploymentPlan
 
     subject(:planner) { NetworkPlanner::Planner.new(logger) }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance) }
-    let(:desired_instance) { DesiredInstance.new(job, instance_double(Planner, model:  Bosh::Director::Models::Deployment.make)) }
+    let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
+    let(:desired_instance) { DesiredInstance.new(job, deployment) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:job) { Job.new(logger) }
-    let(:instance) { InstanceRepository.new(logger).fetch_existing(desired_instance, instance_model, {}) }
+    let(:network_reservation_repository) {NetworkReservationRepository.new(planner, logger)}
+    let(:instance_repository) { InstanceRepository.new(network_reservation_repository, logger) }
+    let(:instance) { instance_repository.fetch_existing(instance_model, {}, job, desired_instance.index, deployment) }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(
@@ -26,7 +29,7 @@ module Bosh::Director::DeploymentPlan
       it 'creates network plan for requested instance plan and network' do
         network_plan = planner.network_plan_with_dynamic_reservation(instance_plan, job_network)
         expect(network_plan.reservation.dynamic?).to be_truthy
-        expect(network_plan.reservation.instance).to eq(instance)
+        expect(network_plan.reservation.instance_model).to eq(instance_model)
         expect(network_plan.reservation.network).to eq(deployment_network)
       end
     end
@@ -35,7 +38,7 @@ module Bosh::Director::DeploymentPlan
       it 'creates network plan with provided IP' do
         network_plan = planner.network_plan_with_static_reservation(instance_plan, job_network, '192.168.2.10')
         expect(network_plan.reservation.static?).to be_truthy
-        expect(network_plan.reservation.instance).to eq(instance)
+        expect(network_plan.reservation.instance_model).to eq(instance_model)
         expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.2.10'))
         expect(network_plan.reservation.network).to eq(deployment_network)
       end
