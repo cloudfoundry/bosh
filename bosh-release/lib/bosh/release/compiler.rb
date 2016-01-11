@@ -162,6 +162,8 @@ module Bosh
           spec["networks"] = {"type" => "dynamic"}
         when "azure"
           spec["networks"] = {"type" => "dynamic"}
+        when "softlayer"
+          spec["networks"] = {"type" => "dynamic"}
         else
           puts "WARNING: no CPI specified"
         end
