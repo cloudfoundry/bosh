@@ -4,32 +4,32 @@ module Bosh::Director
       include Enumerable
       include IpUtil
 
-      def self.create_from_state(instance, state, deployment, logger)
+      def self.create_from_state(instance_model, state, deployment, logger)
         reservations = new(logger)
-        reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance}'")
+        reservations.logger.debug("Creating instance network reservations from agent state for instance '#{instance_model}'")
 
         state.fetch('networks', []).each do |network_name, network_config|
-          reservations.add_existing(instance, deployment, network_name,  network_config['ip'], '', network_config['type'])
+          reservations.add_existing(instance_model, deployment, network_name,  network_config['ip'], '', network_config['type'])
         end
 
         reservations
       end
 
-      def self.create_from_db(instance, deployment, logger)
+      def self.create_from_db(instance_model, deployment, logger)
         reservations = new(logger)
-        reservations.logger.debug("Creating instance network reservations from database for instance '#{instance}'")
+        reservations.logger.debug("Creating instance network reservations from database for instance '#{instance_model}'")
 
-        ip_addresses = instance.model.ip_addresses.clone
+        ip_addresses = instance_model.ip_addresses.clone
 
         ip_addresses.each do |ip_address|
-          reservations.add_existing(instance, deployment, ip_address.network_name, ip_address.address, ip_address.type, 'manual')
+          reservations.add_existing(instance_model, deployment, ip_address.network_name, ip_address.address, ip_address.type, 'manual')
         end
 
-        unless instance.model.spec.nil?
+        unless instance_model.spec.nil?
           # Dynamic network reservations are not saved in DB, recreating from instance spec
-          instance.model.spec.fetch('networks', []).each do |network_name, network_config|
+          instance_model.spec.fetch('networks', []).each do |network_name, network_config|
             next unless network_config['type'] == 'dynamic'
-            reservations.add_existing(instance, deployment, network_name, network_config['ip'], '', network_config['type'])
+            reservations.add_existing(instance_model, deployment, network_name, network_config['ip'], '', network_config['type'])
           end
         end
 
@@ -59,10 +59,10 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_existing(instance, deployment, network_name, ip, ip_type, existing_network_type)
+      def add_existing(instance_model, deployment, network_name, ip, ip_type, existing_network_type)
         network = deployment.network(network_name) || deployment.deleted_network(network_name)
-        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{instance}' on network '#{network.name}'")
-        reservation = ExistingNetworkReservation.new(instance, network, ip, existing_network_type)
+        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{instance_model}' on network '#{network.name}'")
+        reservation = ExistingNetworkReservation.new(instance_model, network, ip, existing_network_type)
         deployment.ip_provider.reserve_existing_ips(reservation)
         @reservations << reservation
       end

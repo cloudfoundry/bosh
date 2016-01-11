@@ -4,7 +4,9 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner) }
+    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
+    let(:skip_drain_decider) { SkipDrain.new(true) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
     let(:deployment_subnets) do
@@ -22,8 +24,8 @@ module Bosh::Director::DeploymentPlan
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
       instance_double(InstanceRepository,
-        fetch_existing: instance_double(Instance, update_description: nil),
-        create: nil
+        fetch_existing: instance_double(Instance, update_description: nil, model: Bosh::Director::Models::Instance.make),
+        create: instance_double(Instance, model: Bosh::Director::Models::Instance.make)
       )
     end
     let(:az1) { AvailabilityZone.new('1', {}) }

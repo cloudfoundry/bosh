@@ -14,7 +14,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger) }
   let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
-  let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
+  let(:instance_model) { BD::Models::Instance.make }
 
   subject(:manual_network) do
      BD::DeploymentPlan::ManualNetwork.parse(
@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe :network_settings do
     it 'should provide the network settings from the subnet' do
-      reservation = BD::DesiredNetworkReservation.new_static(instance, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation, [])).to eq({
             'ip' => '192.168.1.2',
@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::DesiredNetworkReservation.new_static(instance, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation)).to eq({
             'ip' => '192.168.1.2',
@@ -82,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance, manual_network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, manual_network)
 
       expect {
         manual_network.network_settings(reservation)

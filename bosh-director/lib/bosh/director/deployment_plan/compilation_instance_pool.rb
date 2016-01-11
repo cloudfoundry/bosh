@@ -80,7 +80,7 @@ module Bosh::Director
         instance.bind_new_instance_model
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-        reservation = DesiredNetworkReservation.new_dynamic(instance, compilation_network)
+        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network)
         desired_instance = DeploymentPlan::DesiredInstance.new(@compile_job, nil)
         instance_plan = DeploymentPlan::InstancePlan.new(
           existing_instance: instance.model,

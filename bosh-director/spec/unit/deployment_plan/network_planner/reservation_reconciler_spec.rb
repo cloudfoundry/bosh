@@ -5,7 +5,7 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
     describe :reconcile do
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
-      let(:instance) { instance_double(Instance) }
+      let(:instance_model) { Bosh::Director::Models::Instance.make }
       let(:network) { ManualNetwork.new('my-network', subnets, logger) }
       let(:subnets) do
         [
@@ -33,16 +33,16 @@ module Bosh::Director::DeploymentPlan
       let(:desired_az) { AvailabilityZone.new('zone_1', {}) }
       let(:existing_reservations) {
         [
-          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual'),
-          BD::ExistingNetworkReservation.new(instance, network, '192.168.1.3', 'manual')
+          BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual'),
+          BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.3', 'manual')
         ]
       }
 
       before { existing_reservations.each { |reservation| reservation.mark_reserved } }
 
       context 'when desired reservations are the same as existing ones' do
-        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, network) }
-        let(:static_network_reservation) { BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.2') }
+        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
+        let(:static_network_reservation) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2') }
         let(:desired_reservations) {
           [
             static_network_reservation,
@@ -67,8 +67,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when the order of IPs changed' do
-          let(:static_network_reservation1) { BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.3') }
-          let(:static_network_reservation2) { BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.4') }
+          let(:static_network_reservation1) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.3') }
+          let(:static_network_reservation2) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.4') }
           let(:desired_reservations) {
             [
               static_network_reservation2,
@@ -99,9 +99,9 @@ module Bosh::Director::DeploymentPlan
 
       context 'when existing reservation availability zones do not match job availability zones' do
         let(:desired_az) { AvailabilityZone.new('zone_2', {}) }
-        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual')] }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual')] }
         before { existing_reservations[0].resolve_type(:dynamic) }
-        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
+        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)] }
 
         it 'not reusing existing reservations' do
           network_plans = network_planner.reconcile(existing_reservations)
@@ -129,9 +129,9 @@ module Bosh::Director::DeploymentPlan
 
       context 'when existing reservation and job do not belong to any availability zone' do
         let(:desired_az) { nil }
-        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance, network, '192.168.1.2', 'manual')] }
+        let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual')] }
         before { existing_reservations[0].resolve_type(:dynamic) }
-        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance, network)] }
+        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)] }
         let(:subnets) do
           [
             ManualNetworkSubnet.new(
@@ -156,11 +156,11 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there are new reservations' do
-        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, network) }
+        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
         let(:desired_reservations) {
           [
-            BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.2'),
-            BD::DesiredNetworkReservation.new_static(instance, network, '192.168.1.4'),
+            BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2'),
+            BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.4'),
             dynamic_network_reservation
           ]
         }
@@ -183,7 +183,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there is no desired reservations' do
-        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance, network) }
+        let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
         let(:desired_reservations) { [] }
 
         before do

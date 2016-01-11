@@ -402,10 +402,10 @@ describe Bosh::Director::DeploymentPlan::Job do
       instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
       instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
-      instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
-      instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
-      instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1, network)
-      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1, network, '10.0.0.1', 'manual')
+      instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
+      instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
+      instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
+      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1.model, network, '10.0.0.1', 'manual')
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
           desired_instance: BD::DeploymentPlan::DesiredInstance.new,
           existing_instance: nil,

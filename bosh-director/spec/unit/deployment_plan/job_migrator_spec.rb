@@ -197,6 +197,28 @@ module Bosh::Director
           end
         end
 
+        context 'when the referenced job was the original job' do
+          let(:etcd_job_spec) do
+            job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+            job['azs'] = ['z1']
+            job['migrated_from'] = [
+              {'name' => 'etcd', 'az' => 'z1'},
+            ]
+            job
+          end
+
+          it 'does not raise an error' do
+            expect {
+              job_migrator.find_existing_instances(etcd_job)
+            }.not_to raise_error
+          end
+
+          it 'returns one instance of the original job' do
+            Models::Instance.make(job: 'etcd', index: 0, deployment: deployment_model, uuid: 'uuid-1')
+            expect(job_migrator.find_existing_instances(etcd_job).count).to eq(1)
+          end
+        end
+
         context 'when two jobs migrate from the same job' do
           let(:deployment_manifest) do
             manifest = Bosh::Spec::Deployments.simple_manifest
