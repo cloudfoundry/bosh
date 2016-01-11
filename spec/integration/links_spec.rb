@@ -37,7 +37,7 @@ describe 'Links', type: :integration do
     let(:api_job_spec) do
       job_spec = Bosh::Spec::Deployments.simple_job(
         name: 'my_api',
-        templates: [{'name' => 'api_server', 'links' => links}],
+        templates: [{'name' => 'api_server', 'consumes' => links}],
         instances: 1
       )
       job_spec['azs'] = ['z1']
@@ -62,7 +62,7 @@ describe 'Links', type: :integration do
     let(:postgres_job_spec) do
       job_spec = Bosh::Spec::Deployments.simple_job(
         name: 'postgres',
-        templates: [{'name' => 'database'}],
+        templates: [{'name' => 'backup_database'}],
         instances: 1,
         static_ips: ['192.168.1.12']
       )
@@ -90,8 +90,8 @@ describe 'Links', type: :integration do
     context 'when link is provided' do
       let(:links) do
         {
-          'db' => 'simple.mysql.database.db',
-          'backup_db' => 'simple.postgres.database.backup_db'
+          'db' => {'from' => 'simple.db'},
+          'backup_db' => {'from' => 'simple.backup_db'}
         }
       end
 
@@ -155,8 +155,8 @@ describe 'Links', type: :integration do
 
       let(:links) do
         {
-          'db' => 'simple.mysql.database.db',
-          'backup_db' => 'simple.mongo.mongo_db.read_only_db',
+          'db' => {'from'=>'simple.db'},
+          'backup_db' => {'from' => 'simple.read_only_db'},
         }
       end
 
@@ -187,7 +187,7 @@ describe 'Links', type: :integration do
       let(:first_node_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'first_node',
-          templates: [{'name' => 'node', 'links' => first_node_links}],
+          templates: [{'name' => 'node', 'consumes' => first_node_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
@@ -197,15 +197,15 @@ describe 'Links', type: :integration do
 
       let(:first_node_links) do
         {
-          'node1' => 'simple.second_node.node.node1',
-          'node2' => 'simple.first_node.node.node2'
+          'node1' => {'from' => 'simple.node1'},
+          'node2' => {'from' => 'simple.node2'}
         }
       end
 
       let(:second_node_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'second_node',
-          templates: [{'name' => 'node', 'links' => second_node_links}],
+          templates: [{'name' => 'node', 'consumes' => second_node_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
@@ -214,8 +214,8 @@ describe 'Links', type: :integration do
       end
       let(:second_node_links) do
         {
-          'node1' => 'simple.first_node.node.node1',
-          'node2' => 'simple.first_node.node.node2'
+          'node1' => {'from' => 'simple.node1'},
+          'node2' => {'from' => 'simple.node2'}
         }
       end
 
@@ -226,19 +226,8 @@ describe 'Links', type: :integration do
       end
 
       it 'renders link data in job template' do
-        deploy_simple_manifest(manifest_hash: manifest)
-
-        first_node_vm = director.vm('first_node', '0')
-        first_node_template = YAML.load(first_node_vm.read_job_template('node', 'config.yml'))
-
-        expect(first_node_template['nodes']['node1_ips']).to eq(['192.168.1.11'])
-        expect(first_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
-
-        second_node_vm = director.vm('second_node', '0')
-        second_node_template = YAML.load(second_node_vm.read_job_template('node', 'config.yml'))
-
-        expect(second_node_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
-        expect(second_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
+        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).not_to eq(0)
       end
     end
 
@@ -252,7 +241,7 @@ describe 'Links', type: :integration do
       let(:first_node_job_spec) do
         Bosh::Spec::Deployments.simple_job(
           name: 'first_node',
-          templates: [{'name' => 'node', 'links' => first_node_links}],
+          templates: [{'name' => 'node', 'consumes' => first_node_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
@@ -260,23 +249,24 @@ describe 'Links', type: :integration do
 
       let(:first_node_links) do
         {
-          'node1' => 'simple.second_node.node.node1',
-          'node2' => 'simple.first_node.node.node2'
+          'node1' => {'from' => 'simple.node1'},
+          'node2' => {'from' => 'simple.node2'}
         }
       end
 
       let(:second_node_job_spec) do
         Bosh::Spec::Deployments.simple_job(
           name: 'second_node',
-          templates: [{'name' => 'node', 'links' => second_node_links}],
+          templates: [{'name' => 'node', 'consumes' => second_node_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
       end
+
       let(:second_node_links) do
         {
-          'node1' => 'broken.link.is.broken',
-          'node2' => 'other.broken.link.blah'
+          'node1' => {'from' => 'broken.broken'},
+          'node2' => {'from' =>'other.blah'}
         }
       end
 
@@ -285,13 +275,13 @@ describe 'Links', type: :integration do
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
       end
-    end
+  end
 
-    context 'when link references another deployment' do
+   context 'when link references another deployment' do
       let(:first_deployment_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'first_deployment_node',
-          templates: [{'name' => 'node', 'links' => first_deployment_links}],
+          templates: [{'name' => 'node', 'consumes' => first_deployment_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
@@ -301,8 +291,8 @@ describe 'Links', type: :integration do
 
       let(:first_deployment_links) do
         {
-          'node1' => 'first.first_deployment_node.node.node1',
-          'node2' => 'first.first_deployment_node.node.node2'
+          'node1' => {'from' => 'first.node1'},
+          'node2' => {'from' => 'first.node2'}
         }
       end
 
@@ -316,7 +306,7 @@ describe 'Links', type: :integration do
       let(:second_deployment_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'second_deployment_node',
-          templates: [{'name' => 'node', 'links' => second_deployment_links}],
+          templates: [{'name' => 'node', 'consumes' => second_deployment_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
@@ -326,8 +316,8 @@ describe 'Links', type: :integration do
 
       let(:second_deployment_links) do
         {
-          'node1' => 'first.first_deployment_node.node.node1',
-          'node2' => 'second.second_deployment_node.node.node2'
+          'node1' => {'from' => 'first.node1'},
+          'node2' => {'from' => 'second.node2'}
         }
       end
 

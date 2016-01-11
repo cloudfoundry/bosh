@@ -3,6 +3,7 @@ module Bosh::Director
     class LinkPath < Struct.new(:deployment, :job, :template, :name, :path)
 
       def self.parse(deployment_plan, link_info)
+
         from_where = link_info['from']
         parts = from_where.split('.') # the string might be formatted like 'deployment.link_name'
         link_name = parts.shift
@@ -33,18 +34,26 @@ module Bosh::Director
       private
 
       def self.get_link_path_from_deployment_plan(deployment_plan, name)
+        link_path_found = nil
         deployment_plan.jobs.each do |job|
           job.link_infos.each do |template_name, template|
             if template.has_key?('provides')
               template['provides'].to_a.each do |provides_name, source|
                 if provides_name == name
-                  return {:deployment => deployment_plan.name, :job => job.name, :template => template_name, :name => name}
+                  if link_path_found.nil?
+                    link_path_found = {:deployment => deployment_plan.name, :job => job.name, :template => template_name, :name => name}
+                  else
+                    raise "Multiple links found with name: #{name} in deployment #{deployment_plan.name}"
+                  end
                 end
               end
             end
           end
         end
-        raise "Can't find link with name: #{name} in deployment #{deployment_plan.name}"
+        if link_path_found.nil?
+          raise "Can't find link with name: #{name} in deployment #{deployment_plan.name}"
+        end
+        return link_path_found
       end
 
       def self.find_deployment_and_get_link_path(deployment_name, link_name)

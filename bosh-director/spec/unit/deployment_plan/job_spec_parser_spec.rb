@@ -12,7 +12,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       properties: {},
       update: nil,
       name: 'fake-deployment',
-      networks: [network]
+      networks: [network],
+      releases: {}
     )
   end
   let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name', [], logger) }
@@ -116,7 +117,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when the deployment has exactly one release' do
           it "picks the deployment's release" do
-            deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "")
             allow(deployment_plan).to receive(:releases).and_return([deployment_release])
 
             job = parser.parse(job_spec)
@@ -128,7 +129,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           it "does not pick a release" do
             job_spec.delete('release')
 
-            allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion'), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')])
+            allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: ""), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name:"")])
 
             job = parser.parse(job_spec)
             expect(job.release).to be_nil
@@ -262,7 +263,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             version.add_deployment(deployment_model)
           end
 
-          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
 
           context 'when job specifies a release' do
             before do
@@ -296,7 +297,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             before { job_spec.delete('release') }
 
             before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
-            let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+            let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
             let(:template) { make_template('fake-template-name', nil) }
 
             let(:provides_link) { instance_double('Bosh::Director::DeploymentPlan::Link',name: 'zz') }
@@ -356,7 +357,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             before { job_spec.delete('release') }
 
             context 'when deployment has multiple releases' do
-              before { allow(deployment_plan).to receive(:releases).and_return([double, double]) }
+              before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver, deployment_rel_ver]) }
+              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
 
               it 'raises an error because there is not default release specified' do
                 expect {
@@ -370,7 +372,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             context 'when deployment has a single release' do
               before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
-              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
 
               it 'sets job template from deployment release because first release assumed as default' do
                 template = make_template('fake-template-name', nil)

@@ -71,6 +71,40 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     end
   end
 
+  context 'given a deployment with multiple jobs providing same link' do
+    let(:path) { {"from" => 'deployment_name.link_name'} }
+    let(:extra_provider_job) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Job',
+          {
+              name: 'extra_provider_job',
+              link_infos: {
+                  'extra_provider_template' => {
+                      'provides' => {
+                          'link_name' => {
+                              'name' => 'link_name',
+                              'type' => 'link_type'
+                          }
+                      }
+                  }
+              }
+          }
+      )
+    }
+    let(:deployment) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Planner',
+          {
+              name: 'deployment_name',
+              jobs: [provider_job, extra_provider_job]
+          }
+      )
+    }
+    it 'raises error when it finds mutiple link resolutions' do
+      expect{described_class.parse(deployment,path)}.to raise_error("Multiple links found with name: link_name in deployment deployment_name")
+    end
+  end
+
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'deployment_name.unprovided_link_name'} }
     it 'should raise an exception' do

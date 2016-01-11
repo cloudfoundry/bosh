@@ -11,6 +11,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       model: deployment,
       name: 'fake-deployment',
       ip_provider: fake_ip_provider,
+      releases: {}
     )
   end
   let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
@@ -519,6 +520,46 @@ describe Bosh::Director::DeploymentPlan::Job do
 
       expect(job.needed_instance_plans).to eq(needed_instance_plans)
       expect(job.obsolete_instance_plans).to eq([instance_plan3])
+    end
+  end
+
+  describe '#add_link_info' do
+    context 'given properly formated arguments' do
+      let(:spec) do
+        {
+            'name' => 'foobar',
+            'template' => 'foo',
+            'release' => 'appcloud',
+            'vm_type' => 'dea',
+            'stemcell' => 'dea',
+            'env' => {'key' => 'value'},
+            'instances' => 1,
+            'networks'  => [{'name' => 'fake-network-name'}],
+            'properties' => props,
+            'template' => %w(foo bar),
+        }
+      end
+
+      let(:props) do
+        {
+            'cc_url' => 'www.cc.com',
+            'deep_property' => {
+                'unneeded' => 'abc',
+                'dont_override' => 'def'
+            },
+            'dea_max_memory' => 1024
+        }
+      end
+
+      before do
+        allow(plan).to receive(:properties).and_return(props)
+        allow(plan).to receive(:release).with('appcloud').and_return(release)
+      end
+      it 'should populate link_infos' do
+        job.add_link_info('template', 'provides', 'link', {'name'=>'link','type'=>'type'})
+        job.add_link_info('template', 'provides', 'link', {'from'=>'link'})
+        expect(job.link_infos).to eq({"template"=>{"provides"=>{"link"=>{"name"=>"link", "type"=>"type", "from"=>"link"}}}})
+      end
     end
   end
 end

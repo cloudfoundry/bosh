@@ -5,4 +5,3 @@ packages: []
 
 provides:
 - {name: db, type: db}
-- {name: backup_db, type: db}

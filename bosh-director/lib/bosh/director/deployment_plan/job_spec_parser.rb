@@ -116,6 +116,9 @@ module Bosh::Director
 
       def parse_templates
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
+
+        valid_release_versions = @deployment.releases.map {|r| r.name }
+        deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
         if templates
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)
@@ -148,22 +151,20 @@ module Bosh::Director
               @job.add_link_info(template_name, 'consumes', link_name, source)
             end
 
-            # TODO - change this each to a find or map or something so we don't have to loop so much
-            Models::Template.each do |template|
-              if template.name == template_name
-                @deployment.releases.each do |release|
-                  if release.name == template.release.name
-                    if template.consumes_json != nil
-                      JSON.parse(template.consumes_json).each do |consumes_json|
-                        @job.add_link_info(template_name, 'consumes', consumes_json["name"], consumes_json)
-                      end
-                    end
-                    if template.provides_json != nil
-                      JSON.parse(template.provides_json).each do |provides_json|
-                        @job.add_link_info(template_name, 'provides', provides_json["name"], provides_json)
-                      end
-                    end
-                  end
+            templates = Models::Template.where(:name => template_name).where(:release_id => deployment_release_ids)
+            if templates == nil
+              raise "Template #{template_name} not found in Template table"
+            end
+
+            templates.each do |template|
+              if template.consumes_json != nil
+                JSON.parse(template.consumes_json).each do |consumes_json|
+                  @job.add_link_info(template_name, 'consumes', consumes_json["name"], consumes_json)
+                end
+              end
+              if template.provides_json != nil
+                JSON.parse(template.provides_json).each do |provides_json|
+                  @job.add_link_info(template_name, 'provides', provides_json["name"], provides_json)
                 end
               end
             end
