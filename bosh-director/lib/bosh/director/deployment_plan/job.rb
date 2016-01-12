@@ -328,6 +328,10 @@ module Bosh::Director
         end
       end
 
+      def consumes_link_info(template_name, link_name)
+        @link_infos.fetch(template_name, {}).fetch('consumes', {}).fetch(link_name, {})
+      end
+
       def compilation?
         false
       end

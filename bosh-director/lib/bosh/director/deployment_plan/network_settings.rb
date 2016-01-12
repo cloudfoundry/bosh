@@ -61,15 +61,17 @@ module Bosh::Director::DeploymentPlan
       network_addresses
     end
 
-    def network_gateway_address
-      gateway_network_name = @default_network['gateway']
-      network_address = {}
+    def network_address(preferred_network_name)
+      network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
 
-      network_address[gateway_network_name] = {
-        'address' => network_hash[gateway_network_name]['type'] == 'dynamic' ? @dns_manager.dns_record_name(@instance_id, @job_name, gateway_network_name, @deployment_name) : network_hash[gateway_network_name]['ip']
-      }
-      return network_address
+      if network_hash[network_name]['type'] == 'dynamic'
+        address = @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+      else
+        address = network_hash[network_name]['ip']
+      end
+
+      return {network_name => {'address' => address}}
     end
   end
 end

@@ -182,8 +182,8 @@ module Bosh
           network_settings.network_addresses
         end
 
-        def network_gateway_address
-          network_settings.network_gateway_address
+        def network_address(network_name)
+          network_settings.network_address(network_name)
         end
 
         def needs_shutting_down?

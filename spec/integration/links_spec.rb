@@ -15,22 +15,40 @@ describe 'Links', type: :integration do
     end
   end
 
-  before do
-    target_and_login
-    upload_links_release
-    upload_stemcell
+  def should_contain_network_for_job(job, template, pattern)
+    my_api_vm = director.vm(job, '0', deployment: 'simple')
+    template = YAML.load(my_api_vm.read_job_template(template, 'config.yml'))
+
+    template['databases'].each do |_, database|
+      database.each do |node|
+        node['networks'].each do |network|
+          expect(network['address']).to match(pattern)
+        end
+      end
+    end
+  end
+
+  let(:cloud_config) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
     cloud_config_hash['compilation']['az'] = 'z1'
     cloud_config_hash['networks'] << {
-      'name' => 'dynamic-network',
-      'type' => 'dynamic',
-      'subnets' => [{'az' => 'z1'}]
+        'name' => 'dynamic-network',
+        'type' => 'dynamic',
+        'subnets' => [{'az' => 'z1'}]
     }
 
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    cloud_config_hash
+  end
+
+  before do
+    target_and_login
+    upload_links_release
+    upload_stemcell
+
+    upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
   context 'when job requires link' do
@@ -337,6 +355,89 @@ describe 'Links', type: :integration do
 
         expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
         expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
+      end
+    end
+
+    describe 'network resolution' do
+
+      context 'when user specifies a network in consumes' do
+
+        let(:links) do
+          {
+              'db' => {'from' => 'simple.db', 'network' => 'b'},
+              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'b'}
+          }
+        end
+
+        it 'overrides the default network' do
+          cloud_config['networks'] << {
+              'name' => 'b',
+              'type' => 'dynamic',
+              'subnets' => [{'az' => 'z1'}]
+          }
+
+          mysql_job_spec['networks'] << {
+              'name' => 'b'
+          }
+
+          postgres_job_spec['networks'] << {
+              'name' => 'dynamic-network',
+              'default' => ['dns', 'gateway']
+          }
+
+          postgres_job_spec['networks'] << {
+              'name' => 'b'
+          }
+
+          upload_cloud_config(cloud_config_hash: cloud_config)
+          deploy_simple_manifest(manifest_hash: manifest)
+          should_contain_network_for_job('my_api', 'api_server', /.b./)
+        end
+
+        it 'raise an error if network name specified is not one of the networks on the link' do
+          manifest['jobs'].first['templates'].first['consumes'] = {
+              'db' => {'from' => 'simple.db', 'network' => 'invalid_network'},
+              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
+          }
+
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Error 130002: Network name 'invalid_network' is not one of the networks on the link 'db'/)
+        end
+      end
+
+      context 'when user does not specify a network in consumes' do
+
+        let(:links) do
+          {
+              'db' => {'from' => 'simple.db'},
+              'backup_db' => {'from' => 'simple.backup_db'}
+          }
+        end
+
+        it 'uses the network from link when only one network is available' do
+
+          mysql_job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'mysql',
+              templates: [{'name' => 'database'}],
+              instances: 1,
+              static_ips: ['192.168.1.10']
+          )
+          mysql_job_spec['azs'] = ['z1']
+
+          manifest['jobs'] = [api_job_spec, mysql_job_spec, postgres_job_spec]
+
+          deploy_simple_manifest(manifest_hash: manifest)
+          should_contain_network_for_job('my_api', 'api_server', /192.168.1.1(0|2)/)
+        end
+
+        it 'uses the default network when multiple networks are available from link' do
+          postgres_job_spec['networks'] << {
+              'name' => 'dynamic-network',
+              'default' => ['dns', 'gateway']
+          }
+          deploy_simple_manifest(manifest_hash: manifest)
+          should_contain_network_for_job('my_api', 'api_server', /.dynamic-network./)
+        end
+
       end
     end
   end

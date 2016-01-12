@@ -5,12 +5,14 @@ module Bosh::Director
     class Link
       attr_reader :name
 
-      def initialize(name, source)
+      def initialize(name, source, network_name = nil)
         @name = name
         @source = source
+        @network_name = network_name
       end
 
       def spec
+
         {
           'nodes' => @source.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
@@ -20,7 +22,7 @@ module Bosh::Director
               'index' => instance.index,
               'id' => instance.uuid,
               'az' => availability_zone,
-              'address' => instance_plan.network_gateway_address
+              'address' => instance_plan.network_address(@network_name)
             }
           end
         }
