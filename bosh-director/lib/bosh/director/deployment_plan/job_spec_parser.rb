@@ -137,37 +137,40 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.get_or_create_template(template_name)
+            template = release.get_or_create_template(template_name)
+
+            templates_from_model = Models::Template.where(:name => template_name).where(:release_id => deployment_release_ids)
+            if templates_from_model == nil
+              raise "Template #{template_name} not found in Template table"
+            end
+
+            templates_from_model.each do |template_from_model|
+              if template_from_model.consumes_json != nil
+                JSON.parse(template_from_model.consumes_json).each do |consumes_json|
+                  template.add_link_info('consumes', consumes_json["name"], consumes_json)
+                end
+              end
+              if template_from_model.provides_json != nil
+                JSON.parse(template_from_model.provides_json).each do |provides_json|
+                  template.add_link_info('provides', provides_json["name"], provides_json)
+                end
+              end
+            end
 
             provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
             @logger.debug("Parsing template provides links: #{provides_links.inspect}")
             provides_links.to_a.each do |link_name, source|
-              @job.add_link_info(template_name, "provides", link_name, source)
+              template.add_link_info("provides", link_name, source)
             end
 
             consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
             @logger.debug("Parsing template links: #{consumes_links.inspect}")
             consumes_links.to_a.each do |link_name, source|
-              @job.add_link_info(template_name, 'consumes', link_name, source)
+              template.add_link_info('consumes', link_name, source)
             end
 
-            templates = Models::Template.where(:name => template_name).where(:release_id => deployment_release_ids)
-            if templates == nil
-              raise "Template #{template_name} not found in Template table"
-            end
 
-            templates.each do |template|
-              if template.consumes_json != nil
-                JSON.parse(template.consumes_json).each do |consumes_json|
-                  @job.add_link_info(template_name, 'consumes', consumes_json["name"], consumes_json)
-                end
-              end
-              if template.provides_json != nil
-                JSON.parse(template.provides_json).each do |provides_json|
-                  @job.add_link_info(template_name, 'provides', provides_json["name"], provides_json)
-                end
-              end
-            end
+            @job.templates << template
           end
         end
       end

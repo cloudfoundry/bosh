@@ -36,7 +36,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'mysql',
           'templates' => [
-            {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db'}}}
+            {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}}}
           ],
           'resource_pool' => 'fake-resource-pool',
           'instances' => 2,
@@ -115,15 +115,16 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+    release_id = version.release_id
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links, release_id: 1)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links, release_id: 1)
     version.add_template(template_model)
 
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment', link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
@@ -139,7 +140,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
-        let(:links) { {'db' => {"from" => 'db'}} }
+        let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
@@ -178,7 +179,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when job consumes link from another deployment' do
-      let(:links) { {'db' => {"from" => 'other-deployment.db'}} }
+      let(:links) { {'db' => {"from" => 'other-deployment.db', 'name'=> 'db', "type" => "db"}} }
 
       context 'when another deployment has link source' do
         before do
@@ -232,7 +233,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when another deployment does not have link source' do
-        let(:links) { {'db' => {"from" => 'non-existent.db'}} }
+        let(:links) { {'db' => {"from" => 'non-existent.db', 'name'=> 'db', 'type' => 'db'}} }
 
         it 'fails' do
           expect {
@@ -243,7 +244,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => {"from" => 'fake-deployment.db'}} }
+      let(:links) { {'db' => {"from" => 'fake-deployment.db', 'name'=> 'db', 'type'=> 'other'}} }
 
       let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
       let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
@@ -261,7 +262,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let (:links) { {'backup_db' => {"from" => 'db'}} }
 
       let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { [{name: "db", type: "db"}] }
+      let(:provided_links) { [{'name'=> "db", 'type'=> "db"}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
@@ -300,7 +301,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when link source is does not specify deployment name' do
-      let(:links) { {'db' => {"from" => 'db'}} }
+      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_job)
@@ -309,7 +310,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when links source is not provided' do
-      let(:links) { {'db' => {"from" => 'non-existant.db'}} }
+      let(:links) { {'db' => {"from" => 'non-existant.db', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'fails' do
         expect {
@@ -319,7 +320,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when link format is invalid' do
-      let(:links) { {'db' => {"from" => 'one.two.three'}} }
+      let(:links) { {'db' => {"from" => 'one.two.three', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'fails' do
         expect {
@@ -331,6 +332,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     context 'when required link is not specified in manifest' do
       let(:links) { {'other' => {"from" => 'c'}} }
 
+      let(:consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
@@ -340,10 +342,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     context 'when link specified in manifest is not required' do
 
-      let(:links) { {'db' => {"from" => 'fake-deployment.db'}} }
+      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
       let(:consumes_links) { [] }
-      let(:provided_links) { ['db'] } # name and type is implicitly db
+      let(:provided_links) { [{'name'=>'db', 'type'=>'db'}] }
 
       it 'raises unused link error' do
         expect {
@@ -362,7 +364,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         planner
       end
 
-      let(:links) { {'db' => {'from'=>'db'}} }
+      let(:links) { {'db' => {'from'=>'db',  'name'=> 'db','type' => 'db'}} }
 
       let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
 
@@ -476,8 +478,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'adds link to job' do
         Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
         Bosh::Director::Config.current_job.task_id = 'fake-task-id'
-
-
 
         links_resolver.resolve(api_server_job)
         instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first

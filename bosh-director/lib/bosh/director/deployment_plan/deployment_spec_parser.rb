@@ -86,17 +86,16 @@ module Bosh::Director
 
       def parse_links
         @deployment.jobs.each do |current_job|
-          current_job.link_infos.each do |template_name, template|
-            if template.has_key?('consumes')
-              template['consumes'].to_a.each do |name, source|
-                link_path = LinkPath.parse(@deployment, source)
-                current_job.add_link_path(template_name, name, link_path)
+          current_job.templates.each do |template|
+            if template.link_infos.has_key?('consumes')
+              template.link_infos['consumes'].each do |name, source|
+                  link_path = LinkPath.parse(@deployment, name, source)
+                  current_job.add_link_path(template.name, name, link_path)
               end
             end
           end
         end
       end
-
     end
   end
 end

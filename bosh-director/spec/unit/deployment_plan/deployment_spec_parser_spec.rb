@@ -304,14 +304,13 @@ module Bosh::Director
                 { 'name' => 'job1-name' },
                 { 'name' => 'job2-name' },
               ])
-              expect(job1).to receive(:link_infos).and_return({})
-              expect(job2).to receive(:link_infos).and_return({})
             end
 
             let(:job1) do
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job1-name',
                 canonical_name: 'job1-canonical-name',
+                templates: []
               })
             end
 
@@ -319,7 +318,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job2-name',
                 canonical_name: 'job2-canonical-name',
-                link_infos: nil
+                templates: []
               })
             end
 
@@ -422,21 +421,27 @@ module Bosh::Director
                                      }
                                  ])
           end
+          let(:template1) do
+            instance_double('Bosh::Director::DeploymentPlan::Template',
+              {
+                name: 'provides_template',
+                link_infos:{
+                    'consumes' => {
+                        'link_name' => {
+                            'name' => 'link_name',
+                            'type' => 'link_type'
+                        }
+                    }
+                }
+              }
+            )
+          end
           let(:job1) do
             instance_double('Bosh::Director::DeploymentPlan::Job',
               {
                   name: 'job1-name',
                   canonical_name: 'job1-canonical-name',
-                  link_infos: {
-                      'provides_template' => {
-                          'consumes' => {
-                              'link_name' => {
-                                  'name' => 'link_name',
-                                  'type' => 'link_type'
-                              }
-                          }
-                      }
-                  },
+                  templates: [template1]
               })
           end
           let(:link_path) {DeploymentPlan::LinkPath.new('deployment_name', 'job_name', 'provides_template', 'link_name', 'deployment_name.job_name.provides_template.link_name')}

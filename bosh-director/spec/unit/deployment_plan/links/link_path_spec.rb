@@ -2,21 +2,28 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::LinkPath do
   let(:logger) { Logging::Logger.new('TestLogger') }
+  let(:template) {
+    instance_double(
+        'Bosh::Director::DeploymentPlan::Template',
+        {
+            name: 'provider_template',
+            link_infos: {
+                'provides' => {
+                    'link_name' => {
+                        'name' => 'link_name',
+                        'type' => 'link_type'
+                    }
+                }
+            }
+        }
+    )
+  }
   let(:provider_job) {
     instance_double(
         'Bosh::Director::DeploymentPlan::Job',
         {
             name: 'provider_job',
-            link_infos: {
-                'provider_template' => {
-                    'provides' => {
-                        'link_name' => {
-                            'name' => 'link_name',
-                            'type' => 'link_type'
-                        }
-                    }
-                }
-            }
+            templates: [template]
         }
     )
   }
@@ -41,7 +48,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a link name' do
     let(:path) { {"from" => 'link_name'} }
     it 'gets full link path' do
-      link_path = described_class.parse(deployment,path)
+      link_path = described_class.parse(deployment,"link",path)
       expect(link_path.deployment).to eq('deployment_name')
       expect(link_path.job).to eq('provider_job')
       expect(link_path.template).to eq('provider_template')
@@ -52,7 +59,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a deployment name and a link name' do
     let(:path) { {"from" => 'deployment_name.link_name'} }
     it 'gets full link path' do
-      link_path = described_class.parse(deployment,path)
+      link_path = described_class.parse(deployment,"link",path)
       expect(link_path.deployment).to eq('deployment_name')
       expect(link_path.job).to eq('provider_job')
       expect(link_path.template).to eq('provider_template')
@@ -63,7 +70,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a previous deployment name and a link name' do
     let(:path) {{'from' => 'previous_deployment.link_name'}}
     it 'gets full link path' do
-      link_path = described_class.parse(deployment,path)
+      link_path = described_class.parse(deployment,"link",path)
       expect(link_path.deployment).to eq('previous_deployment')
       expect(link_path.job).to eq('provider_job')
       expect(link_path.template).to eq('provider_template')
@@ -73,21 +80,28 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
 
   context 'given a deployment with multiple jobs providing same link' do
     let(:path) { {"from" => 'deployment_name.link_name'} }
+    let(:extra_template) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Template',
+        {
+          name: 'extra_provider_template',
+          link_infos: {
+            'provides' => {
+              'link_name' => {
+                'name' => 'link_name',
+                'type' => 'link_type'
+              }
+            }
+          }
+        }
+      )
+    }
     let(:extra_provider_job) {
       instance_double(
           'Bosh::Director::DeploymentPlan::Job',
           {
               name: 'extra_provider_job',
-              link_infos: {
-                  'extra_provider_template' => {
-                      'provides' => {
-                          'link_name' => {
-                              'name' => 'link_name',
-                              'type' => 'link_type'
-                          }
-                      }
-                  }
-              }
+              templates: [extra_template]
           }
       )
     }
@@ -101,35 +115,35 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       )
     }
     it 'raises error when it finds mutiple link resolutions' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Multiple links found with name: link_name in deployment deployment_name")
+      expect{described_class.parse(deployment,"link",path)}.to raise_error("Multiple links found with name: link_name in deployment deployment_name")
     end
   end
 
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'deployment_name.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+      expect{described_class.parse(deployment,"link",path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
     end
   end
 
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'previous_deployment.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment")
+      expect{described_class.parse(deployment,"link",path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment")
     end
   end
 
   context 'given a bad link name' do
     let(:path) { {"from" => 'unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+      expect{described_class.parse(deployment,"link",path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
     end
   end
 
   context 'given no matching deployment' do
     let(:path) { {"from" => 'non_deployment.link_name'} }
     it 'should raise an exception' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Can't find deployment non_deployment")
+      expect{described_class.parse(deployment,"link",path)}.to raise_error("Can't find deployment non_deployment")
     end
   end
 

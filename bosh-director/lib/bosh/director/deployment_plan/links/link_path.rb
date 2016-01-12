@@ -2,29 +2,28 @@ module Bosh::Director
   module DeploymentPlan
     class LinkPath < Struct.new(:deployment, :job, :template, :name, :path)
 
-      def self.parse(deployment_plan, link_info)
-
+      def self.parse(deployment_plan, link_id, link_info)
         from_where = link_info['from']
         parts = from_where.split('.') # the string might be formatted like 'deployment.link_name'
-        link_name = parts.shift
+        from_name = parts.shift
 
         if parts.size >= 1  # given a deployment name
-          deployment_name = link_name
-          link_name = parts.shift
+          deployment_name = from_name
+          from_name = parts.shift
           if parts.size >= 1
             raise "From string #{from_where} is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'"
           end
 
           if deployment_name == deployment_plan.name
-            link_path = self.get_link_path_from_deployment_plan(deployment_plan, link_name)
+            link_path = self.get_link_path_from_deployment_plan(deployment_plan, from_name)
           else
-            link_path = self.find_deployment_and_get_link_path(deployment_name, link_name)
+            link_path = self.find_deployment_and_get_link_path(deployment_name, from_name)
           end
         else  # given no deployment name
-          link_path = self.get_link_path_from_deployment_plan(deployment_plan, link_name)   # search the jobs for the current deployment for a provides
+          link_path = self.get_link_path_from_deployment_plan(deployment_plan, from_name)   # search the jobs for the current deployment for a provides
         end
 
-        new(link_path[:deployment], link_path[:job], link_path[:template], link_name, "#{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_name}")
+        new(link_path[:deployment], link_path[:job], link_path[:template], from_name, "#{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{from_name}")
       end
 
       def to_s
@@ -36,12 +35,13 @@ module Bosh::Director
       def self.get_link_path_from_deployment_plan(deployment_plan, name)
         link_path_found = nil
         deployment_plan.jobs.each do |job|
-          job.link_infos.each do |template_name, template|
-            if template.has_key?('provides')
-              template['provides'].to_a.each do |provides_name, source|
-                if provides_name == name
+          job.templates.each do |template|
+            if template.link_infos.has_key?('provides')
+              template.link_infos['provides'].to_a.each do |provides_name, source|
+                link_name = source.has_key?("as") ? source['as'] : source['name']
+                if link_name == name
                   if link_path_found.nil?
-                    link_path_found = {:deployment => deployment_plan.name, :job => job.name, :template => template_name, :name => name}
+                    link_path_found = {:deployment => deployment_plan.name, :job => job.name, :template => template.name, :name => name}
                   else
                     raise "Multiple links found with name: #{name} in deployment #{deployment_plan.name}"
                   end
@@ -56,7 +56,7 @@ module Bosh::Director
         return link_path_found
       end
 
-      def self.find_deployment_and_get_link_path(deployment_name, link_name)
+      def self.find_deployment_and_get_link_path(deployment_name, name)
         deployment_model = nil
         Models::Deployment.each do |dep|
           # find the named deployment
@@ -67,7 +67,7 @@ module Bosh::Director
         end
         # get the link path from that deployment
         if deployment_model != nil
-          return self.get_link_path_fom_deployment(deployment_model, link_name)
+          return self.get_link_path_fom_deployment(deployment_model, name)
         else
           raise "Can't find deployment #{deployment_name}"
         end
@@ -94,8 +94,7 @@ module Bosh::Director
       end
 
       def self.find_link_path_with_name(deployment, name)
-        deployment_link_spec = JSON.parse(deployment.link_spec_json)
-
+        deployment_link_spec = deployment.link_spec
         deployment_link_spec.keys.each do |job|
           deployment_link_spec[job].keys.each do |template|
             deployment_link_spec[job][template].keys.each do |link|

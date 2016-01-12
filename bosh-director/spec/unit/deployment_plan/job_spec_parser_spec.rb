@@ -280,6 +280,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
+              allow(template).to receive(:add_link_info)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -317,6 +318,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
+              allow(template).to receive(:add_link_info)
 
             end
 
@@ -1059,6 +1061,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         'Bosh::Director::DeploymentPlan::Template',
         name: name,
         release: rel_ver,
+        link_infos: {}
       )
     end
   end

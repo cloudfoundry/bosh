@@ -11,6 +11,7 @@ module Bosh::Director
 
         job.templates.each do |template|
           resolve_consumed_links(job, template)
+          ensure_all_links_in_consumes_block_are_mentioned_in_spec(job, template)
           save_provided_links(job, template)
         end
       end
@@ -18,7 +19,7 @@ module Bosh::Director
       private
 
       def resolve_consumed_links(job, template)
-        template.consumed_links.each do |consumed_link|
+        template.model_consumed_links.each do |consumed_link|
           link_name = consumed_link.name
 
           @logger.debug("Looking for link '#{link_name}' for job '#{job.name}'")
@@ -28,7 +29,7 @@ module Bosh::Director
             raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
           end
 
-          consumes_network = job.consumes_link_info(template.name, link_name)['network']
+          consumes_network = template.consumes_link_info(link_name)['network']
 
           if consumes_network
             link_provider_job = @deployment_plan.job(link_path.job)
@@ -51,8 +52,6 @@ module Bosh::Director
 
           job.add_resolved_link(link_name, link_spec)
         end
-
-        ensure_provided_links_are_used(job, template)
       end
 
       def save_provided_links(job, template)
@@ -63,10 +62,10 @@ module Bosh::Director
         end
       end
 
-      def ensure_provided_links_are_used(job, template)
+      def ensure_all_links_in_consumes_block_are_mentioned_in_spec(job, template)
         return if job.link_paths.empty?
         job.link_paths[template.name].to_a.each do |link_name, _|
-          unless template.consumed_links.map(&:name).include?(link_name)
+          unless template.model_consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
               "Template '#{template.name}' in job '#{job.name}' specifies link '#{link_name}', " +
                 "but the release job does not consume it."
