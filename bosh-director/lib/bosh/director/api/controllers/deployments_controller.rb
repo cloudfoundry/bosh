@@ -292,7 +292,7 @@ module Bosh::Director
         diff = before_manifest.diff(after_manifest)
 
         json_encode({
-          'cloud_config_id' => deployment.cloud_config.id,
+          'cloud_config_id' => deployment.cloud_config ? deployment.cloud_config.id : nil,
           'diff' => diff.map { |l| [l.to_s, l.status] }
         })
       end
