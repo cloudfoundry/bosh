@@ -2,13 +2,14 @@ require 'spec_helper'
 
 module Bosh::Director::Jobs
   describe UpdateDeployment do
-    subject(:job) { UpdateDeployment.new(manifest_path, cloud_config_id) }
+    subject(:job) { UpdateDeployment.new(manifest_path, cloud_config_id, runtime_config_id) }
 
     let(:config) { Bosh::Director::Config.load_file(asset('test-director-config.yml'))}
     let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
     let(:manifest_path) { directory.add_file('deployment.yml', manifest_content) }
     let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }
     let(:cloud_config_id) { nil }
+    let(:runtime_config_id) { nil }
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
@@ -68,6 +69,13 @@ module Bosh::Director::Jobs
         context 'when a cloud_config is passed in' do
           let(:cloud_config_id) { Bosh::Director::Models::CloudConfig.make.id }
           it 'uses the cloud config' do
+            expect(job.perform).to eq("/deployments/deployment-name")
+          end
+        end
+
+        context 'when a runtime_config is passed in' do
+          let(:runtime_config_id) { Bosh::Director::Models::RuntimeConfig.make.id }
+          it 'uses the runtime config' do
             expect(job.perform).to eq("/deployments/deployment-name")
           end
         end

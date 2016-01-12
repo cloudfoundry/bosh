@@ -34,7 +34,8 @@ module Bosh::Director
         manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
+        latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -59,7 +60,8 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = (request.content_length.nil?  || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
+        latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -268,8 +270,9 @@ module Bosh::Director
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
-        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, latest_runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 

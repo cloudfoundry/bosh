@@ -26,20 +26,27 @@ module Bosh::Spec
 
     def self.simple_runtime_config
       {
-        'releases' => [{"name" => 'release1', "version" => "1"}]
+        'releases' => [{"name" => 'test_release_2', "version" => "2"}]
       }
     end
 
     def self.runtime_config_latest_release
       {
-        'releases' => [{"name" => 'release1', "version" => "latest"}]
+        'releases' => [{"name" => 'test_release_2', "version" => "latest"}]
       }
     end
 
     def self.runtime_config_release_missing
       {
-        'releases' => [{"name" => 'release1', "version" => "1"}],
-        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "job1", "release" => "release2"}]}]
+        'releases' => [{"name" => 'test_release_2', "version" => "2"}],
+        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "job_using_pkg_2", "release" => "release2"}]}]
+      }
+    end
+
+    def self.runtime_config_with_addon
+      {
+        'releases' => [{"name" => 'dummy2', "version" => "0.2-dev"}],
+        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "dummy_with_package", "release" => "dummy2"}], "properties" => {"prop_name" => "prop_value"}}]
       }
     end
 
@@ -189,6 +196,37 @@ module Bosh::Spec
           'max_in_flight'     => 1,
           'update_watch_time' => 20
         }
+      }
+    end
+
+    def self.dummy_job
+      {
+        'name' => 'dummy',
+        'templates' => [{'name'=> 'dummy', 'release' => 'dummy'}],
+        'resource_pool' => 'a',
+        'networks' => [{'name' => 'a'}],
+        'instances' => 1
+      }
+    end
+
+    def self.dummy_deployment
+      {
+        'name' => 'dummy',
+        'director_uuid'  => 'deadbeef',
+
+        'releases' => [{
+          'name'    => 'dummy',
+          'version' => '0.2-dev' # It's our dummy valid release from spec/assets/dummy-release.tgz
+        }],
+
+        'update' => {
+            'canaries'          => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight'     => 1,
+            'update_watch_time' => 20
+        },
+
+        'jobs' => [self.dummy_job]
       }
     end
 

@@ -35,16 +35,17 @@ module Bosh
         def create_from_model(deployment_model, options={})
           manifest_hash = Psych.load(deployment_model.manifest)
           cloud_config_model = deployment_model.cloud_config
-          create_from_manifest(manifest_hash, cloud_config_model, options)
+          runtime_config_model = deployment_model.runtime_config
+          create_from_manifest(manifest_hash, cloud_config_model, runtime_config_model, options)
         end
 
-        def create_from_manifest(manifest_hash, cloud_config, options)
-          parse_from_manifest(manifest_hash, cloud_config, options)
+        def create_from_manifest(manifest_hash, cloud_config, runtime_config, options)
+          parse_from_manifest(manifest_hash, cloud_config, runtime_config, options)
         end
 
         private
 
-        def parse_from_manifest(manifest_hash, cloud_config, options)
+        def parse_from_manifest(manifest_hash, cloud_config, runtime_config, options)
           cloud_config_hash = cloud_config.nil? ? nil : cloud_config.manifest
           @manifest_validator.validate(manifest_hash, cloud_config_hash)
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config_hash)
@@ -74,6 +75,11 @@ module Bosh
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(deployment_manifest, plan_options)
+
+          if runtime_config
+            RuntimeManifestParser.new(@logger, deployment).parse(runtime_config.manifest)
+          end
+
           DeploymentValidator.new.validate(deployment)
           deployment
         end

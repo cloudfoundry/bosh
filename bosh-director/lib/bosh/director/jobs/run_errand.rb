@@ -27,6 +27,7 @@ module Bosh::Director
       deployment_name = deployment_manifest_hash['name']
       with_deployment_lock(deployment_name) do
         cloud_config_model = deployment_model.cloud_config
+        runtime_config_model = deployment_model.runtime_config
 
         deployment = nil
         job = nil
@@ -34,7 +35,7 @@ module Bosh::Director
         event_log.begin_stage('Preparing deployment', 1)
         event_log.track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-          deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+          deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, runtime_config_model, {})
           deployment.bind_models
           job = deployment.job(@errand_name)
 

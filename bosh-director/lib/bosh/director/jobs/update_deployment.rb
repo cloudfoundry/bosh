@@ -9,11 +9,12 @@ module Bosh::Director
         :update_deployment
       end
 
-      def initialize(manifest_file_path, cloud_config_id, options = {})
+      def initialize(manifest_file_path, cloud_config_id, runtime_config_id, options = {})
         @blobstore = App.instance.blobstores.blobstore
         @manifest_file_path = manifest_file_path
         @options = options
         @cloud_config_id = cloud_config_id
+        @runtime_config_id = runtime_config_id
       end
 
       def perform
@@ -30,6 +31,13 @@ module Bosh::Director
           logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
         end
 
+        runtime_config_model = Bosh::Director::Models::RuntimeConfig[@runtime_config_id]
+        if runtime_config_model.nil?
+          logger.debug("No runtime config uploaded yet.")
+        else
+          logger.debug("Runtime config:\n#{runtime_config_model.manifest}")
+        end
+
         deployment_name = deployment_manifest_hash['name']
         with_deployment_lock(deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
@@ -40,7 +48,7 @@ module Bosh::Director
           event_log.begin_stage('Preparing deployment', 1)
           event_log.track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, runtime_config_model, @options)
             deployment_plan.bind_models
           end
 

@@ -269,5 +269,6 @@ module Bosh::Director
   RuntimeAmbiguousReleaseSpec = err(530000)
   RuntimeInvalidReleaseVersion = err(530001)
   RuntimeReleaseNotListedInReleases = err(530002)
+  RuntimeInvalidDeploymentRelease = err(530003)
 
 end

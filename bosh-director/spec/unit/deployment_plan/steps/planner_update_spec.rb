@@ -63,10 +63,11 @@ module Bosh::Director::DeploymentPlan
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
           let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger) }
           let(:cloud_config) { nil }
+          let(:runtime_config) { nil }
 
           let(:deployment_plan) do
             planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config, {})
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config, runtime_config, {})
             deployment_plan.bind_models
             deployment_plan
           end

@@ -155,6 +155,10 @@ module Bosh::Director::Models
     manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
+  RuntimeConfig.blueprint do
+    manifest { Bosh::Spec::Deployments.simple_runtime_config }
+  end
+
   DeploymentProperty.blueprint do
     deployment { Deployment.make }
     name { Sham.name }
