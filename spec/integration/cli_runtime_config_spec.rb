@@ -56,7 +56,7 @@ describe "cli runtime config", type: :integration do
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release))
       expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530001: Runtime " +
-        "manifest contains the release `release1' with version as `latest'. Please specify the actual version string.")
+        "manifest contains the release `test_release_2' with version as `latest'. Please specify the actual version string.")
     end
   end
 
@@ -67,7 +67,7 @@ describe "cli runtime config", type: :integration do
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing))
       expect(bosh_runner.run("update runtime-config #{runtime_config_filename}", failure_expected: true)).to include("Error 530002: Runtime " +
-        "manifest specifies job `job1' which is defined in `release2', but `release2' is not listed in the releases section.")
+        "manifest specifies job `job_using_pkg_2' which is defined in `release2', but `release2' is not listed in the releases section.")
     end
   end
 
