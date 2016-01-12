@@ -68,7 +68,7 @@ module Bosh::Cli
     end
 
     def yaml
-      @yaml ||= Psych.dump(@hash)
+      Psych.dump(@hash)
     end
 
     # @param [Hash] manifest Deployment manifest (will be modified)
