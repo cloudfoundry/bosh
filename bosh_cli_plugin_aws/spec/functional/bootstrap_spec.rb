@@ -275,12 +275,16 @@ describe 'AWS Bootstrap commands' do
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => deployments.to_json)
 
+        stub_request(:post, 'http://127.0.0.1:25555/deployments/vpc-bosh-dev102/diff').
+          with(:headers => {'Content-Type' => 'text/yaml'}).
+          to_return(:status => 200, :body => '{"diff":[]}')
+
         stub_request(:get, 'http://127.0.0.1:25555/releases').
-            with(:headers => {'Content-Type' => 'application/json'}).
-            to_return(
+          with(:headers => {'Content-Type' => 'application/json'}).
+          to_return(
             {:status => 200, :body => '[]' },
             {:status => 200, :body => '[{"name" : "bosh", "release_versions" : [{"version" : "1"}]}]'}
-        )
+          )
 
         stub_request(:get, %r{http://blob.cfblob.com/rest/objects}).
             to_return(:status => 200)
