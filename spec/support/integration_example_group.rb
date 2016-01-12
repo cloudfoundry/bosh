@@ -91,6 +91,7 @@ module IntegrationExampleGroup
 
   def deploy(options)
     cmd = options.fetch(:no_track, false) ? '--no-track ' : ''
+    cmd += options.fetch(:no_color, false) ? '--no-color ' : ''
     cmd += 'deploy'
     cmd += options.fetch(:redact_diff, false) ? ' --redact-diff' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''

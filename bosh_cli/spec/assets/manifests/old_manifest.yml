@@ -1,7 +1,13 @@
 ---
 name: test
+releases:
+- name: simple
+  version: 2
 resource_pools:
 - name: rp
+  stemcell:
+    name: ubuntu
+    version: 1
 networks:
 - name: default
 jobs:

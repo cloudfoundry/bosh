@@ -39,6 +39,14 @@ module Bosh::Cli
       @commands[command.usage] = command
     end
 
+    def self.use_color?
+      # colorization explicitly enabled, or output is tty
+      return false if Bosh::Cli::Config.colorize == false
+
+      # colorization explicitly enabled, or output is tty
+      Bosh::Cli::Config.colorize || Bosh::Cli::Config.output.tty?
+    end
+
     def initialize(filename, work_dir = Dir.pwd)
       @filename = File.expand_path(filename || Bosh::Cli::DEFAULT_CONFIG_PATH)
       @work_dir = work_dir

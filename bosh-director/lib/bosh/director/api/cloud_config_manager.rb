@@ -18,6 +18,10 @@ module Bosh
           list(1).first
         end
 
+        def find_by_id(id)
+          Bosh::Director::Models::CloudConfig.find(id: id)
+        end
+
         private
 
         def validate_manifest!(cloud_config)

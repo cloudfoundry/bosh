@@ -92,6 +92,10 @@ require 'bosh/director/transactor'
 require 'bosh/director/sequel'
 require 'common/thread_pool'
 
+require 'bosh/director/manifest/manifest'
+require 'bosh/director/manifest/changeset'
+require 'bosh/director/manifest/diff_lines'
+
 require 'bosh/director/log_bundles_cleaner'
 require 'bosh/director/logs_fetcher'
 

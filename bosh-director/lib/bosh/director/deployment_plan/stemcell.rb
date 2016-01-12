@@ -38,10 +38,6 @@ module Bosh::Director
         @model = nil
       end
 
-      def is_using_latest_version?
-        @version == 'latest'
-      end
-
       def is_using_os?
         !@os.nil? && @name.nil?
       end
@@ -62,13 +58,9 @@ module Bosh::Director
       end
 
       def add_stemcell_model
-        if is_using_latest_version?
-          @model = is_using_os? ? @manager.latest_by_os(@os) : @manager.latest_by_name(@name)
-        else
-          @model = is_using_os? ?
-            @manager.find_by_os_and_version(@os, @version) :
-            @manager.find_by_name_and_version(@name, @version)
-        end
+        @model = is_using_os? ?
+          @manager.find_by_os_and_version(@os, @version) :
+          @manager.find_by_name_and_version(@name, @version)
 
         @name = @model.name
         @os = @model.operating_system

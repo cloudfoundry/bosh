@@ -13,6 +13,7 @@ module Bosh
         let(:runtime_config_model) { Models::RuntimeConfig.make(manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
+        let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -39,7 +40,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest_hash, cloud_config_model, runtime_config_model, plan_options)
+            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
           end
 
           it 'returns a planner' do
@@ -53,6 +54,12 @@ module Bosh
             end
 
             expect(planner.name).to eq('migrated_name')
+          end
+
+          it 'resolves aliases in manifest' do
+            manifest_hash['releases'].first['version'] = 'latest'
+            planner
+            expect(manifest_hash['releases'].first['version']).to eq('0.1-dev')
           end
 
           it 'logs the migrated manifests' do
@@ -78,7 +85,7 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest_hash, cloud_config_model, runtime_config_model, plan_options)
+              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 

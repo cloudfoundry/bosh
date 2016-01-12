@@ -65,6 +65,67 @@ describe 'cli: deployment process', type: :integration do
         ))
       end
     end
+
+    it 'shows a diff of the manifest with cloud config changes' do
+      old_manifest = Bosh::Spec::Deployments.simple_manifest
+      old_manifest['releases'].first['version'] = '0+dev.1' # latest is converted to release version in new format
+      deploy_from_scratch(manifest_hash: old_manifest)
+
+      new_manifest = Bosh::Spec::Deployments.simple_manifest
+      job_spec = Bosh::Spec::Deployments.simple_job(
+        name: 'new_job',
+        templates: [{'name' => 'foobar_without_packages'}]
+      )
+      job_spec['properties'] = {'foo' => 'bar'}
+      new_manifest['jobs'] = [job_spec]
+
+      new_manifest['releases'].first['version'] = 'latest'
+
+      new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      new_cloud_config['resource_pools'] = [
+        {
+          'name' => 'a',
+          'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
+          'stemcell' => {
+            'name' => 'ubuntu-stemcell',
+            'version' => 'latest',
+          },
+        }
+      ]
+
+      upload_cloud_config(cloud_config_hash: new_cloud_config)
+      output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
+
+      expect(output).to include(<<-DIFF
+  resource_pools:
+  - name: a
+-   size: 3
+    cloud_properties:
++     name: new_property
++     size: large
+  jobs:
++ - name: new_job
++   templates:
++   - name: foobar_without_packages
++   resource_pool: a
++   instances: 3
++   networks:
++   - name: a
++   properties:
++     foo: <redacted>
+- - name: foobar
+-   templates:
+-   - name: foobar
+-   resource_pool: a
+-   instances: 3
+-   networks:
+-   - name: a
+-   properties: {}
+DIFF
+)
+      expect(output).to_not include('stemcell')
+      expect(output).to_not include('releases')
+    end
   end
 
   describe 'bosh deployments' do

@@ -140,11 +140,7 @@ module BoshStringExtensions
     # output disabled
     return self if !Bosh::Cli::Config.output
 
-    # colorization explicitly disabled
-    return self if Bosh::Cli::Config.colorize == false
-
-    # colorization explicitly enabled, or output is tty
-    if Bosh::Cli::Config.colorize || Bosh::Cli::Config.output.tty?
+    if Bosh::Cli::Config.use_color?
       "#{COLOR_CODES[color_code]}#{self}\e[0m"
     else
       self
