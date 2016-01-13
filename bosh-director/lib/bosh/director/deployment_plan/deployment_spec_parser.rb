@@ -89,7 +89,7 @@ module Bosh::Director
           current_job.templates.each do |template|
             if template.link_infos.has_key?('consumes')
               template.link_infos['consumes'].each do |name, source|
-                  link_path = LinkPath.parse(@deployment, name, source)
+                  link_path = LinkPath.parse(@deployment, source)
                   current_job.add_link_path(template.name, name, link_path)
               end
             end

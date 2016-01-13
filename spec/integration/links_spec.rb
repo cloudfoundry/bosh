@@ -52,6 +52,16 @@ describe 'Links', type: :integration do
   end
 
   context 'when job requires link' do
+    let(:implied_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'my_api',
+          templates: [{'name' => 'api_server'}],
+          instances: 1
+      )
+      job_spec['azs'] = ['z1']
+      job_spec
+    end
+
     let(:api_job_spec) do
       job_spec = Bosh::Spec::Deployments.simple_job(
         name: 'my_api',
@@ -83,6 +93,17 @@ describe 'Links', type: :integration do
         templates: [{'name' => 'backup_database'}],
         instances: 1,
         static_ips: ['192.168.1.12']
+      )
+      job_spec['azs'] = ['z1']
+      job_spec
+    end
+
+    let(:aliased_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'aliased_postgres',
+          templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+          instances: 1,
+          static_ips: ['192.168.1.12']
       )
       job_spec['azs'] = ['z1']
       job_spec
@@ -163,8 +184,7 @@ describe 'Links', type: :integration do
       end
     end
 
-    context 'when provided and required links have different names but same type' do
-
+    context 'when consumes link is renamed by from key' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
         manifest['jobs'] = [api_job_spec, mongo_db_spec, mysql_job_spec]
@@ -248,6 +268,122 @@ describe 'Links', type: :integration do
         expect(exit_code).not_to eq(0)
       end
     end
+
+    context 'when provide and consume links are set in spec, but only implied by deployment manifest' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [implied_job_spec, postgres_job_spec]
+        manifest
+      end
+
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_vm = director.vm('my_api', '0')
+        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main'].size).to eq(1)
+        expect(template['databases']['main']).to contain_exactly(
+             {
+                 'name' => 'postgres',
+                 'index' => 0,
+                 'networks' => [
+                     {
+                         'name' => 'a',
+                         'address' => '192.168.1.12',
+                     }
+                 ]
+             }
+         )
+
+        expect(template['databases']['backup'].size).to eq(1)
+        expect(template['databases']['backup']).to contain_exactly(
+                                                     {
+                                                         'name' => 'postgres',
+                                                         'index' => 0,
+                                                         'az' => 'z1',
+                                                         'networks' => [
+                                                             {
+                                                                 'name' => 'a',
+                                                                 'address' => '192.168.1.12',
+                                                             }
+                                                         ]
+                                                     }
+                                                 )
+      end
+    end
+
+    context 'when provide and consume links are set in spec, and implied by deployment manifest, but there are multiple provide links with same type' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
+        manifest
+      end
+
+      it 'raises error before deploying vms' do
+        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).not_to eq(0)
+        expect(director.vms('simple')).to eq([])
+      end
+    end
+
+    context 'when provide link is aliased using "as", and the consume link references the new alias' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest
+      end
+
+      let(:links) do
+        {
+            'db' => {'from'=>'link_alias'},
+            'backup_db' => {'from' => 'simple.link_alias'},
+        }
+      end
+
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_vm = director.vm('my_api', '0')
+        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main'].size).to eq(1)
+        expect(template['databases']['main']).to contain_exactly(
+                                                     {
+                                                         'name' => 'aliased_postgres',
+                                                         'index' => 0,
+                                                         'networks' => [
+                                                             {
+                                                                 'name' => 'a',
+                                                                 'address' => '192.168.1.12',
+                                                             }
+                                                         ]
+                                                     }
+                                                 )
+      end
+    end
+
+    context 'when provide link is aliased using "as", and the consume link references the old name' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest
+      end
+
+      let(:links) do
+        {
+            'db' => {'from'=>'backup_db'},
+            'backup_db' => {'from' => 'simple.backup_db'},
+        }
+      end
+
+      it 'throws an error before deploying vms' do
+        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).not_to eq(0)
+        expect(director.vms('simple')).to eq([])
+      end
+    end
+
 
     context 'when link is broken' do
       let(:manifest) do
