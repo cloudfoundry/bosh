@@ -80,7 +80,7 @@ module IntegrationExampleGroup
     bosh_runner.run("delete stemcell ubuntu-stemcell 1")
   end
 
-  def set_deployment(options)
+  def set_deployment(options={})
     manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
 
     # Hold reference to the tempfile so that it stays around

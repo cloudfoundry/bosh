@@ -94,7 +94,7 @@ No changes
     context 'when using a new director' do
       let(:diff_json) do
         {
-          'cloud_config_id' => 47,
+          'update_config' => {'cloud_config_id' => 47},
           'diff' => [
             ['resource_pools:', nil],
             ['- name: a', nil],
@@ -188,8 +188,8 @@ Detecting deployment changes
         end
       end
 
-      it 'returns cloud config id' do
-        expect(deployment_diff.print(options)).to eq(47)
+      it 'returns update config' do
+        expect(deployment_diff.print(options)).to eq({'cloud_config_id' => 47})
       end
     end
   end
