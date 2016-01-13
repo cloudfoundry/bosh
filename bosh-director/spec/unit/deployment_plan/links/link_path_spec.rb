@@ -92,7 +92,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'when consumes block does not have from key, and an invalid link type' do
     let(:path) { {"name" => "link_name", "type" => "invalid_type"} }
     it 'should throw an error' do
-      expect{described_class.parse(deployment,path)}.to raise_error("No provide links have type invalid_type. Can not make implicit link")
+      expect{described_class.parse(deployment,path)}.to raise_error("Can't find link with type: invalid_type in deployment deployment_name")
     end
   end
 

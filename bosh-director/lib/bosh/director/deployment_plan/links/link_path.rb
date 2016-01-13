@@ -24,10 +24,12 @@ module Bosh::Director
           provides_job.templates.each do |provides_template|
             if provides_template.link_infos.has_key?("provides")
               matching_links = provides_template.link_infos["provides"].select { |k,v| v["type"] == link_type }
-              if link_path_found.nil?
-                link_path_found = {:deployment => deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => matching_links.values()[0]["name"]}
-              else
-                raise "Multiple provide links have type #{link_type}. Can not make implicit link"
+              if matching_links.size > 0
+                if link_path_found.nil?
+                  link_path_found = {:deployment => deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => matching_links.values()[0]["name"]}
+                else
+                  raise "Multiple provide links have type #{link_type}. Can not make implicit link"
+                end
               end
             end
           end
