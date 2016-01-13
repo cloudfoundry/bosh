@@ -29,9 +29,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     def allocate_dynamic_ip(reservation, subnet)
-      item = (0...subnet.range.size).find { |i| available_for_dynamic?(subnet.range[i], subnet) }
-
       @mutex.synchronize do
+        item = (0...subnet.range.size).find { |i| available_for_dynamic?(subnet.range[i], subnet) }
+
         if item.nil?
           entry = @recently_released_ips.find do |entry|
             entry[:network_name] == subnet.network_name && subnet.range.contains?(entry[:ip])
@@ -72,11 +72,8 @@ module Bosh::Director::DeploymentPlan
       return false unless subnet.range.contains?(ip)
       return false if subnet.static_ips.include?(ip.to_i)
       return false if subnet.restricted_ips.include?(ip.to_i)
-
-      @mutex.synchronize do
-        return false if @recently_released_ips.include?({ip: ip.to_i, network_name: subnet.network_name})
-        return false if @ips.include?({ip: ip.to_i, network_name: subnet.network_name})
-      end
+      return false if @recently_released_ips.include?({ip: ip.to_i, network_name: subnet.network_name})
+      return false if @ips.include?({ip: ip.to_i, network_name: subnet.network_name})
 
       true
     end
