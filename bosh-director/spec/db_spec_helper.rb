@@ -2,12 +2,7 @@ $: << File.expand_path('..', __FILE__)
 
 require 'rspec'
 require 'rspec/its'
-require 'tempfile'
-require 'fileutils'
-require 'tmpdir'
-require 'digest/sha1'
-require 'machinist/sequel'
-require 'psych'
+require 'sequel'
 require_relative '../../bosh-director/lib/bosh/director/config'
 
 module DBSpecHelper
@@ -18,13 +13,15 @@ module DBSpecHelper
       Bosh::Director::Config.patch_sqlite
 
       @temp_dir = Bosh::Director::Config.generate_temp_dir
-      @director_migrations = File.expand_path('../../migrations/director', __FILE__)
+      @migration_dir = Dir.mktmpdir('migration-dir', @temp_dir)
+      @director_migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
 
+      Sequel.extension :migration
       connect_database(@temp_dir)
     end
 
     def connect_database(path)
-      db = ENV['DB_CONNECTION'] || "sqlite://#{File.join(path, "director.db")}"
+      db = ENV['DB_CONNECTION'] || "sqlite://#{File.join(path, 'director.db')}"
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
@@ -42,9 +39,26 @@ module DBSpecHelper
       end
 
       @db_dir = Dir.mktmpdir(nil, @temp_dir)
-      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
+      FileUtils.cp(Dir.glob(File.join(@temp_dir, '*.db')), @db_dir)
 
       connect_database(@db_dir)
+    end
+
+    def migrate_all_before(migration_file)
+      reset_database
+      migration_file_full_path = File.join(@director_migrations_dir, migration_file)
+      files_to_migrate = Dir.glob("#{@director_migrations_dir}/*").select do |filename|
+        filename < migration_file_full_path
+      end
+
+      FileUtils.cp_r(files_to_migrate, @migration_dir)
+      Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
+    end
+
+    def migrate(migration_file)
+      migration_file_full_path = File.join(@director_migrations_dir, migration_file)
+      FileUtils.cp(migration_file_full_path, @migration_dir)
+      Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
     end
   end
 end
