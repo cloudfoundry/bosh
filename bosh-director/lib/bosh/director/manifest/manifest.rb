@@ -2,7 +2,8 @@ module Bosh::Director
   class Manifest
     def self.load_from_text(manifest_text, cloud_config)
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
-      new(Psych.load(manifest_text), cloud_config_hash)
+      manifest_hash = manifest_text.nil? ? {} : Psych.load(manifest_text)
+      new(manifest_hash, cloud_config_hash)
     end
 
     attr_reader :manifest_hash, :cloud_config_hash
