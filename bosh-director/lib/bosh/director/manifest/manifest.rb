@@ -32,7 +32,7 @@ module Bosh::Director
     end
 
     def to_hash
-      @manifest_hash.merge(@cloud_config_hash.to_h)
+      @manifest_hash.merge(@cloud_config_hash || {})
     end
 
     private
