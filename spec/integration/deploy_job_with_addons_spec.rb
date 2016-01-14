@@ -21,10 +21,12 @@ describe 'deploy job with addons', type: :integration do
     upload_cloud_config(manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    agent_id = director.vm('foobar', '0').agent_id
-    expect(`ls #{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/jobs`.strip).to eq("dummy_with_properties\nfoobar")
+    foobar_vm = director.vm('foobar', '0')
 
-    echo_statement = `find #{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id} -name "dummy_with_properties_ctl" | xargs cat | grep "prop_value"`
-    expect(echo_statement.strip).to eq("echo 'prop_value'")
+    expect(File.exist?(foobar_vm.job_path('dummy_with_properties'))).to eq(true)
+    expect(File.exist?(foobar_vm.job_path('foobar'))).to eq(true)
+
+    template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+    expect(template).to include("echo 'prop_value'")
   end
 end
