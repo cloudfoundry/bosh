@@ -38,7 +38,7 @@ module Bosh::Cli::Command
           end
         end
 
-        changes['cloud_config_id']
+        changes['update_config']
       rescue Bosh::Cli::ResourceNotFound
         @manifest.resolve_release_aliases
         @manifest.resolve_stemcell_aliases

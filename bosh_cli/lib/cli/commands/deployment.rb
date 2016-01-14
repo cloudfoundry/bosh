@@ -138,7 +138,7 @@ module Bosh::Cli::Command
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      cloud_config_id = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
+      update_config = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')
@@ -147,7 +147,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      deploy_options = { recreate: recreate, cloud_config_id: cloud_config_id }
+      deploy_options = { recreate: recreate, update_config: update_config }
 
       if options.has_key?(:skip_drain)
         # when key is present but no jobs specified OptionParser

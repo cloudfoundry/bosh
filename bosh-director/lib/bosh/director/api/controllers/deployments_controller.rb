@@ -270,38 +270,43 @@ module Bosh::Director
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
 
-        if params['cloud_config_id']
-          cloud_config = Bosh::Director::Api::CloudConfigManager.find_by_id(params['cloud_config_id'])
+        if params['update_config']
+          @logger.debug("Deploying with update config #{params['update_config']}")
+          update_config = JSON.parse(params['update_config'])
+          cloud_config = Api::CloudConfigManager.new.find_by_id(update_config['cloud_config_id'])
+
         else
-          cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+          cloud_config =Api::CloudConfigManager.new.latest
         end
 
-        if params['runtime_config_id']
-          runtime_config = Bosh::Director::Api::RuntimeConfigManager.find_by_id(params['runtime_config_id'])
-        else
-          runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        end
+        runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
         task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
       post '/:deployment/diff', :consumes => :yaml do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
+        deployment = Models::Deployment[name: params[:deployment]]
+        if deployment
+          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+          before_manifest.resolve_aliases
+        else
+          before_manifest = Manifest.load_from_text(nil, nil)
+        end
 
-        before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
-        before_manifest.resolve_aliases
-
+        after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         after_manifest = Manifest.load_from_text(
           request.body,
-          Bosh::Director::Api::CloudConfigManager.new.latest
+          after_cloud_config
         )
         after_manifest.resolve_aliases
 
         diff = before_manifest.diff(after_manifest)
 
         json_encode({
-          'cloud_config_id' => deployment.cloud_config ? deployment.cloud_config.id : nil,
+          'update_config' => {
+            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+          },
           'diff' => diff.map { |l| [l.to_s, l.status] }
         })
       end

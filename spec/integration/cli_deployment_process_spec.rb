@@ -126,6 +126,45 @@ DIFF
       expect(output).to_not include('stemcell')
       expect(output).to_not include('releases')
     end
+
+    context 'when cloud config is updated during deploy' do
+      it 'deploys with cloud config shown in diff' do
+        prepare_for_deploy
+        set_deployment
+        bosh_runner.run_interactively('--no-color deploy') do |runner|
+          expect(runner).to have_output 'Are you sure you want to deploy?'
+
+          new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          new_cloud_config['resource_pools'] = [
+            {
+              'name' => 'a',
+              'cloud_properties' => {'name' => 'new_property'},
+              'stemcell' => {
+                'name' => 'ubuntu-stemcell',
+                'version' => 'latest',
+              },
+            }
+          ]
+
+          upload_cloud_config(cloud_config_hash: new_cloud_config)
+
+          runner.send_keys 'yes'
+          expect(runner).to have_output "Deployed `simple'"
+          puts runner.output
+        end
+
+        output = deploy_simple_manifest
+        puts output
+        expect(output).to include(<<-DIFF
+  resource_pools:
+  - name: a
+-   size: 3
+    cloud_properties:
++     name: new_property
+DIFF
+          )
+      end
+    end
   end
 
   describe 'bosh deployments' do
