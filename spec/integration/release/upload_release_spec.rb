@@ -19,6 +19,18 @@ describe 'upload release', type: :integration do
     expect(out).to match /test_release.+1/
   end
 
+  context 'when release tarball contents are not sorted' do
+    it 'updates job successfully' do
+      target_and_login
+      bosh_runner.run("upload release #{spec_asset('unsorted-release-0+dev.1.tgz')}")
+
+      out = bosh_runner.run("upload release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+
+      expect(out).to match /foobar (.*) UPLOAD/
+      expect(out).to match /creating new jobs > foobar/
+    end
+  end
+
   it 'can upload a release without any package changes when using --rebase option' do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
@@ -40,6 +52,24 @@ describe 'upload release', type: :integration do
       out = bosh_runner.run('releases')
       expect(out).to match /releases total: 1/i
       expect(out).to match /bosh-release.+0\+dev\.1.*0\+dev\.2/m
+    end
+  end
+
+  context 'when uploading a compiled release without "./" prefix in the tarball' do
+    before {
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+    }
+
+    it 'should upload successfully and not raise an error' do
+      expect {
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
+      }.to_not raise_error
     end
   end
 
