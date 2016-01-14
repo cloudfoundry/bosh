@@ -130,6 +130,7 @@ foo: bar
       allow(Kernel).to receive(:system).and_return(true)
       allow(Dir).to receive(:mktmpdir).and_return(@tmpDir)
       allow_any_instance_of(Bosh::Cli::ReleaseTarball).to receive(:load_yaml_file).and_return({})
+      allow_any_instance_of(Bosh::Cli::ReleaseTarball).to receive(:all_release_jobs_unpacked?).and_return(true) # not tested in this context
     end
 
     context 'when unpacking single file' do
@@ -221,6 +222,28 @@ foo: bar
         release_tarball.unpack_jobs
 
         expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", tarball_path,  "--occurrence", "./jobs/", anything)
+      end
+    end
+  end
+
+  describe 'unpack_jobs' do
+    context 'when fast unpack does not unpack all jobs correctly' do
+      before do
+        allow(release_tarball).to receive(:raw_fast_unpack) # stub to do nothing
+      end
+
+      it 'falls back to regular unpack' do
+        release_tarball.unpack_jobs
+        unpacked_job_files = Dir.glob(File.join(release_tarball.unpack_dir, 'jobs', '*'))
+        expect(unpacked_job_files).to_not be_empty
+      end
+    end
+
+    context 'when fast unpack succeeds' do
+      it 'does not fall back to regular unpack' do
+        expect(release_tarball).to receive(:unpack_target).once.and_call_original
+
+        release_tarball.unpack_jobs
       end
     end
   end

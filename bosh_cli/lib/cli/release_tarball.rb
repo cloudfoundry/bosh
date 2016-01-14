@@ -27,7 +27,11 @@ module Bosh::Cli
 
     def unpack_jobs
       return @unpacked_jobs unless @unpacked_jobs.nil?
-      exit_success = safe_fast_unpack('./jobs/')
+      target = './jobs/'
+      exit_success = safe_fast_unpack(target)
+      unless all_release_jobs_unpacked?
+        unpack_target(target)
+      end
       @unpacked_jobs = !!exit_success
     end
 
@@ -65,13 +69,26 @@ module Bosh::Cli
             Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
         when /.*bsd.*/i
             if target[-1, 1] == "/"
-              Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+              unpack_target(target)
             else
               Kernel.system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
             end
         else
-          Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+          unpack_target(target)
       end
+    end
+
+    def unpack_target(target)
+      Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+    end
+
+    # verifies that all jobs in release manifest were unpacked
+    def all_release_jobs_unpacked?
+      return false if manifest_yaml['jobs'].nil?
+
+      manifest_job_names = manifest_yaml['jobs'].map { |j| j['name'] }.sort
+      unpacked_job_file_names = Dir.glob(File.join(@unpack_dir, 'jobs', '*')).map { |f| File.basename(f, '.*') }.sort
+      unpacked_job_file_names == manifest_job_names
     end
 
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
