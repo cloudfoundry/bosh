@@ -1,7 +1,7 @@
 ---
 name: mongo_db
 templates: {}
-packages: []
-
+packages:
+    - pkg_1
 provides:
 - {name: read_only_db, type: db}
