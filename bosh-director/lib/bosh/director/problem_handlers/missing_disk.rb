@@ -19,8 +19,6 @@ module Bosh::Director
         if @instance.nil?
           handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
         end
-
-        @vm = @instance.vm
       end
 
       def description
@@ -44,8 +42,8 @@ module Bosh::Director
         @disk.update(active: false)
 
         # If VM is present we try to unmount and detach disk from VM
-        if @vm && @vm.cid && cloud.has_vm?(@vm.cid)
-          agent_client = agent_client(@vm)
+        if @instance.vm_cid && cloud.has_vm?(@instance.vm_cid)
+          agent_client = agent_client(@instance.credentials, @instance.agent_id)
           disk_list = []
 
           begin
@@ -67,8 +65,8 @@ module Bosh::Director
 
           begin
             @logger.debug('Sending cpi request: detach_disk')
-            cloud.detach_disk(@vm.cid, @disk.disk_cid) if @vm.cid
-          rescue Bosh::Clouds::DiskNotAttached
+            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid) if @instance.vm_cid
+          rescue Bosh::Clouds::DiskNotAttached, Bosh::Clouds::DiskNotFound
           end
         end
 

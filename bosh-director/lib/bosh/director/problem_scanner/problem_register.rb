@@ -40,16 +40,14 @@ module Bosh::Director::ProblemScanner
       end
     end
 
-    def get_vm_instance_and_disk(vm)
-      instance = nil
+    def get_disk(instance)
       mounted_disk_cid = nil
 
       @problem_lock.synchronize do
-        instance = vm.instance
         mounted_disk_cid = instance.persistent_disk_cid if instance
       end
 
-      [instance, mounted_disk_cid]
+      mounted_disk_cid
     end
   end
 end

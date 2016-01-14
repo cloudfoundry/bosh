@@ -15,8 +15,8 @@ properties:
   postgres.password:
     description: Password clients must use to access Postgres
   postgres.listen_address:
-    description: IP address Postgres listens on
-    default: 0.0.0.0
+    description: IP address Postgres listens on; use 0.0.0.0 to listen on all IP addresses
+    default: 127.0.0.1
   postgres.port:
     description: TCP port Postgres listens on
     default: 5432

@@ -15,11 +15,11 @@ module Bosh::Director
       end
 
       def perform
-        vms = Models::Vm.filter(:deployment_id => @deployment_id)
+        instances = Models::Instance.filter(:deployment_id => @deployment_id).exclude(vm_cid: nil)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-          vms.each do |vm|
+          instances.each do |instance|
             pool.process do
-              vm_state = process_vm(vm)
+              vm_state = process_instance(instance)
               result_file.write(vm_state.to_json + "\n")
             end
           end
@@ -29,7 +29,7 @@ module Bosh::Director
         nil
       end
 
-      def process_vm(vm)
+      def process_instance(instance)
         ips = []
         dns_records = []
         job_state = nil
@@ -37,7 +37,7 @@ module Bosh::Director
         processes = []
 
         begin
-          agent = AgentClient.with_vm(vm, :timeout => TIMEOUT)
+          agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
           agent_state = agent.get_state(@format)
           agent_state['networks'].each_value do |network|
             ips << network['ip']
@@ -53,30 +53,29 @@ module Bosh::Director
         end
 
         if dns_manager.dns_enabled?
-          dns_records = dns_manager.find_dns_record_names_by_instance(vm.instance)
+          dns_records = dns_manager.find_dns_record_names_by_instance(instance)
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
-        vm_apply_spec = vm.instance ? vm.instance.spec : {}
-        vm_type_name = vm_apply_spec && vm_apply_spec['vm_type'] ? vm_apply_spec['vm_type']['name'] : nil
+        vm_type_name = instance.spec && instance.spec['vm_type'] ? instance.spec['vm_type']['name'] : nil
 
         {
-          :vm_cid => vm.cid,
-          :disk_cid => vm.instance ? vm.instance.persistent_disk_cid : nil,
+          :vm_cid => instance.vm_cid,
+          :disk_cid => instance.persistent_disk_cid,
           :ips => ips,
           :dns => dns_records,
-          :agent_id => vm.agent_id,
-          :job_name => vm.instance ? vm.instance.job : nil,
-          :index => vm.instance ? vm.instance.index : nil,
+          :agent_id => instance.agent_id,
+          :job_name => instance.job,
+          :index => instance.index,
           :job_state => job_state,
           :resource_pool => vm_type_name,
           :vm_type => vm_type_name,
           :vitals => job_vitals,
           :processes => processes,
-          :resurrection_paused => vm.instance ? vm.instance.resurrection_paused : nil,
-          :az => vm.instance ? vm.instance.availability_zone : nil,
-          :id => vm.instance ? vm.instance.uuid : nil,
-          :bootstrap => vm.instance ? vm.instance.bootstrap : false
+          :resurrection_paused => instance.resurrection_paused,
+          :az => instance.availability_zone,
+          :id => instance.uuid,
+          :bootstrap => instance.bootstrap
         }
       end
 

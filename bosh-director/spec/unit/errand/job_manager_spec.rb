@@ -44,11 +44,8 @@ module Bosh::Director
       let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance1_model) }
       let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance2_model) }
 
-      let(:instance1_model) { instance_double('Bosh::Director::Models::Instance', vm: instance1_vm) }
-      let(:instance2_model) { instance_double('Bosh::Director::Models::Instance', vm: instance2_vm) }
-
-      let(:instance1_vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid-1') }
-      let(:instance2_vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid-2') }
+      let(:instance1_model) { instance_double('Bosh::Director::Models::Instance', vm_cid: 'fake-vm-cid-1') }
+      let(:instance2_model) { instance_double('Bosh::Director::Models::Instance', vm_cid: 'fake-vm-cid-2') }
 
       let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
       let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }

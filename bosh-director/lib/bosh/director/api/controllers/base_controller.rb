@@ -12,6 +12,7 @@ module Bosh::Director
           @identity_provider = config.identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
+          @restore_manager = RestoreManager.new
           @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
           @problem_manager = ProblemManager.new(@deployment_manager)
@@ -21,7 +22,7 @@ module Bosh::Director
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
           @vm_state_manager = VmStateManager.new
-          @dns_manager = DnsManager.create
+          @dns_manager = DnsManagerProvider.create
           @disk_manager = DiskManager.new(nil, @logger)
         end
 

@@ -44,12 +44,12 @@ module Bosh::Director
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',
-                                                    resource_id: instance1.vm.id)
+                                                    resource_id: instance1.id)
           problem2 = Models::DeploymentProblem.make(counter: 1,
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',
-                                                    resource_id: instance2.vm.id)
+                                                    resource_id: instance2.id)
           scanner.reset([['job1', 0]])
           expect(Models::DeploymentProblem[problem1.id].state).to eq('closed')
           expect(Models::DeploymentProblem[problem2.id].state).to eq('open')

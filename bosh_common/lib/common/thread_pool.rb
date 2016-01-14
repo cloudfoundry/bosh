@@ -87,9 +87,9 @@ module Bosh
 
     def raise_worker_exception(exception)
       if exception.respond_to?(:backtrace)
-        @logger.debug("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
+        @logger.error("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
       else
-        @logger.debug("Worker thread raised exception: #{exception}")
+        @logger.error("Worker thread raised exception: #{exception}")
       end
       @lock.synchronize do
         @boom = exception if @boom.nil?

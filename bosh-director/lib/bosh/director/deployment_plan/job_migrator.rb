@@ -23,7 +23,7 @@ module Bosh::Director
         instances += migrated_from_instances
       end
 
-      instances
+      instances.uniq
     end
 
     private
@@ -33,7 +33,8 @@ module Bosh::Director
       migrated_from_instances = []
 
       migrated_from_jobs.each do |migrated_from_job|
-        if @deployment_plan.job(migrated_from_job.name)
+        existing_job = @deployment_plan.job(migrated_from_job.name)
+        if existing_job && existing_job.name != desired_job.name
           raise DeploymentInvalidMigratedFromJob,
             "Failed to migrate job '#{migrated_from_job.name}' to '#{desired_job_name}'. " +
               'A deployment can not migrate a job and also specify it. ' +

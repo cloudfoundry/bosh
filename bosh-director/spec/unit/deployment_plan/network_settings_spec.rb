@@ -14,14 +14,14 @@ module Bosh::Director::DeploymentPlan
         az,
         3,
         'uuid-1',
-        Bosh::Director::DnsManager.create
+        Bosh::Director::DnsManagerProvider.create
       )
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
     let(:instance) { Instance.create_from_job(job, 3, 'started', plan, {}, az, logger) }
     let(:reservation) {
-      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, manual_network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, manual_network)
       reservation.resolve_ip('10.0.0.6')
       reservation
     }
@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
           DynamicNetwork.new('net_a', subnets, logger)
         end
 
-        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance, dynamic_network) }
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network) }
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
           expect(network_settings.to_hash).to eql({

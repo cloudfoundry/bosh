@@ -121,7 +121,7 @@ module Bosh::Monitor
 
         #if a registration request returns without error we log it
         #we don't want to send extra registrations
-        @checklist << event.job if note_type == :register
+        @checklist << label_for_event(event) if note_type == :register
       rescue => e
         logger.error("Could not forward event to Consul Cluster @#{@host}: #{e.inspect}")
       end
@@ -158,7 +158,7 @@ module Bosh::Monitor
       #We keep track so we aren't sending superfluous registrations
       #Only register ttl for events that have a job assigned
       def event_unregistered?(event)
-        @use_ttl && event.respond_to?(:job) && !@checklist.include?(event.job)
+        @use_ttl && event.respond_to?(:job) && !@checklist.include?(label_for_ttl(event))
       end
 
       def registration_payload(event)

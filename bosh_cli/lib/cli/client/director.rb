@@ -248,16 +248,27 @@ module Bosh
 
           recreate               = options.delete(:recreate)
           skip_drain             = options.delete(:skip_drain)
+          update_config          = options.delete(:update_config)
           options[:content_type] = 'text/yaml'
           options[:payload]      = manifest_yaml
 
           url = '/deployments'
 
           extras = []
-          extras << ['recreate', 'true']   if recreate
+          extras << ['recreate', 'true'] if recreate
+          extras << ['update_config', JSON.dump(update_config)] if update_config
           extras << ['skip_drain', skip_drain] if skip_drain
 
           request_and_track(:post, add_query_string(url, extras), options)
+        end
+
+        def diff_deployment(name, manifest_yaml)
+          status, body = post("/deployments/#{name}/diff", 'text/yaml', manifest_yaml)
+          if status == 200
+            JSON.parse(body)
+          else
+            err(parse_error_message(status, body))
+          end
         end
 
         def setup_ssh(deployment_name, job, id, user,
@@ -337,22 +348,6 @@ module Bosh
           url     = "/resurrection"
           payload = JSON.generate('resurrection_paused' => value)
           put(url, 'application/json', payload)
-        end
-
-        def rename_job(deployment_name, manifest_yaml, old_name, new_name,
-          force = false, options = {})
-          options = options.dup
-
-          url = "/deployments/#{deployment_name}/jobs/#{old_name}"
-
-          extras = []
-          extras << ['new_name', new_name]
-          extras << ['force', 'true'] if force
-
-          options[:content_type] = 'text/yaml'
-          options[:payload]      = manifest_yaml
-
-          request_and_track(:put, add_query_string(url, extras), options)
         end
 
         def fetch_logs(deployment_name, job_name, index, log_type,
@@ -570,6 +565,34 @@ module Bosh
           path
         end
 
+        def restore_db(filename)
+          upload_without_track('/restore', filename, { content_type: 'application/x-compressed' })
+        end
+
+        def check_director_restart(poll_interval, timeout)
+          current_time = start_time = Time.now()
+
+          #step 1, wait until director is stopped
+          while current_time.to_i - start_time.to_i <= timeout do
+            status, body = get_json_with_status('/info')
+            break if status != 200
+
+            sleep(poll_interval)
+            current_time = Time.now()
+          end
+
+          #step 2, wait until director is started
+          while current_time.to_i - start_time.to_i <= timeout do
+            status, body = get_json_with_status('/info')
+            return true if status == 200
+
+            sleep(poll_interval)
+            current_time = Time.now()
+          end
+
+          return false
+        end
+
         def list_locks
           get_json('/locks')
         end
@@ -614,6 +637,14 @@ module Bosh
         def upload_and_track(method, uri, filename, options = {})
           file = FileWithProgressBar.open(filename, 'r')
           request_and_track(method, uri, options.merge(:payload => file))
+        ensure
+          file.stop_progress_bar if file
+        end
+
+        def upload_without_track(uri, filename, options = {})
+          file = FileWithProgressBar.open(filename, 'r')
+          status, _ = post(uri, options[:content_type], file, {}, options)
+          status
         ensure
           file.stop_progress_bar if file
         end

@@ -11,10 +11,6 @@ describe 'migrating to cloud config', type: :integration do
 
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    # remove size from resource pools due to bug #94220432
-    # where resource pools with specified size reserve extra IPs
-    cloud_config_hash['resource_pools'].first.delete('size')
-
     cloud_config_hash['networks'].first['subnets'].first['static'] =  ['192.168.1.10', '192.168.1.11']
     cloud_config_hash
   end
@@ -63,20 +59,37 @@ describe 'migrating to cloud config', type: :integration do
     end
 
     it 'deployment after cloud config fails to get static IP in the range reserved by first deployment' do
-        legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
-        deploy_simple_manifest(manifest_hash: legacy_manifest)
-        vms = director.vms
-        expect(vms.size).to eq(1)
-        expect(vms.first.ips).to eq('192.168.1.2')
+      legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
+      deploy_simple_manifest(manifest_hash: legacy_manifest)
+      vms = director.vms
+      expect(vms.size).to eq(1)
+      expect(vms.first.ips).to eq('192.168.1.2')
 
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      _, exit_code = deploy_with_ip(
+        second_deployment_manifest,
+        '192.168.1.2',
+        {failure_expected: true, return_exit_code: true}
+      )
+      expect(exit_code).to_not eq(0)
+    end
+
+    context 'when also adding azs (and no migrated from)' do
+      it 'should not attempt to assign ips to new instances that obsolete instances hold' do
+        deploy_simple_manifest(manifest_hash: legacy_manifest)
+        expect(director.vms.map(&:ips)).to eq(['192.168.1.2'])
+
+        cloud_config_hash['azs'] = [{'name' => 'zone_1', 'cloud_properties' => {}}]
+        cloud_config_hash['networks'].first['subnets'].first['azs'] = ['zone_1']
+        cloud_config_hash['compilation']['az'] = 'zone_1'
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        _, exit_code = deploy_with_ip(
-          second_deployment_manifest,
-          '192.168.1.2',
-          { failure_expected: true, return_exit_code: true }
-        )
-        expect(exit_code).to_not eq(0)
+        simple_manifest['jobs'].first['azs'] = ['zone_1']
+        deploy_simple_manifest(manifest_hash: simple_manifest)
+
+        expect(director.vms.map(&:ips)).to eq(['192.168.1.3'])
       end
+    end
   end
 end

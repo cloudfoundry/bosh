@@ -328,9 +328,9 @@ Director task #{task_regex}
   Started compiling packages > bar/#{sha_regex}. Done #{step_duration_regex}
      Done compiling packages #{step_duration_regex}
 
-  Started creating missing vms > foobar/#{uuid_regex} \\(0\\). Done #{step_duration_regex}
+  Started creating missing vms > foobar/0 \\(#{uuid_regex}\\). Done #{step_duration_regex}
 
-  Started updating job foobar > foobar/#{uuid_regex} \\(0\\) \\(canary\\). Done #{step_duration_regex}
+  Started updating job foobar > foobar/0 \\(#{uuid_regex}\\) \\(canary\\). Done #{step_duration_regex}
 
 Task #{task_regex} done
 

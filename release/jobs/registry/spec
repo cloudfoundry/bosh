@@ -31,6 +31,7 @@ properties:
     description: Password used for the registry database
   registry.db.host:
     description: Address of the registry database
+    default: 127.0.0.1
   registry.db.port:
     description: Port of the registry database
     default: 5432

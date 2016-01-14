@@ -19,7 +19,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_vm(vm, options = {})
+    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -27,10 +27,9 @@ module Bosh::Director
         }
       }
 
-      credentials = vm.credentials
-      defaults.merge!(credentials: credentials) if credentials
+      defaults.merge!(credentials: vm_credentials) if vm_credentials
 
-      self.new('agent', vm.agent_id, defaults.merge(options))
+      self.new('agent', agent_id, defaults.merge(options))
     end
 
     def initialize(service_name, client_id, options = {})

@@ -4,8 +4,18 @@ module Bosh::Director
   describe ProblemHandlers::MissingVM do
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
-    let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model) }
-    let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
+    let!(:instance) do
+      Models::Instance.make(
+        job: manifest['jobs'].first['name'],
+        index: 0,
+        deployment: deployment_model,
+        cloud_properties_hash: {'foo' => 'bar'},
+        spec: spec.merge({env: {'key1' => 'value1'}}),
+        agent_id: 'agent-007',
+        vm_cid: 'vm-cid'
+      )
+    end
+    let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, instance.id, {}) }
     let(:spec) do
       {
         'deployment' => 'simple',
@@ -32,7 +42,7 @@ module Bosh::Director
 
     it 'should call recreate_vm when set to auto' do
       allow(handler).to receive(:recreate_vm)
-      expect(handler).to receive(:recreate_vm).with(vm)
+      expect(handler).to receive(:recreate_vm).with(instance)
       handler.auto_resolve
     end
 
@@ -52,11 +62,8 @@ module Bosh::Director
       it 'recreates a VM' do
         prepare_deploy(manifest, manifest)
 
-        instance_model = Models::Instance.make(job: manifest['jobs'].first['name'], index: 0, vm: vm, deployment: deployment_model, cloud_properties_hash: { 'foo' => 'bar' }, spec: spec)
-        vm.update(env: { 'key1' => 'value1' }, :instance => instance_model)
-
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
-        allow(AgentClient).to receive(:with_vm).and_return(fake_new_agent)
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered
@@ -66,22 +73,27 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
         expect(fake_new_agent).to receive(:start).ordered
 
-        expect(fake_cloud).to receive(:delete_vm).with('vm-cid')
+        expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
         expect(fake_cloud).
           to receive(:create_vm).
           with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, { 'foo' => 'bar' }, anything, [], { 'key1' => 'value1' }).
-          and_return(vm.cid)
+          and_return('new-vm-cid')
 
         fake_job_context
 
-        expect {
-          handler.apply_resolution(:recreate_vm)
-        }.to change { Models::Vm.where(agent_id: 'agent-007').count }.from(1).to(0)
+        expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
+        expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
+
+        handler.apply_resolution(:recreate_vm)
+
+        expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+        expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
       end
 
       it 'deletes VM reference' do
-        handler.apply_resolution(:delete_vm_reference)
-        expect(Models::Vm[vm.id]).to be_nil
+        expect {
+          handler.apply_resolution(:delete_vm_reference)
+        }.to change { Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
       end
     end
   end

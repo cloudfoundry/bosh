@@ -195,33 +195,52 @@ module Bosh::Director
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
 
-            context 'without the "skip_drain" param' do
+            shared_examples 'skip_drain' do
               it 'drains' do
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                  .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
-                  .and_return(OpenStruct.new(:id => 1))
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                            .and_return(OpenStruct.new(:id => 1))
 
-                put '/test_deployment/jobs/job_name/0', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
 
                 put '/test_deployment/jobs/job_name/0B949287-CDED-4761-9002-FC4035E11B21', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
                 expect(last_response).to be_redirect
               end
-            end
 
-            context 'with the "skip_drain" as "true"' do
               it 'skips draining' do
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                        .with(anything(), anything(), anything(), hash_including('skip_drain' => 'job_name'))
-                        .and_return(OpenStruct.new(:id => 1))
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                            .and_return(OpenStruct.new(:id => 1))
 
-                put '/test_deployment/jobs/job_name/0?skip_drain=true', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
               end
+            end
+
+            context 'when there is a job instance' do
+              let(:path) { "/test_deployment/jobs/job_name/0" }
+              let(:drain_option) {"?skip_drain=true"}
+              let(:drain_target) { "job_name" }
+              it_behaves_like 'skip_drain'
+            end
+
+            context 'when there is a  job' do
+              let(:path) { "/test_deployment/jobs/job_name?state=stop" }
+              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_target) { "job_name" }
+              it_behaves_like 'skip_drain'
+            end
+
+            context 'when  deployment' do
+              let(:path) { "/test_deployment/jobs/*?state=stop" }
+              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_target) { "*" }
+              it_behaves_like 'skip_drain'
             end
           end
         end
@@ -351,20 +370,14 @@ module Bosh::Director
                        :manifest => Psych.dump({'foo' => 'bar'}))
 
             15.times do |i|
-              vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                  'deployment_id' => deployment.id
-              }
-              vm = Models::Vm.create(vm_params)
-
               instance_params = {
-                  'deployment_id' => deployment.id,
-                  'vm_id' => vm.id,
-                  'job' => "job-#{i}",
-                  'index' => i,
-                  'state' => 'started',
-                  'uuid' => "instance-#{i}"
+                'deployment_id' => deployment.id,
+                'job' => "job-#{i}",
+                'index' => i,
+                'state' => 'started',
+                'uuid' => "instance-#{i}",
+                'agent_id' => "agent-#{i}",
+                'vm_cid' => "cid-#{i}",
               }
               Models::Instance.create(instance_params)
             end
@@ -643,6 +656,42 @@ module Bosh::Director
                 perform({})
                 expect(last_response.status).to eq(401)
               end
+            end
+          end
+        end
+
+        describe 'diff' do
+          def perform
+            post(
+              '/fake-dep-name/diff',
+              "---\nname: fake-dep-name\nreleases: [{'name':'simple','version':5}]",
+              { 'CONTENT_TYPE' => 'text/yaml' },
+            )
+          end
+          let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
+          before do
+            Models::Deployment.create(
+              :name => 'fake-dep-name',
+              :manifest => Psych.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
+              cloud_config: cloud_config
+            )
+          end
+
+          context 'authenticated access' do
+            before { authorize 'admin', 'admin' }
+
+            it 'returns diff with resolved aliases' do
+              perform
+              expect(last_response.body).to eq('{"update_config":{"cloud_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+            end
+          end
+
+          context 'accessing with invalid credentials' do
+            before { authorize 'invalid-user', 'invalid-password' }
+
+            it 'returns 401' do
+              perform
+              expect(last_response.status).to eq(401)
             end
           end
         end

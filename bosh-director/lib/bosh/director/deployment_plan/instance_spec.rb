@@ -14,7 +14,7 @@ module Bosh::Director
         deployment_name = instance.deployment_model.name
         job = instance_plan.desired_instance.job
         instance_plan = instance_plan
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
 
         spec = {
           'deployment' => deployment_name,
@@ -95,7 +95,7 @@ module Bosh::Director
     class TemplateSpec
       def initialize(full_spec)
         @full_spec = full_spec
-        @dns_manager = DnsManager.create
+        @dns_manager = DnsManagerProvider.create
       end
 
       def spec

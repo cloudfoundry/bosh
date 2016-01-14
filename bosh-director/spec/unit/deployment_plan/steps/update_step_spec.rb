@@ -30,6 +30,7 @@ module Bosh::Director
       allow(base_job).to receive(:logger).and_return(logger)
       allow(base_job).to receive(:track_and_log).and_yield
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
+      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
       fake_app
     end
 
@@ -41,17 +42,7 @@ module Bosh::Director
       let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
       before do
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([])
         allow(deployment_plan).to receive(:unneeded_instances).and_return([])
-      end
-
-      def it_deletes_unneeded_vms
-        vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(vm_model).to receive(:instance)
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
-
-        expect(event_log).to receive(:begin_stage).with('Deleting unneeded VMs', 1)
-        expect(cloud).to receive(:delete_vm).with('vm-cid')
       end
 
       def it_deletes_unneeded_instances
@@ -77,7 +68,6 @@ module Bosh::Director
         allow(event_log).to receive(:track).and_yield
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
 
-        it_deletes_unneeded_vms.ordered
         it_deletes_unneeded_instances.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
@@ -85,30 +75,21 @@ module Bosh::Director
         subject.perform
       end
 
-      it 'deletes unneeded vms from database and writes to event log' do
-        vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
-
-        subject.perform
-
-        expect(Models::Vm[vm_model.id]).to be_nil
-        check_event_log do |events|
-          expect(events.size).to eq(2)
-          expect(events.map { |e| e['stage'] }.uniq).to eq(['Deleting unneeded VMs'])
-          expect(events.map { |e| e['total'] }.uniq).to eq([1])
-          expect(events.map { |e| e['task'] }.uniq).to eq(%w(vm-cid))
-        end
-      end
-
       context 'when perform fails' do
         let(:some_error) { RuntimeError.new('oops') }
+
         before do
-          allow(deployment_plan).to receive(:unneeded_vms).and_return([instance_double(Bosh::Director::Models::Vm, cid: 'some-cid')])
-          allow(cloud).to receive(:delete_vm).with('some-cid').and_raise(some_error)
+          existing_instance = Models::Instance.make(vm_cid: 'vm_cid')
+          allow(deployment_plan).to receive(:unneeded_instances).and_return([existing_instance])
+          agent_client = instance_double(AgentClient, drain: 0, stop: nil)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+
+          expect(cloud).to receive(:delete_vm).with('vm_cid').and_raise(some_error)
         end
 
         it 'still updates the stemcell references' do
           expect(deployment_plan).to receive(:update_stemcell_references!)
+
           expect{
             subject.perform
           }.to raise_error(some_error)

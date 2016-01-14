@@ -26,6 +26,7 @@ require 'bosh/director/api/user/user_manager_provider'
 require 'bosh/director/api/vm_state_manager'
 require 'bosh/director/api/backup_manager'
 require 'bosh/director/api/resurrector_manager'
+require 'bosh/director/api/restore_manager'
 require 'bosh/director/api/cloud_config_manager'
 
 require 'bosh/director/api/instance_lookup'

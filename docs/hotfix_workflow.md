@@ -44,10 +44,11 @@
   - [ ] C. Run the pipeline
 
         ```bash
-        # 1. Open in your browser
+        # 1. unpause the pipeline
+        fly -t production unpause-pipeline -p $HOTFIX_IMG_PIPELINE
+        # 2. point your browser to the pipeline
         open https://main.bosh-ci.cf-app.com/pipelines/$HOTFIX_IMG_PIPELINE
-        # 2. Un-pause the pipeline
-        # 3. Trigger the "start-job" job
+        # 3. trigger the "start-job" job
         ```
 - [ ] 3. Produce BOSH changes (from the hotfix branch)
   - [ ] A. Update BOSH with OS image details
@@ -99,6 +100,7 @@
       # Tear down the Concourse hotfix pipelines
       fly -t production destroy-pipeline -p $HOTFIX_IMG_PIPELINE
       fly -t production destroy-pipeline -p $HOTFIX_BOSH_PIPELINE
+      # Remove the now-merged branch
       git push origin :$HOTFIX_NAME
       ```
 

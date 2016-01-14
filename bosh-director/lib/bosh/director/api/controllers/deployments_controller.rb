@@ -18,28 +18,17 @@ module Bosh::Director
         json_encode(response)
       end
 
-      # PUT /deployments/foo/jobs/dea?new_name=dea_new
+      # PUT /deployments/foo/jobs/dea?new_name=dea_new or
+      # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}&skip_drain=true
       put '/:deployment/jobs/:job', :consumes => :yaml do
-        if params['state']
-          options = {
-            'job_states' => {
-              params[:job] => {
-                'state' => params['state']
-              }
+        options = {
+          'job_states' => {
+            params[:job] => {
+              'state' => params['state']
             }
           }
-        else
-          unless params['new_name']
-            raise DirectorError, "Missing operation on job `#{params[:job]}'"
-          end
-          options = {
-            'job_rename' => {
-              'old_name' => params[:job],
-              'new_name' => params['new_name']
-            }
-          }
-          options['job_rename']['force'] = true if params['force'] == 'true'
-        end
+        }
+        options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
@@ -187,7 +176,7 @@ module Bosh::Director
           task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
-          @deployment_manager.deployment_vms_to_json(deployment)
+          @deployment_manager.deployment_instances_to_json(deployment)
         end
       end
 
@@ -216,7 +205,7 @@ module Bosh::Director
 
       post '/:deployment/properties', :consumes => [:json] do
         payload = json_decode(request.body)
-        @property_manager.create_property(params[:deployment], payload['name'], payload['value'])
+        @property_manager.create_property(params[:deployment], payload['name'], payload['value']  )
         status(204)
       end
 
@@ -278,10 +267,42 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
-        latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        if params['update_config']
+          @logger.debug("Deploying with update config #{params['update_config']}")
+          update_config = JSON.parse(params['update_config'])
+          cloud_config = Api::CloudConfigManager.new.find_by_id(update_config['cloud_config_id'])
+        else
+          cloud_config =Api::CloudConfigManager.new.latest
+        end
 
-        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, options)
         redirect "/tasks/#{task.id}"
+      end
+
+      post '/:deployment/diff', :consumes => :yaml do
+        deployment = Models::Deployment[name: params[:deployment]]
+        if deployment
+          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+          before_manifest.resolve_aliases
+        else
+          before_manifest = Manifest.load_from_text(nil, nil)
+        end
+
+        after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_manifest = Manifest.load_from_text(
+          request.body,
+          after_cloud_config
+        )
+        after_manifest.resolve_aliases
+
+        diff = before_manifest.diff(after_manifest)
+
+        json_encode({
+          'update_config' => {
+            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+          },
+          'diff' => diff.map { |l| [l.to_s, l.status] }
+        })
       end
 
       post '/:deployment_name/errands/:errand_name/runs' do

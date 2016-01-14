@@ -22,14 +22,13 @@ module Bosh::Director
     describe '#perform' do
       before { allow(fetch_logs).to receive(:with_deployment_lock).and_yield }
 
-      let(:instance) { Models::Instance.make(deployment: deployment, vm: nil, job: 'fake-job-name', index: '42') }
+      let(:instance) { Models::Instance.make(deployment: deployment, vm_cid: nil, job: 'fake-job-name', index: '42') }
       let(:deployment) { Models::Deployment.make }
 
       context 'when instance is associated with a vm' do
-        before { instance.update(vm: vm) }
-        let(:vm) { Models::Vm.make(deployment: deployment, agent_id: 'fake-agent-id', cid: 'vm-1') }
+        before { instance.update(vm_cid: 'vm-1') }
 
-        before { allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent) }
+        before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(agent) }
         let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'fake-blobstore-id'}) }
 
         it 'cleans old log bundles' do
@@ -72,7 +71,7 @@ module Bosh::Director
         it 'raises an exception because there is no agent to contact' do
           expect {
             fetch_logs.perform
-          }.to raise_error(InstanceVmMissing, "`fake-job-name/#{instance.uuid} (42)' doesn't reference a VM")
+          }.to raise_error(InstanceVmMissing, "`fake-job-name/42 (#{instance.uuid})' doesn't reference a VM")
         end
       end
     end

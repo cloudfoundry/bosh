@@ -6,6 +6,7 @@ module Bosh::Dev
     let(:build_number) { 'fake-build-number' }
 
     subject(:release_artifact) { ReleaseArtifact.new(build_number, logger) }
+    before { allow(Dir).to receive(:pwd).and_return('fake-dir') }
 
     describe '#name' do
       it 'returns the filename for the release' do
@@ -29,7 +30,7 @@ module Bosh::Dev
 
       it 'copies the release from the pipeline to the artifacts bucket' do
         expect(Open3).to receive(:capture3).
-          with("s3cmd --verbose cp #{source} #{destination}").
+          with("s3cmd --verbose cp #{source} #{destination}", chdir: 'fake-dir').
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         release_artifact.promote
@@ -47,7 +48,7 @@ module Bosh::Dev
 
       it 'returns true if the release file exists in the s3 bucket' do
         expect(Open3).to receive(:capture3).
-          with("s3cmd info #{destination}").
+          with("s3cmd info #{destination}", chdir: 'fake-dir').
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         expect(release_artifact.promoted?).to be(true)
@@ -55,7 +56,7 @@ module Bosh::Dev
 
       it 'returns false if the release file does not exists in the s3 bucket' do
         expect(Open3).to receive(:capture3).
-          with("s3cmd info #{destination}").
+          with("s3cmd info #{destination}", chdir: 'fake-dir').
           and_return([ nil, 'fake-error', instance_double('Process::Status', success?: false) ])
 
         expect(release_artifact.promoted?).to be(false)

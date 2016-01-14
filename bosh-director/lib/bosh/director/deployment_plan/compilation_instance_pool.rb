@@ -17,7 +17,7 @@ module Bosh::Director
             configure_instance_plan(instance_plan)
             @instance_reuser.add_in_use_instance(instance_plan.instance, stemcell)
           else
-            @logger.info("Reusing compilation VM `#{instance.vm.model.cid}' for stemcell `#{stemcell.model.desc}'")
+            @logger.info("Reusing compilation VM `#{instance.model.vm_cid}' for stemcell `#{stemcell.model.desc}'")
           end
 
           yield instance
@@ -66,7 +66,12 @@ module Bosh::Director
       end
 
       def create_instance_plan(stemcell)
-        vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        if @deployment_plan.compilation.vm_type
+          vm_type = @deployment_plan.compilation.vm_type
+        else
+          vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+        end
+
         env = Env.new(@deployment_plan.compilation.env)
 
         @compile_job = CompilationJob.new(vm_type, stemcell, env, @deployment_plan.compilation.network_name)
@@ -75,7 +80,7 @@ module Bosh::Director
         instance.bind_new_instance_model
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-        reservation = DesiredNetworkReservation.new_dynamic(instance, compilation_network)
+        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network)
         desired_instance = DeploymentPlan::DesiredInstance.new(@compile_job, nil)
         instance_plan = DeploymentPlan::InstancePlan.new(
           existing_instance: instance.model,
@@ -90,8 +95,6 @@ module Bosh::Director
       end
 
       def configure_instance_plan(instance_plan)
-        instance_plan.instance.bind_unallocated_vm
-
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
         @vm_creator.create_for_instance_plan(instance_plan, [])
       end

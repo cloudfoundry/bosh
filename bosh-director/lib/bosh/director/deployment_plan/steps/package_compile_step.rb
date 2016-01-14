@@ -9,7 +9,6 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        # @param [DeploymentPlan] deployment_plan Deployment plan
         def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
           @event_log = event_log
           @logger = logger
@@ -68,7 +67,7 @@ module Bosh::Director
               task_result = nil
 
               prepare_vm(stemcell) do |instance|
-                vm_metadata_updater.update(instance.vm.model, :compiling => package.name)
+                vm_metadata_updater.update(instance.model, :compiling => package.name)
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,

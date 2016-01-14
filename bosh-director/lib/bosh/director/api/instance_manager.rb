@@ -31,17 +31,16 @@ module Bosh::Director
       # @param [Models::Instance] instance Instance
       # @return [AgentClient] Agent client to talk to instance
       def agent_client_for(instance)
-        vm = instance.vm
-        if vm.nil?
+        unless instance.vm_cid
           raise InstanceVmMissing,
-                "`#{instance.job}/#{instance.uuid} (#{instance.index})' doesn't reference a VM"
+                "`#{instance}' doesn't reference a VM"
         end
 
-        if vm.agent_id.nil?
-          raise VmAgentIdMissing, "VM `#{vm.cid}' doesn't have an agent id"
+        unless instance.agent_id
+          raise VmAgentIdMissing, "VM `#{instance.vm_cid}' doesn't have an agent id"
         end
 
-        AgentClient.with_vm(vm)
+        AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
       end
 
       def fetch_logs(username, deployment_name, job, index_or_id, options = {})

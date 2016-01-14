@@ -79,18 +79,13 @@ module Bosh::Director
 
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
-        subject(:client) { AgentClient.with_vm(vm_model) }
-        let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
         let(:task) do
           {
               'agent_task_id' => 'fake-agent_task_id',
               'state' => 'running',
               'value' => 'task value'
           }
-        end
-
-        before do
-          allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model)
         end
 
         describe 'send asynchronous messages' do
@@ -194,10 +189,7 @@ module Bosh::Director
 
     context 'task is synchronous' do
       describe 'it does not have agent_task_id' do
-        subject(:client) { AgentClient.with_vm(vm_model) }
-
-        before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
-        let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
 
         before do
           allow(Config).to receive(:nats_rpc)
@@ -221,15 +213,12 @@ module Bosh::Director
         { 'network_a' => { 'ip' => '1.2.3.4' } }
       end
 
-      let(:vm_model) do
-        Models::Vm.make(credentials: Bosh::Core::EncryptionHandler.generate_credentials)
-      end
-
+      let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
       subject(:client) do
-        AgentClient.with_vm(vm_model)
+        AgentClient.with_vm_credentials_and_agent_id(credentials, 'fake-agent-id')
       end
 
-      it 'should use vm credentials' do
+      it 'should use provided credentials' do
         nats_rpc = double('nats_rpc')
 
         allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
@@ -237,7 +226,7 @@ module Bosh::Director
 
         allow(App).to receive_messages(instance: double('App Instance').as_null_object)
 
-        handler = Bosh::Core::EncryptionHandler.new(vm_model.agent_id, vm_model.credentials)
+        handler = Bosh::Core::EncryptionHandler.new('fake-agent-id', credentials)
         expect(nats_rpc).to receive(:send_request) do |*args, &blk|
           data = args[1]['encrypted_data']
           handler.decrypt(data) # decrypt to initiate session

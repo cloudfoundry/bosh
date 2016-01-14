@@ -392,27 +392,21 @@ describe Bosh::Director::DeploymentPlan::Job do
       obsolete_plan = BD::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
 
       job.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
-
-      [instance0, instance1].each do |instance|
-        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-      end
-
-      job.bind_unallocated_vms
     end
   end
 
   describe '#bind_instances' do
     subject(:job) { described_class.new(logger) }
 
-    it 'makes sure theres a model, binds unallocated vms, and binds instance networks' do
+    it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
       instance1 = BD::DeploymentPlan::Instance.create_from_job(job, 6, 'started', nil, {}, az, logger)
-      instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
-      instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0, network)
-      instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1, network)
-      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1, network, '10.0.0.1', 'manual')
+      instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
+      instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
+      instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
+      instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1.model, network, '10.0.0.1', 'manual')
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new({
           desired_instance: BD::DeploymentPlan::DesiredInstance.new,
           existing_instance: nil,
@@ -439,9 +433,6 @@ describe Bosh::Director::DeploymentPlan::Job do
       [instance0, instance1].each do |instance|
         expect(instance).to receive(:ensure_model_bound).with(no_args).ordered
       end
-      [instance0, instance1].each do |instance|
-        expect(instance).to receive(:ensure_vm_allocated).with(no_args).ordered
-      end
 
       job.bind_instances(fake_ip_provider)
 
@@ -460,7 +451,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:starts_on_deploy?) { should be(true) }
     end
 
-    context "when lifecycle profile is not service" do
+    context 'when lifecycle profile is not service' do
       before { subject.lifecycle = 'other' }
       its(:starts_on_deploy?) { should be(false) }
     end
@@ -474,7 +465,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:can_run_as_errand?) { should be(true) }
     end
 
-    context "when lifecycle profile is not errand" do
+    context 'when lifecycle profile is not errand' do
       before { subject.lifecycle = 'other' }
       its(:can_run_as_errand?) { should be(false) }
     end

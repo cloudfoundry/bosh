@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     ##
@@ -11,7 +9,7 @@ module Bosh::Director
       attr_accessor :workers
 
       # @return [Hash] cloud properties to use when creating VMs. (optional)
-      attr_accessor :cloud_properties
+      attr_reader :cloud_properties
 
       # @return [Hash] environment to use when creating VMs. (optional)
       attr_accessor :env
@@ -23,10 +21,9 @@ module Bosh::Director
 
       attr_reader :availability_zone
 
-      # Creates compilation configuration spec from the deployment manifest.
-      # @param [DeploymentPlan] deployment
-      # @param [Hash] compilation_config parsed compilation config YAML section
-      def initialize(compilation_config, azs_list = {})
+      attr_reader :vm_type
+
+      def initialize(compilation_config, azs_list, vm_types = [])
         @workers = safe_property(compilation_config, 'workers', class: Integer, min: 1)
 
         @network_name = safe_property(compilation_config, 'network', class: String)
@@ -45,6 +42,23 @@ module Bosh::Director
         if az_name && !az_name.empty? && @availability_zone.nil?
           raise Bosh::Director::CompilationConfigInvalidAvailabilityZone,
             "Compilation config references unknown az '#{az_name}'. Known azs are: [#{azs_list.keys.join(', ')}]"
+        end
+
+        vm_type_name = safe_property(compilation_config, 'vm_type', class: String, optional: true)
+
+        if vm_type_name
+          @vm_type = vm_types.find { |vm_type| vm_type.name == vm_type_name }
+
+          if @vm_type.nil?
+            vm_types_names = vm_types.map { |vm_type| vm_type.name }
+            raise Bosh::Director::CompilationConfigInvalidVmType,
+              "Compilation config references unknown vm type '#{vm_type_name}'. Known vm types are: #{vm_types_names.join(', ')}"
+          end
+
+          unless @cloud_properties.empty?
+            raise Bosh::Director::CompilationConfigCloudPropertiesNotAllowed,
+              "Compilation config is using vm type '#{@vm_type.name}' and should not be configuring cloud_properties."
+          end
         end
       end
 

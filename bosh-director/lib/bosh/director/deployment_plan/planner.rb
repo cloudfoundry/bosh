@@ -43,11 +43,6 @@ module Bosh::Director
       # Job instances from the old manifest that are not in the new manifest
       attr_reader :unneeded_instances
 
-      # VMs from the old manifest that are not in the new manifest
-      attr_accessor :unneeded_vms
-
-      attr_reader :job_rename
-
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
@@ -74,9 +69,6 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
-
-        @job_rename = safe_property(options, 'job_rename',
-          :class => Hash, :default => {})
 
         @recreate = !!options['recreate']
 
@@ -108,7 +100,7 @@ module Bosh::Director
 
       def bind_models
         stemcell_manager = Api::StemcellManager.new
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
           self,
           stemcell_manager,
@@ -128,7 +120,7 @@ module Bosh::Director
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
-        dns_manager = DnsManager.create
+        dns_manager = DnsManagerProvider.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(InstanceReuser.new, vm_creator, self, @logger, instance_deleter)
         package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
@@ -160,12 +152,6 @@ module Bosh::Director
           desired_job_names.include?(instance.job) ||
             migrating_job_names.include?(instance.job)
         end
-      end
-
-      # Returns a list of Vms in the deployment (according to DB)
-      # @return [Array<Models::Vm>]
-      def vm_models
-        @model.vms
       end
 
       def skip_drain_for_job?(name)
@@ -202,12 +188,6 @@ module Bosh::Director
         @releases[name]
       end
 
-      # Adds a VM to deletion queue
-      # @param [Bosh::Director::Models::Vm] vm VM DB model
-      def mark_vm_for_deletion(vm)
-        @unneeded_vms << vm
-      end
-
       def instance_plans_with_missing_vms
         jobs_starting_on_deploy.collect_concat do |job|
           job.instance_plans_with_missing_vms
@@ -221,12 +201,6 @@ module Bosh::Director
       # Adds a job by name
       # @param [Bosh::Director::DeploymentPlan::Job] job
       def add_job(job)
-        if rename_in_progress? && @job_rename['old_name'] == job.name
-          raise DeploymentRenamedJobNameStillUsed,
-            "Renamed job `#{job.name}' is still referenced in " +
-              'deployment manifest'
-        end
-
         if @jobs_canonical_name_index.include?(job.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
             "Invalid job name `#{job.name}', canonical name already taken"
@@ -246,10 +220,6 @@ module Bosh::Director
 
       def jobs_starting_on_deploy
         @jobs.select(&:starts_on_deploy?)
-      end
-
-      def rename_in_progress?
-        @job_rename['old_name'] && @job_rename['new_name']
       end
 
       def persist_updates!

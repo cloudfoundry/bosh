@@ -13,10 +13,10 @@ module Bosh::Director
     # still be pretty generous interval for agent to respond.
     DEFAULT_AGENT_TIMEOUT = 10
 
-    def reboot_vm(vm)
-      cloud.reboot_vm(vm.cid)
+    def reboot_vm(instance)
+      cloud.reboot_vm(instance.vm_cid)
       begin
-        agent_client(vm).wait_until_ready
+        agent_client(instance.credentials, instance.agent_id).wait_until_ready
       rescue Bosh::Director::RpcTimeout
         handler_error('Agent still unresponsive after reboot')
       rescue Bosh::Director::TaskCancelled
@@ -24,47 +24,36 @@ module Bosh::Director
       end
     end
 
-    def delete_vm(vm)
+    def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(vm) { |agent| agent.list_disk }
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.credentials, instance.agent_id) { |agent| agent.list_disk }
       if disk_list.size != 0
         handler_error('VM has persistent disk attached')
       end
 
-      vm_deleter.delete_vm(vm)
+      vm_deleter.delete_for_instance(instance)
     end
 
-    def delete_vm_reference(vm, options={})
-      if vm.cid && !options[:skip_cid_check]
-        handler_error('VM has a CID')
-      end
-
-      vm.destroy
+    def delete_vm_reference(instance)
+      instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
     end
 
-    def recreate_vm(vm)
-      @logger.debug("Recreating Vm: #{vm.inspect}")
-      unless vm.instance
-        handler_error('VM does not have an associated instance')
-      end
-      instance_model = vm.instance
-      vm_env = vm.env
+    def recreate_vm(instance)
+      @logger.debug("Recreating Vm: #{@instance})")
+      existing_vm_env = instance.vm_env
 
-      handler_error("VM doesn't belong to any deployment") unless vm.deployment
-      handler_error('Failed to recreate VM without instance') unless vm.instance
-
-      validate_spec(vm.instance.spec)
-      validate_env(vm.env)
+      validate_spec(instance.spec)
+      validate_env(instance.vm_env)
 
       instance_plan_to_delete = DeploymentPlan::InstancePlan.new(
-        existing_instance: instance_model,
+        existing_instance: instance,
         instance: nil,
         desired_instance: nil,
         network_plans: []
       )
 
       begin
-        vm_deleter.delete_for_instance_plan(instance_plan_to_delete)
+        vm_deleter.delete_for_instance(instance_plan_to_delete.existing_instance)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
@@ -72,32 +61,32 @@ module Bosh::Director
         # to ignore "VM not found" errors in `delete_vm' and let the method
         # proceed creating a new VM. Other errors are not forgiven.
 
-        @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
+        @logger.warn("VM '#{instance.vm_cid}' might have already been deleted from the cloud")
       end
 
-      instance_plan_to_create = create_instance_plan(instance_model, vm_env)
+      instance_plan_to_create = create_instance_plan(instance, existing_vm_env)
 
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
-        Array(instance_model.persistent_disk_cid)
+        Array(instance.persistent_disk_cid)
       )
 
-      dns_manager = DnsManager.create
+      dns_manager = DnsManagerProvider.create
       dns_names_to_ip = {}
 
       instance_plan_to_create.existing_instance.spec['networks'].each do |network_name, network|
-        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
+        index_dns_name = dns_manager.dns_record_name(instance.index, instance.job, network_name, instance.deployment.name)
         dns_names_to_ip[index_dns_name] = network['ip']
-        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
+        id_dns_name = dns_manager.dns_record_name(instance.uuid, instance.job, network_name, instance.deployment.name)
         dns_names_to_ip[id_dns_name] = network['ip']
       end
 
-      @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
-      dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
+      @logger.debug("Updating DNS record for instance: #{instance.inspect}; to: #{dns_names_to_ip.inspect}")
+      dns_manager.update_dns_record_for_instance(instance, dns_names_to_ip)
       dns_manager.flush_dns_cache
 
-      cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
-      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.vm), cleaner).apply
+      cleaner = RenderedJobTemplatesCleaner.new(instance, App.instance.blobstores.blobstore, @logger)
+      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance.credentials, instance.agent_id), cleaner, @logger).apply
     end
 
     private
@@ -140,28 +129,19 @@ module Bosh::Director
       raise Bosh::Director::ProblemHandlerError, message
     end
 
-    def instance_name(vm)
-      instance = vm.instance
-      return "Unknown VM" if instance.nil?
-
-      job = instance.job || "unknown job"
-      index = instance.index || "unknown index"
-      "#{job}/#{index}"
-    end
-
-    def agent_client(vm, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
+    def agent_client(vm_credentials, agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         :timeout => timeout,
         :retry_methods => { :get_state => retries }
       }
       @clients ||= {}
-      @clients[vm.agent_id] ||= AgentClient.with_vm(vm, options)
+      @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options)
     end
 
-    def agent_timeout_guard(vm, &block)
-      yield agent_client(vm)
+    def agent_timeout_guard(vm_cid, vm_credentials, agent_id, &block)
+      yield agent_client(vm_credentials, agent_id)
     rescue Bosh::Director::RpcTimeout
-      handler_error("VM `#{vm.cid}' is not responding")
+      handler_error("VM `#{vm_cid}' is not responding")
     end
 
     def vm_deleter
@@ -183,8 +163,6 @@ module Bosh::Director
     end
 
     def validate_env(env)
-      handler_error('Unable to look up VM environment') unless env
-
       unless env.kind_of?(Hash)
         handler_error('Invalid VM environment format')
       end

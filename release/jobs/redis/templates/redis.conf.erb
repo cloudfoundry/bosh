@@ -1,9 +1,7 @@
 daemonize no
 pidfile /var/vcap/sys/run/redis/redis.pid
 port <%= p("redis.port") %>
-<% if_p("redis.listen_address") do |listen_address| %>
-bind <%= listen_address %>
-<% end %>
+bind <%= p("redis.listen_address") %>
 timeout 300
 loglevel notice
 logfile ""

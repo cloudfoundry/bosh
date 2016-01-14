@@ -36,7 +36,7 @@ module Bosh::Stemcell
         :bosh_micro_go,
         :aws_cli,
         :logrotate_config,
-      ]
+      ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and [:bosh_ruby, :bosh_micro_go].include?(s) }
     end
 
     def build_stemcell_image_stages
@@ -53,6 +53,8 @@ module Bosh::Stemcell
         warden_stages
       when Infrastructure::Azure then
         azure_stages
+      when Infrastructure::Softlayer then
+        softlayer_stages
       end
 
       stages.concat(finish_stemcell_stages)
@@ -159,6 +161,23 @@ module Bosh::Stemcell
       ]
     end
 
+    def softlayer_stages
+      [
+          :system_network,
+          :system_softlayer_open_iscsi,
+          :system_softlayer_multipath_tools,
+          :disable_blank_passwords,
+          :system_parameters,
+          :bosh_clean,
+          :bosh_harden,
+          :bosh_enable_password_authentication,
+          :bosh_softlayer_agent_settings,
+          :bosh_clean_ssh,
+          :image_create,
+          :image_install_grub,
+      ]
+    end
+
     def finish_stemcell_stages
       [
         :bosh_package_list
@@ -220,7 +239,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
-      ].flatten
+      ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end
 
     def photonos_os_stages

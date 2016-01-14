@@ -55,7 +55,10 @@ describe 'deploy job template', type: :integration do
     after { current_sandbox.health_monitor_process.stop }
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      deploy_from_scratch
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'].first['instances'] = 1
+
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       waiter.wait(60) do
         expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for 'simple'/)

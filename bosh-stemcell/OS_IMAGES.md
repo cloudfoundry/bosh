@@ -7,6 +7,27 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+<<<<<<< HEAD
+=======
+* `8ajef7lP_fAuhx3BXqkjaPskK423EzHJ`
+  - update for USN-2869-1: OpenSSH vulnerabilities
+
+* `L8uhBoJqqNQDRF45ZpjsAAmZ2rnANnbM`
+  - update for USN-2868-1: DHCP vulnerability
+
+* `yVt32oA.CXzu2YCXBH7zdttGFdSozka1`
+  - update ubuntu packages for USN-2865-1, USN-2861-1
+
+* `fAPEi05GreKek9FEiIGYZKfYPhpPCZ3B`
+  - update for USN-2861-1
+
+* `YeywOPDDPX0mn3WgSqpxl1gBXcQhtvWv`
+  - bump kernel to 3.19.0-43
+
+* `TTmPhUs6RDJUlQmZ.RYMu0ItfOS6FNtx`
+  - update monit from 5.2.4 to 5.2.5
+
+>>>>>>> develop
 * `3mZuzYe8vUwy3L1YhZihMvJ3OEzpDkj.`
   - update for USN-2854-1
 
@@ -334,6 +355,21 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `81D.QMDKeGzfBG1ctqTUIvBCpEs0JbRd`
+  - (periodic) bump centos to match ubuntu update for USN-2869-1
+
+* `KLkiU47sSNxtkqXHL6Xb2sfhQTjGDNCK`
+  - (periodic) bump centos to match ubuntu update for USN-2868-1
+
+* `vbWPUGbViswiED.1m6cKU0GdxEu2hL.L`
+  - (periodic) bump centos to match ubuntu update for USN-2865-1, USN-2861-1
+
+* `7PHeBQT.8HLySemI1A3c6HY4NBoG1Asc`
+  - (periodic) bump centos to match ubuntu update for USN-2861-1
+
+* `qmKgGt1iOX84M.hR8ZVI0887DEvnKPHV`
+  - update monit from 5.2.4 to 5.2.5
 
 * `VdAETz96I1jsDYh.Qf8_UgrYTexAmX7U`
   - (periodic) bump centos to match ubuntu update for USN-2854-1

@@ -107,40 +107,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect(stemcell.deployments).to eq([deployment])
     end
 
-    it "should bind to latest stemcell model with os" do
-      deployment = make_deployment("mycloud")
-      plan = make_plan(deployment)
-
-      make_stemcell("stemcell-name", "10")
-      make_stemcell("stemcell-name", "0.5.0", 'os2')
-      stemcell1 = make_stemcell("stemcell-name", "0.5.2", 'os2')
-
-      sc = make({
-          'os' => 'os2',
-          "version" => "latest"})
-      sc.bind_model(plan)
-
-      expect(sc.model).to eq(stemcell1)
-      expect(stemcell1.deployments).to eq([deployment])
-      expect(sc.version).to eq('0.5.2')
-    end
-
-    it "should bind to latest stemcell model with name" do
-      deployment = make_deployment("mycloud")
-      plan = make_plan(deployment)
-
-      make_stemcell("stemcell-name", "0.5.0")
-      stemcell1 = make_stemcell("stemcell-name", "0.5.2")
-
-      sc = make({
-          "name" => "stemcell-name",
-          "version" => "latest"})
-      sc.bind_model(plan)
-
-      expect(sc.model).to eq(stemcell1)
-      expect(stemcell1.deployments).to eq([deployment])
-    end
-
     it "should bind to stemcell with specified OS and version" do
       deployment = make_deployment("mycloud")
       plan = make_plan(deployment)

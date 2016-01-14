@@ -36,10 +36,8 @@ module Bosh::Director::DeploymentPlan
     let(:disk_type) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:vm) { Vm.new }
 
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
-    let(:vm_model) { Bosh::Director::Models::Vm.make }
 
     let(:current_state) { {'current' => 'state'} }
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
@@ -67,42 +65,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#bind_unallocated_vm' do
-      let(:index) { 2 }
-      let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
-      let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
-      let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
-      let(:vm) { Vm.new }
-
-      before do
-        allow(job).to receive(:vm_type).and_return(vm_type)
-        allow(job).to receive(:stemcell).and_return(stemcell)
-      end
-
-      it 'creates a new VM and binds it the instance' do
-        instance.bind_unallocated_vm
-
-        expect(instance.model).not_to be_nil
-        expect(instance.vm).not_to be_nil
-        expect(instance.vm.bound_instance).to eq(instance)
-      end
-
-      it 'creates a new uuid for each instance' do
-        allow(SecureRandom).to receive(:uuid).and_return('uuid-1', 'uuid-2')
-        first_instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-        first_instance.bind_unallocated_vm
-        first_uuid = first_instance.uuid
-        index = 1
-        second_instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
-        second_instance.bind_unallocated_vm
-        second_uuid = second_instance.uuid
-        expect(first_uuid).to_not be_nil
-        expect(second_uuid).to_not be_nil
-        expect(first_uuid).to_not eq(second_uuid)
-      end
-    end
-
     describe '#bind_existing_instance_model' do
       let(:job) { Job.new(logger) }
 
@@ -123,11 +85,8 @@ module Bosh::Director::DeploymentPlan
       it 'sets the instance model' do
         instance.bind_existing_instance_model(instance_model)
         expect(instance.model).to eq(instance_model)
-        expect(instance.vm).to_not be_nil
-        expect(instance.vm.model).to be(instance_model.vm)
-        expect(instance.vm.bound_instance).to be(instance)
       end
-      end
+    end
 
     describe '#bind_new_instance_model' do
       it 'sets the instance model and uuid' do
@@ -146,10 +105,8 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
-        allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
         instance.bind_existing_instance_model(instance_model)
-        instance.bind_unallocated_vm
-        instance.bind_to_vm_model(vm_model)
       end
 
       describe 'apply_vm_state' do
@@ -311,19 +268,6 @@ module Bosh::Director::DeploymentPlan
             end
           end
         end
-      end
-    end
-
-    describe '#bind_to_vm_model' do
-      before do
-        instance.bind_unallocated_vm
-        instance.bind_to_vm_model(vm_model)
-      end
-
-      it 'updates instance model with new vm model' do
-        expect(instance.model.refresh.vm).to eq(vm_model)
-        expect(instance.vm.model).to eq(vm_model)
-        expect(instance.vm.bound_instance).to eq(instance)
       end
     end
 

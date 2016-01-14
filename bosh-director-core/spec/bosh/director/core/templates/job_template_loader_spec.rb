@@ -7,6 +7,9 @@ require 'stringio'
 require 'yaml'
 require 'zlib'
 
+# prevent using ASCII on ppc64le platform
+Encoding.default_external = "UTF-8"
+
 def gzip(string)
   result = StringIO.new
   zio = Zlib::GzipWriter.new(result, nil, nil)

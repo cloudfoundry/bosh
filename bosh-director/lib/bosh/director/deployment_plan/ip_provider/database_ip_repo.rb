@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
       reservation_type = reservation.network.ip_type(cidr_ip)
 
       reserve_with_instance_validation(
-        reservation.instance,
+        reservation.instance_model,
         cidr_ip,
         reservation,
         reservation_type.eql?(:static)
@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
       Bosh::Director::Models::IpAddress.select(:address).all.map { |a| a.address }
     end
 
-    def reserve_with_instance_validation(instance, ip, reservation, is_static)
+    def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
       save_ip(ip, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
@@ -96,12 +96,12 @@ module Bosh::Director::DeploymentPlan
 
       retry unless ip_address
 
-      validate_instance_and_update_reservation_type(instance, ip, ip_address, reservation.network.name, is_static)
+      validate_instance_and_update_reservation_type(instance_model, ip, ip_address, reservation.network.name, is_static)
     end
 
-    def validate_instance_and_update_reservation_type(instance, ip, ip_address, network_name, is_static)
+    def validate_instance_and_update_reservation_type(instance_model, ip, ip_address, network_name, is_static)
       reserved_instance = ip_address.instance
-      if reserved_instance == instance.model
+      if reserved_instance == instance_model
         if ip_address.static != is_static || ip_address.network_name != network_name
           reservation_type = is_static ? 'static' : 'dynamic'
           @logger.debug("Updating reservation for ip '#{ip}' with type '#{reservation_type}' and network '#{network_name}'")
@@ -111,14 +111,14 @@ module Bosh::Director::DeploymentPlan
         return ip_address
       else
         raise Bosh::Director::NetworkReservationAlreadyInUse,
-          "Failed to reserve IP '#{ip}' for instance '#{instance}': " +
+          "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " +
             "already reserved by instance '#{reserved_instance.job}/#{reserved_instance.index}' " +
             "from deployment '#{reserved_instance.deployment.name}'"
       end
     end
 
     def save_ip(ip, reservation, is_static)
-      reservation.instance.model.add_ip_address(
+      reservation.instance_model.add_ip_address(
         address: ip.to_i,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,

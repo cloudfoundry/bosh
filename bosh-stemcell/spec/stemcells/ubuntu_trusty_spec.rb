@@ -4,7 +4,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   it_behaves_like 'All Stemcells'
 
-  context 'installed by image_install_grub', exclude_on_warden: true do
+  context 'installed by image_install_grub', {exclude_on_warden: true, exclude_on_ppc64le: true} do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
       it { should contain 'default=0' }
@@ -49,11 +49,17 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     exclude_on_vcloud: true,
     exclude_on_warden: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/etc/network/interfaces') do
       it { should be_file }
       it { should contain 'auto lo' }
       it { should contain 'iface lo inet loopback' }
+    end
+
+    describe file('/etc/hostname') do
+      it { should be_file }
+      it { should contain 'localhost' }
     end
   end
 
@@ -63,6 +69,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     exclude_on_vsphere: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/etc/network/interfaces') do
       it { should be_file }
@@ -77,8 +84,35 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     exclude_on_warden: true,
     exclude_on_openstack: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe package('open-vm-tools') do
+      it { should be_installed }
+    end
+  end
+
+  context 'installed by system_softlayer_open_iscsi', {
+      exclude_on_aws: true,
+      exclude_on_vsphere: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+      exclude_on_openstack: true,
+      exclude_on_azure: true,
+  } do
+    describe package('open-iscsi') do
+      it { should be_installed }
+    end
+  end
+
+  context 'installed by system_softlayer_multipath_tools', {
+      exclude_on_aws: true,
+      exclude_on_vsphere: true,
+      exclude_on_vcloud: true,
+      exclude_on_warden: true,
+      exclude_on_openstack: true,
+      exclude_on_azure: true,
+  } do
+    describe package('multipath-tools') do
       it { should be_installed }
     end
   end
@@ -89,6 +123,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     exclude_on_warden: true,
     exclude_on_openstack: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/etc/udev/rules.d/60-cdrom_id.rules') do
       it { should be_file }
@@ -124,6 +159,7 @@ HERE
     exclude_on_vsphere: true,
     exclude_on_warden: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
@@ -137,6 +173,7 @@ HERE
     exclude_on_vsphere: true,
     exclude_on_warden: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
@@ -152,6 +189,7 @@ HERE
     exclude_on_openstack: true,
     exclude_on_warden: true,
     exclude_on_azure: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
@@ -165,6 +203,7 @@ HERE
     exclude_on_vsphere: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
+    exclude_on_softlayer: true,
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
@@ -173,6 +212,22 @@ HERE
       it { should contain('"UserDataPath": "/var/lib/waagent/CustomData"') }
       it { should contain('"SettingsPath": "/var/lib/waagent/CustomData"') }
       it { should contain('"UseServerName": true') }
+      it { should contain('"UseRegistry": true') }
+    end
+  end
+
+  context 'installed by bosh_softlayer_agent_settings', {
+      exclude_on_aws: true,
+      exclude_on_vcloud: true,
+      exclude_on_vsphere: true,
+      exclude_on_warden: true,
+      exclude_on_azure: true,
+      exclude_on_openstack: true,
+  } do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should contain('"Type": "File"') }
+      it { should contain('"SettingsPath": "/var/vcap/bosh/user_data.json"') }
       it { should contain('"UseRegistry": true') }
     end
   end

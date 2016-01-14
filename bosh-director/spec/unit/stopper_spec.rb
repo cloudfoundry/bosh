@@ -4,11 +4,10 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
-    let(:instance_model) { Models::Instance.make(vm: vm, spec: spec) }
-    let(:vm) { Models::Vm.make(env: {'old' => 'env'}) }
+    let(:instance_model) { Models::Instance.make(vm_cid: 'vm-cid', spec: spec) }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    before { allow(AgentClient).to receive(:with_vm).with(instance_model.vm).and_return(agent_client) }
+    before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
@@ -81,7 +80,7 @@ module Bosh::Director
       end
 
       context 'when it instance does not have vm' do
-        before { instance_model.vm = nil }
+        before { instance_model.vm_cid = nil }
 
         it 'does not drain and stop' do
           expect(agent_client).to_not receive(:drain)
@@ -178,7 +177,7 @@ module Bosh::Director
 
           subnet = DeploymentPlan::DynamicNetworkSubnet.new('a.b.c.d', {}, ['az'])
           network = DeploymentPlan::DynamicNetwork.new('dynamic', [subnet], logger)
-          reservation = DesiredNetworkReservation.new_dynamic(instance, network)
+          reservation = DesiredNetworkReservation.new_dynamic(instance_model, network)
           instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         end
 

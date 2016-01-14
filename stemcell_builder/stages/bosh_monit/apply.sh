@@ -8,7 +8,7 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-monit_basename=monit-5.2.4
+monit_basename=monit-5.2.5
 monit_archive=$monit_basename.tar.gz
 
 mkdir -p $chroot/$bosh_dir/src

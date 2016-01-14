@@ -98,15 +98,6 @@ module Bosh::Director
           expect(plan.recreate).to eq(true)
         end
 
-        describe 'vm_models' do
-          it 'returns a list of VMs in deployment' do
-            vm_model1 = Models::Vm.make(deployment: deployment_model)
-            vm_model2 = Models::Vm.make(deployment: deployment_model)
-
-            expect(planner.vm_models).to eq([vm_model1, vm_model2])
-          end
-        end
-
         describe '#jobs_starting_on_deploy' do
           before { subject.add_job(job1) }
           let(:job1) do
@@ -254,18 +245,6 @@ module Bosh::Director
                 expect(stemcell_model_2.reload.deployments).to_not include(deployment_model)
               end
             end
-          end
-        end
-
-        describe 'mark_vm_for_deletion' do
-          it 'records vms' do
-            vm_model1 = Models::Vm.make(deployment: deployment_model)
-            vm_model2 = Models::Vm.make(deployment: deployment_model)
-
-            planner.mark_vm_for_deletion(vm_model1)
-            planner.mark_vm_for_deletion(vm_model2)
-
-            expect(planner.unneeded_vms).to eq([vm_model1, vm_model2])
           end
         end
 

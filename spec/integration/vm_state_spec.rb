@@ -158,13 +158,13 @@ describe 'vm state', type: :integration do
 
       bosh_runner.run('restart foobar 1')
       event_log = bosh_runner.run('task last --event --raw')
-      expect(event_log).to match(/foobar\/.* \(1\)/)
-      expect(event_log).to_not match(/foobar\/.* \(2\)/)
+      expect(event_log).to match(/foobar\/1 \(.*\)/)
+      expect(event_log).to_not match(/foobar\/2 \(.*\)/)
 
       bosh_runner.run('restart foobar 2')
       event_log = bosh_runner.run('task last --event --raw')
-      expect(event_log).to_not match(/foobar\/.* \(1\)/)
-      expect(event_log).to match(/foobar\/.* \(2\)/)
+      expect(event_log).to_not match(/foobar\/1 \(.*\)/)
+      expect(event_log).to match(/foobar\/2 \(.*\)/)
     end
   end
 
@@ -179,5 +179,34 @@ describe 'vm state', type: :integration do
       event_log = bosh_runner.run('task last --event --raw')
       expect(event_log).to_not match(/Updating job/)
     end
+  end
+
+  it 'changes a single job instance state when referenced by id' do
+    deploy_from_scratch
+    expect(director.vms.map(&:last_known_state).uniq).to match_array(['running'])
+    bosh_runner.run('stop')
+    expect(director.vms.map(&:last_known_state).uniq).to match_array(['stopped'])
+
+    test_vm = director.vms[1]
+    instance_id = test_vm.instance_uuid
+    expect(bosh_runner.run("start foobar #{instance_id}")).to match %r{foobar/#{instance_id} started}
+
+    vms = director.vms
+    test_vm = director.find_vm(vms, 'foobar', instance_id)
+    expect(test_vm.last_known_state).to eq('running')
+    other_vms = vms.select { |vm| vm.instance_uuid != instance_id }
+    expect(other_vms.map(&:last_known_state).uniq).to eq(['stopped'])
+
+    expect(bosh_runner.run("stop foobar #{instance_id}")).to match %r{foobar/#{instance_id} stopped}
+    expect(director.vm('foobar', instance_id).last_known_state).to eq('stopped')
+
+    expect(bosh_runner.run("recreate foobar #{instance_id}")).to match %r{foobar/#{instance_id} recreated}
+    vms = director.vms
+    recreated_vm = director.find_vm(vms, 'foobar', instance_id)
+    expect(recreated_vm.cid).to_not eq(test_vm.cid)
+    new_other_vms = vms.select { |vm| vm.instance_uuid != instance_id }
+    expect(new_other_vms.map(&:cid)).to match_array(other_vms.map(&:cid))
+
+    expect(bosh_runner.run("restart foobar #{instance_id}")).to match %r{foobar/#{instance_id} restarted}
   end
 end

@@ -5,21 +5,27 @@ module Bosh::Director
     class TestProblemHandler < ProblemHandlers::Base
       register_as :test_problem_handler
 
-      def initialize(vm_id, data)
+      def initialize(instance_uuid, data)
         super
-        @vm = Models::Vm[vm_id]
+        @instance = Models::Instance.find(uuid: instance_uuid)
       end
 
       resolution :recreate_vm do
-        action { recreate_vm(@vm) }
+        action { recreate_vm(@instance) }
       end
     end
 
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => "name-1") }
-    let(:vm) do
-      Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007', deployment: deployment_model)
+    let(:instance) do
+      Models::Instance.make(
+        deployment: deployment_model,
+        job: 'mysql_node',
+        index: 0,
+        vm_cid: 'vm-cid',
+        spec: {'apply' => 'spec', 'env' => {'vm_env' => 'json'}}
+      )
     end
-    let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, vm.id, {}) }
+    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest), :name => 'name-1') }
+    let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:fake_cloud) { instance_double('Bosh::Cloud') }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(fake_cloud, logger) }
     let(:vm_creator) { Bosh::Director::VmCreator.new(fake_cloud, logger, vm_deleter, nil, job_renderer) }
@@ -27,7 +33,7 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
 
     before do
-      allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(agent_client)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(fake_cloud).to receive(:create_vm)
@@ -46,8 +52,8 @@ module Bosh::Director
         before { allow(agent_client).to receive(:list_disk).and_return([]) }
 
         it 'deletes VM using vm_deleter' do
-          expect(vm_deleter).to receive(:delete_vm).with(vm)
-          test_problem_handler.delete_vm(vm)
+          expect(vm_deleter).to receive(:delete_vm).with(instance.vm_cid)
+          test_problem_handler.delete_vm(instance)
         end
       end
 
@@ -56,43 +62,24 @@ module Bosh::Director
 
         it 'fails' do
           expect {
-            test_problem_handler.delete_vm(vm)
+            test_problem_handler.delete_vm(instance)
           }.to raise_error 'VM has persistent disk attached'
         end
       end
     end
 
     describe '#recreate_vm' do
-      let(:instance) { Models::Instance.make(deployment: deployment_model, job: 'mysql_node', index: 0, vm_id: vm.id) }
-      before { vm.instance = instance }
-
       describe 'error handling' do
-        it 'fails if VM does not an associated instance' do
-          vm.instance = nil
-
-          expect {
-            test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error 'VM does not have an associated instance'
-        end
-
         it "doesn't recreate VM if apply spec is unknown" do
-          vm.update(env: {})
+          instance.update(spec_json: nil)
 
           expect {
-            test_problem_handler.apply_resolution(:recreate_vm)
+              test_problem_handler.apply_resolution(:recreate_vm)
           }.to raise_error(ProblemHandlerError, 'Unable to look up VM apply spec')
         end
 
-        it "doesn't recreate VM if environment is unknown" do
-          vm.instance.update(spec: {})
-
-          expect {
-            test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, 'Unable to look up VM environment')
-        end
-
         it 'whines on invalid spec format' do
-          vm.instance.update(spec: :foo)
+          instance.update(spec: :foo)
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -100,8 +87,7 @@ module Bosh::Director
         end
 
         it 'whines on invalid env format' do
-          vm.instance.update(spec: {})
-          vm.update(env: :bar)
+          instance.update(vm_env: :bar)
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
@@ -132,20 +118,19 @@ module Bosh::Director
         let(:dns_manager) { instance_double(DnsManager) }
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          vm.instance.update(spec: spec)
-          vm.update(env: {'key1' => 'value1'})
-          allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm).with(vm).and_return(fake_new_agent)
+          instance.update(spec: spec)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id, anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, instance.agent_id).and_return(fake_new_agent)
 
-          allow(DnsManager).to receive(:create).and_return(dns_manager)
+          allow(DnsManagerProvider).to receive(:create).and_return(dns_manager)
         end
 
         it 'recreates the VM' do
           fake_job_context
 
-          expect(vm_deleter).to receive(:delete_for_instance_plan) do |instance_plan|
-            expect(instance_plan.existing_instance.cloud_properties_hash).to eq({'foo' => 'bar'})
-            expect(instance_plan.existing_instance.env).to eq({'key1' => 'value1'})
+          expect(vm_deleter).to receive(:delete_for_instance) do |instance|
+            expect(instance.cloud_properties_hash).to eq({'foo' => 'bar'})
+            expect(instance.vm_env).to eq({'key1' => 'value1'})
           end
 
           expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan|
@@ -158,9 +143,9 @@ module Bosh::Director
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
-          expect(dns_manager).to receive(:dns_record_name).with(0, "mysql_node", "ip", "name-1").and_return("index.record.name")
-          expect(dns_manager).to receive(:dns_record_name).with(vm.instance.uuid, "mysql_node", "ip", "name-1").and_return("uuid.record.name")
-          expect(dns_manager).to receive(:update_dns_record_for_instance).with(vm.instance, {"index.record.name"=>nil, "uuid.record.name"=>nil})
+          expect(dns_manager).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', 'name-1').and_return('index.record.name')
+          expect(dns_manager).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', 'name-1').and_return('uuid.record.name')
+          expect(dns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' =>nil, 'uuid.record.name' =>nil})
           expect(dns_manager).to receive(:flush_dns_cache)
 
           test_problem_handler.apply_resolution(:recreate_vm)

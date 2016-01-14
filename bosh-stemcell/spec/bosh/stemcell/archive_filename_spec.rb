@@ -38,19 +38,19 @@ module Bosh::Stemcell
     end
 
     describe '#to_s' do
+      let(:arch) { Bosh::Stemcell::Arch.ppc64le? ? 'ppc64le-' : '' }
       context 'when stemcell is NOT light' do
         let(:light) { false }
 
         it 'includes name, version, stemcell name' do
-          expect(archive_filename.to_s).to eq ('FAKE_NAME-007-fake-stemcell-name.tgz')
+          expect(archive_filename.to_s).to eq ("FAKE_NAME-#{arch}007-fake-stemcell-name.tgz")
         end
       end
 
       context 'when stemcell is light' do
         let(:light) { true }
-
         it 'prefixes the name with "light-"' do
-          expect(archive_filename.to_s).to eq ('light-FAKE_NAME-007-fake-stemcell-name.tgz')
+          expect(archive_filename.to_s).to eq ("light-FAKE_NAME-#{arch}007-fake-stemcell-name.tgz")
         end
       end
     end

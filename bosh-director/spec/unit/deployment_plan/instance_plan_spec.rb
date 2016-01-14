@@ -26,7 +26,7 @@ module Bosh::Director::DeploymentPlan
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
     let(:reservation) {
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance, network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
       reservation.resolve_ip('192.168.1.3')
       reservation
     }
@@ -66,7 +66,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network) }
+        let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) {[
          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
          NetworkPlanner::Plan.new(reservation: reservation)
@@ -122,7 +122,7 @@ module Bosh::Director::DeploymentPlan
             ]
           end
           let(:existing_reservation) do
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network)
+            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
             reservation.resolve_ip('10.0.0.5')
             reservation
           end
@@ -130,7 +130,7 @@ module Bosh::Director::DeploymentPlan
           it 'logs' do
             allow(logger).to receive(:debug)
             expect(logger).to receive(:debug).with(
-                "networks_changed? obsolete reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance}}]"
+                "networks_changed? obsolete reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
               )
             instance_plan.networks_changed?
           end
@@ -143,7 +143,7 @@ module Bosh::Director::DeploymentPlan
             ]
           end
           let(:desired_reservation) do
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance, existing_network)
+            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
             reservation.resolve_ip('10.0.0.5')
             reservation
           end
@@ -151,7 +151,7 @@ module Bosh::Director::DeploymentPlan
           it 'logs' do
             allow(logger).to receive(:debug)
             expect(logger).to receive(:debug).with(
-                "networks_changed? desired reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance}}]"
+                "networks_changed? desired reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
               )
             instance_plan.networks_changed?
           end
@@ -251,7 +251,7 @@ module Bosh::Director::DeploymentPlan
                                                    'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
                                                    'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
                                                  })
-          instance_plan.existing_instance.vm.update(env: {'key' => 'previous-value'})
+          instance_plan.existing_instance.update(vm_env: {'key' => 'previous-value'})
         end
 
         it 'returns true' do
@@ -488,7 +488,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1')
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1 (uuid-1)')
           instance_plan.packages_changed?
         end
       end

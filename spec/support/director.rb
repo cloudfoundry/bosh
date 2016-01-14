@@ -50,9 +50,9 @@ module Bosh::Spec
     end
 
     # vm always returns a vm
-    def vm(job_name, index, options={})
+    def vm(job_name, index_or_id, options={})
       deployment_name = options.fetch(:deployment, '')
-      find_vm(vms(deployment_name, options), job_name, index)
+      find_vm(vms(deployment_name, options), job_name, index_or_id)
     end
 
     def find_vm(vms, job_name, index_or_id)
@@ -65,7 +65,7 @@ module Bosh::Spec
     def wait_for_vm(job_name, index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.last_known_state == 'running' }
+        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.ips != '' }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)

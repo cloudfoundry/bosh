@@ -14,11 +14,24 @@ libaio1 gdb libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted \
 cloud-guest-utils anacron software-properties-common"
+
+if is_ppc64le; then
+  debs="$debs \
+libreadline-dev libtool texinfo ppc64-diag libffi-dev \
+libruby bundler libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev"
+fi
+
 pkg_mgr install $debs
 
 # we need newer rsyslog; this comes from the upstream project's own repo
 run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
-pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
+# needed to remove rsyslog-mmjsonparse on ppc64le
+# because of this issue https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
+pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
+if ! is_ppc64le; then
+  pkg_mgr install "rsyslog-mmjsonparse"
+fi
+
 
 exclusions="postfix"
 pkg_mgr purge --auto-remove $exclusions

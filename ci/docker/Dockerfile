@@ -1,4 +1,4 @@
-FROM ubuntu:14.10
+FROM ubuntu:14.04
 
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
@@ -24,8 +24,9 @@ RUN apt-get install -y libxslt-dev; apt-get clean
 RUN apt-get install -y libxml2-dev; apt-get clean
 
 # BOSH dependencies
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list && wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get update
 RUN apt-get install -y mysql-client; apt-get clean
-RUN apt-get install -y libmysqlclient-dev; apt-get clean
+RUN apt-get install -y libmariadbclient-dev; apt-get clean
 RUN apt-get install -y postgresql-9.4; apt-get clean
 RUN apt-get install -y postgresql-client-9.4; apt-get clean
 RUN apt-get install -y libpq-dev; apt-get clean
@@ -35,6 +36,7 @@ RUN apt-get install -y redis-server; apt-get clean
 RUN apt-get install -y mercurial; apt-get clean
 RUN apt-get install -y lsof; apt-get clean
 RUN apt-get install -y unzip; apt-get clean
+RUN apt-get install -y realpath; apt-get clean
 
 # UAA dependencies
 RUN mkdir -p /tmp/integration-uaa/cloudfoundry-identity-uaa-2.0.3

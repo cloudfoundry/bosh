@@ -20,7 +20,7 @@ module Bosh::Director
         end
 
         # remove old tasks
-        TaskRemover.new(Config.max_tasks).remove
+        TaskRemover.new(Config.max_tasks).remove(type)
 
         task.output = log_dir
         task.save

@@ -39,10 +39,10 @@ module Bosh::Director
       instance = instance_plan.instance
       disk_cid = instance.model.persistent_disk_cid
       return @logger.info('Skipping disk attaching') if disk_cid.nil?
-      vm_model = instance.vm.model
+      instance_model = instance.model
       begin
-        @cloud.attach_disk(vm_model.cid, disk_cid)
-        AgentClient.with_vm(vm_model).mount_disk(disk_cid)
+        @cloud.attach_disk(instance_model.vm_cid, disk_cid)
+        AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id).mount_disk(disk_cid)
       rescue => e
         @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
         raise e
@@ -156,7 +156,7 @@ module Bosh::Director
 
       begin
         @logger.info("Detaching disk #{disk_cid}")
-        @cloud.detach_disk(instance.model.vm.cid, disk_cid)
+        @cloud.detach_disk(instance.model.vm_cid, disk_cid)
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
@@ -212,13 +212,13 @@ module Bosh::Director
     end
 
     def agent(instance)
-      AgentClient.with_vm(instance.vm.model)
+      AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
     end
 
     def create_and_attach_disk(instance_plan, vm_recreator)
       instance = instance_plan.instance
       disk = create_disk(instance_plan)
-      @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
+      @cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
       return disk
     rescue Bosh::Clouds::NoDiskSpace => e
       if e.ok_to_retry
@@ -227,7 +227,7 @@ module Bosh::Director
         unmount_disk_for(instance_plan)
         vm_recreator.recreate_vm(instance_plan, disk.disk_cid)
         begin
-          @cloud.attach_disk(instance.model.vm.cid, disk.disk_cid)
+          @cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
         rescue
           orphan_disk(disk)
           raise
@@ -255,7 +255,7 @@ module Bosh::Director
       disk_size = job.persistent_disk_type.disk_size
       cloud_properties = job.persistent_disk_type.cloud_properties
 
-      disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm.cid)
+      disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
       Models::PersistentDisk.create(
         disk_cid: disk_cid,
         active: false,

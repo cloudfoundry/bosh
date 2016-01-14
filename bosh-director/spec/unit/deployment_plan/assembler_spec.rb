@@ -10,7 +10,7 @@ module Bosh::Director
       model: BD::Models::Deployment.make
     ) }
     let(:stemcell_manager) { nil }
-    let(:dns_manager) { DnsManager.create }
+    let(:dns_manager) { DnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
     let(:cloud) { instance_double('Bosh::Cloud') }
@@ -21,11 +21,9 @@ module Bosh::Director
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
-        allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
         allow(deployment_plan).to receive(:jobs).and_return([])
         allow(deployment_plan).to receive(:existing_instances).and_return([])
         allow(deployment_plan).to receive(:candidate_existing_instances).and_return([])
-        allow(deployment_plan).to receive(:vm_models).and_return([])
         allow(deployment_plan).to receive(:resource_pools).and_return(nil)
         allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([])
@@ -46,37 +44,6 @@ module Bosh::Director
 
         expect(assembler).to receive(:with_release_locks).with(['r1', 'r2']).and_yield
         assembler.bind_models
-      end
-
-      describe 'bind_job_renames' do
-        context 'when rename is in progress' do
-          before { allow(deployment_plan).to receive(:rename_in_progress?).and_return(true) }
-
-          it 'updates instance' do
-            allow(deployment_plan).to receive(:job_rename).and_return({
-                  'old_name' => instance_model.job,
-                  'new_name' => 'new-name'
-                })
-
-            expect {
-              assembler.bind_models
-            }.to change {
-                instance_model.job
-              }.from('old-name').to('new-name')
-          end
-        end
-
-        context 'when rename is not in progress' do
-          before { allow(deployment_plan).to receive(:rename_in_progress?).and_return(false) }
-
-          it 'does not update instances' do
-            expect {
-              assembler.bind_models
-            }.to_not change {
-                instance_model.job
-              }
-          end
-        end
       end
 
       describe 'migrate_legacy_dns_records' do
@@ -131,18 +98,6 @@ module Bosh::Director
             expect { assembler.bind_models }.to raise_error('Unable to deploy manifest')
           end
         end
-      end
-
-      it 'binds unallocated VMs for each job' do
-        j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
-        j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
-        expect(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([j1, j2])
-
-        [j1, j2].each do |job|
-          expect(job).to receive(:bind_unallocated_vms).with(no_args).ordered
-        end
-
-        assembler.bind_models
       end
 
       it 'configures dns' do

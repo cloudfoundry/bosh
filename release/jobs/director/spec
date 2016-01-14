@@ -7,6 +7,7 @@ templates:
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  restore-db: bin/restore-db
   task_logrotate.sh: bin/task_logrotate
   task_logrotate.cron: config/task_logrotate.cron
   director.pem.erb: config/ssl/director.pem
@@ -68,8 +69,8 @@ properties:
     description: Enable/Disable agent-director encryption (true|false)
     default: false
   director.max_tasks:
-    description: Max number of tasks to keep in disk
-    default: 500
+    description: Max number of tasks per each type to keep in disk
+    default: 100
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
@@ -124,6 +125,7 @@ properties:
 
   redis.address:
     description: Address of the redis server
+    default: 127.0.0.1
   redis.port:
     description: Port that the redis server listens on
     default: 25255
@@ -157,6 +159,7 @@ properties:
     description: |
       Address of the director database, for example, in the case of AWS RDS:
       rds-instance-name.coqxxxxxxxxx.us-east-1.rds.amazonaws.com
+    default: 127.0.0.1
   director.db.port:
     description: Port of the director database (e.g, msyql2 adapter would generally use 3306)
     default: 5432
@@ -185,6 +188,7 @@ properties:
     description: DNS Database password
   dns.db.host:
     description: DNS Database host
+    default: 127.0.0.1
   dns.db.port:
     description: Port that the powerdns database listens on
     default: 5432
@@ -201,6 +205,9 @@ properties:
   blobstore.provider:
     description: Provider of the blobstore used by director and agent (dav|simple|s3)
     default: 'dav'
+  blobstore.s3_region:
+    description: Region of the blobstore used by s3 blobstore plugin
+    default: 'us-east-1'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.credentials_source:
@@ -311,6 +318,9 @@ properties:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
     description: AWS secret_access_key for agent used by s3 blobstore plugin
+  agent.blobstore.s3_region:
+    description: AWS region for agent used by s3 blobstore plugin
+    default: 'us-east-1'
   agent.blobstore.address:
     description: Address for agent to connect to blobstore server used by simple blobstore plugin
   agent.blobstore.port:

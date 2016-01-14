@@ -21,8 +21,6 @@ module Bosh::Director
 
         manifest_text = File.read(@manifest_file_path)
         logger.debug("Manifest:\n#{manifest_text}")
-        deployment_manifest_hash = Psych.load(manifest_text)
-
         cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
         if cloud_config_model.nil?
           logger.debug("No cloud config uploaded yet.")
@@ -30,7 +28,8 @@ module Bosh::Director
           logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
         end
 
-        deployment_name = deployment_manifest_hash['name']
+        deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model)
+        deployment_name = deployment_manifest.to_hash['name']
         with_deployment_lock(deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
@@ -40,7 +39,7 @@ module Bosh::Director
           event_log.begin_stage('Preparing deployment', 1)
           event_log.track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, @options)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config_model, @options)
             deployment_plan.bind_models
           end
 

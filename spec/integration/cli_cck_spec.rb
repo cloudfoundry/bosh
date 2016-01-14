@@ -16,13 +16,13 @@ describe 'cli: cloudcheck', type: :integration do
   it 'properly resurrects VMs with dead agents' do
     current_sandbox.cpi.kill_agents
 
-    cloudcheck_response = bosh_run_cck_with_resolution(3)
+    cloudcheck_response = scrub_random_ids(bosh_run_cck_with_resolution(3))
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
-    expect(cloudcheck_response).to match(regexp('1. Skip for now
+    expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM
-  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)'))
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
+  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     recreate_vm = 3
     bosh_run_cck_with_resolution(3, recreate_vm)
@@ -32,13 +32,13 @@ describe 'cli: cloudcheck', type: :integration do
   it 'properly delete VMs references for VMs with dead agents' do
     current_sandbox.cpi.kill_agents
 
-    cloudcheck_response = bosh_run_cck_with_resolution(3)
+    cloudcheck_response = scrub_random_ids(bosh_run_cck_with_resolution(3))
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
-    expect(cloudcheck_response).to match(regexp('1. Skip for now
+    expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM
-  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)'))
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
+  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     delete_vm_reference = 4
     bosh_run_cck_with_resolution(3, delete_vm_reference)
@@ -48,12 +48,12 @@ describe 'cli: cloudcheck', type: :integration do
   it 'provides resolution options for missing VMs' do
     current_sandbox.cpi.delete_vm(current_sandbox.cpi.vm_cids.first)
 
-   cloudcheck_response = bosh_run_cck_with_resolution(1)
+   cloudcheck_response = scrub_random_ids(bosh_run_cck_with_resolution(1))
    expect(cloudcheck_response).to_not match(regexp('No problems found'))
    expect(cloudcheck_response).to match(regexp('1 missing'))
-   expect(cloudcheck_response).to match(regexp('1. Skip for now
-  2. Recreate VM
-  3. Delete VM reference') )
+   expect(cloudcheck_response).to match(%r(1\. Skip for now
+  2\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)'
+  3\. Delete VM reference))
   end
 
   it 'provides resolution options for missing disks' do
