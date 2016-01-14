@@ -29,10 +29,9 @@ module Bosh::Cli
 
     def unpack_jobs
       return @unpacked_jobs unless @unpacked_jobs.nil?
-      target = './jobs/'
-      exit_success = safe_fast_unpack(target)
+      exit_success = safe_fast_unpack('./jobs/')
       unless all_release_jobs_unpacked?
-        unpack_target(target)
+        exit_success = safe_unpack('./jobs/')
       end
       @unpacked_jobs = !!exit_success
     end
@@ -54,6 +53,15 @@ module Bosh::Cli
       exit_status
     end
 
+    def safe_unpack(target)
+      exit_status = raw_unpack(target)
+      if !exit_status
+        processed_target = handle_dot_slash_prefix(target)
+        exit_status = raw_unpack(processed_target)
+      end
+      exit_status
+    end
+
     # This will [add or remove] the './' when trying to extract a specific file from archive
     def handle_dot_slash_prefix(target)
       if target =~ /^\.\/.*/
@@ -71,16 +79,16 @@ module Bosh::Cli
           Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
         when /.*bsd.*/i
           if target[-1, 1] == "/"
-            unpack_target(target)
+            raw_unpack(target)
           else
             Kernel.system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
           end
         else
-          unpack_target(target)
+          raw_unpack(target)
       end
     end
 
-    def unpack_target(target)
+    def raw_unpack(target)
       Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
     end
 
