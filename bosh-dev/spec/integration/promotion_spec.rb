@@ -39,6 +39,8 @@ describe 'promotion' do
   after { release_patch_file.delete }
 
   it 'commits the release patch to a stable tag and then merges to the master and feature branches' do
+    skip 'Promotion is disabled on this branch'
+
     candidate_sha = nil
     Dir.chdir(workspace_path) do
       # feature development
