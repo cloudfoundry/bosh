@@ -103,7 +103,6 @@ describe 'Links', type: :integration do
           name: 'aliased_postgres',
           templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
           instances: 1,
-          static_ips: ['192.168.1.12']
       )
       job_spec['azs'] = ['z1']
       job_spec
@@ -382,6 +381,66 @@ describe 'Links', type: :integration do
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
       end
+    end
+
+    context 'when deployment includes a migrated job which also provides or consumes links' do
+      let(:links) do
+        {
+            'db' => {'from'=>'link_alias'},
+            'backup_db' => {'from' => 'simple.link_alias'},
+        }
+      end
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest
+      end
+
+      let(:new_api_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'new_api_job',
+            templates: [{'name' => 'api_server', 'consumes' => links}],
+            instances: 1,
+            migrated_from: ['name' => 'my_api']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:new_aliased_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'new_aliased_job',
+            templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+            instances: 1,
+            migrated_from: ['name' => 'aliased_postgres']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      it 'deploys migrated_from jobs' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        manifest['jobs'] = [new_api_job_spec, new_aliased_job_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_vm = director.vm('new_api_job', '0')
+        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main'].size).to eq(1)
+        expect(template['databases']['main']).to contain_exactly(
+                                                     {
+                                                         'name' => 'new_aliased_job',
+                                                         'index' => 0,
+                                                         'networks' => [
+                                                             {
+                                                                 'name' => 'a',
+                                                                 'address' => '192.168.1.5',
+                                                             }
+                                                         ]
+                                                     }
+                                                 )
+      end
+
     end
 
 
