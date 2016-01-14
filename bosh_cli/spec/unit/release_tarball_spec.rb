@@ -229,21 +229,13 @@ foo: bar
   describe 'unpack_jobs' do
     context 'when fast unpack does not unpack all jobs correctly' do
       before do
-        allow(release_tarball).to receive(:raw_fast_unpack) # stub to do nothing
+        allow(release_tarball).to receive(:raw_fast_unpack).and_return(true) # stub to do nothing
       end
 
       it 'falls back to regular unpack' do
         release_tarball.unpack_jobs
         unpacked_job_files = Dir.glob(File.join(release_tarball.unpack_dir, 'jobs', '*'))
         expect(unpacked_job_files).to_not be_empty
-      end
-    end
-
-    context 'when fast unpack succeeds' do
-      it 'does not fall back to regular unpack' do
-        expect(release_tarball).to receive(:unpack_target).once.and_call_original
-
-        release_tarball.unpack_jobs
       end
     end
   end
