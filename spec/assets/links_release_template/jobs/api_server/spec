@@ -3,10 +3,11 @@ name: api_server
 templates:
   config.yml.erb: config.yml
 
-packages: []
+packages:
+    - pkg_3_depends_on_2
 
-requires:
-  - db
+consumes:
+  - {name: db, type: db}
   - { name: backup_db, type: db }
 
 

@@ -6,9 +6,9 @@ templates:
 packages: []
 
 provides:
-- node1
-- node2
+- {name: node1, type: node1}
+- {name: node2, type: node2}
 
-requires:
-- node1
-- node2
+consumes:
+- {name: node1, type: node1}
+- {name: node2, type: node2}

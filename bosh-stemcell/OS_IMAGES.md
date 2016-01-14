@@ -7,6 +7,8 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+<<<<<<< HEAD
+=======
 * `8ajef7lP_fAuhx3BXqkjaPskK423EzHJ`
   - update for USN-2869-1: OpenSSH vulnerabilities
 
@@ -25,6 +27,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 * `TTmPhUs6RDJUlQmZ.RYMu0ItfOS6FNtx`
   - update monit from 5.2.4 to 5.2.5
 
+>>>>>>> develop
 * `3mZuzYe8vUwy3L1YhZihMvJ3OEzpDkj.`
   - update for USN-2854-1
 

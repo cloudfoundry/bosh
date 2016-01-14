@@ -22,7 +22,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'api-server',
           'templates' => [
-            {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links},
+            {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links},
             {'name' => 'template-without-links', 'release' => 'fake-release'}
           ],
           'resource_pool' => 'fake-resource-pool',
@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'mysql',
           'templates' => [
-            {'name' => 'mysql-template', 'release' => 'fake-release'}
+            {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}}}
           ],
           'resource_pool' => 'fake-resource-pool',
           'instances' => 2,
@@ -116,25 +116,32 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+    release_id = version.release_id
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', requires: requires_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links, release_id: 1)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links)
+    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links, release_id: 1)
     version.add_template(template_model)
+
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment', link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+    version.add_deployment(deployment_model)
+
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment', manifest: deployment_manifest.to_json, link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+    version.add_deployment(deployment_model)
   end
 
-  let(:requires_links) { ['db'] }
-  let(:provided_links) { ['db'] }
+  let(:consumes_links) { [{name: "db", type: "db"}] }
+  let(:provided_links) { [{name: "db", type: "db"}] }
 
   describe '#resolve' do
-    context 'when job requires link from the same deployment' do
+    context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
-        let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+        let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
@@ -148,12 +155,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.3',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                         }
                       }
                     },
@@ -162,12 +166,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                         }
                       }
                     }
@@ -178,8 +179,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
     end
 
-    context 'when job requires link from another deployment' do
-      let(:links) { {'db' => 'other-deployment.mysql.mysql-template.db'} }
+    context 'when job consumes link from another deployment' do
+      let(:links) { {'db' => {"from" => 'other-deployment.db', 'name'=> 'db', "type" => "db"}} }
 
       context 'when another deployment has link source' do
         before do
@@ -210,12 +211,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.4',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.other-deployment.bosh",
                         }
                       }
                     },
@@ -224,12 +222,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
-                      'networks' => {
+                      'address' => {
                         'fake-manual-network' => {
                           'address' => '127.0.0.5',
-                        },
-                        'fake-dynamic-network' => {
-                          'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.other-deployment.bosh",
                         }
                       }
                     }
@@ -240,22 +235,21 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when another deployment does not have link source' do
-        let(:links) { {'db' => 'non-existent.mysql.mysql-template.db'} }
+        let(:links) { {'db' => {"from" => 'non-existent.db', 'name'=> 'db', 'type' => 'db'}} }
 
         it 'fails' do
           expect {
             links_resolver.resolve(api_server_job)
-          }.to raise_error Bosh::Director::DeploymentInvalidLink,
-              "Link 'name: db, type: db' references unknown deployment 'non-existent'"
+          }.to raise_error("Can't find deployment non-existent")
         end
       end
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+      let(:links) { {'db' => {"from" => 'fake-deployment.db', 'name'=> 'db', 'type'=> 'other'}} }
 
-      let(:requires_links) { [{'name' => 'db', 'type' => 'other'}] }
-      let(:provided_links) { ['db'] } # name and type is implicitly db
+      let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
+      let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
 
       it 'fails to find link' do
         expect {
@@ -267,10 +261,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when provided link name matches links name' do
-      let (:links) { {'backup_db' => 'fake-deployment.mysql.mysql-template.db'} }
+      let (:links) { {'backup_db' => {"from" => 'db'}} }
 
-      let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { ['db'] }
+      let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+      let(:provided_links) { [{'name'=> "db", 'type'=> "db"}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
@@ -285,12 +279,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 0,
                     'id' => instance1.uuid,
                     'az' => nil,
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3'
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
                       }
                     }
                   },
@@ -299,12 +290,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 1,
                     'id' => instance2.uuid,
                     'az' => nil,
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4'
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
                       }
                     }
                   }
@@ -315,7 +303,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when link source is does not specify deployment name' do
-      let(:links) { {'db' => 'mysql.mysql-template.db'} }
+      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_job)
@@ -324,56 +312,49 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when links source is not provided' do
-      let(:links) { {'db' => 'fake-deployment.mysql.non-existent.db'} }
+      let(:links) { {'db' => {"from" => 'non-existant.db', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error Bosh::Director::DeploymentInvalidLink,
-            "Cannot resolve link path 'fake-deployment.mysql.non-existent.db' " +
-              "required for link 'db' in job 'api-server' on template 'api-server-template'"
+        }.to raise_error("Can't find deployment non-existant")
       end
     end
 
     context 'when link format is invalid' do
-      let(:links) { {'db' => 'mysql.mysql-template'} }
+      let(:links) { {'db' => {"from" => 'one.two.three', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error Bosh::Director::DeploymentInvalidLink,
-            "Link 'mysql.mysql-template' is invalid. " +
-              "A link must have either 3 or 4 parts: " +
-              "[deployment_name.]job_name.template_name.link_name"
+        }.to raise_error("From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'")
       end
     end
 
     context 'when required link is not specified in manifest' do
-      let(:links) { {'other' => 'a.b.c'} }
+      let(:links) { {'other' => {"from" => 'c'}} }
 
+      let(:consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error(
-            Bosh::Director::JobMissingLink,
-            "Link path was not provided for required link 'db' in job 'api-server'"
-          )
+        }.to raise_error("Can't find link with name: c in deployment fake-deployment")
       end
     end
 
     context 'when link specified in manifest is not required' do
 
-      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
 
-      let(:requires_links) { [] }
-      let(:provided_links) { ['db'] } # name and type is implicitly db
+      let(:consumes_links) { [] }
+      let(:provided_links) { [{'name'=>'db', 'type'=>'db'}] }
 
       it 'raises unused link error' do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
             "Template 'api-server-template' in job 'api-server' specifies link 'db', " +
-              "but the release job does not require it."
+              "but the release job does not consume it."
       end
     end
 
@@ -386,9 +367,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         planner
       end
 
-      let(:links) { {'db' => 'mysql.mysql-template.db'} }
+      let(:links) { {'db' => {'from'=>'db',  'name'=> 'db','type' => 'db'}} }
 
-      let(:deployment_manifest) { generate_manifest_without_cloud_config('fake_deployment', links, ['127.0.0.3', '127.0.0.4']) }
+      let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
 
       let(:cloud_config) do
         Bosh::Director::Models::CloudConfig.make(manifest: {
@@ -461,7 +442,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {
               'name' => 'api-server',
               'templates' => [
-                {'name' => 'api-server-template', 'release' => 'fake-release', 'links' => links}
+                {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links}
               ],
               'resource_pool' => 'fake-resource-pool',
               'azs' => ['az1'],
@@ -476,7 +457,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {
               'name' => 'mysql',
               'templates' => [
-                {'name' => 'mysql-template', 'release' => 'fake-release'}
+                {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db'}}}
               ],
               'resource_pool' => 'fake-resource-pool',
               'instances' => 2,
@@ -512,12 +493,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 0,
                     'id' => instance1.uuid,
                     'az' => 'az1',
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.3',
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                       }
                     }
                   },
@@ -526,12 +504,9 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'index' => 1,
                     'id' => instance2.uuid,
                     'az' => 'az1',
-                    'networks' => {
+                    'address' => {
                       'fake-manual-network' => {
                         'address' => '127.0.0.4',
-                      },
-                      'fake-dynamic-network' => {
-                        'address' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh",
                       }
                     }
                   }

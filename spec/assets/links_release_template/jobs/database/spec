@@ -4,5 +4,4 @@ templates: {}
 packages: []
 
 provides:
-- db
-- {name: backup_db, type: db}
+- {name: db, type: db}

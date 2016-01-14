@@ -117,6 +117,8 @@ module Bosh::Director
       def parse_templates
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
 
+        valid_release_versions = @deployment.releases.map {|r| r.name }
+        deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
         if templates
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)
@@ -135,15 +137,40 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.get_or_create_template(template_name)
+            template = release.get_or_create_template(template_name)
 
-            links = safe_property(template_spec, 'links', class: Hash, optional: true)
-            @logger.debug("Parsing template links: #{links.inspect}")
-
-            links.to_a.each do |name, path|
-              link_path = LinkPath.parse(@deployment.name, path, @logger)
-              @job.add_link_path(template_name, name, link_path)
+            templates_from_model = Models::Template.where(:name => template_name).where(:release_id => deployment_release_ids)
+            if templates_from_model == nil
+              raise "Template #{template_name} not found in Template table"
             end
+
+            templates_from_model.each do |template_from_model|
+              if template_from_model.consumes_json != nil
+                JSON.parse(template_from_model.consumes_json).each do |consumes_json|
+                  template.add_link_info('consumes', consumes_json["name"], consumes_json)
+                end
+              end
+              if template_from_model.provides_json != nil
+                JSON.parse(template_from_model.provides_json).each do |provides_json|
+                  template.add_link_info('provides', provides_json["name"], provides_json)
+                end
+              end
+            end
+
+            provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
+            @logger.debug("Parsing template provides links: #{provides_links.inspect}")
+            provides_links.to_a.each do |link_name, source|
+              template.add_link_info("provides", link_name, source)
+            end
+
+            consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
+            @logger.debug("Parsing template links: #{consumes_links.inspect}")
+            consumes_links.to_a.each do |link_name, source|
+              template.add_link_info('consumes', link_name, source)
+            end
+
+
+            @job.templates << template
           end
         end
       end

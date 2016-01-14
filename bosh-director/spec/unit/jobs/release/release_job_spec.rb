@@ -121,7 +121,7 @@ module Bosh::Director
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
-        it 'verifies that it is an array of string or hashes' do
+        it 'verifies that it is an array of hashes' do
           job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
@@ -136,7 +136,7 @@ module Bosh::Director
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db', 'type' => 'first'}, {'name' => 'db', 'type' => 'second'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(
@@ -146,60 +146,60 @@ module Bosh::Director
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
           release_job.create
 
           template = Models::Template.first
-          expect(template.provides).to eq(['db1', {'name' => 'db2', 'type' =>'db'}])
+          expect(template.provides).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}])
         end
       end
 
-      context 'when job spec file includes requires' do
+      context 'when job spec file includes consumes' do
         it 'verifies it is an array' do
           allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
 
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => 'Invalid'})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => 'Invalid'})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies that it is an array of string' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['Invalid', 1]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => ['Invalid', 1]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies hash contains name and type' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => [{'name' => 'db'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => [{'name' => 'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db', {'name' => 'db', 'type' => 'other'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => [{'name' => 'db', 'type' => 'one'}, {'name' => 'db', 'type' => 'two'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(
               JobDuplicateLinkName,
-              "Job 'foo' 'requires' specifies links with duplicate name 'db'"
+              "Job 'foo' 'consumes' specifies links with duplicate name 'db'"
             )
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db1', {'name' => 'db2', 'type' =>'db'}]})
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'consumes' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]})
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect(Models::Template.count).to eq(0)
           release_job.create
 
           template = Models::Template.first
-          expect(template.requires).to eq(['db1', {'name' => 'db2', 'type' =>'db'} ])
+          expect(template.consumes).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'} ])
         end
       end
     end

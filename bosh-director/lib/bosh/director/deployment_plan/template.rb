@@ -8,6 +8,8 @@ module Bosh::Director
       attr_reader :model
       attr_reader :package_models
 
+      attr_reader :link_infos
+
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
       def initialize(release, name)
@@ -16,6 +18,7 @@ module Bosh::Director
         @model = nil
         @package_models = []
         @logger = Config.logger
+        @link_infos = {}
       end
 
       # Looks up template model and its package models in DB
@@ -81,13 +84,43 @@ module Bosh::Director
       end
 
       # return [Array]
-      def required_links
-        present_model.requires.to_a.map { |l| TemplateLink.parse(l) }
+      def model_consumed_links
+        present_model.consumes.to_a.map { |l| TemplateLink.parse("consumes", l) }
+      end
+
+      # return [Array]
+      def model_provided_links
+        present_model.provides.to_a.map { |l| TemplateLink.parse('provides', l) }
+      end
+
+      # return [Array]
+      def consumed_links
+        if @link_infos["consumes"]  != nil
+          @link_infos["consumes"].map { |_, link_info| TemplateLink.parse("consumes", link_info) }
+        else
+          return []
+        end
       end
 
       # return [Array]
       def provided_links
-        present_model.provides.to_a.map { |l| TemplateLink.parse(l) }
+        if @link_infos["provides"] != nil
+          @link_infos["provides"].map { |_, link_info| TemplateLink.parse("provides", link_info) }
+        else
+          return []
+        end
+      end
+
+      def add_link_info(kind, link_name, source)
+        @link_infos[kind] ||= {}
+        @link_infos[kind][link_name] ||= {}
+        source.to_a.each do |key, value|
+          @link_infos[kind][link_name][key] = value
+        end
+      end
+
+      def consumes_link_info(link_name)
+        @link_infos.fetch('consumes', {}).fetch(link_name, {})
       end
 
       private

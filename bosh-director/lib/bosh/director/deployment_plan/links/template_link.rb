@@ -1,16 +1,34 @@
 module Bosh::Director
   module DeploymentPlan
     class TemplateLink < Struct.new(:name, :type)
-      def self.parse(link_def)
-        if link_def.is_a?(String)
-          return new(link_def, link_def)
+      def self.parse(kind, link_def)
+        if kind == "consumes"
+          return self.parse_consumes_link(link_def)
+        elsif kind == "provides"
+          return self.parse_provides_link(link_def)
         end
+      end
 
-        if link_def.is_a?(Hash) && link_def.has_key?('name') && link_def.has_key?('type')
-          return new(link_def['name'], link_def['type'])
+      def self.parse_consumes_link(link_def)
+        if link_def.is_a?(Hash) && link_def.has_key?('type') && link_def.has_key?('name')
+          if link_def.has_key?('from')
+            return new(link_def['from'].split(".")[-1], link_def['type'])
+          else
+            return new(link_def['name'], link_def['type'])
+          end
         end
+        raise JobInvalidLinkSpec, "Link '#{link_def}' must be a hash with name and type"
+      end
 
-        raise JobInvalidLinkSpec, "Link '#{link_def}' must be either string or hash with name and type"
+      def self.parse_provides_link(link_def)
+        if link_def.is_a?(Hash) && link_def.has_key?('type') && link_def.has_key?('name')
+          if link_def.has_key?('as')
+            return new(link_def['as'], link_def['type'])
+          else
+            return new(link_def['name'], link_def['type'])
+          end
+        end
+        raise JobInvalidLinkSpec, "Link '#{link_def}' must be a hash with name and type"
       end
 
       def to_s

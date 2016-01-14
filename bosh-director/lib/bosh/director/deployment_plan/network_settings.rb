@@ -22,7 +22,6 @@ module Bosh::Director::DeploymentPlan
       @desired_reservations.each do |reservation|
         network_name = reservation.network.name
         network_settings[network_name] = reservation.network.network_settings(reservation, default_properties[network_name], @availability_zone)
-
         # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
         # if they're featured in agent state, in that case we put them into network spec to satisfy
         # ConfigurationHasher in both agent and director.
@@ -60,6 +59,19 @@ module Bosh::Director::DeploymentPlan
         }
       end
       network_addresses
+    end
+
+    def network_address(preferred_network_name)
+      network_name = preferred_network_name || @default_network['gateway']
+      network_hash = to_hash
+
+      if network_hash[network_name]['type'] == 'dynamic'
+        address = @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+      else
+        address = network_hash[network_name]['ip']
+      end
+
+      return {network_name => {'address' => address}}
     end
   end
 end

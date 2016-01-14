@@ -11,6 +11,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       model: deployment,
       name: 'fake-deployment',
       ip_provider: fake_ip_provider,
+      releases: {}
     )
   end
   let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
@@ -512,4 +513,5 @@ describe Bosh::Director::DeploymentPlan::Job do
       expect(job.obsolete_instance_plans).to eq([instance_plan3])
     end
   end
+
 end

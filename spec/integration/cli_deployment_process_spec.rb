@@ -150,11 +150,9 @@ DIFF
 
           runner.send_keys 'yes'
           expect(runner).to have_output "Deployed `simple'"
-          puts runner.output
         end
 
         output = deploy_simple_manifest
-        puts output
         expect(output).to include(<<-DIFF
   resource_pools:
   - name: a

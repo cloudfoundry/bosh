@@ -34,7 +34,7 @@ module Bosh::Director
 
       validate_links(job_manifest)
       template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.requires = job_manifest['requires'] if job_manifest['requires']
+      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
 
       template.save
     end
@@ -149,21 +149,21 @@ module Bosh::Director
 
     def validate_links(job_manifest)
       parse_links(job_manifest['provides'], 'provides') if job_manifest['provides']
-      parse_links(job_manifest['requires'], 'requires') if job_manifest['requires']
+      parse_links(job_manifest['consumes'], 'consumes') if job_manifest['consumes']
     end
 
-    def parse_links(links, desc)
+    def parse_links(links, kind)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-          "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of strings or hashes with name and type"
+              "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}
       links.each do |link_spec|
-        parsed_link = DeploymentPlan::TemplateLink.parse(link_spec)
+        parsed_link = DeploymentPlan::TemplateLink.parse(kind, link_spec)
         if parsed_links[parsed_link.name]
           raise JobDuplicateLinkName,
-            "Job '#{@name}' '#{desc}' specifies links with duplicate name '#{parsed_link.name}'"
+            "Job '#{@name}' '#{kind}' specifies links with duplicate name '#{parsed_link.name}'"
         end
 
         parsed_links[parsed_link.name] = true

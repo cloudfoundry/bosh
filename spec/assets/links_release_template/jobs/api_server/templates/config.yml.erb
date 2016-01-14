@@ -5,7 +5,7 @@ databases:
   - name: <%= node['name'] %>
     index: <%= node['index'] %>
     networks:
-    <% node['networks'].each do |network_name, network_settings| %>
+    <% node['address'].each do |network_name, network_settings| %>
       - name: <%= network_name %>
         address: <%= network_settings['address'] %>
     <% end %>
@@ -16,7 +16,7 @@ databases:
     az: <%= node['az'] %>
     index: <%= node['index'] %>
     networks:
-    <% node['networks'].each do |network_name, network_settings| %>
+    <% node['address'].each do |network_name, network_settings| %>
       - name: <%= network_name %>
         address: <%= network_settings['address'] %>
     <% end %>
