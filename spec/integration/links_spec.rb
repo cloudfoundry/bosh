@@ -314,7 +314,7 @@ describe 'Links', type: :integration do
         manifest
       end
 
-      it 'renders link data in job template t' do
+      it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
         link_vm = director.vm('my_api', '0')
@@ -379,7 +379,7 @@ describe 'Links', type: :integration do
         }
       end
 
-      it 'renders link data in job template y' do
+      it 'renders link data in job template' do
         deploy_simple_manifest(manifest_hash: manifest)
 
         link_vm = director.vm('my_api', '0')
