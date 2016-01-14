@@ -77,12 +77,12 @@ jobs:
       - task: test
         privileged: true
         file:  bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-1"]
         config:
-          tags: ["bosh-integration"]
           params:
             DB:           postgresql
             RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
   - name: integration-2.1-mysql
     public: true
@@ -93,12 +93,12 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-2"]
         config:
-          tags: ["bosh-integration"]
           params:
             DB:           mysql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
   - name: integration-2.1-postgres
     public: true
@@ -109,12 +109,12 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-3"]
         config:
-          tags: ["bosh-integration"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 16
+            NUM_GROUPS: 8
 
 resources:
   - name: interval-trigger
