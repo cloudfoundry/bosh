@@ -46,7 +46,12 @@ module Bosh::Spec
     def self.runtime_config_with_addon
       {
         'releases' => [{"name" => 'dummy2', "version" => "0.2-dev"}],
-        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "dummy_with_package", "release" => "dummy2"}], "properties" => {"prop_name" => "prop_value"}}]
+        'addons' => [
+        {
+          "name" => 'addon1',
+          "jobs" => [{"name" => "dummy_with_properties", "release" => "dummy2"}],
+          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}
+        }]
       }
     end
 

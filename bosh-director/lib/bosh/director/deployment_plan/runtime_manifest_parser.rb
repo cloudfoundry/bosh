@@ -92,10 +92,10 @@ module Bosh::Director
         end
 
         if properties
-          if job.properties
-            job.properties.merge!(properties)
+          if job.all_properties
+            job.all_properties.merge!(properties)
           else
-            job.properties = properties
+            job.all_properties = properties
           end
         end
       end

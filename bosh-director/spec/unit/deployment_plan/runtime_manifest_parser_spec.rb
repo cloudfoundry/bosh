@@ -105,8 +105,8 @@ module Bosh::Director
 
           subject.parse(runtime_manifest)
 
-          expect(deployment.job('dummy').templates.any? {|t| t.name == 'dummy_with_package'}).to eq(true)
-          expect(deployment.job('dummy').properties['prop_name']).to eq('prop_value')
+          expect(deployment.job('dummy').templates.any? {|t| t.name == 'dummy_with_properties'}).to eq(true)
+          expect(deployment.job('dummy').all_properties['dummy_with_properties']['echo_value']).to eq('prop_value')
         end
       end
     end
