@@ -94,7 +94,7 @@ describe 'cli: deployment process', type: :integration do
       ]
 
       upload_cloud_config(cloud_config_hash: new_cloud_config)
-      output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true, interactive: true)
+      output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
       expect(output).to include(<<-DIFF
   resource_pools:
