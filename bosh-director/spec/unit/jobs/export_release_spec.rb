@@ -198,6 +198,27 @@ module Bosh::Director
               }.to_not raise_error
             end
 
+            context 'when dealing with links' do
+              let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory)}
+              let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
+              let(:deployment_job) { instance_double(DeploymentPlan::Job)}
+
+              before {
+                allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
+                allow(planner_factory).to receive(:create_from_model).and_return(planner)
+                allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
+                allow(planner).to receive(:release)
+                allow(planner).to receive(:add_job)
+                allow(planner).to receive(:compile_packages)
+                allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
+              }
+
+              it 'skips links binding' do
+                expect(planner).to receive(:bind_models).with(true)
+                job.perform
+              end
+            end
+
             it 'chooses the first stemcell alphabetically by name' do
               job.perform
               expect(log_string).to match /Will compile with stemcell: ubuntu-stemcell/

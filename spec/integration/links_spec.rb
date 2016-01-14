@@ -183,6 +183,45 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when exporting a release with templates that have links' do
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [mongo_db_spec]
+
+        # We manually change the deployment manifest release version, beacuse of w weird issue where
+        # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
+        # is `0.1-dev`
+        manifest['releases'][0]['version'] = '0+dev.1'
+
+        manifest
+      end
+
+      it 'should successfully compile a release without complaininfg about missing links' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = bosh_runner.run("export release bosh-release/0+dev.1 toronto-os/1")
+
+        expect(out).to_not include('Started compiling packages > pkg_1')
+        expect(out).to include('Started compiling packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done')
+        expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
+
+        expect(out).to include('Started copying packages')
+        expect(out).to include('Started copying packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f. Done')
+        expect(out).to include('Started copying packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done')
+        expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
+
+        expect(out).to include('Started copying jobs')
+        expect(out).to include('Started copying jobs > api_server/ec15421ae355db2b5c6320b4e114d3301150f062. Done')
+        expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
+        expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
+        expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
+        expect(out).to include('Started copying jobs > node/727ce8aba0ae3f8b869ba8b3517c19140ced5383. Done')
+        expect(out).to include('Done copying jobs')
+
+        expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
+      end
+    end
+
     context 'when consumes link is renamed by from key' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
