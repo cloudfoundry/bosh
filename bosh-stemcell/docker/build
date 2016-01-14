@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/os-image-stemcell-builder}
+
+docker build -t $DOCKER_IMAGE .
