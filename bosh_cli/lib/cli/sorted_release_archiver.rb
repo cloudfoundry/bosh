@@ -6,7 +6,7 @@ module Bosh::Cli
 
     def archive(destination_file)
       Dir.chdir(@dir) do
-        success = Kernel.system('tar', '-C', @dir, '-pczf', destination_file, *ordered_release_files)
+        success = Kernel.system('tar', '-C', @dir, '-pczf', destination_file, *ordered_release_files, out: '/dev/null', err: '/dev/null')
         if !success
           raise InvalidRelease, 'Cannot create release tarball'
         end
