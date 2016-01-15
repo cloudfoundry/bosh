@@ -159,6 +159,29 @@ jobs:
       config:
         params:
           RUBY_VERSION: 2.1.7
+          LEGACY: false
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
+
+  - name: legacy-load-tests
+    public: true
+    serial: true
+    plan:
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+          LEGACY: true
       on_failure:
         put: slack-alert
         params:
