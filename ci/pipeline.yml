@@ -10,6 +10,7 @@ groups:
       - integration-2.1-mysql
       - integration-2.1-postgres
       - load-tests
+      - legacy-load-tests
       - fuzz-tests
       - publish-coverage
       - promote-candidate
