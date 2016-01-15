@@ -202,12 +202,12 @@ describe 'Links', type: :integration do
         out = bosh_runner.run("export release bosh-release/0+dev.1 toronto-os/1")
 
         expect(out).to_not include('Started compiling packages > pkg_1')
-        expect(out).to include('Started compiling packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done')
+        expect(out).to include('Started compiling packages > pkg_2/4b74be7d5aa14487c7f7b0d4516875f7c0eeb010. Done')
         expect(out).to include('Started compiling packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying packages')
         expect(out).to include('Started copying packages > pkg_1/16b4c8ef1574b3f98303307caad40227c208371f. Done')
-        expect(out).to include('Started copying packages > pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done')
+        expect(out).to include('Started copying packages > pkg_2/4b74be7d5aa14487c7f7b0d4516875f7c0eeb010. Done')
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
