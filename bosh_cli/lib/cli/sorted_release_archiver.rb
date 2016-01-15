@@ -17,7 +17,7 @@ module Bosh::Cli
 
     def ordered_release_files
       ordered_release_files = ['./release.MF']
-      license_files = Dir.entries('.') & ['LICENSE', 'NOTICE'].sort
+      license_files = (Dir.entries('.') & ['LICENSE', 'NOTICE']).sort
       unless license_files.empty?
         ordered_release_files += license_files.map { |filename| "./#{filename}" }
       end
