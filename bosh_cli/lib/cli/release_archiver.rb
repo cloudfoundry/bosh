@@ -42,7 +42,7 @@ module Bosh::Cli
       end
 
       in_build_dir do
-        `tar -czf #{filepath} . 2>&1`
+        `tar -czf #{filepath} #{ordered_release_files} 2>&1`
         unless $?.exitstatus == 0
           raise InvalidRelease, "Cannot create release tarball"
         end
@@ -54,6 +54,14 @@ module Bosh::Cli
     private
 
     attr_reader :manifest, :packages, :jobs, :license, :build_dir
+
+    def ordered_release_files
+      ordered_release_files = ['./release.MF']
+      license_files = Dir.entries('.') & ['LICENSE', 'NOTICE'].sort
+      ordered_release_files << license_files.map { |filename| "./#{filename}" }
+      ordered_release_files << ['./jobs', './packages']
+      ordered_release_files.join(' ')
+    end
 
     def in_build_dir(&block)
       Dir.chdir(build_dir) { yield }
