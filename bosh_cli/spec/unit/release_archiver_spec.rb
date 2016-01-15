@@ -83,21 +83,6 @@ module Bosh::Cli
           expect { archiver.build }.to_not raise_error
         end
       end
-
-      it "includes files in tar in correct order" do
-        archiver.build
-        archived_files = list_tar_content(archiver.filepath)
-        expect(archived_files.size).to eq(9)
-        expect(archived_files[0]).to eq('./release.MF')
-        expect(archived_files[1]).to eq('./LICENSE')
-        expect(archived_files[2]).to eq('./NOTICE')
-        expect(archived_files[3]).to eq('./jobs/')
-        expect(archived_files[4]).to match /.\/jobs\/job-.*\.tgz/
-        expect(archived_files[5]).to match /.\/jobs\/job-.*\.tgz/
-        expect(archived_files[6]).to eq('./packages/')
-        expect(archived_files[7]).to match /.\/packages\/package-.*\.tgz/
-        expect(archived_files[8]).to match /.\/packages\/package-.*\.tgz/
-      end
     end
 
     def artifact(name, &block)
