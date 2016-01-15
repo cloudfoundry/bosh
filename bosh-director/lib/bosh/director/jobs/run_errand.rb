@@ -23,18 +23,16 @@ module Bosh::Director
 
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
-      deployment_manifest_hash = Psych.load(deployment_model.manifest)
-      deployment_name = deployment_manifest_hash['name']
+      deployment_manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config)
+      deployment_name = deployment_manifest.to_hash['name']
       with_deployment_lock(deployment_name) do
-        cloud_config_model = deployment_model.cloud_config
-
         deployment = nil
         job = nil
 
         event_log.begin_stage('Preparing deployment', 1)
         event_log.track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-          deployment = planner_factory.create_from_manifest(deployment_manifest_hash, cloud_config_model, {})
+          deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, {})
           deployment.bind_models
           job = deployment.job(@errand_name)
 

@@ -28,6 +28,9 @@ module Bosh::Cli
     def unpack_jobs
       return @unpacked_jobs unless @unpacked_jobs.nil?
       exit_success = safe_fast_unpack('./jobs/')
+      unless all_release_jobs_unpacked?
+        exit_success = safe_unpack('./jobs/')
+      end
       @unpacked_jobs = !!exit_success
     end
 
@@ -48,6 +51,15 @@ module Bosh::Cli
       exit_status
     end
 
+    def safe_unpack(target)
+      exit_status = raw_unpack(target)
+      if !exit_status
+        processed_target = handle_dot_slash_prefix(target)
+        exit_status = raw_unpack(processed_target)
+      end
+      exit_status
+    end
+
     # This will [add or remove] the './' when trying to extract a specific file from archive
     def handle_dot_slash_prefix(target)
       if target =~ /^\.\/.*/
@@ -64,14 +76,27 @@ module Bosh::Cli
         when /.*gnu.*/i
             Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "--occurrence", "#{target}", out: "/dev/null", err: "/dev/null")
         when /.*bsd.*/i
-            if target[-1, 1] == "/"
-              Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
-            else
-              Kernel.system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
-            end
+          if target[-1, 1] == "/"
+            raw_unpack(target)
+          else
+            Kernel.system("tar", "-C", @unpack_dir, "--fast-read", "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+          end
         else
-          Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+          raw_unpack(target)
       end
+    end
+
+    def raw_unpack(target)
+      Kernel.system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, "#{target}", out: "/dev/null", err: "/dev/null")
+    end
+
+    # verifies that all jobs in release manifest were unpacked
+    def all_release_jobs_unpacked?
+      return false if manifest_yaml['jobs'].nil?
+
+      manifest_job_names = manifest_yaml['jobs'].map { |j| j['name'] }.sort
+      unpacked_job_file_names = Dir.glob(File.join(@unpack_dir, 'jobs', '*')).map { |f| File.basename(f, '.*') }.sort
+      unpacked_job_file_names == manifest_job_names
     end
 
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
@@ -84,7 +109,7 @@ module Bosh::Cli
     # Creates a new tarball from the current contents of @unpack_dir
     def create_from_unpacked(target_path)
       raise "Not unpacked yet!" unless @unpacked
-      !!system("tar", "-C", @unpack_dir, "-pczf", File.expand_path(target_path), ".", out: "/dev/null", err: "/dev/null")
+      SortedReleaseArchiver.new(@unpack_dir).archive(File.expand_path(target_path))
     end
 
     def exists?

@@ -47,7 +47,6 @@ module Bosh::Cli
     # @return Boolean Were there any changes in deployment manifest?
     def inspect_deployment_changes(manifest, options = {})
       show_empty_changeset = options.fetch(:show_empty_changeset, true)
-      interactive = options.fetch(:interactive, false)
       redact_diff = options.fetch(:redact_diff, false)
 
       manifest = manifest.dup

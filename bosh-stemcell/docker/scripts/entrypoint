@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# The runit post-inst script will signal HUP to pid 1 which, in a docker container, is us.
+# Ruby's default behavior is to exit upon SIGHUP, so ignore it here so ruby/rake doesn't hear it.
+trap '' HUP
+
+/bin/bash $@
+
+exit $?
