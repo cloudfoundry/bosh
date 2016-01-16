@@ -26,7 +26,12 @@ module Bosh::Director
         rescue => e
           unless instance.nil? || instance_plan.nil?
             @instance_reuser.remove_instance(instance)
-            delete_instance(instance_plan)
+
+            if Config.keep_unreachable_vms
+              @logger.info('Keeping reused compilation VM for debugging')
+            else
+              delete_instance(instance_plan)
+            end
           end
           raise e
         end
@@ -34,11 +39,18 @@ module Bosh::Director
 
       def with_single_use_vm(stemcell)
         begin
+          keep_failing_vm = false
           instance_plan, instance = create_instance_plan(stemcell)
           configure_instance_plan(instance_plan)
           yield instance
+        rescue => e
+          @logger.info('Keeping single-use compilation VM for debugging')
+          keep_failing_vm = Config.keep_unreachable_vms
+          raise e
         ensure
-          delete_instance(instance_plan) unless instance.nil?
+          unless instance.nil? || keep_failing_vm
+            delete_instance(instance_plan)
+          end
         end
       end
 
