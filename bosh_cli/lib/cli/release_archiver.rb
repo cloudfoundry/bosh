@@ -41,23 +41,14 @@ module Bosh::Cli
         end
       end
 
-      in_build_dir do
-        `tar -czf #{filepath} . 2>&1`
-        unless $?.exitstatus == 0
-          raise InvalidRelease, "Cannot create release tarball"
-        end
-        say("Generated #{filepath.make_green}")
-        say("Release size: #{pretty_size(filepath).make_green}")
-      end
+      SortedReleaseArchiver.new(build_dir).archive(filepath)
+
+      say("Generated #{filepath.make_green}")
+      say("Release size: #{pretty_size(filepath).make_green}")
     end
 
     private
 
     attr_reader :manifest, :packages, :jobs, :license, :build_dir
-
-    def in_build_dir(&block)
-      Dir.chdir(build_dir) { yield }
-    end
-
   end
 end

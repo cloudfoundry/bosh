@@ -678,6 +678,42 @@ module Bosh::Director
             end
           end
         end
+
+        describe 'diff' do
+          def perform
+            post(
+              '/fake-dep-name/diff',
+              "---\nname: fake-dep-name\nreleases: [{'name':'simple','version':5}]",
+              { 'CONTENT_TYPE' => 'text/yaml' },
+            )
+          end
+          let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
+          before do
+            Models::Deployment.create(
+              :name => 'fake-dep-name',
+              :manifest => Psych.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
+              cloud_config: cloud_config
+            )
+          end
+
+          context 'authenticated access' do
+            before { authorize 'admin', 'admin' }
+
+            it 'returns diff with resolved aliases' do
+              perform
+              expect(last_response.body).to eq('{"update_config":{"cloud_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+            end
+          end
+
+          context 'accessing with invalid credentials' do
+            before { authorize 'invalid-user', 'invalid-password' }
+
+            it 'returns 401' do
+              perform
+              expect(last_response.status).to eq(401)
+            end
+          end
+        end
       end
 
       describe 'scope' do

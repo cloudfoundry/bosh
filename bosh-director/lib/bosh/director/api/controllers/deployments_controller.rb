@@ -205,7 +205,7 @@ module Bosh::Director
 
       post '/:deployment/properties', :consumes => [:json] do
         payload = json_decode(request.body)
-        @property_manager.create_property(params[:deployment], payload['name'], payload['value'])
+        @property_manager.create_property(params[:deployment], payload['name'], payload['value']  )
         status(204)
       end
 
@@ -267,10 +267,42 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
-        latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        if params['update_config']
+          @logger.debug("Deploying with update config #{params['update_config']}")
+          update_config = JSON.parse(params['update_config'])
+          cloud_config = Api::CloudConfigManager.new.find_by_id(update_config['cloud_config_id'])
+        else
+          cloud_config =Api::CloudConfigManager.new.latest
+        end
 
-        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, options)
         redirect "/tasks/#{task.id}"
+      end
+
+      post '/:deployment/diff', :consumes => :yaml do
+        deployment = Models::Deployment[name: params[:deployment]]
+        if deployment
+          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+          before_manifest.resolve_aliases
+        else
+          before_manifest = Manifest.load_from_text(nil, nil)
+        end
+
+        after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_manifest = Manifest.load_from_text(
+          request.body,
+          after_cloud_config
+        )
+        after_manifest.resolve_aliases
+
+        diff = before_manifest.diff(after_manifest)
+
+        json_encode({
+          'update_config' => {
+            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+          },
+          'diff' => diff.map { |l| [l.to_s, l.status] }
+        })
       end
 
       post '/:deployment_name/errands/:errand_name/runs' do

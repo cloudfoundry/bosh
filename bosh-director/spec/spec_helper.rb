@@ -59,21 +59,7 @@ module SpecHelper
     end
 
     def configure_temp_dir
-      @temp_dir = Dir.mktmpdir
-      ENV["TMPDIR"] = @temp_dir
-      FileUtils.mkdir_p(@temp_dir)
-      at_exit do
-        begin
-          if $!
-            status = $!.is_a?(::SystemExit) ? $!.status : 1
-          else
-            status = 0
-          end
-          FileUtils.rm_rf(@temp_dir)
-        ensure
-          exit status
-        end
-      end
+      @temp_dir = Bosh::Director::Config.generate_temp_dir
     end
 
     def init_database

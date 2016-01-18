@@ -1,5 +1,5 @@
 module Bosh
   module Template
-    VERSION = '1.3173.0'
+    VERSION = '1.3178.0'
   end
 end

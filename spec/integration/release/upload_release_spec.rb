@@ -19,6 +19,18 @@ describe 'upload release', type: :integration do
     expect(out).to match /test_release.+1/
   end
 
+  context 'when release tarball contents are not sorted' do
+    it 'updates job successfully' do
+      target_and_login
+      bosh_runner.run("upload release #{spec_asset('unsorted-release-0+dev.1.tgz')}")
+
+      out = bosh_runner.run("upload release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+
+      expect(out).to match /foobar (.*) UPLOAD/
+      expect(out).to match /creating new jobs > foobar/
+    end
+  end
+
   it 'can upload a release without any package changes when using --rebase option' do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
@@ -60,7 +72,6 @@ describe 'upload release', type: :integration do
       }.to_not raise_error
     end
   end
-
 
   # ~33s
   it 'uploads the latest generated release if no release path given' do

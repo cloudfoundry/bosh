@@ -16,11 +16,14 @@ module Bosh::Director::Core::Templates
       @job_templates.sort { |x, y| x.name <=> y.name }.each do |rendered_job_template|
         bound_templates = ''
         bound_templates << rendered_job_template.monit
+        bound_templates << rendered_job_template.name
 
         rendered_job_template.templates.sort { |x, y| x.src_name <=> y.src_name }.each do |template_file|
           bound_templates << template_file.contents
-          instance_digest << bound_templates
+          bound_templates << template_file.dest_name
         end
+
+        instance_digest << bound_templates
       end
 
       instance_digest.hexdigest

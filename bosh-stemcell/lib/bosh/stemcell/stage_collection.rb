@@ -53,6 +53,8 @@ module Bosh::Stemcell
         warden_stages
       when Infrastructure::Azure then
         azure_stages
+      when Infrastructure::Softlayer then
+        softlayer_stages
       end
 
       stages.concat(finish_stemcell_stages)
@@ -156,6 +158,23 @@ module Bosh::Stemcell
         :bosh_clean_ssh,
         :image_create,
         :image_install_grub,
+      ]
+    end
+
+    def softlayer_stages
+      [
+          :system_network,
+          :system_softlayer_open_iscsi,
+          :system_softlayer_multipath_tools,
+          :disable_blank_passwords,
+          :system_parameters,
+          :bosh_clean,
+          :bosh_harden,
+          :bosh_enable_password_authentication,
+          :bosh_softlayer_agent_settings,
+          :bosh_clean_ssh,
+          :image_create,
+          :image_install_grub,
       ]
     end
 

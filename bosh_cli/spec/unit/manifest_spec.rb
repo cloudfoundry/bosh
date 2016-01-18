@@ -59,6 +59,33 @@ describe Bosh::Cli::Manifest do
     ]
   end
 
+  describe 'resolve_stemcell_aliases' do
+    let(:manifest_data) do
+      {
+        'resource_pools' => [
+          {'stemcell' => {'name' => 'foo', 'version' => 'latest'}},
+          {'stemcell' => {'name' => 'foo', 'version' => 22}},
+          {'stemcell' => {'name' => 'bar', 'version' => 'latest'}},
+        ]
+      }
+    end
+
+    it 'resolves latest alias' do
+      stemcells = [
+        {'name' => 'foo', 'version' => '22.6.4'},
+        {'name' => 'foo', 'version' => '22'},
+        {'name' => 'bar', 'version' => '4.0.8'},
+        {'name' => 'bar', 'version' => '4.1'}
+      ]
+
+      expect(director).to receive(:list_stemcells).and_return(stemcells)
+      manifest.resolve_stemcell_aliases
+      expect(manifest.hash['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
+      expect(manifest.hash['resource_pools'][1]['stemcell']['version']).to eq(22)
+      expect(manifest.hash['resource_pools'][2]['stemcell']['version']).to eq(4.1)
+    end
+  end
+
   describe '#latest_release_versions' do
     context 'for director version < 1.5' do
       before do

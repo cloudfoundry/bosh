@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Command::Deployment do
-  let(:director) { double(Bosh::Cli::Client::Director) }
+  let(:director) { instance_double(Bosh::Cli::Client::Director) }
   let(:cmd) { described_class.new(nil, director) }
   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
 

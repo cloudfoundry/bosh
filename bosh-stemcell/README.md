@@ -10,10 +10,9 @@ Note: Use US East (Northern Virginia) region when using AWS in following steps. 
 
 0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
 0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
-0. Add instructions to set BOSH_AWS_... environment variables
 0. Install the vagrant plugins we use:
 
-        vagrant plugin install vagrant-aws --plugin-version 0.5.0
+        vagrant plugin install vagrant-aws
 
 ### Bring up the vagrant stemcell building VM
 
@@ -21,15 +20,9 @@ From a fresh copy of the bosh repo:
 
     git submodule update --init --recursive
 
-If you use AWS EC2-Classic environment, run:
-
-    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
-    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
-    cd bosh-stemcell
-    vagrant up remote --provider=aws
-
 If you use AWS VPC environment, run:
 
+    export BOSH_VAGRANT_KEY_PATH=PATH-TO-YOUR-SSH-KEY
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     export BOSH_AWS_SECURITY_GROUP=YOUR-AWS-SECURITY-GROUP-ID
@@ -37,7 +30,7 @@ If you use AWS VPC environment, run:
     cd bosh-stemcell
     vagrant up remote --provider=aws
 
-(Note: BOSH\_AWS\_SECURITY\_GROUP should be security group id, instead of name "bosh-stemcell")
+(Note: BOSH\_AWS\_SECURITY\_GROUP should be security group id (e.g. "sg-b799b9dc"), instead of name "bosh-stemcell")
 
 ## Updating source code on stemcell building VM
 
@@ -50,7 +43,7 @@ With existing stemcell building VM run:
 
 ## Configure your local ssh and scp to communicate with the stemcell building VM
 
-Once the stemcell builing machine is up, run:
+Once the stemcell-building machine is up, run:
 
     vagrant ssh-config remote
 
@@ -121,7 +114,7 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 ### Building the stemcell with published OS image
 
-Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh.io/stemcells](https://bosh.io/stemcells). The final two arguments are the S3 bucket and key for the OS image to use, which can be found by reading the OS\_IMAGES document in this project.
+Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh.io/stemcells](https://bosh.io/stemcells). Note that the last two arguments to the rake command are the S3 bucket and key of the OS image to use (i.e. in the example below, the .tgz will be downloaded from [http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz](http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz)). More info at OS\_IMAGES.
 
     vagrant ssh -c '
       cd /bosh

@@ -62,16 +62,13 @@ module Bosh::Cli
             "please add 'release' or 'releases' section")
       end
 
-      resolve_release_aliases
-      resolve_stemcell_aliases
-
       report_manifest_warnings
 
       @hash
     end
 
     def yaml
-      @yaml ||= Psych.dump(@hash)
+      Psych.dump(@hash)
     end
 
     # @param [Hash] manifest Deployment manifest (will be modified)

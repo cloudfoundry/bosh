@@ -10,6 +10,7 @@ groups:
       - integration-2.1-mysql
       - integration-2.1-postgres
       - load-tests
+      - legacy-load-tests
       - fuzz-tests
       - publish-coverage
       - promote-candidate
@@ -159,6 +160,35 @@ jobs:
       config:
         params:
           RUBY_VERSION: 2.1.7
+          LEGACY: false
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
+
+  - name: legacy-load-tests
+    public: true
+    serial: true
+    plan:
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+          LEGACY: true
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
 
   - name: fuzz-tests
     public: true
@@ -175,6 +205,12 @@ jobs:
       config:
         params:
           RUBY_VERSION: 2.1.7
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
 
   - name: publish-coverage
     public: true
@@ -234,3 +270,8 @@ resources:
     type: time
     source:
       interval: 15m
+
+  - name: slack-alert
+    type: slack-notification
+    source:
+      url: {{slack_hook_url}}
