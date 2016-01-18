@@ -7,11 +7,8 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `8ajef7lP_fAuhx3BXqkjaPskK423EzHJ`
-  - update for USN-2869-1: OpenSSH vulnerabilities
-
-* `L8uhBoJqqNQDRF45ZpjsAAmZ2rnANnbM`
-  - update for USN-2868-1: DHCP vulnerability
+* `6O0I3q10J8CyrSUKgAnFh02dRZFg2HTG`
+  - update ubuntu packages for USN-2869-1: OpenSSH vulnerabilities
 
 * `yVt32oA.CXzu2YCXBH7zdttGFdSozka1`
   - update ubuntu packages for USN-2865-1, USN-2861-1
@@ -353,11 +350,8 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
-* `81D.QMDKeGzfBG1ctqTUIvBCpEs0JbRd`
+* `TQJviTjjjfBUBtaVr5phBSyfCC_arPrR`
   - (periodic) bump centos to match ubuntu update for USN-2869-1
-
-* `KLkiU47sSNxtkqXHL6Xb2sfhQTjGDNCK`
-  - (periodic) bump centos to match ubuntu update for USN-2868-1
 
 * `vbWPUGbViswiED.1m6cKU0GdxEu2hL.L`
   - (periodic) bump centos to match ubuntu update for USN-2865-1, USN-2861-1
