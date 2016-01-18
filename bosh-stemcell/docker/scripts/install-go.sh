@@ -15,4 +15,8 @@ echo "${GO_ARCHIVE_SHA1} ${GO_ARCHIVE}" | sha1sum -c -
 
 tar xf $GO_ARCHIVE -C $(dirname $GOROOT)
 
+for GO_EXECUTABLE in $GOROOT/bin/*; do
+  ln -s $GO_EXECUTABLE /usr/bin/
+done
+
 rm -f $GO_ARCHIVE

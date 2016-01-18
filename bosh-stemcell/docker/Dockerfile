@@ -6,7 +6,6 @@ RUN dpkg-reconfigure locales
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV GOROOT /usr/local/go
-ENV PATH $GOROOT/bin:$PATH
 
 RUN groupadd -g 1000 ubuntu && useradd -u 1000 -g 1000 -m ubuntu && echo 'ubuntu ALL=NOPASSWD:ALL' >> /etc/sudoers
 
@@ -25,7 +24,7 @@ RUN /tmp/install-ruby.sh && rm /tmp/install-ruby.sh
 ADD scripts/install-go.sh /tmp/install-go.sh
 RUN /tmp/install-go.sh && rm /tmp/install-go.sh
 
-USER ubuntu
+# this is unshare from ubuntu 15.10 so we can use the newer -fp flags
+ADD scripts/unshare /usr/bin/unshare
 
-ADD scripts/entrypoint /usr/bin/entrypoint
-ENTRYPOINT /usr/bin/entrypoint
+USER ubuntu

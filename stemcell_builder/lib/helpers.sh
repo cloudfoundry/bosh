@@ -26,9 +26,11 @@ function run_in_chroot {
   disable $chroot/sbin/initctl
   disable $chroot/usr/sbin/invoke-rc.d
 
-  unshare -m $SHELL <<EOS
+  # `unshare -f -p` to prevent `kill -HUP 1` from causing `init` to exit;
+  unshare -f -p -m $SHELL <<EOS
     mkdir -p $chroot/dev
     mount -n --bind /dev $chroot/dev
+    mount -n --bind /dev/shm $chroot/dev/shm
     mount -n --bind /dev/pts $chroot/dev/pts
 
     mkdir -p $chroot/proc
