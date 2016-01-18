@@ -19,16 +19,16 @@ describe 'inspect release', type: :integration do
       out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
 
       expect(out).to match_output %(
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |
-        | job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |
-        | job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |
-        | job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |
-        | job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |
-        | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
+        | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     | Links Consumed | Links Provided |
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
+        | job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |                |                |
+        | job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |                |                |
+        | job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |                |                |
+        | job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |                |                |
+        | job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |                |                |
+        | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |                |                |
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
 
         +--------------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
         | Package                  | Fingerprint                              | Compiled For | Blobstore ID                         | SHA1                                     |
@@ -48,16 +48,16 @@ describe 'inspect release', type: :integration do
       out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
 
       expect(out).to match_output %(
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
-        | job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |
-        | job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |
-        | job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |
-        | job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |
-        | job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |
-        | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
-        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
+        | Job                   | Fingerprint                              | Blobstore ID                         | SHA1                                     | Links Consumed | Links Provided |
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
+        | job_using_pkg_1       | 9a5f09364b2cdc18a45172c15dca21922b3ff196 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | a7d51f65cda79d2276dc9cc254e6fec523b07b02 |                |                |
+        | job_using_pkg_1_and_2 | 673c3689362f2adb37baed3d8d4344cf03ff7637 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c9acbf245d4b4721141b54b26bee20bfa58f4b54 |                |                |
+        | job_using_pkg_2       | 8e9e3b5aebc7f15d661280545e9d1c1c7d19de74 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 79475b0b035fe70f13a777758065210407170ec3 |                |                |
+        | job_using_pkg_3       | 54120dd68fab145433df83262a9ba9f3de527a4b | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ab4e6077ecf03399f215e6ba16153fd9ebbf1b5f |                |                |
+        | job_using_pkg_4       | 0ebdb544f9c604e9a3512299a02b6f04f6ea6d0c | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1ff32a12e0c574720dd8e5111834bac67229f5c1 |                |                |
+        | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |                |                |
+        +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+----------------+----------------+
 
         +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
         | Package                  | Fingerprint                              | Compiled For                            | Blobstore ID                         | SHA1                                     |
@@ -74,6 +74,42 @@ describe 'inspect release', type: :integration do
         |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 002deec46961440df01c620be491e5b12246c5df |
         +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
       )
+    end
+
+    it 'shows consumed and provided links of release jobs' do
+
+      bosh_runner.run("upload release #{spec_asset('links_releases/release_with_links-0+dev.1.tgz')}")
+      out = scrub_random_ids(bosh_runner.run("inspect release release_with_links/0+dev.1"))
+
+      expect(out).to match_output %(
+        +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
+        | Job             | Fingerprint                              | Blobstore ID                         | SHA1                                     | Links Consumed    | Links Provided       |
+        +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
+        | api_server      | ec15421ae355db2b5c6320b4e114d3301150f062 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 6dfb3dda2ed6c4d30722c41da7fa0eee515e6039 | - name: db        |                      |
+        |                 |                                          |                                      |                                          |   type: db        |                      |
+        |                 |                                          |                                      |                                          | - name: backup_db |                      |
+        |                 |                                          |                                      |                                          |   type: db        |                      |
+        | backup_database | 2ea09882747364709dad9f45267965ac176ae5ad | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 42039d31559c8fac99985b8458e4d912130c80fb |                   | - name: backup_db    |
+        |                 |                                          |                                      |                                          |                   |   type: db           |
+        | database        | a9f952f94a82c13a3129ac481030f704a33d027f | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | b87f71d9922c0ea3d71a796478344d5d49225466 |                   | - name: db           |
+        |                 |                                          |                                      |                                          |                   |   type: db           |
+        | mongo_db        | 1a57f0be3eb19e263261536693db0d5a521261a6 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1eb3dd250cce66ec1b8a2828211707c89b841654 |                   | - name: read_only_db |
+        |                 |                                          |                                      |                                          |                   |   type: db           |
+        | node            | 727ce8aba0ae3f8b869ba8b3517c19140ced5383 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 775f96ee06a89459df9115f0b7632cde4e33f5fd | - name: node1     | - name: node1        |
+        |                 |                                          |                                      |                                          |   type: node1     |   type: node1        |
+        |                 |                                          |                                      |                                          | - name: node2     | - name: node2        |
+        |                 |                                          |                                      |                                          |   type: node2     |   type: node2        |
+        +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
+
+        +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+        | Package            | Fingerprint                              | Compiled For | Blobstore ID                         | SHA1                                     |
+        +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+        | pkg_1              | 16b4c8ef1574b3f98303307caad40227c208371f | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ea3a16a1554b237809435aca7d997fe36d33c558 |
+        | pkg_2              | 4b74be7d5aa14487c7f7b0d4516875f7c0eeb010 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 790c1abeb17c659227df696fac6c8a0efdf25f3e |
+        | pkg_3_depends_on_2 | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 8067d05705ee392defe4c967b75e09310cb81822 |
+        +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
+      )
+
     end
 
   end

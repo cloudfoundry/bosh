@@ -24,17 +24,40 @@ module Bosh::Cli::Command
         say(packages_table.render)
       end
 
+      private
+
       def build_jobs_table(release)
         table do |t|
-          t.headings = 'Job', 'Fingerprint', 'Blobstore ID', 'SHA1'
-          release['jobs'].each do |job|
+          t.headings = 'Job', 'Fingerprint', 'Blobstore ID', 'SHA1', 'Links Consumed', 'Links Provided'
+
+          release['jobs'].each_with_index do |job, index|
+
+            consumed_links = ''
+            if !job['consumes'].nil?
+              consumed_links = format_links_info(job['consumes'])
+            end
+
+            provided_links = ''
+            if !job['provides'].nil?
+              provided_links = format_links_info(job['provides'])
+            end
+
+            if index.even?
+              color = :yellow
+            else
+              color = :green
+            end
+
             row = [
-                job['name'].make_yellow,
-                job['fingerprint'].make_yellow,
-                job['blobstore_id'].make_yellow,
-                job['sha1'].make_yellow]
+                job['name'].make_color(color),
+                job['fingerprint'].make_color(color),
+                job['blobstore_id'].make_color(color),
+                job['sha1'].make_color(color),
+                consumed_links.make_color(color),
+                provided_links.make_color(color)]
             t << row
           end
+
         end
       end
 
@@ -67,6 +90,16 @@ module Bosh::Cli::Command
       # this method checks for that condition so we can give a helpful error message.
       def reasonable_response?(response)
         !response.has_key?('versions')
+      end
+
+      # formats the consume/provide links of a release job, outputs it in a YAML format
+      def format_links_info(links)
+        begin
+          YAML.dump(JSON.parse(links)).sub("---\n", '')
+        rescue => error
+          raise Bosh::Cli::InvalidLinks,
+                "An error has occurred while parsing links data: #{error}"
+        end
       end
     end
   end
