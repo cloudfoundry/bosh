@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Cli::DeploymentHelper do
+  include FakeFS::SpecHelpers
+
   class DeploymentHelperTester
     include Bosh::Cli::DeploymentHelper
 
@@ -38,12 +40,10 @@ describe Bosh::Cli::DeploymentHelper do
         'director_uuid' => 'deadbeef'
       }
 
-      manifest_file = Tempfile.new('manifest')
-      Psych.dump(manifest, manifest_file)
-      manifest_file.close
-      director = instance_double('Bosh::Cli::Client::Director')
+      File.open('fake-deployment-file', 'w') { |f| f.write(manifest.to_yaml) }
+      allow(cmd).to receive(:deployment).and_return('fake-deployment-file')
 
-      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
+      director = instance_double('Bosh::Cli::Client::Director')
       allow(cmd).to receive(:director).and_return(director)
 
       expect(director).to receive(:uuid).and_return('deadcafe')
@@ -60,11 +60,10 @@ describe Bosh::Cli::DeploymentHelper do
         'director_uuid' => 'deadbeef',
         'release' => {'name' => 'appcloud', 'version' => 42}
       }
-      manifest_file = Tempfile.new('manifest')
-      Psych.dump(manifest, manifest_file)
-      manifest_file.close
+
+      File.open('fake-deployment-file', 'w') { |f| f.write(manifest.to_yaml) }
       director = instance_double('Bosh::Cli::Client::Director', uuid: 'deadbeef')
-      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
+      allow(cmd).to receive(:deployment).and_return('fake-deployment-file')
       allow(cmd).to receive(:director).and_return(director)
 
       cmd.prepare_deployment_manifest(manifest)
@@ -158,7 +157,11 @@ describe Bosh::Cli::DeploymentHelper do
   describe '#inspect_deployment_changes' do
     context 'no changes with new manifest' do
       it 'prints out "no changes" for all manifest sections' do
-        manifest = {'name' => 'fake-deployment-name'}
+        manifest_hash = {'name' => 'fake-deployment-name', 'releases' => []}
+        File.open('fake-deployment-file', 'w') { |f| f.write(manifest_hash.to_yaml) }
+        manifest = Bosh::Cli::Manifest.new('fake-deployment-file', director)
+        manifest.load
+
         current_deployment = {'manifest' => 'name: fake-deployment-name'}
 
         output = ''
