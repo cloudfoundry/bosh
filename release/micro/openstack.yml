@@ -7,7 +7,6 @@ jobs:
   - name: micro_openstack
     template:
       - nats
-      - redis
       - postgres
       - powerdns
       - blobstore
@@ -22,9 +21,6 @@ properties:
     password: nats
     auth_timeout: 3
     address: 127.0.0.1
-  redis:
-    address: 127.0.0.1
-    password: redis
   postgres: &bosh_db
     user: postgres
     password: postges

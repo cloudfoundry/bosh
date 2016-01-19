@@ -22,9 +22,9 @@ module Bosh::Director
 
     subject { described_class.new(deployment_name) }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :delete_deployment_snapshots }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     it 'tells the snapshot manager to delete all snapshots of a deployment' do

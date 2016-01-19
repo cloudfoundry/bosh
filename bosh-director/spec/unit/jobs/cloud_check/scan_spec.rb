@@ -4,9 +4,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::CloudCheck::Scan do
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :cck_scan }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe 'instance methods' do
