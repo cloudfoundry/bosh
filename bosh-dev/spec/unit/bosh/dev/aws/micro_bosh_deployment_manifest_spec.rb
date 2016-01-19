@@ -50,7 +50,7 @@ module Bosh::Dev::Aws
         expect(Bosh::AwsCliPlugin::MicroboshManifest).to receive(:new).with(
           { 'vpc-receipt' => true },
           { 'route53-receipt' => true },
-          { hm_director_user: 'admin', hm_director_password: 'admin' },
+          { hm_director_user: 'admin', hm_director_password: 'admin', keep_unreachable_vms: false },
         )
         subject.write
       end
