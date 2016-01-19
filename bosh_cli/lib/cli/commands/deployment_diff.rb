@@ -38,7 +38,7 @@ module Bosh::Cli::Command
           end
         end
 
-        changes['update_config']
+        changes['context']
       rescue Bosh::Cli::ResourceNotFound
         inspect_deployment_changes(
           @manifest,

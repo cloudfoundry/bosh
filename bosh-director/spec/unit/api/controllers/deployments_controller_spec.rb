@@ -682,7 +682,7 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq('{"update_config":{"cloud_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+              expect(last_response.body).to eq('{"context":{"cloud_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
             end
           end
 

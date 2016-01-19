@@ -248,7 +248,7 @@ module Bosh
 
           recreate               = options.delete(:recreate)
           skip_drain             = options.delete(:skip_drain)
-          update_config          = options.delete(:update_config)
+          context                = options.delete(:context)
           options[:content_type] = 'text/yaml'
           options[:payload]      = manifest_yaml
 
@@ -256,7 +256,7 @@ module Bosh
 
           extras = []
           extras << ['recreate', 'true'] if recreate
-          extras << ['update_config', JSON.dump(update_config)] if update_config
+          extras << ['context', JSON.dump(context)] if context
           extras << ['skip_drain', skip_drain] if skip_drain
 
           request_and_track(:post, add_query_string(url, extras), options)
