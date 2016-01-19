@@ -259,6 +259,31 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'deployment job does not have templates' do
+      let(:first_node_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'first_node',
+            templates: [],
+            instances: 1,
+            static_ips: ['192.168.1.10']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [first_node_job_spec]
+        manifest
+      end
+
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+    end
+
+
     context 'when release job requires and provides same link' do
       let(:first_node_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
