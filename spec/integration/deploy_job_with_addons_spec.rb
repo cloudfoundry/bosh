@@ -29,4 +29,27 @@ describe 'deploy job with addons', type: :integration do
     template = foobar_vm.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
     expect(template).to include("echo 'prop_value'")
   end
+
+  it 'succeeds when deployment and runtime config both have the same release with the same version' do
+    target_and_login
+
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config))
+      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}")).to include("Successfully updated runtime config")
+    end
+
+    bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
+    bosh_runner.run("upload release #{spec_asset('test_release_2.tgz')}")
+
+    upload_stemcell
+
+    manifest_hash = Bosh::Spec::Deployments.multiple_release_manifest
+    upload_cloud_config(manifest_hash: manifest_hash)
+    deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    # ensure that the diff only contains one instance of the release
+    expect(deploy_output.scan(/test_release_2/).count).to eq(1)
+
+  end
 end

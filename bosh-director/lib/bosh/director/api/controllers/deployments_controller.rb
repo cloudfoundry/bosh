@@ -288,16 +288,18 @@ module Bosh::Director
       post '/:deployment/diff', :consumes => :yaml do
         deployment = Models::Deployment[name: params[:deployment]]
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)
           before_manifest.resolve_aliases
         else
-          before_manifest = Manifest.load_from_text(nil, nil)
+          before_manifest = Manifest.load_from_text(nil, nil, nil)
         end
 
         after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
         after_manifest = Manifest.load_from_text(
           request.body,
-          after_cloud_config
+          after_cloud_config,
+          after_runtime_config
         )
         after_manifest.resolve_aliases
 
@@ -306,6 +308,7 @@ module Bosh::Director
         json_encode({
           'update_config' => {
             'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+            'runtime_config_id' => after_runtime_config ? after_runtime_config.id : nil
           },
           'diff' => diff.map { |l| [l.to_s, l.status] }
         })

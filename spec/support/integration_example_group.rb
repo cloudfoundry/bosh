@@ -59,6 +59,12 @@ module IntegrationExampleGroup
     bosh_runner.run("update cloud-config #{cloud_config_manifest.path}", options)
   end
 
+  def upload_runtime_config(options={})
+    runtime_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_manifest = yaml_file('simple', runtime_config_hash)
+    bosh_runner.run("update runtime-config #{runtime_config_manifest.path}", options)
+  end
+
   def create_and_upload_test_release(options={})
     create_args = options.fetch(:force, false) ? '--force' : ''
     bosh_runner.run_in_dir("create release #{create_args}", ClientSandbox.test_release_dir, options)

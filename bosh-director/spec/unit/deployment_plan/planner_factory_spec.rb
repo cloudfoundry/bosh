@@ -13,7 +13,7 @@ module Bosh
         let(:runtime_config_model) { Models::RuntimeConfig.make(manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
-        let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash)}
+        let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }

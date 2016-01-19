@@ -44,6 +44,8 @@ module Bosh::Director
               if deployment_release.version != release_spec["version"]
                 raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release `#{release_spec["name"]}' with version as `#{release_spec["version"]}'. " +
                       "This conflicts with version `#{deployment_release.version}' specified in the deployment manifest."
+              else
+                next
               end
             end
 
