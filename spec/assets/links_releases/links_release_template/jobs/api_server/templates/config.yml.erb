@@ -4,20 +4,12 @@ databases:
 <% link('db.nodes').each do |node| %>
   - name: <%= node['name'] %>
     index: <%= node['index'] %>
-    networks:
-    <% node['address'].each do |network_name, network_settings| %>
-      - name: <%= network_name %>
-        address: <%= network_settings['address'] %>
-    <% end %>
+    address: <%= node['address'] %>
 <% end %>
   backup:
 <% link('backup_db.nodes').each do |node| %>
   - name: <%= node['name'] %>
     az: <%= node['az'] %>
     index: <%= node['index'] %>
-    networks:
-    <% node['address'].each do |network_name, network_settings| %>
-      - name: <%= network_name %>
-        address: <%= network_settings['address'] %>
-    <% end %>
+    address: <%= node['address'] %>
 <% end %>

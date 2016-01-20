@@ -178,10 +178,6 @@ module Bosh
           network_settings.to_hash
         end
 
-        def network_addresses
-          network_settings.network_addresses
-        end
-
         def network_address(network_name)
           network_settings.network_address(network_name)
         end

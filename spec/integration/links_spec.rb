@@ -21,9 +21,7 @@ describe 'Links', type: :integration do
 
     template['databases'].each do |_, database|
       database.each do |node|
-        node['networks'].each do |network|
-          expect(network['address']).to match(pattern)
-        end
+          expect(node['address']).to match(pattern)
       end
     end
   end
@@ -148,22 +146,12 @@ describe 'Links', type: :integration do
             {
               'name' => 'mysql',
               'index' => 0,
-              'networks' => [
-                {
-                  'name' => 'dynamic-network',
-                  'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
-                }
-              ]
+              'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
             },
             {
               'name' => 'mysql',
               'index' => 1,
-              'networks' => [
-                {
-                  'name' => 'dynamic-network',
-                  'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
-                }
-              ]
+              'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
             }
           )
 
@@ -172,12 +160,7 @@ describe 'Links', type: :integration do
               'name' => 'postgres',
               'az' => 'z1',
               'index' => 0,
-              'networks' => [
-                {
-                  'name' => 'a',
-                  'address' => '192.168.1.12',
-                }
-              ]
+              'address' => '192.168.1.12'
             }
           )
       end
@@ -197,7 +180,7 @@ describe 'Links', type: :integration do
         manifest
       end
 
-      it 'should successfully compile a release without complaininfg about missing links' do
+      it 'should successfully compile a release without complaining about missing links' do
         deploy_simple_manifest(manifest_hash: manifest)
         out = bosh_runner.run("export release bosh-release/0+dev.1 toronto-os/1")
 
@@ -211,11 +194,11 @@ describe 'Links', type: :integration do
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
-        expect(out).to include('Started copying jobs > api_server/ec15421ae355db2b5c6320b4e114d3301150f062. Done')
+        expect(out).to include('Started copying jobs > api_server/fd60e255d4aec7e3cadd87870ca408816735022e. Done')
         expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
         expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
         expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
-        expect(out).to include('Started copying jobs > node/727ce8aba0ae3f8b869ba8b3517c19140ced5383. Done')
+        expect(out).to include('Started copying jobs > node/9c0fc1103d599b3b29b7ddd4fd2a79cfe8c1e232. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
@@ -248,12 +231,7 @@ describe 'Links', type: :integration do
               'name' => 'mongo',
               'index' => 0,
               'az' => 'z1',
-              'networks' => [
-                {
-                  'name' => 'a',
-                  'address' => '192.168.1.13',
-                }
-              ]
+              'address' => '192.168.1.13'
             }
           )
       end
@@ -325,29 +303,19 @@ describe 'Links', type: :integration do
              {
                  'name' => 'postgres',
                  'index' => 0,
-                 'networks' => [
-                     {
-                         'name' => 'a',
-                         'address' => '192.168.1.12',
-                     }
-                 ]
+                 'address' => '192.168.1.12'
              }
          )
 
         expect(template['databases']['backup'].size).to eq(1)
         expect(template['databases']['backup']).to contain_exactly(
-                                                     {
-                                                         'name' => 'postgres',
-                                                         'index' => 0,
-                                                         'az' => 'z1',
-                                                         'networks' => [
-                                                             {
-                                                                 'name' => 'a',
-                                                                 'address' => '192.168.1.12',
-                                                             }
-                                                         ]
-                                                     }
-                                                 )
+             {
+                 'name' => 'postgres',
+                 'index' => 0,
+                 'az' => 'z1',
+                 'address' => '192.168.1.12'
+             }
+         )
       end
     end
 
@@ -387,17 +355,12 @@ describe 'Links', type: :integration do
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
-                                                     {
-                                                         'name' => 'aliased_postgres',
-                                                         'index' => 0,
-                                                         'networks' => [
-                                                             {
-                                                                 'name' => 'a',
-                                                                 'address' => '192.168.1.3',
-                                                             }
-                                                         ]
-                                                     }
-                                                 )
+           {
+               'name' => 'aliased_postgres',
+               'index' => 0,
+               'address' => '192.168.1.3'
+           }
+        )
       end
     end
 
@@ -467,17 +430,12 @@ describe 'Links', type: :integration do
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
-                                                     {
-                                                         'name' => 'new_aliased_job',
-                                                         'index' => 0,
-                                                         'networks' => [
-                                                             {
-                                                                 'name' => 'a',
-                                                                 'address' => '192.168.1.5',
-                                                             }
-                                                         ]
-                                                     }
-                                                 )
+           {
+               'name' => 'new_aliased_job',
+               'index' => 0,
+               'address' => '192.168.1.5'
+           }
+        )
       end
 
     end

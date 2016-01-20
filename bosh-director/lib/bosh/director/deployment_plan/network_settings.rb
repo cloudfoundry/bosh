@@ -49,19 +49,7 @@ module Bosh::Director::DeploymentPlan
       dns_record_info
     end
 
-    def network_addresses
-      network_addresses = {}
-      to_hash.each do |network_name, network|
-        network_addresses[network_name] = {
-          'address' => network['type'] == 'dynamic' ?
-            @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name) :
-            network['ip']
-        }
-      end
-      network_addresses
-    end
-
-    def network_address(preferred_network_name)
+    def network_address(preferred_network_name = nil)
       network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
 
@@ -71,7 +59,7 @@ module Bosh::Director::DeploymentPlan
         address = network_hash[network_name]['ip']
       end
 
-      return {network_name => {'address' => address}}
+      address
     end
   end
 end
