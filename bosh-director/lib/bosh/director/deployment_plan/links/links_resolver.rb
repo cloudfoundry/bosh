@@ -29,7 +29,7 @@ module Bosh::Director
             raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
           end
 
-          consumes_network = template.consumes_link_info(link_name)['network']
+          consumes_network = template.consumes_link_info(job.name, link_name)['network']
 
           if consumes_network
             link_provider_job = @deployment_plan.job(link_path.job)

@@ -1,23 +1,23 @@
 ---
 databases:
   main:
-<% link('db.nodes').each do |node| %>
-  - name: <%= node['name'] %>
-    index: <%= node['index'] %>
+<% link('db').nodes.each do |node| %>
+  - name: <%= node.name %>
+    index: <%= node.index %>
     networks:
-    <% node['address'].each do |network_name, network_settings| %>
+    <% node.address.each do |network_name, network_settings| %>
       - name: <%= network_name %>
-        address: <%= network_settings['address'] %>
+        address: <%= network_settings["address"] %>
     <% end %>
 <% end %>
   backup:
-<% link('backup_db.nodes').each do |node| %>
-  - name: <%= node['name'] %>
-    az: <%= node['az'] %>
-    index: <%= node['index'] %>
+<% link('backup_db').nodes.each do |node| %>
+  - name: <%= node.name %>
+    az: <%= node.az %>
+    index: <%= node.index %>
     networks:
-    <% node['address'].each do |network_name, network_settings| %>
+    <% node.address.each do |network_name, network_settings| %>
       - name: <%= network_name %>
-        address: <%= network_settings['address'] %>
+        address: <%= network_settings["address"] %>
     <% end %>
 <% end %>

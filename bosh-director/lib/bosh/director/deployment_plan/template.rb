@@ -120,8 +120,8 @@ module Bosh::Director
         end
       end
 
-      def consumes_link_info(link_name)
-        @link_infos.fetch('consumes', {}).fetch(link_name, {})
+      def consumes_link_info(job_name, link_name)
+        @link_infos.fetch(job_name, {}).fetch('consumes', {}).fetch(link_name, {})
       end
 
       private
