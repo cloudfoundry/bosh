@@ -44,6 +44,9 @@ module Bosh
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)
 
+
+        @link_spec = Struct::const_defined?("LinkSpec") ? Struct.const_get("LinkSpec") : Struct.new("LinkSpec", :nodes)
+        @link_spec_props = Struct::const_defined?("LinkSpecProperties") ? Struct.const_get("LinkSpecProperties") : Struct.new("LinkSpecProperties", :name, :index, :id, :az, :address)
         @links = spec['links'] || {}
       end
 
@@ -93,8 +96,13 @@ module Bosh
 
       def link(name)
         result = lookup_property(@links, name)
-        return result unless result.nil?
-
+        if result.has_key?("node")
+          node_array = result["node"].map do |link_spec|
+            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["uuid"], link_spec["az"], link_spec["address"])
+          end
+          nodes = @link_spec.new(node_array)
+          return nodes unless nodes.nil?
+        end
         raise UnknownLink.new(name)
       end
 
