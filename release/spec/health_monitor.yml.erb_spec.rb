@@ -27,6 +27,7 @@ describe 'health_monitor.yml.erb' do
             'rogue_agent_alert' => 66,
           },
           'loglevel' => 'INFO',
+          'em_threadpool_size' => 20,
           # plugins
           'email_notifications' => false,
           'tsdb_enabled' => false,
@@ -81,6 +82,7 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['intervals']['rogue_agent_alert']).to eq(66)
       expect(parsed_yaml['logfile']).to be_a(String)
       expect(parsed_yaml['loglevel']).to eq('INFO')
+      expect(parsed_yaml['em_threadpool_size']).to eq(20)
 
       expect(parsed_yaml['plugins'].length).to eq(1)
       expect(parsed_yaml['plugins'].first['name']).to eq('logger')

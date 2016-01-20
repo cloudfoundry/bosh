@@ -31,6 +31,7 @@ params = {
   },
   'logfile' => '/var/vcap/sys/log/health_monitor/health_monitor.log',
   'loglevel' => p('hm.loglevel'),
+  'em_threadpool_size' => p('hm.em_threadpool_size'),
   'plugins' => [
     {
       'name' => 'logger',
