@@ -22,6 +22,7 @@ jobs:
           - start-job
       - task: build
         file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        privileged: true
         config:
           params:
             BOSH_AWS_ACCESS_KEY_ID:     {{aws_access_key}}
@@ -40,6 +41,7 @@ jobs:
           - start-job
       - task: build
         file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        privileged: true
         config:
           params:
             BOSH_AWS_ACCESS_KEY_ID:     {{aws_access_key}}
