@@ -206,6 +206,51 @@ module Bosh::Director
 
         end
       end
+
+      context 'when diff contains env information' do
+        before do
+          diff_lines << Line.new(0, 'resource_pools:', nil)
+          diff_lines << Line.new(0, '- name: foo', nil)
+          diff_lines << Line.new(1, 'env:', nil)
+          diff_lines << Line.new(2, 'user: foo', nil)
+          diff_lines << Line.new(2, 'password: bar', nil)
+          diff_lines << Line.new(0, 'jobs:', nil)
+          diff_lines << Line.new(0, '- name: job1', nil)
+          diff_lines << Line.new(0, '  env:', nil)
+          diff_lines << Line.new(0, '    bosh:', nil)
+          diff_lines << Line.new(0, '      password: foobar', nil)
+        end
+
+        it 'redacts all env values' do
+          expect(diff_lines.map(&:to_s)).to eq([
+                'resource_pools:',
+                '- name: foo',
+                '  env:',
+                '    user: foo',
+                '    password: bar',
+                'jobs:',
+                '- name: job1',
+                '  env:',
+                '    bosh:',
+                '      password: foobar',
+              ])
+
+          diff_lines.redact_properties
+
+          expect(diff_lines.map(&:to_s)).to eq([
+                'resource_pools:',
+                '- name: foo',
+                '  env:',
+                '    user: <redacted>',
+                '    password: <redacted>',
+                'jobs:',
+                '- name: job1',
+                '  env:',
+                '    bosh:',
+                '      password: <redacted>',
+              ])
+        end
+      end
     end
   end
 end

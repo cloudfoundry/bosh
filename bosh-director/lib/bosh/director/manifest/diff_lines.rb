@@ -28,6 +28,11 @@ module Bosh::Director
       jobs
     )
 
+    REDACT_KEY_NAMES = %w(
+      properties
+      env
+    )
+
     def order
       sections = {}
       key = nil
@@ -63,7 +68,7 @@ module Bosh::Director
       while i < self.size
         line = self[i]
 
-        if line.text =~ /\bproperties:/
+        if REDACT_KEY_NAMES.any? { |key_name| line.text =~ /\b#{key_name}:/ }
           properties_indent = line.full_indent
           i += 1
           line = self[i]
