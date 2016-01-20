@@ -19,25 +19,30 @@ module Bosh::Director
 
       def self.fulfill_implicit_link(deployment_plan, link_info)
         link_type = link_info["type"]
-        link_path_found = nil
+        found_link_paths = []
+
         deployment_plan.jobs.each do |provides_job|
           provides_job.templates.each do |provides_template|
             if provides_template.link_infos.has_key?(provides_job.name) && provides_template.link_infos[provides_job.name].has_key?('provides')
               matching_links = provides_template.link_infos[provides_job.name]["provides"].select { |k,v| v["type"] == link_type }
               if matching_links.size > 0
-                if link_path_found.nil?
-                  link_path_found = {:deployment => deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => matching_links.values()[0]["name"]}
-                else
-                  raise "Multiple provide links have type #{link_type}. Can not make implicit link"
-                end
+                found_link_paths.push({:deployment => deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => matching_links.values()[0]["name"]})
               end
             end
           end
         end
-        if link_path_found.nil?
+
+        if found_link_paths.size == 1
+          return found_link_paths[0]
+        elsif found_link_paths.size > 1
+          all_link_paths = ""
+          found_link_paths.each do |link_path|
+            all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
+          end
+          raise "Can not make implicit link. Multiple provide links have type #{link_type}:#{all_link_paths}"
+        else
           raise "Can't find link with type: #{link_type} in deployment #{deployment_plan.name}"
         end
-        return link_path_found
       end
 
       def self.fulfill_explicit_link(deployment_plan, link_info)
@@ -65,27 +70,30 @@ module Bosh::Director
       end
 
       def self.get_link_path_from_deployment_plan(deployment_plan, name)
-        link_path_found = nil
+        found_link_paths = []
         deployment_plan.jobs.each do |job|
           job.templates.each do |template|
             if template.link_infos.has_key?(job.name) && template.link_infos[job.name].has_key?('provides')
               template.link_infos[job.name]['provides'].to_a.each do |provides_name, source|
                 link_name = source.has_key?("as") ? source['as'] : source['name']
                 if link_name == name
-                  if link_path_found.nil?
-                    link_path_found = {:deployment => deployment_plan.name, :job => job.name, :template => template.name, :name => name}
-                  else
-                    raise "Multiple links found with name: #{name} in deployment #{deployment_plan.name}"
-                  end
+                  found_link_paths.push({:deployment => deployment_plan.name, :job => job.name, :template => template.name, :name => name})
                 end
               end
             end
           end
         end
-        if link_path_found.nil?
+        if found_link_paths.size == 1
+          return found_link_paths[0]
+        elsif found_link_paths.size > 1
+          all_link_paths = ""
+          found_link_paths.each do |link_path|
+            all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
+          end
+          raise "Multiple links found with name #{name} in deployment #{deployment_plan.name}:#{all_link_paths}"
+        else
           raise "Can't find link with name: #{name} in deployment #{deployment_plan.name}"
         end
-        return link_path_found
       end
 
       def self.find_deployment_and_get_link_path(deployment_name, name)
@@ -93,18 +101,10 @@ module Bosh::Director
 
         # get the link path from that deployment
         if deployment_model.count != 0
-          return self.get_link_path_fom_deployment(deployment_model.first, name)
+          return self.find_link_path_with_name(deployment_model.first, name)
         else
           raise "Can't find deployment #{deployment_name}"
         end
-      end
-
-      def self.get_link_path_fom_deployment(deployment, name)
-        link_path = self.find_link_path_with_name(deployment, name)
-        if link_path != nil
-          return link_path
-        end
-        raise "Can't find link with name: #{name} in deployment #{deployment.name}"
       end
 
       def self.search_deployments_for_link_path(name)
@@ -121,16 +121,27 @@ module Bosh::Director
 
       def self.find_link_path_with_name(deployment, name)
         deployment_link_spec = deployment.link_spec
+        found_link_paths = []
         deployment_link_spec.keys.each do |job|
           deployment_link_spec[job].keys.each do |template|
             deployment_link_spec[job][template].keys.each do |link|
               if link == name
-                return {:deployment => deployment.name, :job => job, :template => template, :name => name}
+                found_link_paths.push({:deployment => deployment.name, :job => job, :template => template, :name => name})
               end
             end
           end
         end
-        return nil
+        if found_link_paths.size == 1
+          return found_link_paths[0]
+        elsif found_link_paths.size > 1
+          all_link_paths = ""
+          found_link_paths.each do |link_path|
+            all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
+          end
+          raise "Found multiple links with name: #{name} in deployment #{deployment.name}: #{all_link_paths}"
+        else
+          raise "Can't find link with name: #{name} in deployment #{deployment.name}"
+        end
       end
 
     end

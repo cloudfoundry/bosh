@@ -126,4 +126,49 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     end
   end
 
+  context 'when there are multiple links with the same type' do
+    let(:path) { {"name" => 'link_name', 'type' => 'link_type'} }
+    let(:additional_template) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Template',
+          {
+              name: 'provider_template',
+              link_infos: {
+                  'additional_provider_job' => {
+                      'provides' => {
+                          'link_name' => {
+                              'name' => 'link_name',
+                              'type' => 'link_type'
+                          }
+                      }
+                  }
+              }
+          }
+      )
+    }
+    let(:additional_provider_job) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Job',
+          {
+              name: 'additional_provider_job',
+              templates: [additional_template]
+          }
+      )
+    }
+    let(:deployment) {
+      instance_double(
+          'Bosh::Director::DeploymentPlan::Planner',
+          {
+              name: 'deployment_name',
+              jobs: [provider_job, additional_provider_job]
+          }
+      )
+    }
+    it 'should raise an exception' do
+      expect{described_class.parse(deployment,path)}.to raise_error("Can not make implicit link. Multiple provide links have type link_type:
+   deployment_name.provider_job.provider_template.link_name
+   deployment_name.additional_provider_job.provider_template.link_name")
+    end
+  end
+
 end
