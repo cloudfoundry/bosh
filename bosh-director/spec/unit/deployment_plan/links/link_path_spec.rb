@@ -8,12 +8,14 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
         {
             name: 'provider_template',
             link_infos: {
+              'provider_job' => {
                 'provides' => {
-                    'link_name' => {
-                        'name' => 'link_name',
-                        'type' => 'link_type'
-                    }
+                  'link_name' => {
+                      'name' => 'link_name',
+                      'type' => 'link_type'
+                  }
                 }
+              }
             }
         }
     )
@@ -93,88 +95,6 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     let(:path) { {"name" => "link_name", "type" => "invalid_type"} }
     it 'should throw an error' do
       expect{described_class.parse(deployment,path)}.to raise_error("Can't find link with type: invalid_type in deployment deployment_name")
-    end
-  end
-
-  context 'when consumes block does not have from key, and a link type with multiple provide links' do
-    let(:path) { {"name" => "link_name", "type" => "link_type"} }
-    let(:extra_template) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Template',
-          {
-              name: 'extra_provider_template',
-              link_infos: {
-                  'provides' => {
-                      'link_name' => {
-                          'name' => 'unique_link_name',
-                          'type' => 'link_type'
-                      }
-                  }
-              }
-          }
-      )
-    }
-    let(:extra_provider_job) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Job',
-          {
-              name: 'extra_provider_job',
-              templates: [extra_template]
-          }
-      )
-    }
-    let(:deployment) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Planner',
-          {
-              name: 'deployment_name',
-              jobs: [provider_job, extra_provider_job]
-          }
-      )
-    }
-    it 'should throw an error' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Multiple provide links have type link_type. Can not make implicit link")
-    end
-  end
-
-  context 'given a deployment with multiple jobs providing same link' do
-    let(:path) { {"from" => 'deployment_name.link_name'} }
-    let(:extra_template) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Template',
-        {
-          name: 'extra_provider_template',
-          link_infos: {
-            'provides' => {
-              'link_name' => {
-                'name' => 'link_name',
-                'type' => 'link_type'
-              }
-            }
-          }
-        }
-      )
-    }
-    let(:extra_provider_job) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Job',
-          {
-              name: 'extra_provider_job',
-              templates: [extra_template]
-          }
-      )
-    }
-    let(:deployment) {
-      instance_double(
-          'Bosh::Director::DeploymentPlan::Planner',
-          {
-              name: 'deployment_name',
-              jobs: [provider_job, extra_provider_job]
-          }
-      )
-    }
-    it 'raises error when it finds mutiple link resolutions' do
-      expect{described_class.parse(deployment,path)}.to raise_error("Multiple links found with name: link_name in deployment deployment_name")
     end
   end
 

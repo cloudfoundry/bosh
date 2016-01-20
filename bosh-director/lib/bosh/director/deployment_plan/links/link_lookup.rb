@@ -35,7 +35,7 @@ module Bosh::Director
         template = job.templates.find { |t| t.name == @link_path.template }
         return nil unless template
 
-        found = template.provided_links.find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
+        found = template.provided_links(job.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
         return nil unless found
 
         Link.new(@link_path.name, job, @link_network).spec

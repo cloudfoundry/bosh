@@ -22,8 +22,8 @@ module Bosh::Director
         link_path_found = nil
         deployment_plan.jobs.each do |provides_job|
           provides_job.templates.each do |provides_template|
-            if provides_template.link_infos.has_key?("provides")
-              matching_links = provides_template.link_infos["provides"].select { |k,v| v["type"] == link_type }
+            if provides_template.link_infos.has_key?(provides_job.name) && provides_template.link_infos[provides_job.name].has_key?('provides')
+              matching_links = provides_template.link_infos[provides_job.name]["provides"].select { |k,v| v["type"] == link_type }
               if matching_links.size > 0
                 if link_path_found.nil?
                   link_path_found = {:deployment => deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => matching_links.values()[0]["name"]}
@@ -68,8 +68,8 @@ module Bosh::Director
         link_path_found = nil
         deployment_plan.jobs.each do |job|
           job.templates.each do |template|
-            if template.link_infos.has_key?('provides')
-              template.link_infos['provides'].to_a.each do |provides_name, source|
+            if template.link_infos.has_key?(job.name) && template.link_infos[job.name].has_key?('provides')
+              template.link_infos[job.name]['provides'].to_a.each do |provides_name, source|
                 link_name = source.has_key?("as") ? source['as'] : source['name']
                 if link_name == name
                   if link_path_found.nil?
