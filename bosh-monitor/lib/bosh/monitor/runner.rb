@@ -14,6 +14,7 @@ module Bosh::Monitor
       @intervals     = Bhm.intervals
       @mbus          = Bhm.mbus
       @agent_manager = Bhm.agent_manager
+      EM.threadpool_size = Bhm.em_threadpool_size
     end
 
     def run
