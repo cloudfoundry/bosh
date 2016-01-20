@@ -20,8 +20,8 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'node' => [{'name' => 'link_name', 'address' => "123.456.789.101"}]},
-            'fake-link-2' => {'node' => [{'name' => 'link_name', 'address' => "123.456.789.102"}]}
+            'fake-link-1' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.101"}]},
+            'fake-link-2' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.102"}]}
           },
           'index' => 0,
           'id' => 'deadbeef',
