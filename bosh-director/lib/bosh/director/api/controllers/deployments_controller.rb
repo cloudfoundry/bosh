@@ -274,12 +274,11 @@ module Bosh::Director
           @logger.debug("Deploying with update config #{params['update_config']}")
           update_config = JSON.parse(params['update_config'])
           cloud_config = Api::CloudConfigManager.new.find_by_id(update_config['cloud_config_id'])
-
+          runtime_config = Api::RuntimeConfigManager.new.find_by_id(update_config['runtime_config_id'])
         else
-          cloud_config =Api::CloudConfigManager.new.latest
+          cloud_config = Api::CloudConfigManager.new.latest
+          runtime_config = Api::RuntimeConfigManager.new.latest
         end
-
-        runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
 
         task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, runtime_config, options)
         redirect "/tasks/#{task.id}"
