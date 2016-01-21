@@ -141,6 +141,7 @@ module Bosh::Director::DeploymentPlan
             'job' => 'fake-job',
             'index' => 5,
             'id' => 'fake-uuid',
+            'env' => 'fake-env',
             'unneeded-properties' => 'nope'
           }
         end
@@ -161,6 +162,7 @@ module Bosh::Director::DeploymentPlan
 
           instance.apply_initial_vm_state(instance_spec)
           expect(instance_model.spec['networks']).to eq({'changed' => {}})
+          expect(instance_model.spec['env']).to eq('fake-env')
         end
       end
     end

@@ -87,7 +87,7 @@ module Bosh::Director
         end
 
         it 'whines on invalid env format' do
-          instance.update(vm_env: :bar)
+          instance.update(spec: {'env' => 'bar'})
 
           expect {
             test_problem_handler.apply_resolution(:recreate_vm)
