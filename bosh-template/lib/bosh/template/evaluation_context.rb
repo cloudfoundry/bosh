@@ -119,6 +119,22 @@ module Bosh
         InactiveElseBlock.new
       end
 
+      # Run a block of code if the link given exists
+      # @param [String] name of the link
+      # @yield [Object] link, which is an array of nodes
+      def if_link(name)
+        link_found = lookup_property(@links, name)
+        if link_found.nil? || !link_found.has_key?("nodes")
+          return ActiveElseBlock.new(self)
+        else
+          node_array = link_found["nodes"].map do |link_spec|
+            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["uuid"], link_spec["az"], link_spec["address"])
+          end
+          yield @link_spec.new(node_array)
+          InactiveElseBlock.new
+        end
+      end
+
       # @return [Object] Object representation where all hashes are unrolled
       #   into OpenStruct objects. This exists mostly for backward
       #   compatibility, as it doesn't provide good error reporting.
@@ -146,6 +162,10 @@ module Bosh
         def else_if_p(*names, &block)
           @context.if_p(*names, &block)
         end
+
+        def else_if_link(name, &block)
+          @context.if_link(name, &block)
+        end
       end
 
       class InactiveElseBlock
@@ -153,6 +173,10 @@ module Bosh
         end
 
         def else_if_p(*names)
+          InactiveElseBlock.new
+        end
+
+        def else_if_link(name)
           InactiveElseBlock.new
         end
       end

@@ -66,6 +66,100 @@ module Bosh
         expect(eval_template("<%= link('fake-link-2').nodes[0].address %>", @context)).to eq('123.456.789.102')
       end
 
+      describe 'if_link' do
+
+        it 'works when link is found' do
+          template = <<-TMPL
+        <% if_link("fake-link-1") do |link| %>
+        <%= link.nodes[0].address %>
+        <% end %>
+          TMPL
+
+          expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+        end
+
+        it "does not call the block if a link can't be found" do
+          template = <<-TMPL
+          <% if_link("imaginary-link-1") do |link| %>
+          <%= link.nodes[0].address %>
+          <% end %>
+          TMPL
+
+          expect(eval_template(template, @context).strip).to eq('')
+        end
+
+        describe '.else' do
+          it 'does not call the else block if link is found' do
+            template = <<-TMPL
+          <% if_link("fake-link-1") do |link| %>
+          <%= link.nodes[0].address %>
+          <% end.else do %>
+          should never get here
+          <% end %>
+            TMPL
+
+            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+          end
+
+          it 'calls the else block if the link is missing' do
+            template = <<-TMPL
+          <% if_link("imaginary-link-1") do |link| %>
+          <%= link.nodes[0].address %>
+          <% end.else do %>
+          it should show me
+          <% end %>
+            TMPL
+
+            expect(eval_template(template, @context).strip).to eq('it should show me')
+          end
+        end
+
+        describe '.else_if_link' do
+          it 'is not called when if_link matches' do
+            template = <<-TMPL
+          <% if_link("fake-link-1") do |link| %>
+          <%= link.nodes[0].address %>
+          <% end.else_if_link("should-never-get-here-link") do |v| %>
+          hidden words
+          <% end.else do %>
+          not going to get here
+          <% end %>
+            TMPL
+
+            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+          end
+
+          it 'is called when if_link does not match' do
+            template = <<-TMPL
+          <% if_link("imaginary-link-1") do |v| %>
+          should not get here
+          <% end.else_if_link("fake-link-1") do |link| %>
+          <%= link.nodes[0].address %>
+          <% end.else do %>
+          not going to get here
+          <% end %>
+            TMPL
+
+            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+          end
+
+          it "calls else when its conditions aren't met" do
+            template = <<-TMPL
+          <% if_link("imaginary-link-1") do |v| %>
+          should not get here
+          <% end.else_if_link("imaginary-link-3") do |link| %>
+          I do not exist
+          <% end.else do %>
+          I am alive
+          <% end %>
+            TMPL
+
+            expect(eval_template(template, @context).strip).to eq('I am alive')
+          end
+        end
+
+      end
+
       describe 'p' do
         it 'looks up properties' do
           expect(eval_template("<%= p('router.token') %>", @context)).to eq('zbb')

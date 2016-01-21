@@ -166,6 +166,152 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when dealing with optional links' do
+
+      let(:api_job_with_optional_links_spec_1) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'my_api',
+            templates: [{'name' => 'api_server_with_optional_links_1', 'consumes' => links}],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:api_job_with_optional_links_spec_2) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'my_api',
+            templates: [{'name' => 'api_server_with_optional_links_2', 'consumes' => links}],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [api_job_with_optional_links_spec_1, mysql_job_spec, postgres_job_spec]
+        manifest
+      end
+
+      context 'when optional links are explicitly stated in deployment manifest' do
+        let(:links) do
+          {
+              'db' => {'from' => 'db'},
+              'backup_db' => {'from' => 'backup_db'},
+              'optional_link_name' => {'from' => 'backup_db'}
+          }
+        end
+
+        it 'throws an error if the optional link was not found' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(out).to include("Error 190016: Cannot resolve link path 'simple.postgres.backup_database.backup_db' required for link 'optional_link_name' in job 'my_api' on template 'api_server_with_optional_links_1'")
+        end
+      end
+
+      context 'when optional links are not explicitly stated in deployment manifest' do
+        let(:links) do
+          {
+              'db' => {'from' => 'db'},
+              'backup_db' => {'from' => 'backup_db'}
+          }
+        end
+
+        it 'should not throw an error if the optional link was not found' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
+          expect(exit_code).to eq(0)
+          expect(out).to include("Deployed `simple' to `Test Director'")
+        end
+      end
+
+      context 'when a consumed link is set to nil in the deployment manifest' do
+        context 'when the link is optional and it does not exist' do
+          let(:links) do
+            {
+                'db' => {'from' => 'db'},
+                'backup_db' => {'from' => 'backup_db'},
+                'optional_link_name' => 'nil'
+            }
+          end
+
+          it 'should not render link data in job template' do
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            link_vm = director.vm('my_api', '0')
+            template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_1', 'config.yml'))
+
+            expect(template['optional_key']).to eq(nil)
+          end
+        end
+
+        context 'when the link is optional and it exists' do
+          let(:links) do
+            {
+                'db' => {'from' => 'db'},
+                'backup_db' => 'nil',
+            }
+          end
+
+          let(:manifest) do
+            manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+            manifest['jobs'] = [api_job_with_optional_links_spec_2, mysql_job_spec, postgres_job_spec]
+            manifest
+          end
+
+          it 'should not render link data in job template' do
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            link_vm = director.vm('my_api', '0')
+            template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+
+            expect(template['databases']['backup']).to eq(nil)
+          end
+        end
+
+        context 'when the link is not optional' do
+          let(:links) do
+            {
+                'db' => 'nil',
+                'backup_db' => {'from' => 'backup_db'}
+            }
+          end
+
+          it 'should throw an error' do
+            out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+            expect(exit_code).not_to eq(0)
+            expect(out).to include("Error 140014: Link path was not provided for required link 'db' in job 'my_api'")
+          end
+        end
+      end
+
+      context 'when if_link and else_if_link are used in job templates' do
+
+        let(:links) do
+          {
+              'db' => {'from' => 'db'},
+              'backup_db' => {'from' => 'backup_db'},
+          }
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [api_job_with_optional_links_spec_2, mysql_job_spec, postgres_job_spec]
+          manifest
+        end
+
+        it 'should respect their behavior' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          link_vm = director.vm('my_api', '0')
+          template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+
+          expect(template['databases']['backup2'].size).to eq(1)
+          expect(template['databases']['backup3']).to eq('happy')
+        end
+      end
+    end
+
     context 'when exporting a release with templates that have links' do
 
       let(:manifest) do

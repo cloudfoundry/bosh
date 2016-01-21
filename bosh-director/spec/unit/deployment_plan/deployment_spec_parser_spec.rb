@@ -421,6 +421,7 @@ module Bosh::Director
                                      }
                                  ])
           end
+
           let(:template1) do
             instance_double('Bosh::Director::DeploymentPlan::Template',
               {
@@ -438,6 +439,7 @@ module Bosh::Director
               }
             )
           end
+
           let(:job1) do
             instance_double('Bosh::Director::DeploymentPlan::Job',
               {
@@ -447,11 +449,18 @@ module Bosh::Director
               })
           end
           let(:link_path) {DeploymentPlan::LinkPath.new('deployment_name', 'job_name', 'provides_template', 'link_name', 'deployment_name.job_name.provides_template.link_name')}
+
           it 'should have a link_path' do
-            allow(DeploymentPlan::Job).to receive(:parse).
-              and_return(job1)
+            allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
             expect(DeploymentPlan::LinkPath).to receive(:parse).and_return(link_path)
             expect(job1).to receive(:add_link_path).with("provides_template", 'link_name', link_path)
+            expect(parsed_deployment.job('job1-name').name).to eq('job1-name')
+          end
+
+          it 'should not add a link path if no links found for optional ones, and it should not fail' do
+            allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+            expect(DeploymentPlan::LinkPath).to receive(:parse).and_return(nil)
+            expect(job1).to_not receive(:add_link_path)
             expect(parsed_deployment.job('job1-name').name).to eq('job1-name')
           end
         end

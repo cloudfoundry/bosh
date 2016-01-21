@@ -1,0 +1,37 @@
+---
+databases:
+  main:
+<% link('db').nodes.each do |node| %>
+  - name: <%= node.name %>
+    index: <%= node.index %>
+    address: <%= node.address %>
+<% end %>
+
+<% if_link('backup_db') do |link| %>
+  backup:
+<% link.nodes.each do |node| %>
+  - name: <%= node.name %>
+    az: <%= node.az %>
+    index: <%= node.index %>
+    address: <%= node.address %>
+<% end %>
+<% end %>
+
+<% if_link('snoopyishappy') do |link| %>
+  backup2: didnotwork
+<% end.else_if_link('backup_db') do |link| %>
+  backup2:
+<% link.nodes.each do |node| %>
+  - name: <%= node.name %>
+    az: <%= node.az %>
+    index: <%= node.index %>
+    address: <%= node.address %>
+<% end %>
+<% end %>
+
+
+<% if_link('snoopyishappy') do |link| %>
+  backup3: nothappy
+<% end.else do %>
+  backup3: happy
+<% end %>

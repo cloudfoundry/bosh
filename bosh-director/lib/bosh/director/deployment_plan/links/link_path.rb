@@ -3,12 +3,19 @@ module Bosh::Director
     class LinkPath < Struct.new(:deployment, :job, :template, :name, :path)
 
       def self.parse(deployment_plan, link_info)
+        # in case the link was explicitly set to the string `nil', do not add it
+        # to the link paths, even if the link provider exist, since the user intent
+        # was explicitly set to not consume any link
+        if link_info["skip_link"] && link_info["skip_link"] == true
+          return nil
+        end
+
         if link_info.has_key?("from")
           link_path = self.fulfill_explicit_link(deployment_plan, link_info)
         else
           link_path = self.fulfill_implicit_link(deployment_plan, link_info)
         end
-        new(link_path[:deployment], link_path[:job], link_path[:template], link_path[:name], "#{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}")
+        new(link_path[:deployment], link_path[:job], link_path[:template], link_path[:name], "#{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}") unless link_path.nil?
       end
 
       def to_s
@@ -41,7 +48,10 @@ module Bosh::Director
           end
           raise "Can not make implicit link. Multiple provide links have type #{link_type}:#{all_link_paths}"
         else
-          raise "Can't find link with type: #{link_type} in deployment #{deployment_plan.name}"
+          # Only raise an exception if no linkpath was found, and the link is not optional
+          if !link_info["optional"]
+             raise "Can't find link with type: #{link_type} in deployment #{deployment_plan.name}"
+          end
         end
       end
 

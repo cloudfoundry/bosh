@@ -115,9 +115,18 @@ module Bosh::Director
         @link_infos[job_name] ||= {}
         @link_infos[job_name][kind] ||= {}
         @link_infos[job_name][kind][link_name] ||= {}
-        source.to_a.each do |key, value|
-          @link_infos[job_name][kind][link_name][key] = value
+
+        if source.eql? 'nil'
+          # This is the case where the user set link source to nil explicitly in the deployment manifest
+          # We should skip the binding of this link, even if it exist. This is used only when the link
+          # is optional
+          @link_infos[job_name][kind][link_name]['skip_link'] = true
+        else
+          source.to_a.each do |key, value|
+            @link_infos[job_name][kind][link_name][key] = value
+          end
         end
+
       end
 
       def consumes_link_info(job_name, link_name)
