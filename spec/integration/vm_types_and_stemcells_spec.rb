@@ -104,6 +104,7 @@ stemcells:
         'instances' => 3,
         'networks' => [{ 'name' => 'a' }],
         'properties' => {},
+        'env' => {"bosh"=>{"password"=>"foobar"}}
       }]
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
