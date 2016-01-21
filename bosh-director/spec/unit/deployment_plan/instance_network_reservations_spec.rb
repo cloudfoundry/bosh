@@ -4,11 +4,13 @@ module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
     let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
     let(:cloud_config) { Models::CloudConfig.make }
+    let(:runtime_config) { Models::RuntimeConfig.make }
     let(:deployment) do
       DeploymentPlan::Planner.new(
         {name: 'foo-deployment', properties: {}},
         '',
         cloud_config,
+        runtime_config,
         deployment_model
       )
     end

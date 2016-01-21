@@ -20,8 +20,8 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'a' => 'b'},
-            'fake-link-2' => {'c' => 'd'}
+            'fake-link-1' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.101"}]},
+            'fake-link-2' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.102"}]}
           },
           'index' => 0,
           'id' => 'deadbeef',
@@ -62,13 +62,8 @@ module Bosh
       end
 
       it 'evaluates links' do
-        expect(eval_template("<%= link('fake-link-1.a') %>", @context)).to eq('b')
-        expect(eval_template("<%= link('fake-link-2.c') %>", @context)).to eq('d')
-        expect(eval_template("<%= link('fake-link-2')['c'] %>", @context)).to eq('d')
-
-        expect {
-          eval_template("<%= link('fake-link-1.z') %>", @context)
-        }.to raise_error(UnknownLink, "Can't find link 'fake-link-1.z'")
+        expect(eval_template("<%= link('fake-link-1').nodes[0].address %>", @context)).to eq('123.456.789.101')
+        expect(eval_template("<%= link('fake-link-2').nodes[0].address %>", @context)).to eq('123.456.789.102')
       end
 
       describe 'p' do

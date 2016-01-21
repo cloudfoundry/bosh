@@ -36,7 +36,7 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.manifest}")
         end
 
-        deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model)
+        deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model, runtime_config_model)
         deployment_name = deployment_manifest.to_hash['name']
 
         with_deployment_lock(deployment_name) do

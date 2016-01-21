@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_repo) { DeploymentRepo.new }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash) }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
     let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
     let(:job) { planner.jobs.first }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }

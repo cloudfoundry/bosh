@@ -3,10 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, deployment_model) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config, deployment_model) }
 
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_config) { nil }
+      let(:runtime_config) { nil }
       let(:manifest_text) { generate_manifest_text }
       let(:planner_attributes) { {name: 'mycloud', properties: {}} }
       let(:deployment_model) { Models::Deployment.make }
@@ -94,7 +95,7 @@ module Bosh::Director
         it 'should parse recreate' do
           expect(planner.recreate).to eq(false)
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_config, deployment_model, 'recreate' => true)
+          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config, deployment_model, 'recreate' => true)
           expect(plan.recreate).to eq(true)
         end
 

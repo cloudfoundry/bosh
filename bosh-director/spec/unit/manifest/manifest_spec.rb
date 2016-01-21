@@ -2,9 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Manifest do
-    subject(:manifest) { described_class.new(manifest_hash, cloud_config_hash) }
+    subject(:manifest) { described_class.new(manifest_hash, cloud_config_hash, runtime_config_hash) }
     let(:manifest_hash) { {} }
     let(:cloud_config_hash) { {} }
+    let(:runtime_config_hash) { {} }
 
     before do
       release_1 = Models::Release.make(name: 'simple')
@@ -116,6 +117,34 @@ module Bosh::Director
           expect(manifest.to_hash['resource_pools'].first['stemcell']).to eq(
             { 'name' => 'simple', 'version' => '3169'}
           )
+        end
+      end
+    end
+
+    describe 'to_hash' do
+      context 'when runtime config contains same release/version as deployment manifest' do
+        let(:manifest_hash) do
+          {
+              'releases' => [
+                  {'name' => 'simple', 'version' => '2'},
+                  {'name' => 'hard', 'version' => 'latest'}
+              ]
+          }
+        end
+
+        let(:runtime_config_hash) do
+          {
+              'releases' => [
+                  {'name' => 'simple', 'version' => '2'}
+              ]
+          }
+        end
+
+        it 'includes only one copy of the release in to_hash output' do
+          expect(manifest.to_hash['releases']).to eq([
+               {'name' => 'simple', 'version' => '2'},
+               {'name' => 'hard', 'version' => 'latest'}
+           ])
         end
       end
     end

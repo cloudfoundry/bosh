@@ -426,12 +426,14 @@ module Bosh::Director
               {
                 name: 'provides_template',
                 link_infos:{
+                  'job1-name' => {
                     'consumes' => {
-                        'link_name' => {
-                            'name' => 'link_name',
-                            'type' => 'link_type'
-                        }
+                      'link_name' => {
+                          'name' => 'link_name',
+                          'type' => 'link_type'
+                      }
                     }
+                  }
                 }
               }
             )

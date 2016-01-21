@@ -1,15 +1,15 @@
 ---
 databases:
   main:
-<% link('db.nodes').each do |node| %>
-  - name: <%= node['name'] %>
-    index: <%= node['index'] %>
-    address: <%= node['address'] %>
+<% link('db').nodes.each do |node| %>
+  - name: <%= node.name %>
+    index: <%= node.index %>
+    address: <%= node.address %>
 <% end %>
   backup:
-<% link('backup_db.nodes').each do |node| %>
-  - name: <%= node['name'] %>
-    az: <%= node['az'] %>
-    index: <%= node['index'] %>
-    address: <%= node['address'] %>
+<% link('backup_db').nodes.each do |node| %>
+  - name: <%= node.name %>
+    az: <%= node.az %>
+    index: <%= node.index %>
+    address: <%= node.address %>
 <% end %>

@@ -52,15 +52,14 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
-        @cloud_config = cloud_config
-
+      def initialize(attrs, manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
         @manifest_text = Bosh::Common::DeepCopy.copy(manifest_text)
         @cloud_config = cloud_config
+        @runtime_config = runtime_config
         @model = deployment_model
 
         @stemcells = {}
@@ -236,6 +235,7 @@ module Bosh::Director
 
         model.manifest = Psych.dump(@manifest_text)
         model.cloud_config = @cloud_config
+        model.runtime_config = @runtime_config
         model.link_spec = @link_spec
         model.save
       end

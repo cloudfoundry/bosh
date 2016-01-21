@@ -94,33 +94,34 @@ module Bosh::Director
       end
 
       # return [Array]
-      def consumed_links
-        if @link_infos["consumes"]  != nil
-          @link_infos["consumes"].map { |_, link_info| TemplateLink.parse("consumes", link_info) }
+      def consumed_links(job_name)
+        if @link_infos[job_name] != nil && @link_infos[job_name]["consumes"]  != nil
+          @link_infos[job_name]["consumes"].map { |_, link_info| TemplateLink.parse("consumes", link_info) }
         else
           return []
         end
       end
 
       # return [Array]
-      def provided_links
-        if @link_infos["provides"] != nil
-          @link_infos["provides"].map { |_, link_info| TemplateLink.parse("provides", link_info) }
+      def provided_links(job_name)
+        if @link_infos[job_name] != nil && @link_infos[job_name]["provides"] != nil
+          @link_infos[job_name]["provides"].map { |_, link_info| TemplateLink.parse("provides", link_info) }
         else
           return []
         end
       end
 
-      def add_link_info(kind, link_name, source)
-        @link_infos[kind] ||= {}
-        @link_infos[kind][link_name] ||= {}
+      def add_link_info(job_name, kind, link_name, source)
+        @link_infos[job_name] ||= {}
+        @link_infos[job_name][kind] ||= {}
+        @link_infos[job_name][kind][link_name] ||= {}
         source.to_a.each do |key, value|
-          @link_infos[kind][link_name][key] = value
+          @link_infos[job_name][kind][link_name][key] = value
         end
       end
 
-      def consumes_link_info(link_name)
-        @link_infos.fetch('consumes', {}).fetch(link_name, {})
+      def consumes_link_info(job_name, link_name)
+        @link_infos.fetch(job_name, {}).fetch('consumes', {}).fetch(link_name, {})
       end
 
       private

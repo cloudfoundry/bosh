@@ -33,7 +33,7 @@ module Bosh
         end
 
         def create_from_model(deployment_model, options={})
-          manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config)
+          manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config, deployment_model.runtime_config)
           create_from_manifest(manifest, deployment_model.cloud_config, deployment_model.runtime_config, options)
         end
 
@@ -67,7 +67,7 @@ module Bosh
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, plan_options)
+          deployment = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment)
 
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
