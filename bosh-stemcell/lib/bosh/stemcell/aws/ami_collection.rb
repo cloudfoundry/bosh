@@ -32,6 +32,7 @@ module Bosh::Stemcell::Aws
           'virtualization_type' => @virtualization_type
         )
 
+        seed_ami_id = nil
         Bosh::Retryable.new(tries: 3, sleep: 20, on: [Bosh::Clouds::CloudError]).retryer do
           seed_ami_id = cloud.create_stemcell("#{tmp_dir}/image", cloud_properties)
         end
