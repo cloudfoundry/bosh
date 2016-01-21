@@ -194,11 +194,11 @@ describe 'Links', type: :integration do
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
-        expect(out).to include('Started copying jobs > api_server/fd60e255d4aec7e3cadd87870ca408816735022e. Done')
+        expect(out).to include('Started copying jobs > api_server/0748b1c223476cf79817b45397cd64f0059b3258. Done')
         expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
         expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
         expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
-        expect(out).to include('Started copying jobs > node/9c0fc1103d599b3b29b7ddd4fd2a79cfe8c1e232. Done')
+        expect(out).to include('Started copying jobs > node/6078229e7169ac3f202d3bd13b5806f75cdce6f5. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
