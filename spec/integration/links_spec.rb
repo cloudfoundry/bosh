@@ -225,6 +225,14 @@ describe 'Links', type: :integration do
         end
       end
 
+      context 'when a job spec specifies an optional key in a provides link' do
+        it 'should fail when uploading the release' do
+          expect {
+            bosh_runner.run("upload release #{spec_asset('links_releases/corrupted_release_optional_provides-0+dev.1.tgz')}")
+          }.to raise_error(RuntimeError, /Error 80013: Link 'node1' of type 'node1' is a provides link, not allowed to have `optional' key/)
+        end
+      end
+
       context 'when a consumed link is set to nil in the deployment manifest' do
         context 'when the link is optional and it does not exist' do
           let(:links) do
@@ -306,7 +314,10 @@ describe 'Links', type: :integration do
           link_vm = director.vm('my_api', '0')
           template = YAML.load(link_vm.read_job_template('api_server_with_optional_links_2', 'config.yml'))
 
-          expect(template['databases']['backup2'].size).to eq(1)
+          expect(template['databases']['backup2'][0]['name']).to eq('postgres')
+          expect(template['databases']['backup2'][0]['az']).to eq('z1')
+          expect(template['databases']['backup2'][0]['index']).to eq(0)
+          expect(template['databases']['backup2'][0]['address']).to eq('192.168.1.12')
           expect(template['databases']['backup3']).to eq('happy')
         end
       end
@@ -804,4 +815,5 @@ describe 'Links', type: :integration do
       end
     end
   end
+
 end
