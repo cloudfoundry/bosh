@@ -136,6 +136,7 @@ require 'bosh/director/jobs/cloud_check/scan_and_fix'
 require 'bosh/director/jobs/cloud_check/apply_resolutions'
 require 'bosh/director/jobs/release/release_job'
 require 'bosh/director/jobs/ssh'
+require 'bosh/director/jobs/attach_disk'
 require 'bosh/director/jobs/helpers'
 require 'bosh/director/jobs/db_job'
 

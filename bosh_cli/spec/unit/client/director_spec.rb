@@ -409,6 +409,13 @@ describe Bosh::Cli::Client::Director do
       @director.change_job_state('foo', 'manifest', 'dea', nil, 'stopped')
     end
 
+    it 'attaches a disk to an instance' do
+      expect(@director).to receive(:request_and_track).
+        with(:put, '/disks/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35').
+        and_return(true)
+      @director.attach_disk('foo', 'dea', '17f01a35', 'vol-af4a3e40')
+    end
+
     it 'changes job instance state' do
       expect(@director).to receive(:request_and_track).
         with(:put, '/deployments/foo/jobs/dea/0?state=detached',
