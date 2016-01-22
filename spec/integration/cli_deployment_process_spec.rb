@@ -105,7 +105,7 @@ describe 'cli: deployment process', type: :integration do
 +     size: large
 -   env:
 -     bosh:
--       password: <redacted>
+-       password: foobar
   jobs:
 + - name: new_job
 +   templates:
