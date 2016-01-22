@@ -20,7 +20,6 @@ module Bosh::Director
         parse_releases
         parse_update
         parse_jobs
-        parse_links
 
         @deployment
       end
@@ -77,19 +76,6 @@ module Bosh::Director
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
           @deployment.add_job(Job.parse(@deployment, job_spec, @event_log, @logger))
-        end
-      end
-
-      def parse_links
-        @deployment.jobs.each do |current_job|
-          current_job.templates.each do |template|
-            if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
-              template.link_infos[current_job.name]['consumes'].each do |name, source|
-                  link_path = LinkPath.parse(@deployment, source)
-                  current_job.add_link_path(template.name, name, link_path) unless link_path.nil?
-              end
-            end
-          end
         end
       end
     end

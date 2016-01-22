@@ -78,9 +78,25 @@ module Bosh
             RuntimeManifestParser.new(@logger, deployment).parse(runtime_config.manifest)
           end
 
+          process_links(deployment)
+
           DeploymentValidator.new.validate(deployment)
           deployment
         end
+
+        def process_links(deployment)
+          deployment.jobs.each do |current_job|
+            current_job.templates.each do |template|
+              if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
+                template.link_infos[current_job.name]['consumes'].each do |name, source|
+                     link_path = LinkPath.parse(deployment, source)
+                    current_job.add_link_path(template.name, name, link_path)
+                end
+              end
+            end
+          end
+        end
+
       end
     end
   end

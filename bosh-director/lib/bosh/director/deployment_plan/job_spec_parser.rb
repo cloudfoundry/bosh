@@ -158,17 +158,14 @@ module Bosh::Director
             end
 
             provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
-            @logger.debug("Parsing template provides links: #{provides_links.inspect}")
             provides_links.to_a.each do |link_name, source|
               template.add_link_info(@job.name, "provides", link_name, source)
             end
 
             consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
-            @logger.debug("Parsing template links: #{consumes_links.inspect}")
             consumes_links.to_a.each do |link_name, source|
               template.add_link_info(@job.name, 'consumes', link_name, source)
             end
-
 
             @job.templates << template
           end

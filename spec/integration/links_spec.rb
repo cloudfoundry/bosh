@@ -804,4 +804,47 @@ describe 'Links', type: :integration do
       end
     end
   end
+
+  context 'when addon job requires link' do
+
+    let(:mysql_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'mysql',
+          templates: [{'name' => 'database'}],
+          instances: 1,
+          static_ips: ['192.168.1.10']
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
+    before do
+      Dir.mktmpdir do |tmpdir|
+        runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+        File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_links))
+        bosh_runner.run("update runtime-config #{runtime_config_filename}")
+      end
+    end
+
+    it 'should resolve links for addons' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['jobs'] = [mysql_job_spec]
+
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      my_sql_vm = director.vm("mysql", '0', deployment: 'simple')
+      template = YAML.load(my_sql_vm.read_job_template("addon", 'config.yml'))
+
+      template['databases'].each do |_, database|
+        database.each do |node|
+          expect(node['address']).to match(/.dynamic-network./)
+        end
+      end
+    end
+  end
 end

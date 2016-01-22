@@ -1,0 +1,9 @@
+---
+name: addon
+templates:
+  config.yml.erb: config.yml
+
+packages: []
+
+consumes:
+  - {name: db, type: db}

@@ -55,6 +55,23 @@ module Bosh::Spec
       }
     end
 
+    def self.runtime_config_with_links
+      {
+        'releases' => [{"name" => 'bosh-release', "version" => "0+dev.1"}],
+        'addons' => [
+            {
+                'name' => 'addon_job',
+                'jobs' => [
+                    {'name' => 'addon',
+                     'release' => 'bosh-release',
+                     'consumes' => {'db' => {'from' => 'db'}}
+                    }
+                ]
+            }
+        ]
+      }
+    end
+
     def self.network(options = {})
       {
         'name' => 'a',
