@@ -23,7 +23,7 @@ Concourse will want to publish its artifacts. Create buckets for OS Images, then
           "Action": [
             "s3:GetObject"
           ],
-          "Resource": [ "arn:aws:s3:::bosh-os-images-dev/*" ]
+          "Resource": [ "arn:aws:s3:::bosh-core-os-images-dev/*" ]
         }
       ]
     }
@@ -31,22 +31,33 @@ Concourse will want to publish its artifacts. Create buckets for OS Images, then
 Create an IAM user with the following policy...
 
     {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "Effect": "Allow",
-          "Action": [
-            "s3:GetObject",
-            "s3:GetObjectAcl",
-            "s3:GetObjectVersion",
-            "s3:GetObjectVersionAcl",
-            "s3:ListBucket",
-            "s3:ListBucketVersions",
-            "s3:PutObject"
-          ],
-          "Resource": [
-            "arn:aws:s3:::bosh-os-images-dev/*"
-          ]
-        }
-      ]
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:GetObjectAcl",
+                    "s3:GetObjectVersion",
+                    "s3:GetObjectVersionAcl",
+                    "s3:PutObject",
+                    "s3:PutObjectAcl"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::bosh-core-os-images-dev/*",
+                    "arn:aws:s3:::bosh-core-stemcells-dev/*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListBucket",
+                    "s3:ListBucketVersions"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::bosh-core-os-images-dev",
+                    "arn:aws:s3:::bosh-core-stemcells-dev"
+                ]
+            }
+        ]
     }
