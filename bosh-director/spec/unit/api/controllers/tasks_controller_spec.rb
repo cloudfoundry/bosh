@@ -50,6 +50,7 @@ module Bosh::Director
           context "verbose" do
             let(:concise_task_types) {
               %w[
+                attach_disk
                 create_snapshot
                 delete_deployment
                 delete_release

@@ -12,8 +12,11 @@ module Bosh::Director
       let(:job_queue) { instance_double(JobQueue) }
 
       it 'enqueues an AttachDisk job' do
-        expect(job_queue).to receive(:enqueue)
-                               .with('fake-username', Jobs::AttachDisk, 'attach disk', [deployment_name, job_name, instance_id, disk_cid])
+        expect(job_queue).to receive(:enqueue).with(
+          'fake-username',
+          Jobs::AttachDisk,
+          "attach disk 'fake_disk_cid' to 'job_name/fake_instance_id'",
+          [deployment_name, job_name, instance_id, disk_cid])
         Jobs::AttachDisk.enqueue('fake-username', deployment_name, job_name, instance_id, disk_cid, job_queue)
       end
     end
