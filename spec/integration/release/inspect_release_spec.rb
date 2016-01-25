@@ -77,40 +77,39 @@ describe 'inspect release', type: :integration do
     end
 
     it 'shows consumed and provided links of release jobs' do
-
-      bosh_runner.run("upload release #{spec_asset('links_releases/release_with_links-0+dev.1.tgz')}")
-      out = scrub_random_ids(bosh_runner.run("inspect release release_with_links/0+dev.1"))
+      bosh_runner.run("upload release #{spec_asset('links_releases/release_with_optional_links-0+dev.1.tgz')}")
+      out = scrub_random_ids(bosh_runner.run("inspect release release_with_optional_links/0+dev.1"))
 
       expect(out).to match_output %(
         +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
         | Job             | Fingerprint                              | Blobstore ID                         | SHA1                                     | Links Consumed    | Links Provided       |
         +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
-        | api_server      | ec15421ae355db2b5c6320b4e114d3301150f062 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 6dfb3dda2ed6c4d30722c41da7fa0eee515e6039 | - name: db        |                      |
+        | api_server      | a910dd03699797ba52f73f56f70475c794f9ff43 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1e1ccbc60fefa8713c9c52510968bf0399f7dfda | - name: db        |                      |
         |                 |                                          |                                      |                                          |   type: db        |                      |
+        |                 |                                          |                                      |                                          |   optional: true  |                      |
         |                 |                                          |                                      |                                          | - name: backup_db |                      |
         |                 |                                          |                                      |                                          |   type: db        |                      |
-        | backup_database | 2ea09882747364709dad9f45267965ac176ae5ad | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 42039d31559c8fac99985b8458e4d912130c80fb |                   | - name: backup_db    |
+        | backup_database | 2ea09882747364709dad9f45267965ac176ae5ad | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 46965969e112507cfb29119052a864e40f785d80 |                   | - name: backup_db    |
         |                 |                                          |                                      |                                          |                   |   type: db           |
-        | database        | a9f952f94a82c13a3129ac481030f704a33d027f | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | b87f71d9922c0ea3d71a796478344d5d49225466 |                   | - name: db           |
+        | database        | a9f952f94a82c13a3129ac481030f704a33d027f | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 9fbd6941108389f769c8f7dafc93410c386f1bd5 |                   | - name: db           |
         |                 |                                          |                                      |                                          |                   |   type: db           |
-        | mongo_db        | 1a57f0be3eb19e263261536693db0d5a521261a6 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 1eb3dd250cce66ec1b8a2828211707c89b841654 |                   | - name: read_only_db |
+        | mongo_db        | 1a57f0be3eb19e263261536693db0d5a521261a6 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 36705751b05ab71b9580d82f8347b71f7de31f0b |                   | - name: read_only_db |
         |                 |                                          |                                      |                                          |                   |   type: db           |
-        | node            | 727ce8aba0ae3f8b869ba8b3517c19140ced5383 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 775f96ee06a89459df9115f0b7632cde4e33f5fd | - name: node1     | - name: node1        |
+        | node            | 20df71b951455e465845eab32743822693977b30 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | db867641e909c4ab1d22bb86037489530ee7d7f1 | - name: node1     | - name: node1        |
         |                 |                                          |                                      |                                          |   type: node1     |   type: node1        |
         |                 |                                          |                                      |                                          | - name: node2     | - name: node2        |
         |                 |                                          |                                      |                                          |   type: node2     |   type: node2        |
+        |                 |                                          |                                      |                                          |   optional: true  |                      |
         +-----------------+------------------------------------------+--------------------------------------+------------------------------------------+-------------------+----------------------+
 
         +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
         | Package            | Fingerprint                              | Compiled For | Blobstore ID                         | SHA1                                     |
         +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
-        | pkg_1              | 16b4c8ef1574b3f98303307caad40227c208371f | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ea3a16a1554b237809435aca7d997fe36d33c558 |
-        | pkg_2              | 4b74be7d5aa14487c7f7b0d4516875f7c0eeb010 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 790c1abeb17c659227df696fac6c8a0efdf25f3e |
-        | pkg_3_depends_on_2 | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 8067d05705ee392defe4c967b75e09310cb81822 |
+        | pkg_1              | 16b4c8ef1574b3f98303307caad40227c208371f | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | cbf4e5b05e58f31076c124c343485f6a758b2c34 |
+        | pkg_2              | 4b74be7d5aa14487c7f7b0d4516875f7c0eeb010 | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | c49e3985d896d13d7da7fc99f66b0ad43c0ac417 |
+        | pkg_3_depends_on_2 | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (source)     | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 3ba0f08957427b0e7f060ee059473a632a712d1f |
         +--------------------+------------------------------------------+--------------+--------------------------------------+------------------------------------------+
       )
-
     end
-
   end
 end

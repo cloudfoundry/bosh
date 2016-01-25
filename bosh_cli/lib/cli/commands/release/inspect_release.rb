@@ -32,21 +32,10 @@ module Bosh::Cli::Command
 
           release['jobs'].each_with_index do |job, index|
 
-            consumed_links = ''
-            if !job['consumes'].nil?
-              consumed_links = format_links_info(job['consumes'])
-            end
+            consumed_links = (job['consumes'].nil? ? '' : YAML.dump(job['consumes']).sub("---\n", ''))
+            provided_links = (job['provides'].nil? ? '' : YAML.dump(job['provides']).sub("---\n", ''))
 
-            provided_links = ''
-            if !job['provides'].nil?
-              provided_links = format_links_info(job['provides'])
-            end
-
-            if index.even?
-              color = :yellow
-            else
-              color = :green
-            end
+            color = (index.even? ? :yellow : :green)
 
             row = [
                 job['name'].make_color(color),
@@ -90,16 +79,6 @@ module Bosh::Cli::Command
       # this method checks for that condition so we can give a helpful error message.
       def reasonable_response?(response)
         !response.has_key?('versions')
-      end
-
-      # formats the consume/provide links of a release job, outputs it in a YAML format
-      def format_links_info(links)
-        begin
-          YAML.dump(JSON.parse(links)).sub("---\n", '')
-        rescue => error
-          raise Bosh::Cli::InvalidLinks,
-                "An error has occurred while parsing links data: #{error}"
-        end
       end
     end
   end

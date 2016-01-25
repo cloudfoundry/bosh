@@ -30,21 +30,7 @@ module Bosh::Director
               raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
             end
           else
-            consumes_network = template.consumes_link_info(job.name, link_name)['network']
-
-            if consumes_network
-              link_provider_job = @deployment_plan.job(link_path.job)
-
-              valid_network = link_provider_job.networks.any? do |network|
-                network.name == consumes_network
-              end
-
-              unless valid_network
-                raise NetworkReservationMissing, "Network name '#{consumes_network}' is not one of the networks on the link '#{link_name}'"
-              end
-            end
-
-            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, consumes_network)
+            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, template.consumes_link_info(job.name, link_name)['network'])
             link_spec = link_lookup.find_link_spec
 
             unless link_spec
