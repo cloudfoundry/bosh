@@ -31,6 +31,7 @@ module Bosh::Director
           'properties' => job.properties,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => job.link_spec,
+          'address' => instance_plan.network_settings.network_address
         }
 
         if job.persistent_disk_type
@@ -111,7 +112,8 @@ module Bosh::Director
           'properties',
           'dns_domain_name',
           'links',
-          'persistent_disk'
+          'persistent_disk',
+          'address'
         ]
         template_hash = @full_spec.select {|k,v| keys.include?(k) }
 

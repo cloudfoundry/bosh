@@ -16,6 +16,7 @@ case $1 in
     <% if_p('network_name') do |net_name| %>
       echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
     <% end %>
+    echo "spec.address=<%= spec.address %>"
 
     <% if_p('networks') do |networks| %>
       <% networks.each do |net_name| %>

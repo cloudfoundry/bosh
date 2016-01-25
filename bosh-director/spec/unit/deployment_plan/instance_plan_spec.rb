@@ -275,6 +275,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#persist_current_spec' do
+      let(:subnet) { DynamicNetworkSubnet.new('192.168.1.1', {}, ['foo-az']) }
+      let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+      let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+      let(:network_plans) {[
+          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+          NetworkPlanner::Plan.new(reservation: reservation)
+      ]}
+
       before do
         instance_plan.existing_instance.update(spec: {
             'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}}
