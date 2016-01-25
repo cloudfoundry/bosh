@@ -54,6 +54,10 @@ module Bosh::Director::DeploymentPlan
       instance.bind_existing_instance_model(instance_model)
     end
 
+    it 'handles un-initialized job default_networks without exceptions' do
+      expect(instance_spec).to be(instance_spec)
+    end
+
     describe '#apply_spec' do
       it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
@@ -99,6 +103,25 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
+      # job used in template spec should have a default network for gateway
+      let(:job) {
+        job = instance_double('Bosh::Director::DeploymentPlan::Job',
+          name: 'fake-job',
+          spec: job_spec,
+          canonical_name: 'job',
+          instances: ['instance0'],
+          default_network: {"gateway" => "default"},
+          vm_type: vm_type,
+          stemcell: stemcell,
+          env: env,
+          package_spec: packages,
+          persistent_disk_type: disk_pool,
+          can_run_as_errand?: false,
+          link_spec: 'fake-link',
+          compilation?: false,
+          properties: properties)
+      }
+
       context 'when job has a manual network' do
         let(:subnet_spec) do
           {
@@ -137,6 +160,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
           expect(spec['resource_pool']).to eq('fake-vm-type')
+          expect(spec['address']).to eq('192.168.0.10')
         end
       end
 
@@ -165,6 +189,7 @@ module Bosh::Director::DeploymentPlan
           expect(spec['az']).to eq('foo-az')
           expect(spec['bootstrap']).to eq(true)
           expect(spec['resource_pool']).to eq('fake-vm-type')
+          expect(spec['address']).to eq('uuid-1.fake-job.default.fake-deployment.bosh')
         end
       end
     end

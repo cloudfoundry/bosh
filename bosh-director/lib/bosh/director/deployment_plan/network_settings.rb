@@ -53,6 +53,11 @@ module Bosh::Director::DeploymentPlan
       network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
 
+      # default network is not always set so we check here to avoid nil reference exception
+      if !network_name
+        return nil
+      end
+
       if network_hash[network_name]['type'] == 'dynamic'
         address = @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
       else

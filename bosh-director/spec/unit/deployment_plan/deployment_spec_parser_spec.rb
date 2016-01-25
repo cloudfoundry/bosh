@@ -406,7 +406,6 @@ module Bosh::Director
           end
         end
       end
-
     end
   end
 end

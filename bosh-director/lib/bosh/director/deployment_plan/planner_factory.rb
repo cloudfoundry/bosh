@@ -89,8 +89,11 @@ module Bosh
             current_job.templates.each do |template|
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
                 template.link_infos[current_job.name]['consumes'].each do |name, source|
-                     link_path = LinkPath.parse(deployment, source)
-                    current_job.add_link_path(template.name, name, link_path) unless link_path.nil?
+                  link_path = LinkPath.new(deployment, current_job.name, template.name)
+                  link_path.parse(source)
+                  if !link_path.skip
+                    current_job.add_link_path(template.name, name, link_path)
+                  end
                 end
               end
             end
