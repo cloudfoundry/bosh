@@ -448,18 +448,47 @@ module Bosh::Director
                   templates: [template1]
               })
           end
-          let(:link_path) {DeploymentPlan::LinkPath.new('deployment_name', 'job_name', 'provides_template', 'link_name', 'deployment_name.job_name.provides_template.link_name')}
+
+          let(:link_path) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::LinkPath',
+                {
+                    deployment: 'deployment_name',
+                    job: 'job_name',
+                    template: 'provides_template',
+                    name: 'link_name',
+                    path: 'deployment_name.job_name.provides_template.link_name',
+                    skip: false
+                }
+            )
+          end
+
+          let(:skipped_link_path) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::LinkPath',
+                {
+                    deployment: 'deployment_name',
+                    job: 'job_name',
+                    template: 'provides_template',
+                    name: 'link_name',
+                    path: 'deployment_name.job_name.provides_template.link_name',
+                    skip: true
+                }
+            )
+          end
 
           it 'should have a link_path' do
             allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
-            expect(DeploymentPlan::LinkPath).to receive(:parse).and_return(link_path)
+            expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
+            expect(link_path).to receive(:parse)
             expect(job1).to receive(:add_link_path).with("provides_template", 'link_name', link_path)
             expect(parsed_deployment.job('job1-name').name).to eq('job1-name')
           end
 
           it 'should not add a link path if no links found for optional ones, and it should not fail' do
             allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
-            expect(DeploymentPlan::LinkPath).to receive(:parse).and_return(nil)
+            expect(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
+            expect(skipped_link_path).to receive(:parse)
             expect(job1).to_not receive(:add_link_path)
             expect(parsed_deployment.job('job1-name').name).to eq('job1-name')
           end
