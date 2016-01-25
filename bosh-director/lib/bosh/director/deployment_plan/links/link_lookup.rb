@@ -5,11 +5,33 @@ module Bosh::Director
     class LinkLookupFactory
       def self.create(consumed_link, link_path, deployment_plan, link_network)
         if link_path.deployment == deployment_plan.name
+          if link_network
+            link_provider_job = deployment_plan.job(link_path.job)
+
+            valid_network = link_provider_job.networks.any? do |network|
+              network.name == link_network
+            end
+
+            unless valid_network
+              raise NetworkReservationMissing, "Network name '#{link_network}' is not one of the networks on the link '#{link_path.name}'"
+            end
+          end
+
+
+
           PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
         else
           deployment = Models::Deployment.find(name: link_path.deployment)
           unless deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
+          end
+
+          if link_network
+            ip_address_refs = Models::IpAddress.where(:network_name => link_network).select(:instance_id)
+            instance_models = Models::Instance.where(:deployment_id => deployment.id).where(:id => ip_address_refs)
+            unless instance_models.count > 0
+              raise "No instances found in deployment #{link_path.deployment} that have links with network #{link_network}"
+            end
           end
 
           DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec)
