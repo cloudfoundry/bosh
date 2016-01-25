@@ -73,6 +73,7 @@ module Bosh::Director
             if @deployment
               valid_release_versions = @deployment.releases.map {|r| r.name }
               deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
+              deployment_jobs = @deployment.jobs
 
               templates_from_model = Models::Template.where(:name => job['name'], :release_id => deployment_release_ids)
               if templates_from_model == nil
@@ -84,7 +85,7 @@ module Bosh::Director
 
               template = DeploymentPlan::Template.new(release, job['name'])
 
-              @deployment.jobs.each do |j|
+              deployment_jobs.each do |j|
                 templates_from_model.each do |template_from_model|
                   if template_from_model.consumes_json != nil
                     JSON.parse(template_from_model.consumes_json).each do |consumes_json|
@@ -112,7 +113,7 @@ module Bosh::Director
               template.bind_models
               deployment_plan_templates.push(template)
 
-              @deployment.jobs.each do |job|
+              deployment_jobs.each do |job|
                 merge_addon(job, deployment_plan_templates, addon_spec['properties'])
               end
 
