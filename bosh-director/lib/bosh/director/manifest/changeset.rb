@@ -10,8 +10,9 @@ module Bosh::Director
     KEY_NAME = 'name'
 
     def initialize(before, after)
-      @before = before
-      @after = after
+      @before = Changeset.redact_properties!(before)
+      @after = Changeset.redact_properties!(after)
+
       if @before && @after
         @merged = @before.deep_merge(@after)
       elsif @before
@@ -19,6 +20,22 @@ module Bosh::Director
       else
         @merged = @after
       end
+    end
+
+    def self.redact_properties!(obj)
+      if obj.respond_to?(:key?) && obj.key?("properties") && obj['properties'].respond_to?(:key?)
+        obj['properties'].keys.each { |key|
+          obj['properties'][key] = '<redacted>'
+        }
+      end
+
+      if obj.respond_to?(:each)
+        obj.each{ |*a|
+          redact_properties!(a.last)
+        }
+      end
+
+      obj
     end
 
     def diff(indent = 0)
