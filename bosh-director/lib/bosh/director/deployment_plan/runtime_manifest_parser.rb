@@ -63,6 +63,7 @@ module Bosh::Director
           deployment_plan_templates = []
 
           addon_jobs = safe_property(addon_spec, 'jobs', :class => Array, :default => [])
+
           addon_jobs.each do |job|
             if !@release_specs.find { |release_spec| release_spec['name'] == job['release'] }
               raise RuntimeReleaseNotListedInReleases,
@@ -70,23 +71,58 @@ module Bosh::Director
             end
 
             if @deployment
-              template_object = DeploymentPlan::Template.new(@deployment.release(job['release']), job['name'])
-              template_object.bind_models
+              valid_release_versions = @deployment.releases.map {|r| r.name }
+              deployment_release_ids = Models::Release.where(:name => valid_release_versions).map {|r| r.id}
+              deployment_jobs = @deployment.jobs
 
-              deployment_plan_templates.push(template_object)
-            end
-          end
+              templates_from_model = Models::Template.where(:name => job['name'], :release_id => deployment_release_ids)
+              if templates_from_model == nil
+                raise "Template #{job['name']} not found in Template table"
+              end
 
-          if @deployment
-            @deployment.jobs.each do |job|
-              merge_addon(job, deployment_plan_templates, addon_spec['properties'])
+              release = @deployment.release(job['release'])
+              release.bind_model
+
+              template = DeploymentPlan::Template.new(release, job['name'])
+
+              deployment_jobs.each do |j|
+                templates_from_model.each do |template_from_model|
+                  if template_from_model.consumes_json != nil
+                    JSON.parse(template_from_model.consumes_json).each do |consumes_json|
+                      template.add_link_info(j.name, 'consumes', consumes_json["name"], consumes_json)
+                    end
+                  end
+                  if template_from_model.provides_json != nil
+                    JSON.parse(template_from_model.provides_json).each do |provides_json|
+                      template.add_link_info(j.name, 'provides', provides_json["name"], provides_json)
+                    end
+                  end
+                end
+
+                provides_links = safe_property(job, 'provides', class: Hash, optional: true)
+                provides_links.to_a.each do |link_name, source|
+                  template.add_link_info(j.name, "provides", link_name, source)
+                end
+
+                consumes_links = safe_property(job, 'consumes', class: Hash, optional: true)
+                consumes_links.to_a.each do |link_name, source|
+                  template.add_link_info(j.name, 'consumes', link_name, source)
+                end
+              end
+
+              template.bind_models
+              deployment_plan_templates.push(template)
+
+              deployment_jobs.each do |job|
+                merge_addon(job, deployment_plan_templates, addon_spec['properties'])
+              end
+
             end
           end
         end
       end
 
       def merge_addon(job, templates, properties)
-        puts "merging job: #{job} with templates: #{templates} and properties: #{properties}"
         if job.templates
           job.templates.concat(templates)
         else

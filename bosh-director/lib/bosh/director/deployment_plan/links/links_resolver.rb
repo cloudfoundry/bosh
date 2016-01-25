@@ -22,8 +22,6 @@ module Bosh::Director
         template.model_consumed_links.each do |consumed_link|
           link_name = consumed_link.name
 
-          @logger.debug("Looking for link '#{link_name}' for job '#{job.name}'")
-
           link_path = job.link_path(template.name, link_name)
 
           if link_path.nil?
