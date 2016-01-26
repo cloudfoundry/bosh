@@ -20,6 +20,30 @@ module Bosh::Director
 
         expect(Bosh::Director::Models::RuntimeConfig.first.properties).to eq(properties)
       end
+
+      it 'gives a nice error when request body is not a valid yml' do
+        authorize('admin', 'admin')
+
+        post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+        expect(last_response.status).to eq(400)
+        expect(JSON.parse(last_response.body)).to eq(
+            'code' => 440001,
+            'description' => 'Incorrect YAML structure of the uploaded manifest',
+        )
+      end
+
+      it 'gives a nice error when request body is empty' do
+        authorize('admin', 'admin')
+
+        post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+        expect(last_response.status).to eq(400)
+        expect(JSON.parse(last_response.body)).to eq(
+            'code' => 440001,
+            'description' => 'Manifest should not be empty',
+        )
+      end
     end
 
     describe 'GET', '/' do
