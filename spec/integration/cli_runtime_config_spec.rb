@@ -4,8 +4,7 @@ describe "cli runtime config", type: :integration do
   with_reset_sandbox_before_each
 
   it "can upload a runtime config" do
-    bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login test test")
+    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_runtime_config))
@@ -33,8 +32,7 @@ describe "cli runtime config", type: :integration do
   end
 
   it "can download a runtime config" do
-    bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login test test")
+    target_and_login
 
     # none present yet
     expect(bosh_runner.run("runtime-config")).to eq("Acting as user 'test' on 'Test Director'\n")
@@ -50,8 +48,7 @@ describe "cli runtime config", type: :integration do
   end
 
   it "gives an error when release version is `latest'" do
-    bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login test test")
+    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_latest_release))
@@ -61,8 +58,7 @@ describe "cli runtime config", type: :integration do
   end
 
   it "gives an error when release for addon does not exist in releases section" do
-    bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login test test")
+    target_and_login
     Dir.mktmpdir do |tmpdir|
       runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
       File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_release_missing))
