@@ -97,23 +97,22 @@ baz'}
       upload_cloud_config(cloud_config_hash: new_cloud_config)
       output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
-      expect(output).to include(<<-DIFF
-  resource_pools:
+      expect(output).to match(/  resource_pools:
   - name: a
 -   size: 3
     cloud_properties:
-+     name: new_property
-+     size: large
+\+     name: new_property
+\+     size: large
   jobs:
-+ - name: new_job
-+   templates:
-+   - name: foobar_without_packages
-+   resource_pool: a
-+   instances: 3
-+   networks:
-+   - name: a
-+   properties:
-+     foo: "<redacted>"
+\+ - name: new_job
+\+   templates:
+\+   - name: foobar_without_packages
+\+   resource_pool: a
+\+   instances: 3
+\+   networks:
+\+   - name: a
+\+   properties:
+\+     foo: "?<redacted>"?
 - - name: foobar
 -   templates:
 -   - name: foobar
@@ -121,8 +120,8 @@ baz'}
 -   instances: 3
 -   networks:
 -   - name: a
--   properties: {}
-DIFF
+-   properties: \{\}
+/
 )
       expect(output).to_not include('stemcell')
       expect(output).to_not include('releases')
