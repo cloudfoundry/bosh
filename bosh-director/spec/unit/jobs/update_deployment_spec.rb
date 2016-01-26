@@ -58,10 +58,11 @@ module Bosh::Director::Jobs
           allow(planner).to receive(:compile_packages)
         end
 
-        it 'binds models, renders templates, compiles packages' do
+        it 'binds models, renders templates, compiles packages, runs post-deploy scripts' do
           expect(planner).to receive(:bind_models)
           expect(job_renderer).to receive(:render_job_instances).with(deployment_job.needed_instance_plans)
           expect(planner).to receive(:compile_packages)
+          expect(job).to receive(:run_post_deploys)
 
           job.perform
         end
