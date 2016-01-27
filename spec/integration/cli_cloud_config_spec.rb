@@ -30,6 +30,13 @@ describe "cli cloud config", type: :integration do
       File.write(cloud_config_filename, "---\n}}}i'm not really yaml, hah!")
       expect(bosh_runner.run("update cloud-config #{cloud_config_filename}", failure_expected: true)).to include("Incorrect YAML structure")
     end
+
+    # empty cloud config file
+    Dir.mktmpdir do |tmpdir|
+      empty_cloud_config_filename = File.join(tmpdir, 'empty_cloud_config.yml')
+      File.write(empty_cloud_config_filename, '')
+      expect(bosh_runner.run("update cloud-config #{empty_cloud_config_filename}", failure_expected: true)).to include("Error 440001: Manifest should not be empty")
+    end
   end
 
   it "can download a cloud config" do

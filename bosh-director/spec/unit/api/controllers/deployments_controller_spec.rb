@@ -47,6 +47,24 @@ module Bosh::Director
             post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
             expect(last_response.status).to eq(404)
           end
+
+          it 'gives a nice error when request body is not a valid yml' do
+            post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          end
+
+          it 'gives a nice error when request body is empty' do
+            post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Manifest should not be empty',
+            )
+          end
         end
 
         describe 'updating a deployment' do
@@ -686,6 +704,24 @@ module Bosh::Director
             it 'returns diff with resolved aliases' do
               perform
               expect(last_response.body).to eq('{"update_config":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+            end
+
+            it 'gives a nice error when request body is not a valid yml' do
+              post '/fake-dep-name/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+            end
+
+            it 'gives a nice error when request body is empty' do
+              post '/fake-dep-name/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                  'code' => 440001,
+                  'description' => 'Manifest should not be empty',
+              )
             end
           end
 
