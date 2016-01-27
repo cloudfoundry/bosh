@@ -224,7 +224,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         it 'fails' do
           expect {
             links_resolver.resolve(api_server_job)
-          }.to raise_error("Can't find deployment non-existent")
+          }.to raise_error("Unable to process links for deployment. Errors are:
+   - \"Can't find deployment non-existent\"")
         end
       end
     end
@@ -293,7 +294,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("Can't find deployment non-existant")
+        }.to raise_error("Unable to process links for deployment. Errors are:
+   - \"Can't find deployment non-existant\"")
       end
     end
 
@@ -303,7 +305,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'")
+        }.to raise_error("Unable to process links for deployment. Errors are:
+   - \"From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'\"")
       end
     end
 
@@ -314,7 +317,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
-        }.to raise_error("Can't find link with name: c in deployment fake-deployment")
+        }.to raise_error("Unable to process links for deployment. Errors are:
+   - \"Can't find link with name: c in deployment fake-deployment\"")
       end
     end
 

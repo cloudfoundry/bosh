@@ -85,18 +85,36 @@ module Bosh
         end
 
         def process_links(deployment)
+          errors = []
+
           deployment.jobs.each do |current_job|
             current_job.templates.each do |template|
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('consumes')
                 template.link_infos[current_job.name]['consumes'].each do |name, source|
                   link_path = LinkPath.new(deployment, current_job.name, template.name)
-                  link_path.parse(source)
+
+                  begin
+                    link_path.parse(source)
+                  rescue Exception => e
+                    errors.push e
+                  end
+
                   if !link_path.skip
                     current_job.add_link_path(template.name, name, link_path)
                   end
                 end
               end
             end
+          end
+
+          if errors.length > 0
+            message = 'Unable to process links for deployment. Errors are:'
+
+            errors.each do |e|
+              message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+            end
+
+            raise message
           end
         end
       end
