@@ -52,10 +52,8 @@ module Bosh::Director
             post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)).to eq(
-                'code' => 440001,
-                'description' => 'Incorrect YAML structure of the uploaded manifest',
-            )
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
           end
 
           it 'gives a nice error when request body is empty' do
@@ -712,10 +710,8 @@ module Bosh::Director
               post '/fake-dep-name/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)).to eq(
-                  'code' => 440001,
-                  'description' => 'Incorrect YAML structure of the uploaded manifest',
-              )
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
             end
 
             it 'gives a nice error when request body is empty' do
