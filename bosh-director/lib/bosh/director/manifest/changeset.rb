@@ -22,17 +22,34 @@ module Bosh::Director
       end
     end
 
-    def self.redact_properties!(obj)
-      if obj.respond_to?(:key?) && obj.key?("properties") && obj['properties'].respond_to?(:key?)
-        obj['properties'].keys.each { |key|
-          obj['properties'][key] = '<redacted>'
-        }
-      end
-
-      if obj.respond_to?(:each)
-        obj.each{ |*a|
-          redact_properties!(a.last)
-        }
+    def self.redact_properties!(obj, properties_is_ancestor = false)
+      if properties_is_ancestor
+        if obj.respond_to?(:key?)
+          obj.keys.each{ |key|
+            if obj[key].respond_to?(:each)
+              redact_properties!(obj[key], true)
+            else
+              obj[key] = '<redacted>'
+            end
+          }
+        elsif obj.respond_to?(:each_index)
+          obj.each_index { |i|
+            if obj[i].respond_to?(:each)
+              redact_properties!(obj[i], true)
+            else
+              obj[i] = '<redacted>'
+            end
+          }
+        end
+      else
+        if obj.respond_to?(:key?) && obj.key?("properties") && obj['properties'].respond_to?(:key?)
+            redact_properties!(obj['properties'], true)
+        end
+        if obj.respond_to?(:each)
+          obj.each{ |*a|
+            redact_properties!(a.last)
+          }
+        end
       end
 
       obj

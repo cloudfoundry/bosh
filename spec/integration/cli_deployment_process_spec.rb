@@ -76,8 +76,8 @@ describe 'cli: deployment process', type: :integration do
         name: 'new_job',
         templates: [{'name' => 'foobar_without_packages'}]
       )
-      job_spec['properties'] = {'foo' => 'bar
-baz'}
+      job_spec['properties'] = {'foobar' => { 'foo' => 'bar
+baz'}}
       new_manifest['jobs'] = [job_spec]
 
       new_manifest['releases'].first['version'] = 'latest'
@@ -112,7 +112,8 @@ baz'}
 \+   networks:
 \+   - name: a
 \+   properties:
-\+     foo: "?<redacted>"?
+\+     foobar:
+\+       foo: "?<redacted>"?
 - - name: foobar
 -   templates:
 -   - name: foobar

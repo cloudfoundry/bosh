@@ -748,9 +748,13 @@ module Bosh::Director
             {
               'name' => "test_job",
               'properties' => {
-                'a' => '<redacted>',
-                'c' => '<redacted>',
-                'e' => '<redacted>'
+                'a' => {
+                  'one' => [1, 2, {'three' => 3}],
+                  'two' => 2,
+                  'three' => 3
+                },
+                'c' => 'redact-me',
+                'e' => 'i-am-secret'
               }
             }
           ]
@@ -763,7 +767,11 @@ module Bosh::Director
             {
               'name' => "test_job",
               'properties' => {
-                'a' => '<redacted>',
+                'a' => {
+                  'one' => ['<redacted>', '<redacted>', {'three' => '<redacted>'}],
+                  'two' => '<redacted>',
+                  'three' => '<redacted>'
+                },
                 'c' => '<redacted>',
                 'e' => '<redacted>'
               }
