@@ -121,7 +121,7 @@ module Bosh::Director
             all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
           end
           link_str = "#{@deployment_plan.name}.#{@consumes_job_name}.#{@consumes_template_name}.#{name}"
-          raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{@deployment_plan.name}: #{all_link_paths}"
+          raise "Cannot resolve ambigious link '#{link_str}' in deployment #{@deployment_plan.name}:#{all_link_paths}"
         else
           raise "Can't find link with name: #{name} in deployment #{@deployment_plan.name}"
         end
@@ -158,7 +158,7 @@ module Bosh::Director
             all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:job]}.#{link_path[:template]}.#{link_path[:name]}"
           end
           link_str = "#{@deployment_plan.name}.#{@consumes_job_name}.#{@consumes_template_name}.#{name}"
-          raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{deployment.name}: #{all_link_paths}"
+          raise "Cannot resolve ambigious link '#{link_str}' in deployment #{deployment.name}: #{all_link_paths}"
         else
           raise "Can't find link with name: #{name} in deployment #{deployment.name}"
         end

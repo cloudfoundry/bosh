@@ -21,26 +21,9 @@ module Bosh::Director::Core::Templates
 
       monit = monit_erb.render(template_context, job_name, index, @logger)
 
-      errors = []
-
       rendered_files = source_erbs.map do |source_erb|
-        begin
-          file_contents = source_erb.render(template_context, job_name, index, @logger)
-        rescue Exception => e
-          errors.push e
-        end
-
+        file_contents = source_erb.render(template_context, job_name, index, @logger)
         RenderedFileTemplate.new(source_erb.src_name, source_erb.dest_name, file_contents)
-      end
-
-      if errors.length > 0
-        message = "Unable to render templates for job #{job_name}. Errors are:"
-
-        errors.each do |e|
-          message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
-        end
-
-        raise message
       end
 
       RenderedJobTemplate.new(@name, monit, rendered_files)

@@ -96,24 +96,9 @@ module Bosh::Director
       end
 
       def render_job_templates(jobs)
-        errors = []
         job_renderer = JobRenderer.create
         jobs.each do |job|
-          begin
-            job_renderer.render_job_instances(job.needed_instance_plans)
-          rescue Exception => e
-            errors.push e
-          end
-        end
-
-        if errors.length > 0
-          message = 'Unable to render jobs for deployment. Errors are:'
-
-          errors.each do |e|
-            message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
-          end
-
-          raise message
+          job_renderer.render_job_instances(job.needed_instance_plans)
         end
       end
     end
