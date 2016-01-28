@@ -669,15 +669,15 @@ describe 'Links', type: :integration do
         puts output
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
-        expect(output).to include('Error 100: Unable to process links for deployment. Errors are:
-   - "Cannot resolve ambiguous link \'simple.first_node.node.node1\' in deployment simple:
+        expect(output).to include("Error 100: Unable to process links for deployment. Errors are:
+   - \"Cannot resolve ambiguous link 'simple.first_node.node.node1\' in deployment simple:
      simple.first_node.node.node1
-     simple.second_node.node.node1"
-   - "Cannot resolve ambiguous link \'simple.first_node.node.node2\' in deployment simple:
+     simple.second_node.node.node1\"
+   - \"Cannot resolve ambiguous link 'simple.first_node.node.node2' in deployment simple:
      simple.first_node.node.node2
-     simple.second_node.node.node2"
-   - "Can\'t find deployment broken"
-   - "Can\'t find deployment other"')
+     simple.second_node.node.node2\"
+   - \"Can't find deployment broken\"
+   - \"Can't find deployment other\"")
       end
   end
 
