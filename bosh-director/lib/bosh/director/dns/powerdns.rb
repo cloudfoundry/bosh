@@ -52,16 +52,6 @@ module Bosh::Director
         @logger.info("Deleting DNS record: #{record.name}")
         record.destroy
       end
-
-      # see if any of the reverse domains are empty and should be deleted
-      ips.each do |ip|
-        reverse = reverse_domain(ip)
-        rdomain = Models::Dns::Domain.filter(name: reverse,
-          type: 'NATIVE')
-        rdomain.each do |domain|
-          delete_empty_domain(domain)
-        end
-      end
     end
 
     private
@@ -88,40 +78,31 @@ module Bosh::Director
       reverse_domain = reverse_domain(ip_address)
       reverse_host = reverse_host(ip_address)
 
-      rdomain = Models::Dns::Domain.safe_find_or_create(name: reverse_domain,
-        type: 'NATIVE')
-      Models::Dns::Record.find_or_create(domain_id: rdomain.id,
+      rdomain = Models::Dns::Domain.safe_find_or_create(name: reverse_domain, type: 'NATIVE')
+
+      Models::Dns::Record.find_or_create(
+        domain: rdomain,
         name: reverse_domain,
         type: 'SOA', content: SOA,
-        ttl: TTL_4H)
+        ttl: TTL_4H
+      )
 
-      Models::Dns::Record.find_or_create(domain_id: rdomain.id,
+      Models::Dns::Record.find_or_create(
+        domain: rdomain,
         name: reverse_domain,
         type: 'NS', ttl: TTL_4H,
-        content: "ns.#{@domain_name}")
+        content: "ns.#{@domain_name}"
+      )
 
-      record = Models::Dns::Record.find(content: record_name, type: 'PTR')
-
-      # delete the record if the IP address changed
-      if record && record.name != reverse_host
-        id = record.domain_id
-        record.destroy
-        record = nil
-
-        # delete the domain if the domain id changed and it's empty
-        if id != rdomain.id
-          delete_empty_domain(Models::Dns::Domain[id])
-        end
-      end
-
-      unless record
-        record = Models::Dns::Record.new(domain_id: rdomain.id,
-          name: reverse_host,
-          type: 'PTR', ttl: TTL_5M)
-      end
-      record.content = record_name
-      record.change_date = Time.now.to_i
-      record.save
+      record = Models::Dns::Record.find_or_create(content: record_name, type: 'PTR')
+      record.update(
+        domain: rdomain,
+        name: reverse_host,
+        content: record_name,
+        type: 'PTR',
+        ttl: TTL_5M,
+        change_date: Time.now.to_i
+      )
     end
 
     def find_domain_id
@@ -147,24 +128,6 @@ module Bosh::Director
     def reverse(ip, n)
       octets = ip.split(/\./)
       "#{octets[0..(n-1)].reverse.join(".")}.in-addr.arpa"
-    end
-
-    def delete_empty_domain(domain)
-      # If the count is 2, it means we only have the NS & SOA record
-      # and the domain is "empty" and can be deleted
-      if domain.records.size == 2
-        @logger.info("Deleting empty reverse domain #{domain.name}")
-
-        # Since DNS domain can be deleted by multiple threads
-        # it's possible for database to return 0 rows modified result.
-        # In this specific case that's a valid return value
-        # but Sequel usually considers that an error.
-        # ('Attempt to delete object did not result in a single row modification')
-        domain.require_modification = false
-
-        # Cascaded - all records are removed
-        domain.destroy
-      end
     end
   end
 end

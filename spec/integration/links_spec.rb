@@ -635,7 +635,8 @@ describe 'Links', type: :integration do
           name: 'first_node',
           templates: [{'name' => 'node', 'consumes' => first_node_links}],
           instances: 1,
-          static_ips: ['192.168.1.10']
+          static_ips: ['192.168.1.10'],
+          azs: ["z1"]
         )
       end
 
@@ -651,7 +652,8 @@ describe 'Links', type: :integration do
           name: 'second_node',
           templates: [{'name' => 'node', 'consumes' => second_node_links}],
           instances: 1,
-          static_ips: ['192.168.1.11']
+          static_ips: ['192.168.1.11'],
+          azs: ["z1"]
         )
       end
 
@@ -663,9 +665,19 @@ describe 'Links', type: :integration do
       end
 
       it 'catches broken link before updating vms' do
-        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        puts output
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
+        expect(output).to include("Error 100: Unable to process links for deployment. Errors are:
+   - \"Cannot resolve ambiguous link 'simple.first_node.node.node1\' in deployment simple:
+     simple.first_node.node.node1
+     simple.second_node.node.node1\"
+   - \"Cannot resolve ambiguous link 'simple.first_node.node.node2' in deployment simple:
+     simple.first_node.node.node2
+     simple.second_node.node.node2\"
+   - \"Can't find deployment broken\"
+   - \"Can't find deployment other\"")
       end
   end
 
@@ -872,6 +884,37 @@ describe 'Links', type: :integration do
           expect(node['address']).to match(/.dynamic-network./)
         end
       end
+    end
+  end
+
+  context 'when link is not satisfied in deployment' do
+    let(:bad_properties_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'api_server_with_bad_link_types',
+          templates: [{'name' => 'api_server_with_bad_link_types'}],
+          instances: 1,
+          static_ips: ['192.168.1.10']
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
+    it 'should show all errors' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['jobs'] = [bad_properties_job_spec]
+
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+
+      expect(exit_code).not_to eq(0)
+      expect(out).to include("Error 100: Unable to process links for deployment. Errors are:
+   - \"Can't find link with type: bad_link in deployment simple\"
+   - \"Can't find link with type: bad_link_2 in deployment simple\"
+   - \"Can't find link with type: bad_link_3 in deployment simple\"")
     end
   end
 end

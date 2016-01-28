@@ -45,6 +45,7 @@ module Bosh::Spec
           !instance_data[:bootstrap].empty?,
           instance_data[:az],
           instance_data[:disk_cid],
+          instance_data[:vm_cid]
         )
       end
     end

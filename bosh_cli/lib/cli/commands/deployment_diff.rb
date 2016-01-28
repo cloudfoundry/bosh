@@ -38,13 +38,10 @@ module Bosh::Cli::Command
           end
         end
 
-        changes['update_config']
+        changes['context']
       rescue Bosh::Cli::ResourceNotFound
-        @manifest.resolve_release_aliases
-        @manifest.resolve_stemcell_aliases
-
         inspect_deployment_changes(
-          @manifest.hash,
+          @manifest,
           redact_diff: options[:redact_diff]
         )
 

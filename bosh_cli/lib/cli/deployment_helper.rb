@@ -46,11 +46,14 @@ module Bosh::Cli
     # a meaningful return value.
     # @return Boolean Were there any changes in deployment manifest?
     def inspect_deployment_changes(manifest, options = {})
+      manifest.resolve_release_aliases
+      manifest.resolve_stemcell_aliases
+
       show_empty_changeset = options.fetch(:show_empty_changeset, true)
       redact_diff = options.fetch(:redact_diff, false)
 
-      manifest = manifest.dup
-      current_deployment = director.get_deployment(manifest['name'])
+      manifest_hash = manifest.hash.dup
+      current_deployment = director.get_deployment(manifest_hash['name'])
 
       # We cannot retrieve current manifest until there was at least one
       # successful deployment. There used to be a warning about that
@@ -64,7 +67,7 @@ module Bosh::Cli
       end
 
       diff = Bosh::Cli::HashChangeset.new
-      diff.add_hash(normalize_deployment_manifest(manifest), :new)
+      diff.add_hash(normalize_deployment_manifest(manifest_hash), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       @_diff_key_visited = { 'name' => 1, 'director_uuid' => 1 }
 

@@ -124,13 +124,20 @@ module Bosh::Director
       end
 
       context 'when instance creation fails' do
-        it 'deletes the vm from the cloud' do
-          expect { action_that_raises }.to raise_error(create_instance_error)
+        context 'when keep_unreachable_vms is set' do
+          before { Config.keep_unreachable_vms = true }
+
+          it 'does not delete instance' do
+            expect { action_that_raises }.to raise_error(create_instance_error)
+            expect(instance_deleter).to_not have_received(:delete_instance_plan)
+          end
         end
 
-        it 'deletes the instance' do
-          expect { action_that_raises }.to raise_error(create_instance_error)
-          expect(instance_deleter).to have_received(:delete_instance_plan)
+        context 'when keep_unreachable_vms is not set' do
+          it 'deletes the instance' do
+            expect { action_that_raises }.to raise_error(create_instance_error)
+            expect(instance_deleter).to have_received(:delete_instance_plan)
+          end
         end
       end
     end
@@ -223,6 +230,17 @@ module Bosh::Director
           expect {
             compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
           }.to raise_error(create_instance_error)
+        end
+
+        context 'when keep_unreachable_vms is set' do
+          before { Config.keep_unreachable_vms = true }
+
+          it 'removes the vm from the reuser so that it is not cleaned up later when reuser deletes all instances' do
+            expect(instance_reuser).to receive(:remove_instance)
+            expect {
+              compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
+            }.to raise_error(create_instance_error)
+          end
         end
       end
 

@@ -308,6 +308,16 @@ module Bosh
         agent_base_dir(agent_id)
       end
 
+      def disk_attached_to_vm?(vm_cid, disk_id)
+        File.exist?(attachment_file(vm_cid, disk_id))
+      end
+
+      def current_apply_spec_for_vm(vm_cid)
+        agent_base_dir = agent_dir_for_vm_cid(vm_cid)
+        spec_file = File.join(agent_base_dir, 'bosh', 'spec.json')
+        JSON.parse(File.read(spec_file))
+      end
+
       private
 
       def spawn_agent_process(agent_id)
@@ -417,10 +427,6 @@ module Bosh
 
       def disk_attached?(disk_id)
         File.exist?(attachment_path(disk_id))
-      end
-
-      def disk_attached_to_vm?(vm_cid, disk_id)
-        File.exist?(attachment_file(vm_cid, disk_id))
       end
 
       def detach_disks_attached_to_vm(vm_cid)

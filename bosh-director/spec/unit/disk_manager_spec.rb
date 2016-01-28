@@ -82,8 +82,15 @@ module Bosh::Director
       end
 
       context 'when the agent reports a disk cid consistent with the model' do
-        let(:inactive_disk) { Models::PersistentDisk.make(disk_cid: 'inactive-disk', active: false) }
-        before { instance_model.add_persistent_disk(inactive_disk) }
+        let!(:inactive_disk) do
+          Models::PersistentDisk.make(
+            disk_cid: 'inactive-disk',
+            active: false,
+            instance: instance_model,
+            size: 54,
+            cloud_properties: "cloud-props"
+          )
+        end
 
         it 'logs when the disks are inactive' do
           expect(logger).to receive(:warn).with("`job-name/1 (uuid-1)' has inactive disk inactive-disk")
@@ -110,7 +117,7 @@ module Bosh::Director
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
             end
 
-            context 'when the disk fails to attach with no disk space error' do
+            context 'when the new disk fails to attach with no disk space error' do
               let(:no_space) { Bosh::Clouds::NoDiskSpace.new(ok_to_retry) }
 
               before do
@@ -205,15 +212,31 @@ module Bosh::Director
                   let(:snapshot) { Models::Snapshot.make }
                   before do
                     persistent_disk.add_snapshot(snapshot)
+                    allow(agent_client).to receive(:unmount_disk).with('disk123')
+                    allow(cloud).to receive(:detach_disk).with('vm234', 'disk123')
                   end
 
-                  it 'deletes the old mounted disk' do
+                  it 'orphans the old mounted disk' do
                     expect(agent_client).to receive(:unmount_disk).with('disk123')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
 
                     disk_manager.update_persistent_disk(instance_plan, vm_recreator)
 
                     expect(Models::PersistentDisk.where(disk_cid: 'disk123').first).to be_nil
+                  end
+
+                  it 'orphans additional inactive disks' do
+                    expect(cloud).to receive(:detach_disk).with('vm234', 'inactive-disk')
+
+                    disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+                    expect(Models::PersistentDisk.where(disk_cid: 'inactive-disk').first).to be_nil
+
+                    orphan_disk = Models::OrphanDisk.where(disk_cid: 'inactive-disk').first
+                    expect(orphan_disk.size).to eq(54)
+                    expect(orphan_disk.availability_zone).to eq(instance_model.availability_zone)
+                    expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
+                    expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
+                    expect(orphan_disk.cloud_properties).to eq('cloud-props')
                   end
                 end
               end

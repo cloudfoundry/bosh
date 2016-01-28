@@ -15,8 +15,9 @@ module Bosh::Director::Core::Templates
             'monit file contents 1',
             [
               instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                              src_name: 'template-file1',
-                              contents: 'template file contents 1')
+                src_name: 'template-file1',
+                dest_name: 'template-file1',
+                contents: 'template file contents 1')
             ]
           ),
           RenderedJobTemplate.new(
@@ -24,18 +25,107 @@ module Bosh::Director::Core::Templates
             'monit file contents 2',
             [
               instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                              src_name: 'template-file3',
-                              contents: 'template file contents 3'),
+                src_name: 'template-file3',
+                dest_name: 'template-file3',
+                contents: 'template file contents 3'),
               instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                              src_name: 'template-file2',
-                              contents: 'template file contents 2'),
+                src_name: 'template-file2',
+                dest_name: 'template-file2',
+                contents: 'template file contents 2'),
             ]
           ),
         ]
       }
 
       it 'returns a sha1 checksum of all rendered template files for all job templates' do
-        expect(instance.configuration_hash).to eq('0de71d6895da15482c1cda8a2d637127ea37f9b4')
+        expect(instance.configuration_hash).to eq('c40a2263b628f1454eeab6d482a4c86c4d83eb53')
+      end
+
+      context 'when template has empty files' do
+        let(:templates) {
+          [
+            RenderedJobTemplate.new(
+              'template-name1',
+              'monit file contents 1',
+              [
+                instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
+                  src_name: 'template-file1',
+                  dest_name: 'template-file1',
+                  contents: 'template file contents 1')
+              ]
+            )
+          ]
+        }
+
+        let(:templates2) {
+          [
+            RenderedJobTemplate.new(
+              'template-name1',
+              'monit file contents 1',
+              [
+                instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
+                  src_name: 'template-file1',
+                  dest_name: 'template-file1',
+                  contents: 'template file contents 1')
+              ]
+            ),
+            RenderedJobTemplate.new(
+              'template-name2',
+              '',
+              [
+                instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
+                  src_name: 'template-file1',
+                  dest_name: 'template-file1',
+                  contents: '')
+              ]
+            ),
+          ]
+        }
+
+        it 'returns a different SHA' do
+          expect(RenderedJobInstance.new(templates).configuration_hash).to_not eq(RenderedJobInstance.new(templates2).configuration_hash)
+        end
+      end
+
+      context 'when job without templates is added' do
+        let(:templates) {
+          [
+            RenderedJobTemplate.new(
+              'template-name1',
+              'monit file contents 1',
+              [
+                instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
+                  src_name: 'template-file1',
+                  dest_name: 'template-file1',
+                  contents: 'template file contents 1')
+              ]
+            )
+          ]
+        }
+
+        let(:templates2) {
+          [
+            RenderedJobTemplate.new(
+              'template-name1',
+              'monit file contents 1',
+              [
+                instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
+                  src_name: 'template-file1',
+                  dest_name: 'template-file1',
+                  contents: 'template file contents 1')
+              ]
+            ),
+            RenderedJobTemplate.new(
+              'template-name2',
+              '',
+              []
+            ),
+          ]
+        }
+
+        it 'returns a different SHA' do
+          expect(RenderedJobInstance.new(templates).configuration_hash).to_not eq(RenderedJobInstance.new(templates2).configuration_hash)
+        end
       end
     end
 

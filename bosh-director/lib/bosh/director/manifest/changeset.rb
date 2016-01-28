@@ -9,6 +9,11 @@ module Bosh::Director
   class Changeset
     KEY_NAME = 'name'
 
+    REDACT_KEY_NAMES = %w(
+      properties
+      env
+    )
+
     def initialize(before, after)
       @before = Changeset.redact_properties!(before)
       @after = Changeset.redact_properties!(after)
@@ -22,8 +27,8 @@ module Bosh::Director
       end
     end
 
-    def self.redact_properties!(obj, properties_is_ancestor = false)
-      if properties_is_ancestor
+    def self.redact_properties!(obj, redact_key_is_ancestor = false)
+      if redact_key_is_ancestor
         if obj.respond_to?(:key?)
           obj.keys.each{ |key|
             if obj[key].respond_to?(:each)
@@ -42,12 +47,15 @@ module Bosh::Director
           }
         end
       else
-        if obj.respond_to?(:key?) && obj.key?("properties") && obj['properties'].respond_to?(:key?)
-            redact_properties!(obj['properties'], true)
-        end
         if obj.respond_to?(:each)
-          obj.each{ |*a|
-            redact_properties!(a.last)
+          obj.each{ |a|
+            if obj.respond_to?(:key?) && REDACT_KEY_NAMES.any? { |key| puts "a is #{a}. is #{key} == #{a.first}?"
+            key == a.first } && a.last.respond_to?(:key?)
+              redact_properties!(a.last, true)
+            else
+              redact_properties!(a.respond_to?(:last) ? a.last : a)
+            end
+
           }
         end
       end

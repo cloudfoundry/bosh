@@ -51,6 +51,15 @@ module Bosh::Dev::VCloud
             ]
           }
         },
+        'apply_spec' => {
+          'properties' => {
+            'director' => {
+              'debug' => {
+                'keep_unreachable_vms' => @env.fetch('BAT_DEBUG_MODE', false)
+              }
+            }
+          }
+        },
         'env' => {'vapp' => @env['BOSH_VCLOUD_VAPP_NAME']},
         'logging' => {'level' => 'debug'},
       }

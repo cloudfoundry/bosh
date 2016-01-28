@@ -86,12 +86,6 @@ module Bosh::Cli
           if latest_version.nil?
             err("Latest version for stemcell `#{stemcell['name']}' is unknown")
           end
-          # Avoiding {Float,Fixnum} -> String noise in diff
-          if latest_version.to_s == latest_version.to_f.to_s
-            latest_version = latest_version.to_f
-          elsif latest_version.to_s == latest_version.to_i.to_s
-            latest_version = latest_version.to_i
-          end
           stemcell['version'] = latest_version
         end
       end
@@ -128,10 +122,6 @@ module Bosh::Cli
             err("Release '#{release['name']}' not found on director. Unable to resolve 'latest' alias in manifest.")
           end
           release['version'] = latest_release_version
-        end
-
-        if release['version'].to_i.to_s == release['version']
-          release['version'] = release['version'].to_i
         end
       end
     end

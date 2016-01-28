@@ -64,7 +64,6 @@ jobs:
   template:
   - nats
   - blobstore
-  - redis
   - powerdns
   - director
   - registry
@@ -120,11 +119,6 @@ properties:
     host: <%= bosh_rds_host %>
     port: <%= bosh_rds_port %>
     database: bosh
-
-  redis:
-    address: 127.0.0.1
-    port: 25255
-    password: R3d!S
 
   director:
     name: <%= bosh_deployment_name %>

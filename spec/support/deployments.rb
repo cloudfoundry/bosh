@@ -170,6 +170,11 @@ module Bosh::Spec
           'name' => 'ubuntu-stemcell',
           'version' => '1',
         },
+        'env' => {
+          'bosh' => {
+            'password' => 'foobar'
+          }
+        }
       }
     end
 
@@ -470,6 +475,10 @@ module Bosh::Spec
 
       if opts[:persistent_disk_pool]
         job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
+      end
+
+      if opts.has_key?(:azs)
+        job_hash['azs'] = opts[:azs]
       end
 
       job_hash

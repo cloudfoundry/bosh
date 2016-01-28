@@ -86,6 +86,8 @@ apply_spec:
       address: vip
   properties:
     director:
+      debug:
+        keep_unreachable_vms: false
       max_vm_create_tries: 15
 YAML
 
@@ -140,6 +142,8 @@ apply_spec:
       address: vip
   properties:
     director:
+      debug:
+        keep_unreachable_vms: false
       max_vm_create_tries: 15
 YAML
 
