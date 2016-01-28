@@ -150,7 +150,6 @@ module Bosh::Director::DeploymentPlan
                 'gateway' => '192.168.0.254'
                 })
 
-          expect(spec['packages']).to eq(packages)
           expect(spec['persistent_disk']).to eq(0)
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)
@@ -179,7 +178,6 @@ module Bosh::Director::DeploymentPlan
                 'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
                 )
 
-          expect(spec['packages']).to eq(packages)
           expect(spec['persistent_disk']).to eq(0)
           expect(spec['configuration_hash']).to be_nil
           expect(spec['properties']).to eq(properties)

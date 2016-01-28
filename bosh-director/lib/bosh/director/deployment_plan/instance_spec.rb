@@ -108,7 +108,6 @@ module Bosh::Director
           'id',
           'az',
           'networks',
-          'packages',
           'properties',
           'dns_domain_name',
           'links',

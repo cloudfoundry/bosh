@@ -52,9 +52,9 @@ module Bosh::Director
             deployment_plan.bind_models
           end
 
+          render_job_templates(deployment_plan.jobs_starting_on_deploy)
           deployment_plan.compile_packages
 
-          render_job_templates(deployment_plan.jobs_starting_on_deploy)
           update_step(deployment_plan).perform
           @notifier.send_end_event
           logger.info('Finished updating deployment')
