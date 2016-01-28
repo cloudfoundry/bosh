@@ -477,6 +477,10 @@ module Bosh::Spec
         job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
       end
 
+      if opts.has_key?(:azs)
+        job_hash['azs'] = opts[:azs]
+      end
+
       job_hash
     end
 
