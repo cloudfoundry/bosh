@@ -60,6 +60,11 @@ env:
   vapp: vcloud_vapp_name
 logging:
   level: debug
+apply_spec:
+  properties:
+    director:
+      debug:
+        keep_unreachable_vms: false
 YAML
 
       before do

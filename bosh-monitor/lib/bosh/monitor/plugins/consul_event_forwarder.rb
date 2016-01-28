@@ -11,7 +11,7 @@ module Bosh::Monitor
       CONSUL_MAX_EVENT_BYTESIZE = 512
 
       CONSUL_ENDPOINTS = {
-        event:     "/v1/event/fire/",              #fire an event
+        event:      "/v1/event/fire/",             #fire an event
         register:   "/v1/agent/check/register",    #register a check
         deregister: "/v1/agent/check/deregister/", #deregister a check
         pass:       "/v1/agent/check/pass/",       #mark a check as passing

@@ -76,7 +76,6 @@ module Bosh::Director
       config = Config
       expect(config.event_log).to eq(event_log)
       expect(config.logger).to eq(logger_repo.fetch('DirectorJobRunner'))
-      expect(config.redis_options[:logger]).to eq(logger_repo.fetch('DirectorJobRunnerRedis'))
       expect(config.result).to eq(result_file)
     end
 

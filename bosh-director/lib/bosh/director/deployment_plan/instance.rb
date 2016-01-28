@@ -161,7 +161,7 @@ module Bosh::Director
         agent_partial_state = spec.as_apply_spec.select { |k, _| agent_spec_keys.include?(k) }
         agent_client.apply(agent_partial_state)
 
-        instance_spec_keys = agent_spec_keys + ['stemcell', 'vm_type']
+        instance_spec_keys = agent_spec_keys + ['stemcell', 'vm_type', 'env']
         instance_partial_state = spec.full_spec.select { |k, _| instance_spec_keys.include?(k) }
         @current_state.merge!(instance_partial_state)
 
@@ -182,7 +182,7 @@ module Bosh::Director
       end
 
       def agent_client
-        @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@model.credentials, @model.agent_id)
+        AgentClient.with_vm_credentials_and_agent_id(@model.credentials, @model.agent_id)
       end
 
       ##

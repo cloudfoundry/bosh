@@ -262,8 +262,11 @@ module Bosh::Director
   # Run errand errors
   RunErrandError = err(510000)
 
-  #Deleting Disk
+  # Disk errors
   DeletingPersistentDiskError = err(520000)
+  AttachDiskErrorUnknownInstance = err(520001)
+  AttachDiskNoPersistentDisk =  err(520002)
+  AttachDiskInvalidInstanceState = err(520003)
 
   # Addons
   RuntimeAmbiguousReleaseSpec = err(530000)

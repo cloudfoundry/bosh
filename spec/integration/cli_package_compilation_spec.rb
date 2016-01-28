@@ -66,10 +66,7 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run('deploy')
 
     foobar_vm = director.vm('foobar', '0')
-    agent_base_dir = current_sandbox.cpi.agent_dir_for_vm_cid(foobar_vm.cid)
-    spec_file = File.join(agent_base_dir, 'bosh', 'spec.json')
-
-    apply_spec = JSON.parse(File.read(spec_file))
+    apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.cid)
     packages = apply_spec['packages']
     packages.each do |key, value|
       expect(value['name']).to eq(key)

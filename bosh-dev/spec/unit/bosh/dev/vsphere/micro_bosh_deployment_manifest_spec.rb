@@ -63,6 +63,9 @@ cloud:
                   resource_pool: vcenter_rp
 apply_spec:
   properties:
+    director:
+      debug:
+        keep_unreachable_vms: false
     ntp:
     - ntp_server
     vcenter:
@@ -154,6 +157,9 @@ cloud:
                   resource_pool: vcenter_rp
 apply_spec:
   properties:
+    director:
+      debug:
+        keep_unreachable_vms: false
     ntp:
     - ntp_server
     vcenter:

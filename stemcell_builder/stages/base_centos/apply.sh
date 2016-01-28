@@ -30,7 +30,7 @@ unshare -m $SHELL <<INSTALL_YUM
 
   mkdir -p /etc/pki
   mount --no-mtab --bind $chroot/etc/pki /etc/pki
-  yum --installroot=$chroot -c /bosh/stemcell_builder/etc/custom_yum.conf --assumeyes install yum
+  yum --installroot=$chroot -c $base_dir/etc/custom_yum.conf --assumeyes install yum
 INSTALL_YUM
 
 run_in_chroot $chroot "

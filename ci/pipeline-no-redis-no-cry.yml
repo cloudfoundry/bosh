@@ -1,0 +1,181 @@
+---
+groups:
+  - name: bosh
+    jobs:
+      - start-job
+      - unit-1.9
+      - unit-2.1
+      - integration-1.9-postgres
+      - integration-2.1-mysql
+      - integration-2.1-postgres
+      - load-tests
+      - fuzz-tests
+
+  - name: 1.9
+    jobs:
+      - start-job
+      - unit-1.9
+      - integration-1.9-postgres
+
+  - name: 2.1
+    jobs:
+      - start-job
+      - unit-2.1
+      - integration-2.1-mysql
+      - integration-2.1-postgres
+
+  - name: mysql
+    jobs:
+      - start-job
+      - unit-1.9
+      - unit-2.1
+      - integration-2.1-mysql
+
+  - name: postgres
+    jobs:
+      - start-job
+      - unit-1.9
+      - unit-2.1
+      - integration-1.9-postgres
+      - integration-2.1-postgres
+
+jobs:
+  - name: start-job
+    public: true
+    serial: true
+    plan:
+      - { get: interval-trigger, trigger: true }
+      - { get: bosh-src }
+
+  - name: unit-1.9
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        config:
+          params:
+            RUBY_VERSION: 1.9.3
+
+  - name: unit-2.1
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        config:
+          params:
+            RUBY_VERSION: 2.1.7
+
+  - name: integration-1.9-postgres
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        privileged: true
+        file:  bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-1"]
+        config:
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 8
+
+  - name: integration-2.1-mysql
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-2"]
+        config:
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+
+  - name: integration-2.1-postgres
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration.yml
+        tags: ["bosh-integration-3"]
+        config:
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+
+  - name: load-tests
+    public: true
+    serial: true
+    plan:
+    - { get: fuzz-interval-trigger, trigger: true }
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+
+  - name: fuzz-tests
+    public: true
+    serial: true
+    plan:
+    - { get: fuzz-interval-trigger, trigger: true }
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-fuzz-tests }
+
+    - task: test
+      privileged: true
+      file: bosh-fuzz-tests/ci/tasks/test.yml
+      tags: ["bosh-integration-4"]
+      config:
+        params:
+          RUBY_VERSION: 2.1.7
+
+resources:
+  - name: interval-trigger
+    type: time
+    source:
+      interval: 45m # average build time for the integration tests
+
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: {{branch}}
+
+  - name: bosh-fuzz-tests
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
+      branch: no-redis-no-cry
+
+  - name: bosh-load-tests-workspace
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+      branch: no-redis-no-cry
+
+  - name: fuzz-interval-trigger
+    type: time
+    source:
+      interval: 15m

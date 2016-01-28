@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version      = version
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH Director'
-  spec.description  = "BOSH Director"
+  spec.description  = 'BOSH Director'
   spec.author       = 'VMware'
   spec.homepage     = 'https://github.com/cloudfoundry/bosh'
   spec.license      = 'Apache 2.0'
@@ -40,9 +40,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bosh_openstack_cpi', "=2.1.0"
-  spec.add_dependency 'bosh_aws_cpi',       "=2.1.0"
-  spec.add_dependency 'bosh_vsphere_cpi',   "=2.2.0"
+  spec.add_dependency 'bosh_openstack_cpi', '=2.1.0'
+  spec.add_dependency 'bosh_aws_cpi',       '=2.1.0'
+  spec.add_dependency 'bosh_vsphere_cpi',   '=2.2.0'
   spec.add_dependency 'bosh_vcloud_cpi',    '=0.11.0'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'
@@ -55,9 +55,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
-  spec.add_dependency 'redis',            '~>3.0.2'
-  spec.add_dependency 'resque',           '~>1.25.0'
-  spec.add_dependency 'resque-backtrace', '~>0.0.1'
   spec.add_dependency 'rufus-scheduler',  '~>2.0.18'
   spec.add_dependency 'sequel',           '~>3.43.0'
   spec.add_dependency 'sinatra',          '~>1.4.2'
@@ -67,6 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.1.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
+  spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.1.0'
 
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'rspec'

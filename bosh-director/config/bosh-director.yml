@@ -3,9 +3,6 @@ name: Local Director
 port: 8080
 logging:
   level: DEBUG
-redis:
-  host: 127.0.0.1
-  password:
 dir: /tmp/boshdir
 db:
   adapter: sqlite

@@ -47,7 +47,7 @@ describe Bosh::Release::Compiler do
 
     it 'should compile packages according to the manifest' do
       allow(test_agent).to receive(:run_task).with(:compile_package, kind_of(String), 'sha1',
-                                      /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor)/,
+                                      /(ruby|nats|libpq|postgres|blobstore|nginx|director|health_monitor)/,
                                       kind_of(String), kind_of(Hash)).and_return(result)
       expect(compiler.compile).to include('director')
     end
@@ -75,7 +75,6 @@ describe Bosh::Release::Compiler do
         spec_jobs = spec['job']['templates']
         expect(spec_jobs.size).to eq(3)
         expect(spec_jobs[0]['name']).to eq('nats')
-        expect(spec_jobs[1]['name']).to eq('redis')
         expect(spec_jobs[2]['name']).to eq('postgres')
       end
     end
@@ -112,7 +111,7 @@ describe Bosh::Release::Compiler do
     allow(Digest::SHA1).to receive(:file).and_return(digester)
     result = {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}}
     allow(test_agent).to receive(:run_task).with(:compile_package, kind_of(String), 'fake-sha1',
-                                    /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor|aws_registry)/,
+                                    /(ruby|nats|libpq|postgres|blobstore|nginx|director|health_monitor|aws_registry)/,
                                     kind_of(String), kind_of(Hash)).and_return(result)
     expect(Bosh::Agent::Client).to receive(:create).and_return(test_agent)
     expect(@compiler.compile).to include('aws_registry')

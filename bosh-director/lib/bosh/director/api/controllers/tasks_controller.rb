@@ -20,6 +20,7 @@ module Bosh::Director
         verbose = params['verbose'] || '1'
         if verbose == '1'
           dataset = dataset.filter(type: %w[
+            attach_disk
             create_snapshot
             delete_deployment
             delete_release

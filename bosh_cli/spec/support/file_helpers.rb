@@ -26,6 +26,10 @@ module Support
       `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
     end
 
+    def list_tar_content(tarball_path)
+      `tar -ztf #{tarball_path}`.chomp.split(/\n/)
+    end
+
     def file_mode(file)
       File.stat(file).mode.to_s(8)[-4..-1]
     end

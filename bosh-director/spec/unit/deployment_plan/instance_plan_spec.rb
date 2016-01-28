@@ -205,9 +205,10 @@ module Bosh::Director::DeploymentPlan
       context 'when the vm type name has changed' do
         before do
           instance_plan.existing_instance.update(spec: {
-             'vm_type' => { 'name' => 'changed-name', 'cloud_properties' => {'a' => 'b'}},
-             'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-           })
+              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
+              'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
+              'env' => {'bosh' => { 'password' => 'foobar'}}
+            })
         end
 
         it 'returns false' do
@@ -250,8 +251,8 @@ module Bosh::Director::DeploymentPlan
           instance_plan.existing_instance.update(spec: {
                                                    'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
                                                    'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
+                                                   'env' => {'key' => 'previous-value'},
                                                  })
-          instance_plan.existing_instance.update(vm_env: {'key' => 'previous-value'})
         end
 
         it 'returns true' do

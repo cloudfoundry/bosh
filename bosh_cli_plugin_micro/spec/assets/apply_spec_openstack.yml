@@ -15,10 +15,6 @@ properties:
     password: nats
     address: 127.0.0.1
     port: 4222
-  redis:
-    address: 127.0.0.1
-    port: 25255
-    password: redis
   postgres:
     user: postgres
     password: postgres
@@ -79,11 +75,6 @@ packages:
     version: 0.1-dev
     sha1: ebd7b3d3bdf4590de9f5e4f4eadc819b34f56901
     blobstore_id: c15172b6-965e-49bf-bea6-2e4322a7dc02
-  redis:
-    name: redis
-    version: 0.1-dev
-    sha1: 105e225be4569e8a4b9ab9dae92263f72fe906f2
-    blobstore_id: 4c8aac83-4f5d-41ef-85f7-d371c779d7f1
   libpq:
     name: libpq
     version: 0.1-dev

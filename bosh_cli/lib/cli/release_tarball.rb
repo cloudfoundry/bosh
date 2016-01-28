@@ -109,7 +109,7 @@ module Bosh::Cli
     # Creates a new tarball from the current contents of @unpack_dir
     def create_from_unpacked(target_path)
       raise "Not unpacked yet!" unless @unpacked
-      !!system("tar", "-C", @unpack_dir, "-pczf", File.expand_path(target_path), ".", out: "/dev/null", err: "/dev/null")
+      SortedReleaseArchiver.new(@unpack_dir).archive(File.expand_path(target_path))
     end
 
     def exists?
