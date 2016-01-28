@@ -257,6 +257,139 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'it supports running post-deploy scripts' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+    end
+
+    context 'when the post_deploy scripts are valid' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_2_with_post_deploy_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+        deploy({})
+
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_2_stdout).to match('message on stdout of job 2 post_deploy script')
+      end
+    end
+
+    context 'when the post-deploy scripts exit with error' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_3_with_broken_post_deploy_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'exits with error if post-deploy errors, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+        expect{deploy({})}.to raise_error(RuntimeError, /result: 1 of 2 post_deploy scripts failed. Failed Jobs: job_3_with_broken_post_deploy_script. Successful Jobs: job_1_with_post_deploy_script./)
+
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_3_with_broken_post_deploy_script/bin/post_deploy' script has failed with error")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+
+        job_3_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post_deploy.stdout.log")
+        expect(job_3_stdout).to match('message on stdout of job 3 post_deploy script')
+
+        job_3_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post_deploy.stderr.log")
+        expect(job_3_stderr).not_to be_empty
+      end
+    end
+
+    context 'when nothing has changed in the deployment it does not run the post-deploy script' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_2_with_post_deploy_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+
+      end
+
+      it 'should not run the post deploy script if no changes have been made in deployment' do
+        deploy({})
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_2_stdout).to match('message on stdout of job 2 post_deploy script')
+
+        deploy({})
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_1_stdout).to_not match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\nmessage on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\n")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
+        expect(job_1_stderr).to_not match('message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\nmessage on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\nt')
+
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_2_stdout).to_not match('message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\nmessage on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\n')
+      end
+    end
+  end
+
   it 'supports scaling down and then scaling up' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

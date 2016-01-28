@@ -56,6 +56,11 @@ module Bosh::Director
 
           render_job_templates(deployment_plan.jobs_starting_on_deploy)
           update_step(deployment_plan).perform
+
+          if check_for_changes(deployment_plan)
+            run_post_deploys(deployment_plan)
+          end
+
           @notifier.send_end_event
           logger.info('Finished updating deployment')
 
@@ -76,6 +81,23 @@ module Bosh::Director
       private
 
       # Job tasks
+
+      def check_for_changes(deployment_plan)
+        deployment_plan.jobs.each do |job|
+          if job.did_change
+            return true
+          end
+        end
+        false
+      end
+
+      def run_post_deploys(deployment_plan)
+        deployment_plan.jobs.each do |job|
+          job.instances.each do |instance|
+            instance.agent_client.run_script('post_deploy', {})
+          end
+        end
+      end
 
       def update_step(deployment_plan)
         DeploymentPlan::Steps::UpdateStep.new(
