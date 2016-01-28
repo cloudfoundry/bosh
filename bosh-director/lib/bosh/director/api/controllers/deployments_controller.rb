@@ -266,6 +266,8 @@ module Bosh::Director
       end
 
       post '/', :consumes => :yaml do
+        validate_yml_manifest(request.body.string)
+
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
@@ -285,6 +287,8 @@ module Bosh::Director
       end
 
       post '/:deployment/diff', :consumes => :yaml do
+        validate_yml_manifest(request.body.string)
+
         deployment = Models::Deployment[name: params[:deployment]]
         if deployment
           before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)

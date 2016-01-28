@@ -76,7 +76,8 @@ describe 'cli: deployment process', type: :integration do
         name: 'new_job',
         templates: [{'name' => 'foobar_without_packages'}]
       )
-      job_spec['properties'] = {'foo' => 'bar'}
+      job_spec['properties'] = {'foobar' => { 'foo' => 'bar
+baz'}}
       new_manifest['jobs'] = [job_spec]
 
       new_manifest['releases'].first['version'] = 'latest'
@@ -96,23 +97,23 @@ describe 'cli: deployment process', type: :integration do
       upload_cloud_config(cloud_config_hash: new_cloud_config)
       output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
-      expect(output).to include(<<-DIFF
-  resource_pools:
+      expect(output).to match(/  resource_pools:
   - name: a
 -   size: 3
     cloud_properties:
-+     name: new_property
-+     size: large
+\+     name: new_property
+\+     size: large
   jobs:
-+ - name: new_job
-+   templates:
-+   - name: foobar_without_packages
-+   resource_pool: a
-+   instances: 3
-+   networks:
-+   - name: a
-+   properties:
-+     foo: <redacted>
+\+ - name: new_job
+\+   templates:
+\+   - name: foobar_without_packages
+\+   resource_pool: a
+\+   instances: 3
+\+   networks:
+\+   - name: a
+\+   properties:
+\+     foobar:
+\+       foo: "?<redacted>"?
 - - name: foobar
 -   templates:
 -   - name: foobar
@@ -120,8 +121,8 @@ describe 'cli: deployment process', type: :integration do
 -   instances: 3
 -   networks:
 -   - name: a
--   properties: {}
-DIFF
+-   properties: \{\}
+/
 )
       expect(output).to_not include('stemcell')
       expect(output).to_not include('releases')

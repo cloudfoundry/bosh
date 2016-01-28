@@ -738,5 +738,66 @@ module Bosh::Director
         ])
       end
     end
+
+    context 'redact properties' do
+      it 'redacts child nodes of properties hashes' do
+        manifest_obj = {
+          'name' => 'test_name',
+          'uuid' => '12324234234234234234',
+          'jobs' => [
+            {
+              'name' => "test_job",
+              'properties' => {
+                'a' => {
+                  'one' => [1, 2, {'three' => 3}],
+                  'two' => 2,
+                  'three' => 3
+                },
+                'c' => 'redact-me',
+                'e' => 'i-am-secret'
+              }
+            }
+          ]
+        }
+
+        expect(described_class.redact_properties!(manifest_obj)).to eq({
+          'name' => 'test_name',
+          'uuid' => '12324234234234234234',
+          'jobs' => [
+            {
+              'name' => "test_job",
+              'properties' => {
+                'a' => {
+                  'one' => ['<redacted>', '<redacted>', {'three' => '<redacted>'}],
+                  'two' => '<redacted>',
+                  'three' => '<redacted>'
+                },
+                'c' => '<redacted>',
+                'e' => '<redacted>'
+              }
+            }
+          ]
+        })
+      end
+
+      it 'does not redact if properties is not a hash' do
+        manifest_obj = {
+          'name' => 'test_name',
+          'uuid' => '12324234234234234234',
+          'jobs' => [
+            {
+              'name' => 'test_job',
+              'properties' => [
+                'a',
+                'b',
+                'c'
+              ]
+            }
+          ]
+        }
+
+        expect(described_class.redact_properties!(manifest_obj)).to eq(manifest_obj)
+      end
+    end
   end
 end
