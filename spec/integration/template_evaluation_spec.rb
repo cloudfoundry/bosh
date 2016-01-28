@@ -56,27 +56,4 @@ describe 'template', type: :integration do
 
     expect(new_id).to eq(original_id)
   end
-
-  it 'prints all template evalution errors when there are errors in multiple templates' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'] = [
-        {
-            'name' => 'foobar_with_bad_properties',
-            'templates' => ['name' => 'foobar_with_bad_properties'],
-            'resource_pool' => 'a',
-            'instances' => 1,
-            'networks' => [{
-                               'name' => 'a',
-                           }],
-            'properties' => {},
-        }
-    ]
-
-    output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
-
-    expect(output).to include("Error 100: Unable to render jobs for deployment. Errors are:
-   - \"Unable to render templates for job foobar_with_bad_properties. Errors are:
-     - \"Error filling in template `foobar_ctl' for `foobar_with_bad_properties/0' (line 8: Can't find property `[\"test_property\"]')\"
-     - \"Error filling in template `drain.erb' for `foobar_with_bad_properties/0' (line 4: Can't find property `[\"dynamic_drain_wait1\"]')\"\"")
-  end
 end
