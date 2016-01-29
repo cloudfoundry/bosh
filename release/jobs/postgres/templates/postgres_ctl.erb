@@ -1,8 +1,20 @@
 #!/bin/bash -e
 
-PACKAGE_DIR=/var/vcap/packages/postgres
+PACKAGE_DIR=/var/vcap/packages/postgres-9.4.5
+PACKAGE_DIR_OLD=/var/vcap/packages/postgres
+
+STORE_DIR=/var/vcap/store
+
+# historically we have used `postgres`
+DATA_DIR_OLD=$STORE_DIR/postgres
+
+# then we switched to including version so it is easier to detect version changes
+DATA_DIR=$STORE_DIR/postgres-9.4.5
+
+# and we'll keep the previous version's data intact to easy recovery, if necessary
+DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
+
 JOB_DIR=/var/vcap/jobs/postgres
-DATA_DIR=/var/vcap/store/postgres
 RUN_DIR=/var/vcap/sys/run/postgres
 PIDFILE=$RUN_DIR/postgres.pid
 
@@ -12,6 +24,8 @@ USER='<%= p("postgres.user") %>'
 PASSWORD='<%= p("postgres.password") %>'
 DBNAMES=(<%= p("postgres.additional_databases").join(" ") %>)
 DBNAMES+=('<%= p("postgres.database") %>')
+
+export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
 
 SCRIPT=$(basename $0)
 mkdir -p /var/vcap/sys/log/monit
@@ -24,34 +38,66 @@ case "$1" in
     mkdir -p $RUN_DIR
     chown -R vcap:vcap $RUN_DIR
 
-    mkdir -p $DATA_DIR
-    chown -R vcap:vcap $DATA_DIR
+    if [ -d $DATA_DIR -a -f $STORE_DIR/FLAG_POSTGRES_UPGRADE ]; then
+      echo "FAIL: DB upgrade stopped in the middle, manual intervention required, quitting..."
+      exit 1
+    fi
 
     sysctl -w "kernel.shmmax=67108864"
 
     # We cannot kill the following conditional
     # because initdb is very picky about looking at an empty dir
-    if [ ! -f $DATA_DIR/postgresql.conf ]; then
-      su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+    if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then
+      mkdir -p $DATA_DIR
+      chown vcap:vcap $DATA_DIR
+
+      # initdb creates data directories
+      su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
 
       if [ $? != 0 ]; then
         echo "ERROR: Unable to Initialize Postgres DB"
         exit 1
       fi
 
+
       echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
 
       mkdir -p $DATA_DIR/pg_log
+      chown vcap:vcap $DATA_DIR/pg_log
+    fi
+
+    if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
+
+      if [ -d $DATA_DIR_PREVIOUS ]; then
+        rm -rf $DATA_DIR_PREVIOUS
+      fi
+
+      touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
+
+      # Prevent upgrade from overwriting PIDFILE with new process during upgrade
+      touch $PIDFILE
+      chown root:root $PIDFILE
+
+      su - vcap -c "$PACKAGE_DIR/bin/pg_upgrade \
+        --old-datadir $DATA_DIR_OLD \
+        --new-datadir $DATA_DIR \
+        --old-bindir $PACKAGE_DIR_OLD/bin \
+        --new-bindir $PACKAGE_DIR/bin"
+
+      chown vcap:vcap $PIDFILE
+
+      rm -f $STORE_DIR/FLAG_POSTGRES_UPGRADE
+      mv $DATA_DIR_OLD $DATA_DIR_PREVIOUS
     fi
 
     cp $JOB_DIR/config/postgresql.conf $DATA_DIR
-    chown -R vcap:vcap $DATA_DIR/pg_log
+    chown vcap:vcap $DATA_DIR/postgresql.conf
 
-    echo "Starting PostgreSQL 9.0: "
-    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl -o \"-h $HOST -p $PORT\" -w start -D $DATA_DIR -l \"$DATA_DIR/pg_log/startup.log\""
+    echo "Starting PostgreSQL:"
+    su - vcap -c "$PACKAGE_DIR/bin/pg_ctl -o \"-h $HOST -p $PORT\" -w start -D $DATA_DIR -l \"$DATA_DIR/pg_log/startup.log\""
 
     if [ $? == 0 ]; then
-      echo "PostgreSQL 9.0 started successfully"
+      echo "PostgreSQL started successfully"
       head -n 1 $DATA_DIR/postmaster.pid > $PIDFILE
 
       set +e
@@ -60,13 +106,13 @@ case "$1" in
       do
 
         echo "Trying to create database $DBNAME..."
-        su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/createdb $DBNAME -p $PORT"
+        su - vcap -c "$PACKAGE_DIR/bin/createdb $DBNAME -p $PORT"
 
         echo "Trying to create user..."
-        LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "create role \"$USER\" NOSUPERUSER LOGIN INHERIT CREATEDB"
+        $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "create role \"$USER\" NOSUPERUSER LOGIN INHERIT CREATEDB"
 
         echo "Trying to alter user (to change password)..."
-        LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "alter role \"$USER\" with password '$PASSWORD'"
+        $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "alter role \"$USER\" with password '$PASSWORD'"
 
       done
 
@@ -80,15 +126,18 @@ case "$1" in
     ;;
 
   stop)
-    echo "Stopping PostgreSQL 9.0: "
+    echo "Stopping PostgreSQL:"
     PID=$(head -1 $PIDFILE)
-    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR"
+
+    # Stop both old & new versions, checking for existence of PID first
+    su - vcap -c "[ -f $DATA_DIR/postmaster.pid ] && $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR
+      [ -f $DATA_DIR_OLD/postmaster.pid ] && $PACKAGE_DIR_OLD/bin/pg_ctl stop -m fast -w -D $DATA_DIR_OLD"
+
     while [ -e /proc/$PID ]; do sleep 0.1; done
-    rm -f $PIDFILE
-    ;;
+:    ;;
 
   status)
-    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl status -D $DATA_DIR"
+    su - vcap -c "$PACKAGE_DIR/bin/pg_ctl status -D $DATA_DIR"
     ;;
 
   *)

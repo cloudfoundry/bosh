@@ -7,6 +7,7 @@ templates:
 
 packages:
   - postgres
+  - postgres-9.4.5
 
 properties:
   postgres.user:
