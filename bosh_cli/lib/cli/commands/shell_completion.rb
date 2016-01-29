@@ -7,7 +7,7 @@ module Bosh::Cli::Command
     def exec
       say "#"
       say "# Install this script in your shell to auto-complete your BOSH commands."
-      say "# "
+      say "#"
       say "# bash ~4.0: source <( bosh shell-completion )"
       say "# bash ~3.0: bosh shell-completion | source /dev/stdin"
       say "#"
@@ -97,7 +97,7 @@ EOF
   return 0
 }
 
-complete -F _BoshShellCompletion bo bosh -o filenames
+complete -f -F _BoshShellCompletion bo bosh -o filenames
 EOF
     end
   end
