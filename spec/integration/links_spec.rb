@@ -780,13 +780,29 @@ describe 'Links', type: :integration do
           should_contain_network_for_job('my_api', 'api_server', /.b./)
         end
 
-        it 'raise an error if network name specified is not one of the networks on the link' do
+        it 'raises an error if network name specified is not one of the networks on the link' do
           manifest['jobs'].first['templates'].first['consumes'] = {
               'db' => {'from' => 'simple.db', 'network' => 'invalid_network'},
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
           expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Error 130002: Network name 'invalid_network' is not one of the networks on the link 'db'/)
+        end
+
+        it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
+          cloud_config['networks'] << {
+              'name' => 'global_network',
+              'type' => 'dynamic',
+              'subnets' => [{'az' => 'z1'}]
+          }
+
+          manifest['jobs'].first['templates'].first['consumes'] = {
+              'db' => {'from' => 'simple.db', 'network' => 'global_network'},
+              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
+          }
+
+          upload_cloud_config(cloud_config_hash: cloud_config)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Error 130002: Network name 'global_network' is not one of the networks on the link 'db'/)
         end
       end
 
