@@ -245,7 +245,7 @@ Can't use release 'test_release/1'. It references packages without source code a
       end
 
       out = bosh_runner.run("export release test_release/1 toronto-os/1")
-      task_id = out[/\d+/].to_i
+      task_id = out.match(/Director task (\d+)/)[1].to_i
 
       result_file = File.open(current_sandbox.sandbox_path("boshdir/tasks/#{task_id}/result"), "r")
       tarball_data = Yajl::Parser.parse(result_file.read)
