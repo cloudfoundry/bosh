@@ -80,6 +80,8 @@ module Bosh::Director
 
       attr_reader :link_paths
 
+      attr_accessor :did_change
+
       def self.parse(plan, job_spec, event_log, logger)
         parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)
@@ -106,6 +108,8 @@ module Bosh::Director
         @availability_zones = []
 
         @instance_plans = []
+
+        @did_change = false
       end
 
       def self.is_legacy_spec?(job_spec)
