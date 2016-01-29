@@ -33,8 +33,11 @@ describe Bosh::Director::JobUpdater do
 
   describe 'update' do
     let(:needed_instance_plans) { [] }
-    before { allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans) }
-    before { allow(links_resolver).to receive(:resolve) }
+    before {
+      allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans)
+      allow(job).to receive(:did_change=)
+    }
+    before {allow(links_resolver).to receive(:resolve)}
 
     let(:update_error) { RuntimeError.new('update failed') }
 

@@ -102,8 +102,7 @@ module Bosh::Director::Jobs
 
           it 'will run post-deploy scripts' do
             allow(planner).to receive(:jobs).and_return([deployment_job])
-            allow(deployment_job).to receive(:needed_instance_plans).and_return([instance_plan, instance_plan, instance_plan])
-            allow(instance_plan).to receive(:changed?).and_return(true)
+            allow(deployment_job).to receive(:did_change).and_return(true)
 
             expect(job).to receive(:run_post_deploys)
 

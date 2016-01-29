@@ -93,7 +93,7 @@ module Bosh::Director
 
       def run_post_deploys(deployment_plan)
         deployment_plan.jobs.each do |job|
-          job.instances.each do |instance|
+          job.instances.select{|instance| instance.model[:vm_cid] != nil}.each do |instance|
             instance.agent_client.run_script('post_deploy', {})
           end
         end
