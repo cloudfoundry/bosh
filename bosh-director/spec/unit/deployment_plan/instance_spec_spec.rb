@@ -17,7 +17,7 @@ module Bosh::Director::DeploymentPlan
         spec: job_spec,
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {},
+        default_network: {"gateway" => "default"},
         vm_type: vm_type,
         stemcell: stemcell,
         env: env,
@@ -54,10 +54,6 @@ module Bosh::Director::DeploymentPlan
       instance.bind_existing_instance_model(instance_model)
     end
 
-    it 'handles un-initialized job default_networks without exceptions' do
-      expect(instance_spec).to be(instance_spec)
-    end
-
     describe '#apply_spec' do
       it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
@@ -70,6 +66,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['networks'][network_name]).to eq({
             'type' => 'dynamic',
             'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
+            'default' => ['gateway']
             })
 
         expect(spec['packages']).to eq(packages)
@@ -103,25 +100,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#template_spec' do
-      # job used in template spec should have a default network for gateway
-      let(:job) {
-        job = instance_double('Bosh::Director::DeploymentPlan::Job',
-          name: 'fake-job',
-          spec: job_spec,
-          canonical_name: 'job',
-          instances: ['instance0'],
-          default_network: {"gateway" => "default"},
-          vm_type: vm_type,
-          stemcell: stemcell,
-          env: env,
-          package_spec: packages,
-          persistent_disk_type: disk_pool,
-          can_run_as_errand?: false,
-          link_spec: 'fake-link',
-          compilation?: false,
-          properties: properties)
-      }
-
       context 'when job has a manual network' do
         let(:subnet_spec) do
           {

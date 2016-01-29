@@ -49,8 +49,7 @@ module Bosh::Director
       else
         if obj.respond_to?(:each)
           obj.each{ |a|
-            if obj.respond_to?(:key?) && REDACT_KEY_NAMES.any? { |key| puts "a is #{a}. is #{key} == #{a.first}?"
-            key == a.first } && a.last.respond_to?(:key?)
+            if obj.respond_to?(:key?) && REDACT_KEY_NAMES.any? { |key| key == a.first } && a.last.respond_to?(:key?)
               redact_properties!(a.last, true)
             else
               redact_properties!(a.respond_to?(:last) ? a.last : a)

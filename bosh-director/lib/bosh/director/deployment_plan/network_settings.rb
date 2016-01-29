@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
           @state['networks'][network_name].is_a?(Hash) &&
           network_settings[network_name]['type'] == 'dynamic'
           %w(ip netmask gateway).each do |key|
-            network_settings[network_name][key] = @state['networks'][network_name][key]
+            network_settings[network_name][key] = @state['networks'][network_name][key] unless @state['networks'][network_name][key].nil?
           end
         end
       end
@@ -52,11 +52,6 @@ module Bosh::Director::DeploymentPlan
     def network_address(preferred_network_name = nil)
       network_name = preferred_network_name || @default_network['gateway']
       network_hash = to_hash
-
-      # default network is not always set so we check here to avoid nil reference exception
-      if !network_name
-        return nil
-      end
 
       if network_hash[network_name]['type'] == 'dynamic'
         address = @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
