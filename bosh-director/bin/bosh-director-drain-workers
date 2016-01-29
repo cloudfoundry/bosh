@@ -22,6 +22,7 @@ config = Bosh::Director::Config.load_file(config_file)
 
 Bosh::Director::App.new(config)
 
+config.db
 Delayed::Worker.logger = config.worker_logger
 logger = Bosh::Director::Config.logger
 
