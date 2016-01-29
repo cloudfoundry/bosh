@@ -2,9 +2,9 @@ module Bosh::Monitor
   module Events
     class Heartbeat < Base
 
-      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router routerv2 stager uaa))
+      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router routerv2 stager uaa vcap_redis))
 
-      SERVICE_JOBS_PREFIXES = %w(mysql mongodb rabbit postgresql vblob).join("|")
+      SERVICE_JOBS_PREFIXES = %w(mysql mongodb redis rabbit postgresql vblob).join("|")
       SERVICE_JOBS_GATEWAY_REGEX = /(#{SERVICE_JOBS_PREFIXES})_gateway$/i
       SERVICE_JOBS_NODE_REGEX = /(#{SERVICE_JOBS_PREFIXES})_node(.*)/i
 

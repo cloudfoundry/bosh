@@ -18,9 +18,9 @@ module Bosh::Director
       allow(deployment_manager).to receive(:find_by_name).and_return(deployment)
     end
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :snapshot_deployment }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     describe '#perform' do

@@ -260,6 +260,7 @@ module Bosh
         properties["blobstore"]["address"] = ip
         properties["postgres"]["address"] = ip
         properties["director"]["address"] = ip
+        properties["redis"]["address"] = ip
         properties["nats"]["address"] = ip
         @spec["properties"] = properties
       end

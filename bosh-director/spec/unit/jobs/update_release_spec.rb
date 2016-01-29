@@ -7,9 +7,9 @@ module Bosh::Director
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :update_release }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     describe 'Compiled release upload' do
