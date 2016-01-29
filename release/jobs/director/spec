@@ -195,7 +195,6 @@ properties:
     default: 'dav'
   blobstore.s3_region:
     description: Region of the blobstore used by s3 blobstore plugin
-    default: 'us-east-1'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.credentials_source:
