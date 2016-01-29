@@ -14,6 +14,7 @@ module Bosh::Dev::Sandbox
 
     def initialize(options, logger)
       @database = options[:database]
+      @redis_port = options[:redis_port]
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
@@ -30,8 +31,8 @@ module Bosh::Dev::Sandbox
 
       @worker_processes = 3.times.map do |index|
         Service.new(
-          %W[bosh-director-worker -c #{@director_config} -i #{index}],
-          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal'}},
+          %W[bosh-director-worker -c #{@director_config}],
+          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
           @logger,
         )
       end
@@ -71,6 +72,11 @@ module Bosh::Dev::Sandbox
       @process.stop
     end
 
+    def resque_is_done?
+      info = Resque.info
+      info[:pending] == 0 && info[:working] == 0
+    end
+
     def print_current_tasks
       @database.current_tasks.each do |current_task|
         @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
@@ -80,28 +86,26 @@ module Bosh::Dev::Sandbox
     end
 
     def wait_for_tasks_to_finish
-      @logger.debug('Waiting for Delayed Job queue to drain...')
+      @logger.debug('Waiting for Resque queue to drain...')
       attempt = 0
       delay = 0.1
       timeout = 60
       max_attempts = timeout/delay
 
-      until delayed_job_done?
+      until resque_is_done?
         if attempt > max_attempts
-          @logger.error("Delayed Job queue failed to drain in #{timeout} seconds}")
-          @database.current_tasks.each do |current_task|
-            @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
-            @logger.error(File.read(File.join(current_task[:output], 'debug')))
-            @logger.error("#{DEBUG_HEADER} End of task '#{current_task[:description]}' #{DEBUG_HEADER}:")
-          end
+          @logger.error("Resque queue failed to drain in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
+          print_current_tasks
 
-          raise "Delayed Job queue failed to drain in #{timeout} seconds"
+          raise "Resque queue failed to drain in #{timeout} seconds"
         end
 
         attempt += 1
         sleep delay
       end
-      @logger.debug('Delayed Job queue drained')
+      @logger.debug('Resque queue drained')
+
+      Redis.new(host: 'localhost', port: @redis_port).flushdb
     end
 
     def db_config
@@ -118,14 +122,6 @@ module Bosh::Dev::Sandbox
       @database_migrated = true
     end
 
-    def delayed_job_ready?
-      started = true
-      @worker_processes.each do |worker|
-        started = started && worker.stdout_contents.include?('Starting job worker')
-      end
-      started
-    end
-
     def start_workers
       @worker_processes.each(&:start)
       attempt = 0
@@ -133,10 +129,10 @@ module Bosh::Dev::Sandbox
       timeout = 60 * 5
       max_attempts = timeout/delay
 
-      until delayed_job_ready?
+      until resque_is_ready?
         if attempt > max_attempts
-          @logger.error("Delayed Job queue failed to start in #{timeout} seconds.")
-          raise "Delayed Job failed to start workers in #{timeout} seconds"
+          @logger.error("Resque queue failed to start in #{timeout} seconds. Resque.info: #{Resque.info.pretty_inspect}")
+          raise "Resque failed to start workers in #{timeout} seconds"
         end
 
         attempt += 1
@@ -147,7 +143,6 @@ module Bosh::Dev::Sandbox
     end
 
     def stop_workers
-      # wait for workers in parallel for fastness
       stop_monitor_workers
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
     end
@@ -191,8 +186,9 @@ module Bosh::Dev::Sandbox
       end
     end
 
-    def delayed_job_done?
-      @database.current_locked_jobs.count == 0
+    def resque_is_ready?
+      info = Resque.info
+      info[:workers] == @worker_processes.size
     end
 
     DEBUG_HEADER = '*' * 20

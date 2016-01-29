@@ -3,16 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::DeleteStemcell do
     describe 'perform' do
-      let(:blobstore) { double('Blobstore') }
-
-      before do
-        @cloud = instance_double('Bosh::Cloud')
-        allow(Config).to receive(:cloud).and_return(@cloud)
-      end
-
-      describe 'DJ job class expectations' do
+      describe 'Resque job class expectations' do
         let(:job_type) { :delete_stemcell }
-        it_behaves_like 'a DJ job'
+        it_behaves_like 'a Resque job'
       end
 
       it 'should fail for unknown stemcells' do

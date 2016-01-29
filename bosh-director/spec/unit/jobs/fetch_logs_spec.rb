@@ -14,9 +14,9 @@ module Bosh::Director
       })
     end
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :fetch_logs }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     describe '#perform' do

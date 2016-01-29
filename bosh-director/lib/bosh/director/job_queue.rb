@@ -2,15 +2,13 @@ require 'bosh/director/api/task_helper'
 
 module Bosh::Director
 
-  # Abstracts the delayed jobs system.
+  # Abstracts the resque system.
 
   class JobQueue
     def enqueue(username, job_class, description, params)
       task = Api::TaskHelper.new.create_task(username, job_class.job_type, description)
 
-      Delayed::Worker.backend = :sequel
-      db_job = Bosh::Director::Jobs::DBJob.new(job_class, task.id, params)
-      Delayed::Job.enqueue db_job
+      Resque.enqueue(job_class, task.id, *params)
 
       task
     end

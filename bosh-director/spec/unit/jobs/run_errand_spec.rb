@@ -13,9 +13,9 @@ module Bosh::Director
       manifest_hash
     end
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :run_errand }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     describe '#perform' do
