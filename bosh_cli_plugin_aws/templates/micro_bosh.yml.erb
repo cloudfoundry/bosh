@@ -74,6 +74,8 @@ apply_spec:
     <% end %>
     director:
       enable_snapshots: true
+      debug:
+        keep_unreachable_vms: <%= keep_unreachable_vms %>
       ssl:
         key: |
           <%= director_ssl_key %>

@@ -2,7 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
-    let(:event_log) { Bosh::Director::Config.event_log }
+    let(:redis) { double('Redis').as_null_object }
+    before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
+    let(:logger) { Logging::Logger.new('TestLogger') }
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)

@@ -27,16 +27,27 @@ Rebuild the container with the `build` script...
 
     vagrant$ ./build
 
-After building and testing, push a new image to Docker Hub with `push`...
-
-    vagrant$ ./push
-
 
 ## Testing OS Image changes
 
 You can use `run` to start a container which has mounted your project to `/opt/bosh`...
 
     vagrant$ ./run
-    container$ cd /opt/bosh
     container$ bundle install --local
     container$ bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/os-image.tgz]
+
+
+## Testing Stemcell changes
+
+You can use `run` to start a container which has mounted your project to `/opt/bosh`...
+
+    vagrant$ ./run
+    container$ bundle install --local
+    container$ bundle exec rake stemcell:build[aws,hvm,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
+
+
+## Docker Hub
+
+After building and testing a new container image, push it to Docker Hub with `push`...
+
+    vagrant$ ./push

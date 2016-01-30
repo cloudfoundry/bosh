@@ -94,7 +94,7 @@ No changes
     context 'when using a new director' do
       let(:diff_json) do
         {
-          'update_config' => {'cloud_config_id' => 47},
+          'context' => {'cloud_config_id' => 47},
           'diff' => [
             ['resource_pools:', nil],
             ['- name: a', nil],

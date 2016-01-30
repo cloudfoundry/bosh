@@ -36,7 +36,7 @@ unshare -m $SHELL <<INSTALL_YUM
 
   mkdir -p /etc/pki
   mount --no-mtab --bind $chroot/etc/pki /etc/pki
-  yum --installroot=$chroot -c /bosh/stemcell_builder/etc/custom_rhel_yum.conf --assumeyes install yum
+  yum --installroot=$chroot -c $base_dir/etc/custom_rhel_yum.conf --assumeyes install yum
 INSTALL_YUM
 
 if [ ! -d $chroot/mnt/rhel/Packages ]; then
@@ -52,7 +52,7 @@ rpm --rebuilddb
 "
 
 if [ ! -f $chroot/custom_rhel_yum.conf ]; then
-  cp /bosh/stemcell_builder/etc/custom_rhel_yum.conf $chroot/
+  cp $base_dir/etc/custom_rhel_yum.conf $chroot/
 fi
 run_in_chroot $chroot "yum -c /custom_rhel_yum.conf update --assumeyes"
 run_in_chroot $chroot "yum -c /custom_rhel_yum.conf --verbose --assumeyes groupinstall Base"

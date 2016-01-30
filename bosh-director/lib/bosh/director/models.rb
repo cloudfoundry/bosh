@@ -22,8 +22,6 @@ require 'bosh/director/models/template'
 require 'bosh/director/models/user'
 require 'bosh/director/models/persistent_disk'
 require 'bosh/director/models/rendered_templates_archive'
-require 'bosh/director/models/lock'
-require 'delayed_job_sequel'
 
 module Bosh::Director
   module Models

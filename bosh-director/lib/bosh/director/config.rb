@@ -38,6 +38,7 @@ module Bosh::Director
 
       attr_reader(
         :db_config,
+        :redis_logger_level,
         :ignore_missing_gateway
       )
 
@@ -90,6 +91,13 @@ module Bosh::Director
         @logger.add_appenders(shared_appender)
         @logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
 
+        # use a separate logger with the same appender to avoid multiple file writers
+        redis_logger = Logging::Logger.new('DirectorRedis')
+        redis_logger.add_appenders(shared_appender)
+        logging_config = config.fetch('redis', {}).fetch('logging', {})
+        @redis_logger_level = Logging.levelify(logging_config.fetch('level', 'info'))
+        redis_logger.level = @redis_logger_level
+
         # Event logger supposed to be overridden per task,
         # the default one does nothing
         @event_log = EventLog::Log.new
@@ -98,6 +106,13 @@ module Bosh::Director
         @max_tasks = config.fetch('max_tasks', 100).to_i
 
         @max_threads = config.fetch('max_threads', 32).to_i
+
+        self.redis_options = {
+          :host     => config['redis']['host'],
+          :port     => config['redis']['port'],
+          :password => config['redis']['password'],
+          :logger   => redis_logger
+        }
 
         @revision = get_revision
 
@@ -233,6 +248,18 @@ module Bosh::Director
 
       alias_method :task_checkpoint, :job_cancelled?
 
+      def redis_options
+        @redis_options ||= {}
+      end
+
+      def redis_logger_level
+        @redis_logger_level || Logger::INFO
+      end
+
+      def redis_options=(options)
+        @redis_options = options
+      end
+
       def cloud_options=(options)
         @lock.synchronize do
           @cloud_options = options
@@ -250,6 +277,22 @@ module Bosh::Director
           end
         end
         @nats_rpc
+      end
+
+      def redis
+        threaded[:redis] ||= Redis.new(redis_options)
+      end
+
+      def redis_logger=(logger)
+        if redis?
+          redis.client.logger = logger
+        else
+          redis_options[:logger] = logger
+        end
+      end
+
+      def redis?
+        !threaded[:redis].nil?
       end
 
       def encryption?
@@ -391,21 +434,16 @@ module Bosh::Director
       end
     end
 
-    def worker_logger
+    def resque_logger
       logger = Logging::Logger.new('DirectorWorker')
-      logging_config = hash.fetch('logging', {})
-      worker_logging = hash.fetch('delayed_job', {}).fetch('logging', {})
-      if worker_logging.has_key?('file')
-        logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: worker_logging.fetch('file'), layout: ThreadFormatter.layout))
+      resque_logging = hash.fetch('resque', {}).fetch('logging', {})
+      if resque_logging.has_key?('file')
+        logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: resque_logging.fetch('file'), layout: ThreadFormatter.layout))
       else
         logger.add_appenders(Logging.appenders.stdout('DirectorWorkerIO', layout: ThreadFormatter.layout))
       end
-      logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+      logger.level = Logging.levelify(resque_logging.fetch('level', 'info'))
       logger
-    end
-
-    def db
-      Config.configure_db(hash['db'])
     end
 
     def blobstore_config

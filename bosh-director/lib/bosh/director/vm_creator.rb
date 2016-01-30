@@ -96,7 +96,7 @@ module Bosh::Director
     def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
       agent_id = self.class.generate_agent_id
       env = Bosh::Common::DeepCopy.copy(env)
-      options = {:agent_id => agent_id, :vm_env => env }
+      options = { :agent_id => agent_id }
 
       if Config.encryption?
         credentials = generate_agent_credentials

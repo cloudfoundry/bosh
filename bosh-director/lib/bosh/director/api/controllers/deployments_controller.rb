@@ -267,10 +267,10 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
-        if params['update_config']
-          @logger.debug("Deploying with update config #{params['update_config']}")
-          update_config = JSON.parse(params['update_config'])
-          cloud_config = Api::CloudConfigManager.new.find_by_id(update_config['cloud_config_id'])
+        if params['context']
+          @logger.debug("Deploying with context #{params['context']}")
+          context = JSON.parse(params['context'])
+          cloud_config = Api::CloudConfigManager.new.find_by_id(context['cloud_config_id'])
         else
           cloud_config =Api::CloudConfigManager.new.latest
         end
@@ -298,7 +298,7 @@ module Bosh::Director
         diff = before_manifest.diff(after_manifest)
 
         json_encode({
-          'update_config' => {
+          'context' => {
             'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
           },
           'diff' => diff.map { |l| [l.to_s, l.status] }

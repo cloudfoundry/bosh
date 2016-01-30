@@ -29,7 +29,7 @@ module Bosh::Cli
 
     describe '#change' do
       it 'blows up if there are manifest changes' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           true
         end
 
@@ -41,7 +41,7 @@ module Bosh::Cli
       end
 
       it 'cancels the deploy if the user doesnt confirm' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           false
         end
         allow(command).to receive_messages(confirmed?: false)
@@ -54,7 +54,7 @@ module Bosh::Cli
       end
 
       it 'changes the job state when the user confirms (or its non-interactive) and there arent any manifest changes' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           false
         end
         allow(command).to receive(:confirmed?) { true }
@@ -68,7 +68,7 @@ module Bosh::Cli
       context 'when run forcefully' do
         let(:force) { true }
         it 'does not blow up when changes are present' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+          allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
             true
           end
           allow(command).to receive_messages(confirmed?: true)

@@ -122,6 +122,11 @@ module Bosh::Spec
           'name' => 'ubuntu-stemcell',
           'version' => '1',
         },
+        'env' => {
+          'bosh' => {
+            'password' => 'foobar'
+          }
+        }
       }
     end
 

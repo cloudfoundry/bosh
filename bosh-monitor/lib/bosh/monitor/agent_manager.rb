@@ -124,10 +124,9 @@ module Bosh::Monitor
         return false
       end
 
-      @logger.info("Adding agent #{vm_data["agent_id"]} (#{vm_data["job"]}/#{vm_data["index"]}) to #{deployment_name}...")
+      @logger.info("Adding agent #{vm_data['agent_id']} (#{vm_data['job']}/#{vm_data['index']}) to #{deployment_name}...")
 
-      agent_id = vm_data["agent_id"]
-      agent_cid = vm_data["cid"]
+      agent_id = vm_data['agent_id']
 
       if agent_id.nil?
         @logger.warn("No agent id for VM: #{vm_data}")
@@ -135,7 +134,7 @@ module Bosh::Monitor
       end
 
       # Idle VMs, we don't care about them, but we still want to track them
-      if vm_data["job"].nil?
+      if vm_data['job'].nil?
         @logger.debug("VM with no job found: #{agent_id}")
       end
 
@@ -148,9 +147,10 @@ module Bosh::Monitor
       end
 
       agent.deployment = deployment_name
-      agent.job = vm_data["job"]
-      agent.index = vm_data["index"]
-      agent.cid = vm_data["cid"]
+      agent.job = vm_data['job']
+      agent.index = vm_data['index']
+      agent.cid = vm_data['cid']
+      agent.instance_id = vm_data['id']
 
       @deployments[deployment_name] ||= Set.new
       @deployments[deployment_name] << agent_id
@@ -209,7 +209,7 @@ module Bosh::Monitor
           created_at: ts,
           deployment: agent.deployment,
           job: agent.job,
-          index: agent.index)
+          instance_id: agent.instance_id)
       end
 
       if agent.rogue?

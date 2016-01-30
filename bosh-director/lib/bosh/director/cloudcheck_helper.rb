@@ -38,22 +38,15 @@ module Bosh::Director
       instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
     end
 
-    def recreate_vm(instance)
-      @logger.debug("Recreating Vm: #{@instance})")
-      existing_vm_env = instance.vm_env
+    def recreate_vm(instance_model)
+      @logger.debug("Recreating Vm: #{instance_model})")
+      existing_vm_env = instance_model.vm_env
 
-      validate_spec(instance.spec)
-      validate_env(instance.vm_env)
-
-      instance_plan_to_delete = DeploymentPlan::InstancePlan.new(
-        existing_instance: instance,
-        instance: nil,
-        desired_instance: nil,
-        network_plans: []
-      )
+      validate_spec(instance_model.spec)
+      validate_env(instance_model.vm_env)
 
       begin
-        vm_deleter.delete_for_instance(instance_plan_to_delete.existing_instance)
+        vm_deleter.delete_for_instance(instance_model)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
@@ -61,32 +54,32 @@ module Bosh::Director
         # to ignore "VM not found" errors in `delete_vm' and let the method
         # proceed creating a new VM. Other errors are not forgiven.
 
-        @logger.warn("VM '#{instance.vm_cid}' might have already been deleted from the cloud")
+        @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
       end
 
-      instance_plan_to_create = create_instance_plan(instance, existing_vm_env)
+      instance_plan_to_create = create_instance_plan(instance_model, existing_vm_env)
 
       vm_creator.create_for_instance_plan(
         instance_plan_to_create,
-        Array(instance.persistent_disk_cid)
+        Array(instance_model.persistent_disk_cid)
       )
 
       dns_manager = DnsManagerProvider.create
       dns_names_to_ip = {}
 
       instance_plan_to_create.existing_instance.spec['networks'].each do |network_name, network|
-        index_dns_name = dns_manager.dns_record_name(instance.index, instance.job, network_name, instance.deployment.name)
+        index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[index_dns_name] = network['ip']
-        id_dns_name = dns_manager.dns_record_name(instance.uuid, instance.job, network_name, instance.deployment.name)
+        id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[id_dns_name] = network['ip']
       end
 
-      @logger.debug("Updating DNS record for instance: #{instance.inspect}; to: #{dns_names_to_ip.inspect}")
-      dns_manager.update_dns_record_for_instance(instance, dns_names_to_ip)
+      @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
+      dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
       dns_manager.flush_dns_cache
 
-      cleaner = RenderedJobTemplatesCleaner.new(instance, App.instance.blobstores.blobstore, @logger)
-      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance.credentials, instance.agent_id), cleaner, @logger).apply
+      cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
+      InstanceUpdater::StateApplier.new(instance_plan_to_create, agent_client(instance_model.credentials, instance_model.agent_id), cleaner, @logger).apply
     end
 
     private

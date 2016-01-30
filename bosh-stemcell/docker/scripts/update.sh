@@ -37,7 +37,7 @@ apt-get -y install curl
 
 # sometimes the cached lists seem to get out of date around here
 # http://askubuntu.com/questions/41605/trouble-downloading-packages-list-due-to-a-hash-sum-mismatch-error/160179
-sudo rm -rf /var/lib/apt/lists/*
+rm -rf /var/lib/apt/lists/*
 
 apt-get -y update --fix-missing
 apt-get -y install git
@@ -68,6 +68,9 @@ apt-get -y install qemu-utils
 
 # CentOS building requirements
 apt-get -y install yum
+
+# needed by stemcell building
+apt-get -y install parted
 
 
 

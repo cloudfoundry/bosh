@@ -21,7 +21,7 @@ fi
 unshare -m $SHELL <<INSTALL_YUM
   set -x
   mkdir -p /etc/pki
-  yum --installroot=$chroot -c /bosh/stemcell_builder/etc/custom_photonos_yum.conf --assumeyes install yum
+  yum --installroot=$chroot -c $base_dir/etc/custom_photonos_yum.conf --assumeyes install yum
 INSTALL_YUM
 
 if [ ! -d $chroot/mnt/photonos ]; then
@@ -34,7 +34,7 @@ cp /etc/resolv.conf $chroot/etc/resolv.conf
 dd if=/dev/urandom of=$chroot/var/lib/random-seed bs=512 count=1
 
 if [ ! -f $chroot/custom_rhel_yum.conf ]; then
-  cp /bosh/stemcell_builder/etc/custom_photonos_yum.conf $chroot/
+  cp $base_dir/etc/custom_photonos_yum.conf $chroot/
 fi
 
 

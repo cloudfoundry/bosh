@@ -5,9 +5,9 @@ module Bosh::Director
     let(:snapshot_manager) { instance_double('Bosh::Director::Api::SnapshotManager') }
     subject { described_class.new(snapshot_manager: snapshot_manager) }
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :snapshot_deployments }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     describe '#perform' do

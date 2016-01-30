@@ -9,6 +9,19 @@ module Bosh::Cli
     def normalize
       normalized = Bosh::Common::DeepCopy.copy(manifest_hash)
 
+      # for backwards compatibility, new directors always convert stemcell and release versions to string
+      if normalized['resource_pools']
+        normalized['resource_pools'].each do |rp|
+          rp['stemcell']['version'] = rp['stemcell']['version'].to_s
+        end
+      end
+
+      if normalized['releases']
+        normalized['releases'].each do |release|
+          release['version'] = release['version'].to_s
+        end
+      end
+
       %w(releases networks jobs resource_pools disk_pools).each do |section|
         normalized[section] ||= []
 

@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  << 'agent_client'
 
-  spec.add_dependency 'httpclient', '=2.4.0'
+  spec.add_dependency 'httpclient', '=2.7.1'
   spec.add_dependency 'yajl-ruby', '~>1.2.0'
 
   spec.add_development_dependency 'rspec', '~> 3.0'

@@ -4,21 +4,17 @@ require 'fakefs/spec_helpers'
 module Bosh::Director
   describe Jobs::Ssh do
     include FakeFS::SpecHelpers
-
     subject(:job) { described_class.new(deployment.id, {'target' => target, 'command' => 'fake-command', 'params' => {}, :blobstore => {}}) }
-
-    let(:deployment) { Models::Deployment.make }
-    let(:target) { {'job' => 'fake-job', 'indexes' => [1]} }
-    let (:agent) { double(AgentClient)}
+    let(:agent) { double(AgentClient) }
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
-    let (:instance) { instance_double(Models::Instance)}
-    let(:result_file_path) { 'ssh-spec' }
+    let(:deployment) { Models::Deployment.make }
     let(:result_file) { TaskResultFile.new(result_file_path) }
-
-    describe 'DJ job class expectations' do
+    let(:target) { {'job' => 'fake-job', 'indexes' => [1]} }
+    let(:result_file_path) { 'ssh-spec' }
+    describe 'Resque job class expectations' do
       let(:job_type) { :ssh }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     before do

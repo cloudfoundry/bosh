@@ -12,9 +12,9 @@ describe Bosh::Director::Jobs::SnapshotSelf do
                         enable_snapshots: enable_snapshots)
   end
 
-  describe 'DJ job class expectations' do
+  describe 'Resque job class expectations' do
     let(:job_type) { :snapshot_self }
-    it_behaves_like 'a DJ job'
+    it_behaves_like 'a Resque job'
   end
 
   describe '#perform' do

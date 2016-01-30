@@ -25,8 +25,6 @@ gem 'rake', '~>10.0'
 # when modified needs to be updated there as well
 gem 'json', '=1.8.3'
 
-gem 'talentbox-delayed_job_sequel', '~> 4.1'
-
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
@@ -74,6 +72,7 @@ group :development, :test do
 
   # for root level specs
   gem 'rest-client'
+  gem 'redis'
   gem 'nats'
   gem 'rugged'
 

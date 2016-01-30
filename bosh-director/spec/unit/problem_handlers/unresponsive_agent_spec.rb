@@ -115,7 +115,8 @@ module Bosh::Director
             'networks' => networks,
             'template_hashes' => {},
             'configuration_hash' => {'configuration' => 'hash'},
-            'rendered_templates_archive' => {'some' => 'template'}
+            'rendered_templates_archive' => {'some' => 'template'},
+            'env' => { 'key1' => 'value1' }
           }
         end
         let(:agent_spec) do
@@ -134,7 +135,6 @@ module Bosh::Director
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @instance.update(spec: spec)
-          @instance.update(vm_env: { 'key1' => 'value1' })
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222', anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')

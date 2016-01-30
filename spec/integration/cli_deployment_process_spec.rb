@@ -103,6 +103,9 @@ describe 'cli: deployment process', type: :integration do
     cloud_properties:
 +     name: new_property
 +     size: large
+-   env:
+-     bosh:
+-       password: <redacted>
   jobs:
 + - name: new_job
 +   templates:

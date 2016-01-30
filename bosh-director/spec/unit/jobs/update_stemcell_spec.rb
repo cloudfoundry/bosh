@@ -2,9 +2,9 @@ require 'spec_helper'
 require 'net/http'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
-  describe 'DJ job class expectations' do
+  describe 'Resque job class expectations' do
     let(:job_type) { :update_stemcell }
-    it_behaves_like 'a DJ job'
+    it_behaves_like 'a Resque job'
   end
 
   describe '#perform' do

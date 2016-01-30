@@ -12,7 +12,7 @@ module Bosh::Director
     end
 
     describe '#fetch_vm_state' do
-      it 'enqueues a DJ job' do
+      it 'enqueues a resque job' do
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
