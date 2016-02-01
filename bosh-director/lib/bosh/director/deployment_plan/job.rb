@@ -173,7 +173,8 @@ module Bosh::Director
             "template" => first_template.name,
             "version" => first_template.version,
             "sha1" => first_template.sha1,
-            "blobstore_id" => first_template.blobstore_id
+            "blobstore_id" => first_template.blobstore_id,
+            "template_specific_properties" => first_template.deployment_manifest_template_properties
           }
           if first_template.logs
             result["logs"] = first_template.logs
@@ -185,7 +186,8 @@ module Bosh::Director
               "name" => template.name,
               "version" => template.version,
               "sha1" => template.sha1,
-              "blobstore_id" => template.blobstore_id
+              "blobstore_id" => template.blobstore_id,
+              "template_specific_properties" => template.deployment_manifest_template_properties
             }
             if template.logs
               template_entry["logs"] = template.logs
@@ -341,8 +343,17 @@ module Bosh::Director
         result = {}
 
         @templates.each do |template|
-          template.properties.each_pair do |name, definition|
-            copy_property(result, collection, name, definition["default"])
+          # If a template has properties that were defined in the deployment manifest
+          # for that template only, then we need to bind only these properties, and not
+          # make them available to other templates in the same deployment job. That can
+          # be done by checking @deployment_manifest_template_properties variable of each
+          # template
+          if template.has_local_properties
+            template.bind_local_properties
+          else
+            template.properties.each_pair do |name, definition|
+              copy_property(result, collection, name, definition["default"])
+            end
           end
         end
 

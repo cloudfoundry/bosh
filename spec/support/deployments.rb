@@ -491,6 +491,7 @@ module Bosh::Spec
           'resource_pool' => 'a',
           'instances'     => options.fetch(:instances, 3),
           'networks'      => [{ 'name' => 'a' }],
+          'properties'    => options.fetch(:properties, {}),
       }
     end
 
