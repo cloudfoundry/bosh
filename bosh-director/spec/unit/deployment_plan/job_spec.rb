@@ -58,15 +58,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
     allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
-
-    allow(foo_template).to receive(:deployment_manifest_template_properties)
-    allow(bar_template).to receive(:deployment_manifest_template_properties)
-
-    allow(foo_template).to receive(:add_deployment_manifest_template_properties)
-    allow(bar_template).to receive(:add_deployment_manifest_template_properties)
-
-    allow(foo_template).to receive(:has_local_properties).and_return(false)
-    allow(bar_template).to receive(:has_local_properties).and_return(false)
   end
 
   describe '#bind_properties' do
@@ -101,7 +92,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
-    context 'when all the job specs (aka templates) specify properties' do
+    context 'when all the templates specify properties' do
       it 'should drop deployment manifest properties not specified in the job spec properties' do
         job.bind_properties
         expect(job.properties).to_not have_key('cc')
@@ -143,18 +134,6 @@ describe Bosh::Director::DeploymentPlan::Job do
           ' between its job spec templates.  This may occur if colocating jobs, one of which has a spec file' +
           " including `properties' and one which doesn't."
         )
-      end
-    end
-
-    context 'when the deployment manifest specifies properties for templates' do
-      before do
-        allow(foo_template).to receive(:has_local_properties).and_return(true)
-      end
-
-      it 'only bond the local properties ' do
-        expect(foo_template).to receive(:bind_local_properties)
-        job.bind_properties
-        expect(job.properties).to eq({"dea_max_memory"=>1024})
       end
     end
   end
@@ -356,7 +335,6 @@ describe Bosh::Director::DeploymentPlan::Job do
                 'version' => '200',
                 'sha1' => 'fake_sha1',
                 'blobstore_id' => 'blobstore_id_for_foo_template',
-                'template_specific_properties' => nil,
                 'logs' => {
                   'filter_name1' => 'foo/*',
                 },
@@ -366,7 +344,6 @@ describe Bosh::Director::DeploymentPlan::Job do
             'version' => '200',
             'sha1' => 'fake_sha1',
             'blobstore_id' => 'blobstore_id_for_foo_template',
-            'template_specific_properties' => nil,
             'logs' => {
               'filter_name1' => 'foo/*',
             }
@@ -390,14 +367,12 @@ describe Bosh::Director::DeploymentPlan::Job do
                 'version' => '200',
                 'sha1' => 'fake_sha1',
                 'blobstore_id' => 'blobstore_id_for_foo_template',
-                'template_specific_properties' => nil,
               },
             ],
             'template' => 'foo',
             'version' => '200',
             'sha1' => 'fake_sha1',
             'blobstore_id' => 'blobstore_id_for_foo_template',
-            'template_specific_properties' => nil
           },
         )
       end

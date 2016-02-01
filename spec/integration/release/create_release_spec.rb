@@ -136,8 +136,6 @@ describe 'create release', type: :integration do
               job_desc('job_with_blocking_compilation'),
               job_desc('job_1_with_pre_start_script'),
               job_desc('job_2_with_pre_start_script'),
-              job_desc('job_1_with_many_properties'),
-              job_desc('job_2_with_many_properties'),
               job_desc('job_with_post_start_script'),
               job_desc('transitive_deps'),
               job_desc('id_job')
