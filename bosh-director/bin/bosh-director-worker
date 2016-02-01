@@ -7,31 +7,6 @@ config_file = nil
 index = nil
 erb = false
 
-class JobNamePlugin < Delayed::Plugin
-
-  callbacks do |lifecycle|
-    lifecycle.before(:perform) do |worker, job|
-      job_say(worker, job, "RUNNING INSIDE")
-    end
-  end
-
-  def self.job_say(worker, job, text)
-    real_job = YAML.load_dj(job.handler)
-    text = "Job #{real_job.job_class} (task=#{real_job.task_id}) #{text}"
-    say text, worker
-  end
-
-  def self.say(text, worker)
-    text = "[Worker(#{worker.name})] #{text}"
-    return unless worker.logger
-    level = worker.default_log_level
-    unless level.is_a?(String)
-      level = Logger::Severity.constants.detect { |i| Logger::Severity.const_get(i) == level }.to_s.downcase
-    end
-    worker.logger.send(level, "#{Time.now.strftime('%FT%T%z')}: #{text}")
-  end
-end
-
 begin
   opts = OptionParser.new do |op|
     op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
@@ -79,7 +54,6 @@ begin
   index = 0 if index.nil?
   Bosh::Director::App.new(config)
 
-  Delayed::Worker.logger = config.worker_logger
   Delayed::Worker.backend = :sequel
   Delayed::Worker.destroy_failed_jobs = true
   Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 1
@@ -88,8 +62,6 @@ begin
 
   worker = nil
   queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
-
-  Delayed::Worker.plugins << JobNamePlugin
 
   worker = Delayed::Worker.new({:queues => queues})
 
