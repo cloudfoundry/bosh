@@ -1,6 +1,9 @@
+require 'bosh/template/property_helper'
+
 module Bosh::Director
   module DeploymentPlan
     class Template
+      include Bosh::Template::PropertyHelper
 
       attr_reader :name
       attr_reader :release
@@ -9,6 +12,7 @@ module Bosh::Director
       attr_reader :package_models
 
       attr_reader :link_infos
+      attr_reader :deployment_manifest_template_properties
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
@@ -19,6 +23,7 @@ module Bosh::Director
         @package_models = []
         @logger = Config.logger
         @link_infos = {}
+        @deployment_manifest_template_properties = nil
       end
 
       # Looks up template model and its package models in DB
@@ -131,6 +136,27 @@ module Bosh::Director
 
       def consumes_link_info(job_name, link_name)
         @link_infos.fetch(job_name, {}).fetch('consumes', {}).fetch(link_name, {})
+      end
+
+      def add_deployment_manifest_template_properties(template_scoped_properties)
+        @deployment_manifest_template_properties = template_scoped_properties
+      end
+
+      def has_local_properties
+        return !@deployment_manifest_template_properties.nil?
+      end
+
+      def bind_local_properties
+        bound_template_specific_properties = {}
+        properties.each_pair do |name, definition|
+          copy_property(
+              bound_template_specific_properties,
+              @deployment_manifest_template_properties,
+              name,
+              definition["default"]
+          )
+        end
+        @deployment_manifest_template_properties = bound_template_specific_properties
       end
 
       private
