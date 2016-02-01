@@ -24,8 +24,11 @@ describe 'create release', type: :integration do
           './jobs/has_drain_script.tgz',
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/job_1_with_pre_start_script.tgz',
+          './jobs/job_1_with_post_deploy_script.tgz',
           './jobs/job_2_with_pre_start_script.tgz',
+          './jobs/job_2_with_post_deploy_script.tgz',
           './jobs/job_with_post_start_script.tgz',
+          './jobs/job_3_with_broken_post_deploy_script.tgz',
           './jobs/transitive_deps.tgz',
           './jobs/id_job.tgz',
           './packages/a.tgz',
@@ -89,7 +92,10 @@ describe 'create release', type: :integration do
           'foobar_without_packages' => ['./templates/foobar_ctl', './monit', './job.MF'],
           'job_with_blocking_compilation' => ['./monit', './job.MF'],
           'transitive_deps' => ['./monit', './job.MF'],
-          'id_job' => ['./monit', './templates/config.yml.erb', './job.MF']
+          'id_job' => ['./monit', './templates/config.yml.erb', './job.MF'],
+          'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post_deploy.erb', './templates/job_1_ctl'],
+          'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post_deploy.erb', './templates/job_2_ctl'],
+          'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken_post_deploy.erb', './templates/job_3_ctl'],
         }
 
         job_files.each do |job_name, files|
@@ -136,6 +142,9 @@ describe 'create release', type: :integration do
               job_desc('job_with_blocking_compilation'),
               job_desc('job_1_with_pre_start_script'),
               job_desc('job_2_with_pre_start_script'),
+              job_desc('job_1_with_post_deploy_script'),
+              job_desc('job_2_with_post_deploy_script'),
+              job_desc('job_3_with_broken_post_deploy_script'),
               job_desc('job_with_post_start_script'),
               job_desc('transitive_deps'),
               job_desc('id_job')

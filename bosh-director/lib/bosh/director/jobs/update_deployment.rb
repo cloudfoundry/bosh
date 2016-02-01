@@ -84,9 +84,7 @@ module Bosh::Director
 
       def check_for_changes(deployment_plan)
         deployment_plan.jobs.each do |job|
-          if job.did_change
-            return true
-          end
+          return true if job.did_change
         end
         false
       end

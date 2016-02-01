@@ -350,7 +350,14 @@ describe 'deploy', type: :integration do
                                    {'name' => 'job_1_with_post_deploy_script'},
                                    {'name' => 'job_2_with_post_deploy_script'}
                                ],
-                               instances: 1)]
+                               instances: 1),
+                           Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_errand',
+                               templates: [
+                                   {'name' => 'errand1'}
+                               ],
+                               instances: 1,
+                               lifecycle: 'errand')]
             })
         set_deployment(manifest_hash: manifest)
 
@@ -386,6 +393,23 @@ describe 'deploy', type: :integration do
 
         job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")
         expect(job_2_stdout).to_not match('message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\nmessage on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1\n')
+      end
+
+      it 'should not run post deploy script on jobs with no vm_cid' do
+        deploy({})
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+
+        expect(File.file?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_errand/post_deploy.stdout.log")).to be_falsey
       end
     end
   end
