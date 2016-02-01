@@ -123,18 +123,6 @@ properties:
     description: 'Default user to use with bosh ssh command'
     default: vcap
 
-  redis.address:
-    description: Address of the redis server
-    default: 127.0.0.1
-  redis.port:
-    description: Port that the redis server listens on
-    default: 25255
-  redis.password:
-    description: Password of the redis server
-  redis.loglevel:
-    description: Level of log messages for Redis connections (fatal, error, warn, info, debug)
-    default: info
-
   nats.user:
     description: Username to connect to nats with
     default: nats

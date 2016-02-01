@@ -65,7 +65,7 @@ describe Bosh::Deployer::Specification do
 
   context 'when the services are included in the apply_spec' do
     let(:agent_services) { %w{registry dns} }
-    let(:internal_services) { %w{director redis blobstore nats} }
+    let(:internal_services) { %w{director blobstore nats} }
 
     before do
       (agent_services + internal_services).each do |service|
@@ -86,7 +86,7 @@ describe Bosh::Deployer::Specification do
   end
 
   context 'when there are services not included in the apply_spec' do
-    let(:services) { %w{director redis blobstore nats registry dns} }
+    let(:services) { %w{director blobstore nats registry dns} }
 
     before do
       services.each do |service|

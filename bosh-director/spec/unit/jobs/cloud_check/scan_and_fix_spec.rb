@@ -25,9 +25,9 @@ module Bosh::Director
     let(:fix_stateful_jobs) { true }
     let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :cck_scan_and_fix }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     context 'using uuid for each instance' do

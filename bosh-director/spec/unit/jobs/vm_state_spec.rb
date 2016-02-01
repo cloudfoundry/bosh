@@ -30,9 +30,9 @@ module Bosh::Director
       allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
     end
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :vms }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     let(:instance) { Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: 'fake-vm-cid') }

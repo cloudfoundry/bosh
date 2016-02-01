@@ -73,6 +73,8 @@ begin
   else
     config = Bosh::Director::Config.load_file(config_file)
   end
+  config.db
+  Delayed::Worker.logger = config.worker_logger
 
   index = 0 if index.nil?
   Bosh::Director::App.new(config)
