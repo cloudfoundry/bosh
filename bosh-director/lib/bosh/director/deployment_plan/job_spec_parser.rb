@@ -167,8 +167,6 @@ module Bosh::Director
               template.add_link_info(@job.name, 'consumes', link_name, source)
             end
 
-            template_specific_properties = safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil)
-            template.add_deployment_manifest_template_properties(template_specific_properties)
             @job.templates << template
           end
         end

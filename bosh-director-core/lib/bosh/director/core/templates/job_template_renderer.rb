@@ -2,7 +2,6 @@ require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 require 'bosh/template/evaluation_context'
-require 'common/deep_copy'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
@@ -16,7 +15,7 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
-      template_context = Bosh::Template::EvaluationContext.new(adjust_template_properties(spec,@name))
+      template_context = Bosh::Template::EvaluationContext.new(spec)
       job_name = spec['job']['name']
       index = spec['index']
 
@@ -46,30 +45,5 @@ module Bosh::Director::Core::Templates
 
       RenderedJobTemplate.new(@name, monit, rendered_files)
     end
-
-    private
-
-    # This method will check if the current template has any properties that were
-    # defined at the template level in the deployment manifest; if yes, it will make
-    # a deep copy of the spec and change the spec.properties to <current-template>.template_specific_properties.
-    # This is due to the requirement that limits the available properties for a template
-    # by the properties defined in the template scope in the deployment manifest, if they exist.
-    # We make a deep copy of the spec to be safe, as we are modifying it.
-    def adjust_template_properties(spec, current_template_name)
-      result = spec
-      if spec['job'].is_a?(Hash) && !spec['job']['templates'].nil?
-        current_template = spec['job']['templates'].find {|template| template['name'] == current_template_name }
-
-        if !current_template['template_specific_properties'].nil?
-          # Make a deep copy of the spec and replace the properties with
-          # the specific template properties.
-          altered_spec = Bosh::Common::DeepCopy.copy(spec)
-          altered_spec['properties'] = current_template['template_specific_properties']
-          result = altered_spec
-        end
-      end
-      result
-    end
-
   end
 end

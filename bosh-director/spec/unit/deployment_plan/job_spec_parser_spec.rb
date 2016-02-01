@@ -281,7 +281,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .with('fake-template-name')
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
-              allow(template).to receive(:add_deployment_manifest_template_properties)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -320,7 +319,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .with('fake-template-name')
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
-              allow(template).to receive(:add_deployment_manifest_template_properties)
+
             end
 
             it 'sets job template from release specified in a hash' do
@@ -347,7 +346,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 .and_return(job_rel_ver)
 
               template = make_template('fake-template-name', nil)
-              allow(template).to receive(:add_deployment_manifest_template_properties)
               expect(job_rel_ver).to receive(:get_or_create_template)
                 .with('fake-template-name')
                 .and_return(template)
@@ -375,14 +373,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             end
 
             context 'when deployment has a single release' do
+              before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
               let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
-              let(:template) { make_template('fake-template-name', nil) }
-              before do
-                allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
-                allow(template).to receive(:add_deployment_manifest_template_properties)
-              end
 
               it 'sets job template from deployment release because first release assumed as default' do
+                template = make_template('fake-template-name', nil)
                 expect(deployment_rel_ver).to receive(:get_or_create_template)
                   .with('fake-template-name')
                   .and_return(template)
@@ -449,9 +444,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               .and_return(job_rel_ver)
 
             allow(job_rel_ver).to receive(:get_or_create_template) do |name|
-              template = instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
-              allow(template).to receive(:add_deployment_manifest_template_properties)
-              template
+              instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
             end
           end
 
@@ -481,8 +474,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                       .and_return(rel_ver1)
 
             template1 = make_template('fake-template-name1', rel_ver1)
-            allow(template1).to receive(:add_deployment_manifest_template_properties)
-
             expect(rel_ver1).to receive(:get_or_create_template)
                                .with('fake-template-name1')
                                .and_return(template1)
@@ -494,8 +485,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                       .and_return(rel_ver2)
 
             template2 = make_template('fake-template-name2', rel_ver2)
-            allow(template2).to receive(:add_deployment_manifest_template_properties)
-
             expect(rel_ver2).to receive(:get_or_create_template)
                                .with('fake-template-name2')
                                .and_return(template2)
@@ -526,39 +515,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               Bosh::Director::ValidationInvalidType,
               %{Object ("not-a-hash") did not match the required type `Hash'},
             )
-          end
-        end
-
-        context 'when properties are provided in a template' do
-
-          before do
-            job_spec['templates'] = [
-                {'name' => 'fake-template-name',
-                 'links' => {'db' => 'a.b.c'},
-                 'properties' => {
-                     'property_1' => 'property_1_value',
-                     'property_2' => {
-                         'life' => 'isInteresting'
-                     }
-                 }
-                }
-            ]
-            job_spec['release'] = 'fake-job-release'
-          end
-
-          it 'assigns those properties to the intended template' do
-            allow(deployment_plan).to receive(:release)
-                                          .with('fake-job-release')
-                                          .and_return(job_rel_ver)
-
-            template = make_template('fake-template-name', nil)
-            allow(job_rel_ver).to receive(:get_or_create_template)
-                                      .with('fake-template-name')
-                                      .and_return(template)
-            expect(template).to receive(:add_deployment_manifest_template_properties)
-                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}})
-
-            parser.parse(job_spec)
           end
         end
       end
