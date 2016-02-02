@@ -32,3 +32,8 @@
 	- [Warden CPI](https://github.com/cppforlife/bosh-warden-cpi-release)
 
 Cloud Foundry BOSH is an open source tool for release engineering, deployment, lifecycle management, and monitoring of distributed systems.
+
+## Contributions
+
+Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md) 
+
