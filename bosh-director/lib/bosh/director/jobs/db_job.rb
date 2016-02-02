@@ -12,6 +12,7 @@ module Bosh::Director
         @job_class = job_class
         @task_id = task_id
         @args = args
+        @logger = Config.logger
         raise DirectorError, "Invalid director job class `#{job_class}'. It should specify queue value." unless queue_name
       end
 
@@ -20,7 +21,14 @@ module Bosh::Director
           raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
         end
 
-        @job_class.perform(@task_id, *decode(encode(@args)))
+        process_status = ForkedProcess.run do
+          @job_class.perform(@task_id, *decode(encode(@args)))
+        end
+
+        if process_status.signaled?
+          @logger.debug("Task #{@task_id} was terminated, marking as failed")
+          fail_task
+        end
       end
 
       def queue_name
@@ -29,6 +37,10 @@ module Bosh::Director
       end
 
       private
+
+      def fail_task
+        Models::Task.first(id: @task_id).update(state: 'error')
+      end
 
       def encode(object)
         if MultiJson.respond_to?(:dump) && MultiJson.respond_to?(:load)
@@ -52,6 +64,15 @@ module Bosh::Director
           raise DecodeException, e.message, e.backtrace
         end
       end
+    end
+  end
+
+  class ForkedProcess
+    def self.run
+      pid = Process.fork { yield }
+      Process.waitpid(pid)
+
+      $?
     end
   end
 end

@@ -13,6 +13,12 @@ module Bosh::Director
       end
     end
     let(:task) { Models::Task.make(id: 42) }
+    let(:process_status) { instance_double(Process::Status, :signaled? => signaled) }
+    let(:signaled) { false }
+    before do
+      allow(ForkedProcess).to receive(:run).and_yield.and_return(process_status)
+    end
+
     let(:args) { ["1", "2"] }
 
     it "doesn't accept job class that is not a subclass of base job" do
@@ -48,8 +54,17 @@ module Bosh::Director
       expect{db_job.perform}.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
     end
 
+    context 'when forked process is signaled' do
+      let(:signaled) { true }
+      it 'fails task' do
+        allow(job_class).to receive(:perform).with(task.id, *args)
+        db_job.perform
+        expect(Models::Task.first(id: 42).state).to eq('error')
+      end
+    end
+
     it "performs new job" do
-      expect(Jobs::BaseJob).to receive(:perform).with(task.id, *args)
+      expect(job_class).to receive(:perform).with(task.id, *args)
       db_job.perform
     end
 
