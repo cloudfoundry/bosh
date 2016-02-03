@@ -3,6 +3,7 @@ name: postgres
 
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
+  postgres_upgrade.sh.erb: bin/postgres_upgrade.sh
   postgresql.conf.erb: config/postgresql.conf
 
 packages:
