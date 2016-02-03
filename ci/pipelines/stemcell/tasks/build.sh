@@ -9,7 +9,7 @@ check_param OS_NAME
 check_param OS_VERSION
 
 export TASK_DIR=$PWD
-export CANDIDATE_BUILD_NUMBER=$( cat version/number )
+export CANDIDATE_BUILD_NUMBER=$( cat version/number | sed 's/\.0$//;s/\.0$//' )
 
 # This is copied from https://github.com/concourse/concourse/blob/3c070db8231294e4fd51b5e5c95700c7c8519a27/jobs/baggageclaim/templates/baggageclaim_ctl.erb#L23-L54
 # helps the /dev/mapper/control issue and lets us actually do scary things with the /dev mounts
@@ -51,8 +51,14 @@ sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
   cd bosh-src
 
   bundle install --local
-  bundle exec rake stemcell:build_with_local_os_image_with_bosh_release_tarball[$IAAS,$HYPERVISOR,$OS_NAME,$OS_VERSION,go,$TASK_DIR/os-image/os-image.tgz,$TASK_DIR/bosh-release/*.tgz,$CANDIDATE_BUILD_NUMBER]
+  bundle exec rake stemcell:build_with_local_os_image_with_bosh_release_tarball[$IAAS,$HYPERVISOR,$OS_NAME,$OS_VERSION,go,$TASK_DIR/os-image/*.tgz,$TASK_DIR/bosh-release/*.tgz,$CANDIDATE_BUILD_NUMBER]
 SUDO
 
 mkdir -p stemcell/
-mv bosh-src/tmp/*.tgz stemcell/
+
+if [ -e bosh-src/tmp/*-raw.tgz ] ; then
+  # openstack currently publishes raw files
+  mv bosh-src/tmp/*-raw.tgz stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent-raw.tgz
+fi
+
+mv bosh-src/tmp/*.tgz stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent.tgz
