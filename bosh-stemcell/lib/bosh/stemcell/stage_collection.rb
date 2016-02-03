@@ -260,7 +260,7 @@ module Bosh::Stemcell
         :bosh_sysctl,
         :bosh_users,
         :bosh_monit,
-        :bosh_ntpdate,
+        :bosh_ntpd,
         :bosh_sudoers,
         :disable_blank_passwords,
       ]
