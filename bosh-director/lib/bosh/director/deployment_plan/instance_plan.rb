@@ -68,7 +68,7 @@ module Bosh
         end
 
         def needs_restart?
-          @instance.virtual_state == 'restart'
+          @instance.virtual_state == 'restart' || !@instance.model.post_start_completed
         end
 
         def needs_recreate?

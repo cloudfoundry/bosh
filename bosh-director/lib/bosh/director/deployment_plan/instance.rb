@@ -222,6 +222,10 @@ module Bosh::Director
         @model.update(state: state)
       end
 
+      def update_post_start_completed(value)
+        @model.update(post_start_completed: value)
+      end
+
       def update_description
         @model.update(job: job_name, index: index)
       end
