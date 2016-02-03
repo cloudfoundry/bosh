@@ -69,7 +69,22 @@ module Bosh::Director
 
   class ForkedProcess
     def self.run
-      pid = Process.fork { yield }
+      pid = Process.fork do
+        EM.error_handler { |e| puts ("Error raised during event loop: #{e.inspect}, backtrace: #{e.backtrace}") }
+
+        # Starting EM for NATS
+        Thread.new { EM.run }
+
+        # EM.defer + check defers_finished? to validate that all EM events finished
+        EM.defer { yield }
+        until EM.reactor_running? && EM.defers_finished?
+          sleep 0.5
+        end
+
+        EM.stop
+        exit
+      end
+
       Process.waitpid(pid)
 
       $?
