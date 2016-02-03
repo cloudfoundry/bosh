@@ -1,0 +1,33 @@
+---
+platform: linux
+
+image: docker:///bosh/os-image-stemcell-builder
+
+inputs:
+  - name: bosh-src
+  - name: os-image
+  - name: bosh-release
+  - name: version
+
+outputs:
+  - name: stemcell
+
+run:
+  path: bosh-src/ci/pipelines/stemcell/tasks/build.sh
+
+params:
+  IAAS:       replace-me
+  HYPERVISOR: replace-me
+  OS_NAME:    replace-me
+  OS_VERSION: replace-me
+
+
+# mkdir -p concourse-task/version
+# ( cd concourse-task/version && echo 3184.1 > number )
+# mkdir -p concourse-task/os-image
+# ( cd concourse-task/os-image && echo 0.9999.0 > version )
+# ( cd concourse-task/os-image && wget http://s3.amazonaws.com/bosh-os-images/bosh-ubuntu-trusty-os-image.tgz )
+# mkdir -p concourse-task/bosh-release
+# ( cd concourse-task/bosh-release && echo 250 > version )
+# ( cd concourse-task/bosh-release && wget --content-disposition https://bosh.io/d/github.com/cloudfoundry/bosh?v=250 )
+# IAAS=aws HYPERVISOR=hvm OS_NAME=ubuntu OS_VERSION=trusty fly -t production execute -c $HOME/workspace/bosh/ci/pipelines/stemcell/tasks/build.yml --privileged -x -i bosh-src=$HOME/workspace/bosh -i os-image=concourse-task/os-image -i bosh-release=concourse-task/bosh-release -i version=concourse-task/version -o stemcell=concourse-task/stemcell

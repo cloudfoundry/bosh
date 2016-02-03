@@ -170,7 +170,7 @@ namespace :stemcell do
     begin
       require 'bosh/dev/build'
 
-      # download stemcell from bucket
+      # download bosh release from bucket
       build = Bosh::Dev::Build.candidate
       build_number = build.number
       release_tarball_path = build.release_tarball_path
