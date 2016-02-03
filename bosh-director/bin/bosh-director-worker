@@ -65,9 +65,6 @@ begin
 
   worker = Delayed::Worker.new({:queues => queues})
 
-  EM.error_handler { |e| worker.logger.error ("Error raised during event loop: #{e.inspect}, backtrace: #{e.backtrace}") }
-  Thread.new { EM.run }
-
   worker.name = "worker_#{index}"
   worker.logger.info("Starting worker #{worker.name}.")
   begin
