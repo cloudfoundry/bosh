@@ -30,11 +30,16 @@ module Bosh::Director
               raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
             end
           else
-            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, template.consumes_link_info(job.name, link_name)['network'])
+            link_network = template.consumes_link_info(job.name, link_name)['network']
+            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network)
             link_spec = link_lookup.find_link_spec
 
             unless link_spec
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in job '#{job.name}' on template '#{template.name}'"
+            end
+
+            link_spec['nodes'].each do |node|
+              node.delete('addresses')
             end
 
             job.add_resolved_link(link_name, link_spec)

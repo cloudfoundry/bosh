@@ -682,41 +682,51 @@ describe 'Links', type: :integration do
   end
 
    context 'when link references another deployment' do
-      let(:first_deployment_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
-          name: 'first_deployment_node',
-          templates: [{'name' => 'node', 'consumes' => first_deployment_links}],
-          instances: 1,
-          static_ips: ['192.168.1.10']
-        )
-        job_spec['azs'] = ['z1']
-        job_spec
-      end
 
-      let(:first_deployment_links) do
-        {
-          'node1' => {'from' => 'first.node1'},
-          'node2' => {'from' => 'first.node2'}
-        }
-      end
+     let(:first_manifest) do
+       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+       manifest['name'] = 'first'
+       manifest['jobs'] = [first_deployment_job_spec]
+       manifest
+     end
 
-      let(:first_manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['name'] = 'first'
-        manifest['jobs'] = [first_deployment_job_spec]
-        manifest
-      end
+     let(:first_deployment_job_spec) do
+       job_spec = Bosh::Spec::Deployments.simple_job(
+           name: 'first_deployment_node',
+           templates: [{'name' => 'node', 'consumes' => first_deployment_links}],
+           instances: 1,
+           static_ips: ['192.168.1.10'],
+       )
+       job_spec['azs'] = ['z1']
+       job_spec
+     end
 
-      let(:second_deployment_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
-          name: 'second_deployment_node',
-          templates: [{'name' => 'node', 'consumes' => second_deployment_links}],
-          instances: 1,
-          static_ips: ['192.168.1.11']
-        )
-        job_spec['azs'] = ['z1']
-        job_spec
-      end
+     let(:first_deployment_links) do
+       {
+           'node1' => {'from' => 'first.node1'},
+           'node2' => {'from' => 'first.node2'}
+       }
+     end
+
+     let(:second_deployment_job_spec) do
+       job_spec = Bosh::Spec::Deployments.simple_job(
+           name: 'second_deployment_node',
+           templates: [{'name' => 'node', 'consumes' => second_deployment_links}],
+           instances: 1,
+           static_ips: ['192.168.1.11']
+       )
+       job_spec['azs'] = ['z1']
+       job_spec
+     end
+
+     let(:second_manifest) do
+       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+       manifest['name'] = 'second'
+       manifest['jobs'] = [second_deployment_job_spec]
+       manifest
+     end
+
+     context 'when user does not specify a network for consumes' do
 
       let(:second_deployment_links) do
         {
@@ -725,14 +735,7 @@ describe 'Links', type: :integration do
         }
       end
 
-      let(:second_manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['name'] = 'second'
-        manifest['jobs'] = [second_deployment_job_spec]
-        manifest
-      end
-
-      it 'can find it' do
+      it 'should use default network' do
         deploy_simple_manifest(manifest_hash: first_manifest)
         deploy_simple_manifest(manifest_hash: second_manifest)
 
@@ -742,6 +745,50 @@ describe 'Links', type: :integration do
         expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
         expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
       end
+     end
+
+     context 'when user specifies a network for consumes' do
+
+       let(:second_deployment_links) do
+         {
+             'node1' => {'from' => 'first.node1', 'network' => 'test'},
+             'node2' => {'from' => 'second.node2'}
+         }
+       end
+
+       before do
+         cloud_config['networks'] << {
+             'name' => 'test',
+             'type' => 'dynamic',
+             'subnets' => [{'az' => 'z1'}]
+         }
+
+         first_deployment_job_spec['networks'] << {
+             'name' => 'test'
+         }
+
+         first_deployment_job_spec['networks'] << {
+             'name' => 'dynamic-network',
+             'default' => ['dns', 'gateway']
+         }
+
+         cloud_config['networks'].last['subnets'].first['static'] = ['192.168  .20']
+         cloud_config['networks'].last['subnets'].first['az'] = 'z1'
+
+         upload_cloud_config(cloud_config_hash: cloud_config)
+       end
+
+       it 'should use user specified network from provider job' do
+         deploy_simple_manifest(manifest_hash: first_manifest)
+         deploy_simple_manifest(manifest_hash: second_manifest)
+
+         second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
+         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+
+         expect(second_deployment_template['nodes']['node1_ips'].first).to match(/.test./)
+         expect(second_deployment_template['nodes']['node2_ips'].first).to eq('192.168.1.11')
+       end
+     end
     end
 
     describe 'network resolution' do
@@ -786,7 +833,7 @@ describe 'Links', type: :integration do
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Error 130002: Network name 'invalid_network' is not one of the networks on the link 'db'/)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Network name 'invalid_network' is not one of the networks on the link 'db'/)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -802,7 +849,7 @@ describe 'Links', type: :integration do
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Error 130002: Network name 'global_network' is not one of the networks on the link 'db'/)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Network name 'global_network' is not one of the networks on the link 'db'/)
         end
       end
 

@@ -182,6 +182,10 @@ module Bosh
           network_settings.network_address(network_name)
         end
 
+        def network_addresses
+          network_settings.network_addresses
+        end
+
         def needs_shutting_down?
           return true if obsolete?
 
