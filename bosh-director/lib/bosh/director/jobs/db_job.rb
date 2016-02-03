@@ -12,7 +12,6 @@ module Bosh::Director
         @job_class = job_class
         @task_id = task_id
         @args = args
-        @logger = Config.logger
         raise DirectorError, "Invalid director job class `#{job_class}'. It should specify queue value." unless queue_name
       end
 
@@ -26,7 +25,7 @@ module Bosh::Director
         end
 
         if process_status.signaled?
-          @logger.debug("Task #{@task_id} was terminated, marking as failed")
+          puts "Task #{@task_id} was terminated, marking as failed"
           fail_task
         end
       end
