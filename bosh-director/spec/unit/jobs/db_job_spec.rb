@@ -57,6 +57,7 @@ module Bosh::Director
     context 'when forked process is signaled' do
       let(:signaled) { true }
       it 'fails task' do
+        allow(db_job).to receive(:puts) # suppress the noise, failing to use Logging::Logger in multithreaded calls
         allow(job_class).to receive(:perform).with(task.id, *args)
         db_job.perform
         expect(Models::Task.first(id: 42).state).to eq('error')
