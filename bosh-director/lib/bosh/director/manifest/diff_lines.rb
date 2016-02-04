@@ -64,24 +64,22 @@ module Bosh::Director
     end
 
     def redact_properties
-      i = 0
-      while i < self.size
-        line = self[i]
-
+      self.each_with_index do |line, index|
         if REDACT_KEY_NAMES.any? { |key_name| line.text =~ /\b#{key_name}:/ }
           properties_indent = line.full_indent
-          i += 1
-          line = self[i]
+          inner_index = index + 1
+          line = self[inner_index]
 
           while line && line.full_indent > properties_indent
             line.text.gsub!(/: .+/, ': <redacted>') # readact hash values
             line.text.gsub!(/- [^:]+$/, '- <redacted>') # redact array values
-            i += 1
-            line = self[i]
+
+            inner_index += 1
+            line = self[inner_index]
           end
         end
-        i += 1
       end
+
       self
     end
   end

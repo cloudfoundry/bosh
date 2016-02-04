@@ -142,6 +142,39 @@ module Bosh::Director
         end
       end
 
+      context 'when both local and global properties are present' do
+        before do
+          diff_lines << Line.new(0, 'jobs:', nil)
+          diff_lines << Line.new(0, '- name: job1', nil)
+          diff_lines << Line.new(0, '  properties:', nil)
+          diff_lines << Line.new(0, '    key: local prop value', nil)
+          diff_lines << Line.new(0, 'properties:', nil)
+          diff_lines << Line.new(0, '  key: global prop value', nil)
+        end
+
+        it 'redacts both local and global properties' do
+
+          expect(diff_lines.map(&:to_s)).to eq([
+            'jobs:',
+            '- name: job1',
+            '  properties:',
+            '    key: local prop value',
+            'properties:',
+            '  key: global prop value',
+          ])
+
+          diff_lines.redact_properties
+          expect(diff_lines.map(&:to_s)).to eq([
+                'jobs:',
+                '- name: job1',
+                '  properties:',
+                '    key: <redacted>',
+                'properties:',
+                '  key: <redacted>',
+          ])
+        end
+      end
+
       context 'when properties contain arrays' do
         before do
           diff_lines << Line.new(0, 'jobs:', nil)
