@@ -97,6 +97,10 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
+    it 'should keep dynamic, COMPONENT-based logging paths' do
+      expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
+    end
+
     context 'when domain name specified without all other dns properties' do
       before do
         deployment_manifest_fragment['properties']['dns'] = {
