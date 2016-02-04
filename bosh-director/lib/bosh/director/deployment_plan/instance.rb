@@ -198,15 +198,6 @@ module Bosh::Director
         changed
       end
 
-      ##
-      # @return [Boolean] returns true if the expected configuration hash
-      #   differs from the one provided by the VM
-      def configuration_changed?
-        changed = configuration_hash != @current_state['configuration_hash']
-        log_changes(__method__, @current_state['configuration_hash'], configuration_hash) if changed
-        changed
-      end
-
       def current_job_spec
         @model.spec['job']
       end

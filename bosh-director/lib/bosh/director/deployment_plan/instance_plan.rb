@@ -38,7 +38,7 @@ module Bosh
           @changes << :network if networks_changed?
           @changes << :packages if packages_changed?
           @changes << :persistent_disk if persistent_disk_changed?
-          @changes << :configuration if instance.configuration_changed?
+          @changes << :configuration if configuration_changed?
           @changes << :job if job_changed?
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
@@ -130,6 +130,12 @@ module Bosh
             @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
             not_found
           end
+        end
+
+        def configuration_changed?
+          changed = instance.configuration_hash != instance_model.spec['configuration_hash']
+          log_changes(__method__, instance_model.spec['configuration_hash'], instance.configuration_hash, instance) if changed
+          changed
         end
 
         def mark_desired_network_plans_as_existing

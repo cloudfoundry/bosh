@@ -42,29 +42,6 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) { {'current' => 'state'} }
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
-    describe '#configuration_changed?' do
-      let(:job) { Job.new(logger) }
-
-      describe 'when the configuration has changed' do
-        let(:current_state) { {'configuration_hash' => {'changed' => 'value'}} }
-
-        it 'should return true' do
-          expect(instance.configuration_changed?).to eq(true)
-        end
-
-        it 'should log the configuration changed reason' do
-          expect(logger).to receive(:debug).with('configuration_changed? changed FROM: {"changed"=>"value"} TO: ')
-          instance.configuration_changed?
-        end
-      end
-
-      describe 'when the configuration has not changed' do
-        it 'should return false' do
-          expect(instance.configuration_changed?).to eq(false)
-        end
-      end
-    end
-
     describe '#bind_existing_instance_model' do
       let(:job) { Job.new(logger) }
 
