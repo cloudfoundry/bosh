@@ -245,9 +245,8 @@ module Bosh::Director
           diff_lines << Line.new(0, 'resource_pools:', nil)
           diff_lines << Line.new(0, '- name: foo', nil)
           diff_lines << Line.new(1, 'env:', nil)
-          diff_lines << Line.new(2, 'bosh:', nil)
-          diff_lines << Line.new(3, 'password: bar', nil)
-          diff_lines << Line.new(2, 'persistent_disk_fs: xfs', nil)
+          diff_lines << Line.new(2, 'user: foo', nil)
+          diff_lines << Line.new(2, 'password: bar', nil)
           diff_lines << Line.new(0, 'jobs:', nil)
           diff_lines << Line.new(0, '- name: job1', nil)
           diff_lines << Line.new(0, '  env:', nil)
@@ -255,14 +254,13 @@ module Bosh::Director
           diff_lines << Line.new(0, '      password: foobar', nil)
         end
 
-        it 'redacts password env values' do
+        it 'redacts all env values' do
           expect(diff_lines.map(&:to_s)).to eq([
                 'resource_pools:',
                 '- name: foo',
                 '  env:',
-                '    bosh:',
-                '      password: bar',
-                '    persistent_disk_fs: xfs',
+                '    user: foo',
+                '    password: bar',
                 'jobs:',
                 '- name: job1',
                 '  env:',
@@ -276,9 +274,8 @@ module Bosh::Director
                 'resource_pools:',
                 '- name: foo',
                 '  env:',
-                '    bosh:',
-                '      password: <redacted>',
-                '    persistent_disk_fs: xfs',
+                '    user: <redacted>',
+                '    password: <redacted>',
                 'jobs:',
                 '- name: job1',
                 '  env:',
