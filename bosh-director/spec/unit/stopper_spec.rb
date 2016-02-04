@@ -18,7 +18,6 @@ module Bosh::Director
     let(:instance) { instance_double(DeploymentPlan::Instance,
       job_name: job.name,
       model: instance_model,
-      current_state: {},
       availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
       index: 0,
       uuid: SecureRandom.uuid,
@@ -52,6 +51,7 @@ module Bosh::Director
     end
 
     before do
+      allow(instance).to receive(:current_networks)
       instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
     end

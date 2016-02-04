@@ -128,7 +128,6 @@ module Bosh::Director::DeploymentPlan
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           expect(agent_client).to receive(:apply).with(state).ordered
           instance.apply_vm_state(instance_spec)
-          expect(instance.current_state).to eq(state)
           expect(instance_model.spec).to eq(state)
         end
       end

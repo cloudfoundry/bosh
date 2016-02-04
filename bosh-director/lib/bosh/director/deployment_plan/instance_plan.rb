@@ -166,7 +166,7 @@ module Bosh
             @instance.model.deployment.name,
             @desired_instance.job.default_network,
             desired_reservations,
-            @instance.current_state,
+            @instance.current_networks,
             @instance.availability_zone,
             @instance.index,
             @instance.uuid,

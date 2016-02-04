@@ -8,9 +8,7 @@ module Bosh::Director::DeploymentPlan
         'fake-deployment',
         {'gateway' => 'net_a'},
         [reservation],
-        {'networks' =>
-          {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}}
-        },
+        {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}},
         az,
         3,
         'uuid-1',

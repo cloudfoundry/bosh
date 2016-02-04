@@ -25,8 +25,6 @@ module Bosh::Director
       # @return [String] job state
       attr_reader :virtual_state
 
-      attr_reader :current_state
-
       attr_reader :availability_zone
 
       attr_reader :existing_network_reservations
@@ -73,6 +71,9 @@ module Bosh::Director
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
+
+        # This state is coming from the agent, we
+        # only need networks and job_state from it.
         @current_state = instance_state || {}
 
         # reservation generated from current state/DB
@@ -207,15 +208,19 @@ module Bosh::Director
       end
 
       def current_job_spec
-        @current_state['job']
+        @model.spec['job']
       end
 
       def current_packages
-        @current_state['packages']
+        @model.spec['packages']
       end
 
       def current_job_state
         @current_state['job_state']
+      end
+
+      def current_networks
+        @current_state['networks']
       end
 
       def update_state

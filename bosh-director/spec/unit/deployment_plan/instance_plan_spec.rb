@@ -444,6 +444,8 @@ module Bosh::Director::DeploymentPlan
         let(:current_state) { { 'job' => job.spec } }
 
         context 'that fully matches the job spec' do
+          before { allow(instance).to receive(:current_job_spec).and_return(job.spec) }
+
           it 'returns false' do
             expect(instance_plan.job_changed?).to eq(false)
           end
@@ -452,6 +454,7 @@ module Bosh::Director::DeploymentPlan
         context 'that does not match the job spec' do
           before do
             job.templates = [template]
+            allow(instance).to receive(:current_job_spec).and_return({})
           end
           let(:template) do
             instance_double('Bosh::Director::DeploymentPlan::Template', {
@@ -459,6 +462,7 @@ module Bosh::Director::DeploymentPlan
                 version: state['job']['version'],
                 sha1: state['job']['sha1'],
                 blobstore_id: state['job']['blobstore_id'],
+                template_scoped_properties: nil,
                 logs: nil,
               })
           end
@@ -490,7 +494,21 @@ module Bosh::Director::DeploymentPlan
 
     describe '#packages_changed?' do
       describe 'when packages have changed' do
-        let(:current_state) { {'packages' => {'changed' => 'value'}} }
+        let(:instance_model) do
+          instance_model = BD::Models::Instance.make(
+            bootstrap: true,
+            deployment: deployment_model,
+            uuid: 'uuid-1',
+            spec: { 'vm_type' => {
+                      'name' => 'original_vm_type_name',
+                      'cloud_properties' => {'old' => 'value'}
+                  },
+            'packages' => {"changed" => "value"},
+            'networks' => network_settings,
+            'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
+          )
+          instance_model
+        end
 
         it 'should return true' do
           expect(instance_plan.packages_changed?).to eq(true)
@@ -503,7 +521,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when packages have not changed' do
-        let(:current_state) { {'packages' => {}} }
+        before { allow(instance).to receive(:current_packages).and_return({}) }
 
         it 'should return false' do
           expect(instance_plan.packages_changed?).to eq(false)

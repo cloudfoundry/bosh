@@ -414,6 +414,198 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'when deployment manifest has local templates properties defined' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+      create_and_upload_test_release
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                  name: 'job_with_templates_having_properties',
+                  templates: [
+                      {'name' => 'job_1_with_many_properties',
+                       'properties' => {
+                           'smurfs' => {
+                               'color' => 'red'
+                           },
+                           'gargamel' => {
+                               'color' => 'black'
+                           }
+                       }
+                      },
+                      {'name' => 'job_2_with_many_properties'}
+                  ],
+                  instances: 1,
+                  properties: {
+                      'snoopy' => 'happy',
+                      'smurfs' => {
+                          'color' => 'yellow'
+                      },
+                      'gargamel' => {
+                          'color' => 'blue'
+                      }
+                  })]
+          })
+      set_deployment(manifest_hash: manifest)
+    end
+
+    it 'these templates should use the properties defined in their scope' do
+      deploy({})
+      target_vm = director.vm('job_with_templates_having_properties', '0')
+      template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+      template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+      expect(template_1['properties_list']['smurfs_color']).to eq('red')
+      expect(template_1['properties_list']['gargamel_color']).to eq('black')
+
+      expect(template_2['properties_list']['smurfs_color']).to eq('yellow')
+      expect(template_2['properties_list']['gargamel_color']).to eq('blue')
+    end
+
+    it 'should update the job when template properties change' do
+      deploy({})
+
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                  name: 'job_with_templates_having_properties',
+                  templates: [
+                      {'name' => 'job_1_with_many_properties',
+                       'properties' => {
+                           'smurfs' => {
+                               'color' => 'reddish'
+                           },
+                           'gargamel' => {
+                               'color' => 'blackish'
+                           }
+                       }
+                      },
+                      {'name' => 'job_2_with_many_properties'}
+                  ],
+                  instances: 1,
+                  properties: {
+                      'snoopy' => 'happy',
+                      'smurfs' => {
+                          'color' => 'yellow'
+                      },
+                      'gargamel' => {
+                          'color' => 'blue'
+                      }
+                  })]
+          })
+      set_deployment(manifest_hash: manifest)
+
+      output = deploy({})
+      expect(output).to include("Started updating job job_with_templates_having_properties")
+    end
+
+    it 'should not update the job when template properties are the same' do
+      deploy({})
+      output = deploy({})
+      expect(output).to_not include("Started updating job job_with_templates_having_properties")
+    end
+
+
+    context 'when the template has local properties defined but missing some of them' do
+      before do
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                    name: 'job_with_templates_having_properties',
+                    templates: [
+                        {'name' => 'job_1_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'red'
+                             }
+                         }
+                        },
+                        {'name' => 'job_2_with_many_properties'}
+                    ],
+                    instances: 1,
+                    properties: {
+                        'snoopy' => 'happy',
+                        'smurfs' => {
+                            'color' => 'yellow'
+                        },
+                        'gargamel' => {
+                            'color' => 'black'
+                        }
+                    })]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'should fail even if the properties are defined outside the template scope' do
+        output, exit_code = deploy(failure_expected: true, return_exit_code: true)
+
+        expect(exit_code).to_not eq(0)
+        expect(output).to include("Error 100: Unable to render jobs for deployment. Errors are:")
+        expect(output).to include("- \"Unable to render templates for job job_with_templates_having_properties. Errors are:")
+        expect(output).to include("- \"Error filling in template `properties_displayer.yml.erb' for `job_with_templates_having_properties/0' (line 4: Can't find property `[\"gargamel.color\"]')")
+      end
+    end
+
+    context 'when multiple templates has local properties' do
+      before do
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                    name: 'job_with_templates_having_properties',
+                    templates: [
+                        {'name' => 'job_1_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'pink'
+                             },
+                             'gargamel' => {
+                                 'color' => 'orange'
+                             }
+                         }
+                        },
+                        {'name' => 'job_2_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'brown'
+                             },
+                             'gargamel' => {
+                                 'color' => 'purple'
+                             }
+                         }
+                        }
+                    ],
+                    instances: 1,
+                    properties: {
+                        'snoopy' => 'happy',
+                        'smurfs' => {
+                            'color' => 'yellow'
+                        },
+                        'gargamel' => {
+                            'color' => 'black'
+                        }
+                    })]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'should not cross reference them' do
+        deploy({})
+        target_vm = director.vm('job_with_templates_having_properties', '0')
+        template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        expect(template_1['properties_list']['smurfs_color']).to eq('pink')
+        expect(template_1['properties_list']['gargamel_color']).to eq('orange')
+
+        expect(template_2['properties_list']['smurfs_color']).to eq('brown')
+        expect(template_2['properties_list']['gargamel_color']).to eq('purple')
+      end
+    end
+
+  end
+
   it 'supports scaling down and then scaling up' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
