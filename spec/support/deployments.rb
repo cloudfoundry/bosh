@@ -481,6 +481,10 @@ module Bosh::Spec
         job_hash['azs'] = opts[:azs]
       end
 
+      if opts.has_key?(:properties)
+        job_hash['properties'] = opts[:properties]
+      end
+
       job_hash
     end
 

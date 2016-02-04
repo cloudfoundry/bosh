@@ -13,11 +13,9 @@ module Bosh::Director
             end
 
             unless valid_network
-              raise NetworkReservationMissing, "Network name '#{link_network}' is not one of the networks on the link '#{link_path.name}'"
+              raise "Network name '#{link_network}' is not one of the networks on the link '#{link_path.name}'"
             end
           end
-
-
 
           PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
         else
@@ -27,14 +25,16 @@ module Bosh::Director
           end
 
           if link_network
-            ip_address_refs = Models::IpAddress.where(:network_name => link_network).select(:instance_id)
-            instance_models = Models::Instance.where(:deployment_id => deployment.id).where(:id => ip_address_refs)
-            unless instance_models.count > 0
-              raise "No instances found in deployment #{link_path.deployment} that have links with network #{link_network}"
+            manifest = YAML.load(deployment.manifest)
+            job = manifest['jobs'].find  {|job| job['name'] == link_path.job }
+            valid_network = job['networks'].find { |network| network['name'] == link_network }
+
+            unless valid_network
+              raise "Deployment #{link_path.deployment} does not have any jobs with network #{link_network}"
             end
           end
 
-          DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec)
+          DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)
         end
       end
     end
@@ -66,10 +66,11 @@ module Bosh::Director
 
     # Used to find link source from link spec in deployment model (saved in DB)
     class DeploymentLinkSpecLookup
-      def initialize(consumed_link, link_path, deployment_link_spec)
+      def initialize(consumed_link, link_path, deployment_link_spec, link_network)
         @consumed_link = consumed_link
         @link_path = link_path
         @deployment_link_spec = deployment_link_spec
+        @link_network = link_network
       end
 
       def find_link_spec
@@ -79,10 +80,16 @@ module Bosh::Director
         template = job[@link_path.template]
         return nil unless template
 
-        link_path = template.fetch(@link_path.name, {})[@consumed_link.type]
-        return nil unless link_path
+        link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
+        return nil unless link_spec
 
-        link_path
+        if @link_network
+          link_spec['nodes'].each do |node|
+            node['address'] = node['addresses'][@link_network]
+          end
+        end
+
+        link_spec
       end
     end
   end

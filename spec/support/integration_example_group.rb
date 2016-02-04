@@ -113,6 +113,10 @@ module IntegrationExampleGroup
     bosh_runner.run(cmd, options)
   end
 
+  def stop_job(vm_name)
+    bosh_runner.run("stop #{vm_name}", {})
+  end
+
   def deploy_from_scratch(options={})
     prepare_for_deploy(options)
     deploy_simple_manifest(options)

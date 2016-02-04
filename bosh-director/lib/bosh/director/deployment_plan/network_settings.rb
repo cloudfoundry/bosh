@@ -58,5 +58,22 @@ module Bosh::Director::DeploymentPlan
 
       address
     end
+
+    def network_addresses
+      network_addresses = {}
+
+      to_hash.each do |network_name, network|
+        if network['type'] == 'dynamic'
+          address = @dns_manager.dns_record_name(@instance_id, @job_name, network_name, @deployment_name)
+        else
+          address = network['ip']
+        end
+
+        network_addresses[network_name] = address
+      end
+
+      network_addresses
+    end
+
   end
 end

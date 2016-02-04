@@ -12,7 +12,6 @@ module Bosh::Director
       end
 
       def spec
-
         {
           'nodes' => @source.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
@@ -22,7 +21,8 @@ module Bosh::Director
               'index' => instance.index,
               'id' => instance.uuid,
               'az' => availability_zone,
-              'address' => instance_plan.network_address(@network_name)
+              'address' => instance_plan.network_address(@network_name),
+              'addresses' => instance_plan.network_addresses
             }
           end
         }

@@ -68,7 +68,7 @@ module Bosh
         end
 
         def needs_restart?
-          @instance.virtual_state == 'restart'
+          @instance.virtual_state == 'restart' || !@instance.model.post_start_completed
         end
 
         def needs_recreate?
@@ -180,6 +180,10 @@ module Bosh
 
         def network_address(network_name)
           network_settings.network_address(network_name)
+        end
+
+        def network_addresses
+          network_settings.network_addresses
         end
 
         def needs_shutting_down?
