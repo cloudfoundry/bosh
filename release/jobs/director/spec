@@ -307,7 +307,6 @@ properties:
     description: AWS secret_access_key for agent used by s3 blobstore plugin
   agent.blobstore.s3_region:
     description: AWS region for agent used by s3 blobstore plugin
-    default: 'us-east-1'
   agent.blobstore.address:
     description: Address for agent to connect to blobstore server used by simple blobstore plugin
   agent.blobstore.port:
