@@ -25,6 +25,7 @@ packages:
 - postgres
 - mysql
 - ruby
+- s3cli
 
 properties:
   env.http_proxy:

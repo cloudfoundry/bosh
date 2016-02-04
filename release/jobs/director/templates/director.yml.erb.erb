@@ -147,6 +147,12 @@ params['blobstore'] = {
   'options' => blobstore_options
 }
 
+if p('blobstore.provider') == "s3"
+   params['blobstore']['provider'] = "s3cli"
+   params['blobstore']['options']['s3cli_config_path'] = "/var/vcap/data/tmp/director"
+   params['blobstore']['options']['s3cli_path'] = "/var/vcap/packages/s3cli/bin/s3cli"
+end
+
 user_management = {
     'provider' => p('director.user_management.provider')
 }
@@ -176,13 +182,15 @@ params['trusted_certs'] = p('director.trusted_certs')
 
 if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
   params['compiled_package_cache'] = {
-    'provider' => 's3',
+    'provider' => 's3cli',
     'options' => {
       'bucket_name' => bucket_name,
       'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
       'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
       'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
-      'region' => p('blobstore.s3_region', nil)
+      'region' => p('blobstore.s3_region', nil),
+      's3cli_config_path' => "/var/vcap/data/tmp/director",
+      's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli",
     }
   }
 
