@@ -289,4 +289,12 @@ EOF
       its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
     end
   end
+
+  context 'limit password reuse' do
+    describe file('/etc/pam.d/common-password') do
+      it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
+        should contain /password.*pam_unix\.so.*remember=24/
+      end
+    end
+  end
 end
