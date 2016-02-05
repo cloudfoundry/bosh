@@ -136,7 +136,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   end
 
   let(:consumes_links) { [{name: "db", type: "db"}] }
-  let(:provided_links) { [{name: "db", type: "db"}] }
+  let(:provided_links) { [{name: "db", type: "db", shared: true}] }
 
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
