@@ -140,7 +140,9 @@ module Bosh::Director
           "sha1" => job_spec["sha1"],
           "blobstore_id" => job_spec["blobstore_id"]
         }
-        job_spec["templates"] = [template]
+
+        template['template_scoped_properties'] = job_spec['template_scoped_properties'] unless job_spec['template_scoped_properties'].nil?
+        job_spec['templates'] = [template]
       end
 
 
@@ -175,6 +177,9 @@ module Bosh::Director
             "sha1" => first_template.sha1,
             "blobstore_id" => first_template.blobstore_id
           }
+
+          result['template_scoped_properties'] = first_template.template_scoped_properties unless first_template.template_scoped_properties.nil?
+
           if first_template.logs
             result["logs"] = first_template.logs
           end
@@ -187,6 +192,9 @@ module Bosh::Director
               "sha1" => template.sha1,
               "blobstore_id" => template.blobstore_id
             }
+
+            template_entry['template_scoped_properties'] = template.template_scoped_properties unless template.template_scoped_properties.nil?
+
             if template.logs
               template_entry["logs"] = template.logs
             end
@@ -341,8 +349,17 @@ module Bosh::Director
         result = {}
 
         @templates.each do |template|
-          template.properties.each_pair do |name, definition|
-            copy_property(result, collection, name, definition["default"])
+          # If a template has properties that were defined in the deployment manifest
+          # for that template only, then we need to bind only these properties, and not
+          # make them available to other templates in the same deployment job. That can
+          # be done by checking @template_scoped_properties variable of each
+          # template
+          if template.has_template_scoped_properties
+            template.bind_template_scoped_properties
+          else
+            template.properties.each_pair do |name, definition|
+              copy_property(result, collection, name, definition["default"])
+            end
           end
         end
 

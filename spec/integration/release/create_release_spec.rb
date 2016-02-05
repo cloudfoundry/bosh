@@ -27,6 +27,8 @@ describe 'create release', type: :integration do
           './jobs/job_1_with_post_deploy_script.tgz',
           './jobs/job_2_with_pre_start_script.tgz',
           './jobs/job_2_with_post_deploy_script.tgz',
+          './jobs/job_1_with_many_properties.tgz',
+          './jobs/job_2_with_many_properties.tgz',
           './jobs/job_with_post_start_script.tgz',
           './jobs/job_3_with_broken_post_deploy_script.tgz',
           './jobs/transitive_deps.tgz',
@@ -145,6 +147,8 @@ describe 'create release', type: :integration do
               job_desc('job_1_with_post_deploy_script'),
               job_desc('job_2_with_post_deploy_script'),
               job_desc('job_3_with_broken_post_deploy_script'),
+              job_desc('job_1_with_many_properties'),
+              job_desc('job_2_with_many_properties'),
               job_desc('job_with_post_start_script'),
               job_desc('transitive_deps'),
               job_desc('id_job')
