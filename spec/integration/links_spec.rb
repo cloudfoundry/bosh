@@ -693,7 +693,7 @@ describe 'Links', type: :integration do
      let(:first_deployment_job_spec) do
        job_spec = Bosh::Spec::Deployments.simple_job(
            name: 'first_deployment_node',
-           templates: [{'name' => 'node', 'consumes' => first_deployment_links}],
+           templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
            instances: 1,
            static_ips: ['192.168.1.10'],
        )
@@ -701,17 +701,21 @@ describe 'Links', type: :integration do
        job_spec
      end
 
-     let(:first_deployment_links) do
+     let(:first_deployment_consumed_links) do
        {
            'node1' => {'from' => 'first.node1'},
            'node2' => {'from' => 'first.node2'}
        }
      end
 
+     let(:first_deployment_provided_links) do
+       { 'node1' => {'shared' => true} }
+     end
+
      let(:second_deployment_job_spec) do
        job_spec = Bosh::Spec::Deployments.simple_job(
            name: 'second_deployment_node',
-           templates: [{'name' => 'node', 'consumes' => second_deployment_links}],
+           templates: [{'name' => 'node', 'consumes' => second_deployment_consumed_links}],
            instances: 1,
            static_ips: ['192.168.1.11']
        )
@@ -726,70 +730,110 @@ describe 'Links', type: :integration do
        manifest
      end
 
-     context 'when user does not specify a network for consumes' do
-
-      let(:second_deployment_links) do
-        {
-          'node1' => {'from' => 'first.node1'},
-          'node2' => {'from' => 'second.node2'}
-        }
-      end
-
-      it 'should use default network' do
-        deploy_simple_manifest(manifest_hash: first_manifest)
-        deploy_simple_manifest(manifest_hash: second_manifest)
-
-        second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
-        second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
-
-        expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
-        expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
-      end
+     let(:second_deployment_consumed_links) do
+       {
+           'node1' => {'from' => 'first.node1'},
+           'node2' => {'from' => 'second.node2'}
+       }
      end
 
-     context 'when user specifies a network for consumes' do
-
-       let(:second_deployment_links) do
-         {
-             'node1' => {'from' => 'first.node1', 'network' => 'test'},
-             'node2' => {'from' => 'second.node2'}
-         }
-       end
-
-       before do
-         cloud_config['networks'] << {
-             'name' => 'test',
-             'type' => 'dynamic',
-             'subnets' => [{'az' => 'z1'}]
-         }
-
-         first_deployment_job_spec['networks'] << {
-             'name' => 'test'
-         }
-
-         first_deployment_job_spec['networks'] << {
-             'name' => 'dynamic-network',
-             'default' => ['dns', 'gateway']
-         }
-
-         cloud_config['networks'].last['subnets'].first['static'] = ['192.168  .20']
-         cloud_config['networks'].last['subnets'].first['az'] = 'z1'
-
-         upload_cloud_config(cloud_config_hash: cloud_config)
-       end
-
-       it 'should use user specified network from provider job' do
+     context 'when consumed link is shared across deployments' do
+       it 'should successfully use the shared link' do
          deploy_simple_manifest(manifest_hash: first_manifest)
-         deploy_simple_manifest(manifest_hash: second_manifest)
 
-         second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
-         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+         expect {
+           deploy_simple_manifest(manifest_hash: second_manifest)
+         }.to_not raise_error
+       end
 
-         expect(second_deployment_template['nodes']['node1_ips'].first).to match(/.test./)
-         expect(second_deployment_template['nodes']['node2_ips'].first).to eq('192.168.1.11')
+       context 'when user does not specify a network for consumes' do
+         it 'should use default network' do
+           deploy_simple_manifest(manifest_hash: first_manifest)
+           deploy_simple_manifest(manifest_hash: second_manifest)
+
+           second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
+           second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+
+           expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
+           expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
+         end
+       end
+
+       context 'when user specifies a valid network for consumes' do
+
+         let(:second_deployment_consumed_links) do
+           {
+               'node1' => {'from' => 'first.node1', 'network' => 'test'},
+               'node2' => {'from' => 'second.node2'}
+           }
+         end
+
+         before do
+           cloud_config['networks'] << {
+               'name' => 'test',
+               'type' => 'dynamic',
+               'subnets' => [{'az' => 'z1'}]
+           }
+
+           first_deployment_job_spec['networks'] << {
+               'name' => 'test'
+           }
+
+           first_deployment_job_spec['networks'] << {
+               'name' => 'dynamic-network',
+               'default' => ['dns', 'gateway']
+           }
+
+           upload_cloud_config(cloud_config_hash: cloud_config)
+         end
+
+         it 'should use user specified network from provider job' do
+           deploy_simple_manifest(manifest_hash: first_manifest)
+           deploy_simple_manifest(manifest_hash: second_manifest)
+
+           second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
+           second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+
+           expect(second_deployment_template['nodes']['node1_ips'].first).to match(/.test./)
+           expect(second_deployment_template['nodes']['node2_ips'].first).to eq('192.168.1.11')
+         end
+       end
+
+       context 'when user specifies an invalid network for consumes' do
+
+         let(:second_deployment_consumed_links) do
+           {
+               'node1' => {'from' => 'first.node1', 'network' => 'invalid-network'},
+               'node2' => {'from' => 'second.node2'}
+           }
+         end
+
+         it 'raises an error' do
+           deploy_simple_manifest(manifest_hash: first_manifest)
+
+           expect {
+             deploy_simple_manifest(manifest_hash: second_manifest)
+           }.to raise_error(RuntimeError, /Deployment first does not have any jobs with network invalid-network/)
+         end
        end
      end
-    end
+
+     context 'when consumed link is not shared across deployments' do
+
+       let(:first_deployment_provided_links) do
+         { 'node1' => {'shared' => false} }
+       end
+
+       it 'should raise an error' do
+         deploy_simple_manifest(manifest_hash: first_manifest)
+
+         expect {
+           deploy_simple_manifest(manifest_hash: second_manifest)
+         }.to raise_error(RuntimeError, /Can't find link with name: node1 in deployment first. Please make sure the link was provided and shared./)
+       end
+     end
+
+   end
 
     describe 'network resolution' do
 

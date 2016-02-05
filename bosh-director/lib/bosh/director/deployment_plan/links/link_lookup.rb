@@ -25,9 +25,11 @@ module Bosh::Director
           end
 
           if link_network
-            manifest = YAML.load(deployment.manifest)
-            job = manifest['jobs'].find  {|job| job['name'] == link_path.job }
-            valid_network = job['networks'].find { |network| network['name'] == link_network }
+            link_spec = deployment.link_spec[link_path.job][link_path.template][link_path.name][consumed_link.type]
+
+            valid_network = link_spec['nodes'].any? do |node|
+              node['addresses'].any? { |name, address| name == link_network }
+            end
 
             unless valid_network
               raise "Deployment #{link_path.deployment} does not have any jobs with network #{link_network}"

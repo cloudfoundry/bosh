@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class TemplateLink < Struct.new(:name, :type, :optional)
+    class TemplateLink < Struct.new(:name, :type, :optional, :shared)
       def self.parse(kind, link_def)
         if kind == "consumes"
           return self.parse_consumes_link(link_def)
@@ -25,16 +25,16 @@ module Bosh::Director
           if link_def.has_key?('optional')
             raise JobInvalidLinkSpec, "Link '#{link_def['name']}' of type '#{link_def['type']}' is a provides link, not allowed to have `optional' key"
           elsif link_def.has_key?('as')
-            return new(link_def['as'], link_def['type'])
+            return new(link_def['as'], link_def['type'], false, link_def['shared'] || false)
           else
-            return new(link_def['name'], link_def['type'])
+            return new(link_def['name'], link_def['type'], false, link_def['shared'] || false)
           end
         end
         raise JobInvalidLinkSpec, "Link '#{link_def}' must be a hash with name and type"
       end
 
       def to_s
-        "name: #{name}, type: #{type}"
+        "name: #{name}, type: #{type}, shared: #{shared}"
       end
     end
   end
