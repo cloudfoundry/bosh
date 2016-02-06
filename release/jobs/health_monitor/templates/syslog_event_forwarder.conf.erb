@@ -35,6 +35,8 @@ constant(value=" [job=<%= spec.job.name %> index=<%= spec.index %>] ")
 property(name="msg")
 }
 
+<%= p('hm.syslog_event_forwarder.custom_rule') %>
+
 <% if_p("hm.syslog_event_forwarder.address", "hm.syslog_event_forwarder.port", "hm.syslog_event_forwarder.transport") do |address, port, transport| %>
 
 # Keep filtered programname in sync with syslog_event_forwarder.rb
