@@ -574,9 +574,12 @@ describe 'deploy', type: :integration do
         output, exit_code = deploy(failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 100: Unable to render jobs for deployment. Errors are:")
-        expect(output).to include("- \"Unable to render templates for job job_with_templates_having_properties. Errors are:")
-        expect(output).to include("- \"Error filling in template `properties_displayer.yml.erb' for `job_with_templates_having_properties/0' (line 4: Can't find property `[\"gargamel.color\"]')")
+        expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job job_with_templates_having_properties. Errors are:
+     - Unable to render release templates for release job job_1_with_many_properties. Errors are:
+       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+        EOF
       end
     end
 
