@@ -813,7 +813,7 @@ describe 'Links', type: :integration do
 
            expect {
              deploy_simple_manifest(manifest_hash: second_manifest)
-           }.to raise_error(RuntimeError, /Deployment first does not have any jobs with network invalid-network/)
+           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a./)
          end
        end
      end
@@ -829,7 +829,7 @@ describe 'Links', type: :integration do
 
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
-         }.to raise_error(RuntimeError, /Can't find link with name: node1 in deployment first. Please make sure the link was provided and shared./)
+         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in job 'second_deployment_node' on template 'node' in deployment 'second'. Please make sure the link was provided and shared./)
        end
      end
 
@@ -877,7 +877,7 @@ describe 'Links', type: :integration do
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Network name 'invalid_network' is not one of the networks on the link 'db'/)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network./)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -893,7 +893,7 @@ describe 'Links', type: :integration do
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Network name 'global_network' is not one of the networks on the link 'db'/)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'global_network'. The available networks are: a, dynamic-network./)
         end
       end
 

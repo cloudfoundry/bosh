@@ -39,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     )
   }
 
-  let(:link_path) {described_class.new(deployment, provider_job.name, template.name)}
+  let(:link_path) {described_class.new(deployment, 'consumer_job', 'consumer_job_template')}
 
   before do
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
@@ -155,13 +155,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'deployment_name.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'")
     end
 
     context "when link is optional and the 'from' is explicitly set" do
       let(:path) { {"from" => 'deployment_name.unprovided_link_name', "optional" => true} }
       it 'should throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'")
       end
     end
   end
@@ -169,13 +169,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a different deployment that does not provide the correct link' do
     let(:path) { {"from" => 'previous_deployment.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment. Please make sure the link was provided and shared.")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
     end
 
     context "when link is optional and 'from' is explicitly set" do
       let(:path) { {"from" => 'previous_deployment.unprovided_link_name', "optional" => true} }
       it 'should not throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment. Please make sure the link was provided and shared.")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
       end
     end
   end
@@ -183,13 +183,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a bad link name' do
     let(:path) { {"from" => 'unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'")
     end
 
     context 'when link is optional' do
       let(:path) { {"from" => 'unprovided_link_name', "optional" => true} }
       it 'should still throw an error because the user intent has not been met' do
-        expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment deployment_name")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in job 'consumer_job' on template 'consumer_job_template' in deployment 'deployment_name'")
       end
     end
 
@@ -248,7 +248,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
       )
     }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Multiple jobs provide links of type 'link_type'. Cannot decide which one to use for job 'provider_job'.
+      expect{link_path.parse(path)}.to raise_error("Multiple jobs provide links of type 'link_type'. Cannot decide which one to use for job 'consumer_job'.
    deployment_name.provider_job.provider_template.link_name
    deployment_name.additional_provider_job.provider_template.link_name")
     end
@@ -256,7 +256,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     context 'when link is optional' do
       let(:path) { {"name" => 'link_name', 'type' => 'link_type', 'optional' => true} }
       it 'should still throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Multiple jobs provide links of type 'link_type'. Cannot decide which one to use for job 'provider_job'.
+        expect{link_path.parse(path)}.to raise_error("Multiple jobs provide links of type 'link_type'. Cannot decide which one to use for job 'consumer_job'.
    deployment_name.provider_job.provider_template.link_name
    deployment_name.additional_provider_job.provider_template.link_name")
       end
