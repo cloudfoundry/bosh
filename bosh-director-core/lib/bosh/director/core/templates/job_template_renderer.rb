@@ -17,16 +17,14 @@ module Bosh::Director::Core::Templates
 
     def render(spec)
       template_context = Bosh::Template::EvaluationContext.new(adjust_template_properties(spec,@name))
-      job_name = spec['job']['name']
-      index = spec['index']
 
-      monit = monit_erb.render(template_context, job_name, index, @logger)
+      monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
         begin
-          file_contents = source_erb.render(template_context, job_name, index, @logger)
+          file_contents = source_erb.render(template_context, @logger)
         rescue Exception => e
           errors.push e
         end
@@ -35,10 +33,10 @@ module Bosh::Director::Core::Templates
       end
 
       if errors.length > 0
-        message = "Unable to render templates for job #{job_name}. Errors are:"
+        message = "Unable to render release templates for release job #{@name}. Errors are:"
 
         errors.each do |e|
-          message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+          message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
         end
 
         raise message

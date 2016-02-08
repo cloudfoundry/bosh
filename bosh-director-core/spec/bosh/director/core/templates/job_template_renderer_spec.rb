@@ -51,8 +51,8 @@ module Bosh::Director::Core::Templates
           expect(rendered_file_template.dest_name).to eq('fake-template-dest-name')
           expect(rendered_file_template.contents).to eq('test template')
 
-          expect(monit_erb).to have_received(:render).with(context, 'fake-job-name', 1, logger)
-          expect(source_erb).to have_received(:render).with(context, 'fake-job-name', 1, logger)
+          expect(monit_erb).to have_received(:render).with(context, logger)
+          expect(source_erb).to have_received(:render).with(context, logger)
         end
       end
 

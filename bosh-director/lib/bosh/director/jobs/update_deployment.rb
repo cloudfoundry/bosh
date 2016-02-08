@@ -130,7 +130,7 @@ module Bosh::Director
           message = 'Unable to render jobs for deployment. Errors are:'
 
           errors.each do |e|
-            message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+            message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
           end
 
           raise message
