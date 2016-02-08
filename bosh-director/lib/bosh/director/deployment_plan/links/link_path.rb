@@ -124,7 +124,7 @@ module Bosh::Director
           link_str = "#{@deployment_plan.name}.#{@consumes_job_name}.#{@consumes_template_name}.#{name}"
           raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{@deployment_plan.name}:#{all_link_paths}"
         else
-          raise "Can't find link with name: #{name} in deployment #{@deployment_plan.name}"
+          raise "Can't resolve link '#{name}' in job '#{@consumes_job_name}' on template '#{@consumes_template_name}' in deployment '#{@deployment_plan.name}'"
         end
       end
 
@@ -161,7 +161,7 @@ module Bosh::Director
           link_str = "#{@deployment_plan.name}.#{@consumes_job_name}.#{@consumes_template_name}.#{name}"
           raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{deployment.name}:#{all_link_paths}"
         else
-          raise "Can't find link with name: #{name} in deployment #{deployment.name}. Please make sure the link was provided and shared."
+          raise "Can't resolve link '#{name}' in job '#{@consumes_job_name}' on template '#{@consumes_template_name}' in deployment '#{@deployment_plan.name}'. Please make sure the link was provided and shared."
         end
       end
 
