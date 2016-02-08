@@ -318,7 +318,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't find link with name: c in deployment fake-deployment\"")
+   - \"Can't resolve link 'c' in job 'api-server' on template 'api-server-template' in deployment 'fake-deployment'\"")
       end
     end
 

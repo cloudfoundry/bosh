@@ -3,7 +3,7 @@ module Bosh::Director
     # tested in link_resolver_spec
 
     class LinkLookupFactory
-      def self.create(consumed_link, link_path, deployment_plan, link_network)
+      def self.create(consumed_link, link_path, deployment_plan, link_network, consumes_job, consumes_template)
         if link_path.deployment == deployment_plan.name
           if link_network
             link_provider_job = deployment_plan.job(link_path.job)
@@ -13,7 +13,8 @@ module Bosh::Director
             end
 
             unless valid_network
-              raise "Network name '#{link_network}' is not one of the networks on the link '#{link_path.name}'"
+              available_networks = link_provider_job.networks.map { |network| network.name }.join(', ')
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks}."
             end
           end
 
@@ -32,7 +33,12 @@ module Bosh::Director
             end
 
             unless valid_network
-              raise "Deployment #{link_path.deployment} does not have any jobs with network #{link_network}"
+              available_networks = []
+              link_spec['nodes'].each do |node|
+                node['addresses'].each { |name, address| available_networks << name }
+              end
+
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks.join(', ')}."
             end
           end
 

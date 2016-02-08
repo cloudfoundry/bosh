@@ -34,7 +34,7 @@ module Bosh::Director
       end
 
       def to_s
-        "name: #{name}, type: #{type}, shared: #{shared}"
+        "name: #{name}, type: #{type}, shared: #{shared || false}"
       end
     end
   end
