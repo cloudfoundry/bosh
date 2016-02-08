@@ -333,6 +333,21 @@ describe 'deploy', type: :integration do
         expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
         expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
       end
+
+      it 'runs the post-deploy script when a vms is resurrected' do
+        current_sandbox.with_health_monitor_running do
+          deploy({})
+
+          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+
+          resurected_vm = director.kill_vm_and_wait_for_resurrection(director.vm('job_with_post_deploy_script', '0'))
+
+          agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurected_vm.agent_id}.log")
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        end
+      end
     end
 
     context 'when the post-deploy scripts exit with error' do

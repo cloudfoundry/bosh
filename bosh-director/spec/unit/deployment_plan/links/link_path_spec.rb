@@ -169,13 +169,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a different deployment that does not provide the correct link' do
     let(:path) { {"from" => 'previous_deployment.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment")
+      expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment. Please make sure the link was provided and shared.")
     end
 
     context "when link is optional and 'from' is explicitly set" do
       let(:path) { {"from" => 'previous_deployment.unprovided_link_name', "optional" => true} }
       it 'should not throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment")
+        expect{link_path.parse(path)}.to raise_error("Can't find link with name: unprovided_link_name in deployment previous_deployment. Please make sure the link was provided and shared.")
       end
     end
   end
