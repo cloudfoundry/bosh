@@ -66,7 +66,7 @@ case "$1" in
       chown vcap:vcap $DATA_DIR/pg_log
     fi
 
-    exec $JOB_DIR/bin/postgres_upgrade.sh
+    $JOB_DIR/bin/postgres_upgrade.sh
 
     cp $JOB_DIR/config/postgresql.conf $DATA_DIR
     chown vcap:vcap $DATA_DIR/postgresql.conf

@@ -1,9 +1,11 @@
 #!/bin/bash -e
 
-PACKAGE_DIR=/var/vcap/packages/postgres-9.4.5
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres
+BASE_DIR=${BASE_DIR:-/var/vcap}
 
-STORE_DIR=/var/vcap/store
+PACKAGE_DIR=$BASE_DIR/packages/postgres-9.4.5
+PACKAGE_DIR_OLD=$BASE_DIR/packages/postgres
+
+STORE_DIR=$BASE_DIR/store
 
 # historically we have used `postgres`
 DATA_DIR_OLD=$STORE_DIR/postgres
@@ -14,14 +16,8 @@ DATA_DIR=$STORE_DIR/postgres-9.4.5
 # and we'll keep the previous version's data intact to easy recovery, if necessary
 DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
 
-RUN_DIR=/var/vcap/sys/run/postgres
+RUN_DIR=$BASE_DIR/sys/run/postgres
 PIDFILE=$RUN_DIR/postgres.pid
-
-SCRIPT=$(basename $0)
-mkdir -p /var/vcap/sys/log/monit
-
-exec 1>> /var/vcap/sys/log/monit/$SCRIPT.log
-exec 2>> /var/vcap/sys/log/monit/$SCRIPT.err.log
 
 if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
 
@@ -31,17 +27,11 @@ if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
 
   touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
 
-  # Prevent upgrade from overwriting PIDFILE with new process during upgrade
-  touch $PIDFILE
-  chown root:root $PIDFILE
-
-  su - vcap -c "$PACKAGE_DIR/bin/pg_upgrade \
+  su - vcap -c $PACKAGE_DIR/bin/pg_upgrade \
     --old-datadir $DATA_DIR_OLD \
     --new-datadir $DATA_DIR \
     --old-bindir $PACKAGE_DIR_OLD/bin \
-    --new-bindir $PACKAGE_DIR/bin"
-
-  chown vcap:vcap $PIDFILE
+    --new-bindir $PACKAGE_DIR/bin
 
   rm -f $STORE_DIR/FLAG_POSTGRES_UPGRADE
   mv $DATA_DIR_OLD $DATA_DIR_PREVIOUS
