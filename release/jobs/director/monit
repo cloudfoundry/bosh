@@ -4,7 +4,7 @@ check process director
   stop program "/var/vcap/jobs/director/bin/director_ctl stop"
   group vcap
   <% if properties.micro %>
-  depends on postgres,nats
+  depends on postgres,redis,nats
   <% end %>
 <% (1..(properties.director.workers || 3)).each do |index| %>
 check process worker_<%= index %>

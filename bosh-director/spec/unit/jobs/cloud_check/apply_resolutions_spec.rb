@@ -9,9 +9,9 @@ module Bosh::Director
       allow(ProblemResolver).to receive_messages(new: resolver)
     end
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :cck_apply }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     let(:resolutions) { {1 => 'delete_disk', 2 => 'ignore'} }

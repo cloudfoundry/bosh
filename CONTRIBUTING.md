@@ -1,5 +1,7 @@
 # Contributing to BOSH
 
+When contributing a pull request, be sure to submit your pull request against the [**develop**](https://github.com/cloudfoundry/bosh/tree/develop) branch. See [Pull Request Workflow](docs/pull_request_workflow.md) for futher details.
+
 ## Contributor License Agreement
 
 Follow these steps to make a contribution to any of CF open source repositories:

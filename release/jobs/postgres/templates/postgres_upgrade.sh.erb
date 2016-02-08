@@ -27,11 +27,11 @@ if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
 
   touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
 
-  su - vcap -c $PACKAGE_DIR/bin/pg_upgrade \
+  su - vcap -c "$PACKAGE_DIR/bin/pg_upgrade \
     --old-datadir $DATA_DIR_OLD \
     --new-datadir $DATA_DIR \
     --old-bindir $PACKAGE_DIR_OLD/bin \
-    --new-bindir $PACKAGE_DIR/bin
+    --new-bindir $PACKAGE_DIR/bin"
 
   rm -f $STORE_DIR/FLAG_POSTGRES_UPGRADE
   mv $DATA_DIR_OLD $DATA_DIR_PREVIOUS

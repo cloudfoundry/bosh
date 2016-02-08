@@ -56,6 +56,8 @@ module Bosh::Director
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
+      allow(Config).to receive_messages(redis: double('fake-redis'))
+
       allow(Config).to receive(:cloud).and_return(cloud)
 
       @blobstore = double(:blobstore)

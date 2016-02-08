@@ -5,65 +5,83 @@ module Bosh::Director
     subject(:power_dns) { PowerDns.new('bosh', logger) }
     describe '#create_or_update' do
       context 'when dns record does not exist' do
-        it 'creates domain and ptr domain' do
-          expect {
-            power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
-          }.to change{ Models::Dns::Domain.count }.from(0).to(2)
-
-          expect(Models::Dns::Domain.all.map(&:name)).to contain_exactly('bosh', '3.2.1.in-addr.arpa')
-        end
 
         it 'creates new A record' do
           power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
-          record = Models::Dns::Record.find(type: 'A')
-          expect(record.name).to eq('1.foobar.network.dep.bosh')
-          expect(record.content).to eq('1.2.3.4')
+          record = Models::Dns::Record.find(name: '1.foobar.network.dep.bosh', content: '1.2.3.4', type: 'A')
+          expect(record).to exist
         end
 
-        it 'creates new ptr records' do
+        it 'creates a new PTR record' do
           power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
-          ns_record = Models::Dns::Record.find(type: 'NS')
-          expect(ns_record.name).to eq('3.2.1.in-addr.arpa')
-          expect(ns_record.content).to eq('ns.bosh')
+          ptr_record = Models::Dns::Record.find(
+            name: '4.3.2.1.in-addr.arpa',
+            content: '1.foobar.network.dep.bosh',
+            type: 'PTR'
+          )
+          expect(ptr_record).to exist
+        end
 
-          soa_record = Models::Dns::Record.find(type: 'SOA')
-          expect(soa_record.name).to eq('3.2.1.in-addr.arpa')
-          expect(soa_record.content).to eq('localhost hostmaster@localhost 0 10800 604800 30')
+        it 'creates a domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
+          domain = Models::Dns::Domain.find(name: 'bosh', type: 'NATIVE')
+          expect(domain).to exist
+        end
 
-          ptr_record = Models::Dns::Record.find(type: 'PTR')
-          expect(ptr_record.name).to eq('4.3.2.1.in-addr.arpa')
-          expect(ptr_record.content).to eq('1.foobar.network.dep.bosh')
+        it 'creates a PTR domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
+          ptr_domain = Models::Dns::Domain.find(name: '3.2.1.in-addr.arpa', type: 'NATIVE')
+          expect(ptr_domain).to exist
+        end
+
+        it 'creates a new NS record in the new domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
+          ns_record = Models::Dns::Record.find(name: '3.2.1.in-addr.arpa', content: 'ns.bosh', type: 'NS')
+          expect(ns_record).to exist
+        end
+
+        it 'creates a new SOA record in the new domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
+          soa_record = Models::Dns::Record.find(
+            name: '3.2.1.in-addr.arpa',
+            content: 'localhost hostmaster@localhost 0 10800 604800 30',
+            type: 'SOA'
+          )
+          expect(soa_record).to exist
         end
       end
 
-      context 'when dns record exists' do
+      context 'when a dns record exists' do
         before do
           power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '1.2.3.4')
         end
 
-        it 'updates ip address on A record' do
-          expect {
-            power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
-          }.to_not change { Models::Dns::Domain.count }
-
-          record = Models::Dns::Record.find(type: 'A')
-          expect(record.name).to eq('1.foobar.network.dep.bosh')
-          expect(record.content).to eq('5.6.7.8')
+        it 'updates the ip address on A record' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
+          records = Models::Dns::Record.where(name: '1.foobar.network.dep.bosh', type: 'A')
+          expect(records.map(&:content)).to eq(['5.6.7.8'])
         end
 
-        it 'updates ptr records' do
+        it 'updates PTR records' do
           power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
-          ns_record = Models::Dns::Record.find(type: 'NS')
-          expect(ns_record.name).to eq('7.6.5.in-addr.arpa')
-          expect(ns_record.content).to eq('ns.bosh')
+          ptr_records = Models::Dns::Record.where(name: '8.7.6.5.in-addr.arpa', type: 'PTR')
+          expect(ptr_records.map(&:content)).to eq(['1.foobar.network.dep.bosh'])
+        end
 
-          soa_record = Models::Dns::Record.find(type: 'SOA')
-          expect(soa_record.name).to eq('7.6.5.in-addr.arpa')
-          expect(soa_record.content).to eq('localhost hostmaster@localhost 0 10800 604800 30')
+        it 'creates a new NS record in the new domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
+          ns_record = Models::Dns::Record.find(name: '7.6.5.in-addr.arpa', content: 'ns.bosh', type: 'NS')
+          expect(ns_record).to exist
+        end
 
-          ptr_record = Models::Dns::Record.find(type: 'PTR')
-          expect(ptr_record.name).to eq('8.7.6.5.in-addr.arpa')
-          expect(ptr_record.content).to eq('1.foobar.network.dep.bosh')
+        it 'creates a new SOA record in the new domain' do
+          power_dns.create_or_update_dns_records('1.foobar.network.dep.bosh', '5.6.7.8')
+          soa_record = Models::Dns::Record.find(
+            name: '7.6.5.in-addr.arpa',
+            content: 'localhost hostmaster@localhost 0 10800 604800 30',
+            type: 'SOA'
+          )
+          expect(soa_record).to exist
         end
       end
     end
@@ -77,26 +95,14 @@ module Bosh::Director
         power_dns.create_or_update_dns_records('1.foobar.network-b.dep.bosh', ip)
       end
 
-      it 'deletes dns record' do
+      it 'deletes A records' do
         power_dns.delete('1.foobar.%.dep.bosh')
         expect(Models::Dns::Record.filter(type: 'A').map(&:name)).to eq(['uuid1uuid.foobar.network-a.dep.bosh'])
       end
 
-      it 'deletes ptr records associated with the pattern' do
+      it 'deletes PTR records associated with the pattern' do
         power_dns.delete('1.foobar.%.dep.bosh')
         expect(Models::Dns::Record.filter(type: 'PTR').map(&:content)).to eq(['uuid1uuid.foobar.network-a.dep.bosh'])
-      end
-
-      it 'deletes the NS and SOA records when there are no more A/PTR records in the domain' do
-        power_dns.delete('%.foobar.%.dep.bosh')
-        expect(Models::Dns::Record.filter(type: 'NS').all.size).to eq(0)
-        expect(Models::Dns::Record.filter(type: 'SOA').all.size).to eq(0)
-      end
-
-      it 'deletes empty reverse domain' do
-        expect {
-          power_dns.delete('%.foobar.%.dep.bosh')
-        }.to change { Models::Dns::Domain.all.size }.from(2).to(1)
       end
     end
   end

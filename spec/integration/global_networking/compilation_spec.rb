@@ -147,7 +147,7 @@ describe 'global networking', type: :integration do
     it 'releases its IP on subsequent deploy' do
       prepare_for_deploy
 
-      with_blocking_deploy(skip_task_wait: true) do | blocking_task_id |
+      with_blocking_deploy(skip_task_wait: true) do
         compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
           invocation.inputs['networks']['a']['ip']
         end
@@ -156,7 +156,6 @@ describe 'global networking', type: :integration do
 
         current_sandbox.director_service.hard_stop
         current_sandbox.director_service.start(current_sandbox.director_config)
-        bosh_runner.run("cancel task #{blocking_task_id}")
 
         deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)

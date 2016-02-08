@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'json_pure',   '~>1.7'
   spec.add_dependency 'highline',    '~>1.6.2'
   spec.add_dependency 'progressbar', '~>0.9.0'
-  spec.add_dependency 'httpclient',  '=2.4.0'
+  spec.add_dependency 'httpclient',  '=2.7.1'
   spec.add_dependency 'terminal-table',   '~>1.4.3'
   spec.add_dependency 'blobstore_client', "~>#{version}"
   spec.add_dependency 'net-ssh',          '=2.9.2'

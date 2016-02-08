@@ -28,6 +28,10 @@ describe 'director.yml.erb.erb' do
           'address' => '10.10.0.7',
           'port' => 4222
         },
+        'redis' => {
+          'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
+          'loglevel' => 'info',
+        },
         'director' => {
           'name' => 'vpc-bosh-idora',
           'backend_port' => 25556,
@@ -91,6 +95,10 @@ describe 'director.yml.erb.erb' do
 
     it 'should contain the trusted_certs field' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
+    end
+
+    it 'should keep dynamic, COMPONENT-based logging paths' do
+      expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
     end
 
     context 'when domain name specified without all other dns properties' do

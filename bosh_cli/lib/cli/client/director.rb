@@ -180,6 +180,10 @@ module Bosh
           body
         end
 
+        def attach_disk(deployment_name, job_name, instance_id, disk_cid)
+          request_and_track(:put, "/disks/#{disk_cid}/attachments?deployment=#{deployment_name}&job=#{job_name}&instance_id=#{instance_id}")
+        end
+
         def delete_orphan_disk_by_disk_cid(orphan_disk_cid)
           request_and_track(:delete, "/disks/#{orphan_disk_cid}")
         end

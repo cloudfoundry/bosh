@@ -17,4 +17,12 @@ shared_examples_for 'a systemd-based OS image' do
       it { should return_stdout /enabled/ }
     end
   end
+
+  context 'limit password reuse' do
+    describe file('/etc/pam.d/system-auth') do
+      it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
+        should contain /password.*pam_unix\.so.*remember=24/
+      end
+    end
+  end
 end

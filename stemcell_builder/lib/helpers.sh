@@ -28,7 +28,7 @@ function run_in_chroot {
 
   # TODO: remove the following `if` and set UNSHARE_ARGS to "-f -p -m"
   # once the os-image builder runs in docker without vagrant vm
-  if ./scripts/unshare -h | grep -- "-p, --pid"; then
+  if unshare -h | grep -q -- "-p, --pid"; then
     UNSHARE_ARGS="-f -p -m"
   else
     UNSHARE_ARGS="-m"

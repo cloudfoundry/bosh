@@ -30,7 +30,7 @@ module Bosh::Director
 
     REDACT_KEY_NAMES = %w(
       properties
-      env
+      bosh
     )
 
     def order

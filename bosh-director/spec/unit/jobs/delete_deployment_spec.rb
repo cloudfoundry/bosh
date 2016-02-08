@@ -16,9 +16,9 @@ module Bosh::Director
 
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-    describe 'DJ job class expectations' do
+    describe 'Resque job class expectations' do
       let(:job_type) { :delete_deployment }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a Resque job'
     end
 
     it 'should fail if the deployment is not found' do

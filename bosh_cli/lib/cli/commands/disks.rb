@@ -3,7 +3,6 @@ module Bosh::Cli::Command
     usage 'disks'
     desc 'List all orphaned disks in a deployment (requires --orphaned option)'
     option '--orphaned', 'Return orphaned disks'
-
     def list
       auth_required
       unless options[:orphaned]
@@ -40,6 +39,16 @@ module Bosh::Cli::Command
 
       nl
       say(disks_table)
+    end
+
+    usage 'attach disk'
+    desc 'Attaches an disk to an instance and replaces the current disk'
+    def attach(job_name, id, disk_cid)
+      auth_required
+      manifest = prepare_deployment_manifest
+      status, result = director.attach_disk(manifest.name, job_name, id, disk_cid)
+
+      task_report(status, result, "Attached disk #{disk_cid} to #{job_name}/#{id}")
     end
 
     usage 'delete disk'
