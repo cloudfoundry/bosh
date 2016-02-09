@@ -55,4 +55,24 @@ describe "cli cloud config", type: :integration do
       expect(bosh_runner.run("cloud-config")).to include(cloud_config)
     end
   end
+
+  it 'does not fail if the uploaded cloud config is a large file' do
+    target_and_login
+
+    Dir.mktmpdir do |tmpdir|
+      cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
+      cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
+
+      for i in 0..10001
+        cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
+      end
+
+      cloud_config = Psych.dump(cloud_config)
+      File.write(cloud_config_filename, cloud_config)
+
+      output, exit_code = bosh_runner.run("update cloud-config #{cloud_config_filename}", return_exit_code: true)
+      expect(output).to include('Successfully updated cloud config')
+      expect(exit_code).to eq(0)
+    end
+  end
 end

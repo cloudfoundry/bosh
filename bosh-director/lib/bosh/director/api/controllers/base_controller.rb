@@ -45,16 +45,6 @@ module Bosh::Director
           end
         end
 
-        def validate_yml_manifest(yml_str)
-          raise BadManifest, "Manifest should not be empty" unless yml_str.to_s != ''
-
-          begin
-            Psych.parse(yml_str)
-          rescue Psych::SyntaxError => e
-            raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
-          end
-        end
-
         def requires_authentication?
           true
         end

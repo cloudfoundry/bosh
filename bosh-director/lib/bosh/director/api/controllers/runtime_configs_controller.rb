@@ -4,10 +4,10 @@ module Bosh::Director
   module Api::Controllers
     class RuntimeConfigsController < BaseController
       post '/', :consumes => :yaml do
-        properties = request.body.string
-        validate_yml_manifest(properties)
+        manifest_file_path = prepare_yml_file(request.body, 'runtime-config')
+        manifest_text = File.read(manifest_file_path)
 
-        Bosh::Director::Api::RuntimeConfigManager.new.update(properties)
+        Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text)
         status(201)
       end
 

@@ -827,4 +827,31 @@ Deployed `simple' to `Test Director'
       end
     end
   end
+
+  context 'when the deployment manifest file is large' do
+    before do
+      release_filename = spec_asset('test_release.tgz')
+
+      minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.minimal_manifest)
+      minimal_manifest["properties"] = {}
+      for i in 0..10000
+        minimal_manifest["properties"]["property#{i}"] = "value#{i}"
+      end
+
+      deployment_manifest = yaml_file('minimal', minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+
+      target_and_login
+      bosh_runner.run("upload release #{release_filename}")
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+    end
+
+    it 'deploys successfully' do
+      output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
+      expect(output).to include("Deployed `minimal' to")
+      expect(exit_code).to eq(0)
+    end
+  end
 end

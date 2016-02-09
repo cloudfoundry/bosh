@@ -30,7 +30,7 @@ module Bosh::Director
           runtime_config = instance_double(Bosh::Director::Models::RuntimeConfig, id: 456)
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          create_task = subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', cloud_config, runtime_config, options)
+          create_task = subject.create_deployment(username, 'FAKE_TMPDIR/deployment-FAKE_UUID', cloud_config, runtime_config, options)
 
           expect(create_task).to eq(task)
           expect(job_queue).to have_received(:enqueue).with(
@@ -41,7 +41,7 @@ module Bosh::Director
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', nil, nil, options)
+          subject.create_deployment(username, 'FAKE_TMPDIR/deployment-FAKE_UUID', nil, nil, options)
 
           expect(job_queue).to have_received(:enqueue).with(
               username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, nil, nil, options])

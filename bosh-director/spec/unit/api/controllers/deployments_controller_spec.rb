@@ -125,11 +125,12 @@ module Bosh::Director
 
             it 'allows to change state with content_length of 0' do
               RSpec::Matchers.define :not_to_have_body do |unexpected|
-                match { |actual| actual.read != unexpected.read }
+                match { |actual| actual != unexpected }
               end
               manifest = spec_asset('test_conf.yaml')
+              manifest_path = asset('test_conf.yaml')
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                  with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything(), anything()).
+                  with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
@@ -174,6 +175,32 @@ module Bosh::Director
             put '/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.resurrection_paused).to be(true)
+          end
+
+          it 'gives a nice error when uploading non valid manifest' do
+            deployment = Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started')
+
+            put "/foo/jobs/dea", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          end
+
+          it 'should not validate body content when content.length is zero' do
+            deployment = Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started')
+
+            put "/foo/jobs/dea/0?state=started", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+
+            expect(last_response.status).to eq(302)
           end
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do

@@ -74,4 +74,23 @@ describe "cli runtime config", type: :integration do
     end
   end
 
+  it 'does not fail when runtime config is very large' do
+    target_and_login
+
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
+
+      for i in 0..10001
+        runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
+      end
+
+      runtime_config = Psych.dump(runtime_config)
+
+      File.write(runtime_config_filename, runtime_config)
+      output, exit_code = bosh_runner.run("update runtime-config #{runtime_config_filename}", return_exit_code: true)
+      expect(output).to include('Successfully updated runtime config')
+      expect(exit_code).to eq(0)
+    end
+  end
 end

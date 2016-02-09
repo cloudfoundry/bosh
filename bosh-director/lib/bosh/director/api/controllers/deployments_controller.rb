@@ -30,12 +30,19 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
+        # This line should be outside the if statement so that it
+        # will throw a 404 error if the deployment was not found
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
+
+        if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+        else
+          manifest_file_path = prepare_yml_file(request.body, 'deployment')
+        end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -57,11 +64,19 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
+        # This line should be outside the if statement so that it
+        # will throw a 404 error if the deployment was not found
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = (request.content_length.nil?  || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
+
+        if (request.content_length.nil?  || request.content_length.to_i == 0)
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+        else
+          manifest_file_path = prepare_yml_file(request.body, 'deployment')
+        end
+
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -266,7 +281,7 @@ module Bosh::Director
       end
 
       post '/', :consumes => :yaml do
-        validate_yml_manifest(request.body.string)
+        manifest_file_path = prepare_yml_file(request.body, 'deployment')
 
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
@@ -281,12 +296,13 @@ module Bosh::Director
           runtime_config = Api::RuntimeConfigManager.new.latest
         end
 
-        task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, options)
         redirect "/tasks/#{task.id}"
       end
 
       post '/:deployment/diff', :consumes => :yaml do
-        validate_yml_manifest(request.body.string)
+        manifest_file_path = prepare_yml_file(request.body, 'deployment-diff')
+        manifest_text = File.read(manifest_file_path)
 
         deployment = Models::Deployment[name: params[:deployment]]
         if deployment
@@ -299,7 +315,7 @@ module Bosh::Director
         after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
         after_manifest = Manifest.load_from_text(
-          request.body,
+          manifest_text,
           after_cloud_config,
           after_runtime_config
         )
