@@ -19,7 +19,7 @@ describe 'create release', type: :integration do
           './jobs/fails_with_too_much_output.tgz',
           './jobs/foobar.tgz',
           './jobs/foobar_with_bad_properties.tgz',
-          './jobs/foobar_with_bad_properties_2  .tgz',
+          './jobs/foobar_with_bad_properties_2.tgz',
           './jobs/job_with_many_packages.tgz',
           './jobs/foobar_without_packages.tgz',
           './jobs/has_drain_script.tgz',
