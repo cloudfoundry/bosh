@@ -1,17 +1,15 @@
 require 'open3'
 
 describe 'postgres_ctl.erb' do
-  let(:postgres_upgrade_sh) { File.join(File.dirname(__FILE__), '../jobs/postgres/templates/postgres_upgrade.sh') }
-
-  context 'running postgres_upgrade.sh' do
+  context 'running postgres_db_backup.sh' do
     before do
       FileUtils.mkdir_p 'tmp/store/postgres'
       File.open('tmp/store/postgres/PG_VERSION', 'a+') {|f| f.write '9.0'}
-      FileUtils.mkdir_p 'tmp/sys/run/postgres'
+      FileUtils.mkdir_p 'tmp/sys/run/postgres-9.4.5'
       FileUtils.touch 'tmp/store/postgres/postgresql.conf'
-      FileUtils.mkdir_p 'tmp/jobs/postgres/bin'
-      FileUtils.touch 'tmp/jobs/postgres/bin/really_upgrade_postgres.sh'
-      File.chmod(777, 'tmp/jobs/postgres/bin/really_upgrade_postgres.sh')
+      FileUtils.mkdir_p 'tmp/jobs/postgres-9.4.5/bin'
+      FileUtils.touch 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh'
+      File.chmod(777, 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')
       ENV['BASE_DIR'] = 'tmp'
     end
 
@@ -20,7 +18,7 @@ describe 'postgres_ctl.erb' do
     end
 
     it 'should create a backup directory before migrating' do
-      _, _, status = Open3.capture3('jobs/postgres/templates/postgres_upgrade.sh.erb')
+      _, _, status = Open3.capture3('jobs/postgres-9.4.5/templates/postgres_db_backup.sh.erb')
 
       expect(status).to eq(0)
       expect(Dir.exists?('tmp/store/postgres-previous'))

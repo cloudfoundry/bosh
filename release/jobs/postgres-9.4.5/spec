@@ -1,10 +1,10 @@
 ---
-name: postgres
+name: postgres-9.4.5
 
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
-  postgres_upgrade.sh.erb: bin/postgres_upgrade.sh
-  really_upgrade_postgres.sh.erb: bin/really_upgrade_postgres.sh
+  postgres_db_backup.sh.erb: bin/postgres_db_backup.sh
+  postgres_db_upgrade.sh.erb: bin/postgres_db_upgrade.sh
   postgresql.conf.erb: config/postgresql.conf
 
 packages:

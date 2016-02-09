@@ -14,8 +14,8 @@ DATA_DIR=$STORE_DIR/postgres-9.4.5
 # and we'll keep the previous version's data intact to easy recovery, if necessary
 DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
 
-JOB_DIR=/var/vcap/jobs/postgres
-RUN_DIR=/var/vcap/sys/run/postgres
+JOB_DIR=/var/vcap/jobs/postgres-9.4.5
+RUN_DIR=/var/vcap/sys/run/postgres-9.4.5
 PIDFILE=$RUN_DIR/postgres.pid
 
 HOST=<%= p("postgres.listen_address") %>
@@ -66,7 +66,7 @@ case "$1" in
       chown vcap:vcap $DATA_DIR/pg_log
     fi
 
-    $JOB_DIR/bin/postgres_upgrade.sh
+    $JOB_DIR/bin/postgres_db_backup.sh
 
     cp $JOB_DIR/config/postgresql.conf $DATA_DIR
     chown vcap:vcap $DATA_DIR/postgresql.conf
