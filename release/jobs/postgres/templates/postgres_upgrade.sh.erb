@@ -18,6 +18,7 @@ DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
 
 RUN_DIR=$BASE_DIR/sys/run/postgres
 PIDFILE=$RUN_DIR/postgres.pid
+JOB_DIR=$BASE_DIR/jobs/postgres
 
 if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
 
@@ -27,11 +28,7 @@ if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
 
   touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
 
-  su - vcap -c "$PACKAGE_DIR/bin/pg_upgrade \
-    --old-datadir $DATA_DIR_OLD \
-    --new-datadir $DATA_DIR \
-    --old-bindir $PACKAGE_DIR_OLD/bin \
-    --new-bindir $PACKAGE_DIR/bin"
+  $JOB_DIR/bin/really_upgrade_postgres.sh
 
   rm -f $STORE_DIR/FLAG_POSTGRES_UPGRADE
   mv $DATA_DIR_OLD $DATA_DIR_PREVIOUS

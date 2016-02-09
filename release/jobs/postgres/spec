@@ -4,6 +4,7 @@ name: postgres
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
   postgres_upgrade.sh.erb: bin/postgres_upgrade.sh
+  really_upgrade_postgres.sh.erb: bin/really_upgrade_postgres.sh
   postgresql.conf.erb: config/postgresql.conf
 
 packages:
