@@ -5,14 +5,14 @@ image: docker:///bosh/os-image-stemcell-builder
 
 inputs:
 - name: bosh-src
+- name: version
+
+outputs:
+- name: os-image
 
 run:
   path: bosh-src/ci/pipelines/os-images-new/tasks/build.sh
 
 params:
-  BOSH_AWS_ACCESS_KEY_ID:     replace-me
-  BOSH_AWS_SECRET_ACCESS_KEY: replace-me
   OPERATING_SYSTEM_NAME:      replace-me
   OPERATING_SYSTEM_VERSION:   replace-me
-  OS_IMAGE_S3_BUCKET_NAME:    replace-me
-  OS_IMAGE_S3_KEY:            replace-me
