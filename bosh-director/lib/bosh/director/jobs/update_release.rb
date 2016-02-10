@@ -463,6 +463,9 @@ module Bosh::Director
         compiled_package.package_id = package.id
         compiled_package.stemcell_id = stemcell.id
 
+        compiled_package.stemcell_os = stemcell.operating_system
+        compiled_package.stemcell_version = stemcell.version
+
         compiled_package.save
       end
 
