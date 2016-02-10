@@ -556,7 +556,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                       .with('fake-template-name')
                                       .and_return(template)
             expect(template).to receive(:add_template_scoped_properties)
-                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}})
+                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
 
             parser.parse(job_spec)
           end

@@ -23,7 +23,14 @@ module Bosh::Director
         @package_models = []
         @logger = Config.logger
         @link_infos = {}
-        @template_scoped_properties = nil
+
+        # This hash will contain the properties specific to this template,
+        # it will be a hash where the keys are the deployment job name, and
+        # the value of each key will be the properties defined in template
+        # section of the deployment manifest. This way if a template is used
+        # in multiple deployment jobs, the properties will not be shared across
+        # jobs
+        @template_scoped_properties = {}
       end
 
       # Looks up template model and its package models in DB
@@ -138,25 +145,25 @@ module Bosh::Director
         @link_infos.fetch(job_name, {}).fetch('consumes', {}).fetch(link_name, {})
       end
 
-      def add_template_scoped_properties(template_scoped_properties)
-        @template_scoped_properties = template_scoped_properties
+      def add_template_scoped_properties(template_scoped_properties, deployment_job_name)
+        @template_scoped_properties[deployment_job_name] = template_scoped_properties
       end
 
-      def has_template_scoped_properties
-        return !@template_scoped_properties.nil?
+      def has_template_scoped_properties(deployment_job_name)
+        return !@template_scoped_properties[deployment_job_name].nil?
       end
 
-      def bind_template_scoped_properties
+      def bind_template_scoped_properties(deployment_job_name)
         bound_template_scoped_properties = {}
         properties.each_pair do |name, definition|
           copy_property(
               bound_template_scoped_properties,
-              @template_scoped_properties,
+              @template_scoped_properties[deployment_job_name],
               name,
               definition["default"]
           )
         end
-        @template_scoped_properties = bound_template_scoped_properties
+        @template_scoped_properties[deployment_job_name] = bound_template_scoped_properties
       end
 
       private

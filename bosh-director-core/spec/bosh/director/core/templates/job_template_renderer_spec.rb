@@ -36,7 +36,7 @@ module Bosh::Director::Core::Templates
         JobTemplateRenderer.new('template-name', monit_erb, [source_erb], logger)
       end
 
-      context 'when templates do not local properties' do
+      context 'when templates do not contain local properties' do
         let(:context) { instance_double('Bosh::Template::EvaluationContext') }
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(context)
@@ -56,7 +56,7 @@ module Bosh::Director::Core::Templates
         end
       end
 
-      context 'when templates has local properties' do
+      context 'when template has local properties' do
 
         let(:spec) do
           {

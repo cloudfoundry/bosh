@@ -331,6 +331,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(foo_template).to receive(:version).and_return('200')
       allow(foo_template).to receive(:sha1).and_return('fake_sha1')
       allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
+      allow(foo_template).to receive(:template_scoped_properties).and_return({})
 
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)

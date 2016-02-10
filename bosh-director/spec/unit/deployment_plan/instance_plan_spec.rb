@@ -465,7 +465,7 @@ module Bosh::Director::DeploymentPlan
                 version: state['job']['version'],
                 sha1: state['job']['sha1'],
                 blobstore_id: state['job']['blobstore_id'],
-                template_scoped_properties: nil,
+                template_scoped_properties: {},
                 logs: nil,
               })
           end

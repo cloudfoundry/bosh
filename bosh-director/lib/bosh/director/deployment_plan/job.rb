@@ -141,7 +141,10 @@ module Bosh::Director
           "blobstore_id" => job_spec["blobstore_id"]
         }
 
-        template['template_scoped_properties'] = job_spec['template_scoped_properties'] unless job_spec['template_scoped_properties'].nil?
+        # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
+        # So we will support this feature if a user want to use legacy spec. If they
+        # want to use properties per template, let them use the regular way of defining
+        # templates, i.e. by using the 'templates' key
         job_spec['templates'] = [template]
       end
 
@@ -178,7 +181,7 @@ module Bosh::Director
             "blobstore_id" => first_template.blobstore_id
           }
 
-          result['template_scoped_properties'] = first_template.template_scoped_properties unless first_template.template_scoped_properties.nil?
+          result['template_scoped_properties'] = first_template.template_scoped_properties[@name] unless first_template.template_scoped_properties[@name].nil?
 
           if first_template.logs
             result["logs"] = first_template.logs
@@ -193,7 +196,7 @@ module Bosh::Director
               "blobstore_id" => template.blobstore_id
             }
 
-            template_entry['template_scoped_properties'] = template.template_scoped_properties unless template.template_scoped_properties.nil?
+            template_entry['template_scoped_properties'] = template.template_scoped_properties[@name] unless template.template_scoped_properties[@name].nil?
 
             if template.logs
               template_entry["logs"] = template.logs
@@ -354,8 +357,8 @@ module Bosh::Director
           # make them available to other templates in the same deployment job. That can
           # be done by checking @template_scoped_properties variable of each
           # template
-          if template.has_template_scoped_properties
-            template.bind_template_scoped_properties
+          if template.has_template_scoped_properties(@name)
+            template.bind_template_scoped_properties(@name)
           else
             template.properties.each_pair do |name, definition|
               copy_property(result, collection, name, definition["default"])

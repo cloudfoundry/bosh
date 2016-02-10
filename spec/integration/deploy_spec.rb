@@ -639,6 +639,106 @@ Error 100: Unable to render jobs for deployment. Errors are:
       end
     end
 
+    context 'when same template is referenced in multiple deployment jobs' do
+
+      let (:manifest) do
+        Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                      name: 'worker_1',
+                      templates: [
+                          {'name' => 'job_1_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'pink'
+                               },
+                               'gargamel' => {
+                                   'color' => 'orange'
+                               }
+                           }
+                          },
+                          {'name' => 'job_2_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'yellow'
+                               },
+                               'gargamel' => {
+                                   'color' => 'green'
+                               }
+                           }
+                          }
+                      ],
+                      instances: 1
+                  ),
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                      name: 'worker_2',
+                      templates: [
+                          {'name' => 'job_1_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'navy'
+                               },
+                               'gargamel' => {
+                                   'color' => 'red'
+                               }
+                           }
+                          },
+                          {'name' => 'job_2_with_many_properties'}
+                      ],
+                      instances: 1,
+                      properties: {
+                          'snoopy' => 'happy',
+                          'smurfs' => {
+                              'color' => 'brown'
+                          },
+                          'gargamel' => {
+                              'color' => 'grey'
+                          }
+                      }
+                  )
+              ]
+          })
+      end
+
+      it 'should not expose the local properties across deployment jobs' do
+        set_deployment(manifest_hash: manifest)
+        deploy({})
+
+        target_vm_1 = director.vm('worker_1', '0')
+        template_1_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        target_vm_2 = director.vm('worker_2', '0')
+        template_1_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        expect(template_1_in_worker_1['properties_list']['smurfs_color']).to eq('pink')
+        expect(template_1_in_worker_1['properties_list']['gargamel_color']).to eq('orange')
+        expect(template_2_in_worker_1['properties_list']['smurfs_color']).to eq('yellow')
+        expect(template_2_in_worker_1['properties_list']['gargamel_color']).to eq('green')
+
+        expect(template_1_in_worker_2['properties_list']['smurfs_color']).to eq('navy')
+        expect(template_1_in_worker_2['properties_list']['gargamel_color']).to eq('red')
+        expect(template_2_in_worker_2['properties_list']['smurfs_color']).to eq('brown')
+        expect(template_2_in_worker_2['properties_list']['gargamel_color']).to eq('grey')
+      end
+
+      it 'should only complain about non-property satisfied template when missing properties' do
+        manifest['jobs'][1]['properties'] = {}
+        set_deployment(manifest_hash: manifest)
+
+        output, exist_code = deploy({return_exit_code: true, failure_expected: true})
+
+        expect(exist_code).to_not eq(0)
+        expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job worker_2. Errors are:
+     - Unable to render release templates for release job job_2_with_many_properties. Errors are:
+       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+        EOF
+      end
+    end
   end
 
   it 'supports scaling down and then scaling up' do

@@ -167,7 +167,10 @@ module Bosh::Director
               template.add_link_info(@job.name, 'consumes', link_name, source)
             end
 
-            template.add_template_scoped_properties(safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil))
+            template.add_template_scoped_properties(
+                safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
+                @job.name
+            )
 
             @job.templates << template
           end
