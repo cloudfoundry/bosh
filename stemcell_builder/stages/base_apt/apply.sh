@@ -35,3 +35,8 @@ fi
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
 pkg_mgr install upstart
 pkg_mgr dist-upgrade
+
+# initscripts messes with /dev/shm -> /run/shm and can create self-referencing symbolic links
+# revert /run/shm back to a regular directory (symlinked to by /dev/shm)
+rm -rf $chroot/run/shm
+mkdir -p $chroot/run/shm
