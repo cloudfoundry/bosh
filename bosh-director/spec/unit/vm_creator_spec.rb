@@ -29,7 +29,7 @@ describe Bosh::Director::VmCreator do
   let(:stemcell_model) { Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
   let(:stemcell) do
     stemcell_model
-    stemcell = Bosh::Director::DeploymentPlan::Stemcell.new({'name' => 'fake-stemcell', 'version' => '123'})
+    stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
     stemcell.add_stemcell_model
     stemcell
   end

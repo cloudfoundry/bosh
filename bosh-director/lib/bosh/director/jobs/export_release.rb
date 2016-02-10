@@ -27,7 +27,7 @@ module Bosh::Director
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
-        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.new({
+        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({
             "os" => @stemcell_os,
             "version" => @stemcell_version
           })

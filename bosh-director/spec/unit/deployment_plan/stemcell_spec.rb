@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Stemcell do
   def make(spec)
-    BD::DeploymentPlan::Stemcell.new(spec)
+    BD::DeploymentPlan::Stemcell.parse(spec)
   end
 
   def make_plan(deployment = nil)

@@ -23,7 +23,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       allow(resource_pool).to receive(:name).and_return('fake-vm-type')
       allow(resource_pool).to receive(:cloud_properties).and_return({})
       allow(resource_pool).to receive(:stemcell).and_return(
-          Bosh::Director::DeploymentPlan::Stemcell.new({
+          Bosh::Director::DeploymentPlan::Stemcell.parse({
               'name' => 'fake-stemcell-name',
               'version' => 1
             })
@@ -726,7 +726,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               })
           )
         allow(deployment_plan).to receive(:stemcell).with('fake-stemcell').and_return(
-            Bosh::Director::DeploymentPlan::Stemcell.new({
+            Bosh::Director::DeploymentPlan::Stemcell.parse({
                 'alias' => 'fake-stemcell',
                 'os' => 'fake-os',
                 'version' => 1

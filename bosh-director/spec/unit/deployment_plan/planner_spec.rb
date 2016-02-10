@@ -226,7 +226,7 @@ module Bosh::Director
           context 'when using vm types and stemcells' do
             let(:resource_pools) { [] }
             before do
-              planner.add_stemcell(Stemcell.new({
+              planner.add_stemcell(Stemcell.parse({
                     'alias' => 'default',
                     'name' => 'default',
                     'version' => '1',

@@ -33,7 +33,7 @@ module Bosh::Director
             if @deployment.stemcells.has_key?(alias_val)
               raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
             end
-            @deployment.add_stemcell(Stemcell.new(stemcell_hash))
+            @deployment.add_stemcell(Stemcell.parse(stemcell_hash))
           end
         end
       end

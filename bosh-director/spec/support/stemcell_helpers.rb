@@ -4,7 +4,7 @@ module Support
       model = Bosh::Director::Models::Stemcell.make(options)
       deployment = Bosh::Director::Models::Deployment.make
       plan = double(:plan, model: deployment)
-      stemcell = Bosh::Director::DeploymentPlan::Stemcell.new(
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(
         {'name' => model.name, 'version' => model.version}
       )
       stemcell.bind_model(plan)
