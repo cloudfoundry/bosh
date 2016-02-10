@@ -26,6 +26,8 @@ if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
     rm -rf $DATA_DIR_PREVIOUS
   fi
 
+  tar -cjvf $STORE_DIR/postgres-$(date +%Y-%m-%d_%H:%M:%S).tgz $DATA_DIR_OLD
+
   touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
 
   $JOB_DIR/bin/postgres_db_upgrade.sh
