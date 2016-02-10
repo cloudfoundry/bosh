@@ -3,6 +3,8 @@ require 'bosh/template/evaluation_failed'
 require 'bosh/template/unknown_property'
 require 'bosh/template/unknown_link'
 require 'bosh/template/property_helper'
+require 'bosh/template/evaluation_link_node'
+require 'bosh/template/evaluation_link'
 
 module Bosh
   module Template
@@ -44,9 +46,6 @@ module Bosh
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)
 
-
-        @link_spec = Struct::const_defined?("LinkSpec") ? Struct.const_get("LinkSpec") : Struct.new("LinkSpec", :nodes)
-        @link_spec_props = Struct::const_defined?("LinkSpecProperties") ? Struct.const_get("LinkSpecProperties") : Struct.new("LinkSpecProperties", :name, :index, :id, :az, :address)
         @links = spec['links'] || {}
       end
 
@@ -98,9 +97,9 @@ module Bosh
         result = lookup_property(@links, name)
         if result.has_key?("nodes")
           node_array = result["nodes"].map do |link_spec|
-            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"])
+            EvaluationLinkNode.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          return @link_spec.new(node_array)
+          return EvaluationLink.new(node_array)
         end
         raise UnknownLink.new(name)
       end
@@ -128,9 +127,9 @@ module Bosh
           return ActiveElseBlock.new(self)
         else
           node_array = link_found["nodes"].map do |link_spec|
-            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["uuid"], link_spec["az"], link_spec["address"])
+            EvaluationLinkNode.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          yield @link_spec.new(node_array)
+          yield EvaluationLink.new(node_array)
           InactiveElseBlock.new
         end
       end

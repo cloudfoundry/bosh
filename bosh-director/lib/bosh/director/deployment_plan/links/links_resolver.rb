@@ -50,7 +50,7 @@ module Bosh::Director
       def save_provided_links(job, template)
         template.provided_links(job.name).each do |provided_link|
           if provided_link.shared
-            link_spec = Link.new(provided_link.name, job).spec
+            link_spec = Link.new(provided_link.name, job, template).spec
             @logger.debug("Saving link spec for job '#{job.name}', template: '#{template.name}', link: '#{provided_link}', spec: '#{link_spec}'")
             @deployment_plan.link_spec[job.name][template.name][provided_link.name][provided_link.type] = link_spec
           end

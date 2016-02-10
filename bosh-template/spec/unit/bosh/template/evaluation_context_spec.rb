@@ -1,5 +1,7 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_context'
+require 'bosh/template/evaluation_link_node'
+require 'bosh/template/evaluation_link'
 
 module Bosh
   module Template
@@ -20,8 +22,8 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.101"}]},
-            'fake-link-2' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.102"}]}
+            'fake-link-1' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
+            'fake-link-2' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
           },
           'index' => 0,
           'id' => 'deadbeef',
@@ -64,6 +66,11 @@ module Bosh
       it 'evaluates links' do
         expect(eval_template("<%= link('fake-link-1').nodes[0].address %>", @context)).to eq('123.456.789.101')
         expect(eval_template("<%= link('fake-link-2').nodes[0].address %>", @context)).to eq('123.456.789.102')
+      end
+
+      it 'evaluates link properties' do
+        expect(eval_template("<%= link('fake-link-1').nodes[0].p('prop1') %>", @context)).to eq('value')
+        expect(eval_template("<%= link('fake-link-2').nodes[0].p('prop2') %>", @context)).to eq('value')
       end
 
       describe 'if_link' do
