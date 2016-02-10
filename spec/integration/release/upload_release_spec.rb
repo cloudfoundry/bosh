@@ -367,6 +367,26 @@ describe 'upload release', type: :integration do
       }.to raise_error(RuntimeError, /No stemcells matching OS centos-7 version 3001/)
     end
 
+    it 'should not raise an error if there exists a stemcell that is only different in patch version' do
+      output = nil
+
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001.1-aws-xen-centos-7-go_agent.tgz')}")
+
+      expect {
+        output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      }.not_to raise_error
+
+      expect(output).to include("Release uploaded")
+    end
+
+    it 'should raise an error if there only exist stemcells that are different in major version' do
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+
+      expect {
+        bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      }.to raise_error(RuntimeError, /No stemcells matching OS centos-7 version 3001/)
+    end
+
     it 'should populate compiled packages for one stemcell' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
@@ -561,14 +581,12 @@ describe 'upload release', type: :integration do
   end
 
   describe 'uploading release with --fix' do
-    def get_blob_files(table_string)
-      blobs = []
-      table = table_string.lines.grep(/^\| /).map { |line| line.gsub(/\s+/, "")}
-      table.each { |line|
-        blobs << line.split('|')[4]
-      }
-      blobs.shift
-      blobs.select { |s| !s.nil? && s != "" }
+    def get_blob_ids(table_string)
+      table_string.lines.inject([]) do |result, line|
+        match = line.match(/\|\s(\S+)\s\|\s\S+\s\|$/)
+        result << match[1] if match
+        result
+      end
     end
 
     def search_and_delete_files(file_path, blob_files)
@@ -605,7 +623,7 @@ describe 'upload release', type: :integration do
         expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
 
         inspect1 = bosh_runner.run('inspect release bosh-release/0+dev.1')
-        blob_files_1 = get_blob_files(inspect1.split(/\n\n/)[1])
+        blob_files_1 = get_blob_ids(inspect1)
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
@@ -617,7 +635,7 @@ describe 'upload release', type: :integration do
         expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
 
         inspect2 = bosh_runner.run('inspect release bosh-release/0+dev.1')
-        blob_files_2 = get_blob_files(inspect2.split(/\n\n/)[1])
+        blob_files_2 = get_blob_ids(inspect2)
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end
@@ -630,7 +648,7 @@ describe 'upload release', type: :integration do
         expect(output).to include('Release uploaded')
 
         inspect1 = bosh_runner.run('inspect release hello-go/50')
-        blob_files_1 = get_blob_files(inspect1.split(/\n\n/)[1])
+        blob_files_1 = get_blob_ids(inspect1.split(/\n\n/)[1])
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
@@ -639,11 +657,10 @@ describe 'upload release', type: :integration do
         expect(output).to include('Release uploaded')
 
         inspect2 = bosh_runner.run('inspect release hello-go/50')
-        blob_files_2 = get_blob_files(inspect2.split(/\n\n/)[1])
+        blob_files_2 = get_blob_ids(inspect2.split(/\n\n/)[1])
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end
     end
   end
-
 end

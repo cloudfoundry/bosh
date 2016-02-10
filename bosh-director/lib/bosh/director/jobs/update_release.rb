@@ -273,6 +273,7 @@ module Bosh::Director
 
         if @compiled_release
           compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
+            @packages[pkg.name] = pkg
             stemcells_used_by_package(pkg_meta).map do |stemcell|
               {
                   package: pkg,
@@ -385,8 +386,9 @@ module Bosh::Director
           stemcell = compiled_package_spec[:stemcell]
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          existing_compiled_package = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
-          if existing_compiled_package.empty?
+          stemcell_major_version_regex = regex_for_stemcell_major_version(stemcell.version)
+          existing_compiled_packages = Models::CompiledPackage.eager_graph(:stemcell).where(:package_id => package.id, :stemcell__version => stemcell_major_version_regex)
+          if existing_compiled_packages.empty?
 
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
             event_log.track(package_desc) do
@@ -398,7 +400,9 @@ module Bosh::Director
               had_effect = true
             end
           elsif @fix
-            fix_compiled_package(existing_compiled_package.first, compiled_pkg_tgz)
+            existing_compiled_package = existing_compiled_packages.first
+            @packages[existing_compiled_package.name] = existing_compiled_package
+            fix_compiled_package(existing_compiled_package, compiled_pkg_tgz)
           end
         end
 
@@ -421,17 +425,18 @@ module Bosh::Director
 
       def stemcells_used_by_package(package_meta)
         if package_meta['stemcell'].nil?
-          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
+          raise 'stemcell information (operating system/version) should be listed for each package of a compiled tarball'
         end
 
         values = package_meta['stemcell'].split('/', 2)
         operating_system = values[0]
         stemcell_version = values[1]
         unless operating_system && stemcell_version
-          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
+          raise 'stemcell information (operating system/version) should be listed for each package of a compiled tarball'
         end
 
-        stemcells = Models::Stemcell.where(:operating_system => operating_system, :version => stemcell_version)
+        stemcell_major_version_regex = regex_for_stemcell_major_version(stemcell_version)
+        stemcells = Models::Stemcell.where(:operating_system => operating_system, :version => stemcell_major_version_regex)
         if stemcells.empty?
           raise "No stemcells matching OS #{operating_system} version #{stemcell_version}"
         end
@@ -490,12 +495,15 @@ module Bosh::Director
 
       # @return [boolean] true if a new blob was created; false otherwise
       def save_package_source_blob(package, package_meta, release_dir)
-        name, version, existing_blob, sha1 = package_meta['name'], package_meta['version'], package_meta['blobstore_id'], package_meta['sha1']
+        name = package_meta['name']
+        version = package_meta['version']
+        existing_blob = package_meta['blobstore_id']
+        sha1 = package_meta['sha1']
         desc = "package '#{name}/#{version}'"
         package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
 
         if @fix
-          package.sha1 = package_meta['sha1']
+          package.sha1 = sha1
 
           if package.blobstore_id != nil
             delete_compiled_packages package
@@ -506,14 +514,14 @@ module Bosh::Director
 
           if existing_blob
             pkg = Models::Package.where(blobstore_id: existing_blob).first
-            delete_compiled_packages package
+            delete_compiled_packages(package)
             fix_package(pkg, package_tgz)
             package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
             return true
           end
         else
           return false unless package.blobstore_id.nil?
-          package.sha1 = package_meta['sha1']
+          package.sha1 = sha1
 
           if existing_blob
             logger.info("Creating #{desc} from existing blob #{existing_blob}")
@@ -580,7 +588,7 @@ module Bosh::Director
         end
 
         did_something = create_jobs(new_jobs, release_dir)
-        did_something |= use_existing_jobs(existing_jobs)
+        did_something |= use_existing_jobs(existing_jobs, release_dir)
 
         did_something
       end
@@ -604,18 +612,28 @@ module Bosh::Director
 
       def create_job(job_meta, release_dir)
         release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
-        release_job.create
+        logger.info("Creating job template `#{job_meta['name']}/#{job_meta['version']}' " +
+            'from provided bits')
+        release_job.update(Models::Template.new())
       end
 
       # @param [Array<Array>] jobs Existing jobs metadata
       # @return [boolean] true if at least one job was tied to the release version; false if the call had no effect.
-      def use_existing_jobs(jobs)
+      def use_existing_jobs(jobs, release_dir)
         return false if jobs.empty?
 
         single_step_stage("Processing #{jobs.size} existing job#{"s" if jobs.size > 1}") do
-          jobs.each do |template, _|
+          jobs.each do |template, job_meta|
             job_desc = "#{template.name}/#{template.version}"
-            logger.info("Using existing job `#{job_desc}'")
+
+            if @fix
+              logger.info("Fixing existing job `#{job_desc}'")
+              release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
+              release_job.update(template)
+            else
+              logger.info("Using existing job `#{job_desc}'")
+            end
+
             register_template(template) unless template.release_versions.include? @release_version_model
           end
         end
@@ -685,6 +703,11 @@ with blobstore_id '#{compiled_pkg.blobstore_id}' #{e.inspect}")
         logger.info("Re-created compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
 with blobstore_id '#{compiled_pkg.blobstore_id}'")
         compiled_pkg.save
+      end
+
+      def regex_for_stemcell_major_version(stemcell_version)
+        stemcell_major_version = stemcell_version.split(".").first
+        /#{stemcell_major_version}(\.[0-9]+)*/
       end
     end
   end

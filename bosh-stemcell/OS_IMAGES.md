@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `3KSsEYj8q18vJPJfngAjPD2TJqUxwILf`
+  - custom kernel update to fix aufs problem
+  - built from 3146.7-os-image (fe65269b2a438ce8176639e14e6e1f3a09e16b8b)
+
 * `BzKAbSfWFuIlnIRxEpSkdiHDm53nVwlV`
   - bump for stigs (V-38658)
 
