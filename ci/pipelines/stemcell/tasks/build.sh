@@ -56,9 +56,13 @@ SUDO
 
 mkdir -p stemcell/
 
+base_path="stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent"
+
 if [ -e bosh-src/tmp/*-raw.tgz ] ; then
   # openstack currently publishes raw files
-  mv bosh-src/tmp/*-raw.tgz stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent-raw.tgz
+  mv bosh-src/tmp/*-raw.tgz $base_path-raw.tgz
+  echo -n $(sha1sum $base_path-raw.tgz | awk '{print $1}') > $base_path-raw.tgz.sha1
 fi
 
-mv bosh-src/tmp/*.tgz stemcell/bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent.tgz
+mv bosh-src/tmp/*.tgz $base_path.tgz
+echo -n $(sha1sum $base_path.tgz | awk '{print $1}') > $base_path.tgz.sha1

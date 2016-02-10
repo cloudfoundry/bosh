@@ -82,19 +82,28 @@ jobs:
         config:
           params:
             AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
-            AWS_SECRET_KEY_ID: {{stemcell_aws_secret_key}}
+            AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
             BUCKET_NAME: {{stemcell_bucket}}
             CANDIDATE_PREFIX: bosh-stemcell-candidate/
             PUBLISHED_PREFIX: bosh-stemcell/
             COPY_KEYS: |
+              aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
               aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
+              aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz.sha1
               aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
+              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
               openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
+              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
               openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz.sha1
               openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
+              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
               openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
+              vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
               vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+              vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz.sha1
               vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
+              vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
               vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
 
   - name: build-aws-xen-ubuntu-trusty
@@ -119,9 +128,13 @@ jobs:
             HYPERVISOR: xen
             OS_NAME:    ubuntu
             OS_VERSION: trusty
-      - put: aws-xen-ubuntu-trusty-tarball-candidate
-        params:
-          file: stemcell/*.tgz
+      - aggregate:
+        - put: aws-xen-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: aws-xen-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
 
   - name: build-aws-xen-centos-7
     plan:
@@ -145,9 +158,13 @@ jobs:
             HYPERVISOR: xen
             OS_NAME:    centos
             OS_VERSION: 7
-      - put: aws-xen-centos-7-tarball-candidate
-        params:
-          file: stemcell/*.tgz
+      - aggregate:
+        - put: aws-xen-centos-7
+          params:
+            file: stemcell/*.tgz
+        - put: aws-xen-centos-7-sha1
+          params:
+            file: stemcell/*.tgz.sha1
 
   #
   # openstack
@@ -176,12 +193,18 @@ jobs:
             OS_NAME:    ubuntu
             OS_VERSION: trusty
       - aggregate:
-        - put: openstack-kvm-ubuntu-trusty-raw-tarball-candidate
+        - put: openstack-kvm-ubuntu-trusty-raw
           params:
             file: stemcell/*-raw.tgz
-        - put: openstack-kvm-ubuntu-trusty-tarball-candidate
+        - put: openstack-kvm-ubuntu-trusty-raw-sha1
+          params:
+            file: stemcell/*-raw.tgz.sha1
+        - put: openstack-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
+        - put: openstack-kvm-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*-go_agent.tgz.sha1
 
   - name: build-openstack-kvm-centos-7
     plan:
@@ -206,12 +229,18 @@ jobs:
             OS_NAME:    centos
             OS_VERSION: 7
       - aggregate:
-        - put: openstack-kvm-centos-7-raw-tarball-candidate
+        - put: openstack-kvm-centos-7-raw
           params:
             file: stemcell/*-raw.tgz
-        - put: openstack-kvm-centos-7-tarball-candidate
+        - put: openstack-kvm-centos-7-raw-sha1
+          params:
+            file: stemcell/*-raw.tgz.sha1
+        - put: openstack-kvm-centos-7
           params:
             file: stemcell/*-go_agent.tgz
+        - put: openstack-kvm-centos-7-sha1
+          params:
+            file: stemcell/*-go_agent.tgz.sha1
 
   #
   # vsphere
@@ -239,9 +268,13 @@ jobs:
             HYPERVISOR: esxi
             OS_NAME:    ubuntu
             OS_VERSION: trusty
-      - put: vsphere-esxi-ubuntu-trusty-tarball-candidate
-        params:
-          file: stemcell/*.tgz
+      - aggregate:
+        - put: vsphere-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: vsphere-esxi-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
 
   - name: build-vsphere-esxi-centos-7
     plan:
@@ -265,9 +298,13 @@ jobs:
             HYPERVISOR: esxi
             OS_NAME:    centos
             OS_VERSION: 7
-      - put: vsphere-esxi-centos-7-tarball-candidate
-        params:
-          file: stemcell/*.tgz
+      - aggregate:
+        - put: vsphere-esxi-centos-7
+          params:
+            file: stemcell/*.tgz
+        - put: vsphere-esxi-centos-7-sha1
+          params:
+            file: stemcell/*.tgz.sha1
 
   #
   # vcloud
@@ -295,9 +332,13 @@ jobs:
             HYPERVISOR: esxi
             OS_NAME:    ubuntu
             OS_VERSION: trusty
-      - put: vcloud-esxi-ubuntu-trusty-tarball-candidate
-        params:
-          file: stemcell/*.tgz
+      - aggregate:
+        - put: vcloud-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: vcloud-esxi-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
 
 resources:
   - name: bosh-src
@@ -340,7 +381,7 @@ resources:
   # aws
   #
 
-  - name: aws-xen-ubuntu-trusty-tarball-candidate
+  - name: aws-xen-ubuntu-trusty
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -348,7 +389,7 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: aws-xen-centos-7-tarball-candidate
+  - name: aws-xen-centos-7
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -356,11 +397,27 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
+  - name: aws-xen-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: aws-xen-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
   #
   # openstack
   #
 
-  - name: openstack-kvm-ubuntu-trusty-tarball-candidate
+  - name: openstack-kvm-ubuntu-trusty
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -368,7 +425,7 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: openstack-kvm-ubuntu-trusty-raw-tarball-candidate
+  - name: openstack-kvm-ubuntu-trusty-raw
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -376,7 +433,7 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: openstack-kvm-centos-7-tarball-candidate
+  - name: openstack-kvm-centos-7
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -384,7 +441,7 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: openstack-kvm-centos-7-raw-tarball-candidate
+  - name: openstack-kvm-centos-7-raw
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -392,11 +449,43 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
+  - name: openstack-kvm-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-ubuntu-trusty-raw-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-raw-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
   #
   # vsphere
   #
 
-  - name: vsphere-esxi-ubuntu-trusty-tarball-candidate
+  - name: vsphere-esxi-ubuntu-trusty
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -404,7 +493,7 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: vsphere-esxi-centos-7-tarball-candidate
+  - name: vsphere-esxi-centos-7
     type: s3
     source:
       bucket: {{stemcell_bucket}}
@@ -412,14 +501,38 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
+  - name: vsphere-esxi-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vsphere-esxi-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
   #
   # vcloud
   #
 
-  - name: vcloud-esxi-ubuntu-trusty-tarball-candidate
+  - name: vcloud-esxi-ubuntu-trusty
     type: s3
     source:
       bucket: {{stemcell_bucket}}
       regexp: bosh-stemcell-candidate/vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vcloud-esxi-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
