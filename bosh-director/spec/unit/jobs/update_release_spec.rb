@@ -1023,21 +1023,10 @@ module Bosh::Director
           end
 
           it 're-uploads all compiled packages to replace old ones' do
-            fake_dataset = instance_double(Sequel::Dataset)
-            fake_stemcell_version = /fake-stemcell-version-1(\.[0-9]+)*/
-            stemcells_dataset = Models::Stemcell.where(id: stemcell.id)
-            existing_compiled_packages_dataset = Models::CompiledPackage.where(id: compiled_package.id)
-
-            #Sqlite does not support pattern matching, so we need to stub these calls
-            expect(Models::Stemcell).to receive(:where).with(operating_system: 'fake-os-name-1', version: fake_stemcell_version).and_return(stemcells_dataset)
-            expect(Models::CompiledPackage).to receive(:eager_graph).with(:stemcell).and_return(fake_dataset)
-            expect(fake_dataset).to receive(:where).with(package_id: 1, stemcell__version: fake_stemcell_version).and_return(existing_compiled_packages_dataset)
-
             expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
             ).and_return('new-compiled-blobstore-id-after-fix')
-
             expect{
               job.perform
             }.to change { Models::CompiledPackage.dataset.first.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
@@ -1077,16 +1066,6 @@ module Bosh::Director
           end
 
           it 'replaces existing compiled packages and copy blobs' do
-            fake_dataset = instance_double(Sequel::Dataset)
-            fake_stemcell_version = /fake-stemcell-version-1(\.[0-9]+)*/
-            stemcells_dataset = Models::Stemcell.where(id: stemcell.id)
-            existing_compiled_packages_dataset = Models::CompiledPackage.where(package_id: 3, stemcell_id: stemcell.id)
-
-            #Sqlite does not support pattern matching, so we need to stub these calls
-            expect(Models::Stemcell).to receive(:where).with(operating_system: 'fake-os-name-1', version: fake_stemcell_version).and_return(stemcells_dataset)
-            expect(Models::CompiledPackage).to receive(:eager_graph).with(:stemcell).and_return(fake_dataset)
-            expect(fake_dataset).to receive(:where).with(package_id: 3, stemcell__version: fake_stemcell_version).and_return(existing_compiled_packages_dataset)
-
             expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')

@@ -367,26 +367,6 @@ describe 'upload release', type: :integration do
       }.to raise_error(RuntimeError, /No stemcells matching OS centos-7 version 3001/)
     end
 
-    it 'should not raise an error if there exists a stemcell that is only different in patch version' do
-      output = nil
-
-      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001.1-aws-xen-centos-7-go_agent.tgz')}")
-
-      expect {
-        output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
-      }.not_to raise_error
-
-      expect(output).to include("Release uploaded")
-    end
-
-    it 'should raise an error if there only exist stemcells that are different in major version' do
-      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
-
-      expect {
-        bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
-      }.to raise_error(RuntimeError, /No stemcells matching OS centos-7 version 3001/)
-    end
-
     it 'should populate compiled packages for one stemcell' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       output = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
