@@ -12,7 +12,7 @@ module Bosh::Dev
 
       def release_version
         @release_version ||= begin
-          postgres_release_config = YAML::load_file(File.join(File.dirname(__FILE__), '../../../../release/jobs/postgres/spec.yml'))
+          postgres_release_config = YAML::load_file(File.join(File.dirname(__FILE__), '../../../../release/jobs/postgres-9.4.5/spec.yml'))
           postgres_version = postgres_release_config['packages'].sort.last
 
           postgres_version.split('-').last
