@@ -1,0 +1,11 @@
+---
+smurfs:
+<% link('optional_link_name') do |link| %>
+  grandpa:
+  <% link.nodes.each do |node| %>
+    - name: <%= node.name %>
+      az: <%= node.az %>
+      index: <%= node.index %>
+      address: <%= node.address %>
+  <% end %>
+<% end %>

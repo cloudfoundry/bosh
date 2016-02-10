@@ -323,6 +323,34 @@ describe 'Links', type: :integration do
           expect(template['databases']['backup3']).to eq('happy')
         end
       end
+
+      context 'when the optional link is used without if_link in templates' do
+        let(:api_job_with_bad_optional_links) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'my_api',
+              templates: [{'name' => 'api_server_with_bad_optional_links'}],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [api_job_with_bad_optional_links]
+          manifest
+        end
+
+        it 'should throw a legitimate error if link was not found' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(out).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job my_api. Errors are:
+     - Unable to render release templates for release job api_server_with_bad_optional_links. Errors are:
+       - Error filling in release template `config.yml.erb' (line 3: Can't find link 'optional_link_name')
+          EOF
+        end
+      end
     end
 
     context 'when exporting a release with templates that have links' do

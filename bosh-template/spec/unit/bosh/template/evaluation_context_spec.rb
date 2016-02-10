@@ -73,6 +73,12 @@ module Bosh
         expect(eval_template("<%= link('fake-link-2').nodes[0].p('prop2') %>", @context)).to eq('value')
       end
 
+      it 'should throw a nice error when a link cannot be found' do
+        expect {
+          eval_template("<%= link('invisi-link') %>", @context)
+        }.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+      end
+
       describe 'if_link' do
 
         it 'works when link is found' do

@@ -95,6 +95,8 @@ module Bosh
 
       def link(name)
         result = lookup_property(@links, name)
+        raise UnknownLink.new(name) if result.nil?
+
         if result.has_key?("nodes")
           node_array = result["nodes"].map do |link_spec|
             EvaluationLinkNode.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
