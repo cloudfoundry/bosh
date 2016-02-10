@@ -273,7 +273,6 @@ module Bosh::Director
 
         if @compiled_release
           compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
-            @packages[pkg.name] = pkg
             stemcells_used_by_package(pkg_meta).map do |stemcell|
               {
                   package: pkg,
@@ -386,8 +385,7 @@ module Bosh::Director
           stemcell = compiled_package_spec[:stemcell]
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          stemcell_major_version_regex = regex_for_stemcell_major_version(stemcell.version)
-          existing_compiled_packages = Models::CompiledPackage.eager_graph(:stemcell).where(:package_id => package.id, :stemcell__version => stemcell_major_version_regex)
+          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
           if existing_compiled_packages.empty?
 
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
@@ -425,18 +423,17 @@ module Bosh::Director
 
       def stemcells_used_by_package(package_meta)
         if package_meta['stemcell'].nil?
-          raise 'stemcell information (operating system/version) should be listed for each package of a compiled tarball'
+          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
         end
 
         values = package_meta['stemcell'].split('/', 2)
         operating_system = values[0]
         stemcell_version = values[1]
         unless operating_system && stemcell_version
-          raise 'stemcell information (operating system/version) should be listed for each package of a compiled tarball'
+          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
         end
 
-        stemcell_major_version_regex = regex_for_stemcell_major_version(stemcell_version)
-        stemcells = Models::Stemcell.where(:operating_system => operating_system, :version => stemcell_major_version_regex)
+        stemcells = Models::Stemcell.where(:operating_system => operating_system, :version => stemcell_version)
         if stemcells.empty?
           raise "No stemcells matching OS #{operating_system} version #{stemcell_version}"
         end
@@ -703,11 +700,6 @@ with blobstore_id '#{compiled_pkg.blobstore_id}' #{e.inspect}")
         logger.info("Re-created compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
 with blobstore_id '#{compiled_pkg.blobstore_id}'")
         compiled_pkg.save
-      end
-
-      def regex_for_stemcell_major_version(stemcell_version)
-        stemcell_major_version = stemcell_version.split(".").first
-        /#{stemcell_major_version}(\.[0-9]+)*/
       end
     end
   end
