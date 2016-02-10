@@ -98,7 +98,7 @@ module Bosh
         result = lookup_property(@links, name)
         if result.has_key?("nodes")
           node_array = result["nodes"].map do |link_spec|
-            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["uuid"], link_spec["az"], link_spec["address"])
+            @link_spec_props.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"])
           end
           return @link_spec.new(node_array)
         end

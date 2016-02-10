@@ -2,7 +2,8 @@
 databases:
   main:
 <% link('db').nodes.each do |node| %>
-  - name: <%= node.name %>
+  - id: <%= node.id %>
+    name: <%= node.name %>
     index: <%= node.index %>
     address: <%= node.address %>
 <% end %>

@@ -144,11 +144,13 @@ describe 'Links', type: :integration do
         expect(template['databases']['main'].size).to eq(2)
         expect(template['databases']['main']).to contain_exactly(
             {
+              'id' => "#{mysql_0_vm.instance_uuid}",
               'name' => 'mysql',
               'index' => 0,
               'address' => "#{mysql_0_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
             },
             {
+              'id' => "#{mysql_1_vm.instance_uuid}",
               'name' => 'mysql',
               'index' => 1,
               'address' => "#{mysql_1_vm.instance_uuid}.mysql.dynamic-network.simple.bosh"
@@ -351,7 +353,7 @@ describe 'Links', type: :integration do
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
-        expect(out).to include('Started copying jobs > api_server/0748b1c223476cf79817b45397cd64f0059b3258. Done')
+        expect(out).to include('Started copying jobs > api_server/666e35a3f7bd98a5dc4b2bc1370db4cbebe5c8a3. Done')
         expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
         expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
         expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
@@ -480,9 +482,12 @@ describe 'Links', type: :integration do
         link_vm = director.vm('my_api', '0')
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
+        postgres_vm = director.vm('postgres', '0')
+
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
              {
+                 'id' => "#{postgres_vm.instance_uuid}",
                  'name' => 'postgres',
                  'index' => 0,
                  'address' => '192.168.1.12'
@@ -533,11 +538,14 @@ describe 'Links', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
 
         link_vm = director.vm('my_api', '0')
+        aliased_postgres_vm = director.vm('aliased_postgres', '0')
+
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
            {
+               'id' => "#{aliased_postgres_vm.instance_uuid}",
                'name' => 'aliased_postgres',
                'index' => 0,
                'address' => '192.168.1.3'
@@ -610,9 +618,12 @@ describe 'Links', type: :integration do
         link_vm = director.vm('new_api_job', '0')
         template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
+        new_aliased_job_vm = director.vm('new_aliased_job', '0')
+
         expect(template['databases']['main'].size).to eq(1)
         expect(template['databases']['main']).to contain_exactly(
            {
+               'id' => "#{new_aliased_job_vm.instance_uuid}",
                'name' => 'new_aliased_job',
                'index' => 0,
                'address' => '192.168.1.5'
