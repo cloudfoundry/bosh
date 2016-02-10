@@ -38,10 +38,12 @@ RSpec.configure do |c|
       end
     end
 
-    local_major_and_minor_version = Bosh::Dev::PostgresVersion.local_version.split('.')[0..1]
-    release_major_and_minor_version = Bosh::Dev::PostgresVersion.release_version.split('.')[0..1]
-    unless local_major_and_minor_version == release_major_and_minor_version
-      raise "Postgres version mismatch: release version is #{release_major_and_minor_version}; local version is #{local_major_and_minor_version}"
+    if ENV['DB'] == 'postgresql'
+      local_major_and_minor_version = Bosh::Dev::PostgresVersion.local_version.split('.')[0..1]
+      release_major_and_minor_version = Bosh::Dev::PostgresVersion.release_version.split('.')[0..1]
+      unless local_major_and_minor_version == release_major_and_minor_version
+        raise "Postgres version mismatch: release version is #{release_major_and_minor_version}; local version is #{local_major_and_minor_version}"
+      end
     end
   end
 end
