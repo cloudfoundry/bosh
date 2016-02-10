@@ -459,7 +459,7 @@ module Bosh::Director
         transitive_dependencies = @release_version_model.transitive_dependencies(package)
         compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
 
-        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell)
+        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)
         compiled_package.package_id = package.id
         compiled_package.stemcell_id = stemcell.id
 

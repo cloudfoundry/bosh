@@ -63,7 +63,7 @@ module Bosh::Director
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log)
             if compiled_package.nil?
-              build = Models::CompiledPackage.generate_build_number(package, stemcell.model)
+              build = Models::CompiledPackage.generate_build_number(package, stemcell.model.operating_system, stemcell.model.version)
               task_result = nil
 
               prepare_vm(stemcell) do |instance|

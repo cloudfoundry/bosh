@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::Models
   describe CompiledPackage do
     let(:package) { Package.make }
-    let(:stemcell) { Stemcell.make }
+    let(:stemcell) { Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
 
     describe 'self.create_dependency_key' do
       let(:package1) { Package.new(name: 'package1', version: '123') }
@@ -47,12 +47,12 @@ module Bosh::Director::Models
 
     describe '#generate_build_number' do
       it 'returns 1 if no compiled packages for package and stemcell' do
-        expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(1)
+        expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)
       end
 
       it 'returns 2 if only one compiled package exists for package and stemcell' do
-        CompiledPackage.make(package: package, stemcell: stemcell, build: 1)
-        expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(2)
+        CompiledPackage.make(package: package, stemcell: stemcell, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
+        expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(2)
       end
 
       it 'will return 1 for new, unique combinations of packages and stemcells' do
@@ -60,7 +60,7 @@ module Bosh::Director::Models
           package = Package.make
           stemcell = Stemcell.make
 
-          expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(1)
+          expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)
         end
       end
     end
