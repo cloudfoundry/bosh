@@ -142,7 +142,7 @@ module Bosh::Director
       end
 
       context 'when existing compiled packages exist' do
-        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell: stemcell.model, dependency_key: 'dependency-key-c') }
+        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: 'dependency-key-c') }
 
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do

@@ -60,7 +60,6 @@ module Bosh::Director
         expect(Models::CompiledPackage).to receive(:create) do |&block|
           cp = double
           expect(cp).to receive(:package=).with(package)
-          expect(cp).to receive(:stemcell=).with(stemcell)
           expect(cp).to receive(:stemcell_os=).with(stemcell.operating_system)
           expect(cp).to receive(:stemcell_version=).with(stemcell.version)
           expect(cp).to receive(:sha1=).with('cp sha1')

@@ -76,7 +76,6 @@ module Bosh::Director
 
       Models::CompiledPackage.create do |p|
         p.package = package
-        p.stemcell = stemcell
         p.stemcell_os = stemcell.operating_system
         p.stemcell_version = stemcell.version
         p.sha1 = compiled_package_sha1

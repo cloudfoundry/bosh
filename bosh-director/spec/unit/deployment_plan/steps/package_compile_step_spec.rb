@@ -89,7 +89,8 @@ module Bosh::Director
 
       Models::CompiledPackage.make(package: package,
         dependency_key: package_dependency_key,
-        stemcell: stemcell,
+        stemcell_os: stemcell.operating_system,
+        stemcell_version: stemcell.version,
         build: 1,
         sha1: sha1,
         blobstore_id: blobstore_id)

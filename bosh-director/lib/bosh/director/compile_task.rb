@@ -137,7 +137,8 @@ module Bosh::Director
       # Check if this package is already compiled
       compiled_package = Models::CompiledPackage[
         :package_id => package.id,
-        :stemcell_id => stemcell.id,
+        :stemcell_os => stemcell.os,
+        :stemcell_version => stemcell.version,
         :dependency_key => dependency_key
       ]
       if compiled_package

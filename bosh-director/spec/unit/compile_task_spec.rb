@@ -205,7 +205,7 @@ module Bosh::Director
         before { allow(Config).to receive(:use_compiled_package_cache?).and_return(false) }
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell.model, dependency_key: dependency_key)
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
@@ -234,7 +234,7 @@ module Bosh::Director
             it 'returns the compiled package' do
               allow(event_log).to receive(:track).with(anything).and_yield
 
-              compiled_package = double('compiled package', package: package, stemcell: stemcell.model, dependency_key: dependency_key)
+              compiled_package = double('compiled package', package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
               allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
               expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell.model, task.cache_key, task.dependency_key).and_return(compiled_package)
               expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
@@ -244,7 +244,7 @@ module Bosh::Director
 
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell.model, dependency_key: dependency_key)
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
