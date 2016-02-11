@@ -99,6 +99,109 @@ module Bosh::Director
                                                               "Instance 'job_name/fake_instance_id' in deployment 'fake_deployment_name' must be in 'bosh stopped --hard' state")
           end
         end
+
+        context 'when orphaned disk is attached' do
+          let!(:original_disk) do
+            Models::PersistentDisk.make(
+                disk_cid: 'original-disk-cid',
+                instance_id: instance_model.id,
+                active: true,
+                size: 50)
+          end
+
+          let!(:orphan_disk) do
+            Models::OrphanDisk.make(
+                disk_cid: 'orphan-disk-cid',
+                instance_name: 'fake-instance',
+                availability_zone: 'o-zone',
+                deployment_name: deployment_name,
+                cloud_properties: {})
+          end
+
+          let!(:snapshot) do
+            Models::Snapshot.make(
+                persistent_disk: original_disk,
+                clean: true,
+                snapshot_cid: original_disk.disk_cid)
+          end
+
+          let!(:orphan_disk_snapshot) do
+            Models::OrphanSnapshot.make(
+                orphan_disk: orphan_disk,
+                clean: false,
+                snapshot_cid: orphan_disk.disk_cid,
+                snapshot_created_at: Date.today)
+          end
+
+          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, orphan_disk.disk_cid) }
+
+          before do
+            attach_disk_job.perform
+          end
+
+          it 'attaches the orphaned disk' do
+            expect(Models::OrphanDisk.where(disk_cid: orphan_disk.disk_cid).count).to eq(0)
+            expect(Models::PersistentDisk.where(disk_cid: orphan_disk.disk_cid).count).to eq(1)
+          end
+
+          it 'attaches the orphaned snapshots for the orphan disk' do
+            expect(Models::OrphanSnapshot.where(snapshot_cid: orphan_disk.disk_cid).count).to eq(0)
+            expect(Models::Snapshot.where(snapshot_cid: orphan_disk.disk_cid).count).to eq(1)
+          end
+
+          it 'orphans the existing persistent disk' do
+            expect(Models::PersistentDisk.where(disk_cid: original_disk.disk_cid).count).to eq(0)
+            expect(Models::OrphanDisk.where(disk_cid: original_disk.disk_cid).count).to eq(1)
+          end
+
+          it 'orphans the existing disk snapshots' do
+            expect(Models::OrphanSnapshot.where(snapshot_cid: original_disk.disk_cid).count).to eq(1)
+            expect(Models::Snapshot.where(snapshot_cid: original_disk.disk_cid).count).to eq(0)
+          end
+
+          it 'unorphanes any snapshots for the orphan disk' do
+            expect(Models::Snapshot.where(snapshot_cid: orphan_disk.disk_cid).count).to eq(1)
+          end
+
+          it 'creates orphan disks from the existing persistent disk properties' do
+            current_orphan_disk = Models::OrphanDisk.first
+
+            expect(current_orphan_disk.disk_cid).to eq(original_disk.disk_cid)
+            expect(current_orphan_disk.size).to eq(original_disk.size)
+            expect(current_orphan_disk.availability_zone).to eq(original_disk.instance.availability_zone)
+            expect(current_orphan_disk.deployment_name).to eq(original_disk.instance.deployment.name)
+            expect(current_orphan_disk.instance_name).to eq(original_disk.instance.name)
+            expect(current_orphan_disk.cloud_properties).to eq(original_disk.cloud_properties)
+          end
+
+          it 'creates orphan snapshots from existing snapshots' do
+            current_orphan_snapshot = Models::OrphanSnapshot.first
+            current_orphan_disk = Models::OrphanDisk.first
+
+            expect(current_orphan_snapshot.orphan_disk).to eq(current_orphan_disk)
+            expect(current_orphan_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
+            expect(current_orphan_snapshot.clean).to eq(snapshot.clean)
+            expect(current_orphan_snapshot.snapshot_created_at).to eq(snapshot.created_at)
+          end
+
+          it 'unorphans using orphan disk properties' do
+            current_disk = Models::PersistentDisk.first
+
+            expect(current_disk.disk_cid).to eq(orphan_disk.disk_cid)
+            expect(current_disk.size).to eq(orphan_disk.size)
+            expect(current_disk.active).to eq(true)
+            expect(current_disk.cloud_properties).to eq(orphan_disk.cloud_properties)
+          end
+
+          it 'creates unorphan snapshots using orphan snapshots' do
+            current_snapshot = Models::Snapshot.first
+            current_disk = Models::PersistentDisk.first
+
+            expect(current_snapshot.persistent_disk).to eq(current_disk)
+            expect(current_snapshot.snapshot_cid).to eq(orphan_disk_snapshot.snapshot_cid)
+            expect(current_snapshot.clean).to eq(orphan_disk_snapshot.clean)
+          end
+        end
       end
 
       context 'when the job does not declare persistent disk' do
