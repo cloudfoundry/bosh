@@ -12,7 +12,11 @@ module Bosh::Director
         instances.each do |instance|
           pool.process do
             agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, agent_options)
-            agent.run_script('post_deploy', {})
+            begin
+              agent.run_script('post_deploy', {})
+            rescue Bosh::Director::RpcTimeout
+              # Ignoring timeout errors
+            end
           end
         end
       end
