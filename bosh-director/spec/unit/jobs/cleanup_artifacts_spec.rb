@@ -52,11 +52,14 @@ module Bosh::Director
         allow(Config).to receive(:cloud).and_return(cloud)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
 
-        allow(blobstore).to receive(:delete).with('compiled-package-1')
         allow(blobstore).to receive(:delete).with('blobstore-id-1')
       end
 
       context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
+        before do
+          expect(blobstore).to receive(:delete).with('compiled-package-1')
+        end
+
         context 'when there are orphaned disks' do
           before do
             Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
@@ -131,6 +134,10 @@ module Bosh::Director
         end
 
         context 'when there are more than 2 stemcells and/or releases' do
+          before do
+            expect(blobstore).to receive(:delete).with('compiled-package-1')
+          end
+
           it 'keeps the 2 latest versions of each stemcell' do
             Models::Stemcell.make(name: 'stemcell-a', version: '10')
             Models::Stemcell.make(name: 'stemcell-a', version: '9')
@@ -218,6 +225,7 @@ module Bosh::Director
         before do
           Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
           Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+          expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
         it 're-raises the error' do
           allow(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
