@@ -45,7 +45,7 @@ module Bosh::Director
 
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)
         planner = planner_factory.create_from_model(targeted_deployment)
-        deployment_plan_stemcell.bind_model(planner)
+        deployment_plan_stemcell.bind_model(planner.model)
 
         stemcell_model = deployment_plan_stemcell.model
         logger.info "Will compile with stemcell: #{stemcell_model.desc}"

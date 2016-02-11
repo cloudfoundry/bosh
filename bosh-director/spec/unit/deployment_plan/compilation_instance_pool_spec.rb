@@ -4,8 +4,21 @@ module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}, cid: 'stemcell-cid') }
-    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make, spec: {'name' => 'stemcell-name'}, cid: 'another-stemcell-cid') }
+
+    let(:stemcell) do
+      model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
+      stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, model.version)
+      stemcell.bind_model(deployment_model)
+      stemcell
+    end
+
+    let(:another_stemcell) do
+      model = Models::Stemcell.make(cid: 'another-stemcell-cid', name: 'stemcell-name')
+      stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, model.version)
+      stemcell.bind_model(deployment_model)
+      stemcell
+    end
+
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }

@@ -99,7 +99,6 @@ describe 'cli: deployment process', type: :integration do
       expect(output).to include(<<-DIFF
   resource_pools:
   - name: a
--   size: 3
     cloud_properties:
 +     name: new_property
 +     size: large
@@ -161,7 +160,6 @@ DIFF
         expect(output).to include(<<-DIFF
   resource_pools:
   - name: a
--   size: 3
     cloud_properties:
 +     name: new_property
 DIFF

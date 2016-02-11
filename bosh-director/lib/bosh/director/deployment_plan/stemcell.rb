@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class Stemcell
@@ -7,14 +5,8 @@ module Bosh::Director
 
       attr_reader :alias
       attr_reader :os
-
-      # @return [String] Stemcell name
       attr_reader :name
-
-      # @return [String] Stemcell version
       attr_reader :version
-
-      # @return [Models::Stemcell] Stemcell DB model
       attr_reader :model
 
       def self.parse(spec)
@@ -22,35 +14,31 @@ module Bosh::Director
         name = safe_property(spec, "name", :class => String, :optional => true)
         os = safe_property(spec, "os", :class => String, :optional => true)
         version = safe_property(spec, "version", :class => String)
-        return new(name_alias, name, os, version, spec)
-      end
 
-      # @param [Hash] spec Raw stemcell spec according to deployment manifest
-      def initialize(name_alias, name, os, version, spec)
-        @alias = name_alias
-        @name = name
-        @os = os
-
-        if @name.nil? && @os.nil?
+        if name.nil? && os.nil?
           raise ValidationMissingField, "Required property `os' or `name' was not specified in object (#{spec})"
         end
 
-        if !@name.nil? && !@os.nil?
+        if !name.nil? && !os.nil?
           raise StemcellBothNameAndOS, "Properties `os' and `name' are both specified for stemcell, choose one. (#{spec})"
         end
 
-        @version = version
+        new(name_alias, name, os, version)
+      end
 
+      def initialize(name_alias, name, os, version)
+        @alias = name_alias
+        @name = name
+        @os = os
+        @version = version
         @manager = Api::StemcellManager.new
-        @model = nil
       end
 
       def is_using_os?
         !@os.nil? && @name.nil?
       end
 
-      def bind_model(deployment_plan)
-        deployment_model = deployment_plan.model
+      def bind_model(deployment_model)
         if deployment_model.nil?
           raise DirectorError, "Deployment not bound in the deployment plan"
         end

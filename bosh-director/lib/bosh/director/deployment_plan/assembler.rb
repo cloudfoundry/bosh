@@ -128,13 +128,13 @@ module Bosh::Director
               "Stemcell not bound for resource pool `#{resource_pool.name}'"
           end
 
-          stemcell.bind_model(@deployment_plan)
+          stemcell.bind_model(@deployment_plan.model)
         end
         return
       end
 
       @deployment_plan.stemcells.each do |_, stemcell|
-        stemcell.bind_model(@deployment_plan)
+        stemcell.bind_model(@deployment_plan.model)
       end
     end
 
