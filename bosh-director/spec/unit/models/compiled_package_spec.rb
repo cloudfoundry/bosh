@@ -32,15 +32,15 @@ module Bosh::Director::Models
 
       it 'generates sha1 that uniquely identifies a package by its dependencies & stemcell' do
         expect(
-          CompiledPackage.create_cache_key(package1, [], stemcell)
+          CompiledPackage.create_cache_key(package1, [], stemcell.sha1)
         ).to eq("hexdigest for '<package1-fingerprint><stemcell-sha1>'")
 
         expect(
-          CompiledPackage.create_cache_key(package2, [package1, package3], stemcell)
+          CompiledPackage.create_cache_key(package2, [package1, package3], stemcell.sha1)
         ).to eq("hexdigest for '<package2-fingerprint><stemcell-sha1><package1-fingerprint><package3-fingerprint>'")
 
         expect(
-          CompiledPackage.create_cache_key(package3, [package1], stemcell)
+          CompiledPackage.create_cache_key(package3, [package1], stemcell.sha1)
         ).to eq("hexdigest for '<package3-fingerprint><stemcell-sha1><package1-fingerprint>'")
       end
     end

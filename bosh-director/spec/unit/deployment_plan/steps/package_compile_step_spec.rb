@@ -83,7 +83,7 @@ module Bosh::Director
     def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
       transitive_dependencies = release_version_model.transitive_dependencies(package)
       package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
 
       CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 

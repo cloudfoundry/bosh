@@ -11,9 +11,9 @@ module Bosh::Director::Models
     end
 
     # Creates a 'unique' key to use in the global package cache
-    def self.create_cache_key(package, transitive_dependencies, stemcell)
+    def self.create_cache_key(package, transitive_dependencies, stemcell_sha1)
       dependency_fingerprints = transitive_dependencies.to_a.sort_by(&:name).map {|p| p.fingerprint }
-      hash_input = ([package.fingerprint, stemcell.sha1]+dependency_fingerprints).join('')
+      hash_input = ([package.fingerprint, stemcell_sha1]+dependency_fingerprints).join('')
       Digest::SHA1.hexdigest(hash_input)
     end
 

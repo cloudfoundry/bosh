@@ -27,7 +27,7 @@ module Bosh::Director
         expect(release_version_model).to receive(:dependencies).with(package).and_return(dependencies)
         expect(release_version_model).to receive(:transitive_dependencies).with(package).and_return(transitive_dependencies)
         expect(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies).and_return(dependency_key)
-        expect(Bosh::Director::Models::CompiledPackage).to receive(:create_cache_key).with(package, transitive_dependencies, stemcell.model).and_return(cache_key)
+        expect(Bosh::Director::Models::CompiledPackage).to receive(:create_cache_key).with(package, transitive_dependencies, stemcell.model.sha1).and_return(cache_key)
       end
 
       context 'when existing compiled packages do not exist' do
