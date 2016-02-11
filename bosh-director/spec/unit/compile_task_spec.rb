@@ -38,11 +38,11 @@ module Bosh::Director
     end
 
     describe 'compilation readiness' do
-      it 'can tell if compiled' do
-        package = Models::Package.make(name:  'foo')
-        stemcell = Models::Stemcell.make
-        compiled_package = Models::CompiledPackage.make(:package => package)
+      let(:package) { Models::Package.make(name: 'foo') }
+      let(:stemcell) { Models::Stemcell.make({operating_system: 'chrome-os', version: 'latest'}) }
+      let(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
 
+      it 'can tell if compiled' do
         task = make(package, stemcell)
         expect(task.ready_to_compile?).to be(true)
         expect(task.compiled?).to be(false)
@@ -53,10 +53,6 @@ module Bosh::Director
       end
 
       it 'is ready to compile when all dependencies are compiled' do
-        package = Models::Package.make(name: 'foo')
-        stemcell = Models::Stemcell.make
-        compiled_package = Models::CompiledPackage.make
-
         dep1 = Models::Package.make(name: 'bar')
         dep2 = Models::Package.make(name: 'baz')
 
@@ -107,8 +103,8 @@ module Bosh::Director
         package = Models::Package.make
         stemcell = Models::Stemcell.make
 
-        cp = Models::CompiledPackage.make
-        cp2 = Models::CompiledPackage.make
+        cp = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
+        cp2 = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
 
         task = make(package, stemcell)
 
@@ -135,7 +131,7 @@ module Bosh::Director
         stemcell = Models::Stemcell.make
         foo = Models::Package.make(name: 'foo')
         bar = Models::Package.make(name: 'bar', version: '42')
-        cp = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe')
+        cp = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
         foo_task = make(foo, stemcell)
         bar_task = make(bar, stemcell)
@@ -164,9 +160,7 @@ module Bosh::Director
         bar = Models::Package.make(name:  'bar', :version => '42')
         baz = Models::Package.make(name:  'baz', :version => '17')
 
-        cp_bar = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe')
-
-        cp_baz = Models::CompiledPackage.make(package: baz, build: 335, sha1: 'baddead', blobstore_id: 'deadbad')
+        cp_bar = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
 
         foo_task = make(foo, stemcell)
         bar_task = make(bar, stemcell)
@@ -195,7 +189,7 @@ module Bosh::Director
       let(:event_log) { double("event_log") }
       let(:logger) { double("logger", info:nil) }
       let(:package) { Models::Package.make }
-      let(:stemcell) { make_stemcell }
+      let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: 'latest') }
       let(:dependency_key) { 'fake-dependency-key' }
       let(:cache_key) { 'fake-cache-key' }
 

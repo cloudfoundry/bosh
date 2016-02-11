@@ -11,7 +11,8 @@ module Bosh::Director
         package_dependency_key = Bosh::Director::Models::CompiledPackage.create_dependency_key(transitive_dependencies)
         Models::CompiledPackage[
           :package_id => package.id,
-          :stemcell_id => @stemcell.id,
+          :stemcell_os => @stemcell.operating_system,
+          :stemcell_version => @stemcell.version,
           :dependency_key => package_dependency_key
         ]
       end.compact

@@ -18,9 +18,9 @@ module Bosh::Director::Models
     end
 
     def validate
-      validates_presence [:package_id, :stemcell_id, :sha1, :blobstore_id, :dependency_key]
-      validates_unique [:package_id, :stemcell_id, :dependency_key]
-      validates_unique [:package_id, :stemcell_id, :build]
+      validates_presence [:package_id, :stemcell_os, :stemcell_version, :sha1, :blobstore_id, :dependency_key]
+      validates_unique [:package_id, :stemcell_os, :stemcell_version, :dependency_key]
+      validates_unique [:package_id, :stemcell_os, :stemcell_version, :build]
     end
 
     def before_save

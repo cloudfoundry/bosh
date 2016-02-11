@@ -43,7 +43,7 @@ module Bosh::Director
 
         package = Models::Package.make(release: release_1, blobstore_id: 'package_blob_id_1')
         package.add_release_version(release_version_1)
-        Models::CompiledPackage.make(package: package, stemcell: stemcell_1, blobstore_id: 'compiled-package-1')
+        Models::CompiledPackage.make(package: package, stemcell: stemcell_1, blobstore_id: 'compiled-package-1', stemcell_os: 'linux', stemcell_version: '2.18')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(stage)

@@ -98,8 +98,8 @@ module Bosh::Director
 
     def prepare_samples
       @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'cf-release', model: release_version_model)
-      @stemcell_a = make_stemcell
-      @stemcell_b = make_stemcell
+      @stemcell_a = make_stemcell(operating_system: 'chrome-os')
+      @stemcell_b = make_stemcell(operating_system: 'chrome-os')
 
       @p_common = make_package('common')
       @p_syslog = make_package('p_syslog')

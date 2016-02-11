@@ -244,6 +244,8 @@ module Bosh::Director
               stemcell_id: stemcell.id,
               dependency_key: [],
               build: 23,
+              stemcell_os: 'ubuntu',
+              stemcell_version: '1'
           )
 
           package_postgres = release_version.add_package(
@@ -261,6 +263,8 @@ module Bosh::Director
               stemcell_id: stemcell.id,
               dependency_key: '[["ruby","ruby_version"]]',
               build: 23,
+              stemcell_os: 'ubuntu',
+              stemcell_version: '1'
           )
 
           result_file = double('result file')

@@ -928,7 +928,9 @@ module Bosh::Director
             stemcell: stemcell,
             sha1: 'fake-compiled-sha-1',
             blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
-            dependency_key: 'fake-dep-key-1'
+            dependency_key: 'fake-dep-key-1',
+            stemcell_os: 'windows me',
+            stemcell_version: '4.5'
           )}
 
           it 'verifies package' do
@@ -1017,6 +1019,8 @@ module Bosh::Director
               blobstore_id: 'fake-compiled-blobstore-id-1',
               dependency_key: 'fake-compiled-dependency-key-1',
               sha1: 'fake-compiled-sha-1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1'
             )
             package.add_compiled_package compiled_package
             compiled_package
@@ -1060,6 +1064,8 @@ module Bosh::Director
               blobstore_id: 'fake-existing-compiled-blobstore-id-1',
               dependency_key: 'fake-existing-compiled-dependency-key-1',
               sha1: 'fake-existing-compiled-sha-1',
+              stemcell_os: 'Android',
+              stemcell_version: '23'
             )
             existing_package.add_compiled_package existing_compiled_package
             existing_compiled_package

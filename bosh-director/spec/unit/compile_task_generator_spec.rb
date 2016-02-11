@@ -18,7 +18,7 @@ module Bosh::Director
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b') }
       let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c') }
 
-      let(:stemcell) { make_stemcell }
+      let(:stemcell) { make_stemcell({operating_system: 'chrome-os', version: 'latest'}) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }

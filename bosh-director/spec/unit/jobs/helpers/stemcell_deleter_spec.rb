@@ -55,7 +55,10 @@ module Bosh::Director
         associated_package = Models::CompiledPackage.make(
           package: Models::Package.make,
           stemcell: stemcell,
-          blobstore_id: 'compiled-package-blb-1')
+          blobstore_id: 'compiled-package-blb-1',
+          stemcell_os: 'Plan 9',
+          stemcell_version: '9'
+        )
 
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid').and_raise('error')
 
@@ -84,10 +87,16 @@ module Bosh::Director
         associated_package = Models::CompiledPackage.make(
           package: Models::Package.make(name: 'package-name', version: 'version'),
           stemcell: stemcell,
-          blobstore_id: 'compiled-package-blb-1')
+          blobstore_id: 'compiled-package-blb-1',
+          stemcell_os: 'AIX',
+          stemcell_version: '7.1'
+        )
         unassociated_package = Models::CompiledPackage.make(
           package: Models::Package.make,
-          blobstore_id: 'compiled-package-blb-2')
+          blobstore_id: 'compiled-package-blb-2',
+          stemcell_os: 'AIX',
+          stemcell_version: '7.2'
+        )
 
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid')
 

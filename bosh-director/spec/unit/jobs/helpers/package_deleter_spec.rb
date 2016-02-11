@@ -16,8 +16,8 @@ module Bosh::Director
       before do
         package.add_release_version(release_version_1)
         package.add_release_version(release_version_2)
-        Models::CompiledPackage.make(package: package, blobstore_id: 'compiled_package_blobstore_id')
-        Models::CompiledPackage.make(package: package)
+        Models::CompiledPackage.make(package: package, blobstore_id: 'compiled_package_blobstore_id', stemcell_os: 'Darwin', stemcell_version: 'X')
+        Models::CompiledPackage.make(package: package, stemcell_os: 'Darwin', stemcell_version: 'Y')
       end
 
       describe '#delete' do

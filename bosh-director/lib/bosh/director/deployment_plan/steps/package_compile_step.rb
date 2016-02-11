@@ -82,7 +82,8 @@ module Bosh::Director
 
               compiled_package = Models::CompiledPackage.create do |p|
                 p.package = package
-                p.stemcell = stemcell.model
+                p.stemcell_os = stemcell.os
+                p.stemcell_version = stemcell.version
                 p.sha1 = task_result['sha1']
                 p.build = build
                 p.blobstore_id = task_result['blobstore_id']

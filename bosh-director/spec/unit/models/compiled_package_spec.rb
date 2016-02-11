@@ -73,7 +73,8 @@ module Bosh::Director::Models
         it 'generates dependency key sha' do
           compiled_package = CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
+            stemcell_os: stemcell.operating_system,
+            stemcell_version: stemcell.version,
             dependency_key: dependency_key
           )
 
@@ -85,7 +86,8 @@ module Bosh::Director::Models
         it 'updates dependency key sha' do
           compiled_package = CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
+            stemcell_os: stemcell.operating_system,
+            stemcell_version: stemcell.version,
             dependency_key: dependency_key
           )
 

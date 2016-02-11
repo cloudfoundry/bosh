@@ -3,6 +3,7 @@ Sequel.migration do
     alter_table(:compiled_packages) do
       add_column :stemcell_os, String
       add_column :stemcell_version, String
+      set_column_allow_null :stemcell_id, true
     end
 
     self[:compiled_packages].each do |compiled_package|
