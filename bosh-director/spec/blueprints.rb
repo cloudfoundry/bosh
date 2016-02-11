@@ -73,10 +73,11 @@ module Bosh::Director::Models
 
   CompiledPackage.blueprint do
     package           { Package.make }
-    stemcell          { Stemcell.make }
     build             { Sham.build }
     blobstore_id      { Sham.blobstore_id }
     sha1              { Sham.sha1 }
+    stemcell_os       { Sham.stemcell_os }
+    stemcell_version  { Sham.stemcell_version }
     dependency_key    { "[]" }
   end
 
