@@ -321,7 +321,7 @@ module Bosh::Director
             logger.info("Using existing package `#{package_desc}'")
             register_package(package)
 
-            if compiled_release
+            if @compiled_release
               stemcells = stemcells_used_by_package(package_meta)
               stemcells.each do |stemcell|
                 hash = { package: package, stemcell: stemcell}
@@ -385,7 +385,8 @@ module Bosh::Director
           stemcell = compiled_package_spec[:stemcell]
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
+          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id, :stemcell_os => stemcell.operating_system, :stemcell_version => stemcell.version)
+
           if existing_compiled_packages.empty?
 
             package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"

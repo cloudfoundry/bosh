@@ -979,7 +979,7 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
-              'stemcell' => 'fake-os-name-1/fake-stemcell-version-1'
+              'stemcell' => 'macintosh os/7.1'
             }
           ]
         end
@@ -996,8 +996,8 @@ module Bosh::Director
         let!(:stemcell) do
           Models::Stemcell.make(
             name: 'fake-stemcell-name-1',
-            operating_system: 'fake-os-name-1',
-            version: 'fake-stemcell-version-1',
+            operating_system: 'macintosh os',
+            version: '7.1',
             cid: 'fake-stemcell-cid-1'
           )
         end

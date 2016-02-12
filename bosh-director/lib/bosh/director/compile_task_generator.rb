@@ -11,7 +11,7 @@ module Bosh::Director
     def generate!(compile_tasks, job, template, package, stemcell)
       # Our assumption here is that package dependency graph
       # has no cycles: this is being enforced on release upload.
-      # Other than that it's a vanilla DFS.
+      # Other than that it's a vanilla Depth-First Search (DFS).
 
       @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'")
       task_key = [package.id, stemcell.id]
