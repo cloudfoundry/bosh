@@ -44,6 +44,10 @@ module Bosh::Director
           raise AttachDiskErrorUnknownInstance, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' was not found"
         end
 
+        if instance.persistent_disk.nil?
+          raise AttachDiskNoPersistentDisk, "Job '#{@job_name}' is not configured with a persistent disk"
+        end
+
         if instance.state != 'detached' && instance.state != 'stopped'
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end
@@ -75,6 +79,20 @@ module Bosh::Director
         end
       end
 
+      def query_instance_model
+        Models::Instance.filter(job: @job_name, uuid: @instance_id).to_a.first
+      end
+
+      def deployment_plan_instance(instance)
+        deployment_model = Api::DeploymentLookup.new.by_name(@deployment_name)
+        planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+        deployment_plan = planner_factory.create_from_model(deployment_model)
+        job = deployment_plan.job(@job_name)
+
+        deployment_plan_instance = DeploymentPlan::Instance.create_from_job(job, 0, instance.state, deployment_model, instance.state, instance.availability_zone, logger)
+        deployment_plan_instance.bind_existing_instance_model(instance)
+        deployment_plan_instance
+      end
     end
   end
 end
