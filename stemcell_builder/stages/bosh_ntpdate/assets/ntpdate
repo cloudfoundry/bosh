@@ -6,5 +6,6 @@ BOSH=/var/vcap/bosh
 NTP_SERVER_FILE=$BOSH/etc/ntpserver
 if [ -f $NTP_SERVER_FILE ]; then
 	NTP_SERVER=`cat $NTP_SERVER_FILE`
-	/usr/sbin/ntpdate $NTP_SERVER > $BOSH/log/ntpdate.out 2>&1
+	# Use -u option to prevent returning packets from being blocked by firewall
+	/usr/sbin/ntpdate -u $NTP_SERVER > $BOSH/log/ntpdate.out 2>&1
 fi
