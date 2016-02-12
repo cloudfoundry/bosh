@@ -109,7 +109,17 @@ module Bosh::Director
       end
     end
 
-    private
+    def orphan_mounted_persistent_disk(instance, disk)
+      unmount(instance, disk)
+
+      disk_cid = disk.disk_cid
+      if disk_cid.nil?
+        @logger.info('Skipping disk detaching, instance does not have a disk')
+        return
+      end
+
+      detach_and_orphan_disk(disk, instance.model)
+    end
 
     def attach_disk(instance_model)
       disk_cid = instance_model.persistent_disk_cid
@@ -123,6 +133,8 @@ module Bosh::Director
         raise e
       end
     end
+
+    private
 
     def delete_orphan_snapshot(orphan_snapshot)
       begin
@@ -147,18 +159,6 @@ module Bosh::Director
         )
         snapshot.delete
       end
-    end
-
-    def orphan_mounted_persistent_disk(instance, disk)
-      unmount(instance, disk)
-
-      disk_cid = disk.disk_cid
-      if disk_cid.nil?
-        @logger.info('Skipping disk detaching, instance does not have a disk')
-        return
-      end
-
-      detach_and_orphan_disk(disk, instance.model)
     end
 
     def detach_and_orphan_disk(disk, instance_model)

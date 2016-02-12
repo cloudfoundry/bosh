@@ -24,7 +24,7 @@ module Bosh::Director
     let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid) }
 
     describe '#perform' do
-      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, vm_cid: vm_cid, state: 'detached') }
+      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, vm_cid: vm_cid, state: instance_state) }
       let!(:deployment_model) do
         deployment_model = Models::Deployment.make(name: deployment_name)
         deployment_model.add_instance(instance_model)
@@ -33,6 +33,7 @@ module Bosh::Director
 
       context 'when the instance is stopped hard' do
         let(:vm_cid) { nil }
+        let(:instance_state) {'detached'}
 
         let!(:original_disk) do
           Models::PersistentDisk.make(
@@ -96,7 +97,7 @@ module Bosh::Director
           end
           it 'raises an error' do
             expect { attach_disk_job.perform }.to raise_error(AttachDiskInvalidInstanceState,
-                                                              "Instance 'job_name/fake_instance_id' in deployment 'fake_deployment_name' must be in 'bosh stopped --hard' state")
+                                                              "Instance 'job_name/fake_instance_id' in deployment 'fake_deployment_name' must be in 'bosh stopped' state")
           end
         end
 
@@ -204,8 +205,61 @@ module Bosh::Director
         end
       end
 
+      context 'when the instance is stopped soft' do
+        let(:vm_cid) { nil }
+
+        let(:instance_state) {'stopped'}
+
+        let!(:original_disk) do
+          Models::PersistentDisk.make(
+              disk_cid: 'original-disk-cid',
+              instance_id: instance_model.id,
+              active: true,
+              size: 50)
+        end
+
+        let(:planner) { instance_double(DeploymentPlan::Planner)}
+        let(:planner_factory) { instance_double(DeploymentPlan::PlannerFactory)}
+        let(:deployment_job) { instance_double(DeploymentPlan::Job)}
+
+        let(:deployment_plan_instance) { instance_double(DeploymentPlan::Instance)}
+
+        let(:disk_manager) { instance_double(DiskManager)}
+
+        before {
+          allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
+          allow(planner_factory).to receive(:create_from_model).and_return(planner)
+          allow(planner).to receive(:job).and_return(deployment_job)
+
+          allow(DeploymentPlan::Instance).to receive(:create_from_job).and_return(deployment_plan_instance)
+          allow(deployment_plan_instance).to receive(:bind_existing_instance_model)
+
+          allow(Config).to receive(:cloud)
+
+          allow(DiskManager).to receive(:new).and_return(disk_manager)
+          allow(disk_manager).to receive(:orphan_mounted_persistent_disk)
+          allow(disk_manager).to receive(:attach_disk)
+        }
+
+        it 'attaches the new disk' do
+          expect(disk_manager).to receive(:attach_disk)
+          attach_disk_job.perform
+
+          active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+          expect(active_disks.count).to eq(1)
+          expect(active_disks.first.disk_cid).to eq(disk_cid)
+        end
+
+        it 'orphans and unmounts the previous disk' do
+          expect(disk_manager).to receive(:orphan_mounted_persistent_disk).with(deployment_plan_instance, original_disk)
+          attach_disk_job.perform
+        end
+      end
+
       context 'when the job does not declare persistent disk' do
         let(:vm_cid) { 'fake-vm-cid' }
+        let(:instance_state) {'detached'}
+
         it 'raise error' do
           expect { attach_disk_job.perform }.to raise_error(AttachDiskNoPersistentDisk, "Job 'job_name' is not configured with a persistent disk")
         end
