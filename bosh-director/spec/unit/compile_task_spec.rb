@@ -189,7 +189,7 @@ module Bosh::Director
       let(:event_log) { double("event_log") }
       let(:logger) { double("logger", info:nil) }
       let(:package) { Models::Package.make }
-      let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: 'latest') }
+      let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: '48.0') }
       let(:dependency_key) { 'fake-dependency-key' }
       let(:cache_key) { 'fake-cache-key' }
 
@@ -205,10 +205,33 @@ module Bosh::Director
           end
         end
 
+        context 'when the compiled package in blobstore has a different stemcell patch number' do
+          it 'returns nil' do
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
+
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log)).to eq(nil)
+          end
+        end
+
         context 'when compiled package is not found in local blobstore' do
           it 'returns nil' do
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(nil)
+          end
+        end
+
+        context 'when the release is a compiled release' do
+          context 'when the compiled package is found in the local blobstore with a different patch number stemcell' do
+            it 'returns it' do
+              package.blobstore_id = nil
+              package.sha1 = nil
+
+              compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
+
+              expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+              expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
+            end
           end
         end
       end

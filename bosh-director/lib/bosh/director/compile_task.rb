@@ -134,13 +134,29 @@ module Bosh::Director
     # @param [CompileTask] task
     # @return [Models::CompiledPackage]
     def find_compiled_package(logger, event_log)
+      # if `package` has source associated with it (blobstore_id and sha1)
+      #   then we need an exact match in find_compiled_package
+      compiled_package = nil
+
       # Check if this package is already compiled
-      compiled_package = Models::CompiledPackage[
-        :package_id => package.id,
-        :stemcell_os => stemcell.os,
-        :stemcell_version => stemcell.version,
-        :dependency_key => dependency_key
-      ]
+      if @package.blobstore_id
+        compiled_package = Models::CompiledPackage[
+          :package_id => package.id,
+          :stemcell_os => stemcell.os,
+          :stemcell_version => stemcell.version,
+          :dependency_key => dependency_key
+        ]
+      else
+        compiled_package_list = Models::CompiledPackage.where(
+          :package_id => package.id,
+          :stemcell_os => stemcell.os,
+          :dependency_key => dependency_key
+        ).all
+
+        compiled_package = compiled_package_list.select do |compiled_pkg|
+          Bosh::Common::Version::StemcellVersion.match(compiled_pkg.stemcell_version, stemcell.version)
+        end.first
+      end
       if compiled_package
         logger.info("Found compiled version of package `#{package.desc}' " +
                        "for stemcell `#{stemcell.desc}'")

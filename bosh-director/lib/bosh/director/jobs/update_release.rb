@@ -321,7 +321,7 @@ module Bosh::Director
             logger.info("Using existing package `#{package_desc}'")
             register_package(package)
 
-            if @compiled_release
+            if compiled_release
               stemcells = stemcells_used_by_package(package_meta)
               stemcells.each do |stemcell|
                 hash = { package: package, stemcell: stemcell}
