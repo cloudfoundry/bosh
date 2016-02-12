@@ -509,7 +509,12 @@ module Bosh::Spec
     def self.simple_errand_job
       {
         'name' => 'fake-errand-name',
-        'template' => 'errand1',
+        'templates' => [
+          {
+            'release' => 'bosh-release',
+            'name' => 'errand1'
+          }
+        ],
         'lifecycle' => 'errand',
         'resource_pool' => 'a',
         'instances' => 1,

@@ -128,6 +128,9 @@ module IntegrationExampleGroup
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
+    if options[:runtime_config_hash]
+      upload_runtime_config(options)
+    end
   end
 
   def deploy_simple_manifest(options={})
