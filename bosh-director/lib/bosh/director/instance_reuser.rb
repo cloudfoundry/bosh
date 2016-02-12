@@ -51,8 +51,8 @@ module Bosh::Director
     def get_num_instances(stemcell)
       canonical_stemcell = canonical(stemcell)
       @mutex.synchronize do
-        idle_count = @idle_instances_by_stemcell[canonical_stemcell].nil? ? 0 : @idle_instances_by_stemcell[canonical_stemcell].size
-        in_use_count = @in_use_instances_by_stemcell[canonical_stemcell].nil? ? 0 : @in_use_instances_by_stemcell[canonical_stemcell].size
+        idle_count = @idle_instances_by_stemcell.fetch(canonical_stemcell, []).size
+        in_use_count = @in_use_instances_by_stemcell.fetch(canonical_stemcell, []).size
         idle_count + in_use_count
       end
     end

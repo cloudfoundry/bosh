@@ -158,7 +158,10 @@ module Bosh::Director
     describe 'with_reused_vm' do
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_instance_pool.with_reused_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_instance_pool.with_reused_vm(stemcell) { raise(create_instance_error) } }
+        let(:action_that_raises) do
+          allow(vm_creator).to receive(:create_for_instance_plan).and_raise(create_instance_error)
+          compilation_instance_pool.with_reused_vm(stemcell)
+        end
       end
 
       context 'after a vm is created' do
@@ -299,7 +302,10 @@ module Bosh::Director
     describe 'with_single_use_vm' do
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_instance_pool.with_single_use_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_instance_pool.with_single_use_vm(stemcell) { raise create_instance_error } }
+        let(:action_that_raises) do
+          allow(vm_creator).to receive(:create_for_instance_plan).and_raise(create_instance_error)
+          compilation_instance_pool.with_single_use_vm(stemcell)
+        end
       end
     end
   end
