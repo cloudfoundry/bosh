@@ -319,22 +319,23 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       errand
     end
 
-    it 'starts/stops all jobs and executes lifecycle scripts' do
+    it 'does not stop jobs after the errand has run' do
       deploy_from_scratch(manifest_hash: manifest_with_errand,
-                            runtime_config_hash: runtime_config_hash)
+        runtime_config_hash: runtime_config_hash)
       _, exit_code = bosh_runner.run("run errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}",{return_exit_code: true})
       expect(exit_code).to eq(0)
 
       vm = director.vm('fake-errand-name', '0')
-      agent_log = vm.read_file("../agent.#{vm.agent_id}.log")
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{vm.agent_id}.log")
 
-      expect(agent_log).to include('{"protocol":2,"method":"run_script","arguments":["pre-start",{}],')
-      expect(agent_log).to include('{"protocol":2,"method":"start","arguments":[],')
-      expect(agent_log).to match(%r(Checking if file exists #{vm.file_path("data/jobs/errand1")}/[^/\n]+/monit))
-      expect(agent_log).to match(%r(Checking if file exists #{vm.file_path("data/jobs/foobar_without_packages")}/[^/\n]+/monit))
-      expect(agent_log).to match(%r(Checking if file exists #{vm.file_path("data/jobs/has_drain_script")}/[^/\n]+/monit))
-      expect(agent_log).to include('{"protocol":2,"method":"drain","arguments":[')
-      expect(agent_log).to include('{"protocol":2,"method":"stop","arguments":[],')
+      # executed once each, but is echoed in the logs twice
+      expect(agent_log.scan('{"protocol":2,"method":"drain"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"stop"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_script","arguments":["pre-start",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"start"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_script","arguments":["post-start",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_errand",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"fetch_logs",').size).to eq(2)
     end
   end
 
