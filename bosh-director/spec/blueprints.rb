@@ -2,33 +2,35 @@
 require_relative '../../spec/support/deployments'
 
 Sham.define do
-  name          { |index| "name-#{index}" }
-  username      { |index| "username-#{index}" }
-  password      { |index| "password-#{index}" }
-  version       { |index| "version-#{index}" }
-  manifest      { |index| "manifest-#{index}" }
-  job           { |index| "job-#{index}"}
-  vm_cid        { |index| "vm-cid-#{index}" }
-  disk_cid      { |index| "disk-cid-#{index}" }
-  snapshot_cid  { |index| "snapshot-cid-#{index}" }
-  stemcell_cid  { |index| "stemcell-cid-#{index}" }
-  blobstore_id  { |index| "blobstore-id-#{index}" }
-  agent_id      { |index| "agent-id-#{index}" }
-  uuid          { |index| "uuid-#{index}" }
-  director_uuid { |index| "director-uuid-#{index}" }
-  index         { |index| index }
-  description   { |index| "description #{index}" }
-  type          { |index| "type #{index}" }
-  sha1          { |index| "sha1-#{index}" }
-  build         { |index| index }
-  ip            { |index|
-                  octet = index % 255
-                  "#{octet}.#{octet}.#{octet}.#{octet}"
-                }
-  ptr           { |index|
-                  octet = index % 255
-                  "#{octet}.#{octet}.#{octet}.in-addr.arpa"
-                }
+  name             { |index| "name-#{index}" }
+  username         { |index| "username-#{index}" }
+  password         { |index| "password-#{index}" }
+  version          { |index| "version-#{index}" }
+  manifest         { |index| "manifest-#{index}" }
+  job              { |index| "job-#{index}"}
+  vm_cid           { |index| "vm-cid-#{index}" }
+  disk_cid         { |index| "disk-cid-#{index}" }
+  snapshot_cid     { |index| "snapshot-cid-#{index}" }
+  stemcell_cid     { |index| "stemcell-cid-#{index}" }
+  stemcell_os      { |index| "stemcell-os-#{index}" }
+  stemcell_version { |index| "stemcell-version-#{index}" }
+  blobstore_id     { |index| "blobstore-id-#{index}" }
+  agent_id         { |index| "agent-id-#{index}" }
+  uuid             { |index| "uuid-#{index}" }
+  director_uuid    { |index| "director-uuid-#{index}" }
+  index            { |index| index }
+  description      { |index| "description #{index}" }
+  type             { |index| "type #{index}" }
+  sha1             { |index| "sha1-#{index}" }
+  build            { |index| index }
+  ip               { |index|
+                     octet = index % 255
+                     "#{octet}.#{octet}.#{octet}.#{octet}"
+                   }
+  ptr              { |index|
+                     octet = index % 255
+                     "#{octet}.#{octet}.#{octet}.in-addr.arpa"
+                   }
 end
 
 module Bosh::Director::Models
