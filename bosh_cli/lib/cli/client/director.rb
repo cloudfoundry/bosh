@@ -123,6 +123,10 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_events
+          get_json('/events')
+        end
+
         def list_errands(deployment_name)
           get_json("/deployments/#{deployment_name}/errands")
         end

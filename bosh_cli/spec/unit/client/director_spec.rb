@@ -656,6 +656,14 @@ describe Bosh::Cli::Client::Director do
     end
   end
 
+  describe 'fetch_events' do
+    it 'fetches events' do
+      expect(@director).to receive(:get).with('/events', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+      @director.list_events
+    end
+  end
+
   describe 'fetch_vm_state' do
     let(:dummy_deployment_name) {"dummy_deployment"}
     let(:dummy_vm_state) do

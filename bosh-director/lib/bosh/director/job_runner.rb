@@ -96,6 +96,10 @@ module Bosh::Director
       @task.checkpoint_time = Time.now
       @task.save
 
+      job.add_event ({:event_state  => "started",
+                      :event_result => "running",
+                      :task_id      => @task.id})
+
       result = job.perform
 
       @task_logger.info('Done')
@@ -151,6 +155,9 @@ module Bosh::Director
       @task.result = truncate(result.to_s)
       @task.timestamp = Time.now
       @task.save
+      Config.current_job.add_event ({:event_state  => @task.state,
+                                     :event_result => result.to_s,
+                                     :task_id      => @task.id})
     end
 
     # Logs the exception in the event log

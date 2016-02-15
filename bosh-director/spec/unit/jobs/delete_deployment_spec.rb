@@ -24,5 +24,32 @@ module Bosh::Director
     it 'should fail if the deployment is not found' do
       expect { job.perform }.to raise_exception DeploymentNotFound
     end
+
+    describe '#add_event' do
+      before do
+        allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
+      end
+      let (:options) do
+        {:event_state  => 'started',
+         :event_result => 'running',
+         :task_id      => 42}
+      end
+
+      it 'should store new event' do
+        expect {
+          job.add_event(options)
+        }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(1)
+
+        event= Bosh::Director::Models::Event.first
+        expect(event.event_state).to eq('started')
+        expect(event.target_type).to eq('deployment')
+        expect(event.target_name).to eq('test_deployment')
+        expect(event.event_action).to eq('delete')
+        expect(event.event_result).to eq('running')
+        expect(event.task_id).to eq(42)
+        expect(event.timestamp).to eq(Time.now)
+      end
+    end
   end
 end

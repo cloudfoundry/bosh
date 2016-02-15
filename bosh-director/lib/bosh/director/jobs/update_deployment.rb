@@ -30,6 +30,7 @@ module Bosh::Director
 
         deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model)
         deployment_name = deployment_manifest.to_hash['name']
+        @deployment_name = deployment_name
         with_deployment_lock(deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
@@ -64,6 +65,23 @@ module Bosh::Director
         FileUtils.rm_rf(@manifest_file_path)
       end
 
+      def add_event(options)
+        state           = options[:event_state]
+        result          = options[:event_result]
+        task_id         = options[:task_id]
+        deployment_name = @deployment_name || Manifest.load_from_text(File.read(@manifest_file_path), nil).to_hash['name']
+        action = deployment_new?(deployment_name) ? "create" : "update"
+
+        event = Models::Event.new(target_type:  'deployment',
+                                  target_name:  deployment_name,
+                                  event_action: action,
+                                  event_state:  state,
+                                  event_result: result,
+                                  task_id:      task_id,
+                                  timestamp:    Time.now)
+        event.save
+      end
+
       private
 
       # Job tasks
@@ -91,6 +109,10 @@ module Bosh::Director
         jobs.each do |job|
           job_renderer.render_job_instances(job.needed_instance_plans)
         end
+      end
+
+      def deployment_new?(deployment_name)
+        @deployment_new ||= Models::Deployment[name: deployment_name].nil?
       end
     end
   end

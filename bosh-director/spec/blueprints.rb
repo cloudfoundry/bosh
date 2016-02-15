@@ -161,6 +161,10 @@ module Bosh::Director::Models
     value { "value" }
   end
 
+  Event.blueprint do
+    timestamp   { Time.now }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }

@@ -9,6 +9,7 @@ module Bosh::Director::Jobs
     let(:manifest_path) { directory.add_file('deployment.yml', manifest_content) }
     let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }
     let(:cloud_config_id) { nil }
+    let(:deployment_job) { Bosh::Director::DeploymentPlan::Job.new(logger) }
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
@@ -45,7 +46,6 @@ module Bosh::Director::Jobs
         let(:planner) do
           instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', jobs_starting_on_deploy: [deployment_job])
         end
-        let(:deployment_job) { Bosh::Director::DeploymentPlan::Job.new(logger) }
 
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
@@ -100,6 +100,39 @@ module Bosh::Director::Jobs
           }.to raise_error(Exception)
           expect(File.exist? manifest_path).to be_falsey
         end
+      end
+    end
+
+    describe '#add_event' do
+      before do
+        allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
+      end
+      let (:options) do
+        {:event_state  => 'started',
+         :event_result => 'running',
+         :task_id      => 42}
+      end
+
+      it 'should store new event' do
+        expect {
+          job.add_event(options)
+        }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(1)
+
+        event= Bosh::Director::Models::Event.first
+        expect(event.event_state).to eq('started')
+        expect(event.target_type).to eq('deployment')
+        expect(event.target_name).to eq('deployment-name')
+        expect(event.event_action).to eq('create')
+        expect(event.event_result).to eq('running')
+        expect(event.task_id).to eq(42)
+        expect(event.timestamp).to eq(Time.now)
+      end
+
+      it 'should define `update` deployment action' do
+        Bosh::Director::Models::Deployment.make(name: 'deployment-name')
+        job.add_event(options)
+        expect(Bosh::Director::Models::Event.first.event_action).to eq('update')
       end
     end
   end

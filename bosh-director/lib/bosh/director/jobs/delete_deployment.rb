@@ -36,6 +36,20 @@ module Bosh::Director
           "/deployments/#{@deployment_name}"
         end
       end
+
+      def add_event(options)
+        state   = options[:event_state]
+        result  = options[:event_result]
+        task_id = options[:task_id]
+        event   = Models::Event.new(target_type:  'deployment',
+                                    target_name:  @deployment_name,
+                                    event_action: 'delete',
+                                    event_state:  state,
+                                    event_result: result,
+                                    task_id:      task_id,
+                                    timestamp:    Time.now)
+        event.save
+      end
     end
   end
 end

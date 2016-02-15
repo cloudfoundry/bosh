@@ -40,6 +40,17 @@ module Bosh::Director
       expect(task.result).to eq('foo')
     end
 
+    it 'calls an event logging for the requested job with provided args' do
+      expect_any_instance_of(sample_job_class).to receive(:add_event).with({:event_state  => "started",
+                                                                            :event_result => "running",
+                                                                            :task_id      => 42})
+      expect_any_instance_of(sample_job_class).to receive(:add_event).with({:event_state  => "done",
+                                                                            :event_result => "foo",
+                                                                            :task_id      => 42})
+      runner = make_runner(sample_job_class, 42)
+      runner.run
+    end
+
     it 'whines when no task is found' do
       expect {
         make_runner(sample_job_class, 155)
@@ -87,7 +98,15 @@ module Bosh::Director
         end
       end
 
+      expect_any_instance_of(job).to receive(:add_event).with({:event_state  => "started",
+                                                               :event_result => "running",
+                                                               :task_id      => 42})
+      expect_any_instance_of(job).to receive(:add_event).with({:event_state  => "cancelled",
+                                                               :event_result => "task cancelled",
+                                                               :task_id      => 42})
+
       make_runner(job, 42).run
+
       task.reload
       expect(task.state).to eq('cancelled')
     end
@@ -96,6 +115,13 @@ module Bosh::Director
       job = Class.new(Jobs::BaseJob) do
         define_method(:perform) { |*args| raise 'Oops' }
       end
+
+      expect_any_instance_of(job).to receive(:add_event).with({:event_state  => "started",
+                                                               :event_result => "running",
+                                                               :task_id      => 42})
+      expect_any_instance_of(job).to receive(:add_event).with({:event_state  => "error",
+                                                               :event_result => "Oops",
+                                                               :task_id      => 42})
 
       make_runner(job, 42).run
       task.reload
