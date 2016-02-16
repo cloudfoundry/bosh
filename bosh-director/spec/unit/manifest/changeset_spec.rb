@@ -745,13 +745,13 @@ module Bosh::Director
           'name' => 'test_name',
           'uuid' => '12324234234234234234',
           'env' => {
-              'a' => {
+              'bosh' => {
                   'one' => [1, 2, {'three' => 3}],
                   'two' => 2,
                   'three' => 3
               },
-              'c' => 'redact-me',
-              'e' => 'i-am-secret'
+              'c' => 'dont-redact-me',
+              'e' => 'i-am-not-secret'
           },
           'jobs' => [
             {
@@ -773,13 +773,13 @@ module Bosh::Director
           'name' => 'test_name',
           'uuid' => '12324234234234234234',
           'env' => {
-              'a' => {
+              'bosh' => {
                   'one' => ['<redacted>', '<redacted>', {'three' => '<redacted>'}],
                   'two' => '<redacted>',
                   'three' => '<redacted>'
               },
-              'c' => '<redacted>',
-              'e' => '<redacted>'
+              'c' => 'dont-redact-me',
+              'e' => 'i-am-not-secret'
           },
           'jobs' => [
             {

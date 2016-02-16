@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bundler'
   spec.add_dependency 'logging'
 
-  spec.add_dependency('ruby_vcloud_sdk', '=0.7.1')
+  spec.add_dependency('ruby_vcloud_sdk', '=0.7.4')
 
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3.0.0'

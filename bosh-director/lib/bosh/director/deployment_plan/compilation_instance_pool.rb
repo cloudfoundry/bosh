@@ -13,6 +13,7 @@ module Bosh::Director
         begin
           instance = @instance_reuser.get_instance(stemcell)
           if instance.nil?
+            @logger.debug("Creating new compilation VM for stemcell '#{stemcell.model.desc}'")
             instance_plan, instance = create_instance_plan(stemcell)
             configure_instance_plan(instance_plan)
             @instance_reuser.add_in_use_instance(instance_plan.instance, stemcell)

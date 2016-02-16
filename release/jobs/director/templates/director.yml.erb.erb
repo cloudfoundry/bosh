@@ -7,7 +7,7 @@ params = {
   'max_threads' => p('director.max_threads'),
   'logging' => {
     'level' => 'DEBUG',
-    'file' =>  "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.debug.log"
+    'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
   'redis' => {
     'host' => p('redis.address'),

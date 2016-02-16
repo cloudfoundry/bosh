@@ -8,7 +8,7 @@ module Bosh::Director
 
     before do
       job.vm_type = DeploymentPlan::VmType.new({'name' => 'fake-vm-type'})
-      job.stemcell = DeploymentPlan::Stemcell.new({'name' => 'fake-stemcell-name', 'version' => '1.0'})
+      job.stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell-name', 'version' => '1.0'})
       job.env = DeploymentPlan::Env.new({})
     end
 

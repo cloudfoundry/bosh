@@ -24,14 +24,15 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       allow(resource_pool).to receive(:name).and_return('fake-vm-type')
       allow(resource_pool).to receive(:cloud_properties).and_return({})
       allow(resource_pool).to receive(:stemcell).and_return(
-          Bosh::Director::DeploymentPlan::Stemcell.new({
+          Bosh::Director::DeploymentPlan::Stemcell.parse({
               'name' => 'fake-stemcell-name',
               'version' => 1
             })
         )
     end
+    let(:resource_pool_env) { {'key' => 'value'} }
     let(:resource_pool) do
-      instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: {'key' => 'value'})
+      instance_double('Bosh::Director::DeploymentPlan::ResourcePool', env: resource_pool_env)
     end
     let(:disk_type) { instance_double('Bosh::Director::DeploymentPlan::DiskType') }
     before { allow(deployment_plan).to receive(:disk_type).and_return(disk_type) }
@@ -752,6 +753,20 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
       end
 
+      context 'when the job declares env, and the resource pool does not' do
+        let(:resource_pool_env) { {} }
+        before do
+          job_spec['env'] = {'job' => 'env'}
+          expect(deployment_plan).to receive(:resource_pool)
+                                       .with('fake-resource-pool-name')
+                                       .and_return(resource_pool)
+        end
+
+        it 'should assign the job env to the job' do
+          job = parser.parse(job_spec)
+          expect(job.env.spec).to eq({'job' => 'env'})
+        end
+      end
 
       it 'complains about unknown resource pool' do
         job_spec['resource_pool'] = 'unknown-resource-pool'
@@ -777,7 +792,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               })
           )
         allow(deployment_plan).to receive(:stemcell).with('fake-stemcell').and_return(
-            Bosh::Director::DeploymentPlan::Stemcell.new({
+            Bosh::Director::DeploymentPlan::Stemcell.parse({
                 'alias' => 'fake-stemcell',
                 'os' => 'fake-os',
                 'version' => 1

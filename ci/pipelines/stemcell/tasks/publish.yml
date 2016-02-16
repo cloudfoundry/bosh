@@ -1,0 +1,16 @@
+---
+platform: linux
+image: docker:///boshcpi/aws-cpi-release
+inputs:
+  - name: bosh-src
+  - name: version
+run:
+  path: bosh-src/ci/pipelines/stemcell/tasks/publish.sh
+params:
+  AWS_ACCESS_KEY_ID:     required
+  AWS_SECRET_ACCESS_KEY: required
+  AWS_DEFAULT_REGION:    us-east-1
+  BUCKET_NAME:           required
+  CANDIDATE_PREFIX:      required
+  PUBLISHED_PREFIX:      required
+  COPY_KEYS:             required

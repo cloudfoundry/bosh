@@ -164,7 +164,6 @@ module Bosh::Spec
     def self.resource_pool
       {
         'name' => 'a',
-        'size' => 3,
         'cloud_properties' => {},
         'stemcell' => {
           'name' => 'ubuntu-stemcell',

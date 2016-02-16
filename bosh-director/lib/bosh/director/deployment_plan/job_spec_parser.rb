@@ -200,8 +200,8 @@ module Bosh::Director
         end
 
         if disk_type_name
-            disk_name = disk_type_name
-            disk_source = 'type'
+          disk_name = disk_type_name
+          disk_source = 'type'
         else
           disk_name = disk_pool_name
           disk_source = 'pool'
@@ -254,10 +254,9 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        job_env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
-        @job.env = Env.new(job_env_hash)
-
+        env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
         resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
+
         if resource_pool_name
           resource_pool = @deployment.resource_pool(resource_pool_name)
           if resource_pool.nil?
@@ -265,36 +264,40 @@ module Bosh::Director
               "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
           end
 
-          @job.vm_type = VmType.new({
-              'name' => resource_pool.name,
-              'cloud_properties' => resource_pool.cloud_properties
-            })
+          vm_type = VmType.new({
+            'name' => resource_pool.name,
+            'cloud_properties' => resource_pool.cloud_properties
+          })
 
-          @job.stemcell = resource_pool.stemcell
+          stemcell = resource_pool.stemcell
 
-          if  !job_env_hash.empty? && !resource_pool.env.empty?
+          if !env_hash.empty? && !resource_pool.env.empty?
             raise JobAmbiguousEnv,
               "Job '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
           end
 
-          @job.env = Env.new(resource_pool.env)
+          if env_hash.empty?
+            env_hash = resource_pool.env
+          end
+        else
+          vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
+          vm_type = @deployment.vm_type(vm_type_name)
+          if vm_type.nil?
+            raise JobUnknownVmType,
+              "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
+          end
 
-          return
+          stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
+          stemcell = @deployment.stemcell(stemcell_name)
+          if stemcell.nil?
+            raise JobUnknownStemcell,
+              "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
+          end
         end
 
-        vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
-        @job.vm_type = @deployment.vm_type(vm_type_name)
-        if @job.vm_type.nil?
-          raise JobUnknownVmType,
-            "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
-        end
-
-        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
-        @job.stemcell = @deployment.stemcell(stemcell_name)
-        if @job.stemcell.nil?
-          raise JobUnknownStemcell,
-            "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
-        end
+        @job.vm_type = vm_type
+        @job.stemcell = stemcell
+        @job.env = Env.new(env_hash)
       end
 
       def parse_update_config

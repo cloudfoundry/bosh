@@ -16,7 +16,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_kernel' do
-    describe package('linux-generic-lts-vivid') do
+    describe package('linux-image-3.19.0-49-generic') do
       it { should be_installed }
     end
   end
@@ -287,6 +287,14 @@ EOF
   context 'official Ubuntu gpg key is installed (stig: V-38476)' do
     describe command('apt-key list') do
       its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
+    end
+  end
+
+  context 'limit password reuse' do
+    describe file('/etc/pam.d/common-password') do
+      it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
+        should contain /password.*pam_unix\.so.*remember=24/
+      end
     end
   end
 end

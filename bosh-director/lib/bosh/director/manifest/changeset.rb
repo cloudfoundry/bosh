@@ -11,7 +11,7 @@ module Bosh::Director
 
     REDACT_KEY_NAMES = %w(
       properties
-      env
+      bosh
     )
 
     def initialize(before, after, redacted_before = nil, redacted_after = nil)

@@ -128,7 +128,6 @@ describe 'cli: deployment process', type: :integration do
           expect(output).to_not include('releases')
           expect(output).to match(/  resource_pools:
   - name: a
--   size: 3
     cloud_properties:
 \+     name: new_property
 \+     size: large
@@ -192,7 +191,6 @@ describe 'cli: deployment process', type: :integration do
         expect(output).to include(<<-DIFF
   resource_pools:
   - name: a
--   size: 3
     cloud_properties:
 +     name: new_property
 DIFF

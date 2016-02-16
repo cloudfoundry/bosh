@@ -561,14 +561,12 @@ describe 'upload release', type: :integration do
   end
 
   describe 'uploading release with --fix' do
-    def get_blob_files(table_string)
-      blobs = []
-      table = table_string.lines.grep(/^\| /).map { |line| line.gsub(/\s+/, "")}
-      table.each { |line|
-        blobs << line.split('|')[4]
-      }
-      blobs.shift
-      blobs.select { |s| !s.nil? && s != "" }
+    def get_blob_ids(table_string)
+      table_string.lines.inject([]) do |result, line|
+        match = line.match(/\|\s(\S+)\s\|\s\S+\s\|$/)
+        result << match[1] if match
+        result
+      end
     end
 
     def search_and_delete_files(file_path, blob_files)
@@ -605,7 +603,7 @@ describe 'upload release', type: :integration do
         expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
 
         inspect1 = bosh_runner.run('inspect release bosh-release/0+dev.1')
-        blob_files_1 = get_blob_files(inspect1.split(/\n\n/)[1])
+        blob_files_1 = get_blob_ids(inspect1)
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
@@ -617,7 +615,7 @@ describe 'upload release', type: :integration do
         expect(bosh_runner.run('deploy')).to match /Deployed.*to.*/
 
         inspect2 = bosh_runner.run('inspect release bosh-release/0+dev.1')
-        blob_files_2 = get_blob_files(inspect2.split(/\n\n/)[1])
+        blob_files_2 = get_blob_ids(inspect2)
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end
@@ -630,7 +628,7 @@ describe 'upload release', type: :integration do
         expect(output).to include('Release uploaded')
 
         inspect1 = bosh_runner.run('inspect release hello-go/50')
-        blob_files_1 = get_blob_files(inspect1.split(/\n\n/)[1])
+        blob_files_1 = get_blob_ids(inspect1.split(/\n\n/)[1])
 
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
@@ -639,11 +637,10 @@ describe 'upload release', type: :integration do
         expect(output).to include('Release uploaded')
 
         inspect2 = bosh_runner.run('inspect release hello-go/50')
-        blob_files_2 = get_blob_files(inspect2.split(/\n\n/)[1])
+        blob_files_2 = get_blob_ids(inspect2.split(/\n\n/)[1])
 
         expect(blob_files_2 - blob_files_1).to eq blob_files_2
       end
     end
   end
-
 end
