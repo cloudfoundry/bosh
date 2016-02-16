@@ -626,7 +626,15 @@ module Bosh::Director
             let(:cloud_config) { Models::CloudConfig.make }
 
             context 'authenticated access' do
-              before { authorize 'admin', 'admin' }
+              before do
+                authorize 'admin', 'admin'
+                release = Models::Release.make(name: 'bosh-release')
+                template1 = Models::Template.make(name: 'foobar', release: release)
+                template2 = Models::Template.make(name: 'errand1', release: release)
+                release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+                release_version.add_template(template1)
+                release_version.add_template(template2)
+              end
 
               it 'returns errands in deployment' do
                 response = perform

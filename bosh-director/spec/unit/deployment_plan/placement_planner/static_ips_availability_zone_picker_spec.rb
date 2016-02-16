@@ -104,6 +104,11 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_job
       allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
+
+      release = Bosh::Director::Models::Release.make(name: 'bosh-release')
+      template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
+      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+      release_version.add_template(template)
     end
 
     describe '#place_and_match_in' do

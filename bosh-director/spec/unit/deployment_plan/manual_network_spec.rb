@@ -29,6 +29,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
      )
    end
 
+  before do
+    release = Bosh::Director::Models::Release.make(name: 'bosh-release')
+    template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
+    release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+    release_version.add_template(template)
+  end
+
   describe :initialize do
     it 'should parse subnets' do
       expect(manual_network.subnets.size).to eq(1)
