@@ -129,6 +129,52 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'it supports forceful removal of ARP cache entries' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+      create_and_upload_test_release
+    end
+
+    context 'when there is only 1 deployment' do
+      it 'calls the delete_from_arp action on the bosh-agents' do
+        manifest = Bosh::Spec::Deployments.test_release_manifest
+        manifest.merge!(
+            {
+                'jobs' => [Bosh::Spec::Deployments.simple_job(
+                               name: 'job_to_test_forceful_arp',
+                               instances: 2)]
+            })
+        set_deployment(manifest_hash: manifest)
+
+        deploy({})
+
+        # This is above the second deploy so we get the first log file from the agent
+        # as they get a new agent_id after they're brought down then up
+        agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
+
+        # Change stemcell deployment (forces all VMs to update)
+        upload_stemcell_2
+        simple_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        simple_cloud_config['resource_pools'].first['stemcell'].merge!({"name" => "centos-stemcell", "version" => "2"})
+        upload_cloud_config(cloud_config_hash: simple_cloud_config)
+
+        deploy({})
+
+        agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
+
+        agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
+        agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
+
+        expect(agent_log_0).to include("Running async action delete_from_arp")
+        expect(agent_log_1).to include("Running async action delete_from_arp")
+        expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
+        expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2"]')
+      end
+    end
+  end
+
   context 'it supports running pre-start scripts' do
     before do
       target_and_login

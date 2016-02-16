@@ -7,6 +7,8 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
+    TIMEOUT = 5
+
     def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer)
       @cloud = cloud
       @logger = logger
@@ -64,6 +66,17 @@ module Bosh::Director
 
         agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
         agent_client.wait_until_ready
+
+        instances = Models::Instance.exclude(vm_cid: nil, vm_cid: instance_model.vm_cid).all
+        ip_addresses = instance_plan.network_settings_hash.map do |index,network|
+          network['ip']
+        end
+
+        instances.each do |instance|
+          agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
+          agent.delete_from_arp(ips: ip_addresses)
+        end
+
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e
