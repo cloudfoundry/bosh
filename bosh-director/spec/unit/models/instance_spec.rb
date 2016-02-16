@@ -3,7 +3,7 @@ require 'bosh/director/models/instance'
 
 module Bosh::Director::Models
   describe Instance do
-    subject { described_class.make(job: 'test-job') }
+    subject { described_class.make }
 
     describe '#latest_rendered_templates_archive' do
       def perform
@@ -90,12 +90,6 @@ module Bosh::Director::Models
 
           expect(perform.to_a).to eq([not_latest])
         end
-      end
-    end
-
-    describe '#name' do
-      it 'returns the instance name' do
-        expect(subject.name).to eq("test-job/#{subject.uuid}")
       end
     end
 
