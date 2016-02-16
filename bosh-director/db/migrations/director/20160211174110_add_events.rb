@@ -11,4 +11,8 @@ Sequel.migration do
       Time :timestamp, :null => false
     end
   end
+
+  down do
+    drop_table :events
+  end
 end
