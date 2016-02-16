@@ -100,6 +100,10 @@ module Bosh::Director
       send_message(:unmount_disk, *args)
     end
 
+    def delete_from_arp(*args)
+      send_message(:delete_from_arp, *args)
+    end
+
     def update_settings(certs)
       begin
         send_message(:update_settings, {"trusted_certs" => certs})

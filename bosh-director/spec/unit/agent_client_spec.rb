@@ -106,6 +106,7 @@ module Bosh::Director
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
           it_acts_as_asynchronous_message :start
+          it_acts_as_asynchronous_message :delete_from_arp
         end
 
         describe 'update_settings' do
