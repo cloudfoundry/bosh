@@ -4,8 +4,8 @@ module Bosh::Director
   module Api::Controllers
     class CloudConfigsController < BaseController
       post '/', :consumes => :yaml do
-        manifest_file_path = prepare_yml_file(request.body, 'cloud-config')
-        manifest_text = File.read(manifest_file_path)
+        manifest_text = request.body.read
+        validate_manifest_yml(manifest_text)
 
         Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
         status(201)

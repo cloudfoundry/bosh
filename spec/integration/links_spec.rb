@@ -720,7 +720,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
       end
   end
 
-   context 'when link references another deployment' do
+    context 'when link references another deployment' do
 
      let(:first_manifest) do
        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
@@ -852,7 +852,49 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
            expect {
              deploy_simple_manifest(manifest_hash: second_manifest)
-           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a./)
+           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+         end
+
+         context 'when provider job has more than one instances' do
+           let(:first_deployment_job_spec) do
+             job_spec = Bosh::Spec::Deployments.simple_job(
+                 name: 'first_deployment_node',
+                 templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
+                 instances: 2,
+                 static_ips: ['192.168.1.10', '192.168.1.12'],
+             )
+             job_spec['azs'] = ['z1']
+             job_spec
+           end
+
+           it 'shows the available networks with no duplicates' do
+             deploy_simple_manifest(manifest_hash: first_manifest)
+
+             expect {
+               deploy_simple_manifest(manifest_hash: second_manifest)
+             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+           end
+         end
+
+         context 'when provider job has 0 instances' do
+           let(:first_deployment_job_spec) do
+             job_spec = Bosh::Spec::Deployments.simple_job(
+                 name: 'first_deployment_node',
+                 templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
+                 instances: 0,
+                 static_ips: [],
+             )
+             job_spec['azs'] = ['z1']
+             job_spec
+           end
+
+           it 'shows the available networks' do
+             deploy_simple_manifest(manifest_hash: first_manifest)
+
+             expect {
+               deploy_simple_manifest(manifest_hash: second_manifest)
+             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+           end
          end
        end
      end
@@ -868,7 +910,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
-         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in job 'second_deployment_node' on template 'node' in deployment 'second'. Please make sure the link was provided and shared./)
+         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in job 'second_deployment_node' on template 'node' in deployment 'second'. Please make sure the link was provided and shared\./)
        end
      end
 
@@ -916,7 +958,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network\./)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -932,7 +974,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'global_network'. The available networks are: a, dynamic-network./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'global_network'. The available networks are: a, dynamic-network\./)
         end
       end
 

@@ -128,6 +128,9 @@ module IntegrationExampleGroup
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
+    if options[:runtime_config_hash]
+      upload_runtime_config(options)
+    end
   end
 
   def deploy_simple_manifest(options={})
@@ -172,6 +175,10 @@ module IntegrationExampleGroup
 
   def scrub_random_cids(bosh_output)
     bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  end
+
+  def cid_from(bosh_output)
+    bosh_output[/[0-9a-f]{32}/, 0]
   end
 
   def scrub_time(bosh_output)

@@ -28,17 +28,10 @@ module Bosh::Director
           if link_network
             link_spec = deployment.link_spec[link_path.job][link_path.template][link_path.name][consumed_link.type]
 
-            valid_network = link_spec['nodes'].any? do |node|
-              node['addresses'].any? { |name, address| name == link_network }
-            end
+            valid_network = link_spec['available_networks'].include? link_network
 
             unless valid_network
-              available_networks = []
-              link_spec['nodes'].each do |node|
-                node['addresses'].each { |name, address| available_networks << name }
-              end
-
-              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks.join(', ')}."
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{link_spec['available_networks'].join(', ')}."
             end
           end
 

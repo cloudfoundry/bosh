@@ -90,4 +90,32 @@ DISKS
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(['snapshot_disk', 'delete_vm', 'create_vm', 'set_vm_metadata', 'detach_disk'])
   end
+
+  it 'Attaches an orphaned disk to a hard stopped instance' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_job = Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1)
+
+    manifest_hash['jobs'] = [deployment_job]
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+    bosh_runner.run('delete deployment simple')
+
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+    instance = director.instances.first
+
+    orphan_disk_output = bosh_runner.run('disks --orphaned')
+    orphan_disk_cid = cid_from(orphan_disk_output)
+
+    expect(orphan_disk_cid).to_not be_nil
+
+    bosh_runner.run("stop foobar #{instance.id} --hard")
+    bosh_runner.run("attach disk foobar #{instance.id} #{orphan_disk_cid}")
+    bosh_runner.run("start foobar #{instance.id}")
+
+    started_instance = director.instances.first
+
+    expect(current_sandbox.cpi.disk_attached_to_vm?(started_instance.vm_cid, orphan_disk_cid)).to eq(true)
+  end
 end

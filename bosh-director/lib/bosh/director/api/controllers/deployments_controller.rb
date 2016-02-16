@@ -301,8 +301,8 @@ module Bosh::Director
       end
 
       post '/:deployment/diff', :consumes => :yaml do
-        manifest_file_path = prepare_yml_file(request.body, 'deployment-diff')
-        manifest_text = File.read(manifest_file_path)
+        manifest_text = request.body.read
+        validate_manifest_yml(manifest_text)
 
         deployment = Models::Deployment[name: params[:deployment]]
         if deployment

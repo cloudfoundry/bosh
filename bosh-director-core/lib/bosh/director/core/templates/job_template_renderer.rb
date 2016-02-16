@@ -62,7 +62,9 @@ module Bosh::Director::Core::Templates
           # Make a deep copy of the spec and replace the properties with
           # the specific template properties.
           altered_spec = Bosh::Common::DeepCopy.copy(spec)
-          altered_spec['properties'] = current_template['template_scoped_properties']
+          altered_spec['properties'] = Bosh::Common::DeepCopy.copy(
+              current_template['template_scoped_properties']
+          )
           result = altered_spec
         end
       end
