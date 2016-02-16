@@ -258,6 +258,7 @@ describe 'deploy', type: :integration do
   end
 
   context 'it supports running post-deploy scripts' do
+    with_reset_sandbox_before_each(enable_post_deploy: true)
     before do
       target_and_login
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -443,6 +444,48 @@ describe 'deploy', type: :integration do
 
         expect(File.file?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_errand/post_deploy.stdout.log")).to be_falsey
       end
+    end
+  end
+
+  context 'it does not support running post-deploy scripts' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+
+      create_and_upload_test_release
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'job_with_post_deploy_script',
+                             templates: [
+                                 {'name' => 'job_1_with_post_deploy_script'},
+                                 {'name' => 'job_2_with_post_deploy_script'}
+                             ],
+                             instances: 1),
+                         Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'another_job_with_post_deploy_script',
+                             templates: [
+                                 {'name' => 'job_1_with_post_deploy_script'},
+                                 {'name' => 'job_2_with_post_deploy_script'}
+                             ],
+                             instances: 1)]
+          })
+      set_deployment(manifest_hash: manifest)
+    end
+
+    it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+      deploy({})
+
+      agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+      expect(agent_log).to_not include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+      expect(agent_log).to_not include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")).to be_falsey
     end
   end
 

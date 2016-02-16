@@ -33,7 +33,8 @@ module Bosh::Director
         :max_vm_create_tries,
         :nats_uri,
         :default_ssh_options,
-        :keep_unreachable_vms
+        :keep_unreachable_vms,
+        :enable_post_deploy
       )
 
       attr_reader(
@@ -163,6 +164,7 @@ module Bosh::Director
         @ignore_missing_gateway = config['ignore_missing_gateway']
 
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
+        @enable_post_deploy = config.fetch('enable_post_deploy', false)
 
         Bosh::Clouds::Config.configure(self)
 

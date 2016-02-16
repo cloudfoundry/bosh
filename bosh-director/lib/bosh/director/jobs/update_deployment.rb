@@ -58,7 +58,7 @@ module Bosh::Director
           update_step(deployment_plan).perform
 
           if check_for_changes(deployment_plan)
-            run_post_deploys(deployment_plan)
+            PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
           end
 
           @notifier.send_end_event

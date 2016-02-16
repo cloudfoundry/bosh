@@ -104,7 +104,7 @@ module Bosh::Director::Jobs
             allow(planner).to receive(:jobs).and_return([deployment_job])
             allow(deployment_job).to receive(:did_change).and_return(true)
 
-            expect(job).to receive(:run_post_deploys)
+            expect(Bosh::Director::PostDeploymentScriptRunner).to receive(:run_post_deploys_after_deployment)
 
             job.perform
           end
