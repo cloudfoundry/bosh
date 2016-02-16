@@ -1,10 +1,11 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+      def initialize(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, max_instance_count)
         @instance_reuser = instance_reuser
         @logger = logger
         @instance_deleter = instance_deleter
+        @max_instance_count = max_instance_count
         @instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
         @mutex = Mutex.new
       end
@@ -79,6 +80,10 @@ module Bosh::Director
         @mutex.synchronize do
           instance_memo = @instance_reuser.get_instance(stemcell)
           if instance_memo.nil?
+            if @instance_reuser.total_instance_count >= @max_instance_count
+              instance_memo = @instance_reuser.remove_idle_instance_not_matching_stemcell(stemcell)
+              destroy_instance(instance_memo.instance_plan)
+            end
             @logger.debug("Creating new compilation VM for stemcell '#{stemcell.model.desc}'")
             instance_memo = InstanceMemo.new(@instance_provider, stemcell)
             @instance_reuser.add_in_use_instance(instance_memo, stemcell)

@@ -19,6 +19,13 @@ module Bosh::Director
       stemcell
     end
 
+    let(:different_stemcell) do
+      model = Models::Stemcell.make(cid: 'different-stemcell-cid', name: 'different-stemcell-name')
+      stemcell = DeploymentPlan::Stemcell.new('stemcell-name-diff-alias', 'different-stemcell-name', nil, model.version)
+      stemcell.bind_model(deployment_model)
+      stemcell
+    end
+
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
@@ -64,8 +71,8 @@ module Bosh::Director
     end
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
     let(:ip_provider) {instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
-
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter) }
+    let(:max_instance_count) { 1 }
+    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, max_instance_count) }
     let(:expected_network_settings) do
       {
         'a' => {
@@ -164,6 +171,22 @@ module Bosh::Director
         end
       end
 
+      context 'when the the pool is full' do
+        context 'and there are no available instances for the given stemcell' do
+          it 'destroys the idle instance made for a different stemcell' do
+            compilation_instance_pool.with_reused_vm(stemcell) {|i| }
+            expect(instance_deleter).to_not have_received(:delete_instance_plan)
+            expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
+
+            compilation_instance_pool.with_reused_vm(different_stemcell) {|i| }
+
+            expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
+            expect(instance_reuser.get_num_instances(different_stemcell)).to eq(1)
+            expect(instance_deleter).to have_received(:delete_instance_plan)
+          end
+        end
+      end
+
       context 'after a vm is created' do
         it 'is reused' do
           original = nil
@@ -192,7 +215,7 @@ module Bosh::Director
         end
 
         let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, 4)
         end
 
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
@@ -223,7 +246,7 @@ module Bosh::Director
         end
 
         let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter)
+          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, 4)
         end
 
         it 'spins up vm with the correct VM type' do
@@ -280,7 +303,8 @@ module Bosh::Director
       end
 
       describe 'delete_instances' do
-        let(:number_of_workers) { 1 }
+        let(:max_instance_count) { 2 }
+
         before do
           compilation_instance_pool.with_reused_vm(stemcell) {}
           compilation_instance_pool.with_reused_vm(another_stemcell) {}
@@ -288,12 +312,12 @@ module Bosh::Director
 
         it 'removes the vm from the reuser' do
           expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
-          compilation_instance_pool.delete_instances(number_of_workers)
+          compilation_instance_pool.delete_instances(max_instance_count)
           expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
         end
 
         it 'deletes the instance' do
-          compilation_instance_pool.delete_instances(number_of_workers)
+          compilation_instance_pool.delete_instances(max_instance_count)
           expect(instance_deleter).to have_received(:delete_instance_plan).exactly(2).times
         end
       end

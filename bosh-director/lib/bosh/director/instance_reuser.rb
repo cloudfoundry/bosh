@@ -48,12 +48,32 @@ module Bosh::Director
       end
     end
 
+    def remove_idle_instance_not_matching_stemcell(stemcell)
+      canonical_stemcell = canonical(stemcell)
+      @mutex.synchronize do
+        @idle_instances_by_stemcell.each do |stemcell, idle_instances|
+          if stemcell != canonical_stemcell && !idle_instances.empty?
+            return idle_instances.pop
+          end
+        end
+      end
+    end
+
     def get_num_instances(stemcell)
       canonical_stemcell = canonical(stemcell)
       @mutex.synchronize do
         idle_count = @idle_instances_by_stemcell.fetch(canonical_stemcell, []).size
         in_use_count = @in_use_instances_by_stemcell.fetch(canonical_stemcell, []).size
         idle_count + in_use_count
+      end
+    end
+
+    def total_instance_count
+      @mutex.synchronize do
+        sum = 0
+        @idle_instances_by_stemcell.values.each{|instances| sum += instances.to_a.count }
+        @in_use_instances_by_stemcell.values.each{|instances| sum += instances.to_a.count }
+        sum
       end
     end
 
