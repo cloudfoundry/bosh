@@ -260,11 +260,15 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
             release_model.add_version(version)
 
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+
             deployment_model = Bosh::Director::Models::Deployment.make(name: 'deployment', link_spec_json: "{\"job_name\":{\"template_name\":{\"link_name\":{\"name\":\"link_name\",\"type\":\"link_type\"}}}}")
             version.add_deployment(deployment_model)
           end
 
-          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
+          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1') }
 
           context 'when job specifies a release' do
             before do
@@ -337,7 +341,22 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when one of the hashes does not specify a release' do
-          before { job_spec['templates'] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}] }
+
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
+
+          before do
+            job_spec['templates'] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}]
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+          end
 
           context 'when job specifies a release' do
             before { job_spec['release'] = 'fake-job-release' }
@@ -376,7 +395,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             end
 
             context 'when deployment has a single release' do
-              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
+              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1') }
               let(:template) { make_template('fake-template-name', nil) }
               before do
                 allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
@@ -444,7 +463,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           before do # resolve release and template objs
             job_spec['release'] = 'fake-job-release'
 
-            job_rel_ver = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name1', release: fake_template_release_model))
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name2', release: fake_template_release_model))
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name3', release: fake_template_release_model))
+
+            job_rel_ver = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1')
             allow(deployment_plan).to receive(:release)
               .with('fake-job-release')
               .and_return(job_rel_ver)
@@ -469,6 +494,16 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when multiple hashes reference different releases' do
+          before do
+            fake_template_release_model_1 = Bosh::Director::Models::Release.make(name: 'fake-template-release1')
+            fake_template_release_version_model_1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model_1)
+            fake_template_release_version_model_1.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name1', release: fake_template_release_model_1))
+
+            fake_template_release_model_2 = Bosh::Director::Models::Release.make(name: 'fake-template-release2')
+            fake_template_release_version_model_2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model_2)
+            fake_template_release_version_model_2.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name2', release: fake_template_release_model_2))
+          end
+
           it 'uses the correct release for each template' do
             job_spec['templates'] = [
               {'name' => 'fake-template-name1', 'release' => 'fake-template-release1', 'links' => {}},
@@ -476,7 +511,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             ]
 
             # resolve first release and template obj
-            rel_ver1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            rel_ver1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release1', version: '1')
             allow(deployment_plan).to receive(:release)
                                       .with('fake-template-release1')
                                       .and_return(rel_ver1)
@@ -489,7 +524,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                .and_return(template1)
 
             # resolve second release and template obj
-            rel_ver2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            rel_ver2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release2', version: '1')
             allow(deployment_plan).to receive(:release)
                                       .with('fake-template-release2')
                                       .and_return(rel_ver2)
@@ -531,6 +566,14 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when properties are provided in a template' do
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
 
           before do
             job_spec['templates'] = [
@@ -545,6 +588,10 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 }
             ]
             job_spec['release'] = 'fake-job-release'
+
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
           end
 
           it 'assigns those properties to the intended template' do

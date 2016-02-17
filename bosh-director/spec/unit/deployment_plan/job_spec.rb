@@ -216,7 +216,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#validate_package_names_do_not_collide!' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1') }
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
     before { allow(plan).to receive(:properties).and_return({}) }
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -228,6 +228,15 @@ describe Bosh::Director::DeploymentPlan::Job do
     before { allow(plan).to receive(:release).with('release1').and_return(release) }
 
     context 'when the templates are from the same release' do
+      before do
+        release = Bosh::Director::Models::Release.make(name: 'release1')
+        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release)
+        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release)
+        release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release)
+        release_version.add_template(template1)
+        release_version.add_template(template2)
+      end
+
       let(:spec) do
         {
           'name' => 'foobar',
@@ -256,6 +265,18 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
 
     context 'when the templates are from different releases' do
+      before do
+        release1 = Bosh::Director::Models::Release.make(name: 'release1')
+        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release1)
+        release_version1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1)
+        release_version1.add_template(template1)
+
+        release2 = Bosh::Director::Models::Release.make(name: 'bar_release')
+        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release2)
+        release_version2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release2)
+        release_version2.add_template(template2)
+      end
+
       let(:spec) do
         {
           'name' => 'foobar',
@@ -274,7 +295,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:releases).with(no_args).and_return([release, bar_release]) }
 
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
-      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
+      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release', version: '1') }
 
       before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_template) }
       let(:bar_template) do

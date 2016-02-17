@@ -1014,6 +1014,117 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
       end
     end
+
+    context 'when multiple versions of a release are uploaded' do
+
+      let(:links) do
+        {
+            'db' => {'from' => 'db'},
+            'backup_db' => {'from' => 'backup_db'}
+        }
+      end
+
+      let(:job_consumes_link_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'deployment-job',
+            templates: [{'name' => 'api_server', 'consumes' => links}],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:job_not_consuming_links_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'deployment-job',
+            templates: [{'name' => 'api_server'}],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      it 'should only look at the specific release version templates when getting links' do
+        # ####################################################################
+        # 1- Deploy release version dev.1 that has jobs with links
+        bosh_runner.run("upload release #{spec_asset('links_releases/release_with_minimal_links-0+dev.1.tgz')}")
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['releases'].clear
+        manifest['releases'] << {
+            'name' => 'release_with_minimal_links',
+            'version' => '0+dev.1'
+        }
+        manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
+
+        output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code_1).to eq(0)
+        expect(output_1).to include("Started creating missing vms > deployment-job/0")
+        expect(output_1).to include("Started creating missing vms > mysql/0")
+        expect(output_1).to include("Started creating missing vms > mysql/1")
+        expect(output_1).to include("Started creating missing vms > postgres/0")
+
+        expect(output_1).to include("Started updating job deployment-job > deployment-job/0")
+        expect(output_1).to include("Started updating job mysql > mysql/0")
+        expect(output_1).to include("Started updating job mysql > mysql/1")
+        expect(output_1).to include("Started updating job postgres > postgres/0")
+
+
+        # ####################################################################
+        # 2- Deploy release version dev.2 where its jobs were updated to not have links
+        bosh_runner.run("upload release #{spec_asset('links_releases/release_with_minimal_links-0+dev.2.tgz')}")
+
+        manifest['releases'].clear
+        manifest['releases'] << {
+            'name' => 'release_with_minimal_links',
+            'version' => 'latest'
+        }
+        manifest['jobs'].clear
+        manifest['jobs'] = [job_not_consuming_links_spec, mysql_job_spec, postgres_job_spec]
+
+        output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code_2).to eq(0)
+        expect(output_2).to_not include("Started creating missing vms > deployment-job/0")
+        expect(output_2).to_not include("Started creating missing vms > mysql/0")
+        expect(output_2).to_not include("Started creating missing vms > mysql/1")
+        expect(output_2).to_not include("Started creating missing vms > postgres/0")
+
+        expect(output_2).to include("Started updating job deployment-job > deployment-job/0")
+        expect(output_2).to include("Started updating job mysql > mysql/0")
+        expect(output_2).to include("Started updating job mysql > mysql/1")
+        expect(output_2).to include("Started updating job postgres > postgres/0")
+
+        current_deployments = bosh_runner.run("deployments")
+        expect(current_deployments).to match_output %(
+          +--------+------------------------------------+-------------------+--------------+
+          | Name   | Release(s)                         | Stemcell(s)       | Cloud Config |
+          +--------+------------------------------------+-------------------+--------------+
+          | simple | release_with_minimal_links/0+dev.2 | ubuntu-stemcell/1 | latest       |
+          +--------+------------------------------------+-------------------+--------------+
+        )
+
+
+        # ####################################################################
+        # 3- Re-deploy release version dev.1 that has jobs with links. It should still work
+        manifest['releases'].clear
+        manifest['releases'] << {
+            'name' => 'release_with_minimal_links',
+            'version' => '0+dev.1'
+        }
+        manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
+
+        output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code_3).to eq(0)
+        expect(output_3).to_not include("Started creating missing vms > deployment-job/0")
+        expect(output_3).to_not include("Started creating missing vms > mysql/0")
+        expect(output_3).to_not include("Started creating missing vms > mysql/1")
+        expect(output_3).to_not include("Started creating missing vms > postgres/0")
+
+        expect(output_3).to include("Started updating job deployment-job > deployment-job/0")
+        expect(output_3).to include("Started updating job mysql > mysql/0")
+        expect(output_3).to include("Started updating job mysql > mysql/1")
+        expect(output_3).to include("Started updating job postgres > postgres/0")
+      end
+    end
   end
 
   context 'when addon job requires link' do

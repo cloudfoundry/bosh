@@ -76,6 +76,10 @@ module Bosh::Director
         end
 
         it "appends addon jobs to deployment job templates and addon properties to deployment job properties" do
+          release_model = Bosh::Director::Models::Release.make(name: 'dummy')
+          release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model)
+          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+
           runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
           job_parser = DeploymentPlan::JobSpecParser.new(deployment, event_log, logger)
 
