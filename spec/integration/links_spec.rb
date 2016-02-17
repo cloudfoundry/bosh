@@ -20,8 +20,8 @@ describe 'Links', type: :integration do
     template = YAML.load(my_api_vm.read_job_template(template, 'config.yml'))
 
     template['databases'].each do |_, database|
-      database.each do |node|
-          expect(node['address']).to match(pattern)
+      database.each do |instance|
+          expect(instance['address']).to match(pattern)
       end
     end
   end
@@ -381,11 +381,11 @@ Error 100: Unable to render jobs for deployment. Errors are:
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
-        expect(out).to include('Started copying jobs > api_server/666e35a3f7bd98a5dc4b2bc1370db4cbebe5c8a3. Done')
+        expect(out).to include('Started copying jobs > api_server/02a79601cb3a8865fe754901803d8dcce9663c19. Done')
         expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
         expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
         expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
-        expect(out).to include('Started copying jobs > node/6078229e7169ac3f202d3bd13b5806f75cdce6f5. Done')
+        expect(out).to include('Started copying jobs > node/65091387a082a30834de1e4f52144d06c86789c6. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
@@ -793,8 +793,8 @@ Error 100: Unable to render jobs for deployment. Errors are:
            second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
            second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
 
-           expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
-           expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
+           expect(second_deployment_template['instances']['node1_ips']).to eq(['192.168.1.10'])
+           expect(second_deployment_template['instances']['node2_ips']).to eq(['192.168.1.11'])
          end
        end
 
@@ -832,9 +832,9 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
            second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
            second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
-
-           expect(second_deployment_template['nodes']['node1_ips'].first).to match(/.test./)
-           expect(second_deployment_template['nodes']['node2_ips'].first).to eq('192.168.1.11')
+           
+           expect(second_deployment_template['instances']['node1_ips'].first).to match(/.test./)
+           expect(second_deployment_template['instances']['node2_ips'].first).to eq('192.168.1.11')
          end
        end
 
@@ -1052,8 +1052,8 @@ Error 100: Unable to render jobs for deployment. Errors are:
       template = YAML.load(my_sql_vm.read_job_template("addon", 'config.yml'))
 
       template['databases'].each do |_, database|
-        database.each do |node|
-          expect(node['address']).to match(/.dynamic-network./)
+        database.each do |instance|
+          expect(instance['address']).to match(/.dynamic-network./)
         end
       end
     end

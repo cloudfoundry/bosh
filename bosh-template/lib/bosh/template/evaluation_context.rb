@@ -3,7 +3,7 @@ require 'bosh/template/evaluation_failed'
 require 'bosh/template/unknown_property'
 require 'bosh/template/unknown_link'
 require 'bosh/template/property_helper'
-require 'bosh/template/evaluation_link_node'
+require 'bosh/template/evaluation_link_instance'
 require 'bosh/template/evaluation_link'
 
 module Bosh
@@ -97,11 +97,11 @@ module Bosh
         result = lookup_property(@links, name)
         raise UnknownLink.new(name) if result.nil?
 
-        if result.has_key?("nodes")
-          node_array = result["nodes"].map do |link_spec|
-            EvaluationLinkNode.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+        if result.has_key?("instances")
+          instance_array = result["instances"].map do |link_spec|
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          return EvaluationLink.new(node_array)
+          return EvaluationLink.new(instance_array)
         end
         raise UnknownLink.new(name)
       end
@@ -122,16 +122,16 @@ module Bosh
 
       # Run a block of code if the link given exists
       # @param [String] name of the link
-      # @yield [Object] link, which is an array of nodes
+      # @yield [Object] link, which is an array of instances
       def if_link(name)
         link_found = lookup_property(@links, name)
-        if link_found.nil? || !link_found.has_key?("nodes")
+        if link_found.nil? || !link_found.has_key?("instances")
           return ActiveElseBlock.new(self)
         else
-          node_array = link_found["nodes"].map do |link_spec|
-            EvaluationLinkNode.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+          instance_array = link_found["instances"].map do |link_spec|
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          yield EvaluationLink.new(node_array)
+          yield EvaluationLink.new(instance_array)
           InactiveElseBlock.new
         end
       end

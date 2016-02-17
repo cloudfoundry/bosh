@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_context'
-require 'bosh/template/evaluation_link_node'
+require 'bosh/template/evaluation_link_instance'
 require 'bosh/template/evaluation_link'
 
 module Bosh
@@ -22,8 +22,8 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
-            'fake-link-2' => {'nodes' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
+            'fake-link-1' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
+            'fake-link-2' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
           },
           'index' => 0,
           'id' => 'deadbeef',
@@ -64,13 +64,13 @@ module Bosh
       end
 
       it 'evaluates links' do
-        expect(eval_template("<%= link('fake-link-1').nodes[0].address %>", @context)).to eq('123.456.789.101')
-        expect(eval_template("<%= link('fake-link-2').nodes[0].address %>", @context)).to eq('123.456.789.102')
+        expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('123.456.789.101')
+        expect(eval_template("<%= link('fake-link-2').instances[0].address %>", @context)).to eq('123.456.789.102')
       end
 
       it 'evaluates link properties' do
-        expect(eval_template("<%= link('fake-link-1').nodes[0].p('prop1') %>", @context)).to eq('value')
-        expect(eval_template("<%= link('fake-link-2').nodes[0].p('prop2') %>", @context)).to eq('value')
+        expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
+        expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
       end
 
       it 'should throw a nice error when a link cannot be found' do
@@ -84,7 +84,7 @@ module Bosh
         it 'works when link is found' do
           template = <<-TMPL
         <% if_link("fake-link-1") do |link| %>
-        <%= link.nodes[0].address %>
+        <%= link.instances[0].address %>
         <% end %>
           TMPL
 
@@ -94,7 +94,7 @@ module Bosh
         it "does not call the block if a link can't be found" do
           template = <<-TMPL
           <% if_link("imaginary-link-1") do |link| %>
-          <%= link.nodes[0].address %>
+          <%= link.instances[0].address %>
           <% end %>
           TMPL
 
@@ -105,7 +105,7 @@ module Bosh
           it 'does not call the else block if link is found' do
             template = <<-TMPL
           <% if_link("fake-link-1") do |link| %>
-          <%= link.nodes[0].address %>
+          <%= link.instances[0].address %>
           <% end.else do %>
           should never get here
           <% end %>
@@ -117,7 +117,7 @@ module Bosh
           it 'calls the else block if the link is missing' do
             template = <<-TMPL
           <% if_link("imaginary-link-1") do |link| %>
-          <%= link.nodes[0].address %>
+          <%= link.instances[0].address %>
           <% end.else do %>
           it should show me
           <% end %>
@@ -131,7 +131,7 @@ module Bosh
           it 'is not called when if_link matches' do
             template = <<-TMPL
           <% if_link("fake-link-1") do |link| %>
-          <%= link.nodes[0].address %>
+          <%= link.instances[0].address %>
           <% end.else_if_link("should-never-get-here-link") do |v| %>
           hidden words
           <% end.else do %>
@@ -147,7 +147,7 @@ module Bosh
           <% if_link("imaginary-link-1") do |v| %>
           should not get here
           <% end.else_if_link("fake-link-1") do |link| %>
-          <%= link.nodes[0].address %>
+          <%= link.instances[0].address %>
           <% end.else do %>
           not going to get here
           <% end %>

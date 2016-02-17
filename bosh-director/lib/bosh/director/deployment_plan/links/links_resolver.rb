@@ -38,8 +38,8 @@ module Bosh::Director
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in job '#{job.name}' on template '#{template.name}'"
             end
 
-            link_spec['nodes'].each do |node|
-              node.delete('addresses')
+            link_spec['instances'].each do |instance|
+              instance.delete('addresses')
             end
 
             job.add_resolved_link(link_name, link_spec)

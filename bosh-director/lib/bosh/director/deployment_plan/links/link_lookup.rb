@@ -85,8 +85,8 @@ module Bosh::Director
         return nil unless link_spec
 
         if @link_network
-          link_spec['nodes'].each do |node|
-            node['address'] = node['addresses'][@link_network]
+          link_spec['instances'].each do |instance|
+            instance['address'] = instance['addresses'][@link_network]
           end
         end
 

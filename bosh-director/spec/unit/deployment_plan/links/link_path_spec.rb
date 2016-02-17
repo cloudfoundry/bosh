@@ -45,7 +45,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
     release_model.add_version(version)
-    previous_deployment = Bosh::Director::Models::Deployment.make(name: 'previous_deployment', link_spec_json: '{"provider_job":{"provider_template":{"link_name":{"link_name":{"nodes":[]}}}}}')
+    previous_deployment = Bosh::Director::Models::Deployment.make(name: 'previous_deployment', link_spec_json: '{"provider_job":{"provider_template":{"link_name":{"link_name":{"instances":[]}}}}}')
     version.add_deployment(previous_deployment)
   end
 

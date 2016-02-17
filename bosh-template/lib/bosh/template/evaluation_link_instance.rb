@@ -2,7 +2,7 @@ require 'bosh/template/property_helper'
 
 module Bosh
   module Template
-    class EvaluationLinkNode
+    class EvaluationLinkInstance
       include PropertyHelper
 
       attr_reader :name

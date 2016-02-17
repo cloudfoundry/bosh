@@ -1,10 +1,10 @@
 ---
-nodes:
+instances:
   node1_ips:
-<% link('node1').nodes.each do |node| %>
-    - <%= node.address %>
+<% link('node1').instances.each do |instance| %>
+    - <%= instance.address %>
 <% end %>
   node2_ips:
-<% link('node2').nodes.each do |node| %>
-    - <%= node.address %>
+<% link('node2').instances.each do |instance| %>
+    - <%= instance.address %>
 <% end %>

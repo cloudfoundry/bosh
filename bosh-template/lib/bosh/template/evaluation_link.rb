@@ -1,9 +1,9 @@
 module Bosh
   module Template
     class EvaluationLink
-      attr_reader :nodes
-      def initialize(nodes)
-        @nodes = nodes
+      attr_reader :instances
+      def initialize(instances)
+        @instances = instances
       end
     end
   end
