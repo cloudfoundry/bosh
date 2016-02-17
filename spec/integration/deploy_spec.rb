@@ -350,6 +350,20 @@ Deployed `simple' to `Test Director'
       bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
     }
 
+    context 'it uploads the compiled release when there is no corresponding stemcell' do
+      it 'should not raise an error' do
+        bosh_runner.run('delete stemcell bosh-aws-xen-hvm-centos-7-go_agent 3001')
+        bosh_runner.run('delete release test_release')
+        expect {
+          bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+        }.to_not raise_exception
+        out = bosh_runner.run('inspect release test_release/1')
+        expect(out).to include('| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
+|                          |                                          | centos-7/3001 |')
+        puts out
+      end
+    end
+
     context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
       before {
         cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config

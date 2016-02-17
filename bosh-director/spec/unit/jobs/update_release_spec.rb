@@ -918,14 +918,8 @@ module Bosh::Director
             release_version_model.add_package(package)
             package
           end
-          let!(:stemcell) { Models::Stemcell.make(
-            name: 'fake-stemcell-1',
-            version: 'fake-stemcell-version-1',
-            cid: 'fake-cid-1'
-          )}
           let!(:compiled_package) { Models::CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
             sha1: 'fake-compiled-sha-1',
             blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
             dependency_key: 'fake-dep-key-1',
@@ -993,14 +987,6 @@ module Bosh::Director
             'compiled_packages' => manifest_compiled_packages,
           }
         end
-        let!(:stemcell) do
-          Models::Stemcell.make(
-            name: 'fake-stemcell-name-1',
-            operating_system: 'macintosh os',
-            version: '7.1',
-            cid: 'fake-stemcell-cid-1'
-          )
-        end
 
         context 'when release already exists' do
           let!(:package) do
@@ -1015,7 +1001,6 @@ module Bosh::Director
           end
           let!(:compiled_package) do
             compiled_package = Models::CompiledPackage.make(
-              stemcell: stemcell,
               blobstore_id: 'fake-compiled-blobstore-id-1',
               dependency_key: 'fake-compiled-dependency-key-1',
               sha1: 'fake-compiled-sha-1',
@@ -1060,12 +1045,11 @@ module Bosh::Director
           end
           let!(:existing_compiled_package) do
             existing_compiled_package = Models::CompiledPackage.make(
-              stemcell: stemcell,
               blobstore_id: 'fake-existing-compiled-blobstore-id-1',
               dependency_key: 'fake-existing-compiled-dependency-key-1',
               sha1: 'fake-existing-compiled-sha-1',
-              stemcell_os: 'Android',
-              stemcell_version: '23'
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1'
             )
             existing_package.add_compiled_package existing_compiled_package
             existing_compiled_package

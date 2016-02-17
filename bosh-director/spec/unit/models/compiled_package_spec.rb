@@ -45,6 +45,21 @@ module Bosh::Director::Models
       end
     end
 
+    describe 'self.split_stemcell_os_and_version' do
+      it 'splits a properly formatted value' do
+        expect(CompiledPackage.split_stemcell_os_and_version("ubuntu_trusty/3146.1")).to eq({
+              os: 'ubuntu_trusty',
+              version: '3146.1',
+            })
+      end
+
+      it 'raises an error when given an invalid value' do
+        expect{
+          CompiledPackage.split_stemcell_os_and_version("somethingelse")
+        }.to raise_error
+      end
+    end
+
     describe '#generate_build_number' do
       it 'returns 1 if no compiled packages for package and stemcell' do
         expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)

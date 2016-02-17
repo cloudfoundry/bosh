@@ -17,6 +17,19 @@ module Bosh::Director::Models
       Digest::SHA1.hexdigest(hash_input)
     end
 
+    # Marks job template model as being used by release version
+    # @param string stemcell os & version, e.g. 'ubuntu_trusty/3146.1'
+    # @return hash, e.g. { stemcell_os: 'ubuntu_trusty', stemcell_version: '3146.1' }
+    def self.split_stemcell_os_and_version(name)
+      values = name.split('/', 2)
+
+      unless 2 == values.length
+        raise "Expected value to be in the format of \"{os_name}/{stemcell_version}\", but given \"#{name}\""
+      end
+
+      return { os: values[0], version: values[1] }
+    end
+
     def validate
       validates_presence [:package_id, :stemcell_os, :stemcell_version, :sha1, :blobstore_id, :dependency_key]
       validates_unique [:package_id, :stemcell_os, :stemcell_version, :dependency_key]
