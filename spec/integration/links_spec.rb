@@ -1056,7 +1056,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
         }
         manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
 
-        output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_1).to eq(0)
         expect(output_1).to include("Started creating missing vms > deployment-job/0")
         expect(output_1).to include("Started creating missing vms > mysql/0")
@@ -1081,7 +1081,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
         manifest['jobs'].clear
         manifest['jobs'] = [job_not_consuming_links_spec, mysql_job_spec, postgres_job_spec]
 
-        output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_2).to eq(0)
         expect(output_2).to_not include("Started creating missing vms > deployment-job/0")
         expect(output_2).to_not include("Started creating missing vms > mysql/0")
@@ -1112,7 +1112,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
         }
         manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
 
-        output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_3).to eq(0)
         expect(output_3).to_not include("Started creating missing vms > deployment-job/0")
         expect(output_3).to_not include("Started creating missing vms > mysql/0")
