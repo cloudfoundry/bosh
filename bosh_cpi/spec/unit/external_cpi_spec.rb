@@ -44,15 +44,26 @@ describe Bosh::Clouds::ExternalCpi do
     describe 'log' do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
 
-      it 'saves the log in task cpi log' do
+      it 'saves the log and stderr in task cpi log' do
         call_cpi_method
-        expect(File.read(cpi_log_path)).to eq('fake-log')
+        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
       end
 
       it 'adds to existing file if for a given task several cpi requests were made' do
         external_cpi.public_send(method, *arguments)
         external_cpi.public_send(method, *arguments)
-        expect(File.read(cpi_log_path)).to eq('fake-logfake-log')
+        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-datafake-logfake-stderr-data')
+      end
+
+      context 'when no stderr' do
+        before {
+          allow(Open3).to receive(:capture3).and_return(cpi_response, nil, 0)
+        }
+
+        it 'saves the log in task cpi log' do
+          call_cpi_method
+          expect(File.read(cpi_log_path)).to eq('fake-log')
+        end
       end
     end
 
