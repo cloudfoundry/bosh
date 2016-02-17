@@ -158,23 +158,23 @@ module Bosh::Director
 
             if current_template_model.consumes_json != nil
               JSON.parse(current_template_model.consumes_json).each do |consumes_json|
-                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json)
+                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json, template_spec)
               end
             end
             if current_template_model.provides_json != nil
               JSON.parse(current_template_model.provides_json).each do |provides_json|
-                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json)
+                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json, template_spec)
               end
             end
 
             provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
             provides_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, "provides", link_name, source)
+              template.add_link_info(@job.name, "provides", link_name, source, template_spec)
             end
 
             consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
             consumes_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, 'consumes', link_name, source)
+              template.add_link_info(@job.name, 'consumes', link_name, source, template_spec)
             end
 
             template.add_template_scoped_properties(

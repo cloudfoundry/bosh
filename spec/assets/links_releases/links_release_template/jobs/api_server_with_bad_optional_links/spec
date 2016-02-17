@@ -9,3 +9,4 @@ packages:
 consumes:
   - {name: optional_link_name, type: optional_link_type, optional: true}
 
+properties: {}

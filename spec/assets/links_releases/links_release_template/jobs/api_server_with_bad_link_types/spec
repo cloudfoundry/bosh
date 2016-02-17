@@ -11,3 +11,5 @@ consumes:
   - {name: db, type: bad_link}
   - { name: backup_db, type: bad_link_2 }
   - {name: some_link_name, type: bad_link_3}
+
+properties: {}

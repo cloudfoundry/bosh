@@ -381,11 +381,16 @@ Error 100: Unable to render jobs for deployment. Errors are:
         expect(out).to include('Started copying packages > pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c. Done')
 
         expect(out).to include('Started copying jobs')
-        expect(out).to include('Started copying jobs > api_server/02a79601cb3a8865fe754901803d8dcce9663c19. Done')
-        expect(out).to include('Started copying jobs > backup_database/2ea09882747364709dad9f45267965ac176ae5ad. Done')
-        expect(out).to include('Started copying jobs > database/a9f952f94a82c13a3129ac481030f704a33d027f. Done')
-        expect(out).to include('Started copying jobs > mongo_db/1a57f0be3eb19e263261536693db0d5a521261a6. Done')
-        expect(out).to include('Started copying jobs > node/65091387a082a30834de1e4f52144d06c86789c6. Done')
+        expect(out).to include('Started copying jobs > addon/39adedad4737bc2acce16352c55c14de0a601512. Done')
+        expect(out).to include('Started copying jobs > api_server/8c6864dd746cadc5c39259b0b7a1fe9f40205b65. Done')
+        expect(out).to include('Started copying jobs > api_server_with_bad_link_types/5efc0322b51eace0b355e7613f06b7238d2a04c7. Done')
+        expect(out).to include('Started copying jobs > api_server_with_bad_optional_links/1df8cd1987c1711bb04af2f43378715296070765. Done')
+        expect(out).to include('Started copying jobs > api_server_with_optional_links_1/5ae8a1435d098577de613fe4de18c252b1a624d3. Done')
+        expect(out).to include('Started copying jobs > api_server_with_optional_links_2/a4c1f8bc664578874ea9de1dc0618b9f3e811172. Done')
+        expect(out).to include('Started copying jobs > backup_database/c6802f3d21e6c2367520629c691ab07e0e49be6d. Done')
+        expect(out).to include('Started copying jobs > database/6f16ca3fad0d120eefd91334f4c8d3584886cc3d. Done')
+        expect(out).to include('Started copying jobs > mongo_db/2a32a7517a77bfa606a7a4ae0ae8097bf36505df. Done')
+        expect(out).to include('Started copying jobs > node/9bf2cb66c06889609404fbe10b3c8f597463bdb5. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
@@ -447,7 +452,6 @@ Error 100: Unable to render jobs for deployment. Errors are:
         deploy_simple_manifest(manifest_hash: manifest)
       end
     end
-
 
     context 'when release job requires and provides same link' do
       let(:first_node_job_spec) do
@@ -660,7 +664,6 @@ Error 100: Unable to render jobs for deployment. Errors are:
       end
 
     end
-
 
     context 'when link is broken' do
       let(:manifest) do
@@ -1015,8 +1018,63 @@ Error 100: Unable to render jobs for deployment. Errors are:
       end
     end
 
-    context 'when multiple versions of a release are uploaded' do
+    context 'when link provider specifies properties from job spec' do
+      let(:mysql_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'mysql',
+            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }, 'provides' => {'db' => {'properties' => ['test']} } }],
+            instances: 2,
+            static_ips: ['192.168.1.10', '192.168.1.11']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec['networks'] << {
+            'name' => 'dynamic-network',
+            'default' => ['dns', 'gateway']
+        }
+        job_spec
+      end
 
+      let(:links) do
+        {
+            'db' => {'from' => 'db'},
+            'backup_db' => {'from' => 'backup_db'}
+        }
+      end
+
+      it 'allows only the specified properties' do
+        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
+      end
+    end
+
+    context 'when link provider specifies properties not from job spec' do
+      let(:mysql_job_spec) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'mysql',
+            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }, 'provides' => {'db' => {'properties' => ['test', 'test1']} } }],
+            instances: 2,
+            static_ips: ['192.168.1.10', '192.168.1.11']
+        )
+        job_spec['azs'] = ['z1']
+        job_spec['networks'] << {
+            'name' => 'dynamic-network',
+            'default' => ['dns', 'gateway']
+        }
+        job_spec
+      end
+
+      let(:links) do
+        {
+            'db' => {'from' => 'db'},
+            'backup_db' => {'from' => 'backup_db'}
+        }
+      end
+
+      it 'fails if the property specified for links is not provided by job template' do
+        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(RuntimeError, /Link db in job mysql on template database specifies properties which are not defined in its job spec. The following properties are invalid: test1\./)
+      end
+    end
+
+    context 'when multiple versions of a release are uploaded' do
       let(:links) do
         {
             'db' => {'from' => 'db'},
@@ -1123,6 +1181,10 @@ Error 100: Unable to render jobs for deployment. Errors are:
         expect(output_3).to include("Started updating job mysql > mysql/0")
         expect(output_3).to include("Started updating job mysql > mysql/1")
         expect(output_3).to include("Started updating job postgres > postgres/0")
+      end
+
+      it 'allows only the specified properties' do
+        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
       end
     end
   end

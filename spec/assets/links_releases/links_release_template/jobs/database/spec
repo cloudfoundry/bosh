@@ -5,3 +5,8 @@ packages: []
 
 provides:
 - {name: db, type: db}
+
+properties:
+  test:
+    description: "test property"
+    default: "default test property"

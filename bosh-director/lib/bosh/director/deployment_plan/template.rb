@@ -4,6 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     class Template
       include Bosh::Template::PropertyHelper
+      include ValidationHelper
 
       attr_reader :name
       attr_reader :release
@@ -123,7 +124,7 @@ module Bosh::Director
         end
       end
 
-      def add_link_info(job_name, kind, link_name, source)
+      def add_link_info(job_name, kind, link_name, source, template_spec = nil)
         @link_infos[job_name] ||= {}
         @link_infos[job_name][kind] ||= {}
         @link_infos[job_name][kind][link_name] ||= {}
@@ -135,7 +136,11 @@ module Bosh::Director
           @link_infos[job_name][kind][link_name]['skip_link'] = true
         else
           source.to_a.each do |key, value|
-            @link_infos[job_name][kind][link_name][key] = value
+            if key == 'properties'
+              @link_infos[job_name][kind][link_name][key] = link_properties(job_name, link_name, value, template_spec)
+            else
+              @link_infos[job_name][kind][link_name][key] = value
+            end
           end
         end
 
@@ -143,6 +148,10 @@ module Bosh::Director
 
       def consumes_link_info(job_name, link_name)
         @link_infos.fetch(job_name, {}).fetch('consumes', {}).fetch(link_name, {})
+      end
+
+      def provides_link_info(job_name, link_name)
+        @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
       end
 
       def add_template_scoped_properties(template_scoped_properties, deployment_job_name)
@@ -167,6 +176,30 @@ module Bosh::Director
       end
 
       private
+
+      def link_properties(job_name, link_name, link_properties, template_spec)
+        if template_spec
+          template_properties = safe_property(template_spec, 'properties', class: Hash, optional: true, default: {})
+          template_name = safe_property(template_spec, 'name', class: String)
+          template_property_names = template_properties.keys
+          invalid_properties = []
+          result = {}
+
+          link_properties.each do |name|
+            if template_property_names.include?(name)
+              result[name] = template_properties[name]
+            else
+              invalid_properties << name
+            end
+          end
+
+          if invalid_properties.size > 0
+            raise "Link #{link_name} in job #{job_name} on template #{template_name} specifies properties which are not defined in its job spec. The following properties are invalid: #{invalid_properties.join(', ')}."
+          end
+
+          result
+        end
+      end
 
       # Returns model only if it's present, fails otherwise
       # @return [Models::Template]

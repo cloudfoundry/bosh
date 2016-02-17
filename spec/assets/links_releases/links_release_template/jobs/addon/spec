@@ -7,3 +7,5 @@ packages: []
 
 consumes:
   - {name: db, type: db}
+
+properties: {}

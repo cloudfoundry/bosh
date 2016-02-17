@@ -37,7 +37,11 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'mysql',
           'templates' => [
-            {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}}}
+            {'name' => 'mysql-template',
+             'release' => 'fake-release',
+             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db', 'properties'=>['mysql']}},
+             "properties" => {'mysql' => nil}
+            }
           ],
           'resource_pool' => 'fake-resource-pool',
           'instances' => 2,
@@ -119,24 +123,32 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     release_id = version.release_id
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', consumes: consumes_links, release_id: 1)
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template',
+                                                           consumes: consumes_links,
+                                                           release_id: 1)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links, release_id: 1)
+    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template',
+                                                           provides: provided_links,
+                                                           properties: {mysql: {description:'some description'}},
+                                                           release_id: 1)
     version.add_template(template_model)
 
-    deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment', link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment',
+                                                               link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
     version.add_deployment(deployment_model)
 
-    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment', manifest: deployment_manifest.to_json, link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment',
+                                                               manifest: deployment_manifest.to_json,
+                                                               link_spec_json: "{\"mysql\":{\"mysql-template\":{\"db\":{\"name\":\"db\",\"type\":\"db\"}}}}")
     version.add_deployment(deployment_model)
   end
 
   let(:consumes_links) { [{name: "db", type: "db"}] }
-  let(:provided_links) { [{name: "db", type: "db", shared: true}] }
+  let(:provided_links) { [{name: "db", type: "db", shared: true, properties: ['mysql']}] }
 
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
@@ -147,6 +159,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           links_resolver.resolve(api_server_job)
           instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+
           expect(api_server_job.link_spec).to eq({
                 'db' => {
                   'available_networks' => ['fake-manual-network', 'fake-dynamic-network'],
@@ -446,7 +459,11 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             {
               'name' => 'mysql',
               'templates' => [
-                {'name' => 'mysql-template', 'release' => 'fake-release', 'provides' => {'db' => {'as' => 'db'}}}
+                {'name' => 'mysql-template',
+                 'release' => 'fake-release',
+                 'provides' => {'db' => {'as' => 'db'}},
+                 'properties' => {'mysql' => nil}
+                }
               ],
               'resource_pool' => 'fake-resource-pool',
               'instances' => 2,
