@@ -71,6 +71,14 @@ module Bosh::Director
 
       def parse_jobs
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
+        instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
+
+        if jobs.count > 0 && instance_groups.count > 0
+          raise JobBothInstanceGroupAndJob, "Cannot have both jobs and instance_groups"
+        elsif instance_groups.count > 0
+          jobs = instance_groups
+        end
+
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
