@@ -3,12 +3,19 @@ module Bosh::Director
     class DeploymentManager
       include ApiHelper
 
-      # Finds deployment by name
-      # @param [String] name
-      # @return [Models::Deployment] Deployment model
-      # @raise [DeploymentNotFound]
+      def initialize
+        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
+      end
+
       def find_by_name(name)
         DeploymentLookup.new.by_name(name)
+      end
+
+      def find_available(token_scopes)
+        deployments = Bosh::Director::Models::Deployment.order_by(:name.asc).all
+        deployments.select do |deployment|
+          @permission_authorizer.is_authorized?(deployment.scopes.split((',')), token_scopes)
+        end
       end
 
       def create_deployment(username, deployment_manifest, cloud_config, options = {})

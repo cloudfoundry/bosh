@@ -26,6 +26,11 @@ module Bosh::Director::Models
       end
     end
 
+    def self.uuid
+      uuid = first(name: 'uuid')
+      return uuid.value if uuid
+    end
+
     def self.update_or_create_uuid(value, logger)
       if where(name: 'uuid').update(value: value) == 0
         create(name: 'uuid', value: value)

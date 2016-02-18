@@ -12,8 +12,8 @@ module Bosh::Director
       def initialize(manifest_file_path, cloud_config_id, options = {})
         @blobstore = App.instance.blobstores.blobstore
         @manifest_file_path = manifest_file_path
-        @options = options
         @cloud_config_id = cloud_config_id
+        @options = options
       end
 
       def perform

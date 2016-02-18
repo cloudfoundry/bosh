@@ -4,9 +4,12 @@ require 'rack/test'
 module Bosh::Director
   describe Api::UAAIdentityProvider do
 
-    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options, uuid_provider) }
+    before do
+      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+    end
+
+    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
-    let(:uuid_provider) { instance_double(Api::DirectorUUIDProvider, 'uuid' => 'fake-director-uuid')}
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
@@ -119,9 +122,33 @@ module Bosh::Director
 
                   it 'returns false' do
                     expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-                    expect(identity_provider.required_scopes(requested_access)).to eq(["bosh.admin", "bosh.fake-director-uuid.admin", "bosh.read", "bosh.fake-director-uuid.read"])
+                    expect(identity_provider.required_scopes(requested_access)).to eq(%w(bosh.admin bosh.fake-director-uuid.admin bosh.read bosh.fake-director-uuid.read))
                   end
                 end
+              end
+            end
+
+            context 'when user scope is bosh.teams.<TEAM-NAME>.admin' do
+              let(:scope) { ['bosh.teams.my_team.admin'] }
+
+              it 'returns an authorized User with the username' do
+                expect(uaa_user.username).to eq('marissa')
+              end
+
+              it 'has access to manage deployments' do
+                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
+              end
+            end
+
+            context 'when user scope has a bad scope' do
+              let(:scope) { ['bosh.teams.my.cool.team.admin'] }
+
+              it 'returns an authorized User with the username' do
+                expect(uaa_user.username).to eq('marissa')
+              end
+
+              it 'does not have access to manage deployments' do
+                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
               end
             end
           end
