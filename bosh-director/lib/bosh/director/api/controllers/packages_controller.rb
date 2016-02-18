@@ -34,8 +34,7 @@ module Bosh::Director
         end
 
         matching_packages = Models::Package.join(Models::CompiledPackage, :package_id=>:id)
-                                .select(:packages__name, :packages__fingerprint, :compiled_packages__dependency_key, :stemcells__operating_system, :stemcells__version)
-                                .join(Models::Stemcell, :id=>:stemcell_id)
+                              .select(:packages__name, :packages__fingerprint, :compiled_packages__dependency_key, :stemcell_os, :stemcell_version)
                               .where(fingerprint: fingerprint_list).all
 
         matching_packages = filter_matching_packages(matching_packages, manifest)
@@ -48,7 +47,7 @@ module Bosh::Director
         filtered_packages = []
 
         matching_packages.each do |package|
-          stemcell_match = "#{package[:operating_system]}/#{package[:version]}" == compiled_package_meta(package.name, manifest)['stemcell']
+          stemcell_match = "#{package[:stemcell_os]}/#{package[:stemcell_version]}" == compiled_package_meta(package.name, manifest)['stemcell']
           dependencies_match = package[:dependency_key] == dependency_key(package, manifest)
 
           if stemcell_match && dependencies_match

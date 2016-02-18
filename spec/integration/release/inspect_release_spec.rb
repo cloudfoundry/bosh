@@ -42,7 +42,7 @@ describe 'inspect release', type: :integration do
       )
     end
 
-    it 'shows jobs and pacakges compiled against multiple stemcells' do
+    it 'shows jobs and packages compiled against multiple stemcells' do
       bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       out = scrub_random_ids(bosh_runner.run("inspect release test_release/1"))
@@ -59,20 +59,20 @@ describe 'inspect release', type: :integration do
         | job_using_pkg_5       | fb41300edf220b1823da5ab4c243b085f9f249af | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 37350e20c6f78ab96a1191e5d97981a8d2831665 |
         +-----------------------+------------------------------------------+--------------------------------------+------------------------------------------+
 
-        +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
-        | Package                  | Fingerprint                              | Compiled For                            | Blobstore ID                         | SHA1                                     |
-        +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
-        | pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)                             |                                      |                                          |
-        |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 735987b52907d970106f38413825773eec7cc577 |
-        | pkg_2                    | f5c1c303c2308404983cf1e7566ddc0a22a22154 | (no source)                             |                                      |                                          |
-        |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 5b21895211d8592c129334e3d11bd148033f7b82 |
-        | pkg_3_depends_on_2       | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (no source)                             |                                      |                                          |
-        |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f5cc94a01d2365bbeea00a4765120a29cdfb3bd7 |
-        | pkg_4_depends_on_3       | 9207b8a277403477e50cfae52009b31c840c49d4 | (no source)                             |                                      |                                          |
-        |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f21275861158ad864951faf76da0dce9c1b5f215 |
-        | pkg_5_depends_on_4_and_1 | 3cacf579322370734855c20557321dadeee3a7a4 | (no source)                             |                                      |                                          |
-        |                          |                                          | bosh-aws-xen-hvm-centos-7-go_agent/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 002deec46961440df01c620be491e5b12246c5df |
-        +--------------------------+------------------------------------------+-----------------------------------------+--------------------------------------+------------------------------------------+
+        +--------------------------+------------------------------------------+---------------+--------------------------------------+------------------------------------------+
+        | Package                  | Fingerprint                              | Compiled For  | Blobstore ID                         | SHA1                                     |
+        +--------------------------+------------------------------------------+---------------+--------------------------------------+------------------------------------------+
+        | pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
+        |                          |                                          | centos-7/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 735987b52907d970106f38413825773eec7cc577 |
+        | pkg_2                    | f5c1c303c2308404983cf1e7566ddc0a22a22154 | (no source)   |                                      |                                          |
+        |                          |                                          | centos-7/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 5b21895211d8592c129334e3d11bd148033f7b82 |
+        | pkg_3_depends_on_2       | 413e3e9177f0037b1882d19fb6b377b5b715be1c | (no source)   |                                      |                                          |
+        |                          |                                          | centos-7/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f5cc94a01d2365bbeea00a4765120a29cdfb3bd7 |
+        | pkg_4_depends_on_3       | 9207b8a277403477e50cfae52009b31c840c49d4 | (no source)   |                                      |                                          |
+        |                          |                                          | centos-7/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | f21275861158ad864951faf76da0dce9c1b5f215 |
+        | pkg_5_depends_on_4_and_1 | 3cacf579322370734855c20557321dadeee3a7a4 | (no source)   |                                      |                                          |
+        |                          |                                          | centos-7/3001 | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | 002deec46961440df01c620be491e5b12246c5df |
+        +--------------------------+------------------------------------------+---------------+--------------------------------------+------------------------------------------+
       )
     end
 

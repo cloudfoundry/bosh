@@ -360,7 +360,6 @@ Deployed `simple' to `Test Director'
         out = bosh_runner.run('inspect release test_release/1')
         expect(out).to include('| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
 |                          |                                          | centos-7/3001 |')
-        puts out
       end
     end
 
