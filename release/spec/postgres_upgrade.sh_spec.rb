@@ -9,7 +9,8 @@ describe 'postgres_ctl.erb' do
       FileUtils.touch 'tmp/store/postgres/postgresql.conf'
       FileUtils.mkdir_p 'tmp/jobs/postgres-9.4.5/bin'
       FileUtils.touch 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh'
-      File.chmod(777, 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')
+      expect(File.exist?('tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')).to eq(true)
+      expect(File.chmod(777, 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')).to eq(1)
       ENV['BASE_DIR'] = 'tmp'
     end
 
