@@ -4,3 +4,5 @@ templates: {}
 
 packages:
 - blocking_package
+
+properties: {}

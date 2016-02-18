@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fileutils'
 
 describe 'deploy', type: :integration do
   with_reset_sandbox_before_each
@@ -343,97 +344,77 @@ Deployed `simple' to `Test Director'
   end
 
   context 'it supports compiled releases' do
-    before {
-      target_and_login
-
-      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-    }
-
-    context 'it uploads the compiled release when there is no corresponding stemcell' do
-      it 'should not raise an error' do
-        bosh_runner.run('delete stemcell bosh-aws-xen-hvm-centos-7-go_agent 3001')
-        bosh_runner.run('delete release test_release')
-        expect {
-          bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-        }.to_not raise_exception
-        out = bosh_runner.run('inspect release test_release/1')
-        expect(out).to include('| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
-|                          |                                          | centos-7/3001 |')
-      end
-    end
-
-    context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
+    context 'release and stemcell have been uploaded' do
       before {
-        cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
-        cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
-        cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
-        upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       }
 
-      context 'and they contain identical packages' do
-        before {
-          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
-          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
-          deployment_manifest['releases'][0]['version'] = '4'
-          set_deployment({manifest_hash: deployment_manifest })
-        }
-
-        it 'does not compile any packages' do
-          out = deploy({})
-
-          expect(out).to_not include("Started compiling packages")
+      context 'it uploads the compiled release when there is no corresponding stemcell' do
+        it 'should not raise an error' do
+          bosh_runner.run('delete stemcell bosh-aws-xen-hvm-centos-7-go_agent 3001')
+          bosh_runner.run('delete release test_release')
+          expect {
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+          }.to_not raise_exception
+          out = bosh_runner.run('inspect release test_release/1')
+          expect(out).to include('| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
+|                          |                                          | centos-7/3001 |')
         end
       end
 
-      context 'and they contain one different package' do
+      context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
         before {
-          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
-          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
-          deployment_manifest['releases'][0]['version'] = '3'
-          set_deployment({manifest_hash: deployment_manifest })
+          cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+          cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+          upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
         }
 
-        it 'compiles only the package with the different version and those that depend on it' do
-          out = deploy({})
-          expect(out).to include("Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f")
-          expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
-
-          expect(out).to_not include('Started compiling packages > pkg_2/')
-          expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
-          expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
-        end
-      end
-
-      context 'when deploying with a stemcell that does not match the compiled release' do
-        before {
-          # switch deployment to use "ubuntu-stemcell/1"
-          bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-          upload_cloud_config
-          set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5') })
-        }
-
-        it 'fails with an error message saying there is no way to compile for that stemcell' do
-          out = deploy(failure_expected: true)
-          expect(out).to include("Error 60001:")
-
-          expect(out).to match_output %(
-            Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
-             - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
-             - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
-             - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
-             - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
-             - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
-          )
-        end
-
-        context 'and multiple releases are referenced in the current deployment' do
+        context 'and they contain identical packages' do
           before {
-            bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')}")
-            set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_referencing_multiple_releases})
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
+            deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+            deployment_manifest['releases'][0]['version'] = '4'
+            set_deployment({manifest_hash: deployment_manifest })
           }
 
-          it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
+          it 'does not compile any packages' do
+            out = deploy({})
+
+            expect(out).to_not include('Started compiling packages')
+          end
+        end
+
+        context 'and they contain one different package' do
+          before {
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
+            deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+            deployment_manifest['releases'][0]['version'] = '3'
+            set_deployment({manifest_hash: deployment_manifest })
+          }
+
+          it 'compiles only the package with the different version and those that depend on it' do
+            out = deploy({})
+            expect(out).to include('Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f')
+            expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+
+            expect(out).to_not include('Started compiling packages > pkg_2/')
+            expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
+            expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
+          end
+        end
+
+        context 'when deploying with a stemcell that does not match the compiled release' do
+          before {
+            # switch deployment to use "ubuntu-stemcell/1"
+            bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+            upload_cloud_config
+            set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5') })
+          }
+
+          it 'fails with an error message saying there is no way to compile for that stemcell' do
             out = deploy(failure_expected: true)
             expect(out).to include("Error 60001:")
 
@@ -441,18 +422,95 @@ Deployed `simple' to `Test Director'
               Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
                - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
                - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
-            )
-
-            expect(out).to match_output %(
-              Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
-               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
-               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
                - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
                - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
                - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
             )
           end
+
+          context 'and multiple releases are referenced in the current deployment' do
+            before {
+              bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')}")
+              set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_referencing_multiple_releases})
+            }
+
+            it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
+              out = deploy(failure_expected: true)
+              expect(out).to include("Error 60001:")
+
+              expect(out).to match_output %(
+                Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+                 - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+                 - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+              )
+
+              expect(out).to match_output %(
+                Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+                 - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+                 - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+                 - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+                 - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+                 - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
+              )
+            end
+          end
         end
+      end
+    end
+
+    context 'it exercises the entire compiled release lifecycle' do
+      it 'exports, deletes deployment & stemcell, uploads compiled, uploads patch-level stemcell, deploys' do
+        target_and_login
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['resource_pools'][0]['stemcell']['version'] = 'latest'
+        upload_cloud_config({:cloud_config_hash => cloud_config_hash})
+
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+        [
+          'jobs/job_with_blocking_compilation',
+          'packages/blocking_package',
+          'jobs/fails_with_too_much_output',
+          'packages/fails_with_too_much_output',
+        ].each do |release_path|
+          FileUtils.rm_rf(File.join(ClientSandbox.test_release_dir, release_path))
+        end
+
+        create_and_upload_test_release(:force => true)
+
+        set_deployment({
+                         manifest_hash: Bosh::Spec::Deployments.test_release_manifest.merge(
+                           {
+                             'jobs' => [
+                               {
+                                 'name' => 'job_with_many_packages',
+                                 'templates' => [
+                                   {
+                                     'name' => 'job_with_many_packages'
+                                   }
+                                 ],
+                                 'resource_pool' => 'a',
+                                 'instances' => 1,
+                                 'networks' => [{'name' => 'a'}],
+                               }
+                             ]
+                           }
+                         )
+                       })
+        deploy({})
+
+        bosh_runner.run('export release bosh-release/0.1-dev toronto-os/1')
+
+        bosh_runner.run('delete deployment simple')
+        bosh_runner.run('delete release bosh-release')
+        bosh_runner.run('delete stemcell ubuntu-stemcell 1')
+
+        bosh_runner.run("upload release #{File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')}/release-bosh-release-0.1-dev-on-toronto-os-stemcell-1.tgz")
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_1_1.tgz')}")
+
+        create_call_count = current_sandbox.cpi.invocations_for_method('create_vm').size
+        deploy({})
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').size).to eq(create_call_count + 1)
       end
     end
   end
