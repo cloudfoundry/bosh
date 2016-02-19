@@ -195,75 +195,78 @@ module Bosh::Director
 
       subject(:task) { CompileTask.new(package, stemcell, job, dependency_key, cache_key) }
 
-      context 'when global package cache is not used' do
-        before { allow(Config).to receive(:use_compiled_package_cache?).and_return(false) }
-        context 'when compiled package is found in local blobstore' do
-          it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
+      context 'when source is available' do
+        context 'when the stemcell os & version match exactly' do
+          let!(:compiled_package) {Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)}
+
+          it 'returns the compiled package' do
             expect(BlobUtil).not_to receive(:fetch_from_global_cache)
             expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
         end
 
-        context 'when the compiled package in blobstore has a different stemcell patch number' do
-          it 'returns nil' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
+        context 'when the stemcell os & version do not match exactly' do
+          let!(:compiled_package) {Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)}
 
-            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
-            expect(task.find_compiled_package(logger, event_log)).to eq(nil)
+          context 'when using the compiled package cache' do
+            before { allow(Config).to receive(:use_compiled_package_cache?).and_return(true) }
+
+            context 'when the compiled package exists in the global package cache' do
+              before do
+                allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
+              end
+
+              it 'returns the compiled package from the compiled package cache' do
+                allow(event_log).to receive(:track).with(anything).and_yield
+
+                compiled_package = double('compiled package', package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
+
+                expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell.model, task.cache_key, task.dependency_key).and_return(compiled_package)
+                expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
+              end
+            end
+
+            context 'when the compiled package does not exist in the global package cache' do
+              before do
+                allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(false)
+              end
+
+              it 'returns nil' do
+                expect(task.find_compiled_package(logger, event_log)).to be_nil
+              end
+            end
           end
-        end
 
-        context 'when compiled package is not found in local blobstore' do
-          it 'returns nil' do
-            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
-            expect(task.find_compiled_package(logger, event_log)).to eq(nil)
-          end
-        end
-
-        context 'when the release is a compiled release' do
-          context 'when the compiled package is found in the local blobstore with a different patch number stemcell' do
-            it 'returns it' do
-              package.blobstore_id = nil
-              package.sha1 = nil
-
-              compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
-
+          context 'when not using the compiled package cache' do
+            before { allow(Config).to receive(:use_compiled_package_cache?).and_return(false) }
+            it 'returns nil' do
               expect(BlobUtil).not_to receive(:fetch_from_global_cache)
-              expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
+              expect(task.find_compiled_package(logger, event_log)).to eq(nil)
             end
           end
         end
       end
 
-      context 'when using global package cache' do
-        before { allow(Config).to receive(:use_compiled_package_cache?).and_return(true) }
+      context 'when source is NOT available' do
+        before do
+          package.blobstore_id = nil
+          package.sha1 = nil
+        end
 
-        context 'when compiled package is not found in local blobstore' do
-          context 'nor was it found in the global one' do
-            it 'returns nil' do
-              allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(false)
-              expect(task.find_compiled_package(logger, event_log)).to eq(nil)
-            end
-          end
+        context 'when the stemcell os matches but the version differs by patch-level' do
+          let!(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key) }
 
-          context 'but it was found in the global blobstore' do
-            it 'returns the compiled package' do
-              allow(event_log).to receive(:track).with(anything).and_yield
-
-              compiled_package = double('compiled package', package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
-              allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
-              expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell.model, task.cache_key, task.dependency_key).and_return(compiled_package)
-              expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
-            end
+          it 'returns the compiled package from stemcell with different patch level' do
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
         end
 
-        context 'when compiled package is found in local blobstore' do
-          it 'returns it' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
-            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
-            expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
+        context 'when there is no compatible compiled package' do
+          let!(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '50', dependency_key: dependency_key) }
+
+          it 'returns nil' do
+            expect(task.find_compiled_package(logger, event_log)).to be_nil
           end
         end
       end
