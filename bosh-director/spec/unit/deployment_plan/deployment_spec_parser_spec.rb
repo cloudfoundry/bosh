@@ -292,141 +292,141 @@ module Bosh::Director
         end
       end
 
-      shared_examples_for "instance groups" do
-        context 'when job names are unique' do
-          it 'delegates to Job to parse job specs' do
-            expect(DeploymentPlan::Job).to receive(:parse).
-                                               with(be_a(DeploymentPlan::Planner), {'name' => job1.name}, event_log, logger).
-                                               and_return(job1)
+      shared_examples_for 'jobs/instance_groups key' do
+        context 'when there is at least one job' do
+          before { manifest_hash.merge!(keyword => []) }
 
-            expect(DeploymentPlan::Job).to receive(:parse).
-                                               with(be_a(DeploymentPlan::Planner), {'name' => job2.name}, event_log, logger).
-                                               and_return(job2)
+          let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-            expect(parsed_deployment.jobs).to eq([job1, job2])
+          context 'when job names are unique' do
+            before do
+              manifest_hash.merge!(keyword => [
+                { 'name' => 'job1-name' },
+                { 'name' => 'job2-name' },
+              ])
+            end
+
+            let(:job1) do
+              instance_double('Bosh::Director::DeploymentPlan::Job', {
+                name: 'job1-name',
+                canonical_name: 'job1-canonical-name',
+              })
+            end
+
+            let(:job2) do
+              instance_double('Bosh::Director::DeploymentPlan::Job', {
+                name: 'job2-name',
+                canonical_name: 'job2-canonical-name',
+              })
+            end
+
+            it 'delegates to Job to parse job specs' do
+              expect(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                and_return(job1)
+
+              expect(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                and_return(job2)
+
+              expect(parsed_deployment.jobs).to eq([job1, job2])
+            end
+
+            it 'allows to look up job by name' do
+              allow(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                and_return(job1)
+
+              allow(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                and_return(job2)
+
+              expect(parsed_deployment.job('job1-name')).to eq(job1)
+              expect(parsed_deployment.job('job2-name')).to eq(job2)
+            end
           end
 
-          it 'allows to look up job by name' do
-            allow(DeploymentPlan::Job).to receive(:parse).
-                                              with(be_a(DeploymentPlan::Planner), {'name' => job1.name}, event_log, logger).
-                                              and_return(job1)
+          context 'when more than one job have same canonical name' do
+            before do
+              manifest_hash.merge!(keyword => [
+                { 'name' => 'job1-name' },
+                { 'name' => 'job2-name' },
+              ])
+            end
 
-            allow(DeploymentPlan::Job).to receive(:parse).
-                                              with(be_a(DeploymentPlan::Planner), {'name' => job2.name}, event_log, logger).
-                                              and_return(job2)
+            let(:job1) do
+              instance_double('Bosh::Director::DeploymentPlan::Job', {
+                name: 'job1-name',
+                canonical_name: 'same-canonical-name',
+              })
+            end
 
-            expect(parsed_deployment.job(job1.name)).to eq(job1)
-            expect(parsed_deployment.job(job2.name)).to eq(job2)
+            let(:job2) do
+              instance_double('Bosh::Director::DeploymentPlan::Job', {
+                name: 'job2-name',
+                canonical_name: 'same-canonical-name',
+              })
+            end
+
+            it 'raises an error' do
+              allow(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                and_return(job1)
+
+              allow(DeploymentPlan::Job).to receive(:parse).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                and_return(job2)
+
+              expect {
+                parsed_deployment
+              }.to raise_error(
+                DeploymentCanonicalJobNameTaken,
+                "Invalid job name `job2-name', canonical name already taken",
+              )
+            end
           end
         end
 
-        context 'when more than one job have same canonical name' do
-          let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
-                                                                     name: 'job1-name',
-                                                                     canonical_name: 'same-canonical-name',
-                                                                 })
+        context 'when there are no jobs' do
+          before { manifest_hash.merge!(keyword => []) }
+
+          it 'parses jobs and return empty array' do
+            expect(parsed_deployment.jobs).to eq([])
           end
-          let(:job2) do
-            instance_double('Bosh::Director::DeploymentPlan::Job', {
-                                                                     name: 'job2-name',
-                                                                     canonical_name: 'same-canonical-name',
-                                                                 })
-          end
+        end
 
-          it 'raises an error' do
-            allow(DeploymentPlan::Job).to receive(:parse).
-                                              with(be_a(DeploymentPlan::Planner), {'name' => job1.name}, event_log, logger).
-                                              and_return(job1)
+        context 'when jobs key is not specified' do
+          before { manifest_hash.delete(keyword) }
 
-            allow(DeploymentPlan::Job).to receive(:parse).
-                                              with(be_a(DeploymentPlan::Planner), {'name' => job2.name}, event_log, logger).
-                                              and_return(job2)
-
-            expect {
-              parsed_deployment
-            }.to raise_error(
-                     DeploymentCanonicalJobNameTaken,
-                     "Invalid job name `job2-name', canonical name already taken",
-                 )
+          it 'parses jobs and return empty array' do
+            expect(parsed_deployment.jobs).to eq([])
           end
         end
       end
 
-      describe 'instance_group/jobs key' do
-        let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-        let(:job1) do
-          instance_double('Bosh::Director::DeploymentPlan::Job', {
-                                                                   name: 'job1-name',
-                                                                   canonical_name: 'job1-canonical-name',
-                                                               })
-        end
+      describe 'jobs key' do
+        let(:keyword) { "jobs" }
+        it_behaves_like "jobs/instance_groups key"
+      end
 
-        let(:job2) do
-          instance_double('Bosh::Director::DeploymentPlan::Job', {
-                                                                   name: 'job2-name',
-                                                                   canonical_name: 'job2-canonical-name',
-                                                               })
-        end
+      describe 'instance_group key' do
+        let(:keyword) { "instance_groups" }
+        it_behaves_like "jobs/instance_groups key"
 
-        context 'when there is a jobs key and an instance groups key' do
+        context 'when there are both jobs and instance_groups' do
           before do
             manifest_hash.merge!('jobs' => [
                                      { 'name' => 'job1-name' },
                                      { 'name' => 'job2-name' },
                                  ],
-            'instance_groups' => [{'name' => 'instance-group1'},
-                                  {'name' => 'instance-group2'},])
-          end
-
-          it 'should throw an error' do
-            expect { parsed_deployment }.to raise_error(Bosh::Director::JobBothInstanceGroupAndJob,
-                             "Cannot have both jobs and instance_groups")
-          end
-        end
-
-        context 'when there is at least one instance_group' do
-          before do
-            manifest_hash.merge!('instance_groups' => [
-                                     { 'name' => job1.name },
-                                     { 'name' => job2.name },
+                                 'instance_groups' => [
+                                     { 'name' => 'job1-name' },
+                                     { 'name' => 'job2-name' },
                                  ])
           end
-          it_behaves_like 'instance groups'
-        end
 
-        context 'when there is at least one job' do
-          before do
-            manifest_hash.merge!('jobs' => [
-                                     { 'name' => job1.name },
-                                     { 'name' => job2.name },
-                                 ])
-          end
-          it_behaves_like 'instance groups'
-        end
-
-        context 'when there are no instance_groups' do
-          before { manifest_hash.merge!('instance_groups' => []) }
-
-          it 'parses instance_groups and return empty array' do
-            expect(parsed_deployment.jobs).to eq([])
-          end
-        end
-
-        context 'when instance_groups key is not specified' do
-          before { manifest_hash.delete('instance_groups') }
-
-          it 'parses instance_groups and return empty array' do
-            expect(parsed_deployment.jobs).to eq([])
-          end
-        end
-
-        context 'when neither instance_groups or jobs key is specified' do
-          before { manifest_hash.delete('instance_groups') }
-          before { manifest_hash.delete('jobs') }
-
-          it 'return empty array' do
-            expect(parsed_deployment.jobs).to eq([])
+          it 'throws an error' do
+            expect {parsed_deployment}.to raise_error(JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed")
           end
         end
       end
