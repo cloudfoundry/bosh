@@ -15,6 +15,7 @@ Sham.define do
   blobstore_id  { |index| "blobstore-id-#{index}" }
   agent_id      { |index| "agent-id-#{index}" }
   uuid          { |index| "uuid-#{index}" }
+  director_uuid { |index| "director-uuid-#{index}" }
   index         { |index| index }
   description   { |index| "description #{index}" }
   type          { |index| "type #{index}" }
@@ -31,6 +32,11 @@ Sham.define do
 end
 
 module Bosh::Director::Models
+
+  DirectorAttribute.blueprint do
+    name { 'uuid' }
+    value { Sham.director_uuid }
+    end
 
   Release.blueprint do
     name { Sham.name }

@@ -5,6 +5,10 @@ module Bosh::Director
         module Helpers
           def current_user
             @user.username if @user
+            end
+
+          def token_scopes
+            @user.scopes if @user
           end
         end
 

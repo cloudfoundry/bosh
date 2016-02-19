@@ -267,4 +267,7 @@ module Bosh::Director
   AttachDiskErrorUnknownInstance = err(520001)
   AttachDiskNoPersistentDisk =  err(520002)
   AttachDiskInvalidInstanceState = err(520003)
+
+  # Authorization errors
+  UnauthorizedToAccessDeployment = err(600000)
 end

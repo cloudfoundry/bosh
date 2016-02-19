@@ -15,6 +15,13 @@ module Bosh::Director
       stemcell
     end
 
+    let(:different_stemcell) do
+      model = Models::Stemcell.make(name: 'different-stemcell-name', version: '1')
+      stemcell = DeploymentPlan::Stemcell.new('different-stemcell-name-alias', model.name, nil, model.version)
+      stemcell.bind_model(Models::Deployment.make)
+      stemcell
+    end
+
     let(:stemcell_of_same_name_and_version) do
       stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, '1')
       stemcell.bind_model(Models::Deployment.make)
@@ -22,7 +29,7 @@ module Bosh::Director
     end
 
     let(:second_stemcell) { Models::Stemcell.make }
-    let(:second_instance) { instance_double(DeploymentPlan::Instance) }
+    let(:second_instance) { Object.new }
 
     describe '#add_in_use_instance' do
       it 'should add a instance to the InstanceReuser' do
@@ -55,6 +62,18 @@ module Bosh::Director
         expect(reuser.get_num_instances(stemcell_of_same_name_and_version)).to eq(1)
         expect(reuser.get_num_instances(second_stemcell)).to eq(0)
         expect(reuser.get_instance(stemcell_of_same_name_and_version)).to eq(instance)
+      end
+    end
+
+    describe '#get_num_total_instances' do
+      it 'should return the total count of instances across all stemcells' do
+        expect(reuser.total_instance_count).to eq(0)
+        reuser.add_in_use_instance(instance, stemcell)
+        expect(reuser.total_instance_count).to eq(1)
+        reuser.add_in_use_instance(instance, stemcell)
+        expect(reuser.total_instance_count).to eq(2)
+        reuser.add_in_use_instance(instance, different_stemcell)
+        expect(reuser.total_instance_count).to eq(3)
       end
     end
 
@@ -100,11 +119,24 @@ module Bosh::Director
     end
 
     describe '#remove_instance' do
-      it 'should remove a instance from the InstanceReuser' do
+      it 'should remove an instance' do
         reuser.add_in_use_instance(instance, stemcell)
         expect(reuser.get_num_instances(stemcell)).to eq(1)
         reuser.remove_instance(instance)
         expect(reuser.get_num_instances(stemcell)).to eq(0)
+      end
+    end
+
+    describe '#remove_idle_instance_not_matching_stemcell' do
+      it 'should remove an instance belonging to any stemcell not matching the given stemcell' do
+        reuser.add_in_use_instance(instance, stemcell)
+        reuser.release_instance(instance)
+        reuser.add_in_use_instance(second_instance, second_stemcell)
+        reuser.release_instance(second_instance)
+
+        expect(reuser.remove_idle_instance_not_matching_stemcell(stemcell)).to eq(second_instance)
+        expect(reuser.get_instance(second_stemcell)).to eq(nil)
+        expect(reuser.get_instance(stemcell)).to eq(instance)
       end
     end
   end

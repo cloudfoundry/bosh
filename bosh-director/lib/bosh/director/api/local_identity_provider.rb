@@ -6,7 +6,7 @@ module Bosh
       class LocalIdentityProvider
         extend Forwardable
 
-        def initialize(options, _)
+        def initialize(options)
           users = options.fetch('users', [])
           @user_manager = Bosh::Director::Api::UserManagerProvider.new.user_manager(users)
         end
@@ -38,7 +38,11 @@ module Bosh
         end
       end
 
-      class LocalUser < Struct.new(:username, :password); end
+      class LocalUser < Struct.new(:username, :password)
+        def scopes
+          ['bosh.admin']
+        end
+      end
     end
   end
 end
