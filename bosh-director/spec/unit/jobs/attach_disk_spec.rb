@@ -253,11 +253,35 @@ module Bosh::Director
       end
 
       context 'when the job does not declare persistent disk' do
-        let(:vm_cid) { 'fake-vm-cid' }
-        let(:instance_state) {'detached'}
+        let(:vm_cid) { nil }
 
-        it 'raise error' do
-          expect { attach_disk_job.perform }.to raise_error(AttachDiskNoPersistentDisk, "Job 'job_name' is not configured with a persistent disk")
+        let(:instance_state) {'stopped'}
+        
+        let(:original_disk) { nil }
+
+        let(:disk_manager) { instance_double(DiskManager)}
+
+        before {
+          allow(DiskManager).to receive(:new).and_return(disk_manager)
+          allow(disk_manager).to receive(:detach_disk)
+          allow(disk_manager).to receive(:unmount_disk)
+          allow(disk_manager).to receive(:orphan_disk)
+          allow(disk_manager).to receive(:attach_disk)
+        }
+
+        it 'attaches the new disk' do
+          expect(disk_manager).to receive(:attach_disk)
+          attach_disk_job.perform
+
+          active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+          expect(active_disks.count).to eq(1)
+          expect(active_disks.first.disk_cid).to eq(disk_cid)
+        end
+
+        it 'performs no action for previous disk' do
+          expect(disk_manager).to_not receive(:detach_disk).with(instance_model, original_disk)
+          expect(disk_manager).to_not receive(:unmount_disk).with(instance_model, original_disk)
+          expect(disk_manager).to_not receive(:orphan_disk).with(original_disk)
         end
       end
     end

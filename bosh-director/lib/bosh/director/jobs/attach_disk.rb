@@ -47,10 +47,6 @@ module Bosh::Director
         if instance.state != 'detached' && instance.state != 'stopped'
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end
-
-        if instance.persistent_disk.nil?
-          raise AttachDiskNoPersistentDisk, "Job '#{@job_name}' is not configured with a persistent disk"
-        end
       end
 
       def handle_previous_disk(instance)
