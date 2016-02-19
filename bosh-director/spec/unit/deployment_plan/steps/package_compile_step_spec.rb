@@ -669,7 +669,7 @@ module Bosh::Director
         compiled_package = instance_double(
           'Bosh::Director::Models::CompiledPackage',
           name: 'fake-package-name', package: package,
-          stemcell: stemcell, blobstore_id: 'some blobstore id')
+          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id')
         expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
         expect(BlobUtil).to receive(:save_to_global_cache).with(compiled_package, cache_key)
         allow(compiler).to receive(:prepare_vm)

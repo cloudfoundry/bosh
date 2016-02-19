@@ -66,7 +66,7 @@ module Bosh::Director::Models
       end
 
       it 'returns 2 if only one compiled package exists for package and stemcell' do
-        CompiledPackage.make(package: package, stemcell: stemcell, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
+        CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
         expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(2)
       end
 

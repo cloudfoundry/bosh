@@ -28,22 +28,6 @@ module Bosh::Director::Jobs
             @logger.info("Force deleting is set, ignoring exception: #{e.message}")
           end
 
-          @logger.info('Looking for any compiled packages on this stemcell')
-          compiled_packages = Bosh::Director::Models::CompiledPackage.filter(:stemcell_id => stemcell.id)
-
-          stage = @event_log.begin_stage('Deleting compiled packages',
-            compiled_packages.count, [stemcell.name, stemcell.version])
-          @logger.info('Deleting compiled packages ' +
-              "(#{compiled_packages.count}) for `#{stemcell.name}/#{stemcell.version}'")
-
-          compiled_packages.each do |compiled_package|
-            message = "#{compiled_package.name}/#{compiled_package.version}"
-            stage.advance_and_track(message) do
-              @logger.info(message)
-              @compiled_package_deleter.delete(compiled_package, options)
-            end
-          end
-
           stemcell.destroy
         end
       end

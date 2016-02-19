@@ -51,10 +51,9 @@ module Bosh::Director
         expect(Models::Stemcell.all).to be_empty
       end
 
-      it 'should delete associated compiled packages' do
+      it 'should NOT delete associated compiled packages, but set stemcell_id to nil' do
         associated_package = Models::CompiledPackage.make(
           package: Models::Package.make,
-          stemcell: stemcell,
           blobstore_id: 'compiled-package-blb-1',
           stemcell_os: 'Plan 9',
           stemcell_version: '9'
@@ -62,10 +61,11 @@ module Bosh::Director
 
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid').and_raise('error')
 
-        expect(blobstore).to receive(:delete).with('compiled-package-blb-1')
+        expect(blobstore).not_to receive(:delete).with('compiled-package-blb-1')
 
         stemcell_deleter.delete(stemcell, 'force' => true)
-        expect(Models::CompiledPackage[associated_package.id]).to be_nil
+
+        expect(Models::CompiledPackage[associated_package.id]).to eq(associated_package)
       end
     end
 
@@ -81,12 +81,9 @@ module Bosh::Director
         expect(Models::Stemcell.all).to be_empty
       end
 
-      it 'should delete the associated compiled packages' do
-        expect(event_log).to receive(:begin_stage).with('Deleting compiled packages', 1, ['test_stemcell', 'test_version']).and_return(compiled_package_stage)
-        expect(compiled_package_stage).to receive(:advance_and_track).with('package-name/version').and_yield
+      it 'should NOT delete the associated compiled packages, but set stemcell_id to nil' do
         associated_package = Models::CompiledPackage.make(
           package: Models::Package.make(name: 'package-name', version: 'version'),
-          stemcell: stemcell,
           blobstore_id: 'compiled-package-blb-1',
           stemcell_os: 'AIX',
           stemcell_version: '7.1'
@@ -100,11 +97,12 @@ module Bosh::Director
 
         expect(cloud).to receive(:delete_stemcell).with('stemcell_cid')
 
-        expect(blobstore).to receive(:delete).with('compiled-package-blb-1')
+        expect(blobstore).not_to receive(:delete).with('compiled-package-blb-1')
 
         stemcell_deleter.delete(stemcell)
-        expect(Models::CompiledPackage[associated_package.id]).to be_nil
-        expect(Models::CompiledPackage[unassociated_package.id]).not_to be_nil
+
+        expect(Models::CompiledPackage[associated_package.id]).to eq(associated_package)
+        expect(Models::CompiledPackage[unassociated_package.id]).to eq(unassociated_package)
       end
     end
   end

@@ -241,7 +241,6 @@ module Bosh::Director
           package_ruby.add_compiled_package(
               sha1: 'ruby_compiled_package_sha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
-              stemcell_id: stemcell.id,
               dependency_key: [],
               build: 23,
               stemcell_os: 'ubuntu',
@@ -260,7 +259,6 @@ module Bosh::Director
           package_postgres.add_compiled_package(
               sha1: 'postgres_compiled_package_sha1',
               blobstore_id: 'postgres_package_blobstore_id',
-              stemcell_id: stemcell.id,
               dependency_key: '[["ruby","ruby_version"]]',
               build: 23,
               stemcell_os: 'ubuntu',

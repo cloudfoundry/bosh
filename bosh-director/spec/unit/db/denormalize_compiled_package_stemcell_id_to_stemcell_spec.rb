@@ -40,7 +40,7 @@ module Bosh::Director
       DBSpecHelper.migrate(migration_file)
 
       expect(db[:compiled_packages].count).to eq(1)
-      expect(db[:compiled_packages].first[:stemcell_id]).to eq(1)
+      expect(db[:compiled_packages].first[:stemcell_id]).to be_nil
       expect(db[:compiled_packages].first[:stemcell_os]).to eq('ubuntu_trusty')
       expect(db[:compiled_packages].first[:stemcell_version]).to eq('9999.1')
     end

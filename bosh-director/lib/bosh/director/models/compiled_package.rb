@@ -1,7 +1,6 @@
 module Bosh::Director::Models
   class CompiledPackage < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :package
-    many_to_one :stemcell
 
     # Creates a dependency_key from a list of dependencies
     # Input MUST include immediate & transitive dependencies
