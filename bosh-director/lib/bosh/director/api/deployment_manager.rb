@@ -14,7 +14,9 @@ module Bosh::Director
       def find_available(token_scopes)
         deployments = Bosh::Director::Models::Deployment.order_by(:name.asc).all
         deployments.select do |deployment|
-          @permission_authorizer.is_authorized?(deployment.scopes.split((',')), token_scopes)
+          teams = deployment.teams.nil? ? [] : deployment.teams.split(',')
+          team_scopes = @permission_authorizer.transform_teams_to_team_scopes(teams)
+          @permission_authorizer.is_authorized_to_read?(team_scopes, token_scopes)
         end
       end
 

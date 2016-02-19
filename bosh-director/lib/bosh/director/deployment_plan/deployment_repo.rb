@@ -9,15 +9,17 @@ module Bosh::Director
         attributes = {name: name}
         deployment = Bosh::Director::Models::Deployment.find(attributes)
 
-        if options['scopes']
-          attributes.merge!(scopes: options['scopes'].join(','))
-        end
-
         if options['scopes'] && deployment
-          @permission_authorizer.raise_error_if_unauthorized(options['scopes'], deployment.scopes.split(','))
+          team_scopes = @permission_authorizer.transform_teams_to_team_scopes(deployment.teams.split(','))
+          @permission_authorizer.raise_error_if_no_write_permissions(options['scopes'], team_scopes)
         end
 
         return deployment if deployment
+
+        if options['scopes']
+          team_scopes = @permission_authorizer.transform_team_scope_to_teams(options['scopes'])
+          attributes.merge!(teams: team_scopes.join(','))
+        end
 
         create_for_attributes(attributes)
       end
