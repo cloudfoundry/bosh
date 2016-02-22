@@ -114,14 +114,14 @@ module Bosh::Director
       context 'when trying to start a job' do
         context 'when job does not start within max_watch_time' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'}, {'job_state' => 'stopped'})
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]}, {'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]})
           end
 
           it 'raises AgentJobNotRunning' do
             expect(state_applier).to receive(:sleep).with(1.0).twice
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0 (uuid-1)' is not running after update"
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0 (uuid-1)' is not running after update. Review logs for failed jobs: broken_template"
           end
 
           it 'does not update state on the instance model' do
@@ -132,9 +132,19 @@ module Bosh::Director
           end
         end
 
+        context 'when a stopped job does not have processes defined' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'})
+          end
+
+          it 'raises AgentJobNotRunning with no failing jobs' do
+            expect { state_applier.post_start(1000, 2000) }.to raise_error AgentJobNotRunning, "`fake-job/0 (uuid-1)' is not running after update."
+          end
+        end
+
         context 'when the job successfully starts' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'}, {'job_state' => 'running'})
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]}, {'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]})
             allow(state_applier).to receive(:sleep)
             allow(agent_client).to receive(:run_script)
           end
@@ -157,7 +167,7 @@ module Bosh::Director
 
           it 'updates state on the instance model after agent reports that job is in desired state' do
             allow(agent_client).to receive(:run_script)
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}).ordered
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}).ordered
             expect {
               state_applier.post_start(1000, 8_000)
             }.to change(instance.model, :state)
@@ -173,7 +183,7 @@ module Bosh::Director
 
         context 'when job does not stop within max_watch_time' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}, {'job_state' => 'running'})
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}, {'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]})
           end
 
           it 'raises AgentJobNotStopped' do
@@ -193,7 +203,7 @@ module Bosh::Director
 
         context 'when the job successfully stops' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'}, {'job_state' => 'stopped'})
+            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}, {'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]})
           end
 
           it 'does not run the post-start script after instance is in desired state' do

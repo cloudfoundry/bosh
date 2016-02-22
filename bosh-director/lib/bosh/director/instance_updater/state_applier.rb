@@ -24,7 +24,14 @@ module Bosh::Director
 
       if @instance.state == 'started'
         if current_state['job_state'] != 'running'
-          raise AgentJobNotRunning, "`#{@instance}' is not running after update"
+          failing_jobs = Array(current_state['processes']).map do |process|
+            process['name'] if process['state'] != 'starting' && process['state'] != 'running'
+          end.compact
+
+          error_message = "`#{@instance}' is not running after update."
+          error_message += " Review logs for failed jobs: #{failing_jobs.join(", ")}" if !failing_jobs.empty?
+
+          raise AgentJobNotRunning, error_message
         else
           @agent_client.run_script('post-start', {})
         end
