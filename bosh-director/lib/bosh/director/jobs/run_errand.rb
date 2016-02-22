@@ -40,7 +40,7 @@ module Bosh::Director
             raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
           end
 
-          unless job.can_run_as_errand?
+          unless job.is_errand?
             raise RunErrandError,
               "Job `#{job.name}' is not an errand. To mark a job as an errand " +
                 "set its lifecycle to 'errand' in the deployment manifest."

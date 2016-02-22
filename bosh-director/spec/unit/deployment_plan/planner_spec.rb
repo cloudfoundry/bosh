@@ -105,8 +105,8 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'fake-job1-name',
                 canonical_name: 'fake-job1-cname',
-                starts_on_deploy?: true,
-                can_run_as_errand?: false,
+                is_service?: true,
+                is_errand?: false,
               })
           end
 
@@ -116,8 +116,8 @@ module Bosh::Director
                 name: 'fake-job2-name',
                 canonical_name: 'fake-job2-cname',
                 lifecycle: 'errand',
-                starts_on_deploy?: false,
-                can_run_as_errand?: true,
+                is_service?: false,
+                is_errand?: true,
               })
           end
 

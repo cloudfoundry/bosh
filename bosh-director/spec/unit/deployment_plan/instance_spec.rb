@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
         name: 'fake-job',
         persistent_disk_type: disk_type,
         compilation?: false,
-        can_run_as_errand?: false
+        is_errand?: false
       )
     end
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }

@@ -289,11 +289,11 @@ module Bosh::Director
         end
       end
 
-      def starts_on_deploy?
+      def is_service?
         @lifecycle == 'service'
       end
 
-      def can_run_as_errand?
+      def is_errand?
         @lifecycle == 'errand'
       end
 

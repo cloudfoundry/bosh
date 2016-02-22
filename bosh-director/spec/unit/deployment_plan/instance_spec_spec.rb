@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
         env: env,
         package_spec: packages,
         persistent_disk_type: disk_pool,
-        can_run_as_errand?: false,
+        is_errand?: false,
         link_spec: 'fake-link',
         compilation?: false,
         properties: properties)

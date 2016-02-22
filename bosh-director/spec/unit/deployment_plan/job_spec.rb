@@ -486,31 +486,31 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
   end
 
-  describe '#starts_on_deploy?' do
+  describe '#is_service?' do
     subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
-      its(:starts_on_deploy?) { should be(true) }
+      its(:is_service?) { should be(true) }
     end
 
     context 'when lifecycle profile is not service' do
       before { subject.lifecycle = 'other' }
-      its(:starts_on_deploy?) { should be(false) }
+      its(:is_service?) { should be(false) }
     end
   end
 
-  describe '#can_run_as_errand?' do
+  describe '#is_errand?' do
     subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }
-      its(:can_run_as_errand?) { should be(true) }
+      its(:is_errand?) { should be(true) }
     end
 
     context 'when lifecycle profile is not errand' do
       before { subject.lifecycle = 'other' }
-      its(:can_run_as_errand?) { should be(false) }
+      its(:is_errand?) { should be(false) }
     end
   end
 

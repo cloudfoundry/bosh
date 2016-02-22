@@ -350,7 +350,7 @@ module Bosh::Director
       get '/:deployment_name/errands', scope: :read do
         deployment_plan = load_deployment_plan
 
-        errands = deployment_plan.jobs.select(&:can_run_as_errand?)
+        errands = deployment_plan.jobs.select(&:is_errand?)
 
         errand_data = errands.map do |errand|
           { "name" => errand.name }

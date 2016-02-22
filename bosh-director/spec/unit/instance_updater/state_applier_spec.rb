@@ -31,7 +31,7 @@ module Bosh::Director
         env: DeploymentPlan::Env.new({'key' => 'value'}),
         package_spec: {},
         persistent_disk_type: nil,
-        can_run_as_errand?: false,
+        is_errand?: false,
         link_spec: 'fake-link',
         compilation?: false,
         templates: [],
