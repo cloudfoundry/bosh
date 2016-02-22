@@ -2,6 +2,7 @@
 name: registry
 
 templates:
+  cacert.pem.erb:   config/cacert.pem
   registry_ctl.erb: bin/registry_ctl
   registry.yml.erb: config/registry.yml
 
