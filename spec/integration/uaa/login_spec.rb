@@ -129,9 +129,9 @@ CERT
 
       it 'can only access task default logs' do
         admin_client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         create_and_upload_test_release(env: admin_client_env)
 
+        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('task latest', env: read_client_env)
         expect(output).to match /release has been created/
 

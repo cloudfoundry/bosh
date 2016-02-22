@@ -36,7 +36,7 @@ module Bosh
           if user.scopes
             required_scopes = required_scopes(requested_access)
             return has_valid_team_scope?(user.scopes) ||
-                    @permission_authorizer.has_admin_or_director_read_scope?(user.scopes) ||
+                    @permission_authorizer.has_admin_or_director_scope?(user.scopes) ||
                     @permission_authorizer.contains_requested_scope?(required_scopes, user.scopes)
           end
 
