@@ -22,16 +22,16 @@ module Bosh::Director
     def post_start(min_watch_time, max_watch_time)
       current_state = wait_until_desired_state(min_watch_time, max_watch_time)
 
-      failing_jobs = []
-      current_state['processes'].each do |process|
-        if process['state'] != "starting"
-          failing_jobs.push(process['name'])
-        end
-      end
-
       if @instance.state == 'started'
         if current_state['job_state'] != 'running'
-          raise AgentJobNotRunning, "`#{@instance}' is not running after update. Review logs for failed jobs: #{failing_jobs.join(", ")}"
+          failing_jobs = Array(current_state['processes']).map do |process|
+            process['name'] if process['state'] != 'starting' && process['state'] != 'running'
+          end.compact
+
+          error_message = "`#{@instance}' is not running after update."
+          error_message += " Review logs for failed jobs: #{failing_jobs.join(", ")}" if !failing_jobs.empty?
+
+          raise AgentJobNotRunning, error_message
         else
           @agent_client.run_script('post-start', {})
         end
