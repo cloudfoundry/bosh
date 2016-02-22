@@ -157,8 +157,9 @@ module Bosh::Director
 
     def vm_creator
       disk_manager = DiskManager.new(cloud, @logger)
+      arp_flusher = ArpFlusher.new
       job_renderer = JobRenderer.create
-      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
+      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
     end
 
     def validate_spec(spec)

@@ -6,7 +6,7 @@ module Bosh::Director
       # clear out the DB to clear state
     end
 
-    describe "instance filtering" do
+    describe "#filter_instances" do
       let(:ip_addresses) { ["10.0.0.1"] }
 
       it "excludes the VM being created" do
