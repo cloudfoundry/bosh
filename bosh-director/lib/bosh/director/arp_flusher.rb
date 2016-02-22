@@ -3,10 +3,14 @@ module Bosh::Director
     def delete_from_arp(vm_cid_to_exclude, ip_addresses)
       filtered_instances = filter_instances(vm_cid_to_exclude)
 
-      filtered_instances.each do |instance|
-        agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
-        agent.wait_until_ready
-        agent.delete_from_arp(ips: ip_addresses)
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+        filtered_instances.each do |instance|
+          pool.process do
+            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
+            agent.wait_until_ready
+            agent.delete_from_arp(ips: ip_addresses)
+          end
+        end
       end
     end
 

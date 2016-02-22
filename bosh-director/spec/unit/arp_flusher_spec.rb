@@ -59,10 +59,14 @@ module Bosh::Director
       let(:vm_being_created_cid) { "fake-cid-99" }
       let(:ip_addresses) { ["10.0.0.1"] }
       let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_from_arp: nil)}
+      let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_from_arp: nil)}
       let(:instance) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: "fake-job-1", vm_cid: "id") }
+      let(:instance2) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 2, job: "fake-job-1", vm_cid: "id") }
       let(:arp_flusher) { ArpFlusher.new }
 
       before do
+        Config.max_threads = 5
+
         allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).
           with(instance.credentials, instance.agent_id).and_return(agent)
       end
