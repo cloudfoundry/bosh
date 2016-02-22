@@ -553,6 +553,7 @@ DEPENDENCIES
   bosh_cli_plugin_micro!
   bosh_common!
   bosh_cpi!
+  bundler (~> 1.10.0)
   codeclimate-test-reporter
   eventmachine (= 1.0.3)
   fakefs
