@@ -57,6 +57,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(exit_code).to eq(0)
     end
 
+    it 'can handle long-running http requests' do
+      client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
+
+      `dd if=/dev/urandom of=#{ClientSandbox.test_release_dir}/src/a/bigfile.txt bs=512 count=404800`
+      _, exit_code = deploy_from_scratch(no_login: true, env: client_env, return_exit_code: true, force: true)
+
+      expect(exit_code).to eq(0)
+    end
+
     it 'fails to log in when incorrect credentials were provided' do
       bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Email:'

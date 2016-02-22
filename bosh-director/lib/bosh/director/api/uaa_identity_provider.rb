@@ -26,7 +26,14 @@ module Bosh
 
         def get_user(request_env)
           auth_header = request_env['HTTP_AUTHORIZATION']
-          token = @token_coder.decode(auth_header)
+          upload_request_header = request_env['HTTP_X_BOSH_UPLOAD_REQUEST']
+
+          if upload_request_header == '1'
+            token = @token_coder.decode_at_reference_time(auth_header, Time.now.to_i - 60*20) # Allow 20 minutes for uploads
+          else
+            token = @token_coder.decode(auth_header)
+          end
+
           UaaUser.new(token)
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
