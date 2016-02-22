@@ -997,4 +997,62 @@ Deployed `simple' to `Test Director'
       expect(exit_code).to eq(0)
     end
   end
+
+  context 'when errand jobs are used' do
+    let(:manifest) {
+      Bosh::Spec::Deployments.test_release_manifest.merge({
+        'jobs' => [
+          Bosh::Spec::Deployments.job_with_many_templates(
+            name: 'job_with_post_deploy_script',
+            templates: [
+              {'name' => 'job_1_with_post_deploy_script'},
+              {'name' => 'job_2_with_post_deploy_script'}
+            ],
+            instances: 1),
+          Bosh::Spec::Deployments.simple_errand_job.merge({
+              'name' => 'alive-errand',
+            }),
+          Bosh::Spec::Deployments.simple_errand_job.merge({
+              'name' => 'dead-errand',
+            }),
+        ]
+      })
+    }
+
+    before do
+      prepare_for_deploy()
+      deploy_simple_manifest(manifest_hash: manifest)
+    end
+
+    context 'when errand has been run with --keep-alive' do
+      it 'immediately updates the errand job' do
+        bosh_runner.run('download manifest simple')
+
+        bosh_runner.run('run errand alive-errand --keep-alive')
+
+        job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+        expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_falsey
+
+        job_with_errand_vm = director.vm('alive-errand', '0')
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/errand1/bin/run'))).to be_truthy
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_falsey
+
+        new_manifest = manifest
+        new_manifest['jobs'][0]['templates'] << {'name' => 'foobar'}
+        new_manifest['jobs'][1]['templates'] << {'name' => 'foobar'}
+        new_manifest['jobs'][2]['templates'] << {'name' => 'foobar'}
+        deploy_simple_manifest(manifest_hash: new_manifest)
+
+        job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+        expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_truthy
+
+        job_with_errand_vm = director.vm('alive-errand', '0')
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_truthy
+
+        expect {
+          director.vm('dead-errand', '0')
+        }.to raise_error(RuntimeError, 'Failed to find vm dead-errand/0')
+      end
+    end
+  end
 end

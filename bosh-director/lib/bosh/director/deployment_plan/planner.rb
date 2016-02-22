@@ -219,7 +219,19 @@ module Bosh::Director
       end
 
       def jobs_starting_on_deploy
-        @jobs.select(&:starts_on_deploy?)
+        jobs = []
+
+        @jobs.each do |job|
+          if job.starts_on_deploy?
+            jobs << job
+          elsif job.can_run_as_errand?
+            if job.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
+              jobs << job
+            end
+          end
+        end
+
+        jobs
       end
 
       def persist_updates!

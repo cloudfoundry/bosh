@@ -105,6 +105,8 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'fake-job1-name',
                 canonical_name: 'fake-job1-cname',
+                starts_on_deploy?: true,
+                can_run_as_errand?: false,
               })
           end
 
@@ -113,24 +115,41 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'fake-job2-name',
                 canonical_name: 'fake-job2-cname',
+                lifecycle: 'errand',
+                starts_on_deploy?: false,
+                can_run_as_errand?: true,
               })
           end
 
-          context 'when there is at least one job that runs when deploy starts' do
-            before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
-            before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
+          context 'with errand running via keep-alive' do
+            before do
+              allow(job2).to receive(:instances).and_return([
+                    instance_double('Bosh::Director::DeploymentPlan::Instance', {
+                        model: instance_double('Bosh::Director::Models::Instance', {
+                            vm_cid: 'foo-1234',
+                          })
+                      })
+                  ])
+            end
 
-            it 'only returns jobs that start on deploy' do
-              expect(subject.jobs_starting_on_deploy).to eq([job2])
+            it 'returns both the regular job and keep-alive errand' do
+              expect(subject.jobs_starting_on_deploy).to eq([job1, job2])
             end
           end
 
-          context 'when there are no jobs that run when deploy starts' do
-            before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
-            before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+          context 'with errand not running' do
+            before do
+              allow(job2).to receive(:instances).and_return([
+                    instance_double('Bosh::Director::DeploymentPlan::Instance', {
+                        model: instance_double('Bosh::Director::Models::Instance', {
+                            vm_cid: nil,
+                          })
+                      })
+                  ])
+            end
 
-            it 'only returns jobs that start on deploy' do
-              expect(subject.jobs_starting_on_deploy).to eq([])
+            it 'returns only the regular job' do
+              expect(subject.jobs_starting_on_deploy).to eq([job1])
             end
           end
         end
