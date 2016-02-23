@@ -16,11 +16,15 @@ Sequel.migration do
       )
     end
 
-    if [:mysql2, :mysql].include?(adapter_scheme)
-      foreign_key = foreign_key_list(:compiled_packages).find { |constraint| constraint.fetch(:columns) == [:stemcell_id] }.fetch(:name)
-      alter_table(:compiled_packages) do
-        drop_constraint(foreign_key, {type: :foreign_key})
-      end
+    foreign_key = foreign_key_list(:compiled_packages).find { |constraint| constraint.fetch(:columns) == [:stemcell_id] }.fetch(:name)
+    build_index = indexes(:compiled_packages).find { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :build] }.first
+    dependency_key_index = indexes(:compiled_packages).find { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :dependency_key_sha1] }.first
+    alter_table(:compiled_packages) do
+      drop_constraint(foreign_key, :type=>:foreign_key)
+      drop_constraint(build_index)
+      add_index [:package_id, :stemcell_os, :stemcell_version, :build], unique: true, name: 'package_stemcell_build_idx'
+      add_index [:package_id, :stemcell_os, :stemcell_version, :dependency_key_sha1], unique: true, name: 'package_stemcell_dependency_idx'
+      drop_index(nil, :name=>dependency_key_index)
     end
 
     alter_table(:compiled_packages) do
