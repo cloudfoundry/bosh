@@ -245,6 +245,15 @@ module Bosh::Director
         it 'decodes the token at the time request started' do
           expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
         end
+
+        context 'when request took longer than 1 hour' do
+          let(:request_env) { { 'HTTP_X_BOSH_UPLOAD_REQUEST_TIME' => 60*60, 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" } }
+          let(:token_expiry_time) { Time.now.to_i - 61*60 }
+
+          it 'only decodes token 1 hour ago' do
+            expect { identity_provider.valid_access?(uaa_user, requested_access) }.to raise_error(AuthenticationError)
+          end
+        end
       end
     end
 
