@@ -97,9 +97,9 @@ describe 'create release', type: :integration do
           'job_with_blocking_compilation' => ['./monit', './job.MF'],
           'transitive_deps' => ['./monit', './job.MF'],
           'id_job' => ['./monit', './templates/config.yml.erb', './job.MF'],
-          'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post_deploy.erb', './templates/job_1_ctl'],
-          'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post_deploy.erb', './templates/job_2_ctl'],
-          'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken_post_deploy.erb', './templates/job_3_ctl'],
+          'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_1_ctl'],
+          'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_2_ctl'],
+          'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken-post-deploy.erb', './templates/job_3_ctl'],
         }
 
         job_files.each do |job_name, files|
