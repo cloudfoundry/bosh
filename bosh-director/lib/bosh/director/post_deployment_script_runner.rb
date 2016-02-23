@@ -14,7 +14,7 @@ module Bosh::Director
           pool.process do
             agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, agent_options)
             begin
-              agent.run_script('post_deploy', {})
+              agent.run_script('post-deploy', {})
             rescue Bosh::Director::RpcTimeout
               # Ignoring timeout errors
             end
@@ -29,7 +29,7 @@ module Bosh::Director
         deployment_plan.jobs.each do |job|
           job.instances.select{|instance| instance.model[:vm_cid] != nil && instance.model.state != "stopped"}.each do |instance|
             pool.process do
-              instance.agent_client.run_script('post_deploy', {})
+              instance.agent_client.run_script('post-deploy', {})
             end
           end
         end

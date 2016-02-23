@@ -265,7 +265,7 @@ describe 'deploy', type: :integration do
       upload_stemcell
     end
 
-    context 'when the post_deploy scripts are valid' do
+    context 'when the post-deploy scripts are valid' do
       before do
         create_and_upload_test_release
         manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
@@ -294,17 +294,17 @@ describe 'deploy', type: :integration do
         agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
-        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed")
 
-        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
-        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
 
-        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
-        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
 
-        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")
-        expect(job_2_stdout).to match('message on stdout of job 2 post_deploy script')
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_2_stdout).to match('message on stdout of job 2 post-deploy script')
       end
 
       it 'runs does not run post-deploy scripts on stopped vms' do
@@ -314,12 +314,12 @@ describe 'deploy', type: :integration do
         agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
         stop_job("another_job_with_post_deploy_script/0")
 
@@ -327,12 +327,12 @@ describe 'deploy', type: :integration do
         agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(2)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(2)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(2)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(2)
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
       end
 
       it 'runs the post-deploy script when a vms is resurrected' do
@@ -341,12 +341,12 @@ describe 'deploy', type: :integration do
 
           agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
           resurected_vm = director.kill_vm_and_wait_for_resurrection(director.vm('job_with_post_deploy_script', '0'))
 
           agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurected_vm.agent_id}.log")
-          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
         end
       end
     end
@@ -368,24 +368,24 @@ describe 'deploy', type: :integration do
       end
 
       it 'exits with error if post-deploy errors, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
-        expect{deploy({})}.to raise_error(RuntimeError, /result: 1 of 2 post_deploy scripts failed. Failed Jobs: job_3_with_broken_post_deploy_script. Successful Jobs: job_1_with_post_deploy_script./)
+        expect{deploy({})}.to raise_error(RuntimeError, /result: 1 of 2 post-deploy scripts failed. Failed Jobs: job_3_with_broken_post_deploy_script. Successful Jobs: job_1_with_post_deploy_script./)
 
         agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
-        expect(agent_log).to include("/jobs/job_3_with_broken_post_deploy_script/bin/post_deploy' script has failed with error")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_3_with_broken_post_deploy_script/bin/post-deploy' script has failed with error")
 
-        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
-        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
 
-        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
-        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
 
-        job_3_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post_deploy.stdout.log")
-        expect(job_3_stdout).to match('message on stdout of job 3 post_deploy script')
+        job_3_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post-deploy.stdout.log")
+        expect(job_3_stdout).to match('message on stdout of job 3 post-deploy script')
 
-        job_3_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post_deploy.stderr.log")
+        job_3_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post-deploy.stderr.log")
         expect(job_3_stderr).not_to be_empty
       end
     end
@@ -419,13 +419,13 @@ describe 'deploy', type: :integration do
         agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
         deploy({})
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
       end
 
       it 'should not run post deploy script on jobs with no vm_cid' do
@@ -433,16 +433,16 @@ describe 'deploy', type: :integration do
         agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
 
         agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
-        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
 
-        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")
-        expect(job_1_stdout).to match("message on stdout of job 1 post_deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
 
-        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")
-        expect(job_1_stderr).to match('message on stderr of job 1 post_deploy script')
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
 
-        expect(File.file?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_errand/post_deploy.stdout.log")).to be_falsey
+        expect(File.file?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_errand/post-deploy.stdout.log")).to be_falsey
       end
     end
   end
@@ -480,12 +480,12 @@ describe 'deploy', type: :integration do
       agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
 
       agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
-      expect(agent_log).to_not include("/jobs/job_1_with_post_deploy_script/bin/post_deploy' script has successfully executed")
-      expect(agent_log).to_not include("/jobs/job_2_with_post_deploy_script/bin/post_deploy' script has successfully executed")
+      expect(agent_log).to_not include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+      expect(agent_log).to_not include("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed")
 
-      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stdout.log")).to be_falsey
-      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post_deploy.stderr.log")).to be_falsey
-      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post_deploy.stdout.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post-deploy.stdout.log")).to be_falsey
     end
   end
 

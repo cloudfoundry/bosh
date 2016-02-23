@@ -89,14 +89,6 @@ module Bosh::Director
         false
       end
 
-      def run_post_deploys(deployment_plan)
-        deployment_plan.jobs.each do |job|
-          job.instances.select{|instance| instance.model[:vm_cid] != nil && instance.model.state != "stopped"}.each do |instance|
-            instance.agent_client.run_script('post_deploy', {})
-          end
-        end
-      end
-
       def update_step(deployment_plan)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
