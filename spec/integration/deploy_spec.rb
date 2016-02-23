@@ -150,83 +150,85 @@ describe 'deploy', type: :integration do
     end
 
     context 'when there is only 1 deployment' do
-      it 'calls the delete_from_arp action on the bosh-agents' do
-        manifest = Bosh::Spec::Deployments.test_release_manifest
-        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(
-          name: 'job_to_test_forceful_arp',
-          instances: 2
-        )]
-        set_deployment(manifest_hash: manifest)
-        deploy({})
-
-        # This is above the second deploy so we get the first log file from the agent
-        # as they get a new agent_id after they're brought down then up
-        agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
-
-        # Change stemcell deployment (forces all VMs to update)
-        upload_stemcell_2
-        simple_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-        simple_cloud_config['resource_pools'][0]['stemcell']["name"] = "centos-stemcell"
-        simple_cloud_config['resource_pools'][0]['stemcell']["version"] = "2"
-        upload_cloud_config(cloud_config_hash: simple_cloud_config)
-
-        deploy({})
-
-        agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
-
-        agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
-        agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
-
-        expect(agent_log_0).to include("Running async action delete_from_arp")
-        expect(agent_log_1).to include("Running async action delete_from_arp")
-        expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
-        expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2"]')
-      end
-
-      it 'calls delete_from_arp action with multiple ip addresses' do
-        job_with_networks = Bosh::Spec::Deployments.simple_job(
+      context 'when flush_arp is set in BOSH director config' do
+        it 'calls the delete_from_arp action on the bosh-agents' do
+          manifest = Bosh::Spec::Deployments.test_release_manifest
+          manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(
             name: 'job_to_test_forceful_arp',
             instances: 2
-        )
-        job_with_networks['networks'] = [
-            { 'name' => 'a', 'default' => ["dns", "gateway"] },
-            { 'name' => 'b' }
-        ]
+          )]
+          set_deployment(manifest_hash: manifest)
+          deploy({})
 
-        manifest = Bosh::Spec::Deployments.test_release_manifest
-        manifest['jobs'] = [job_with_networks]
+          # This is above the second deploy so we get the first log file from the agent
+          # as they get a new agent_id after they're brought down then up
+          agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
 
-        set_deployment(manifest_hash: manifest)
+          # Change stemcell deployment (forces all VMs to update)
+          upload_stemcell_2
+          simple_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          simple_cloud_config['resource_pools'][0]['stemcell']["name"] = "centos-stemcell"
+          simple_cloud_config['resource_pools'][0]['stemcell']["version"] = "2"
+          upload_cloud_config(cloud_config_hash: simple_cloud_config)
 
-        deploy({})
+          deploy({})
 
-        # This is above the second deploy so we get the first log file from the agent
-        # as they get a new agent_id after they're brought down then up
-        agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
+          agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
 
-        # Change stemcell deployment (forces all VMs to update)
-        upload_stemcell_2
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-        cloud_config_hash.merge!({
-          'networks' => [
-            Bosh::Spec::Deployments.network,
-            Bosh::Spec::Deployments.network({
-              'name' => 'b',
-              'subnets' => [Bosh::Spec::NetworkingManifest.make_subnet({
-                :range => '192.168.2.0/24',
-                :available_ips => 20
-              })]
-          })]
-        })
-        cloud_config_hash['resource_pools'].first['stemcell'].merge!({"name" => "centos-stemcell", "version" => "2"})
-        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
+          agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
 
-        deploy({})
+          expect(agent_log_0).to include("Running async action delete_from_arp")
+          expect(agent_log_1).to include("Running async action delete_from_arp")
+          expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
+          expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2"]')
+        end
 
-        agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
+        it 'calls delete_from_arp action with multiple ip addresses' do
+          job_with_networks = Bosh::Spec::Deployments.simple_job(
+              name: 'job_to_test_forceful_arp',
+              instances: 2
+          )
+          job_with_networks['networks'] = [
+              { 'name' => 'a', 'default' => ["dns", "gateway"] },
+              { 'name' => 'b' }
+          ]
 
-        expect(agent_log_1).to include("Running async action delete_from_arp")
-        expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2","192.168.2.2"]')
+          manifest = Bosh::Spec::Deployments.test_release_manifest
+          manifest['jobs'] = [job_with_networks]
+
+          set_deployment(manifest_hash: manifest)
+
+          deploy({})
+
+          # This is above the second deploy so we get the first log file from the agent
+          # as they get a new agent_id after they're brought down then up
+          agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
+
+          # Change stemcell deployment (forces all VMs to update)
+          upload_stemcell_2
+          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_hash.merge!({
+            'networks' => [
+              Bosh::Spec::Deployments.network,
+              Bosh::Spec::Deployments.network({
+                'name' => 'b',
+                'subnets' => [Bosh::Spec::NetworkingManifest.make_subnet({
+                  :range => '192.168.2.0/24',
+                  :available_ips => 20
+                })]
+            })]
+          })
+          cloud_config_hash['resource_pools'].first['stemcell'].merge!({"name" => "centos-stemcell", "version" => "2"})
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+          deploy({})
+
+          agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
+
+          expect(agent_log_1).to include("Running async action delete_from_arp")
+          expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2","192.168.2.2"]')
+        end
       end
 
       context 'when max_in_flight is greater than 1' do
@@ -235,8 +237,8 @@ describe 'deploy', type: :integration do
           manifest.merge!(
               {
                   'jobs' => [Bosh::Spec::Deployments.simple_job(
-                                 name: 'job_to_test_forceful_arp',
-                                 instances: 3)]
+                      name: 'job_to_test_forceful_arp',
+                      instances: 3)]
               })
           manifest['update'].merge!({'max_in_flight'=>2})
           set_deployment(manifest_hash: manifest)
@@ -277,34 +279,37 @@ describe 'deploy', type: :integration do
     end
 
     context 'when there is more than 1 deployment' do
-      it 'calls the delete_from_arp action on all bosh-agents' do
-        manifest_deployment_1 = Bosh::Spec::Deployments.test_release_manifest
-        manifest_deployment_1.merge!(
-            {
-                'jobs' => [Bosh::Spec::Deployments.simple_job(
-                               name: 'job_to_test_forceful_arp',
-                               instances: 1)]
-            })
-        set_deployment(manifest_hash: manifest_deployment_1)
-        deploy({})
+      context 'when flush_arp is set in the BOSH director config' do
+        it 'calls the delete_from_arp action on all bosh-agents' do
+          manifest_deployment_1 = Bosh::Spec::Deployments.test_release_manifest
+          manifest_deployment_1.merge!(
+              {
+                  'jobs' => [Bosh::Spec::Deployments.simple_job(
+                                 name: 'job_to_test_forceful_arp',
+                                 instances: 1)]
+              })
+          set_deployment(manifest_hash: manifest_deployment_1)
+          deploy({})
 
-        agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
+          agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
 
-        manifest_deployment_2 = Bosh::Spec::Deployments.test_release_manifest
-        manifest_deployment_2.merge!(
-            {
-                'name' => 'simple2',
-                'jobs' => [Bosh::Spec::Deployments.simple_job(
-                               name: 'job_to_test_forceful_arp_2',
-                               instances: 1)]
-            })
+          manifest_deployment_2 = Bosh::Spec::Deployments.test_release_manifest
+          manifest_deployment_2.merge!(
+              {
+                  'name' => 'simple2',
+                  'jobs' => [Bosh::Spec::Deployments.simple_job(
+                                 name: 'job_to_test_forceful_arp_2',
+                                 instances: 1)]
+              })
 
-        set_deployment(manifest_hash: manifest_deployment_2)
-        deploy({})
+          set_deployment(manifest_hash: manifest_deployment_2)
+          deploy({})
 
-        agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
-        expect(agent_log_0).to include("Running async action delete_from_arp")
-        expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
+          agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
+
+          expect(agent_log_0).to include("Running async action delete_from_arp")
+          expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
+        end
       end
     end
   end
