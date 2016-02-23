@@ -14,7 +14,8 @@ module Bosh::Director
     let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
     let(:requested_access) { [] }
-    let(:uaa_user) { identity_provider.get_user(request_env) }
+    let(:uaa_user) { identity_provider.get_user(request_env, options) }
+    let(:options) { {} }
 
     describe 'client info' do
       it 'contains type and options, but not secret key' do
@@ -200,7 +201,7 @@ module Bosh::Director
           let(:pkey) { another_rsa_key.public_key }
 
           it 'raises an error' do
-            expect { identity_provider.get_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -208,7 +209,7 @@ module Bosh::Director
           let(:pkey) { nil }
 
           it 'raises an error' do
-            expect { identity_provider.get_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -216,7 +217,7 @@ module Bosh::Director
           let(:token_expiry_time) { (Time.now - 1000).to_i }
 
           it 'raises' do
-            expect {  identity_provider.get_user(request_env) }.to raise_error(AuthenticationError)
+            expect {  identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
           end
         end
       end
@@ -233,6 +234,18 @@ module Bosh::Director
           expect(uaa_user.username).to eq('fake-client-id')
         end
       end
+
+      context 'when extended_token_timeout is requested' do
+        let(:request_env) { { 'HTTP_X_BOSH_UPLOAD_REQUEST_TIME' => 30, 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" } }
+        let(:token_expiry_time) { Time.now.to_i - 10 }
+        let(:options) { { extended_token_timeout: true } }
+        let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: 'symmetric-key') }
+        let(:skey) { 'symmetric-key' }
+
+        it 'decodes the token at the time request started' do
+          expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
+        end
+      end
     end
 
     context 'when no Uaa token is given' do
@@ -240,7 +253,7 @@ module Bosh::Director
         let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
 
         it 'raises' do
-          expect { identity_provider.get_user(request_env) }.to raise_error(AuthenticationError)
+          expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
         end
       end
 
@@ -248,7 +261,7 @@ module Bosh::Director
         let(:request_env) { { } }
 
         it 'raises' do
-          expect { identity_provider.get_user(request_env) }.to raise_error(AuthenticationError)
+          expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
         end
       end
 

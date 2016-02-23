@@ -10,7 +10,7 @@ module Support
       @has_access = false
     end
 
-    def get_user(request_env)
+    def get_user(request_env, _)
       @request_env = request_env
 
       auth = Rack::Auth::Basic::Request.new(request_env)

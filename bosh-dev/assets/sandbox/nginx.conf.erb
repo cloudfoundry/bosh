@@ -65,7 +65,7 @@ http {
     }
 
     location @director_upload {
-      proxy_set_header X-BOSH-UPLOAD-REQUEST 1;
+      proxy_set_header X-BOSH-UPLOAD-REQUEST-TIME $request_time;
 
       proxy_pass http://director;
     }

@@ -33,7 +33,8 @@ module Bosh::Director
 
             if auth_provided
               begin
-                @user = identity_provider.get_user(request.env)
+                extended_token_timeout = request.media_type == mime_type(:multipart)
+                @user = identity_provider.get_user(request.env, extended_token_timeout: extended_token_timeout)
               rescue AuthenticationError
               end
             end
