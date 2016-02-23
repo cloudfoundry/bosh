@@ -100,8 +100,7 @@ module Bosh
           context 'and there is no existing deployment with the same name' do
             it 'should create a new deployment' do
               expect {
-                instance = subject.find_or_create_by_name('new', {'scopes' => ['bosh.team.production.admin']})
-                puts instance.pretty_inspect
+                subject.find_or_create_by_name('new', {'scopes' => ['bosh.team.production.admin']})
               }.to change { Models::Deployment.count }
 
               expect(Models::Deployment.filter(name: 'new', scopes: 'bosh.team.production.admin').count).to eq(1)

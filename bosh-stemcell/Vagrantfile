@@ -86,6 +86,7 @@ EOS
       mkdir -p /bosh/tmp
 
       chown -R ubuntu:ubuntu /bosh
+      gem install bundler --version 1.11.2 --no-ri --no-rdoc
       ( cd /bosh && bundle install --local )
 
       wget -q https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz

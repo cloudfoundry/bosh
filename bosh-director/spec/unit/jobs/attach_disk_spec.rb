@@ -31,6 +31,10 @@ module Bosh::Director
         deployment_model
       end
 
+      before {
+        allow(Config).to receive(:cloud)
+      }
+
       context 'when the instance is stopped hard' do
         let(:vm_cid) { nil }
         let(:instance_state) {'detached'}
@@ -56,11 +60,14 @@ module Bosh::Director
           expect(active_disks.first.size).to eq(1)
         end
 
-        it 'marks the pre existing active persistent disk as inactive' do
+        it 'marks the pre existing active persistent disk as inactive and orphans it' do
           attach_disk_job.perform
-          original_disk = Models::PersistentDisk[disk_cid: 'original-disk-cid']
-          expect(instance_model.persistent_disks).to include(original_disk)
-          expect(original_disk.active).to be(false)
+          expect(instance_model.persistent_disks).to_not include(original_disk)
+          original_persistent_disk = Models::PersistentDisk[disk_cid: 'original-disk-cid']
+          expect(original_persistent_disk).to be(nil)
+
+          orphaned_original_disk = Models::OrphanDisk[disk_cid: 'original-disk-cid']
+          expect(orphaned_original_disk).to_not be(nil)
         end
 
         it 'returns a message' do
@@ -218,26 +225,13 @@ module Bosh::Director
               size: 50)
         end
 
-        let(:planner) { instance_double(DeploymentPlan::Planner)}
-        let(:planner_factory) { instance_double(DeploymentPlan::PlannerFactory)}
-        let(:deployment_job) { instance_double(DeploymentPlan::Job)}
-
-        let(:deployment_plan_instance) { instance_double(DeploymentPlan::Instance)}
-
         let(:disk_manager) { instance_double(DiskManager)}
 
         before {
-          allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
-          allow(planner_factory).to receive(:create_from_model).and_return(planner)
-          allow(planner).to receive(:job).and_return(deployment_job)
-
-          allow(DeploymentPlan::Instance).to receive(:create_from_job).and_return(deployment_plan_instance)
-          allow(deployment_plan_instance).to receive(:bind_existing_instance_model)
-
-          allow(Config).to receive(:cloud)
-
           allow(DiskManager).to receive(:new).and_return(disk_manager)
-          allow(disk_manager).to receive(:orphan_mounted_persistent_disk)
+          allow(disk_manager).to receive(:detach_disk)
+          allow(disk_manager).to receive(:unmount_disk)
+          allow(disk_manager).to receive(:orphan_disk)
           allow(disk_manager).to receive(:attach_disk)
         }
 
@@ -251,17 +245,43 @@ module Bosh::Director
         end
 
         it 'orphans and unmounts the previous disk' do
-          expect(disk_manager).to receive(:orphan_mounted_persistent_disk).with(deployment_plan_instance, original_disk)
+          expect(disk_manager).to receive(:detach_disk).with(instance_model, original_disk)
+          expect(disk_manager).to receive(:unmount_disk).with(instance_model, original_disk)
+          expect(disk_manager).to receive(:orphan_disk).with(original_disk)
           attach_disk_job.perform
         end
       end
 
       context 'when the job does not declare persistent disk' do
-        let(:vm_cid) { 'fake-vm-cid' }
-        let(:instance_state) {'detached'}
+        let(:vm_cid) { nil }
 
-        it 'raise error' do
-          expect { attach_disk_job.perform }.to raise_error(AttachDiskNoPersistentDisk, "Job 'job_name' is not configured with a persistent disk")
+        let(:instance_state) {'stopped'}
+        
+        let(:original_disk) { nil }
+
+        let(:disk_manager) { instance_double(DiskManager)}
+
+        before {
+          allow(DiskManager).to receive(:new).and_return(disk_manager)
+          allow(disk_manager).to receive(:detach_disk)
+          allow(disk_manager).to receive(:unmount_disk)
+          allow(disk_manager).to receive(:orphan_disk)
+          allow(disk_manager).to receive(:attach_disk)
+        }
+
+        it 'attaches the new disk' do
+          expect(disk_manager).to receive(:attach_disk)
+          attach_disk_job.perform
+
+          active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+          expect(active_disks.count).to eq(1)
+          expect(active_disks.first.disk_cid).to eq(disk_cid)
+        end
+
+        it 'performs no action for previous disk' do
+          expect(disk_manager).to_not receive(:detach_disk).with(instance_model, original_disk)
+          expect(disk_manager).to_not receive(:unmount_disk).with(instance_model, original_disk)
+          expect(disk_manager).to_not receive(:orphan_disk).with(original_disk)
         end
       end
     end

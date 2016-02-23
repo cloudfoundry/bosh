@@ -27,10 +27,13 @@ module Bosh::Director
         disk.update(:active => true) if disk
       end
 
-      orphan_mounted_persistent_disk(instance, old_disk) if old_disk
+      orphan_mounted_persistent_disk(instance.model, old_disk) if old_disk
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance.model)
-      inactive_disks.each{|disk| detach_and_orphan_disk(disk, instance.model) }
+      inactive_disks.each do |disk|
+        detach_disk(instance.model, disk)
+        orphan_disk(disk)
+      end
     end
 
     def attach_disks_if_needed(instance_plan)
@@ -65,6 +68,24 @@ module Bosh::Director
       end
     end
 
+    def unorphan_disk(disk, instance_id)
+      @transactor.retryable_transaction(Bosh::Director::Config.db) do
+        new_disk = Models::PersistentDisk.create(
+            disk_cid: disk.disk_cid,
+            instance_id: instance_id,
+            active: true,
+            size: disk.size,
+            cloud_properties: disk.cloud_properties)
+
+        disk.orphan_snapshots.each do |snapshot|
+          Models::Snapshot.create(persistent_disk: new_disk, snapshot_cid: snapshot.snapshot_cid, clean: snapshot.clean)
+          snapshot.destroy
+        end
+
+        disk.destroy
+      end
+    end
+
     def list_orphan_disks
       Models::OrphanDisk.all.map do |disk|
         {
@@ -92,7 +113,7 @@ module Bosh::Director
     def unmount_disk_for(instance_plan)
       disk = instance_plan.instance.model.persistent_disk
       return if disk.nil?
-      unmount(instance_plan.instance, disk)
+      unmount_disk(instance_plan.instance.model, disk)
     end
 
     def delete_orphan_disk(orphan_disk)
@@ -109,8 +130,51 @@ module Bosh::Director
       end
     end
 
-    def orphan_mounted_persistent_disk(instance, disk)
-      unmount(instance, disk)
+    def attach_disk(instance_model)
+      disk_cid = instance_model.persistent_disk_cid
+      return @logger.info('Skipping disk attaching') if disk_cid.nil?
+
+      begin
+        @cloud.attach_disk(instance_model.vm_cid, disk_cid)
+        agent_client(instance_model).mount_disk(disk_cid)
+      rescue => e
+        @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
+        raise e
+      end
+    end
+
+    def detach_disk(instance_model, disk)
+      begin
+        @logger.info("Detaching disk #{disk.disk_cid}")
+        @cloud.detach_disk(instance_model.vm_cid, disk.disk_cid)
+      rescue Bosh::Clouds::DiskNotAttached
+        if disk.active
+          raise CloudDiskNotAttached,
+                "`#{instance_model}' VM should have persistent disk attached " +
+                    "but it doesn't (according to CPI)"
+        end
+      end
+    end
+
+    def unmount_disk(instance_model, disk)
+      disk_cid = disk.disk_cid
+      if disk_cid.nil?
+        @logger.info('Skipping disk unmounting, instance does not have a disk')
+        return
+      end
+
+      if agent_mounted_disks(instance_model).include?(disk_cid)
+        @logger.info("Stopping instance '#{instance_model}' before unmount")
+        agent_client(instance_model).stop
+        @logger.info("Unmounting disk '#{disk_cid}'")
+        agent_client(instance_model).unmount_disk(disk_cid)
+      end
+    end
+
+    private
+
+    def orphan_mounted_persistent_disk(instance_model, disk)
+      unmount_disk(instance_model, disk)
 
       disk_cid = disk.disk_cid
       if disk_cid.nil?
@@ -118,23 +182,9 @@ module Bosh::Director
         return
       end
 
-      detach_and_orphan_disk(disk, instance.model)
+      detach_disk(instance_model, disk)
+      orphan_disk(disk)
     end
-
-    def attach_disk(instance_model)
-      disk_cid = instance_model.persistent_disk_cid
-      return @logger.info('Skipping disk attaching') if disk_cid.nil?
-
-      begin
-        @cloud.attach_disk(instance_model.vm_cid, disk_cid)
-        AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id).mount_disk(disk_cid)
-      rescue => e
-        @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
-        raise e
-      end
-    end
-
-    private
 
     def delete_orphan_snapshot(orphan_snapshot)
       begin
@@ -157,36 +207,7 @@ module Bosh::Director
           clean: snapshot.clean,
           snapshot_created_at: snapshot.created_at
         )
-        snapshot.delete
-      end
-    end
-
-    def detach_and_orphan_disk(disk, instance_model)
-      begin
-        @logger.info("Detaching disk #{disk.disk_cid}")
-        @cloud.detach_disk(instance_model.vm_cid, disk.disk_cid)
-      rescue Bosh::Clouds::DiskNotAttached
-        if disk.active
-          raise CloudDiskNotAttached,
-                "`#{instance_model}' VM should have persistent disk attached " +
-                  "but it doesn't (according to CPI)"
-        end
-      end
-      orphan_disk(disk)
-    end
-
-    def unmount(instance, disk)
-      disk_cid = disk.disk_cid
-      if disk_cid.nil?
-        @logger.info('Skipping disk unmounting, instance does not have a disk')
-        return
-      end
-
-      if agent_mounted_disks(instance).include?(disk_cid)
-        @logger.info("Stopping instance '#{instance}' before unmount")
-        agent_client(instance).stop
-        @logger.info("Unmounting disk '#{disk_cid}'")
-        agent_client(instance).unmount_disk(disk_cid)
+        snapshot.destroy
       end
     end
 
@@ -196,7 +217,7 @@ module Bosh::Director
     def check_persistent_disk(instance_plan)
       instance = instance_plan.instance
       return if instance.model.persistent_disks.empty?
-      agent_disk_cid = agent_mounted_disks(instance).first
+      agent_disk_cid = agent_mounted_disks(instance.model).first
 
       if agent_disk_cid.nil? && !instance_plan.needs_disk?
         @logger.debug('Disk is already detached')
@@ -214,12 +235,12 @@ module Bosh::Director
       end
     end
 
-    def agent_mounted_disks(instance)
-      agent_client(instance).list_disk
+    def agent_mounted_disks(instance_model)
+      agent_client(instance_model).list_disk
     end
 
-    def agent_client(instance)
-      AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
+    def agent_client(instance_model)
+      AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
     end
 
     def create_and_attach_disk(instance_plan, vm_recreator)
@@ -247,14 +268,14 @@ module Bosh::Director
     end
 
     def mount_and_migrate_disk(instance, new_disk, old_disk)
-      agent_client = agent_client(instance)
+      agent_client = agent_client(instance.model)
       agent_client.mount_disk(new_disk.disk_cid)
       # Mirgate to and from cids are actually ignored by the agent.
       # The first mount invocation is the source, and the last mount invocation is the target.
       agent_client.migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
     rescue => e
       @logger.debug("Failed to migrate disk, deleting new disk. #{e.inspect}")
-      orphan_mounted_persistent_disk(instance, new_disk)
+      orphan_mounted_persistent_disk(instance.model, new_disk)
       raise e
     end
 
@@ -264,8 +285,8 @@ module Bosh::Director
 
       disk_size = job.persistent_disk_type.disk_size
       cloud_properties = job.persistent_disk_type.cloud_properties
-
       disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
+
       Models::PersistentDisk.create(
         disk_cid: disk_cid,
         active: false,

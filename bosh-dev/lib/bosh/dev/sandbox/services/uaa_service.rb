@@ -8,7 +8,7 @@ module Bosh::Dev::Sandbox
     UAA_VERSION = 'cloudfoundry-identity-uaa-2.0.3'
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-    INSTALL_DIR = File.join('/tmp', 'integration-uaa', UAA_VERSION)
+    INSTALL_DIR = File.join('tmp', 'integration-uaa', UAA_VERSION)
     TOMCAT_DIR = File.join(INSTALL_DIR, TOMCAT_VERSIONED_FILENAME)
 
     def initialize(port_provider, base_log_path, logger)
