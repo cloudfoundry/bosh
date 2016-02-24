@@ -144,6 +144,13 @@ module Bosh::Spec
       }
     end
 
+    def self.vm_extension
+      {
+          'name' => 'vm-extension-name',
+          'cloud_properties' => {},
+      }
+    end
+
     def self.disk_pool
       {
         'name' => 'disk_a',

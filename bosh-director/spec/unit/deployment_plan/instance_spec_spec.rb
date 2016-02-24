@@ -19,6 +19,7 @@ module Bosh::Director::DeploymentPlan
         instances: ['instance0'],
         default_network: {},
         vm_type: vm_type,
+        vm_extensions: [],
         stemcell: stemcell,
         env: env,
         package_spec: packages,

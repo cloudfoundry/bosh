@@ -96,6 +96,7 @@ module Bosh::Director
         instance_model.index,
         instance_model.state,
         vm_type,
+        nil,
         stemcell,
         env,
         false,

@@ -88,6 +88,8 @@ module Bosh::Director
         :resource_pool,
         :vm_types,
         :vm_type,
+        :vm_extensions,
+        :vm_extension,
         :add_resource_pool,
         :disk_types,
         :disk_type,
@@ -284,6 +286,7 @@ module Bosh::Director
         @global_network_resolver = options.fetch(:global_network_resolver)
         @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
         @vm_types = self.class.index_by_name(options.fetch(:vm_types, {}))
+        @vm_extensions = self.class.index_by_name(options.fetch(:vm_extensions, {}))
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
@@ -330,6 +333,14 @@ module Bosh::Director
 
       def vm_type(name)
         @vm_types[name]
+      end
+
+      def vm_extensions
+        @vm_extensions.values
+      end
+
+      def vm_extension(name)
+        @vm_extensions[name]
       end
 
       def add_resource_pool(resource_pool)

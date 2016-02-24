@@ -27,10 +27,12 @@ module Bosh::Director::DeploymentPlan
         name: 'fake-job',
         persistent_disk_type: disk_type,
         compilation?: false,
-        can_run_as_errand?: false
+        can_run_as_errand?: false,
+        vm_extensions: vm_extensions
       )
     end
     let(:vm_type) { VmType.new({'name' => 'fake-vm-type'}) }
+    let(:vm_extensions) {[]}
     let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}) }
     let(:env) { Env.new({'key' => 'value'}) }
     let(:disk_type) { nil }
@@ -286,6 +288,26 @@ module Bosh::Director::DeploymentPlan
               {'zone' => 'the-right-one', 'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
             )
         end
+
+        context 'when the instance has vm_extensions' do
+          context 'when vm_type and vm_extensions and availability zones have some overlapping cloud properties' do
+            let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
+            let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
+            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
+
+            it 'uses the vm_type cloud_properties then the availability zones then rightmost vm_extension for overlapping values' do
+              availability_zone = instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone)
+              allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one', 'other-stuff' => 'who-chares'})
+              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff', 'other-stuff' => 'i-chares'})
+              allow(vm_extension_1).to receive(:cloud_properties).and_return({'fooz' => 'bar', 'resources' => 'the-new-stuff', 'food' => 'drink'})
+              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz', 'food' => 'eat'})
+
+              instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+
+              expect(instance.cloud_properties).to eq({'resources' => 'the-new-stuff', 'foo' => 'baaaz', 'zone' => 'the-right-one', 'food' => 'eat', 'fooz' => 'bar', 'other-stuff' => 'i-chares'})
+            end
+          end
+        end
       end
 
       context 'when the instance does not have an availability zone' do
@@ -298,6 +320,38 @@ module Bosh::Director::DeploymentPlan
               {'resources' => 'the-good-stuff', 'foo' => 'rp-foo'},
             )
         end
+
+        context 'when the instance has vm_extensions' do
+          let(:vm_extension_1) {VmExtension.new({'name' => 'fake-vm-extension-1'})}
+          let(:vm_extension_2) {VmExtension.new({'name' => 'fake-vm-extension-2'})}
+
+          context 'when the same property exists in multiple vm_extensions' do
+            let(:vm_extensions) {[vm_extension_1, vm_extension_2]}
+
+            it 'uses the right most vm_extension\'s property value for overlapping values' do
+              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar', 'resources' => 'the-good-stuff'})
+              allow(vm_extension_2).to receive(:cloud_properties).and_return({'foo' => 'baaaz'})
+
+              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
+
+              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'baaaz'})
+            end
+          end
+
+          context 'when vm_type and vm_extensions have some overlapping cloud properties' do
+            let(:vm_extensions) {[vm_extension_1]}
+
+            it 'uses the vm_type cloud_properties for overlapping values' do
+              allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
+              allow(vm_extension_1).to receive(:cloud_properties).and_return({'foo' => 'bar'})
+
+              instance = Instance.create_from_job(job, index, state, deployment, current_state, nil, logger)
+
+              expect(instance.cloud_properties).to eq({'resources' => 'the-good-stuff', 'foo' => 'bar'})
+            end
+          end
+        end
+
       end
     end
 

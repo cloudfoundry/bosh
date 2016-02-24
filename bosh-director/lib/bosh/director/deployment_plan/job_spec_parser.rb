@@ -245,6 +245,8 @@ module Bosh::Director
             'cloud_properties' => resource_pool.cloud_properties
           })
 
+          vm_extensions = []
+
           stemcell = resource_pool.stemcell
 
           if !env_hash.empty? && !resource_pool.env.empty?
@@ -263,6 +265,9 @@ module Bosh::Director
               "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
           end
 
+          vm_extension_names = Array(safe_property(@job_spec, 'vm_extensions', class: Array, optional: true))
+          vm_extensions = Array(vm_extension_names).map {|vm_extension_name| @deployment.vm_extension(vm_extension_name)}
+
           stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
           stemcell = @deployment.stemcell(stemcell_name)
           if stemcell.nil?
@@ -272,6 +277,7 @@ module Bosh::Director
         end
 
         @job.vm_type = vm_type
+        @job.vm_extensions = vm_extensions
         @job.stemcell = stemcell
         @job.env = Env.new(env_hash)
       end

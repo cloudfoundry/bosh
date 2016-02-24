@@ -411,6 +411,22 @@ module Bosh::Director
         end
       end
 
+      describe 'vm_extensions' do
+        context 'when vm_extensions are specified' do
+
+        before do
+          cloud_manifest['vm_extensions'] = [
+              Bosh::Spec::Deployments.vm_extension.merge({'name' => 'vm-extension-1-name'}),
+              Bosh::Spec::Deployments.vm_extension.merge({'name' => 'vm-extension-2-name'})
+          ]
+        end
+          it 'should create vmExtension for each entry' do
+            expect(parsed_cloud_planner.vm_extensions.map(&:class)).to eq([DeploymentPlan::VmExtension, DeploymentPlan::VmExtension])
+            expect(parsed_cloud_planner.vm_extensions.map(&:name)).to eq(['vm-extension-1-name', 'vm-extension-2-name'])
+          end
+        end
+      end
+
       describe 'disk_pools' do
         context 'when there is at least one disk_pool' do
           context 'when each resource pool has a unique name' do

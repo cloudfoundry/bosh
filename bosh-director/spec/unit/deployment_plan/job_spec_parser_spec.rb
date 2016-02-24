@@ -813,6 +813,70 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
     end
 
+    describe 'vm_extensions key' do
+
+      let(:vm_extension_1) do
+        {
+            'name'             => 'vm_extension_1',
+            'cloud_properties' => {'property' => 'value'}
+        }
+      end
+
+      let(:vm_extension_2) do
+        {
+            'name'             => 'vm_extension_2',
+            'cloud_properties' => {'another_property' => 'value1', 'property' => 'value2'}
+        }
+      end
+
+      let(:job_spec) do
+        {
+            'name'      => 'fake-job-name',
+            'templates' => [],
+            'release'   => 'fake-release-name',
+            'vm_type' => 'fake-vm-type',
+            'stemcell' => 'fake-stemcell',
+            'env' => {'key' => 'value'},
+            'instances' => 1,
+            'networks'  => [{'name' => 'fake-network-name'}]
+        }
+      end
+
+      before do
+        allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
+            Bosh::Director::DeploymentPlan::VmType.new({
+                                                           'name' => 'fake-vm-type',
+                                                           'cloud_properties' => {}
+                                                       })
+        )
+        allow(deployment_plan).to receive(:stemcell).with('fake-stemcell').and_return(
+            Bosh::Director::DeploymentPlan::Stemcell.parse({
+                                                               'alias' => 'fake-stemcell',
+                                                               'os' => 'fake-os',
+                                                               'version' => 1
+                                                           })
+        )
+        allow(deployment_plan).to receive(:vm_extension).with('vm_extension_1').and_return(
+            Bosh::Director::DeploymentPlan::VmExtension.new(vm_extension_1)
+        )
+        allow(deployment_plan).to receive(:vm_extension).with('vm_extension_2').and_return(
+            Bosh::Director::DeploymentPlan::VmExtension.new(vm_extension_2)
+        )
+      end
+
+      context 'job has one vm_extension' do
+        it 'parses the vm_extension' do
+          job_spec['vm_extensions'] = ['vm_extension_1']
+
+          job = parser.parse(job_spec)
+          expect(job.vm_extensions.size).to eq(1)
+          expect(job.vm_extensions.first.name).to eq('vm_extension_1')
+          expect(job.vm_extensions.first.cloud_properties).to eq({'property' => 'value'})
+
+        end
+      end
+    end
+
     describe 'properties key' do
       it 'complains about unsatisfiable property mappings' do
         props = { 'foo' => 'bar' }

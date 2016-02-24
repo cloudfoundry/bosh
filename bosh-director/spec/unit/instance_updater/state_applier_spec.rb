@@ -22,6 +22,7 @@ module Bosh::Director
         instances: ['instance0'],
         default_network: {},
         vm_type: DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}),
+        vm_extensions: [],
         stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
         env: DeploymentPlan::Env.new({'key' => 'value'}),
         package_spec: {},
