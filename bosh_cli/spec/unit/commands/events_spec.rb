@@ -13,41 +13,56 @@ describe Bosh::Cli::Command::Events do
     let(:target) { 'http://example.org' }
     let(:event_1) do
       {
-          "id"           => 1,
-          "target_type"  => "deployment",
-          "target_name"  => "simple",
-          "event_action" => "create",
-          "event_state"  => "started",
-          "event_result" => "running",
-          "task_id"      => 1,
-          "timestamp"    => 1455635708,
+          "id"          => "1",
+          "timestamp"   => 1455635708,
+          "user"        => "admin",
+          "action"      => "create",
+          "object_type" => "deployment",
+          "object_name" => "depl1",
+          "task"        => "1",
+          "context"     => {}
       }
     end
     let(:event_2) do
       {
-          "id"           => 2,
-          "target_type"  => "deployment",
-          "target_name"  => "simple",
-          "event_action" => "create",
-          "event_state"  => "done",
-          "event_result" => "/deployments/simple",
-          "task_id"      => 1,
-          "timestamp"    => 1455635708,
+          "id"          => "2",
+          "parent_id"   => "1",
+          "timestamp"   => 1455635708,
+          "user"        => "admin",
+          "action"      => "create",
+          "object_type" => "deployment",
+          "object_name" => "depl1",
+          "task"        => "5",
+          "context"     => {"information" => "blah blah"}
       }
     end
-
+    let(:event_3) do
+      {
+          "id"          => "3",
+          "timestamp"   => 1455635708,
+          "user"        => "admin",
+          "action"      => "rename",
+          "error"       => "Someting went wrong",
+          "object_type" => "deployment",
+          "object_name" => "depl1",
+          "task"        => "6",
+          "context"     => {"new name" => "depl2"}
+      }
+    end
     context 'when there are events' do
-      before { expect(director).to receive(:list_events) { [event_1, event_2] } }
+      before { expect(director).to receive(:list_events) { [event_3, event_2, event_1] } }
 
       it 'lists all events' do
         expect(command).to receive(:say) do |display_output|
           expect(display_output.to_s).to match_output "
-+---+---------------------+--------+---------+---------------------+------+-------------------------+
-| # | Name                | Action | State   | Result              | Task | Timestamp               |
-+---+---------------------+--------+---------+---------------------+------+-------------------------+
-| 1 | 'simple' deployment | create | started | running             | 1    | 2016-02-16 15:15:08 UTC |
-| 2 | 'simple' deployment | create | done    | /deployments/simple | 1    | 2016-02-16 15:15:08 UTC |
-+---+---------------------+--------+---------+---------------------+------+-------------------------+
++--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
+| ID     | Time                         | User  | Action | Object type | Object ID | Task | Dep | Inst | Context                     |
++--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
+| 3      | Tue Feb 16 15:15:08 UTC 2016 | admin | rename | deployment  | depl1     | 6    | -   | -    | error: Someting went wrong, |
+|        |                              |       |        |             |           |      |     |      | new name: depl2             |
+| 2 <- 1 | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 5    | -   | -    | information: blah blah      |
+| 1      | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 1    | -   | -    | -                           |
++--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
 "
         end
         command.list

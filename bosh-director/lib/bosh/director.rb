@@ -145,6 +145,7 @@ require 'bosh/director/blobstores'
 require 'bosh/director/api/director_uuid_provider'
 require 'bosh/director/api/local_identity_provider'
 require 'bosh/director/api/uaa_identity_provider'
+require 'bosh/director/api/event_manager'
 require 'bosh/director/app'
 
 module Bosh::Director

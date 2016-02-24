@@ -3,7 +3,16 @@
 module Bosh::Director::Models
   class Event < Sequel::Model(Bosh::Director::Config.db)
     def validate
-      validates_presence [:target_type, :event_action, :event_state, :event_state, :task_id, :timestamp]
+      validates_presence [:timestamp, :action, :object_type, :object_name]
+    end
+
+    def context
+      return {} if context_json.nil?
+      Yajl::Parser.parse(context_json)
+    end
+
+    def context=(data)
+      self.context_json = Yajl::Encoder.encode(data)
     end
   end
 end

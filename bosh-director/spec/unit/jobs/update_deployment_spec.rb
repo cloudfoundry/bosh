@@ -10,10 +10,13 @@ module Bosh::Director::Jobs
     let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }
     let(:cloud_config_id) { nil }
     let(:deployment_job) { Bosh::Director::DeploymentPlan::Job.new(logger) }
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
       Bosh::Director::App.new(config)
+      allow(job).to receive(:task_id).and_return(task.id)
+      allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
     end
 
     describe '#perform' do
@@ -80,6 +83,55 @@ module Bosh::Director::Jobs
           job.perform
           expect(File.exist? manifest_path).to be_falsey
         end
+
+        it 'should store new events' do
+          expect {
+            job.perform
+          }.to change {
+            Bosh::Director::Models::Event.count }.from(0).to(2)
+
+          event_1 = Bosh::Director::Models::Event.first
+          expect(event_1.user).to eq(task.username)
+          expect(event_1.action).to eq('create')
+          expect(event_1.object_type).to eq('deployment')
+          expect(event_1.object_name).to eq('deployment-name')
+          expect(event_1.task).to eq("#{task.id}")
+          expect(event_1.timestamp).to eq(Time.now)
+
+          event_2 = Bosh::Director::Models::Event.order(:id).last
+          expect(event_2.parent_id).to eq(1)
+          expect(event_2.user).to eq(task.username)
+          expect(event_2.action).to eq('create')
+          expect(event_2.object_type).to eq('deployment')
+          expect(event_2.object_name).to eq('deployment-name')
+          expect(event_2.task).to eq("#{task.id}")
+          expect(event_2.timestamp).to eq(Time.now)
+        end
+
+        it 'should define `update` deployment action' do
+          Bosh::Director::Models::Deployment.make(name: 'deployment-name')
+          expect {
+            job.perform
+          }.to change {
+            Bosh::Director::Models::Event.count }.from(0).to(2)
+
+          event_1 = Bosh::Director::Models::Event.first
+          expect(event_1.user).to eq('user')
+          expect(event_1.action).to eq('update')
+          expect(event_1.object_type).to eq('deployment')
+          expect(event_1.object_name).to eq('deployment-name')
+          expect(event_1.task).to eq("42")
+          expect(event_1.timestamp).to eq(Time.now)
+
+          event_2 = Bosh::Director::Models::Event.order(:id).last
+          expect(event_2.parent_id).to eq(1)
+          expect(event_2.user).to eq('user')
+          expect(event_2.action).to eq('update')
+          expect(event_2.object_type).to eq('deployment')
+          expect(event_2.object_name).to eq('deployment-name')
+          expect(event_2.task).to eq("42")
+          expect(event_2.timestamp).to eq(Time.now)
+        end
       end
 
       context 'when the first step fails' do
@@ -100,39 +152,6 @@ module Bosh::Director::Jobs
           }.to raise_error(Exception)
           expect(File.exist? manifest_path).to be_falsey
         end
-      end
-    end
-
-    describe '#add_event' do
-      before do
-        allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
-      end
-      let (:options) do
-        {:event_state  => 'started',
-         :event_result => 'running',
-         :task_id      => 42}
-      end
-
-      it 'should store new event' do
-        expect {
-          job.add_event(options)
-        }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(1)
-
-        event= Bosh::Director::Models::Event.first
-        expect(event.event_state).to eq('started')
-        expect(event.target_type).to eq('deployment')
-        expect(event.target_name).to eq('deployment-name')
-        expect(event.event_action).to eq('create')
-        expect(event.event_result).to eq('running')
-        expect(event.task_id).to eq(42)
-        expect(event.timestamp).to eq(Time.now)
-      end
-
-      it 'should define `update` deployment action' do
-        Bosh::Director::Models::Deployment.make(name: 'deployment-name')
-        job.add_event(options)
-        expect(Bosh::Director::Models::Event.first.event_action).to eq('update')
       end
     end
   end

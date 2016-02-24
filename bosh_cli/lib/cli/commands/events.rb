@@ -19,18 +19,25 @@ module Bosh::Cli::Command
       end
 
       events_table = table do |t|
-        headings   = ["#", 'Name', 'Action', 'State', 'Result', 'Task', 'Timestamp']
+        headings   = ['ID', 'Time', 'User', 'Action', 'Object type', 'Object ID', 'Task', 'Dep', 'Inst', 'Context']
         t.headings = headings
 
         events.each do |event|
           row = []
-          row << event['id']
-          row << "'#{event['target_name']}' #{event['target_type']}"
-          row << event['event_action']
-          row << event['event_state']
-          row << event['event_result'].to_s.truncate(80)
-          row << event['task_id']
-          row << Time.at(event['timestamp']).utc
+          id  = event['id']
+          id  = "#{id} <- #{event['parent_id']}" if event['parent_id']
+          row << id
+          row << Time.at(event['timestamp']).utc.strftime('%a %b %e %H:%M:%S %Z %Y')
+          row << event['user']
+          row << event['action']
+          row << event['object_type']
+          row << event['object_name']
+          row << event.fetch('task', "-")
+          row << event.fetch('deployment', "-")
+          row << event.fetch('instance', "-")
+          context = event["error"] ? {"error" => event["error"].to_s.truncate(80)}.merge(event["context"]) : event["context"]
+          context = context.empty? ? "-" : context.map { |k, v| "#{k}: #{v}" }.join(",\n")
+          row << context
           t << row
         end
       end

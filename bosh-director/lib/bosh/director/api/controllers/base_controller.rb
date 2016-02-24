@@ -24,6 +24,7 @@ module Bosh::Director
           @vm_state_manager = VmStateManager.new
           @dns_manager = DnsManagerProvider.create
           @disk_manager = DiskManager.new(nil, @logger)
+          @event_manager = EventManager.new
         end
 
         register Bosh::Director::Api::Extensions::Scoping

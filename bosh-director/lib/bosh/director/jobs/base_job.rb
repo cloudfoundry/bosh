@@ -28,10 +28,6 @@ module Bosh::Director
         @result_file ||= Config.result
       end
 
-      def add_event (options)
-        #for some jobs
-      end
-
       def dns_manager
         @dns_manager ||= DnsManagerProvider.create
       end
@@ -70,6 +66,10 @@ module Bosh::Director
 
       def task_manager
         @task_manager ||= Api::TaskManager.new
+      end
+
+      def event_manager
+        @event_manager ||= Api::EventManager.new
       end
     end
   end

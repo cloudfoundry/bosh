@@ -21,22 +21,21 @@ module Bosh::Director
       context 'events' do
         before do
           Models::Event.make(
-              "target_type"  => "deployment",
-              "target_name"  => "simple",
-              "event_action" => "create",
-              "event_state"  => "started",
-              "event_result" => "running",
-              "task_id"      => 1,
-              "timestamp"    => timestamp
+              "timestamp"    => timestamp,
+              "user" => "test",
+              "action"  => "create",
+              "object_type"  => "deployment",
+              "object_name" => "depl1",
+              "task" => "1"
           )
           Models::Event.make(
-              "target_type"  => "deployment",
-              "target_name"  => "simple",
-              "event_action" => "create",
-              "event_state"  => "done",
-              "event_result" => "/deployment/simple",
-              "task_id"      => 1,
-              "timestamp"    => timestamp
+              "parent_id"  => 1,
+              "timestamp"    => timestamp,
+              "user" => "test",
+              "action"  => "create",
+              "object_type"  => "deployment",
+              "object_name" => "depl1",
+              "task" => "2",
           )
         end
 
@@ -55,21 +54,30 @@ module Bosh::Director
 
           expect(body.size).to eq(2)
 
-          expect(body.first['target_type']).to eq('deployment')
-          expect(body.first['target_name']).to eq('simple')
-          expect(body.first['event_action']).to eq('create')
-          expect(body.first['event_state']).to eq('started')
-          expect(body.first['event_result']).to eq('running')
-          expect(body.first['task_id']).to eq(1)
-          expect(body.first['timestamp']).to eq(timestamp.to_i)
+          expected = [
+              {'id'          => '2',
+               'parent_id'   => '1',
+               'timestamp'   => timestamp.to_i,
+               'user'        => 'test',
+               'action'      => 'create',
+               'object_type' => 'deployment',
+               'object_name'   => 'depl1',
+               'task'        => '2',
+               'context'     => {}
+              },
+              {
+                  'id'          => '1',
+                  'timestamp'   => timestamp.to_i,
+                  'user'        => 'test',
+                  'action'      => 'create',
+                  'object_type' => 'deployment',
+                  'object_name'   => 'depl1',
+                  'task'        => '1',
+                  'context'     => {}
+              }
 
-          expect(body.last['target_type']).to eq('deployment')
-          expect(body.last['target_name']).to eq('simple')
-          expect(body.last['event_action']).to eq('create')
-          expect(body.last['event_state']).to eq('done')
-          expect(body.last['event_result']).to eq('/deployment/simple')
-          expect(body.last['task_id']).to eq(1)
-          expect(body.last['timestamp']).to eq(timestamp.to_i)
+          ]
+          expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
         end
       end
     end

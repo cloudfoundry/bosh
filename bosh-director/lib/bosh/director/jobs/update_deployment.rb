@@ -29,10 +29,11 @@ module Bosh::Director
         end
 
         deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model)
-        deployment_name = deployment_manifest.to_hash['name']
-        @deployment_name = deployment_name
-        with_deployment_lock(deployment_name) do
-          @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
+
+        @deployment_name = deployment_manifest.to_hash['name']
+        parent_id        = add_event
+        with_deployment_lock(@deployment_name) do
+          @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
 
           deployment_plan = nil
@@ -50,6 +51,7 @@ module Bosh::Director
           update_step(deployment_plan).perform
           @notifier.send_end_event
           logger.info('Finished updating deployment')
+          add_event(parent_id)
 
           "/deployments/#{deployment_plan.name}"
         end
@@ -59,30 +61,30 @@ module Bosh::Director
         rescue Exception => e2
           # log the second error
         ensure
+          add_event(parent_id, e)
           raise e
         end
       ensure
         FileUtils.rm_rf(@manifest_file_path)
       end
 
-      def add_event(options)
-        state           = options[:event_state]
-        result          = options[:event_result]
-        task_id         = options[:task_id]
-        deployment_name = @deployment_name || Manifest.load_from_text(File.read(@manifest_file_path), nil).to_hash['name']
-        action = deployment_new?(deployment_name) ? "create" : "update"
-
-        event = Models::Event.new(target_type:  'deployment',
-                                  target_name:  deployment_name,
-                                  event_action: action,
-                                  event_state:  state,
-                                  event_result: result,
-                                  task_id:      task_id,
-                                  timestamp:    Time.now)
-        event.save
-      end
-
       private
+
+      def add_event(parent_id = nil, error = nil)
+        @user  = @user ||= task_manager.find_task(task_id).username
+        action = deployment_new? ? "create" : "update"
+        event  = event_manager.create_event(
+            {
+                parent_id:   parent_id,
+                user:        @user,
+                action:      action,
+                object_type: "deployment",
+                object_name: @deployment_name,
+                task:        task_id,
+                error:       error
+            })
+        event.id
+      end
 
       # Job tasks
 
@@ -111,8 +113,8 @@ module Bosh::Director
         end
       end
 
-      def deployment_new?(deployment_name)
-        @deployment_new ||= Models::Deployment[name: deployment_name].nil?
+      def deployment_new?
+        @deployment_new ||= Models::Deployment[name: @deployment_name].nil?
       end
     end
   end
