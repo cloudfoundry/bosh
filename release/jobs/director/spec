@@ -43,6 +43,9 @@ properties:
   director.nginx.workers:
     description: Number of nginx workers for director
     default: 2
+  director.workers:
+    description: Number of director workers
+    default: 3
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
