@@ -24,17 +24,29 @@ module Bosh::Cli::Command
         say(packages_table.render)
       end
 
+      private
+
       def build_jobs_table(release)
         table do |t|
-          t.headings = 'Job', 'Fingerprint', 'Blobstore ID', 'SHA1'
-          release['jobs'].each do |job|
+          t.headings = 'Job', 'Fingerprint', 'Blobstore ID', 'SHA1', 'Links Consumed', 'Links Provided'
+
+          release['jobs'].each_with_index do |job, index|
+
+            consumed_links = (job['consumes'].nil? ? '' : YAML.dump(job['consumes']).sub("---\n", ''))
+            provided_links = (job['provides'].nil? ? '' : YAML.dump(job['provides']).sub("---\n", ''))
+
+            color = (index.even? ? :yellow : :green)
+
             row = [
-                job['name'].make_yellow,
-                job['fingerprint'].make_yellow,
-                job['blobstore_id'].make_yellow,
-                job['sha1'].make_yellow]
+                job['name'].make_color(color),
+                job['fingerprint'].make_color(color),
+                job['blobstore_id'].make_color(color),
+                job['sha1'].make_color(color),
+                consumed_links.make_color(color),
+                provided_links.make_color(color)]
             t << row
           end
+
         end
       end
 

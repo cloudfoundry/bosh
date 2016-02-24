@@ -11,22 +11,27 @@ module Bosh::Director
           existing_instance: instance_model,
           desired_instance: DeploymentPlan::DesiredInstance.new(job),
           instance: instance,
-          network_plans: [],
         })
     end
+
+    let(:network_spec) do
+      {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
+    end
+    let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
+
     let(:job) do
       job = instance_double('Bosh::Director::DeploymentPlan::Job',
         name: 'fake-job',
         spec: {'name' => 'job'},
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {},
+        default_network: {"gateway" => "default"},
         vm_type: DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}),
         stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
         env: DeploymentPlan::Env.new({'key' => 'value'}),
         package_spec: {},
         persistent_disk_type: nil,
-        can_run_as_errand?: false,
+        is_errand?: false,
         link_spec: 'fake-link',
         compilation?: false,
         templates: [],
@@ -39,15 +44,22 @@ module Bosh::Director
         })
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, nil, logger) }
-    let(:instance_model) { Models::Instance.make(state: instance_model_state, uuid: 'uuid-1') }
+    let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
+    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, availability_zone, logger) }
+    let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }
     let(:instance_state) { 'started' }
     let(:instance_model_state) { 'stopped' }
 
-    before { instance.bind_existing_instance_model(instance_model) }
+    before do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
+      reservation.resolve_ip('192.168.0.10')
+
+      instance_plan.network_plans << DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
+      instance.bind_existing_instance_model(instance_model)
+    end
 
     describe 'applying state' do
       before do

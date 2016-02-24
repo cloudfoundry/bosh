@@ -123,6 +123,12 @@ module Bosh::Director
         end
 
         if templates
+          release_manager = Api::ReleaseManager.new
+
+          # Key: release name.
+          # Value: list of templates models of release version.
+          release_versions_templates_models_hash = {}
+
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)
             release_name = safe_property(template_spec, 'release', class: String, optional: true)
@@ -140,15 +146,48 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.get_or_create_template(template_name)
-
-            links = safe_property(template_spec, 'links', class: Hash, optional: true)
-            @logger.debug("Parsing template links: #{links.inspect}")
-
-            links.to_a.each do |name, path|
-              link_path = LinkPath.parse(@deployment.name, path, @logger)
-              @job.add_link_path(template_name, name, link_path)
+            if !release_versions_templates_models_hash.has_key?(release_name)
+              release_model = release_manager.find_by_name(release.name)
+              current_release_version = release_manager.find_version(release_model, release.version)
+              release_versions_templates_models_hash[release_name] = current_release_version.templates
             end
+
+            templates_models_list = release_versions_templates_models_hash[release_name]
+            current_template_model = templates_models_list.find {|target| target.name == template_name }
+
+            template = release.get_or_create_template(template_name)
+
+            if current_template_model == nil
+              raise "Template #{template_name} not found in Template table"
+            end
+
+            if current_template_model.consumes_json != nil
+              JSON.parse(current_template_model.consumes_json).each do |consumes_json|
+                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json, template_spec)
+              end
+            end
+            if current_template_model.provides_json != nil
+              JSON.parse(current_template_model.provides_json).each do |provides_json|
+                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json, template_spec)
+              end
+            end
+
+            provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
+            provides_links.to_a.each do |link_name, source|
+              template.add_link_info(@job.name, "provides", link_name, source, template_spec)
+            end
+
+            consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
+            consumes_links.to_a.each do |link_name, source|
+              template.add_link_info(@job.name, 'consumes', link_name, source, template_spec)
+            end
+
+            template.add_template_scoped_properties(
+                safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
+                @job.name
+            )
+
+            @job.templates << template
           end
         end
       end

@@ -23,7 +23,7 @@ module Bosh::Director
 
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
-      deployment_manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config)
+      deployment_manifest = Manifest.load_from_text(deployment_model.manifest, deployment_model.cloud_config, deployment_model.runtime_config)
       deployment_name = deployment_manifest.to_hash['name']
       with_deployment_lock(deployment_name) do
         deployment = nil
@@ -32,7 +32,7 @@ module Bosh::Director
         event_log.begin_stage('Preparing deployment', 1)
         event_log.track('Preparing deployment') do
           planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-          deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, {})
+          deployment = planner_factory.create_from_manifest(deployment_manifest, deployment_model.cloud_config, deployment_model.runtime_config, {})
           deployment.bind_models
           job = deployment.job(@errand_name)
 
@@ -40,7 +40,7 @@ module Bosh::Director
             raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
           end
 
-          unless job.can_run_as_errand?
+          unless job.is_errand?
             raise RunErrandError,
               "Job `#{job.name}' is not an errand. To mark a job as an errand " +
                 "set its lifecycle to 'errand' in the deployment manifest."

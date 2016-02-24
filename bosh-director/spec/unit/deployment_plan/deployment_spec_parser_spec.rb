@@ -310,6 +310,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job1-name',
                 canonical_name: 'job1-canonical-name',
+                templates: []
               })
             end
 
@@ -317,6 +318,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job2-name',
                 canonical_name: 'job2-canonical-name',
+                templates: []
               })
             end
 
@@ -340,6 +342,7 @@ module Bosh::Director
               allow(DeploymentPlan::Job).to receive(:parse).
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
                 and_return(job2)
+
 
               expect(parsed_deployment.job('job1-name')).to eq(job1)
               expect(parsed_deployment.job('job2-name')).to eq(job2)

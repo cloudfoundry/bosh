@@ -97,6 +97,9 @@ properties:
   director.debug.keep_unreachable_vms:
     description: When a bosh deploy fails, the failed VM will be kept instead of destroyed
     default: false
+  director.enable_post_deploy:
+    description: When true, all templates will run their post_deploy script once deployment is complete
+    default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:

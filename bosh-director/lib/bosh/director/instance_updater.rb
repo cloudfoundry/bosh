@@ -98,7 +98,14 @@ module Bosh::Director
       job = instance_plan.desired_instance.job
       min_watch_time = get_min_watch_time(job.update)
       max_watch_time = get_max_watch_time(job.update)
-      state_applier.post_start(min_watch_time, max_watch_time)
+
+      begin
+        state_applier.post_start(min_watch_time, max_watch_time)
+        instance.update_post_start_completed(true)
+      rescue Exception => e
+        instance.update_post_start_completed(false)
+        raise e
+      end
     end
 
     private

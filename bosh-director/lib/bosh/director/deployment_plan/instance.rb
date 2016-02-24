@@ -25,8 +25,6 @@ module Bosh::Director
       # @return [String] job state
       attr_reader :virtual_state
 
-      attr_reader :current_state
-
       attr_reader :availability_zone
 
       attr_reader :existing_network_reservations
@@ -73,6 +71,9 @@ module Bosh::Director
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
+
+        # This state is coming from the agent, we
+        # only need networks and job_state from it.
         @current_state = instance_state || {}
 
         # reservation generated from current state/DB
@@ -198,29 +199,28 @@ module Bosh::Director
         changed
       end
 
-      ##
-      # @return [Boolean] returns true if the expected configuration hash
-      #   differs from the one provided by the VM
-      def configuration_changed?
-        changed = configuration_hash != @current_state['configuration_hash']
-        log_changes(__method__, @current_state['configuration_hash'], configuration_hash) if changed
-        changed
-      end
-
       def current_job_spec
-        @current_state['job']
+        @model.spec['job']
       end
 
       def current_packages
-        @current_state['packages']
+        @model.spec['packages']
       end
 
       def current_job_state
         @current_state['job_state']
       end
 
+      def current_networks
+        @current_state['networks']
+      end
+
       def update_state
         @model.update(state: state)
+      end
+
+      def update_post_start_completed(value)
+        @model.update(post_start_completed: value)
       end
 
       def update_description

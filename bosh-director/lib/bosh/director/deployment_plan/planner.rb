@@ -1,5 +1,6 @@
 require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
+require 'bosh/director/deployment_plan/runtime_manifest_parser'
 require 'bosh/director/deployment_plan/disk_type'
 require 'forwardable'
 require 'common/deep_copy'
@@ -51,15 +52,14 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
-        @cloud_config = cloud_config
-
+      def initialize(attrs, manifest_text, cloud_config, runtime_config, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
         @manifest_text = Bosh::Common::DeepCopy.copy(manifest_text)
         @cloud_config = cloud_config
+        @runtime_config = runtime_config
         @model = deployment_model
 
         @stemcells = {}
@@ -98,7 +98,7 @@ module Bosh::Director
         Canonicalizer.canonicalize(@name)
       end
 
-      def bind_models
+      def bind_models(skip_links_binding = false)
         stemcell_manager = Api::StemcellManager.new
         dns_manager = DnsManagerProvider.create
         assembler = DeploymentPlan::Assembler.new(
@@ -109,7 +109,7 @@ module Bosh::Director
           @logger
         )
 
-        assembler.bind_models
+        assembler.bind_models(skip_links_binding)
       end
 
       def compile_packages
@@ -225,7 +225,19 @@ module Bosh::Director
       end
 
       def jobs_starting_on_deploy
-        @jobs.select(&:starts_on_deploy?)
+        jobs = []
+
+        @jobs.each do |job|
+          if job.is_service?
+            jobs << job
+          elsif job.is_errand?
+            if job.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
+              jobs << job
+            end
+          end
+        end
+
+        jobs
       end
 
       def persist_updates!
@@ -241,6 +253,7 @@ module Bosh::Director
 
         model.manifest = Psych.dump(@manifest_text)
         model.cloud_config = @cloud_config
+        model.runtime_config = @runtime_config
         model.link_spec = @link_spec
         model.save
       end

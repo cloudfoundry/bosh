@@ -3,16 +3,39 @@ module Bosh::Director
     # tested in link_resolver_spec
 
     class LinkLookupFactory
-      def self.create(required_link, link_path, deployment_plan)
+      def self.create(consumed_link, link_path, deployment_plan, link_network, consumes_job, consumes_template)
         if link_path.deployment == deployment_plan.name
-          PlannerLinkLookup.new(required_link, link_path, deployment_plan)
+          if link_network
+            link_provider_job = deployment_plan.job(link_path.job)
+
+            valid_network = link_provider_job.networks.any? do |network|
+              network.name == link_network
+            end
+
+            unless valid_network
+              available_networks = link_provider_job.networks.map { |network| network.name }.join(', ')
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks}."
+            end
+          end
+
+          PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
         else
           deployment = Models::Deployment.find(name: link_path.deployment)
           unless deployment
-            raise DeploymentInvalidLink, "Link '#{required_link}' references unknown deployment '#{link_path.deployment}'"
+            raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
 
-          DeploymentLinkSpecLookup.new(required_link, link_path, deployment.link_spec)
+          if link_network
+            link_spec = deployment.link_spec[link_path.job][link_path.template][link_path.name][consumed_link.type]
+
+            valid_network = link_spec['available_networks'].include? link_network
+
+            unless valid_network
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{link_spec['available_networks'].join(', ')}."
+            end
+          end
+
+          DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)
         end
       end
     end
@@ -21,10 +44,11 @@ module Bosh::Director
 
     # Used to find link source from deployment plan
     class PlannerLinkLookup
-      def initialize(required_link, link_path, deployment_plan)
-        @required_link = required_link
+      def initialize(consumed_link, link_path, deployment_plan, link_network)
+        @consumed_link = consumed_link
         @link_path = link_path
         @jobs = deployment_plan.jobs
+        @link_network = link_network
       end
 
       def find_link_spec
@@ -34,19 +58,20 @@ module Bosh::Director
         template = job.templates.find { |t| t.name == @link_path.template }
         return nil unless template
 
-        found = template.provided_links.find { |p| p.name == @link_path.name && p.type == @required_link.type }
+        found = template.provided_links(job.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
         return nil unless found
 
-        Link.new(@link_path.name, job).spec
+        Link.new(@link_path.name, job, template, @link_network).spec
       end
     end
 
     # Used to find link source from link spec in deployment model (saved in DB)
     class DeploymentLinkSpecLookup
-      def initialize(required_link, link_path, deployment_link_spec)
-        @required_link = required_link
+      def initialize(consumed_link, link_path, deployment_link_spec, link_network)
+        @consumed_link = consumed_link
         @link_path = link_path
         @deployment_link_spec = deployment_link_spec
+        @link_network = link_network
       end
 
       def find_link_spec
@@ -56,10 +81,16 @@ module Bosh::Director
         template = job[@link_path.template]
         return nil unless template
 
-        link_path = template.fetch(@link_path.name, {})[@required_link.type]
-        return nil unless link_path
+        link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
+        return nil unless link_spec
 
-        link_path
+        if @link_network
+          link_spec['instances'].each do |instance|
+            instance['address'] = instance['addresses'][@link_network]
+          end
+        end
+
+        link_spec
       end
     end
   end

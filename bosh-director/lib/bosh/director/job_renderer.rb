@@ -12,8 +12,8 @@ module Bosh::Director
       @logger = logger
     end
 
-    def render_job_instances(instance_plan)
-      instance_plan.each { |instance_plan| render_job_instance(instance_plan) }
+    def render_job_instances(instance_plans)
+      instance_plans.each { |instance_plan| render_job_instance(instance_plan) }
     end
 
     def render_job_instance(instance_plan)

@@ -63,6 +63,7 @@ module Bosh::Director::Models
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
     package_names_json  { "[]" }
+    properties          { {} }
   end
 
   Stemcell.blueprint do
@@ -159,6 +160,10 @@ module Bosh::Director::Models
 
   CloudConfig.blueprint do
     manifest { Bosh::Spec::Deployments.simple_cloud_config }
+  end
+
+  RuntimeConfig.blueprint do
+    manifest { Bosh::Spec::Deployments.simple_runtime_config }
   end
 
   DeploymentProperty.blueprint do

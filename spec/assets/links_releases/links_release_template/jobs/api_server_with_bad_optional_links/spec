@@ -1,0 +1,12 @@
+---
+name: api_server_with_bad_optional_links
+templates:
+  config.yml.erb: config.yml
+
+packages:
+    - pkg_3_depends_on_2
+
+consumes:
+  - {name: optional_link_name, type: optional_link_type, optional: true}
+
+properties: {}

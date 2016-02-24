@@ -11,6 +11,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       model: deployment,
       name: 'fake-deployment',
       ip_provider: fake_ip_provider,
+      releases: {}
     )
   end
   let(:vm_type) { instance_double('Bosh::Director::DeploymentPlan::VmType') }
@@ -57,6 +58,15 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
     allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
+
+    allow(foo_template).to receive(:template_scoped_properties)
+    allow(bar_template).to receive(:template_scoped_properties)
+
+    allow(foo_template).to receive(:add_template_scoped_properties)
+    allow(bar_template).to receive(:add_template_scoped_properties)
+
+    allow(foo_template).to receive(:has_template_scoped_properties).and_return(false)
+    allow(bar_template).to receive(:has_template_scoped_properties).and_return(false)
   end
 
   describe '#bind_properties' do
@@ -91,7 +101,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(plan).to receive(:release).with('appcloud').and_return(release)
     end
 
-    context 'when all the templates specify properties' do
+    context 'when all the job specs (aka templates) specify properties' do
       it 'should drop deployment manifest properties not specified in the job spec properties' do
         job.bind_properties
         expect(job.properties).to_not have_key('cc')
@@ -133,6 +143,18 @@ describe Bosh::Director::DeploymentPlan::Job do
           ' between its job spec templates.  This may occur if colocating jobs, one of which has a spec file' +
           " including `properties' and one which doesn't."
         )
+      end
+    end
+
+    context 'when the deployment manifest specifies properties for templates' do
+      before do
+        allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
+      end
+
+      it 'only bond the local properties ' do
+        expect(foo_template).to receive(:bind_template_scoped_properties)
+        job.bind_properties
+        expect(job.properties).to eq({"dea_max_memory"=>1024})
       end
     end
   end
@@ -194,7 +216,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#validate_package_names_do_not_collide!' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1') }
+    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
     before { allow(plan).to receive(:properties).and_return({}) }
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -206,6 +228,15 @@ describe Bosh::Director::DeploymentPlan::Job do
     before { allow(plan).to receive(:release).with('release1').and_return(release) }
 
     context 'when the templates are from the same release' do
+      before do
+        release = Bosh::Director::Models::Release.make(name: 'release1')
+        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release)
+        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release)
+        release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release)
+        release_version.add_template(template1)
+        release_version.add_template(template2)
+      end
+
       let(:spec) do
         {
           'name' => 'foobar',
@@ -234,6 +265,18 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
 
     context 'when the templates are from different releases' do
+      before do
+        release1 = Bosh::Director::Models::Release.make(name: 'release1')
+        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release1)
+        release_version1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1)
+        release_version1.add_template(template1)
+
+        release2 = Bosh::Director::Models::Release.make(name: 'bar_release')
+        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release2)
+        release_version2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release2)
+        release_version2.add_template(template2)
+      end
+
       let(:spec) do
         {
           'name' => 'foobar',
@@ -252,7 +295,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:releases).with(no_args).and_return([release, bar_release]) }
 
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
-      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
+      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release', version: '1') }
 
       before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_template) }
       let(:bar_template) do
@@ -309,6 +352,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(foo_template).to receive(:version).and_return('200')
       allow(foo_template).to receive(:sha1).and_return('fake_sha1')
       allow(foo_template).to receive(:blobstore_id).and_return('blobstore_id_for_foo_template')
+      allow(foo_template).to receive(:template_scoped_properties).and_return({})
 
       allow(plan).to receive(:releases).with(no_args).and_return([release])
       allow(plan).to receive(:release).with('release1').and_return(release)
@@ -442,31 +486,31 @@ describe Bosh::Director::DeploymentPlan::Job do
     end
   end
 
-  describe '#starts_on_deploy?' do
+  describe '#is_service?' do
     subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
-      its(:starts_on_deploy?) { should be(true) }
+      its(:is_service?) { should be(true) }
     end
 
     context 'when lifecycle profile is not service' do
       before { subject.lifecycle = 'other' }
-      its(:starts_on_deploy?) { should be(false) }
+      its(:is_service?) { should be(false) }
     end
   end
 
-  describe '#can_run_as_errand?' do
+  describe '#is_errand?' do
     subject { described_class.new(logger) }
 
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }
-      its(:can_run_as_errand?) { should be(true) }
+      its(:is_errand?) { should be(true) }
     end
 
     context 'when lifecycle profile is not errand' do
       before { subject.lifecycle = 'other' }
-      its(:can_run_as_errand?) { should be(false) }
+      its(:is_errand?) { should be(false) }
     end
   end
 
@@ -512,4 +556,5 @@ describe Bosh::Director::DeploymentPlan::Job do
       expect(job.obsolete_instance_plans).to eq([instance_plan3])
     end
   end
+
 end

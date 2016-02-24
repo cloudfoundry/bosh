@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
-    let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, {}) }
+    let(:planner) { planner_factory.create_from_manifest(manifest_hash, cloud_config_model, nil, {}) }
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
@@ -88,8 +88,8 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_repo) { DeploymentRepo.new }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash) }
-    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, {}) }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, cloud_config_hash, nil) }
+    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
     let(:job) { planner.jobs.first }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
@@ -104,6 +104,11 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_job
       allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
+
+      release = Bosh::Director::Models::Release.make(name: 'bosh-release')
+      template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
+      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+      release_version.add_template(template)
     end
 
     describe '#place_and_match_in' do
