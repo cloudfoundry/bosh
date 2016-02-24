@@ -76,6 +76,33 @@ module Bosh::Director
       rescue SystemCallError => e
         raise SystemError, e.message
       end
+
+      def prepare_yml_file(yml_stream, manifest_type, skip_validation = false)
+        random_file_name = "#{manifest_type}-#{SecureRandom.uuid}"
+        tmp_manifest_dir = Dir::tmpdir
+
+        manifest_file_path = File.join(tmp_manifest_dir, random_file_name)
+        unless check_available_disk_space(tmp_manifest_dir, yml_stream.size)
+          raise NotEnoughDiskSpace, 'Uploading manifest failed. ' +
+              "Insufficient space on BOSH director in #{tmp_manifest_dir}"
+        end
+
+        write_file(manifest_file_path, yml_stream)
+
+        validate_manifest_yml(File.read(manifest_file_path)) unless skip_validation
+
+        manifest_file_path
+      end
+
+      def validate_manifest_yml(yml_string)
+        raise BadManifest, 'Manifest should not be empty' unless yml_string.to_s != ''
+
+        begin
+          Psych.parse(yml_string)
+        rescue Psych::SyntaxError => e
+          raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
+        end
+      end
     end
   end
 end

@@ -26,6 +26,8 @@ module Bosh::Director
         def perform
           jobs = filtered_jobs
 
+          resolved_problems = 0
+
           begin
             with_deployment_lock(@deployment, :timeout => 0) do
 
@@ -34,9 +36,12 @@ module Bosh::Director
               scanner.scan_vms(jobs)
 
               resolver = ProblemResolver.new(@deployment)
-              resolver.apply_resolutions(resolutions(jobs))
+              resolved_problems = resolver.apply_resolutions(resolutions(jobs))
 
               'scan and fix complete'
+            end
+            if resolved_problems > 0
+              PostDeploymentScriptRunner.run_post_deploys_after_resurrection(@deployment)
             end
           rescue Lock::TimeoutError
             raise 'Unable to get deployment lock, maybe a deployment is in progress. Try again later.'

@@ -10,8 +10,10 @@ module Bosh
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
+        let(:runtime_config_model) { Models::RuntimeConfig.make(manifest: runtime_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
-        let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash)}
+        let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
+        let(:manifest) { Manifest.new(manifest_hash, cloud_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -38,7 +40,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest, cloud_config_model, plan_options)
+            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
           end
 
           it 'returns a planner' do
@@ -83,7 +85,7 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest, cloud_config_model, plan_options)
+              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
@@ -121,11 +123,12 @@ LOGMESSAGE
                 manifest_hash
               end
 
-              it 'has the releases from the deployment manifest' do
+              it 'has the releases from the deployment manifest and the addon' do
                 expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
                   [
                     ['bosh-release', '1'],
-                    ['bar-release', '2']
+                    ['bar-release', '2'],
+                    ["test_release_2", "2"]
                   ]
                 )
               end
@@ -209,6 +212,94 @@ LOGMESSAGE
               end
             end
           end
+
+          describe 'links' do
+              context 'when a job consumes a link' do
+                before do
+                    manifest_hash.merge!('jobs' => [
+                       { 'name' => 'job1-name',
+                         'templates' => [{
+                             'name' => 'provides_template',
+                             'consumes' => {
+                                 'link_name' => {'from' => 'link_name'}
+                             }
+                         }]
+                       }
+                   ])
+                end
+
+                let(:template1) do
+                  instance_double('Bosh::Director::DeploymentPlan::Template',
+                      {
+                          name: 'provides_template',
+                          link_infos:{
+                              'job1-name' => {
+                                  'consumes' => {
+                                      'link_name' => {
+                                          'name' => 'link_name',
+                                          'type' => 'link_type'
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  )
+                end
+
+                let(:job1) do
+                  instance_double('Bosh::Director::DeploymentPlan::Job',
+                    {
+                        name: 'job1-name',
+                        canonical_name: 'job1-canonical-name',
+                        templates: [template1]
+                    })
+                end
+
+                let(:link_path) do
+                  instance_double(
+                      'Bosh::Director::DeploymentPlan::LinkPath',
+                      {
+                          deployment: 'deployment_name',
+                          job: 'job_name',
+                          template: 'provides_template',
+                          name: 'link_name',
+                          path: 'deployment_name.job_name.provides_template.link_name',
+                          skip: false
+                      }
+                  )
+                end
+
+                let(:skipped_link_path) do
+                  instance_double(
+                      'Bosh::Director::DeploymentPlan::LinkPath',
+                      {
+                          deployment: 'deployment_name',
+                          job: 'job_name',
+                          template: 'provides_template',
+                          name: 'link_name',
+                          path: 'deployment_name.job_name.provides_template.link_name',
+                          skip: true
+                      }
+                  )
+                end
+
+                it 'should have a link_path' do
+                  allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                  expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
+                  expect(link_path).to receive(:parse)
+                  expect(job1).to receive(:add_link_path).with("provides_template", 'link_name', link_path)
+                  planner
+                end
+
+                it 'should not add a link path if no links found for optional ones, and it should not fail' do
+                  allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                  expect(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
+                  expect(skipped_link_path).to receive(:parse)
+                  expect(job1).to_not receive(:add_link_path)
+                  planner
+                end
+              end
+          end
         end
 
         def configure_config
@@ -225,6 +316,11 @@ LOGMESSAGE
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
+          end
+
+          runtime_config_hash['releases'].each do |release_entry|
+            release = Models::Release.make(name: release_entry['name'])
+            Models::ReleaseVersion.make(release: release, version: release_entry['version'])
           end
         end
 

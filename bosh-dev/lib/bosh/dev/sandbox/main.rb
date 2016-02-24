@@ -168,6 +168,7 @@ module Bosh::Dev::Sandbox
         user_authentication: @user_authentication,
         trusted_certs: @trusted_certs,
         users_in_manifest: @users_in_manifest,
+        enable_post_deploy: @enable_post_deploy
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -271,6 +272,7 @@ module Bosh::Dev::Sandbox
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
+      @enable_post_deploy = options.fetch(:enable_post_deploy, false)
     end
 
     def certificate_path

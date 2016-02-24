@@ -13,7 +13,8 @@ module Bosh::Dev::Sandbox
       :user_authentication,
       :uaa_url,
       :trusted_certs,
-      :users_in_manifest
+      :users_in_manifest,
+      :enable_post_deploy
 
 
     def initialize(attrs, port_provider)
@@ -39,6 +40,8 @@ module Bosh::Dev::Sandbox
 
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
+
+      @enable_post_deploy = attrs.fetch(:enable_post_deploy, false)
     end
 
     def render(template_path)

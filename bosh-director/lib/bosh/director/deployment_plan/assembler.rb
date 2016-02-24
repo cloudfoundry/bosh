@@ -13,7 +13,7 @@ module Bosh::Director
       @dns_manager = dns_manager
     end
 
-    def bind_models
+    def bind_models(skip_links_binding = false)
       @logger.info('Binding models')
       bind_releases
 
@@ -43,7 +43,11 @@ module Bosh::Director
       bind_properties
       bind_instance_networks
       bind_dns
-      bind_links
+
+      if (!skip_links_binding)
+        bind_links
+      end
+
     end
 
     private

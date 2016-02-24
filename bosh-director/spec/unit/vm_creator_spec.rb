@@ -17,7 +17,7 @@ describe Bosh::Director::VmCreator do
       get_state: nil
     )
   end
-  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManagerProvider.create).to_hash }
+  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManagerProvider.create).to_hash }
   let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
     instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -71,6 +71,7 @@ describe Bosh::Director::VmCreator do
     job.stemcell = stemcell
     job.env = env
     job.templates << template
+    job.default_network = {"gateway" => "name"}
     job
   end
 

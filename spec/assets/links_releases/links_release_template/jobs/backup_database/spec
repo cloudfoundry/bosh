@@ -1,0 +1,9 @@
+---
+name: backup_database
+templates: {}
+packages: []
+
+provides:
+- {name: backup_db, type: db}
+
+properties: {}

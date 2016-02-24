@@ -56,4 +56,63 @@ describe 'template', type: :integration do
 
     expect(new_id).to eq(original_id)
   end
+
+  it 'prints all template evaluation errors when there are errors in multiple release template files' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'] = [
+        {
+            'name' => 'foobar',
+            'templates' => ['name' => 'foobar_with_bad_properties'],
+            'resource_pool' => 'a',
+            'instances' => 1,
+            'networks' => [{
+                               'name' => 'a',
+                           }],
+            'properties' => {},
+        }
+    ]
+
+    output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+
+    expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job foobar. Errors are:
+     - Unable to render release templates for release job foobar_with_bad_properties. Errors are:
+       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+    EOF
+  end
+
+  it 'prints all template evaluation errors when there are errors in multiple job deployment templates' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'] = [
+        {
+            'name' => 'foobar',
+            'templates' => [
+                # {'name' => 'foobar'},
+                {'name' => 'foobar_with_bad_properties'},
+                {'name' => 'foobar_with_bad_properties_2'}
+            ],
+            'resource_pool' => 'a',
+            'instances' => 1,
+            'networks' => [{
+                               'name' => 'a',
+                           }],
+            'properties' => {},
+        }
+    ]
+
+    output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+
+    expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job foobar. Errors are:
+     - Unable to render release templates for release job foobar_with_bad_properties. Errors are:
+       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+     - Unable to render release templates for release job foobar_with_bad_properties_2. Errors are:
+       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+    EOF
+  end
 end
