@@ -247,8 +247,9 @@ describe 'deploy', type: :integration do
 
           vms = director.vms
           index_ip_hash = Hash[*vms.map {|vm| [vm.index, vm.ips]}.flatten]
-
+          agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
           agent_id_2 = director.vm('job_to_test_forceful_arp', '2').agent_id
+
 
           # Change stemcell deployment (forces all VMs to update)
           upload_stemcell_2
@@ -258,22 +259,21 @@ describe 'deploy', type: :integration do
 
           deploy({})
 
+          agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
+          agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
+
+          agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
           agent_log_2 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
 
+          expect(agent_log_1).to include("Running async action delete_from_arp")
           expect(agent_log_2).to include("Running async action delete_from_arp")
+          expect(agent_log_1).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
           expect(agent_log_2).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
-          expect(agent_log_2).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["1"]}\"]")
-
-          agent_id_0 = director.vm('job_to_test_forceful_arp', '0').agent_id
-          agent_id_1 = director.vm('job_to_test_forceful_arp', '1').agent_id
-
-          agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
-          agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
 
           expect(agent_log_0).to include("Running async action delete_from_arp")
-          expect(agent_log_1).to include("Running async action delete_from_arp")
+          expect(agent_log_0).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["1"]}\"]")
           expect(agent_log_0).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["2"]}\"]")
-          expect(agent_log_1).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["2"]}\"]")
+
         end
       end
     end
