@@ -74,6 +74,10 @@
     end
     if_p('openstack.connection_options') do |connection_options|
       cloud_params['openstack']['connection_options'] = connection_options
+      if connection_options['ca_cert']
+        connection_options['ssl_ca_file'] = '/var/vcap/jobs/registry/config/cacert.pem'
+        connection_options.delete('ca_cert')
+      end
     end
   end
 

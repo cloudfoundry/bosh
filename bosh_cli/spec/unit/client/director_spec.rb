@@ -658,7 +658,7 @@ describe Bosh::Cli::Client::Director do
 
       it 'reports timeout if the director can not be restarted in time' do
         expect(@director).to receive(:get).
-                                 with('/info', 'application/json').twice.
+                                 with('/info', 'application/json').at_least(:once).
                                  and_return([200, '{}'])
         expect(@director.check_director_restart(1, 1)).to eql(false)
       end

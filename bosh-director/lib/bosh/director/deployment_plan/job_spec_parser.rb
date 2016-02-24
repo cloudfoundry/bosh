@@ -116,6 +116,11 @@ module Bosh::Director
 
       def parse_templates
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
+        jobs = safe_property(@job_spec, 'jobs', class: Array, optional: true)
+
+        if jobs && !jobs.empty?
+          templates = jobs
+        end
 
         if templates
           release_manager = Api::ReleaseManager.new
@@ -364,15 +369,23 @@ module Bosh::Director
       def validate_templates
         template_property = safe_property(@job_spec, 'template', optional: true)
         templates_property = safe_property(@job_spec, 'templates', optional: true)
+        jobs_property = safe_property(@job_spec, 'jobs', optional: true)
 
         if template_property && templates_property
-          raise JobInvalidTemplates,
-                "Job `#{@job.name}' specifies both template and templates keys, only one is allowed"
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and templates keys, only one is allowed"
         end
 
-        if [template_property, templates_property].compact.empty?
+        if templates_property && jobs_property
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both templates and jobs keys, only one is allowed"
+        end
+
+        if template_property && jobs_property
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and jobs keys, only one is allowed"
+        end
+
+        if [template_property, templates_property, jobs_property].compact.empty?
           raise ValidationMissingField,
-                "Job `#{@job.name}' does not specify template or templates keys, one is required"
+                "Job `#{@job.name}' does not specify template, templates, or jobs keys, one is required"
         end
       end
 

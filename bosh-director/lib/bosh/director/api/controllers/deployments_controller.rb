@@ -142,7 +142,7 @@ module Bosh::Director
 
       delete '/:deployment/snapshots/:cid' do
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
+        @snapshot_manager.find_by_cid(deployment, params[:cid])
 
         task = @snapshot_manager.delete_snapshots_task(current_user, [params[:cid]])
         redirect "/tasks/#{task.id}"
@@ -150,8 +150,8 @@ module Bosh::Director
 
       get '/', scope: :read do
         latest_cloud_config = Api::CloudConfigManager.new.latest
-        deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
-        cloud_config = if deployment.cloud_config.nil?
+        deployments = @deployment_manager.find_available(token_scopes).map do |deployment|
+          cloud_config = if deployment.cloud_config.nil?
                          'none'
                        elsif deployment.cloud_config == latest_cloud_config
                          'latest'
@@ -296,7 +296,9 @@ module Bosh::Director
           runtime_config = Api::RuntimeConfigManager.new.latest
         end
 
+        options.merge!('scopes' => token_scopes)
         task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, options)
+
         redirect "/tasks/#{task.id}"
       end
 

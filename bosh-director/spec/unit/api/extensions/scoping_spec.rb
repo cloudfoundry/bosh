@@ -49,7 +49,7 @@ module Bosh::Director
             end
 
             context 'when identity provider is not UAA' do
-              let(:identity_provider) { Api::LocalIdentityProvider.new({}, {}) }
+              let(:identity_provider) { Api::LocalIdentityProvider.new({}) }
 
               it 'return generic error messsage' do
                 get '/test_route'

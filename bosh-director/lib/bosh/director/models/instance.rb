@@ -61,6 +61,10 @@ module Bosh::Director::Models
       self.dns_records = JSON.dump(list)
     end
 
+    def name
+      "#{self.job}/#{self.uuid}"
+    end
+
     def to_s
       "#{self.job}/#{self.index} (#{self.uuid})"
     end

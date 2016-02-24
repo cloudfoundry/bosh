@@ -49,7 +49,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     let(:job_spec) do
       {
         'name'      => 'fake-job-name',
-        'templates' => [],
+        'jobs' => [],
         'release'   => 'fake-release-name',
         'resource_pool' => 'fake-resource-pool-name',
         'instances' => 1,
@@ -140,7 +140,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'template key' do
-      before { job_spec.delete('templates') }
+      before { job_spec.delete('jobs') }
       before { allow(event_log).to receive(:warn_deprecated) }
 
       it 'parses a single template' do
@@ -247,11 +247,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    describe 'templates key' do
+    shared_examples_for 'templates/jobs key' do
+      before { job_spec.delete('jobs') }
+
       context 'when value is an array of hashes' do
         context 'when one of the hashes specifies a release' do
           before do
-            job_spec['templates'] = [{
+            job_spec[keyword] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
               'consumes' => {'a' => {'from' => 'link_name'}}
@@ -352,7 +354,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           end
 
           before do
-            job_spec['templates'] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}]
+            job_spec[keyword] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}]
             fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
             fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
             fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
@@ -429,7 +431,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the hashes specifies a release not specified in a deployment' do
           before do
-            job_spec['templates'] = [{
+            job_spec[keyword] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
             }]
@@ -453,7 +455,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when multiple hashes have the same name' do
           before do
-            job_spec['templates'] = [
+            job_spec[keyword] = [
               {'name' => 'fake-template-name1'},
               {'name' => 'fake-template-name2'},
               {'name' => 'fake-template-name1'},
@@ -505,7 +507,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           end
 
           it 'uses the correct release for each template' do
-            job_spec['templates'] = [
+            job_spec[keyword] = [
               {'name' => 'fake-template-name1', 'release' => 'fake-template-release1', 'links' => {}},
               {'name' => 'fake-template-name2', 'release' => 'fake-template-release2', 'links' => {}},
             ]
@@ -543,7 +545,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the hashes is missing a name' do
           it 'raises an error because that is how template will be found' do
-            job_spec['templates'] = [{}]
+            job_spec[keyword] = [{}]
             expect {
               parser.parse(job_spec)
             }.to raise_error(
@@ -555,7 +557,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the elements is not a hash' do
           it 'raises an error' do
-            job_spec['templates'] = ['not-a-hash']
+            job_spec[keyword] = ['not-a-hash']
             expect {
               parser.parse(job_spec)
             }.to raise_error(
@@ -613,15 +615,25 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
       context 'when value is not an array' do
         it 'raises an error' do
-          job_spec['templates'] = 'not-an-array'
+          job_spec[keyword] = 'not-an-array'
           expect {
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::ValidationInvalidType,
-            %{Property `templates' (value "not-an-array") did not match the required type `Array'},
+            %{Property `#{keyword}' (value "not-an-array") did not match the required type `Array'},
           )
         end
       end
+    end
+
+    describe 'templates key' do
+      let(:keyword) { "templates" }
+      it_behaves_like "templates/jobs key"
+    end
+
+    describe 'jobs key' do
+      let(:keyword) { "jobs" }
+      it_behaves_like "templates/jobs key"
     end
 
     describe 'validating job templates' do
@@ -640,16 +652,32 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
       end
 
+      context 'when both jobs and templates are specified' do
+        before do
+          job_spec['templates'] = []
+          job_spec['jobs'] = []
+        end
+        before { allow(event_log).to receive(:warn_deprecated) }
+
+        it 'raises' do
+          expect { parser.parse(job_spec) }.to raise_error(
+                                                   Bosh::Director::JobInvalidTemplates,
+                                                   "Job `fake-job-name' specifies both templates and jobs keys, only one is allowed"
+                                               )
+        end
+      end
+
       context 'when neither key is specified' do
         before do
           job_spec.delete('templates')
           job_spec.delete('template')
+          job_spec.delete('jobs')
         end
 
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::ValidationMissingField,
-             "Job `fake-job-name' does not specify template or templates keys, one is required"
+             "Job `fake-job-name' does not specify template, templates, or jobs keys, one is required"
           )
         end
       end

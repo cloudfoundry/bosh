@@ -115,6 +115,7 @@ module Bosh::Director
             state: state,
             compilation: @compilation,
             uuid: SecureRandom.uuid,
+            availability_zone: availability_zone_name,
             bootstrap: false
           })
         @uuid = @model.uuid

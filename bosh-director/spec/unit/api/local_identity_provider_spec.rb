@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::LocalIdentityProvider do
-    subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}, 'fake-uuid') }
+    subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}) }
     let(:users) { [{'name' => 'admin', 'password' => 'admin'}] }
     let(:credentials) do
       {
@@ -25,12 +25,12 @@ module Bosh::Director
       let(:request_env) { { 'HTTP_AUTHORIZATION' => credentials[:admin] } }
 
       it 'returns the username of the authenticated user' do
-        local_user = identity_provider.get_user(request_env)
+        local_user = identity_provider.get_user(request_env, {})
         expect(local_user.username).to eq('admin')
       end
 
       it 'validates user access' do
-        local_user = identity_provider.get_user(request_env)
+        local_user = identity_provider.get_user(request_env, {})
         expect(identity_provider.valid_access?(local_user, {})).to be(true)
       end
     end
@@ -40,7 +40,7 @@ module Bosh::Director
 
       it 'raises' do
         expect {
-          identity_provider.get_user(request_env)
+          identity_provider.get_user(request_env, {})
         }.to raise_error(AuthenticationError)
       end
     end

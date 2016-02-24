@@ -177,6 +177,10 @@ module IntegrationExampleGroup
     bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   end
 
+  def cid_from(bosh_output)
+    bosh_output[/[0-9a-f]{32}/, 0]
+  end
+
   def scrub_time(bosh_output)
     bosh_output.gsub /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [-+][0-9]{4}/, '0000-00-00 00:00:00 -0000'
   end

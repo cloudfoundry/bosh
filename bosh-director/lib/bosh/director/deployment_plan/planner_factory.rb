@@ -51,7 +51,7 @@ module Bosh
           @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
           name = deployment_manifest['name']
 
-          deployment_model = @deployment_repo.find_or_create_by_name(name)
+          deployment_model = @deployment_repo.find_or_create_by_name(name, options)
 
           attrs = {
             name: name,

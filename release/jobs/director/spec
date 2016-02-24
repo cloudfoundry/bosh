@@ -26,11 +26,11 @@ packages:
 - ruby
 
 properties:
-  director.env.http_proxy:
+  env.http_proxy:
     description: HTTP proxy that the director, scheduler and workers should use
-  director.env.https_proxy:
+  env.https_proxy:
     description: HTTPS proxy that the director, scheduler and workers should use
-  director.env.no_proxy:
+  env.no_proxy:
     description: List of comma-separated hosts that should skip connecting to the proxy in the director, scheduler and workers
   director.name:
     description: Name of the director

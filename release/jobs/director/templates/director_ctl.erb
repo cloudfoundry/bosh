@@ -29,15 +29,15 @@ export TMPDIR=/var/vcap/data/tmp/director
 export C_INCLUDE_PATH=/var/vcap/packages/sqlite/include:/var/vcap/packages/libpq/include:$C_INCLUDE_PATH
 export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:/var/vcap/packages/mysqlclient/lib:$LIBRARY_PATH
 
-<% if_p('director.env.http_proxy') do |http_proxy| %>
+<% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY=<%= http_proxy %>
 export http_proxy=<%= http_proxy %>
 <% end %>
-<% if_p('director.env.https_proxy') do |https_proxy| %>
+<% if_p('env.https_proxy') do |https_proxy| %>
 export HTTPS_PROXY=<%= https_proxy %>
 export https_proxy=<%= https_proxy %>
 <% end %>
-<% if_p('director.env.no_proxy') do |no_proxy| %>
+<% if_p('env.no_proxy') do |no_proxy| %>
 export NO_PROXY=<%= no_proxy %>
 export no_proxy=<%= no_proxy %>
 <% end %>

@@ -9,7 +9,7 @@ describe 'postgres_ctl.erb' do
       FileUtils.touch 'tmp/store/postgres/postgresql.conf'
       FileUtils.mkdir_p 'tmp/jobs/postgres-9.4.5/bin'
       FileUtils.touch 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh'
-      File.chmod(777, 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')
+      File.chmod(0755, 'tmp/jobs/postgres-9.4.5/bin/postgres_db_upgrade.sh')
       ENV['BASE_DIR'] = 'tmp'
     end
 
@@ -18,9 +18,9 @@ describe 'postgres_ctl.erb' do
     end
 
     it 'should create a backup directory before migrating' do
-      _, _, status = Open3.capture3('jobs/postgres-9.4.5/templates/postgres_db_backup.sh.erb')
+      stdout, stderr, status = Open3.capture3('jobs/postgres-9.4.5/templates/postgres_db_backup.sh.erb')
 
-      expect(status).to eq(0)
+      expect(status).to eq(0), "Expected to not receive an error. STDOUT: #{stdout} STDERR: #{stderr}"
       expect(Dir.exists?('tmp/store/postgres-previous'))
       expect(File.read('tmp/store/postgres-previous/PG_VERSION')).to eq('9.0')
     end
