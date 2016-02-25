@@ -101,7 +101,7 @@ module Bosh
           instance_array = result["instances"].map do |link_spec|
             EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          return EvaluationLink.new(instance_array)
+          return EvaluationLink.new(instance_array, result["link_properties"])
         end
         raise UnknownLink.new(name)
       end
@@ -131,7 +131,8 @@ module Bosh
           instance_array = link_found["instances"].map do |link_spec|
             EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
           end
-          yield EvaluationLink.new(instance_array)
+
+          yield EvaluationLink.new(instance_array, link_found["link_properties"])
           InactiveElseBlock.new
         end
       end

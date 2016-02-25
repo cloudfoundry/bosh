@@ -123,6 +123,8 @@ describe 'Links', type: :integration do
       manifest
     end
 
+    let(:links) {{}}
+
     context 'when link is provided' do
       let(:links) do
         {
@@ -1022,7 +1024,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
       let(:mysql_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
             name: 'mysql',
-            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }, 'provides' => {'db' => {'properties' => ['test']} } }],
+            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }}],
             instances: 2,
             static_ips: ['192.168.1.10', '192.168.1.11']
         )
@@ -1034,23 +1036,22 @@ Error 100: Unable to render jobs for deployment. Errors are:
         job_spec
       end
 
-      let(:links) do
-        {
-            'db' => {'from' => 'db'},
-            'backup_db' => {'from' => 'backup_db'}
-        }
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [mysql_job_spec]
+        manifest
       end
 
-      it 'allows only the specified properties' do
+      it 'allows to be deployed' do
         expect{ deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
       end
     end
 
-    context 'when link provider specifies properties not from job spec' do
+    context 'when link provider specifies properties not listed in job spec properties' do
       let(:mysql_job_spec) do
         job_spec = Bosh::Spec::Deployments.simple_job(
             name: 'mysql',
-            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }, 'provides' => {'db' => {'properties' => ['test', 'test1']} } }],
+            templates: [{'name' => 'provider_fail'}],
             instances: 2,
             static_ips: ['192.168.1.10', '192.168.1.11']
         )
@@ -1062,15 +1063,8 @@ Error 100: Unable to render jobs for deployment. Errors are:
         job_spec
       end
 
-      let(:links) do
-        {
-            'db' => {'from' => 'db'},
-            'backup_db' => {'from' => 'backup_db'}
-        }
-      end
-
       it 'fails if the property specified for links is not provided by job template' do
-        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(RuntimeError, /Link db in job mysql on template database specifies properties which are not defined in its job spec. The following properties are invalid: test1\./)
+        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(RuntimeError, /Property listed in property list for link provider_fail is not defined in the properties list in release spec/)
       end
     end
 
@@ -1230,6 +1224,63 @@ Error 100: Unable to render jobs for deployment. Errors are:
         end
       end
     end
+  end
+
+  context 'checking link properties' do
+    let(:job_with_nil_properties) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'property_job',
+          templates: [{'name' => 'provider', 'properties' => {'a' => 'deployment_a'}}, {'name' => 'consumer'}],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+          properties: {}
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
+    let(:job_with_link_properties_not_defined_in_release_properties) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'jobby',
+          templates: [{'name' => 'provider', 'properties' => {'doesntExist' => 'someValue'}}],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+          properties: {}
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
+    it 'should raise an error when consuming links without properties' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['jobs'] = [job_with_nil_properties]
+
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+
+      expect(exit_code).not_to eq(0)
+      expect(out).to include("Can't find property `[\"b\"]")
+    end
+
+    it 'should raise an error when a deployment template property is not defined in the release properties' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
+
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+
+      expect(exit_code).not_to eq(0)
+      expect(out).to include("Properties [\"doesntExist\"] defined in job jobby are not defined in the corresponding release")
+    end
+
   end
 
   context 'when link is not satisfied in deployment' do
