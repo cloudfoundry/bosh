@@ -1,14 +1,15 @@
 module Bosh::Director
   class InstanceUpdater::StateApplier
-    def initialize(instance_plan, agent_client, rendered_job_templates_cleaner, logger)
+    def initialize(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
       @instance_plan = instance_plan
       @instance = @instance_plan.instance
       @agent_client = agent_client
       @rendered_job_templates_cleaner = rendered_job_templates_cleaner
       @logger = logger
+      @is_canary = options.fetch(:canary, false)
     end
 
-    def apply
+    def apply(update_config)
       @instance.apply_vm_state(@instance_plan.spec)
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
@@ -17,7 +18,16 @@ module Bosh::Director
         @agent_client.run_script('pre-start', {})
         @agent_client.start
       end
+
+      if update_config
+        min_watch_time = @is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
+        max_watch_time = @is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
+
+        post_start(min_watch_time, max_watch_time)
+      end
     end
+
+    private
 
     def post_start(min_watch_time, max_watch_time)
       current_state = wait_until_desired_state(min_watch_time, max_watch_time)
@@ -43,8 +53,6 @@ module Bosh::Director
 
       @instance.update_state
     end
-
-    private
 
     def wait_until_desired_state(min_watch_time, max_watch_time)
       current_state = {}

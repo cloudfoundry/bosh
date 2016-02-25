@@ -30,6 +30,7 @@ module Bosh
           return @changes if @changes
 
           @changes = Set.new
+          @changes << :dirty if @instance.dirty?
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
@@ -68,7 +69,7 @@ module Bosh
         end
 
         def needs_restart?
-          @instance.virtual_state == 'restart' || !@instance.model.post_start_completed
+          @instance.virtual_state == 'restart'
         end
 
         def needs_recreate?
