@@ -19,7 +19,6 @@ module Bosh::Stemcell
       mount_command = "sudo mount #{device_path} #{image_mount_point}"
       shell.run(mount_command, output_command: verbose)
     rescue => e
-      puts "Failed to mount with error #{e.inspect}"
       raise e unless e.message.include?(mount_command)
 
       sleep 0.5

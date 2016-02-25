@@ -37,6 +37,9 @@ module Bosh::Director
       # @return [DeploymentPlan::VmType]
       attr_accessor :vm_type
 
+      # @return [DeploymentPlan::VmExtension]
+      attr_accessor :vm_extensions
+
       # @return [DeploymentPlan::Env]
       attr_accessor :env
 
@@ -80,6 +83,8 @@ module Bosh::Director
 
       attr_reader :link_paths
 
+      attr_accessor :did_change
+
       def self.parse(plan, job_spec, event_log, logger)
         parser = JobSpecParser.new(plan, event_log, logger)
         parser.parse(job_spec)
@@ -106,6 +111,8 @@ module Bosh::Director
         @availability_zones = []
 
         @instance_plans = []
+
+        @did_change = false
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -136,7 +143,12 @@ module Bosh::Director
           "sha1" => job_spec["sha1"],
           "blobstore_id" => job_spec["blobstore_id"]
         }
-        job_spec["templates"] = [template]
+
+        # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
+        # So we will support this feature if a user want to use legacy spec. If they
+        # want to use properties per template, let them use the regular way of defining
+        # templates, i.e. by using the 'templates' key
+        job_spec['templates'] = [template]
       end
 
 
@@ -160,35 +172,42 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
-        first_template = @templates[0]
-        result = {
-          "name" => @name,
-          "templates" => [],
-          # --- Legacy ---
-          "template" => first_template.name,
-          "version" => first_template.version,
-          "sha1" => first_template.sha1,
-          "blobstore_id" => first_template.blobstore_id
-        }
-        if first_template.logs
-          result["logs"] = first_template.logs
-        end
-        # --- /Legacy ---
-
-        @templates.each do |template|
-          template_entry = {
-            "name" => template.name,
-            "version" => template.version,
-            "sha1" => template.sha1,
-            "blobstore_id" => template.blobstore_id
+        if @templates.size >= 1
+          first_template = @templates[0]
+          result = {
+            "name" => @name,
+            "templates" => [],
+            # --- Legacy ---
+            "template" => first_template.name,
+            "version" => first_template.version,
+            "sha1" => first_template.sha1,
+            "blobstore_id" => first_template.blobstore_id
           }
-          if template.logs
-            template_entry["logs"] = template.logs
-          end
-          result["templates"] << template_entry
-        end
 
-        result
+          result['template_scoped_properties'] = first_template.template_scoped_properties[@name] unless first_template.template_scoped_properties[@name].nil?
+
+          if first_template.logs
+            result["logs"] = first_template.logs
+          end
+          # --- /Legacy ---
+
+          @templates.each do |template|
+            template_entry = {
+              "name" => template.name,
+              "version" => template.version,
+              "sha1" => template.sha1,
+              "blobstore_id" => template.blobstore_id
+            }
+
+            template_entry['template_scoped_properties'] = template.template_scoped_properties[@name] unless template.template_scoped_properties[@name].nil?
+
+            if template.logs
+              template_entry["logs"] = template.logs
+            end
+            result["templates"] << template_entry
+          end
+          result
+        end
       end
 
       # Returns package specs for all packages in the job indexed by package
@@ -273,11 +292,11 @@ module Bosh::Director
         end
       end
 
-      def starts_on_deploy?
+      def is_service?
         @lifecycle == 'service'
       end
 
-      def can_run_as_errand?
+      def is_errand?
         @lifecycle == 'errand'
       end
 
@@ -318,10 +337,6 @@ module Bosh::Director
       # @param [Hash] collection All properties collection
       # @return [Hash] Properties required by templates included in this job
       def filter_properties(collection)
-        if @templates.empty?
-          raise DirectorError, "Can't extract job properties before parsing job templates"
-        end
-
         if @templates.none? { |template| template.properties }
           return collection
         end
@@ -340,8 +355,17 @@ module Bosh::Director
         result = {}
 
         @templates.each do |template|
-          template.properties.each_pair do |name, definition|
-            copy_property(result, collection, name, definition["default"])
+          # If a template has properties that were defined in the deployment manifest
+          # for that template only, then we need to bind only these properties, and not
+          # make them available to other templates in the same deployment job. That can
+          # be done by checking @template_scoped_properties variable of each
+          # template
+          if template.has_template_scoped_properties(@name)
+            template.bind_template_scoped_properties(@name)
+          else
+            template.properties.each_pair do |name, definition|
+              copy_property(result, collection, name, definition["default"])
+            end
           end
         end
 

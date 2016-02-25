@@ -107,6 +107,8 @@ module Bosh::Director
               'blobstore_id' => template.blobstore_id,
               'sha1' => template.sha1,
               'fingerprint' => template.fingerprint.to_s,
+              'consumes' => template.consumes,
+              'provides' => template.provides
           }
         end
 

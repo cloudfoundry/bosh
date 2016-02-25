@@ -145,10 +145,19 @@ describe Bosh::Cli::Runner do
   describe '--parallel option' do
     let(:runner) { described_class.new(['--parallel', '5']) }
 
-    it "sets the parallel_downloads config to the number given" do
+    it 'sets the parallel_downloads config to the number given' do
       runner.run
       expect(Bosh::Cli::Config.max_parallel_downloads).to eq 5
       Bosh::Cli::Config.max_parallel_downloads = nil
+    end
+    end
+
+  describe '--ca-cert option' do
+    let(:runner) { described_class.new(['--ca-cert', 'tmp/test-ca-cert']) }
+
+    it 'sets the ca cert file' do
+      runner.run
+      expect(runner.options[:ca_cert]).to eq 'tmp/test-ca-cert'
     end
   end
 

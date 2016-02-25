@@ -31,6 +31,8 @@ module Bosh::Director
       if instance_plans.empty?
         @logger.info("No instances to update for '#{@job.name}'")
         return
+      else
+        @job.did_change = true
       end
 
       instance_plans.each do |instance_plan|
@@ -81,7 +83,11 @@ module Bosh::Director
     def delete_unneeded_instances
       unneeded_instance_plans = @job.obsolete_instance_plans
       unneeded_instances = @job.unneeded_instances
-      return if unneeded_instances.empty?
+      if unneeded_instances.empty?
+        return
+      else
+        @job.did_change = true
+      end
 
       event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
       dns_manager = DnsManagerProvider.create

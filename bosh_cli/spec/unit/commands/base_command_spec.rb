@@ -320,4 +320,28 @@ describe Bosh::Cli::Command::Base do
       end
     end
   end
+
+  describe 'ca_cert' do
+    context 'when ca cert is provided as part of the command with the --ca-cert flag' do
+      it 'should override ca cert from global config' do
+        add_config('target' => 'localhost:8080', 'ca_cert' => {'https://localhost:8080' => 'tmp/config_ca_cert'})
+        cmd = make
+        cmd.add_option(:ca_cert, 'tmp/command_ca_cert')
+
+        expect(Bosh::Cli::Client::Director).to receive(:new).with('https://localhost:8080', nil, ca_cert: 'tmp/command_ca_cert')
+        cmd.send(:auth_info)
+      end
+    end
+
+    context 'when ca cert is NOT provided as part of the command with the --ca-cert flag' do
+      it 'should use ca cert from global config' do
+        add_config('target' => 'localhost:8080', 'ca_cert' => {'https://localhost:8080' => 'tmp/config_ca_cert'})
+        cmd = make
+
+        expect(Bosh::Cli::Client::Director).to receive(:new).with('https://localhost:8080', nil, ca_cert: 'tmp/config_ca_cert')
+        cmd.send(:auth_info)
+      end
+    end
+  end
+
 end

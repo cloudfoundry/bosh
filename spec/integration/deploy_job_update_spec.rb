@@ -18,14 +18,19 @@ describe 'deploy job update', type: :integration do
 
   describe 'Displaying manifest diffs' do
     let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_with_addon }
     let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
-    it 'accurately reports deployment configuration changes and cloud configuration changes' do
+    it 'accurately reports deployment configuration changes, cloud configuration changes and runtime config changes' do
+
       deploy_from_scratch
+
+      bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
 
       cloud_config_hash['resource_pools'][0]['size'] = 2
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      upload_runtime_config(runtime_config_hash: runtime_config_hash)
 
       manifest_hash['update']['canary_watch_time'] = 0
       manifest_hash['jobs'][0]['instances'] = 2
@@ -33,9 +38,21 @@ describe 'deploy job update', type: :integration do
       set_deployment(manifest_hash: manifest_hash)
 
       deploy_output = deploy(failure_expected: true, redact_diff: true)
+
       expect(deploy_output).to match(/resource_pools:/)
       expect(deploy_output).to match(/update:/)
       expect(deploy_output).to match(/jobs:/)
+      expect(deploy_output).to match(/addons:/)
+      expect(deploy_output).to match(/dummy2/)
+
+      # ensure it doesn't show the diff the second time
+      deploy_output = deploy(failure_expected: true, redact_diff: true)
+
+      expect(deploy_output).to_not match(/resource_pools:/)
+      expect(deploy_output).to_not match(/update:/)
+      expect(deploy_output).to_not match(/jobs:/)
+      expect(deploy_output).to_not match(/addons:/)
+      expect(deploy_output).to_not match(/dummy2/)
     end
 
     context 'when using legacy deployment configuration' do

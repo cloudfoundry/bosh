@@ -4,6 +4,8 @@ module Bosh
   module Director
     module Api
       class UAAIdentityProvider
+        MAX_TOKEN_EXTENSION_TIME_IN_SECONDS = 3600
+
         def initialize(options)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
@@ -24,12 +26,16 @@ module Bosh
           }
         end
 
-        def get_user(request_env)
+        def get_user(request_env, options)
           auth_header = request_env['HTTP_AUTHORIZATION']
-          upload_request_header = request_env['HTTP_X_BOSH_UPLOAD_REQUEST']
 
-          if upload_request_header == '1'
-            token = @token_coder.decode_at_reference_time(auth_header, Time.now.to_i - 60*20) # Allow 20 minutes for uploads
+          if options[:extended_token_timeout]
+            request_time_in_seconds = request_env.fetch('HTTP_X_BOSH_UPLOAD_REQUEST_TIME').to_i
+            request_time_in_seconds = MAX_TOKEN_EXTENSION_TIME_IN_SECONDS if request_time_in_seconds > MAX_TOKEN_EXTENSION_TIME_IN_SECONDS
+
+            Config.logger.debug("Using extended token timeout, request took #{request_time_in_seconds} seconds")
+
+            token = @token_coder.decode_at_reference_time(auth_header, Time.now.to_i - request_time_in_seconds)
           else
             token = @token_coder.decode(auth_header)
           end

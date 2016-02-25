@@ -1,7 +1,0 @@
----
-name: mongo_db
-templates: {}
-packages: []
-
-provides:
-- {name: read_only_db, type: db}

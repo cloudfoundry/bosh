@@ -12,7 +12,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       properties: {},
       update: nil,
       name: 'fake-deployment',
-      networks: [network]
+      networks: [network],
+      releases: {}
     )
   end
   let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network-name', [], logger) }
@@ -37,7 +38,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     before { allow(deployment_plan).to receive(:disk_type).and_return(disk_type) }
 
     before { allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new) }
-
     before { allow(deployment_plan).to receive(:release).and_return(job_rel_ver) }
     let(:job_rel_ver) do
       instance_double(
@@ -49,7 +49,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     let(:job_spec) do
       {
         'name'      => 'fake-job-name',
-        'templates' => [],
+        'jobs' => [],
         'release'   => 'fake-release-name',
         'resource_pool' => 'fake-resource-pool-name',
         'instances' => 1,
@@ -118,7 +118,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when the deployment has exactly one release' do
           it "picks the deployment's release" do
-            deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            deployment_release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "")
             allow(deployment_plan).to receive(:releases).and_return([deployment_release])
 
             job = parser.parse(job_spec)
@@ -130,7 +130,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           it "does not pick a release" do
             job_spec.delete('release')
 
-            allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion'), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')])
+            allow(deployment_plan).to receive(:releases).and_return([instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: ""), instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name:"")])
 
             job = parser.parse(job_spec)
             expect(job.release).to be_nil
@@ -140,7 +140,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'template key' do
-      before { job_spec.delete('templates') }
+      before { job_spec.delete('jobs') }
       before { allow(event_log).to receive(:warn_deprecated) }
 
       it 'parses a single template' do
@@ -247,21 +247,36 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    describe 'templates key' do
+    shared_examples_for 'templates/jobs key' do
+      before { job_spec.delete('jobs') }
+
       context 'when value is an array of hashes' do
         context 'when one of the hashes specifies a release' do
           before do
-            job_spec['templates'] = [{
+            job_spec[keyword] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
-              'links' => {'a' => 'x.y.z.zz'}
+              'consumes' => {'a' => {'from' => 'link_name'}}
             }]
+            release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
+            version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+            release_model.add_version(version)
+
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+
+            deployment_model = Bosh::Director::Models::Deployment.make(name: 'deployment', link_spec_json: "{\"job_name\":{\"template_name\":{\"link_name\":{\"name\":\"link_name\",\"type\":\"link_type\"}}}}")
+            version.add_deployment(deployment_model)
           end
 
-          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+          let(:template_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1') }
 
           context 'when job specifies a release' do
-            before { job_spec['release'] = 'fake-job-release' }
+            before do
+              job_spec['release'] = 'fake-job-release'
+
+            end
             let(:template) { make_template('fake-template-name', template_rel_ver) }
 
             before do
@@ -272,6 +287,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
+              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_template_scoped_properties)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -279,27 +296,38 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               expect(job.templates).to eq([template])
             end
 
-            it 'sets link paths specified in templates' do
-              job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('x.y.z.zz')
-            end
+            # it 'sets link paths specified in templates' do
+            #   job = parser.parse(job_spec)
+            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
+            # end
           end
 
           context 'when job does not specify a release' do
             before { job_spec.delete('release') }
 
             before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
-            let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+            let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
             let(:template) { make_template('fake-template-name', nil) }
+
+            let(:provides_link) { instance_double('Bosh::Director::DeploymentPlan::Link',name: 'zz') }
+            let(:provides_template) { instance_double('Bosh::Director::DeploymentPlan::Template',name: 'z') }
+            let(:provides_job) { instance_double('Bosh::Director::DeploymentPlan::Job',name: 'y') }
+
 
             before do
               allow(deployment_plan).to receive(:release)
                                            .with('fake-template-release')
                                            .and_return(template_rel_ver)
 
+              allow(provides_template).to receive(:provided_links).and_return([provides_link])
+              allow(provides_job).to receive(:templates).and_return([provides_template])
+              allow(deployment_plan).to receive(:jobs).and_return([provides_job])
+
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
+              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_template_scoped_properties)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -307,15 +335,30 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               expect(job.templates).to eq([template])
             end
 
-            it 'sets link paths specified in templates' do
-              job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a').path).to eq('x.y.z.zz')
-            end
+            # it 'sets link paths specified in templates' do
+            #   job = parser.parse(job_spec)
+            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
+            # end
           end
         end
 
         context 'when one of the hashes does not specify a release' do
-          before { job_spec['templates'] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}] }
+
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
+
+          before do
+            job_spec[keyword] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}]
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+          end
 
           context 'when job specifies a release' do
             before { job_spec['release'] = 'fake-job-release' }
@@ -326,6 +369,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 .and_return(job_rel_ver)
 
               template = make_template('fake-template-name', nil)
+              allow(template).to receive(:add_template_scoped_properties)
               expect(job_rel_ver).to receive(:get_or_create_template)
                 .with('fake-template-name')
                 .and_return(template)
@@ -339,7 +383,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             before { job_spec.delete('release') }
 
             context 'when deployment has multiple releases' do
-              before { allow(deployment_plan).to receive(:releases).and_return([double, double]) }
+              before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver, deployment_rel_ver]) }
+              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: "") }
 
               it 'raises an error because there is not default release specified' do
                 expect {
@@ -352,11 +397,14 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             end
 
             context 'when deployment has a single release' do
-              before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
-              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+              let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1') }
+              let(:template) { make_template('fake-template-name', nil) }
+              before do
+                allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
+                allow(template).to receive(:add_template_scoped_properties)
+              end
 
               it 'sets job template from deployment release because first release assumed as default' do
-                template = make_template('fake-template-name', nil)
                 expect(deployment_rel_ver).to receive(:get_or_create_template)
                   .with('fake-template-name')
                   .and_return(template)
@@ -383,7 +431,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the hashes specifies a release not specified in a deployment' do
           before do
-            job_spec['templates'] = [{
+            job_spec[keyword] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
             }]
@@ -407,7 +455,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when multiple hashes have the same name' do
           before do
-            job_spec['templates'] = [
+            job_spec[keyword] = [
               {'name' => 'fake-template-name1'},
               {'name' => 'fake-template-name2'},
               {'name' => 'fake-template-name1'},
@@ -417,13 +465,21 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           before do # resolve release and template objs
             job_spec['release'] = 'fake-job-release'
 
-            job_rel_ver = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name1', release: fake_template_release_model))
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name2', release: fake_template_release_model))
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name3', release: fake_template_release_model))
+
+            job_rel_ver = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release', version: '1')
             allow(deployment_plan).to receive(:release)
               .with('fake-job-release')
               .and_return(job_rel_ver)
 
             allow(job_rel_ver).to receive(:get_or_create_template) do |name|
-              instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
+              template = instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
+              allow(template).to receive(:add_template_scoped_properties)
+              template
             end
           end
 
@@ -440,30 +496,44 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when multiple hashes reference different releases' do
+          before do
+            fake_template_release_model_1 = Bosh::Director::Models::Release.make(name: 'fake-template-release1')
+            fake_template_release_version_model_1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model_1)
+            fake_template_release_version_model_1.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name1', release: fake_template_release_model_1))
+
+            fake_template_release_model_2 = Bosh::Director::Models::Release.make(name: 'fake-template-release2')
+            fake_template_release_version_model_2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model_2)
+            fake_template_release_version_model_2.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name2', release: fake_template_release_model_2))
+          end
+
           it 'uses the correct release for each template' do
-            job_spec['templates'] = [
+            job_spec[keyword] = [
               {'name' => 'fake-template-name1', 'release' => 'fake-template-release1', 'links' => {}},
               {'name' => 'fake-template-name2', 'release' => 'fake-template-release2', 'links' => {}},
             ]
 
             # resolve first release and template obj
-            rel_ver1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            rel_ver1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release1', version: '1')
             allow(deployment_plan).to receive(:release)
                                       .with('fake-template-release1')
                                       .and_return(rel_ver1)
 
             template1 = make_template('fake-template-name1', rel_ver1)
+            allow(template1).to receive(:add_template_scoped_properties)
+
             expect(rel_ver1).to receive(:get_or_create_template)
                                .with('fake-template-name1')
                                .and_return(template1)
 
             # resolve second release and template obj
-            rel_ver2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+            rel_ver2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-template-release2', version: '1')
             allow(deployment_plan).to receive(:release)
                                       .with('fake-template-release2')
                                       .and_return(rel_ver2)
 
             template2 = make_template('fake-template-name2', rel_ver2)
+            allow(template2).to receive(:add_template_scoped_properties)
+
             expect(rel_ver2).to receive(:get_or_create_template)
                                .with('fake-template-name2')
                                .and_return(template2)
@@ -475,7 +545,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the hashes is missing a name' do
           it 'raises an error because that is how template will be found' do
-            job_spec['templates'] = [{}]
+            job_spec[keyword] = [{}]
             expect {
               parser.parse(job_spec)
             }.to raise_error(
@@ -487,7 +557,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         context 'when one of the elements is not a hash' do
           it 'raises an error' do
-            job_spec['templates'] = ['not-a-hash']
+            job_spec[keyword] = ['not-a-hash']
             expect {
               parser.parse(job_spec)
             }.to raise_error(
@@ -496,19 +566,74 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             )
           end
         end
+
+        context 'when properties are provided in a template' do
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
+
+          before do
+            job_spec['templates'] = [
+                {'name' => 'fake-template-name',
+                 'links' => {'db' => 'a.b.c'},
+                 'properties' => {
+                     'property_1' => 'property_1_value',
+                     'property_2' => {
+                         'life' => 'isInteresting'
+                     }
+                 }
+                }
+            ]
+            job_spec['release'] = 'fake-job-release'
+
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model))
+          end
+
+          it 'assigns those properties to the intended template' do
+            allow(deployment_plan).to receive(:release)
+                                          .with('fake-job-release')
+                                          .and_return(job_rel_ver)
+
+            template = make_template('fake-template-name', nil)
+            allow(job_rel_ver).to receive(:get_or_create_template)
+                                      .with('fake-template-name')
+                                      .and_return(template)
+            expect(template).to receive(:add_template_scoped_properties)
+                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
+
+            parser.parse(job_spec)
+          end
+        end
       end
 
       context 'when value is not an array' do
         it 'raises an error' do
-          job_spec['templates'] = 'not-an-array'
+          job_spec[keyword] = 'not-an-array'
           expect {
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::ValidationInvalidType,
-            %{Property `templates' (value "not-an-array") did not match the required type `Array'},
+            %{Property `#{keyword}' (value "not-an-array") did not match the required type `Array'},
           )
         end
       end
+    end
+
+    describe 'templates key' do
+      let(:keyword) { "templates" }
+      it_behaves_like "templates/jobs key"
+    end
+
+    describe 'jobs key' do
+      let(:keyword) { "jobs" }
+      it_behaves_like "templates/jobs key"
     end
 
     describe 'validating job templates' do
@@ -527,16 +652,32 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
       end
 
+      context 'when both jobs and templates are specified' do
+        before do
+          job_spec['templates'] = []
+          job_spec['jobs'] = []
+        end
+        before { allow(event_log).to receive(:warn_deprecated) }
+
+        it 'raises' do
+          expect { parser.parse(job_spec) }.to raise_error(
+                                                   Bosh::Director::JobInvalidTemplates,
+                                                   "Job `fake-job-name' specifies both templates and jobs keys, only one is allowed"
+                                               )
+        end
+      end
+
       context 'when neither key is specified' do
         before do
           job_spec.delete('templates')
           job_spec.delete('template')
+          job_spec.delete('jobs')
         end
 
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::ValidationMissingField,
-             "Job `fake-job-name' does not specify template or templates keys, one is required"
+             "Job `fake-job-name' does not specify template, templates, or jobs keys, one is required"
           )
         end
       end
@@ -783,6 +924,70 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
       end
 
+    end
+
+    describe 'vm_extensions key' do
+
+      let(:vm_extension_1) do
+        {
+            'name'             => 'vm_extension_1',
+            'cloud_properties' => {'property' => 'value'}
+        }
+      end
+
+      let(:vm_extension_2) do
+        {
+            'name'             => 'vm_extension_2',
+            'cloud_properties' => {'another_property' => 'value1', 'property' => 'value2'}
+        }
+      end
+
+      let(:job_spec) do
+        {
+            'name'      => 'fake-job-name',
+            'templates' => [],
+            'release'   => 'fake-release-name',
+            'vm_type' => 'fake-vm-type',
+            'stemcell' => 'fake-stemcell',
+            'env' => {'key' => 'value'},
+            'instances' => 1,
+            'networks'  => [{'name' => 'fake-network-name'}]
+        }
+      end
+
+      before do
+        allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
+            Bosh::Director::DeploymentPlan::VmType.new({
+                                                           'name' => 'fake-vm-type',
+                                                           'cloud_properties' => {}
+                                                       })
+        )
+        allow(deployment_plan).to receive(:stemcell).with('fake-stemcell').and_return(
+            Bosh::Director::DeploymentPlan::Stemcell.parse({
+                                                               'alias' => 'fake-stemcell',
+                                                               'os' => 'fake-os',
+                                                               'version' => 1
+                                                           })
+        )
+        allow(deployment_plan).to receive(:vm_extension).with('vm_extension_1').and_return(
+            Bosh::Director::DeploymentPlan::VmExtension.new(vm_extension_1)
+        )
+        allow(deployment_plan).to receive(:vm_extension).with('vm_extension_2').and_return(
+            Bosh::Director::DeploymentPlan::VmExtension.new(vm_extension_2)
+        )
+      end
+
+      context 'job has one vm_extension' do
+        it 'parses the vm_extension' do
+          job_spec['vm_extensions'] = ['vm_extension_1']
+
+          job = parser.parse(job_spec)
+          expect(job.vm_extensions.size).to eq(1)
+          expect(job.vm_extensions.first.name).to eq('vm_extension_1')
+          expect(job.vm_extensions.first.cloud_properties).to eq({'property' => 'value'})
+
+        end
+      end
     end
 
     describe 'properties key' do
@@ -1054,6 +1259,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         'Bosh::Director::DeploymentPlan::Template',
         name: name,
         release: rel_ver,
+        link_infos: {}
       )
     end
   end

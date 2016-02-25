@@ -8,12 +8,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
    manifest_hash['networks'].first['subnets'].first['static'] = static_ips
    manifest_hash
   end
-  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, nil) }
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, nil, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
   let(:network_spec) { manifest_hash['networks'].first }
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger) }
-  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, {}) }
+  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, nil, {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan) }
   let(:instance_model) { BD::Models::Instance.make }
 
@@ -28,6 +28,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
        logger
      )
    end
+
+  before do
+    release = Bosh::Director::Models::Release.make(name: 'bosh-release')
+    template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
+    release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+    release_version.add_template(template)
+  end
 
   describe :initialize do
     it 'should parse subnets' do
@@ -44,7 +51,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         manifest['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
             'range' => '192.168.1.0/28',
           })
-        Bosh::Director::Manifest.new(manifest, nil)
+        Bosh::Director::Manifest.new(manifest, nil, nil)
       end
 
       it 'should raise an error' do

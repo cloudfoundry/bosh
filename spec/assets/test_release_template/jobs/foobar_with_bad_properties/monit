@@ -1,0 +1,5 @@
+check process foobar_with_bad_properties
+  with pidfile /var/vcap/sys/run/foobar_with_bad_properties.pid
+  start program "/var/vcap/jobs/foobar_with_bad_properties/bin/foobar_ctl start"
+  stop program "/var/vcap/jobs/foobar_with_bad_properties/bin/foobar_ctl stop"
+  group vcap

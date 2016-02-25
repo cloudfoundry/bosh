@@ -4,7 +4,7 @@ describe 'User authorization with UAA', type: :integration do
   with_reset_sandbox_before_each(user_authentication: 'uaa')
 
   before do
-    bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+    bosh_runner.run("target #{current_sandbox.director_url}", ca_cert: current_sandbox.certificate_path)
     bosh_runner.run('logout')
   end
 

@@ -25,8 +25,6 @@ module Bosh::Director
       # @return [String] job state
       attr_reader :virtual_state
 
-      attr_reader :current_state
-
       attr_reader :availability_zone
 
       attr_reader :existing_network_reservations
@@ -37,6 +35,7 @@ module Bosh::Director
           index,
           virtual_state,
           job.vm_type,
+          job.vm_extensions,
           job.stemcell,
           job.env,
           job.compilation?,
@@ -52,6 +51,7 @@ module Bosh::Director
         index,
         virtual_state,
         vm_type,
+        vm_extensions,
         stemcell,
         env,
         compilation,
@@ -66,6 +66,7 @@ module Bosh::Director
         @deployment_model = deployment_model
         @job_name = job_name
         @vm_type = vm_type
+        @vm_extensions = vm_extensions
         @stemcell = stemcell
         @env = env
         @compilation = compilation
@@ -73,6 +74,9 @@ module Bosh::Director
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
+
+        # This state is coming from the agent, we
+        # only need networks and job_state from it.
         @current_state = instance_state || {}
 
         # reservation generated from current state/DB
@@ -122,6 +126,10 @@ module Bosh::Director
 
       def vm_type
         @vm_type
+      end
+
+      def vm_extensions
+        @vm_extensions
       end
 
       def stemcell
@@ -198,29 +206,28 @@ module Bosh::Director
         changed
       end
 
-      ##
-      # @return [Boolean] returns true if the expected configuration hash
-      #   differs from the one provided by the VM
-      def configuration_changed?
-        changed = configuration_hash != @current_state['configuration_hash']
-        log_changes(__method__, @current_state['configuration_hash'], configuration_hash) if changed
-        changed
-      end
-
       def current_job_spec
-        @current_state['job']
+        @model.spec['job']
       end
 
       def current_packages
-        @current_state['packages']
+        @model.spec['packages']
       end
 
       def current_job_state
         @current_state['job_state']
       end
 
+      def current_networks
+        @current_state['networks']
+      end
+
       def update_state
         @model.update(state: state)
+      end
+
+      def update_post_start_completed(value)
+        @model.update(post_start_completed: value)
       end
 
       def update_description
@@ -269,11 +276,19 @@ module Bosh::Director
       end
 
       def cloud_properties
-        if @availability_zone.nil?
-          vm_type.cloud_properties
-        else
-          @availability_zone.cloud_properties.merge(vm_type.cloud_properties)
+        merged_cloud_properties = nil
+
+        if !@availability_zone.nil?
+          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, @availability_zone.cloud_properties)
         end
+
+        merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_type.cloud_properties)
+
+        Array(vm_extensions).each do |vm_extension|
+          merged_cloud_properties = merge_cloud_properties(merged_cloud_properties, vm_extension.cloud_properties)
+        end
+
+        merged_cloud_properties
       end
 
       def availability_zone_name
@@ -293,6 +308,10 @@ module Bosh::Director
       end
 
       private
+
+      def merge_cloud_properties(merged_cloud_properties, new_cloud_properties)
+        merged_cloud_properties.nil? ? new_cloud_properties : merged_cloud_properties.merge(new_cloud_properties)
+      end
 
       # Looks up instance model in DB
       # @return [Models::Instance]

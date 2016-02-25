@@ -2,6 +2,8 @@ module Bosh::Director
   module Api
     module Extensions
       module Scoping
+        ROUTES_WITH_EXTENDED_TIMEOUT = ['/stemcells', '/releases', '/restore']
+
         module Helpers
           def current_user
             @user.username if @user
@@ -33,7 +35,11 @@ module Bosh::Director
 
             if auth_provided
               begin
-                @user = identity_provider.get_user(request.env)
+                extended_token_timeout = ROUTES_WITH_EXTENDED_TIMEOUT.include?(request.path) &&
+                    request.media_type == mime_type(:multipart) &&
+                    request.request_method == 'POST'
+
+                @user = identity_provider.get_user(request.env, extended_token_timeout: extended_token_timeout)
               rescue AuthenticationError
               end
             end
