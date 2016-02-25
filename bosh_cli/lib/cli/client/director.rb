@@ -138,7 +138,6 @@ module Bosh
 
         def list_recent_tasks(count = 30, verbose = 1, deployment_name = nil)
           if deployment_name
-            puts "Getting recent tasks with endpoint: /tasks?limit=#{count}&verbose=#{verbose}&deployment=#{deployment_name}"
             get_json("/tasks?limit=#{count}&verbose=#{verbose}&deployment=#{deployment_name}")
           else
             get_json("/tasks?limit=#{count}&verbose=#{verbose}")

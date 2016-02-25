@@ -8,7 +8,7 @@ describe 'cli: tasks', type: :integration do
     bosh_runner.run('delete deployment simple')
     output = bosh_runner.run('tasks recent --deployment simple', {failure_expected: true})
 
-    expect(output).to match /delete deployment simple/
+    expect(output).to match /| 4 | done  | .* | test | simple     | delete deployment simple | \/deployments\/simple |/
     expect(output).not_to match /create stemcell/
     expect(output).not_to match /create release/
   end
