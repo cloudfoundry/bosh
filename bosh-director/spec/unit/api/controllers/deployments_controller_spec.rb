@@ -74,7 +74,7 @@ module Bosh::Director
             it 'does not skip draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -85,7 +85,7 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -96,7 +96,7 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -130,7 +130,7 @@ module Bosh::Director
               manifest = spec_asset('test_conf.yaml')
               manifest_path = asset('test_conf.yaml')
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                  with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything()).
+                  with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
@@ -245,7 +245,7 @@ module Bosh::Director
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
+                            .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
                             .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -259,7 +259,7 @@ module Bosh::Director
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                            .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
                             .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -684,6 +684,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
+                    'fake-dep-name'
                   ).and_return(task)
 
                   perform({})
@@ -695,6 +696,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
+                    'fake-dep-name'
                   ).and_return(task)
 
                   perform({'keep-alive' => true})

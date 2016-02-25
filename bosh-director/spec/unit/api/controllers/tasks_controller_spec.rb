@@ -114,6 +114,36 @@ module Bosh::Director
             end
           end
 
+          context "collection of tasks associated with different deployments" do
+            let(:deployment_name_1) {'deployment1'}
+            let(:deployment_name_2) {'deployment2'}
+
+            before do
+              Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1)
+              Models::Task.make(type: 'create_snapshot')
+              Models::Task.make(type: 'delete_deployment', deployment_name: deployment_name_1)
+              Models::Task.make(type: 'delete_release')
+              Models::Task.make(type: 'delete_snapshot')
+              Models::Task.make(type: 'delete_stemcell')
+              Models::Task.make(type: 'run_errand', deployment_name: deployment_name_2)
+              Models::Task.make(type: 'snapshot_deployment', deployment_name: deployment_name_1)
+              Models::Task.make(type: 'update_deployment', deployment_name: deployment_name_2)
+              Models::Task.make(type: 'update_release')
+              Models::Task.make(type: 'update_stemcell')
+            end
+
+            context "when deployment name 1 is used as a query parameter" do
+              it "filters tasks with that deployment name" do
+                get "/?deployment=#{deployment_name_1}"
+                expect(last_response.status).to eq(200)
+                body = Yajl::Parser.parse(last_response.body)
+                actual_ids = body.map { |attributes| attributes["id"] }
+
+                expect(actual_ids).to match([8, 3, 1])
+              end
+            end
+          end
+
           context "when a state is passed" do
             it "filters all but tasks with that state" do
               expected_task = Models::Task.make(

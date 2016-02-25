@@ -32,7 +32,8 @@ module Bosh::Director
 
         # This line should be outside the if statement so that it
         # will throw a 404 error if the deployment was not found
-        deployment = @deployment_manager.find_by_name(params[:deployment])
+        deployment_name = params[:deployment]
+        deployment = @deployment_manager.find_by_name(deployment_name)
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
@@ -42,7 +43,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment_name, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -76,7 +77,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, params[:deployment], options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -297,7 +298,7 @@ module Bosh::Director
         end
 
         options.merge!('scopes' => token_scopes)
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, nil, options)
 
         redirect "/tasks/#{task.id}"
       end
@@ -344,6 +345,7 @@ module Bosh::Director
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment_name}",
           [deployment_name, errand_name, keep_alive],
+          deployment_name
         )
 
         redirect "/tasks/#{task.id}"

@@ -40,7 +40,7 @@ module Bosh::Director
     describe '#create_deployment_snapshot_task' do
       it 'enqueues a SnapshotDeployment job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options]
+          username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment.name
         ).and_return(task)
 
         expect(subject.create_deployment_snapshot_task(username, deployment, options)).to eq(task)
@@ -62,7 +62,7 @@ module Bosh::Director
     describe '#delete_deployment_snapshots_task' do
       it 'enqueues a DeleteDeploymentSnapshots job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name]
+          username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name], deployment.name
         ).and_return(task)
 
         expect(subject.delete_deployment_snapshots_task(username, deployment)).to eq(task)

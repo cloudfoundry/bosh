@@ -128,12 +128,20 @@ module Bosh
           get_json("/deployments/#{deployment_name}/errands")
         end
 
-        def list_running_tasks(verbose = 1)
-          get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
+        def list_running_tasks(verbose = 1, deployment_name = nil)
+          if deployment_name
+            get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}&deployment=#{deployment_name}")
+          else
+            get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
+          end
         end
 
-        def list_recent_tasks(count = 30, verbose = 1)
-          get_json("/tasks?limit=#{count}&verbose=#{verbose}")
+        def list_recent_tasks(count = 30, verbose = 1, deployment_name = nil)
+          if deployment_name
+            get_json("/tasks?limit=#{count}&verbose=#{verbose}&deployment=#{deployment_name}")
+          else
+            get_json("/tasks?limit=#{count}&verbose=#{verbose}")
+          end
         end
 
         def get_release(name)
