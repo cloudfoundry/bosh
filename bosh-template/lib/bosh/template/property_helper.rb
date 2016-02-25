@@ -28,6 +28,7 @@ module Bosh
       # @param [Hash] collection Property collection
       # @param [String] name Dot-separated property name
       def lookup_property(collection, name)
+        return nil if collection.nil?
         keys = name.split(".")
         ref = collection
 

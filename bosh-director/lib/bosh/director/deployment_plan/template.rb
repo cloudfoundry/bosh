@@ -124,7 +124,7 @@ module Bosh::Director
         end
       end
 
-      def add_link_info(job_name, kind, link_name, source, template_spec = nil)
+      def add_link_info(job_name, kind, link_name, source)
         @link_infos[job_name] ||= {}
         @link_infos[job_name][kind] ||= {}
         @link_infos[job_name][kind][link_name] ||= {}
@@ -136,11 +136,7 @@ module Bosh::Director
           @link_infos[job_name][kind][link_name]['skip_link'] = true
         else
           source.to_a.each do |key, value|
-            if key == 'properties'
-              @link_infos[job_name][kind][link_name][key] = link_properties(job_name, link_name, value, template_spec)
-            else
-              @link_infos[job_name][kind][link_name][key] = value
-            end
+            @link_infos[job_name][kind][link_name][key] = value
           end
         end
 
@@ -175,29 +171,51 @@ module Bosh::Director
         @template_scoped_properties[deployment_job_name] = bound_template_scoped_properties
       end
 
-      private
+      def assign_link_property_values(properties_json, job_name)
+        # only 'provides' needs to worry about properties
+        if !@link_infos[job_name] || !@link_infos[job_name]['provides']
+          return
+        end
 
-      def link_properties(job_name, link_name, link_properties, template_spec)
-        if template_spec
-          template_properties = safe_property(template_spec, 'properties', class: Hash, optional: true, default: {})
-          template_name = safe_property(template_spec, 'name', class: String)
-          template_property_names = template_properties.keys
-          invalid_properties = []
-          result = {}
+        init_link_properties(job_name)
+        job_template_scoped_properties = @template_scoped_properties[job_name]
 
-          link_properties.each do |name|
-            if template_property_names.include?(name)
-              result[name] = template_properties[name]
-            else
-              invalid_properties << name
+        if properties_json != nil
+          properties_object = JSON.parse(properties_json)
+
+          if job_template_scoped_properties != nil
+            unlisted_property_names = job_template_scoped_properties.keys - properties_object.keys
+            if unlisted_property_names.length > 0
+              raise "Properties #{unlisted_property_names} defined in job #{job_name} are not defined in the corresponding release"
             end
           end
 
-          if invalid_properties.size > 0
-            raise "Link #{link_name} in job #{job_name} on template #{template_name} specifies properties which are not defined in its job spec. The following properties are invalid: #{invalid_properties.join(', ')}."
+          @link_infos[job_name]['provides'].each do |link_name, link_values|
+            link_values['mapped_properties'].each do |property_key, _|
+              if properties_object.has_key?(property_key)
+                if job_template_scoped_properties != nil && job_template_scoped_properties.has_key?(property_key)
+                  link_values['mapped_properties'][property_key] = job_template_scoped_properties[property_key]
+                elsif properties_object[property_key]['default']
+                  link_values['mapped_properties'][property_key] = properties_object[property_key]['default']
+                end
+              else
+                raise "Property listed in property list for link #{link_name} is not defined in the properties list in release spec"
+              end
+            end
           end
+        end
+      end
 
-          result
+      private
+
+      def init_link_properties(job_name)
+        @link_infos[job_name]['provides'].each do |_, link_params|
+          link_params['mapped_properties'] = {}
+          if link_params['properties']
+            link_params['properties'].each do |key|
+              link_params['mapped_properties'][key] = nil
+            end
+          end
         end
       end
 

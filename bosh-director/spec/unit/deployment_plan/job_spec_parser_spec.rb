@@ -287,6 +287,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
               allow(template).to receive(:add_template_scoped_properties)
+              allow(template).to receive(:assign_link_property_values)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -326,6 +327,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
               allow(template).to receive(:add_template_scoped_properties)
+              allow(template).to receive(:assign_link_property_values)
             end
 
             it 'sets job template from release specified in a hash' do
@@ -368,6 +370,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               template = make_template('fake-template-name', nil)
               allow(template).to receive(:add_template_scoped_properties)
+              allow(template).to receive(:assign_link_property_values)
               expect(job_rel_ver).to receive(:get_or_create_template)
                 .with('fake-template-name')
                 .and_return(template)
@@ -400,6 +403,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               before do
                 allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
                 allow(template).to receive(:add_template_scoped_properties)
+                allow(template).to receive(:assign_link_property_values)
               end
 
               it 'sets job template from deployment release because first release assumed as default' do
@@ -477,6 +481,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             allow(job_rel_ver).to receive(:get_or_create_template) do |name|
               template = instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
               allow(template).to receive(:add_template_scoped_properties)
+              allow(template).to receive(:assign_link_property_values)
               template
             end
           end
@@ -518,6 +523,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template1 = make_template('fake-template-name1', rel_ver1)
             allow(template1).to receive(:add_template_scoped_properties)
+            allow(template1).to receive(:assign_link_property_values)
 
             expect(rel_ver1).to receive(:get_or_create_template)
                                .with('fake-template-name1')
@@ -531,6 +537,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template2 = make_template('fake-template-name2', rel_ver2)
             allow(template2).to receive(:add_template_scoped_properties)
+            allow(template2).to receive(:assign_link_property_values)
 
             expect(rel_ver2).to receive(:get_or_create_template)
                                .with('fake-template-name2')
@@ -600,6 +607,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                           .and_return(job_rel_ver)
 
             template = make_template('fake-template-name', nil)
+            allow(template).to receive(:assign_link_property_values)
             allow(job_rel_ver).to receive(:get_or_create_template)
                                       .with('fake-template-name')
                                       .and_return(template)
