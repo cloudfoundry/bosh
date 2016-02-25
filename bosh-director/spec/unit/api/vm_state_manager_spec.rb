@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::VmStateManager do
-    let(:deployment) { double('Deployment', id: 90210) }
+    let(:deployment) { double('Deployment', id: 90210, name: 'DEPLOYMENT_NAME') }
     let(:task) { double('Task') }
     let(:username) { 'username-1' }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
@@ -16,7 +16,7 @@ module Bosh::Director
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT']).and_return(task)
+          username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment.name).and_return(task)
 
         expect(subject.fetch_vm_state(username, deployment, 'FAKE_FORMAT')).to eq(task)
       end

@@ -322,6 +322,12 @@ describe Bosh::Cli::Client::Director do
              'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
+
+      expect(@director).to receive(:get).
+          with('/tasks?state=processing,cancelling,queued&verbose=1&deployment=deployment-name',
+               'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_running_tasks(1, 'deployment-name')
     end
 
     it 'lists recent tasks' do
@@ -339,6 +345,11 @@ describe Bosh::Cli::Client::Director do
         with('/tasks?limit=50&verbose=2', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(50, 2)
+
+      expect(@director).to receive(:get).
+          with('/tasks?limit=50&verbose=2&deployment=deployment-name', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_recent_tasks(50, 2, 'deployment-name')
     end
 
     it 'uploads local release' do
