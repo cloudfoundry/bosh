@@ -18,7 +18,7 @@ module Bosh::Director
     def scan(vms=nil)
       if vms
         instances = vms.map do |job, index|
-          @instance_manager.find_by_name(@deployment.name, job, index)
+          @instance_manager.find_by_name(@deployment, job, index)
         end
       else
         instances = Models::Instance.filter(deployment: @deployment).exclude(vm_cid: nil).all

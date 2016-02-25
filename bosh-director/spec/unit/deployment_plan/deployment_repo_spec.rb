@@ -66,16 +66,6 @@ module Bosh
               end
             end
 
-            context 'and provided scopes have no match with teams on the existing deployment' do
-              it 'should raise an error' do
-                Models::Deployment.create(name: 'existing', teams: 'production')
-
-                expect {
-                  subject.find_or_create_by_name('existing', {'scopes' => ['bosh.teams.dev.admin']})
-                }.to raise_error(UnauthorizedToAccessDeployment, 'You are unauthorized to view this deployment. Please contact the BOSH admin.')
-              end
-            end
-
             context 'and provided scope is bosh.admin' do
               it 'should not create a new deployment' do
                 existing = Models::Deployment.create(name: 'existing', teams: 'production')

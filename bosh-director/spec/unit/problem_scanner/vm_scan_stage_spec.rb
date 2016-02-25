@@ -13,7 +13,7 @@ module Bosh::Director
       )
     end
 
-    let(:instance_manager) { instance_double('Bosh::Director::Api::InstanceManager') }
+    let(:instance_manager) { instance_double(Api::InstanceManager) }
     let(:problem_register) { ProblemScanner::ProblemRegister.new(deployment, logger) }
     before do
       allow(problem_register).to receive(:get_disk).and_call_original
@@ -33,9 +33,9 @@ module Bosh::Director
           Models::Instance.make(agent_id: "agent-#{i}", deployment: deployment, job: "job-#{i}", index: i)
         end
 
-        allow(instance_manager).to receive(:find_by_name).with('fake-deployment', 'job-1', 1).and_return(instances[0])
-        allow(instance_manager).to receive(:find_by_name).with('fake-deployment', 'job-2', 2).and_return(instances[1])
-        allow(instance_manager).to receive(:find_by_name).with('fake-deployment', 'job-3', 3).and_return(instances[2])
+        allow(instance_manager).to receive(:find_by_name).with(deployment, 'job-1', 1).and_return(instances[0])
+        allow(instance_manager).to receive(:find_by_name).with(deployment, 'job-2', 2).and_return(instances[1])
+        allow(instance_manager).to receive(:find_by_name).with(deployment, 'job-3', 3).and_return(instances[2])
 
         expect(event_logger).to receive(:track_and_log).with('Checking VM states')
         expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 0 missing, 0 unbound')

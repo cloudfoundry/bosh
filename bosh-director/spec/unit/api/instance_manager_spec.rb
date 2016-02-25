@@ -20,13 +20,13 @@ module Bosh::Director
       context 'when index is provided' do
         let(:index) { '3' }
 
-        it 'enqueues a resque job' do
+        it 'enqueues a background job' do
           instance.update(index: index)
 
           expect(job_queue).to receive(:enqueue).with(
             username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
 
-          expect(subject.fetch_logs(username, deployment_name, job, index, options)).to eq(task)
+          expect(subject.fetch_logs(username, deployment, job, index, options)).to eq(task)
         end
       end
 
@@ -37,7 +37,7 @@ module Bosh::Director
           expect(job_queue).to receive(:enqueue).with(
             username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
 
-          expect(subject.fetch_logs(username, deployment_name, job, uuid, options)).to eq(task)
+          expect(subject.fetch_logs(username, deployment, job, uuid, options)).to eq(task)
         end
       end
     end
@@ -56,7 +56,7 @@ module Bosh::Director
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 
-        expect(subject.ssh(username, options)).to eq(task)
+        expect(subject.ssh(username, deployment, options)).to eq(task)
       end
     end
 
@@ -76,14 +76,14 @@ module Bosh::Director
         instance.update(index: index)
         instance.update(uuid: id)
 
-        expect(subject.find_by_name(deployment_name, job, index)).to eq instance
-        expect(subject.find_by_name(deployment_name, job, id)).to eq instance
+        expect(subject.find_by_name(deployment, job, index)).to eq instance
+        expect(subject.find_by_name(deployment, job, id)).to eq instance
       end
     end
 
     describe '#filter_by' do
       it 'filters by given criteria' do
-        expect(subject.filter_by(uuid: instance.uuid)).to eq [instance]
+        expect(subject.filter_by(deployment, uuid: instance.uuid)).to eq [instance]
       end
     end
   end

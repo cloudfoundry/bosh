@@ -51,7 +51,7 @@ module Bosh::Director
             context 'when identity provider is not UAA' do
               let(:identity_provider) { Api::LocalIdentityProvider.new({}) }
 
-              it 'return generic error messsage' do
+              it 'return generic error message' do
                 get '/test_route'
                 expect(last_response.status).to eq(401)
                 expect(last_response.body).to eq("Not authorized: '/test_route'\n")

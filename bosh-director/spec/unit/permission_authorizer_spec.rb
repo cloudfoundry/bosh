@@ -6,6 +6,220 @@ module Bosh::Director
       Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
     end
 
+    describe '#is_granted?' do
+      describe 'director subject' do
+        let(:acl_subject) { :director }
+
+        describe 'checking admin rights' do
+          let(:acl_right) { :admin }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                  'bosh.teams.security.admin',    # team specific admins
+                  'bosh.read',                    # read != admin
+                  'bosh.fake-director-uuid.read', # other director-specific read != admin
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking read rights' do
+          let(:acl_right) { :read }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows global read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.read'])).to eq(true)
+          end
+
+          it 'allows director-specific read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.read'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                  'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                  'bosh.teams.security.admin',  # team specific admins
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking for create_deployment rights' do
+          let(:acl_right) { :create_deployment }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows team admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.read', # denies global read scope
+                  'bosh.fake-director-uuid.read', # denies director-specific read scope
+                  'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                  'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                  'bosh.teams.security.read',  # team specific reads
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking for list_deployments rights' do
+          let(:acl_right) { :list_deployments }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows global read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.read'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.read'])).to eq(true)
+          end
+
+          it 'allows team admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
+          end
+
+          it 'allows team read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                  'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                  'bosh.teams.security.unexpected',  # abnormal team-specific scope
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking for invalid rights' do
+          let(:acl_right) { :what_I_fancy }
+
+          it 'raises an exception' do
+            expect{
+              subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
+            }.to raise_error ArgumentError, "Unexpected right for director: #{acl_right}"
+          end
+        end
+      end
+
+      describe 'deployment' do
+        let(:acl_subject) { Models::Deployment.make(name: 'favorite', teams: 'security') }
+
+        describe 'checking admin rights' do
+          let(:acl_right) { :admin }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows team admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                  'bosh.teams.fraud.admin',       # unrelated team specific admins
+                  'bosh.teams.security.read',     # team specific read
+                  'bosh.read',                    # read != admin
+                  'bosh.fake-director-uuid.read', # other director-specific read != admin
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking read rights' do
+          let(:acl_right) { :read }
+
+          it 'allows global admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows director-specific admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows global read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.read'])).to eq(true)
+          end
+
+          it 'allows director-specific read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.read'])).to eq(true)
+          end
+
+          it 'allows team admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
+          end
+
+          it 'allows team read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+                  'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                  'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                  'bosh.teams.fraud.admin',     # unrelated team specific scope
+                ])).to eq(false)
+          end
+        end
+
+        describe 'checking for invalid rights' do
+          let(:acl_right) { :what_I_fancy }
+
+          it 'raises an exception' do
+            expect{
+              subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
+            }.to raise_error ArgumentError, "Unexpected right for deployment: #{acl_right}"
+          end
+        end
+      end
+
+      describe 'unexpected subject' do
+        let(:acl_subject) { :subject_I_fancy }
+        let(:acl_right) { :read }
+
+        it 'raises an exception' do
+          expect{
+            subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
+          }.to raise_error ArgumentError, "Unexpected subject: #{acl_subject}"
+        end
+      end
+    end
+
     describe '#has_admin_or_director_scope?' do
       it 'should return true for bosh.admin' do
         token_scope = ['bosh.admin']
@@ -98,88 +312,15 @@ module Bosh::Director
       end
     end
 
-    describe '#raise_error_if_no_write_permissions' do
-      context 'provided scopes have bosh.admin' do
-        it 'does not raise an exception' do
-          token_scope = ['bosh.admin']
-          expect {
-            subject.raise_error_if_no_write_permissions(token_scope, [])
-          }.not_to raise_error
-        end
-      end
-
-      context 'provided scopes have bosh.admin and unknown director' do
-        it 'does not raise an exception' do
-          token_scope = ['bosh.admin', 'bosh.unknown-director.admin']
-          expect {
-            subject.raise_error_if_no_write_permissions(token_scope, [])
-          }.not_to raise_error
-        end
-      end
-
-      context 'provided scopes have bosh.fake-director-uuid.admin' do
-        it 'does not raise an exception' do
-          token_scope = ['bosh.fake-director-uuid.admin']
-          expect {
-            subject.raise_error_if_no_write_permissions(token_scope, [])
-          }.not_to raise_error
-        end
-      end
-
-      context 'provided scopes and deployment teams parameter have bosh.teams.fake-team.admin' do
-        it 'does not raise an exception' do
-          token_scope = ['bosh.teams.fake-team.admin']
-          expect {
-            subject.raise_error_if_no_write_permissions(token_scope, ['bosh.teams.fake-team.admin'])
-          }.not_to raise_error
-        end
-      end
-
-      context 'provided no scopes' do
-        it 'does raise an exception' do
-          expect {
-            subject.raise_error_if_no_write_permissions([], [])
-          }.to raise_error(UnauthorizedToAccessDeployment)
-        end
-      end
-
-      context 'director uuid is different from provided scopes' do
-        it 'does raise an exception' do
-          expect {
-            token_scope = ['bosh.unknown-director.admin']
-            subject.raise_error_if_no_write_permissions(token_scope, [])
-          }.to raise_error(UnauthorizedToAccessDeployment)
-        end
-      end
-
-      context 'provided scopes are different from team scopes' do
-        it 'does raise an exception' do
-          expect {
-            token_scope = ['bosh.teams.team-a.admin']
-            subject.raise_error_if_no_write_permissions(token_scope, ['bosh.teams.team-b.admin'])
-          }.to raise_error(UnauthorizedToAccessDeployment)
-        end
-      end
-
-      context 'provided scopes has readonly permissions' do
-        it 'does raise an exception' do
-          expect {
-            token_scope = ['bosh.read', 'bosh.fake-director-uuid.read']
-            subject.raise_error_if_no_write_permissions(token_scope, [])
-          }.to raise_error(UnauthorizedToAccessDeployment)
-        end
-      end
-    end
-
     describe '#transform_team_scope_to_teams' do
       it 'returns an array of team names from scope format' do
         token_scopes = ['bosh.teams.prod.admin']
-        expect(subject.transform_team_scope_to_teams(token_scopes)).to eq(['prod'])
+        expect(subject.transform_admin_team_scope_to_teams(token_scopes)).to eq(['prod'])
       end
 
       it 'returns an empty array if no valid token_scopes are found' do
         token_scopes = ['bosh.admin']
-        expect(subject.transform_team_scope_to_teams(token_scopes)).to eq([])
+        expect(subject.transform_admin_team_scope_to_teams(token_scopes)).to eq([])
       end
     end
 

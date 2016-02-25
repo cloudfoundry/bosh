@@ -20,7 +20,7 @@ module Bosh::Director
       def reset(vms=nil)
         if vms
           vms.each do |job, index|
-            instance = @instance_manager.find_by_name(@deployment.name, job, index)
+            instance = @instance_manager.find_by_name(@deployment, job, index)
 
             Models::DeploymentProblem.where(
               deployment: @deployment,

@@ -269,5 +269,5 @@ module Bosh::Director
   AttachDiskInvalidInstanceState = err(520003)
 
   # Authorization errors
-  UnauthorizedToAccessDeployment = err(600000)
+  UnauthorizedToAccessDeployment = err(600000, FORBIDDEN)
 end

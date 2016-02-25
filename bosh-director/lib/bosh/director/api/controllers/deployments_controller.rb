@@ -1,10 +1,54 @@
 require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
+  module Api::Extensions
+    module DeploymentScoping
+      def route(verb, path, options = {}, &block)
+        options[:scope] ||= :authorization
+        options[:authorization] ||= [:deployment => :admin]
+        super(verb, path, options, &block)
+      end
+
+      def authorization(authorization)
+        return unless authorization
+
+        condition do
+          authorization_subject = authorization.first[0]
+          required_right = authorization.first[1]
+          subject = :director
+
+          if params.has_key?('deployment')
+            params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
+
+            if :deployment == authorization_subject
+              subject = params['deployment_model']
+            end
+          end
+
+          if !@permission_authorizer.is_granted?(subject, required_right, token_scopes)
+            throw(:halt, [401, 'Insufficient privileges'])
+          end
+        end
+      end
+    end
+  end
+
   module Api::Controllers
     class DeploymentsController < BaseController
+
+      register Bosh::Director::Api::Extensions::DeploymentScoping
+
+      def initialize(config)
+        super(config)
+        @deployment_manager = Api::DeploymentManager.new
+        @problem_manager = Api::ProblemManager.new
+        @property_manager = Api::PropertyManager.new
+        @instance_manager = Api::InstanceManager.new
+        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
+      end
+
       get '/:deployment/jobs/:job/:index_or_id' do
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+        instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
 
         response = {
           deployment: params[:deployment],
@@ -12,7 +56,7 @@ module Bosh::Director
           index: instance.index,
           id: instance.uuid,
           state: instance.state,
-          disks: instance.persistent_disks.map {|d| d.disk_cid}
+          disks: instance.persistent_disks.map { |d| d.disk_cid }
         }
 
         json_encode(response)
@@ -29,9 +73,7 @@ module Bosh::Director
           }
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
-
-        deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = ((request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
+        manifest = ((request.content_length.nil? || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
@@ -42,7 +84,7 @@ module Bosh::Director
       put '/:deployment/jobs/:job/:index_or_id', :consumes => :yaml do
         validate_instance_index_or_id(params[:index_or_id])
 
-        instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+        instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
         index = instance.index
 
         options = {
@@ -56,8 +98,7 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
-        deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = (request.content_length.nil?  || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
+        manifest = (request.content_length.nil? || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
@@ -65,7 +106,6 @@ module Bosh::Director
 
       # GET /deployments/foo/jobs/dea/2/logs
       get '/:deployment/jobs/:job/:index_or_id/logs' do
-        deployment = params[:deployment]
         job = params[:job]
         index_or_id = params[:index_or_id]
 
@@ -79,17 +119,14 @@ module Bosh::Director
       end
 
       get '/:deployment/snapshots' do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
         json_encode(@snapshot_manager.snapshots(deployment))
       end
 
       get '/:deployment/jobs/:job/:index/snapshots' do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
         json_encode(@snapshot_manager.snapshots(deployment, params[:job], params[:index]))
       end
 
       post '/:deployment/snapshots' do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
 
@@ -98,16 +135,16 @@ module Bosh::Director
       end
 
       put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
-        payload = json_decode(request.body)
 
-        @resurrector_manager.set_pause_for_instance(params[:deployment], params[:job], params[:index_or_id], payload['resurrection_paused'])
+        payload = json_decode(request.body)
+        @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
       end
 
       post '/:deployment/jobs/:job/:index_or_id/snapshots' do
         if params[:index_or_id].to_s =~ /^\d+$/
-          instance = @instance_manager.find_by_name(params[:deployment], params[:job], params[:index_or_id])
+          instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
         else
-          instance = @instance_manager.filter_by(uuid: params[:index_or_id]).first
+          instance = @instance_manager.filter_by(deployment, uuid: params[:index_or_id]).first
         end
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
@@ -117,23 +154,22 @@ module Bosh::Director
       end
 
       delete '/:deployment/snapshots' do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
-
         task = @snapshot_manager.delete_deployment_snapshots_task(current_user, deployment)
         redirect "/tasks/#{task.id}"
       end
 
       delete '/:deployment/snapshots/:cid' do
-        deployment = @deployment_manager.find_by_name(params[:deployment])
         @snapshot_manager.find_by_cid(deployment, params[:cid])
 
         task = @snapshot_manager.delete_snapshots_task(current_user, [params[:cid]])
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: :read do
+      get '/', authorization: [director: :list_deployments] do
         latest_cloud_config = Api::CloudConfigManager.new.latest
-        deployments = @deployment_manager.find_available(token_scopes).map do |deployment|
+        deployments = @deployment_manager.all_by_name_asc
+          .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
+          .map do |deployment|
           cloud_config = if deployment.cloud_config.nil?
                          'none'
                        elsif deployment.cloud_config == latest_cloud_config
@@ -163,26 +199,32 @@ module Bosh::Director
         json_encode(deployments)
       end
 
-      get '/:name', scope: :read do
-        deployment = @deployment_manager.find_by_name(params[:name])
-        @deployment_manager.deployment_to_json(deployment)
+      get '/:deployment', authorization: [:deployment => :read] do
+        Yajl::Encoder.encode({'manifest' => deployment.manifest})
       end
 
-      get '/:name/vms', scope: :read do
-        deployment = @deployment_manager.find_by_name(params[:name])
-
+      get '/:deployment/vms', authorization: [:deployment => :read] do
         format = params[:format]
         if format == 'full'
           task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
-          @deployment_manager.deployment_instances_to_json(deployment)
+          instances = @deployment_manager.deployment_instances_with_vms(deployment)
+          instance_hashes = []
+          instances.each do |instance|
+            instance_hashes << {
+              'agent_id' => instance.agent_id,
+              'cid' => instance.vm_cid,
+              'job' => instance.job,
+              'index' => instance.index,
+              'id' => instance.uuid
+            }
+          end
+          Yajl::Encoder.encode(instance_hashes)
         end
       end
 
-      delete '/:name' do
-        deployment = @deployment_manager.find_by_name(params[:name])
-
+      delete '/:deployment' do
         options = {}
         options['force'] = true if params['force'] == 'true'
         options['keep_snapshots'] = true if params['keep_snapshots'] == 'true'
@@ -190,39 +232,39 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
+      post '/:deployment/ssh', :consumes => [:json] do
+        payload = json_decode(request.body)
+        task = @instance_manager.ssh(current_user, deployment, payload)
+        redirect "/tasks/#{task.id}"
+      end
+
       # Property management
       get '/:deployment/properties' do
-        properties = @property_manager.get_properties(params[:deployment]).map do |property|
-          { 'name' => property.name, 'value' => property.value }
+        properties = @property_manager.get_properties(deployment).map do |property|
+          {'name' => property.name, 'value' => property.value}
         end
         json_encode(properties)
       end
 
       get '/:deployment/properties/:property' do
-        property = @property_manager.get_property(params[:deployment], params[:property])
+        property = @property_manager.get_property(deployment, params[:property])
         json_encode('value' => property.value)
       end
 
       post '/:deployment/properties', :consumes => [:json] do
         payload = json_decode(request.body)
-        @property_manager.create_property(params[:deployment], payload['name'], payload['value']  )
+        @property_manager.create_property(deployment, payload['name'], payload['value'])
         status(204)
-      end
-
-      post '/:deployment/ssh', :consumes => [:json] do
-        payload = json_decode(request.body)
-        task = @instance_manager.ssh(current_user, payload)
-        redirect "/tasks/#{task.id}"
       end
 
       put '/:deployment/properties/:property', :consumes => [:json] do
         payload = json_decode(request.body)
-        @property_manager.update_property(params[:deployment], params[:property], payload['value'])
+        @property_manager.update_property(deployment, params[:property], payload['value'])
         status(204)
       end
 
       delete '/:deployment/properties/:property' do
-        @property_manager.delete_property(params[:deployment], params[:property])
+        @property_manager.delete_property(deployment, params[:property])
         status(204)
       end
 
@@ -230,12 +272,12 @@ module Bosh::Director
 
       # Initiate deployment scan
       post '/:deployment/scans' do
-        start_task { @problem_manager.perform_scan(current_user, params[:deployment]) }
+        start_task { @problem_manager.perform_scan(current_user, deployment) }
       end
 
       # Get the list of problems for a particular deployment
       get '/:deployment/problems' do
-        problems = @problem_manager.get_problems(params[:deployment]).map do |problem|
+        problems = @problem_manager.get_problems(deployment).map do |problem|
           {
             'id' => problem.id,
             'type' => problem.type,
@@ -250,20 +292,18 @@ module Bosh::Director
 
       put '/:deployment/problems', :consumes => [:json] do
         payload = json_decode(request.body)
-        start_task { @problem_manager.apply_resolutions(current_user, params[:deployment], payload['resolutions']) }
+        start_task { @problem_manager.apply_resolutions(current_user, deployment, payload['resolutions']) }
       end
 
       put '/:deployment/scan_and_fix', :consumes => :json do
         jobs_json = json_decode(request.body)['jobs']
         payload = convert_job_instance_hash(jobs_json)
-
-        deployment = @deployment_manager.find_by_name(params[:deployment])
         if deployment_has_instance_to_resurrect?(deployment)
-          start_task { @problem_manager.scan_and_fix(current_user, params[:deployment], payload) }
+          start_task { @problem_manager.scan_and_fix(current_user, deployment, payload) }
         end
       end
 
-      post '/', :consumes => :yaml do
+      post '/', authorization: [director: :create_deployment], :consumes => :yaml do
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
@@ -280,12 +320,21 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/diff', :consumes => :yaml do
-        deployment = Models::Deployment[name: params[:deployment]]
+      post '/:deployment/diff', authorization: false, :consumes => :yaml do
+        deployment = Models::Deployment.find(name: params[:deployment])
+
         if deployment
+          unless @permission_authorizer.is_granted?(deployment, :admin, token_scopes)
+            throw(:halt, [401, 'Insufficient privileges'])
+          end
+
           before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
           before_manifest.resolve_aliases
         else
+          unless @permission_authorizer.is_granted?(:director, :create_deployment, token_scopes)
+            throw(:halt, [401, 'Insufficient privileges'])
+          end
+
           before_manifest = Manifest.load_from_text(nil, nil)
         end
 
@@ -306,40 +355,32 @@ module Bosh::Director
         })
       end
 
-      post '/:deployment_name/errands/:errand_name/runs' do
-        deployment_name = params[:deployment_name]
+      post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
         keep_alive = json_decode(request.body)['keep-alive'] || FALSE
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::RunErrand,
-          "run errand #{errand_name} from deployment #{deployment_name}",
-          [deployment_name, errand_name, keep_alive],
+          "run errand #{errand_name} from deployment #{deployment.name}",
+          [deployment.name, errand_name, keep_alive],
         )
 
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:deployment_name/errands', scope: :read do
-        deployment_plan = load_deployment_plan
-
+      get '/:deployment/errands', authorization: [:deployment => :read] do
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
+        deployment_plan = planner_factory.create_from_model(deployment)
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)
-
-        errand_data = errands.map do |errand|
-          { "name" => errand.name }
-        end
-
+        errand_data = errands.map { |errand| {"name" => errand.name} }
         json_encode(errand_data)
       end
 
       private
 
-      def load_deployment_plan
-        deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
-
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
-        planner_factory.create_from_model(deployment_model)
+      def deployment
+        params['deployment_model']
       end
 
       def convert_job_instance_hash(hash)
@@ -351,11 +392,7 @@ module Bosh::Director
 
       def deployment_has_instance_to_resurrect?(deployment)
         false if deployment.nil?
-        filter = {
-          deployment_id: deployment.id,
-          resurrection_paused: false
-        }
-        instances = @instance_manager.filter_by(filter)
+        instances = @instance_manager.filter_by(deployment, resurrection_paused: false)
         instances.any?
       end
 

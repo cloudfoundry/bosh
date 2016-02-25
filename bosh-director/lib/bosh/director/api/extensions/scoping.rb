@@ -18,6 +18,11 @@ module Bosh::Director
         end
 
         def scope(allowed_scope)
+          if allowed_scope == :authorization
+            # handled by the :authorization option of the route
+            return
+          end
+
           condition do
             if allowed_scope == :default
               scope = settings.default_scope
@@ -27,19 +32,7 @@ module Bosh::Director
               scope = allowed_scope
             end
 
-            auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
-              request.env.has_key?(key)
-            end
-
-            if auth_provided
-              begin
-                @user = identity_provider.get_user(request.env)
-              rescue AuthenticationError
-              end
-            end
-
             if requires_authentication? && (@user.nil? || !identity_provider.valid_access?(@user, scope))
-              response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
               if @user.nil?
                 message = "Not authorized: '#{request.path}'\n"
               else

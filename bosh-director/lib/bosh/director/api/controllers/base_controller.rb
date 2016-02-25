@@ -10,13 +10,9 @@ module Bosh::Director
           @config = config
           @logger = Config.logger
           @identity_provider = config.identity_provider
-          @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
           @restore_manager = RestoreManager.new
-          @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
-          @problem_manager = ProblemManager.new(@deployment_manager)
-          @property_manager = PropertyManager.new(@deployment_manager)
           @release_manager = ReleaseManager.new
           @snapshot_manager = SnapshotManager.new
           @stemcell_manager = StemcellManager.new
@@ -42,6 +38,27 @@ module Bosh::Director
             content_type = request.content_type || ''
             mime_type = content_type.split(';')[0]
             types.include?(mime_type)
+          end
+        end
+
+        before do
+          auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
+            request.env.has_key?(key)
+          end
+
+          if auth_provided
+            begin
+              @user = identity_provider.get_user(request.env)
+            rescue AuthenticationError
+            end
+          end
+
+          if requires_authentication?
+            response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
+            if @user.nil?
+              message = "Not authorized: '#{request.path}'\n"
+              throw(:halt, [401, message])
+            end
           end
         end
 

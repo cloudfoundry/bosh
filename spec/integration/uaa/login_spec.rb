@@ -157,7 +157,16 @@ CERT
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin, bosh.read, bosh.deadbeef.read`)
+        expect(output).to include("Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin, bosh.read, bosh.deadbeef.read")
+      end
+
+      it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
+        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        deploy_from_scratch(no_login: true, env: client_env)
+
+        client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
+        output = bosh_runner.run('delete deployment simple', env: client_env, failure_expected: true)
+        expect(output).to include('You are unauthorized to view this deployment. Please contact the BOSH admin.')
       end
     end
 
