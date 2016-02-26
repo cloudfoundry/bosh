@@ -15,10 +15,14 @@ module Bosh::Director
       @rendered_job_templates_cleaner.clean
 
       if @instance.state == 'started'
+        @logger.info("Running pre-start for #{@instance}")
         @agent_client.run_script('pre-start', {})
+
+        @logger.info("Starting instance #{@instance}")
         @agent_client.start
       end
 
+      # for backwards compatibility with instances that don't have update config
       if update_config
         min_watch_time = @is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
         max_watch_time = @is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
@@ -43,6 +47,7 @@ module Bosh::Director
 
           raise AgentJobNotRunning, error_message
         else
+          @logger.info("Running post-start for #{@instance}")
           @agent_client.run_script('post-start', {})
         end
       end

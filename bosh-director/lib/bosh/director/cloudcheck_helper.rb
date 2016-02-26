@@ -67,7 +67,8 @@ module Bosh::Director
       dns_manager = DnsManagerProvider.create
       dns_names_to_ip = {}
 
-      instance_plan_to_create.existing_instance.spec['networks'].each do |network_name, network|
+      apply_spec = instance_plan_to_create.existing_instance.spec
+      apply_spec['networks'].each do |network_name, network|
         index_dns_name = dns_manager.dns_record_name(instance_model.index, instance_model.job, network_name, instance_model.deployment.name)
         dns_names_to_ip[index_dns_name] = network['ip']
         id_dns_name = dns_manager.dns_record_name(instance_model.uuid, instance_model.job, network_name, instance_model.deployment.name)
@@ -80,13 +81,17 @@ module Bosh::Director
 
       InstanceUpdater::InstanceState.with_instance_update(instance_model) do
         cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
+
+        # for backwards compatibility with instances that don't have update config
+        update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
+
         InstanceUpdater::StateApplier.new(
           instance_plan_to_create,
           agent_client(instance_model.credentials, instance_model.agent_id),
           cleaner,
           @logger,
           {}
-        ).apply(nil)
+        ).apply(update_config)
       end
     end
 

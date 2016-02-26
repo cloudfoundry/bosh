@@ -37,6 +37,7 @@ module Bosh::Director
         link_spec: 'fake-link',
         compilation?: false,
         templates: [],
+        update_spec: update_config.to_hash,
         properties: {}
       )
     end
@@ -176,10 +177,13 @@ module Bosh::Director
 
           it 'logs while waiting until instance is in desired state' do
             expect(logger).to receive(:info).with('Applying VM state').ordered
+            expect(logger).to receive(:info).with('Running pre-start for fake-job/0 (uuid-1)').ordered
+            expect(logger).to receive(:info).with('Starting instance fake-job/0 (uuid-1)').ordered
             expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
             expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
             expect(logger).to receive(:info).with('Waiting for 1.0 seconds to check fake-job/0 (uuid-1) status').ordered
             expect(logger).to receive(:info).with('Checking if fake-job/0 (uuid-1) has been updated after 1.0 seconds').ordered
+            expect(logger).to receive(:info).with('Running post-start for fake-job/0 (uuid-1)').ordered
 
             state_applier.apply(update_config)
           end
