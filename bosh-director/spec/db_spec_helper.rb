@@ -13,19 +13,16 @@ module DBSpecHelper
       Bosh::Director::Config.patch_sqlite
 
       @temp_dir = Bosh::Director::Config.generate_temp_dir
-      @migration_dir = Dir.mktmpdir('migration-dir', @temp_dir)
       @director_migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
 
-      Sequel.extension :migration
-      connect_database(@temp_dir)
+     Sequel.extension :migration
     end
 
-    def connect_database(path)
-      db = ENV['DB_CONNECTION'] || "sqlite://#{File.join(path, 'director.db')}"
-
+    def connect_database
+      db_path = ENV['DB_CONNECTION'] || "sqlite://#{File.join(@db_dir, 'director.db')}"
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
-      @db = Sequel.connect(db, db_opts)
+      @db = Sequel.connect(db_path, db_opts)
     end
 
     def reset_database
@@ -34,14 +31,13 @@ module DBSpecHelper
         @db = nil
       end
 
-      if @db_dir && File.directory?(@db_dir)
-        FileUtils.rm_rf(@db_dir)
-      end
-
+      FileUtils.rm_rf(@db_dir) if @db_dir
       @db_dir = Dir.mktmpdir(nil, @temp_dir)
-      FileUtils.cp(Dir.glob(File.join(@temp_dir, '*.db')), @db_dir)
 
-      connect_database(@db_dir)
+      FileUtils.rm_rf(@migration_dir) if @migration_dir
+      @migration_dir = Dir.mktmpdir('migration-dir', @temp_dir)
+
+      connect_database
     end
 
     def migrate_all_before(migration_file)
