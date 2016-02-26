@@ -17,7 +17,7 @@ Sequel.migration do
     end
 
     if [:mysql2, :mysql, :postgres].include?(adapter_scheme)
-      foreign_key = foreign_key_list(:compiled_packages).find { |constraint| constraint.fetch(:columns) == [:stemcell_id] }.fetch(:name)
+      foreign_key = foreign_key_list(:compiled_packages).find { |constraint| constraint.fetch(:columns).include?(:stemcell_id) }.fetch(:name)
       build_index = indexes(:compiled_packages).find { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :build] }.first
       dependency_key_index = indexes(:compiled_packages).find { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :dependency_key_sha1] }.first
       alter_table(:compiled_packages) do
