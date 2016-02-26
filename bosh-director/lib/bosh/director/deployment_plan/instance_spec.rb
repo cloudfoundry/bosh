@@ -31,7 +31,8 @@ module Bosh::Director
           'properties' => job.properties,
           'dns_domain_name' => dns_manager.dns_domain_name,
           'links' => job.link_spec,
-          'address' => instance_plan.network_settings.network_address
+          'address' => instance_plan.network_settings.network_address,
+          'update' => job.update_spec
         }
 
         if job.persistent_disk_type

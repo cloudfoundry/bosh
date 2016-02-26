@@ -226,8 +226,8 @@ module Bosh::Director
         @model.update(state: state)
       end
 
-      def update_post_start_completed(value)
-        @model.update(post_start_completed: value)
+      def dirty?
+        !@model.update_completed
       end
 
       def update_description

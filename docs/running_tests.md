@@ -28,6 +28,8 @@ bosh$ bundle exec rake spec:unit
 
 The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3. All code needs to run on Ruby 2.x.x.
 
+You can also use `./quick-unit-tests.sh` to run all unit tests against a local [Concourse CI](https://concourse.ci/) instance.
+
 
 ### Integration Tests
 
@@ -36,6 +38,8 @@ Integration tests describe communication between BOSH components focusing on the
 ```
 bosh$ bundle exec rake spec:integration
 ```
+
+You can also use `./quick-integration-tests.sh` to run all integration tests against a local [Concourse CI](https://concourse.ci/) instance.
 
 
 ### Acceptance Tests (BATs)

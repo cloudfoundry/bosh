@@ -1,7 +1,7 @@
 # abort script on any command that exit with a non zero value
 set -e
 
-MYSQL_VERSION='5.1.62-rel13.3-435-Linux-x86_64'
+MYSQL_VERSION='5.7.10-3-Linux.x86_64.ssl100'
 # `mysqldump` (only) from Percona binary Linux build
 tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
 (
@@ -9,6 +9,8 @@ tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
   mkdir -p ${BOSH_INSTALL_TARGET}/bin
   cd server-$MYSQL_VERSION
   cp -a bin/mysqldump bin/mysql ${BOSH_INSTALL_TARGET}/bin
+
+  cp -a lib ${BOSH_INSTALL_TARGET}/lib
 )
 
 MARIADB_VERSION='2.2.1'

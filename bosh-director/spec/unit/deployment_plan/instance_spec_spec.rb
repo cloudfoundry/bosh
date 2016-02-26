@@ -27,6 +27,7 @@ module Bosh::Director::DeploymentPlan
         is_errand?: false,
         link_spec: 'fake-link',
         compilation?: false,
+        update_spec: {},
         properties: properties)
     }
     let(:index) { 0 }

@@ -72,6 +72,7 @@ describe Bosh::Director::VmCreator do
     job.env = env
     job.templates << template
     job.default_network = {"gateway" => "name"}
+    job.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
     job
   end
 

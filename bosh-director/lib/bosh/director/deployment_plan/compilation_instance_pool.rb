@@ -222,6 +222,10 @@ module Bosh::Director
         {}
       end
 
+      def update_spec
+        nil
+      end
+
       def persistent_disk_type
         nil
       end

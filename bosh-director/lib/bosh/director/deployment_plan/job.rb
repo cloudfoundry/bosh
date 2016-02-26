@@ -210,6 +210,10 @@ module Bosh::Director
         end
       end
 
+      def update_spec
+        update.to_hash
+      end
+
       # Returns package specs for all packages in the job indexed by package
       # name. To be used by all instances of the job to populate agent state.
       # @return [Hash<String, Hash>] All package specs indexed by package name
