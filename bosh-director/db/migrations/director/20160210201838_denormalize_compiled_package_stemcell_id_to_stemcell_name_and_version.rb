@@ -32,10 +32,18 @@ Sequel.migration do
       # stemcell_indexes is an array, where each element is an array with first element being the name of index
       stemcell_index = stemcell_indexes.first.first
 
+      if [:mysql2, :mysql].include?(adapter_scheme)
+        alter_table(:compiled_packages) do
+          drop_index(nil, name: build_index)
+        end
+      elsif [:postgres].include?(adapter_scheme)
+        alter_table(:compiled_packages) do
+          drop_constraint(build_index)
+        end
+      end
+
       alter_table(:compiled_packages) do
         drop_constraint(stemcell_foreign_key_name, :type => :foreign_key)
-        drop_index(nil, name: build_index)
-
         add_index [:package_id, :stemcell_os, :stemcell_version, :build], unique: true, name: 'package_stemcell_build_idx'
         add_index [:package_id, :stemcell_os, :stemcell_version, :dependency_key_sha1], unique: true, name: 'package_stemcell_dependency_idx'
         drop_index(nil, name: stemcell_index)
