@@ -143,7 +143,6 @@ module Bosh::Director
           'job',
           'index',
           'id',
-          'az',
           'networks',
           'packages',
           'dns_domain_name',
