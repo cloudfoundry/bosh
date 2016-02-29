@@ -6,6 +6,7 @@ module Bosh::Director
     def initialize(deployment)
       @deployment = deployment
       @resolved_count = 0
+      @resolution_error_logs = StringIO.new
 
       #temp
       @event_log = Config.event_log
@@ -42,7 +43,10 @@ module Bosh::Director
           apply_resolution(problem)
         end
       end
-      @resolved_count
+
+      error_message = @resolution_error_logs.string.empty? ? nil : @resolution_error_logs.string.chomp
+
+      [@resolved_count, error_message]
     end
 
     private
@@ -75,8 +79,10 @@ module Bosh::Director
     private
 
     def log_resolution_error(problem, error)
-      logger.error("Error resolving problem `#{problem.id}': #{error}")
+      error_message = "Error resolving problem `#{problem.id}': #{error}"
+      logger.error(error_message)
       logger.error(error.backtrace.join("\n"))
+      @resolution_error_logs.puts(error_message)
     end
   end
 end

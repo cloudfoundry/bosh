@@ -136,6 +136,25 @@ module Bosh::Director
       end
     end
 
+    describe '#perform' do
+      context 'when problem resolution fails' do
+        it 'raises an error' do
+          scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
+          allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
+          allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+
+          resolver = instance_double('Bosh::Director::ProblemResolver')
+          expect(ProblemResolver).to receive(:new).and_return(resolver)
+          expect(resolver).to receive(:apply_resolutions).and_return([1, "error message"])
+          expect(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
+
+          expect{
+            scan_and_fix.perform
+          }.to raise_error(Bosh::Director::ProblemHandlerError)
+        end
+      end
+    end
+
     it 'should not recreate vms with resurrection_paused turned on' do
       unresponsive_instance = Models::Instance.find(deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
       unresponsive_instance.resurrection_paused = true
