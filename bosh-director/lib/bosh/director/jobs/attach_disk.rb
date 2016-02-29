@@ -54,8 +54,8 @@ module Bosh::Director
         previous_persistent_disk.update(active: false)
 
         if instance.state == 'stopped'
-          @disk_manager.detach_disk(instance, previous_persistent_disk)
           @disk_manager.unmount_disk(instance, previous_persistent_disk)
+          @disk_manager.detach_disk(instance, previous_persistent_disk)
         end
 
         @disk_manager.orphan_disk(previous_persistent_disk)
