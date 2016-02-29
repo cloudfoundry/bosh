@@ -40,9 +40,8 @@ export NO_PROXY=<%= no_proxy %>
 export no_proxy=<%= no_proxy %>
 <% end %>
 
-function pid_exists() {
-  ps -p $1 &> /dev/null
-}
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/ps_utils.sh
 
 case $1 in
 
@@ -63,17 +62,9 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    if [ ! -z $PID ] && pid_exists $PID; then
-     kill $PID
-    fi
-    TRIES=0
-    while [ -e /proc/$PID ]
-    do
-      TRIES=$(( $TRIES + 1 ))
-      if [ $TRIES -gt 100 ]; then
-        kill -9 $PID
-      fi
-      sleep 0.1
+    kill_process $PID # prevent the parent from fork()ing new children
+    for CHILD in list_child_processes; do
+      kill_process $CHILD
     done
     rm -f $PIDFILE
     ;;

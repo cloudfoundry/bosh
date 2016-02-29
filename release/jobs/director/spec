@@ -4,6 +4,7 @@ templates:
   director_ctl.erb: bin/director_ctl
   director.yml.erb.erb: config/director.yml.erb
   worker_ctl.erb: bin/worker_ctl
+  ps_utils.sh: bin/ps_utils.sh
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
