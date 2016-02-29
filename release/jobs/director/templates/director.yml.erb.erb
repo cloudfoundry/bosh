@@ -7,7 +7,7 @@ params = {
   'max_threads' => p('director.max_threads'),
   'logging' => {
     'level' => 'DEBUG',
-    'file' =>  "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.debug.log"
+    'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'dir' => '/var/vcap/store/director',
@@ -23,7 +23,8 @@ params = {
   'snapshots' => {
     'enabled'=> p('director.enable_snapshots')
   },
-  'max_vm_create_tries' => p('director.max_vm_create_tries')
+  'max_vm_create_tries' => p('director.max_vm_create_tries'),
+  'enable_post_deploy' => p('director.enable_post_deploy')
 }
 
 params['scheduled_jobs'] = []

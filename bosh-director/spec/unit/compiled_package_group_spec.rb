@@ -4,7 +4,7 @@ require 'bosh/director/compiled_package_group'
 module Bosh::Director
   describe CompiledPackageGroup do
     let(:release_version) { Models::ReleaseVersion.make }
-    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1') }
+    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1', operating_system: 'chrome-os') }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell) }
 
@@ -21,7 +21,7 @@ module Bosh::Director
       let(:dependency_key1) { 'fake_dependency_key_1' }
       let(:dependency_key2) { 'fake_dependency_key_2' }
 
-      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell: stemcell, dependency_key: dependency_key1) }
+      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell_os: stemcell.operating_system, stemcell_version: stemcell.version, dependency_key: dependency_key1) }
 
       before do
         allow(release_version).to receive(:transitive_dependencies).with(package1).and_return(transitive_dependencies1)

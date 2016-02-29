@@ -89,6 +89,7 @@ module Bosh::Clouds
       end
 
       save_cpi_log(parsed_response['log'])
+      save_cpi_log(stderr)
 
       parsed_response['result']
     end

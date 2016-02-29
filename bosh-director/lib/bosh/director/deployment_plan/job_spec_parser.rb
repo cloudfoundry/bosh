@@ -116,8 +116,19 @@ module Bosh::Director
 
       def parse_templates
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
+        jobs = safe_property(@job_spec, 'jobs', class: Array, optional: true)
+
+        if jobs && !jobs.empty?
+          templates = jobs
+        end
 
         if templates
+          release_manager = Api::ReleaseManager.new
+
+          # Key: release name.
+          # Value: list of templates models of release version.
+          release_versions_templates_models_hash = {}
+
           templates.each do |template_spec|
             template_name = safe_property(template_spec, 'name', class: String)
             release_name = safe_property(template_spec, 'release', class: String, optional: true)
@@ -135,15 +146,50 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.get_or_create_template(template_name)
-
-            links = safe_property(template_spec, 'links', class: Hash, optional: true)
-            @logger.debug("Parsing template links: #{links.inspect}")
-
-            links.to_a.each do |name, path|
-              link_path = LinkPath.parse(@deployment.name, path, @logger)
-              @job.add_link_path(template_name, name, link_path)
+            if !release_versions_templates_models_hash.has_key?(release_name)
+              release_model = release_manager.find_by_name(release.name)
+              current_release_version = release_manager.find_version(release_model, release.version)
+              release_versions_templates_models_hash[release_name] = current_release_version.templates
             end
+
+            templates_models_list = release_versions_templates_models_hash[release_name]
+            current_template_model = templates_models_list.find {|target| target.name == template_name }
+
+            template = release.get_or_create_template(template_name)
+
+            if current_template_model == nil
+              raise "Template #{template_name} not found in Template table"
+            end
+
+            if current_template_model.consumes_json != nil
+              JSON.parse(current_template_model.consumes_json).each do |consumes_json|
+                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json)
+              end
+            end
+            if current_template_model.provides_json != nil
+              JSON.parse(current_template_model.provides_json).each do |provides_json|
+                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json)
+              end
+            end
+
+            provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
+            provides_links.to_a.each do |link_name, source|
+              template.add_link_info(@job.name, "provides", link_name, source)
+            end
+
+            consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
+            consumes_links.to_a.each do |link_name, source|
+              template.add_link_info(@job.name, 'consumes', link_name, source)
+            end
+
+            template.add_template_scoped_properties(
+                safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
+                @job.name
+            )
+
+            template.assign_link_property_values(current_template_model.properties_json, @job.name)
+
+            @job.templates << template
           end
         end
       end
@@ -171,8 +217,8 @@ module Bosh::Director
         end
 
         if disk_type_name
-            disk_name = disk_type_name
-            disk_source = 'type'
+          disk_name = disk_type_name
+          disk_source = 'type'
         else
           disk_name = disk_pool_name
           disk_source = 'pool'
@@ -225,10 +271,9 @@ module Bosh::Director
       end
 
       def parse_resource_pool
-        job_env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
-        @job.env = Env.new(job_env_hash)
-
+        env_hash = safe_property(@job_spec, 'env', class: Hash, :default => {})
         resource_pool_name = safe_property(@job_spec, "resource_pool", class: String, optional: true)
+
         if resource_pool_name
           resource_pool = @deployment.resource_pool(resource_pool_name)
           if resource_pool.nil?
@@ -236,36 +281,46 @@ module Bosh::Director
               "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
           end
 
-          @job.vm_type = VmType.new({
-              'name' => resource_pool.name,
-              'cloud_properties' => resource_pool.cloud_properties
-            })
+          vm_type = VmType.new({
+            'name' => resource_pool.name,
+            'cloud_properties' => resource_pool.cloud_properties
+          })
 
-          @job.stemcell = resource_pool.stemcell
+          vm_extensions = []
 
-          if  !job_env_hash.empty? && !resource_pool.env.empty?
+          stemcell = resource_pool.stemcell
+
+          if !env_hash.empty? && !resource_pool.env.empty?
             raise JobAmbiguousEnv,
               "Job '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
           end
 
-          @job.env = Env.new(resource_pool.env)
+          if env_hash.empty?
+            env_hash = resource_pool.env
+          end
+        else
+          vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
+          vm_type = @deployment.vm_type(vm_type_name)
+          if vm_type.nil?
+            raise JobUnknownVmType,
+              "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
+          end
 
-          return
+          vm_extension_names = Array(safe_property(@job_spec, 'vm_extensions', class: Array, optional: true))
+          vm_extensions = Array(vm_extension_names).map {|vm_extension_name| @deployment.vm_extension(vm_extension_name)}
+
+          stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
+          stemcell = @deployment.stemcell(stemcell_name)
+          if stemcell.nil?
+            raise JobUnknownStemcell,
+              "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
+          end
         end
 
-        vm_type_name = safe_property(@job_spec, 'vm_type', class: String)
-        @job.vm_type = @deployment.vm_type(vm_type_name)
-        if @job.vm_type.nil?
-          raise JobUnknownVmType,
-            "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
-        end
-
-        stemcell_name = safe_property(@job_spec, 'stemcell', class: String)
-        @job.stemcell = @deployment.stemcell(stemcell_name)
-        if @job.stemcell.nil?
-          raise JobUnknownStemcell,
-            "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
-        end
+        @job.vm_type = vm_type
+        @job.vm_extensions = vm_extensions
+        @job.stemcell = stemcell
+        @job.env = Env.new(env_hash)
       end
 
       def parse_update_config
@@ -322,15 +377,23 @@ module Bosh::Director
       def validate_templates
         template_property = safe_property(@job_spec, 'template', optional: true)
         templates_property = safe_property(@job_spec, 'templates', optional: true)
+        jobs_property = safe_property(@job_spec, 'jobs', optional: true)
 
         if template_property && templates_property
-          raise JobInvalidTemplates,
-                "Job `#{@job.name}' specifies both template and templates keys, only one is allowed"
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and templates keys, only one is allowed"
         end
 
-        if [template_property, templates_property].compact.empty?
+        if templates_property && jobs_property
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both templates and jobs keys, only one is allowed"
+        end
+
+        if template_property && jobs_property
+          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and jobs keys, only one is allowed"
+        end
+
+        if [template_property, templates_property, jobs_property].compact.empty?
           raise ValidationMissingField,
-                "Job `#{@job.name}' does not specify template or templates keys, one is required"
+                "Job `#{@job.name}' does not specify template, templates, or jobs keys, one is required"
         end
       end
 

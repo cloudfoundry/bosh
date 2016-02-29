@@ -3,6 +3,8 @@ require 'bosh/template/evaluation_failed'
 require 'bosh/template/unknown_property'
 require 'bosh/template/unknown_link'
 require 'bosh/template/property_helper'
+require 'bosh/template/evaluation_link_instance'
+require 'bosh/template/evaluation_link'
 
 module Bosh
   module Template
@@ -93,8 +95,14 @@ module Bosh
 
       def link(name)
         result = lookup_property(@links, name)
-        return result unless result.nil?
+        raise UnknownLink.new(name) if result.nil?
 
+        if result.has_key?("instances")
+          instance_array = result["instances"].map do |link_spec|
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+          end
+          return EvaluationLink.new(instance_array, result["link_properties"])
+        end
         raise UnknownLink.new(name)
       end
 
@@ -110,6 +118,23 @@ module Bosh
 
         yield *values
         InactiveElseBlock.new
+      end
+
+      # Run a block of code if the link given exists
+      # @param [String] name of the link
+      # @yield [Object] link, which is an array of instances
+      def if_link(name)
+        link_found = lookup_property(@links, name)
+        if link_found.nil? || !link_found.has_key?("instances")
+          return ActiveElseBlock.new(self)
+        else
+          instance_array = link_found["instances"].map do |link_spec|
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+          end
+
+          yield EvaluationLink.new(instance_array, link_found["link_properties"])
+          InactiveElseBlock.new
+        end
       end
 
       # @return [Object] Object representation where all hashes are unrolled
@@ -139,6 +164,10 @@ module Bosh
         def else_if_p(*names, &block)
           @context.if_p(*names, &block)
         end
+
+        def else_if_link(name, &block)
+          @context.if_link(name, &block)
+        end
       end
 
       class InactiveElseBlock
@@ -146,6 +175,10 @@ module Bosh
         end
 
         def else_if_p(*names)
+          InactiveElseBlock.new
+        end
+
+        def else_if_link(name)
           InactiveElseBlock.new
         end
       end

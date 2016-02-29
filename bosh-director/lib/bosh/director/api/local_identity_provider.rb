@@ -6,7 +6,7 @@ module Bosh
       class LocalIdentityProvider
         extend Forwardable
 
-        def initialize(options, _)
+        def initialize(options)
           users = options.fetch('users', [])
           @user_manager = Bosh::Director::Api::UserManagerProvider.new.user_manager(users)
         end
@@ -18,7 +18,7 @@ module Bosh
           {'type' => 'basic', 'options' => {}}
         end
 
-        def get_user(request_env)
+        def get_user(request_env, _)
           auth ||= Rack::Auth::Basic::Request.new(request_env)
           raise AuthenticationError unless auth.provided? && auth.basic? && auth.credentials
 
@@ -38,7 +38,11 @@ module Bosh
         end
       end
 
-      class LocalUser < Struct.new(:username, :password); end
+      class LocalUser < Struct.new(:username, :password)
+        def scopes
+          ['bosh.admin']
+        end
+      end
     end
   end
 end

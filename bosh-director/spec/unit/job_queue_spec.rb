@@ -23,11 +23,10 @@ module Bosh::Director
         task_helper = instance_double('Bosh::Director::Api::TaskHelper')
         expect(Bosh::Director::Api::TaskHelper).to receive(:new).and_return(task_helper)
 
-        expect(task_helper).to receive(:create_task).with('whoami', :snow, 'busy doing something').and_return(task)
+        expect(task_helper).to receive(:create_task).with('whoami', :snow, 'busy doing something', 'some_deployment').and_return(task)
         expect(Jobs::DBJob).to receive(:new).with(job_class, task.id, ['foo', 'bar']).and_return(db_job)
-        cnt = Delayed::Job.count
         expect(Delayed::Job.count).to eq(0)
-        retval = subject.enqueue('whoami', job_class, 'busy doing something', ['foo', 'bar'])
+        retval = subject.enqueue('whoami', job_class, 'busy doing something', ['foo', 'bar'], 'some_deployment')
         expect(retval).to be(task)
         expect(Delayed::Job.count).to eq(1)
         expect(Delayed::Job.first[:queue]).to eq('sample')

@@ -4,9 +4,10 @@ module Bosh::Director
   module Api::Controllers
     class CloudConfigsController < BaseController
       post '/', :consumes => :yaml do
-        properties = request.body.string
-        Bosh::Director::Api::CloudConfigManager.new.update(properties)
+        manifest_text = request.body.read
+        validate_manifest_yml(manifest_text)
 
+        Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
         status(201)
       end
 

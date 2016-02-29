@@ -15,7 +15,7 @@ module Bosh::Director
       context 'when blobstore fails to delete compiled package' do
         it 'should fail to delete release' do
           package = Models::Package.make(release: release)
-          Models::CompiledPackage.make(package: package, blobstore_id: 'compiled-package-1')
+          Models::CompiledPackage.make(package: package, blobstore_id: 'compiled-package-1', stemcell_os: 'FreeBSD', stemcell_version: '10.1')
 
           expect(blobstore).to receive(:delete).with('compiled-package-1').and_raise('Oh noes!')
 
@@ -91,11 +91,11 @@ module Bosh::Director
         @tmpl2 = Models::Template.make(release: release, blobstore_id: 'template2')
         @tmpl3 = Models::Template.make(release: release, blobstore_id: 'template3')
 
-        @stemcell = Models::Stemcell.make
+        @stemcell = Models::Stemcell.make(operating_system: 'linux', version: '3.11')
 
-        @cpkg1 = Models::CompiledPackage.make(package: @pkg1, stemcell: @stemcell, blobstore_id: 'deadbeef')
-        @cpkg2 = Models::CompiledPackage.make(package: @pkg2, stemcell: @stemcell, blobstore_id: 'badcafe')
-        @cpkg3 = Models::CompiledPackage.make(package: @pkg3, stemcell: @stemcell, blobstore_id: 'feeddead')
+        @cpkg1 = Models::CompiledPackage.make(package: @pkg1, blobstore_id: 'deadbeef', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
+        @cpkg2 = Models::CompiledPackage.make(package: @pkg2, blobstore_id: 'badcafe', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
+        @cpkg3 = Models::CompiledPackage.make(package: @pkg3, blobstore_id: 'feeddead', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
 
         @rv1.add_package(@pkg1)
         @rv1.add_package(@pkg2)

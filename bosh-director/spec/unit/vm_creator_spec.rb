@@ -17,7 +17,7 @@ describe Bosh::Director::VmCreator do
       get_state: nil
     )
   end
-  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManagerProvider.create).to_hash }
+  let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1',  BD::DnsManagerProvider.create).to_hash }
   let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment_name') }
   let(:deployment_plan) do
     instance_double(Bosh::Director::DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -29,7 +29,7 @@ describe Bosh::Director::VmCreator do
   let(:stemcell_model) { Bosh::Director::Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
   let(:stemcell) do
     stemcell_model
-    stemcell = Bosh::Director::DeploymentPlan::Stemcell.new({'name' => 'fake-stemcell', 'version' => '123'})
+    stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
     stemcell.add_stemcell_model
     stemcell
   end
@@ -71,6 +71,8 @@ describe Bosh::Director::VmCreator do
     job.stemcell = stemcell
     job.env = env
     job.templates << template
+    job.default_network = {"gateway" => "name"}
+    job.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
     job
   end
 

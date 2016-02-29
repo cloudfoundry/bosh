@@ -1,0 +1,37 @@
+---
+databases:
+  main:
+<% link('db').instances.each do |instance| %>
+  - name: <%= instance.name %>
+    index: <%= instance.index %>
+    address: <%= instance.address %>
+<% end %>
+
+<% if_link('backup_db') do |link| %>
+  backup:
+<% link.instances.each do |instance| %>
+  - name: <%= instance.name %>
+    az: <%= instance.az %>
+    index: <%= instance.index %>
+    address: <%= instance.address %>
+<% end %>
+<% end %>
+
+<% if_link('snoopyishappy') do |link| %>
+  backup2: didnotwork
+<% end.else_if_link('backup_db') do |link| %>
+  backup2:
+<% link.instances.each do |instance| %>
+  - name: <%= instance.name %>
+    az: <%= instance.az %>
+    index: <%= instance.index %>
+    address: <%= instance.address %>
+<% end %>
+<% end %>
+
+
+<% if_link('snoopyishappy') do |link| %>
+  backup3: nothappy
+<% end.else do %>
+  backup3: happy
+<% end %>

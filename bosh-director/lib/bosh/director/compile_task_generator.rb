@@ -11,7 +11,7 @@ module Bosh::Director
     def generate!(compile_tasks, job, template, package, stemcell)
       # Our assumption here is that package dependency graph
       # has no cycles: this is being enforced on release upload.
-      # Other than that it's a vanilla DFS.
+      # Other than that it's a vanilla Depth-First Search (DFS).
 
       @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'")
       task_key = [package.id, stemcell.id]
@@ -26,7 +26,7 @@ module Bosh::Director
 
       transitive_dependencies = release_version.transitive_dependencies(package)
       package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model.sha1)
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 

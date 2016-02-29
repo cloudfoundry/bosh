@@ -13,7 +13,7 @@ module Bosh::Director
       @dns_manager = dns_manager
     end
 
-    def bind_models
+    def bind_models(skip_links_binding = false)
       @logger.info('Binding models')
       bind_releases
 
@@ -43,7 +43,11 @@ module Bosh::Director
       bind_properties
       bind_instance_networks
       bind_dns
-      bind_links
+
+      if (!skip_links_binding)
+        bind_links
+      end
+
     end
 
     private
@@ -128,13 +132,13 @@ module Bosh::Director
               "Stemcell not bound for resource pool `#{resource_pool.name}'"
           end
 
-          stemcell.bind_model(@deployment_plan)
+          stemcell.bind_model(@deployment_plan.model)
         end
         return
       end
 
       @deployment_plan.stemcells.each do |_, stemcell|
-        stemcell.bind_model(@deployment_plan)
+        stemcell.bind_model(@deployment_plan.model)
       end
     end
 

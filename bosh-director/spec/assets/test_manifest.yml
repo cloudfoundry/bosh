@@ -1,0 +1,20 @@
+---
+name: my-test-deployment
+director_uuid: 1234abcd-5678-efab-9012-3456cdef7890
+
+releases:
+- {name: redis, version: 12}
+
+jobs:
+- name: redis-master
+  instances: 1
+  templates:
+  - {name: redis-server, release: redis}
+  persistent_disk: 10_240
+  resource_pool: redis-servers
+  networks:
+  - name: default
+
+properties:
+  redis:
+    max_connections: 10

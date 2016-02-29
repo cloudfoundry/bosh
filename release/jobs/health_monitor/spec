@@ -231,3 +231,6 @@ properties:
   hm.syslog_event_forwarder.transport:
     description: One of ["udp", "tcp", "relp"]
     default: tcp
+  hm.syslog_event_forwarder.custom_rule:
+    description: Custom rule for syslog event forwarder
+    default: ""

@@ -158,6 +158,36 @@ module Bosh::Director
 
           expect(body['versions'].sort).to eq((1..10).map { |i| i.to_s }.sort)
         end
+
+        it 'satisfies inspect release calls' do
+          release = Models::Release.create(:name => 'test_release')
+          release_version = Models::ReleaseVersion.make(:version => 1)
+
+          dummy_template = Models::Template.make(
+              :release_id => 1,
+              :name => 'dummy_template',
+              :version => '2',
+              :blobstore_id => '123',
+              :sha1 => '12a',
+              :consumes => 'link-consumed',
+              :provides => 'link-provided',
+          )
+
+          release_version.add_template(dummy_template)
+          release.add_version(release_version)
+          release.save
+
+          get '/test_release?version=1'
+          expect(last_response.status).to eq(200)
+          body = Yajl::Parser.parse(last_response.body)
+
+          dummy_template_result = body['jobs'][0]
+          expect(dummy_template_result['name']).to eq('dummy_template')
+          expect(dummy_template_result['blobstore_id']).to eq('123')
+          expect(dummy_template_result['sha1']).to eq('12a')
+          expect(dummy_template_result['consumes']).not_to be_nil
+          expect(dummy_template_result['provides']).not_to be_nil
+        end
       end
 
       describe 'scope' do

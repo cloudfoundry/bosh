@@ -1,7 +1,6 @@
 module Bosh::Director
   class NilInstanceError < ArgumentError; end
 
-  # A class for maintaining Instance objects, making reusing Instances easier.
   class InstanceReuser
     def initialize
       @idle_instances_by_stemcell = {}
@@ -9,26 +8,23 @@ module Bosh::Director
       @mutex = Mutex.new
     end
 
-    # Adds an instance's information to the pool of VMs that can be reused.
-    # @param [DeploymentPlan::Instance] The instance for the new VM.
     def add_in_use_instance(instance, stemcell)
       raise NilInstanceError if instance.nil?
+      canonical_stemcell = canonical(stemcell)
       @mutex.synchronize do
-        @in_use_instances_by_stemcell[stemcell] ||= []
-        @in_use_instances_by_stemcell[stemcell] << instance
+        @in_use_instances_by_stemcell[canonical_stemcell] ||= []
+        @in_use_instances_by_stemcell[canonical_stemcell] << instance
       end
     end
 
-    # Returns the instance of a VM that is not in use and can be reused.
-    # @param [Models::Stemcell] stemcell The stemcell that the VM must be running.
-    # @return [DeploymentPlan::Instance] The instance for an existing unused VM, if one exists. Otherwise, nil.
     def get_instance(stemcell)
+      canonical_stemcell = canonical(stemcell)
       @mutex.synchronize do
-        return nil if @idle_instances_by_stemcell[stemcell].nil?
-        instance = @idle_instances_by_stemcell[stemcell].pop
+        return nil if @idle_instances_by_stemcell[canonical_stemcell].nil?
+        instance = @idle_instances_by_stemcell[canonical_stemcell].pop
         return nil if instance.nil?
-        @in_use_instances_by_stemcell[stemcell] ||= []
-        @in_use_instances_by_stemcell[stemcell] << instance
+        @in_use_instances_by_stemcell[canonical_stemcell] ||= []
+        @in_use_instances_by_stemcell[canonical_stemcell] << instance
         return instance
       end
     end
@@ -44,46 +40,66 @@ module Bosh::Director
       raise NilInstanceError if instance.nil?
       @mutex.synchronize do
         release_without_lock(instance)
-        @idle_instances_by_stemcell.each_value do |vms|
-          vms.each do |v|
-            vms.delete(v) if instance == v
+        @idle_instances_by_stemcell.each_value do |idle_instances|
+          idle_instances.each do |idle_instance|
+            idle_instances.delete(idle_instance) if instance == idle_instance
           end
         end
       end
     end
 
-    # Gets the total number of compilation instances created with a given stemcell.
-    # @param [Models::Stemcell] stemcell The stemcell the VMs are running.
-    # @return [Integer] The number of instances running a given stemcell.
-    def get_num_instances(stemcell)
+    def remove_idle_instance_not_matching_stemcell(stemcell)
+      canonical_stemcell = canonical(stemcell)
       @mutex.synchronize do
-        idle_count = @idle_instances_by_stemcell[stemcell].nil? ? 0 : @idle_instances_by_stemcell[stemcell].size
-        in_use_count = @in_use_instances_by_stemcell[stemcell].nil? ? 0 : @in_use_instances_by_stemcell[stemcell].size
+        @idle_instances_by_stemcell.each do |stemcell, idle_instances|
+          if stemcell != canonical_stemcell && !idle_instances.empty?
+            return idle_instances.pop
+          end
+        end
+      end
+    end
+
+    def get_num_instances(stemcell)
+      canonical_stemcell = canonical(stemcell)
+      @mutex.synchronize do
+        idle_count = @idle_instances_by_stemcell.fetch(canonical_stemcell, []).size
+        in_use_count = @in_use_instances_by_stemcell.fetch(canonical_stemcell, []).size
         idle_count + in_use_count
       end
     end
 
-    # An iterator for all compilation VMs on all stemcells.
-    # @yield [DeploymentPlan::Instance] yields each instance in InstanceReuser.
+    def total_instance_count
+      @mutex.synchronize do
+        sum = 0
+        @idle_instances_by_stemcell.values.each{|instances| sum += instances.to_a.count }
+        @in_use_instances_by_stemcell.values.each{|instances| sum += instances.to_a.count }
+        sum
+      end
+    end
+
     def each
-      all_vms = (@idle_instances_by_stemcell.values + @in_use_instances_by_stemcell.values).flatten
-      all_vms.each do |vm|
-        yield vm
+      all_instances = (@idle_instances_by_stemcell.values + @in_use_instances_by_stemcell.values).flatten
+      all_instances.each do |instance|
+        yield instance
       end
     end
 
     private
 
     def release_without_lock(instance)
-      @in_use_instances_by_stemcell.each do |stemcell, vms|
-        vms.each do |v|
-          if instance == v
-            vms.delete(v)
-            @idle_instances_by_stemcell[stemcell] ||= []
-            @idle_instances_by_stemcell[stemcell] << instance
+      @in_use_instances_by_stemcell.each do |canonical_stemcell, in_use_instances|
+        in_use_instances.each do |in_use_instance|
+          if instance == in_use_instance
+            in_use_instances.delete(in_use_instance)
+            @idle_instances_by_stemcell[canonical_stemcell] ||= []
+            @idle_instances_by_stemcell[canonical_stemcell] << instance
           end
         end
       end
+    end
+
+    def canonical(stemcell)
+      stemcell.desc
     end
   end
 end

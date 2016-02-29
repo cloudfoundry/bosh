@@ -28,7 +28,7 @@ module Bosh::Director
           safe_property(spec, "cloud_properties", class: Hash, default: {})
 
         stemcell_spec = safe_property(spec, "stemcell", class: Hash)
-        @stemcell = Stemcell.new(stemcell_spec)
+        @stemcell = Stemcell.parse(stemcell_spec)
 
         @env = safe_property(spec, "env", class: Hash, default: {})
       end

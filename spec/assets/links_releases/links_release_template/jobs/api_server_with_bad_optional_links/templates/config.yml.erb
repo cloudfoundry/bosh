@@ -1,0 +1,11 @@
+---
+smurfs:
+<% link('optional_link_name') do |link| %>
+  grandpa:
+  <% link.instances.each do |instance| %>
+    - name: <%= instance.name %>
+      az: <%= instance.az %>
+      index: <%= instance.index %>
+      address: <%= instance.address %>
+  <% end %>
+<% end %>

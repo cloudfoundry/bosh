@@ -76,9 +76,10 @@ module Bosh::Director
 
       Models::CompiledPackage.create do |p|
         p.package = package
-        p.stemcell = stemcell
+        p.stemcell_os = stemcell.operating_system
+        p.stemcell_version = stemcell.version
         p.sha1 = compiled_package_sha1
-        p.build = Models::CompiledPackage.generate_build_number(package, stemcell)
+        p.build = Models::CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)
         p.blobstore_id = blobstore_id
         p.dependency_key = dependency_key
       end

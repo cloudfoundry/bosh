@@ -1,0 +1,21 @@
+---
+name: provider
+templates: {}
+
+provides:
+  - name: provider
+    type: provider
+    properties:
+    - a
+    - b
+    - c
+
+properties:
+  a:
+    description: "description for a"
+    default: "default_a"
+  b:
+    description: "description for b"
+  c:
+    description: "description for c"
+    default: "default_c"

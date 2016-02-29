@@ -3,10 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, deployment_model) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config, deployment_model) }
 
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_config) { nil }
+      let(:runtime_config) { nil }
       let(:manifest_text) { generate_manifest_text }
       let(:planner_attributes) { {name: 'mycloud', properties: {}} }
       let(:deployment_model) { Models::Deployment.make }
@@ -94,7 +95,7 @@ module Bosh::Director
         it 'should parse recreate' do
           expect(planner.recreate).to eq(false)
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_config, deployment_model, 'recreate' => true)
+          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config, deployment_model, 'recreate' => true)
           expect(plan.recreate).to eq(true)
         end
 
@@ -104,6 +105,8 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'fake-job1-name',
                 canonical_name: 'fake-job1-cname',
+                is_service?: true,
+                is_errand?: false,
               })
           end
 
@@ -112,24 +115,41 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'fake-job2-name',
                 canonical_name: 'fake-job2-cname',
+                lifecycle: 'errand',
+                is_service?: false,
+                is_errand?: true,
               })
           end
 
-          context 'when there is at least one job that runs when deploy starts' do
-            before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
-            before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
+          context 'with errand running via keep-alive' do
+            before do
+              allow(job2).to receive(:instances).and_return([
+                    instance_double('Bosh::Director::DeploymentPlan::Instance', {
+                        model: instance_double('Bosh::Director::Models::Instance', {
+                            vm_cid: 'foo-1234',
+                          })
+                      })
+                  ])
+            end
 
-            it 'only returns jobs that start on deploy' do
-              expect(subject.jobs_starting_on_deploy).to eq([job2])
+            it 'returns both the regular job and keep-alive errand' do
+              expect(subject.jobs_starting_on_deploy).to eq([job1, job2])
             end
           end
 
-          context 'when there are no jobs that run when deploy starts' do
-            before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
-            before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+          context 'with errand not running' do
+            before do
+              allow(job2).to receive(:instances).and_return([
+                    instance_double('Bosh::Director::DeploymentPlan::Instance', {
+                        model: instance_double('Bosh::Director::Models::Instance', {
+                            vm_cid: nil,
+                          })
+                      })
+                  ])
+            end
 
-            it 'only returns jobs that start on deploy' do
-              expect(subject.jobs_starting_on_deploy).to eq([])
+            it 'returns only the regular job' do
+              expect(subject.jobs_starting_on_deploy).to eq([job1])
             end
           end
         end
@@ -226,7 +246,7 @@ module Bosh::Director
           context 'when using vm types and stemcells' do
             let(:resource_pools) { [] }
             before do
-              planner.add_stemcell(Stemcell.new({
+              planner.add_stemcell(Stemcell.parse({
                     'alias' => 'default',
                     'name' => 'default',
                     'version' => '1',

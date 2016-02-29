@@ -800,7 +800,20 @@ module Bosh::Director
             'packages' => manifest_packages,
           }
         end
-        let(:manifest_jobs) { [] }
+        let(:manifest_jobs) {
+          [
+            {
+              'sha1' => 'fake-sha-2',
+              'fingerprint' => 'fake-fingerprint-2',
+              'name' => 'fake-name-2',
+              'version' => 'fake-version-2',
+              'packages' => [
+                'fake-name-1',
+              ],
+              'templates' => {},
+            },
+          ]
+        }
         let(:manifest_packages) do
           [
             {
@@ -820,20 +833,41 @@ module Bosh::Director
               name: 'fake-name-1',
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
-              blobstore_id: 'fake-blobstore-id-1',
+              blobstore_id: 'fake-pkg-blobstore-id-1',
               sha1: 'fake-sha-1'
             )
             release_version_model.add_package(package)
             package
           end
 
-          it 're-uploads all packages to replace old ones' do
-            expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
+          let!(:template) do
+            template = Models::Template.make(
+              release: release,
+              name: 'fake-name-2',
+              version: 'fake-version-2',
+              fingerprint: 'fake-fingerprint-2',
+              blobstore_id: 'fake-job-blobstore-id-2',
+              sha1: 'fake-sha-2',
+            )
+            release_version_model.add_template(template)
+            template
+          end
+
+          it 're-uploads all blobs to replace old ones' do
+            expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:delete_blob).with('fake-job-blobstore-id-2')
+
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'packages', 'fake-name-1.tgz')
             ).and_return('new-blobstore-id-after-fix')
 
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
+            ).and_return('new-job-blobstore-id-after-fix')
+
             job.perform
+
+            expect(template.reload.blobstore_id).to eq('new-job-blobstore-id-after-fix')
           end
         end
 
@@ -865,6 +899,7 @@ module Bosh::Director
           it 'replaces existing packages and copy blobs' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
+            expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'jobs', 'fake-name-2.tgz')).and_return('new-job-blobstore-id-after-fix')
             expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
             job.perform
           end
@@ -883,17 +918,13 @@ module Bosh::Director
             release_version_model.add_package(package)
             package
           end
-          let!(:stemcell) { Models::Stemcell.make(
-            name: 'fake-stemcell-1',
-            version: 'fake-stemcell-version-1',
-            cid: 'fake-cid-1'
-          )}
           let!(:compiled_package) { Models::CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
             sha1: 'fake-compiled-sha-1',
             blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
-            dependency_key: 'fake-dep-key-1'
+            dependency_key: 'fake-dep-key-1',
+            stemcell_os: 'windows me',
+            stemcell_version: '4.5'
           )}
 
           it 'verifies package' do
@@ -905,6 +936,9 @@ module Bosh::Director
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'packages', 'fake-name-1.tgz')
             ).and_return('new-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
+            ).and_return('new-job-blobstore-id-1')
             expect(Models::CompiledPackage.dataset.count).to eql 1
 
             job.perform
@@ -919,6 +953,9 @@ module Bosh::Director
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'packages', 'fake-name-1.tgz')
             ).and_return('new-pkg-blobstore-id-1')
+            expect(BlobUtil).to receive(:create_blob).with(
+              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
+            ).and_return('new-job-blobstore-id-1')
             expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
             expect {
               job.perform
@@ -936,7 +973,7 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
-              'stemcell' => 'fake-os-name-1/fake-stemcell-version-1'
+              'stemcell' => 'macintosh os/7.1'
             }
           ]
         end
@@ -949,14 +986,6 @@ module Bosh::Director
             'jobs' => manifest_jobs,
             'compiled_packages' => manifest_compiled_packages,
           }
-        end
-        let!(:stemcell) do
-          Models::Stemcell.make(
-            name: 'fake-stemcell-name-1',
-            operating_system: 'fake-os-name-1',
-            version: 'fake-stemcell-version-1',
-            cid: 'fake-stemcell-cid-1'
-          )
         end
 
         context 'when release already exists' do
@@ -972,10 +1001,11 @@ module Bosh::Director
           end
           let!(:compiled_package) do
             compiled_package = Models::CompiledPackage.make(
-              stemcell: stemcell,
               blobstore_id: 'fake-compiled-blobstore-id-1',
               dependency_key: 'fake-compiled-dependency-key-1',
               sha1: 'fake-compiled-sha-1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1'
             )
             package.add_compiled_package compiled_package
             compiled_package
@@ -1015,10 +1045,11 @@ module Bosh::Director
           end
           let!(:existing_compiled_package) do
             existing_compiled_package = Models::CompiledPackage.make(
-              stemcell: stemcell,
               blobstore_id: 'fake-existing-compiled-blobstore-id-1',
               dependency_key: 'fake-existing-compiled-dependency-key-1',
               sha1: 'fake-existing-compiled-sha-1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1'
             )
             existing_package.add_compiled_package existing_compiled_package
             existing_compiled_package

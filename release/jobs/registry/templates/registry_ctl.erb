@@ -1,0 +1,65 @@
+#!/bin/bash
+
+RUN_DIR=/var/vcap/sys/run/registry
+LOG_DIR=/var/vcap/sys/log/registry
+PIDFILE=$RUN_DIR/registry.pid
+RUNAS=vcap
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+export BUNDLE_GEMFILE=/var/vcap/packages/registry/Gemfile
+export GEM_HOME=/var/vcap/packages/registry/gem_home/ruby/2.1.0
+
+<% if_p('env.http_proxy') do |http_proxy| %>
+export HTTP_PROXY=<%= http_proxy %>
+export http_proxy=<%= http_proxy %>
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+export HTTPS_PROXY=<%= https_proxy %>
+export https_proxy=<%= https_proxy %>
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+export NO_PROXY=<%= no_proxy %>
+export no_proxy=<%= no_proxy %>
+<% end %>
+
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
+
+    echo $$ > $PIDFILE
+
+    chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/registry/bin/bosh-registry-migrate \
+      -c /var/vcap/jobs/registry/config/registry.yml \
+      >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
+
+    if [ $? -ne 0 ]; then
+      echo "migration failed"
+      exit 1
+    fi
+
+    exec chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/registry/bin/bosh-registry \
+      -c /var/vcap/jobs/registry/config/registry.yml \
+      >>$LOG_DIR/registry.stdout.log 2>>$LOG_DIR/registry.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: registry_ctl {start|stop}" ;;
+esac
+exit 0

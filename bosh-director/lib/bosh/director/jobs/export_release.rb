@@ -27,7 +27,7 @@ module Bosh::Director
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
-        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.new({
+        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({
             "os" => @stemcell_os,
             "version" => @stemcell_version
           })
@@ -45,7 +45,7 @@ module Bosh::Director
 
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)
         planner = planner_factory.create_from_model(targeted_deployment)
-        deployment_plan_stemcell.bind_model(planner)
+        deployment_plan_stemcell.bind_model(planner.model)
 
         stemcell_model = deployment_plan_stemcell.model
         logger.info "Will compile with stemcell: #{stemcell_model.desc}"
@@ -54,7 +54,7 @@ module Bosh::Director
 
         export_release_job = create_job_with_all_the_templates_so_everything_compiles(release_version_model, release, planner, deployment_plan_stemcell)
         planner.add_job(export_release_job)
-        planner.bind_models
+        planner.bind_models(true)
 
         lock_timeout = 15 * 60 # 15 minutes
 

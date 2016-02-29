@@ -4,7 +4,9 @@
 # so it needs to make sure it can't be abused.
 #
 
+set -u
 set -x
+set -e
 
 adapter=$1
 host=$2
@@ -15,9 +17,18 @@ backup_file=$6
 
 PATH=/var/vcap/bosh/bin:$PATH
 
+REGISTRY_EXISTS=false
+
+if monit summary | grep -q registry ; then
+  REGISTRY_EXISTS=true
+fi
+
 monit stop director
 monit stop director_scheduler
-monit stop registry
+
+if $REGISTRY_EXISTS ; then
+  monit stop registry
+fi
 
 for i in $(seq 60)
 do
@@ -31,8 +42,10 @@ do
         continue
     fi
 
-    if [ -z "$(monit summary | grep '^Process.*registry.*not monitored$')" ];then
-       continue
+    if $REGISTRY_EXISTS ; then
+        if [ -z "$(monit summary | grep '^Process.*registry.*not monitored$')" ];then
+            continue
+        fi
     fi
 
     break
@@ -50,8 +63,6 @@ if [ "$adapter" = 'postgres' ];then
         fi
     done
 
-    dropdb -U$user -h$host $db_name
-    createdb -U$user -h$host $db_name
     tar -xzvf $backup_file -O | psql -U$user -h$host $db_name
 
 elif [ "$adapter" = 'mysql2' ];then
@@ -73,4 +84,7 @@ fi
 
 monit start director
 monit start director_scheduler
-monit start registry
+
+if $REGISTRY_EXISTS ; then
+  monit start registry
+fi

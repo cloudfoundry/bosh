@@ -1,0 +1,20 @@
+---
+name: foobar_with_bad_properties_2
+templates:
+  foobar_ctl: bin/foobar_ctl
+  drain.erb: bin/drain
+
+packages:
+- foo
+- bar
+
+properties:
+  drain_type:
+    description: Used in drain script to trigger dynamic vs static drain behavior
+    default: static
+
+  network_name:
+    description: Network name used for determining printed IP address
+
+  networks:
+    description: All networks

@@ -59,6 +59,12 @@ module IntegrationExampleGroup
     bosh_runner.run("update cloud-config #{cloud_config_manifest.path}", options)
   end
 
+  def upload_runtime_config(options={})
+    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_manifest = yaml_file('simple', runtime_config_hash)
+    bosh_runner.run("update runtime-config #{runtime_config_manifest.path}", options)
+  end
+
   def create_and_upload_test_release(options={})
     create_args = options.fetch(:force, false) ? '--force' : ''
     bosh_runner.run_in_dir("create release #{create_args}", ClientSandbox.test_release_dir, options)
@@ -107,6 +113,10 @@ module IntegrationExampleGroup
     bosh_runner.run(cmd, options)
   end
 
+  def stop_job(vm_name)
+    bosh_runner.run("stop #{vm_name}", {})
+  end
+
   def deploy_from_scratch(options={})
     prepare_for_deploy(options)
     deploy_simple_manifest(options)
@@ -118,6 +128,9 @@ module IntegrationExampleGroup
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
+    if options[:runtime_config_hash]
+      upload_runtime_config(options)
+    end
   end
 
   def deploy_simple_manifest(options={})
@@ -162,6 +175,10 @@ module IntegrationExampleGroup
 
   def scrub_random_cids(bosh_output)
     bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  end
+
+  def cid_from(bosh_output)
+    bosh_output[/[0-9a-f]{32}/, 0]
   end
 
   def scrub_time(bosh_output)

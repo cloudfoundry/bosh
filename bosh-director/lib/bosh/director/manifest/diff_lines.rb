@@ -26,11 +26,7 @@ module Bosh::Director
       releases
       update
       jobs
-    )
-
-    REDACT_KEY_NAMES = %w(
-      properties
-      env
+      addons
     )
 
     def order
@@ -61,28 +57,6 @@ module Bosh::Director
       end
 
       self.replace(ordered_lines)
-    end
-
-    def redact_properties
-      i = 0
-      while i < self.size
-        line = self[i]
-
-        if REDACT_KEY_NAMES.any? { |key_name| line.text =~ /\b#{key_name}:/ }
-          properties_indent = line.full_indent
-          i += 1
-          line = self[i]
-
-          while line && line.full_indent > properties_indent
-            line.text.gsub!(/: .+/, ': <redacted>') # readact hash values
-            line.text.gsub!(/- [^:]+$/, '- <redacted>') # redact array values
-            i += 1
-            line = self[i]
-          end
-        end
-        i += 1
-      end
-      self
     end
   end
 end

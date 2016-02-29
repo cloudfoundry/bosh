@@ -13,8 +13,9 @@ module Bosh::Director
         networks = parse_networks(cloud_manifest, global_network_resolver, azs)
         resource_pools = parse_resource_pools(cloud_manifest)
         vm_types = parse_vm_types(cloud_manifest)
+        vm_extensions = parse_vm_extensions(cloud_manifest)
         disk_types = parse_disk_types(cloud_manifest)
-        compilation_config = parse_compilation(cloud_manifest, networks, az_list, vm_types)
+        compilation_config = parse_compilation(cloud_manifest, networks, az_list, vm_types, vm_extensions)
 
         CloudPlanner.new({
           availability_zones_list: az_list,
@@ -24,6 +25,7 @@ module Bosh::Director
           compilation: compilation_config,
           resource_pools: resource_pools,
           vm_types: vm_types,
+          vm_extensions: vm_extensions,
           disk_types: disk_types,
           logger: @logger,
         })
@@ -75,9 +77,9 @@ module Bosh::Director
         parsed_networks
       end
 
-      def parse_compilation(cloud_manifest, networks, az_list, vm_types)
+      def parse_compilation(cloud_manifest, networks, az_list, vm_types, vm_extensions)
         compilation_spec = safe_property(cloud_manifest, 'compilation', :class => Hash)
-        config = CompilationConfig.new(compilation_spec, az_list, vm_types)
+        config = CompilationConfig.new(compilation_spec, az_list, vm_types, vm_extensions)
 
         compilation_network = networks.find { |network| network.name == config.network_name }
         if compilation_network.nil?
@@ -132,6 +134,20 @@ module Bosh::Director
         parsed_vm_types
       end
 
+      def parse_vm_extensions(cloud_manifest)
+        vm_extensions = safe_property(cloud_manifest, 'vm_extensions', :class => Array, :optional => true, :default => [])
+
+        parsed_vm_extensions = vm_extensions.map do |vmt_spec|
+          VmExtension.new(vmt_spec)
+        end
+
+        duplicates = detect_duplicates(parsed_vm_extensions) { |vmt| vmt.name }
+        unless duplicates.empty?
+          raise DeploymentDuplicateVmExtensionName, "Duplicate vm extension name `#{duplicates.first.name}'"
+        end
+
+        parsed_vm_extensions
+      end
 
       def parse_disk_types(cloud_manifest)
         disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true, :default => [])

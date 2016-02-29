@@ -24,6 +24,54 @@ module Bosh::Spec
         })
     end
 
+    def self.simple_runtime_config
+      {
+        'releases' => [{"name" => 'test_release_2', "version" => "2"}]
+      }
+    end
+
+    def self.runtime_config_latest_release
+      {
+        'releases' => [{"name" => 'test_release_2', "version" => "latest"}]
+      }
+    end
+
+    def self.runtime_config_release_missing
+      {
+        'releases' => [{"name" => 'test_release_2', "version" => "2"}],
+        'addons' => [{"name" => 'addon1', "jobs" => [{"name" => "job_using_pkg_2", "release" => "release2"}]}]
+      }
+    end
+
+    def self.runtime_config_with_addon
+      {
+        'releases' => [{"name" => 'dummy2', "version" => "0.2-dev"}],
+        'addons' => [
+        {
+          "name" => 'addon1',
+          "jobs" => [{"name" => "dummy_with_properties", "release" => "dummy2"}],
+          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}}
+        }]
+      }
+    end
+
+    def self.runtime_config_with_links
+      {
+        'releases' => [{"name" => 'bosh-release', "version" => "0+dev.1"}],
+        'addons' => [
+            {
+                'name' => 'addon_job',
+                'jobs' => [
+                    {'name' => 'addon',
+                     'release' => 'bosh-release',
+                     'consumes' => {'db' => {'from' => 'db'}}
+                    }
+                ]
+            }
+        ]
+      }
+    end
+
     def self.network(options = {})
       {
         'name' => 'a',
@@ -116,7 +164,6 @@ module Bosh::Spec
     def self.resource_pool
       {
         'name' => 'a',
-        'size' => 3,
         'cloud_properties' => {},
         'stemcell' => {
           'name' => 'ubuntu-stemcell',
@@ -142,6 +189,13 @@ module Bosh::Spec
       {
         'name' => 'vm-type-name',
         'cloud_properties' => {},
+      }
+    end
+
+    def self.vm_extension
+      {
+          'name' => 'vm-extension-name',
+          'cloud_properties' => {},
       }
     end
 
@@ -175,6 +229,37 @@ module Bosh::Spec
           'max_in_flight'     => 1,
           'update_watch_time' => 20
         }
+      }
+    end
+
+    def self.dummy_job
+      {
+        'name' => 'dummy',
+        'templates' => [{'name'=> 'dummy', 'release' => 'dummy'}],
+        'resource_pool' => 'a',
+        'networks' => [{'name' => 'a'}],
+        'instances' => 1
+      }
+    end
+
+    def self.dummy_deployment
+      {
+        'name' => 'dummy',
+        'director_uuid'  => 'deadbeef',
+
+        'releases' => [{
+          'name'    => 'dummy',
+          'version' => '0.2-dev' # It's our dummy valid release from spec/assets/dummy-release.tgz
+        }],
+
+        'update' => {
+            'canaries'          => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight'     => 1,
+            'update_watch_time' => 20
+        },
+
+        'jobs' => [self.dummy_job]
       }
     end
 
@@ -398,6 +483,14 @@ module Bosh::Spec
         job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
       end
 
+      if opts.has_key?(:azs)
+        job_hash['azs'] = opts[:azs]
+      end
+
+      if opts.has_key?(:properties)
+        job_hash['properties'] = opts[:properties]
+      end
+
       job_hash
     end
 
@@ -408,6 +501,7 @@ module Bosh::Spec
           'resource_pool' => 'a',
           'instances'     => options.fetch(:instances, 3),
           'networks'      => [{ 'name' => 'a' }],
+          'properties'    => options.fetch(:properties, {}),
       }
     end
 
@@ -421,7 +515,12 @@ module Bosh::Spec
     def self.simple_errand_job
       {
         'name' => 'fake-errand-name',
-        'template' => 'errand1',
+        'templates' => [
+          {
+            'release' => 'bosh-release',
+            'name' => 'errand1'
+          }
+        ],
         'lifecycle' => 'errand',
         'resource_pool' => 'a',
         'instances' => 1,

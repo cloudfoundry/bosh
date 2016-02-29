@@ -30,6 +30,7 @@ module Bosh
           return @changes if @changes
 
           @changes = Set.new
+          @changes << :dirty if @instance.dirty?
           @changes << :restart if needs_restart?
           @changes << :recreate if needs_recreate?
           @changes << :cloud_properties if instance.cloud_properties_changed?
@@ -38,7 +39,7 @@ module Bosh
           @changes << :network if networks_changed?
           @changes << :packages if packages_changed?
           @changes << :persistent_disk if persistent_disk_changed?
-          @changes << :configuration if instance.configuration_changed?
+          @changes << :configuration if configuration_changed?
           @changes << :job if job_changed?
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
@@ -132,6 +133,12 @@ module Bosh
           end
         end
 
+        def configuration_changed?
+          changed = instance.configuration_hash != instance_model.spec['configuration_hash']
+          log_changes(__method__, instance_model.spec['configuration_hash'], instance.configuration_hash, instance) if changed
+          changed
+        end
+
         def mark_desired_network_plans_as_existing
           network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
         end
@@ -166,7 +173,7 @@ module Bosh
             @instance.model.deployment.name,
             @desired_instance.job.default_network,
             desired_reservations,
-            @instance.current_state,
+            @instance.current_networks,
             @instance.availability_zone,
             @instance.index,
             @instance.uuid,
@@ -176,6 +183,10 @@ module Bosh
 
         def network_settings_hash
           network_settings.to_hash
+        end
+
+        def network_address(network_name)
+          network_settings.network_address(network_name)
         end
 
         def network_addresses

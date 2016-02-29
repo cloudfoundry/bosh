@@ -34,6 +34,11 @@ module Bosh::Director
           ])
         end
 
+        deployment = params['deployment']
+        if deployment
+          dataset = dataset.filter(deployment_name: deployment)
+        end
+
         tasks = dataset.order_by(:timestamp.desc).map do |task|
           if task_timeout?(task)
             task.state = :timeout

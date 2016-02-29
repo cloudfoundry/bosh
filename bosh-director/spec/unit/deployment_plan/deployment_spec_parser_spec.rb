@@ -292,15 +292,15 @@ module Bosh::Director
         end
       end
 
-      describe 'jobs key' do
+      shared_examples_for 'jobs/instance_groups key' do
         context 'when there is at least one job' do
-          before { manifest_hash.merge!('jobs' => []) }
+          before { manifest_hash.merge!(keyword => []) }
 
           let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
           context 'when job names are unique' do
             before do
-              manifest_hash.merge!('jobs' => [
+              manifest_hash.merge!(keyword => [
                 { 'name' => 'job1-name' },
                 { 'name' => 'job2-name' },
               ])
@@ -310,6 +310,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job1-name',
                 canonical_name: 'job1-canonical-name',
+                templates: []
               })
             end
 
@@ -317,6 +318,7 @@ module Bosh::Director
               instance_double('Bosh::Director::DeploymentPlan::Job', {
                 name: 'job2-name',
                 canonical_name: 'job2-canonical-name',
+                templates: []
               })
             end
 
@@ -341,6 +343,7 @@ module Bosh::Director
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
                 and_return(job2)
 
+
               expect(parsed_deployment.job('job1-name')).to eq(job1)
               expect(parsed_deployment.job('job2-name')).to eq(job2)
             end
@@ -348,7 +351,7 @@ module Bosh::Director
 
           context 'when more than one job have same canonical name' do
             before do
-              manifest_hash.merge!('jobs' => [
+              manifest_hash.merge!(keyword => [
                 { 'name' => 'job1-name' },
                 { 'name' => 'job2-name' },
               ])
@@ -388,7 +391,7 @@ module Bosh::Director
         end
 
         context 'when there are no jobs' do
-          before { manifest_hash.merge!('jobs' => []) }
+          before { manifest_hash.merge!(keyword => []) }
 
           it 'parses jobs and return empty array' do
             expect(parsed_deployment.jobs).to eq([])
@@ -396,10 +399,37 @@ module Bosh::Director
         end
 
         context 'when jobs key is not specified' do
-          before { manifest_hash.delete('jobs') }
+          before { manifest_hash.delete(keyword) }
 
           it 'parses jobs and return empty array' do
             expect(parsed_deployment.jobs).to eq([])
+          end
+        end
+      end
+
+      describe 'jobs key' do
+        let(:keyword) { "jobs" }
+        it_behaves_like "jobs/instance_groups key"
+      end
+
+      describe 'instance_group key' do
+        let(:keyword) { "instance_groups" }
+        it_behaves_like "jobs/instance_groups key"
+
+        context 'when there are both jobs and instance_groups' do
+          before do
+            manifest_hash.merge!('jobs' => [
+                                     { 'name' => 'job1-name' },
+                                     { 'name' => 'job2-name' },
+                                 ],
+                                 'instance_groups' => [
+                                     { 'name' => 'job1-name' },
+                                     { 'name' => 'job2-name' },
+                                 ])
+          end
+
+          it 'throws an error' do
+            expect {parsed_deployment}.to raise_error(JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed")
           end
         end
       end

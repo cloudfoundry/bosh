@@ -13,6 +13,8 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
+    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+
     su postgres -c '
       export PATH=/usr/lib/postgresql/9.4/bin:$PATH
       export PGDATA=/tmp/postgres

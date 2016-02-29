@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fileutils'
 
 describe 'deploy', type: :integration do
   with_reset_sandbox_before_each
@@ -257,6 +258,533 @@ describe 'deploy', type: :integration do
     end
   end
 
+  context 'it supports running post-deploy scripts' do
+    with_reset_sandbox_before_each(enable_post_deploy: true)
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+    end
+
+    context 'when the post-deploy scripts are valid' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_2_with_post_deploy_script'}
+                               ],
+                               instances: 1),
+                           Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'another_job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_2_with_post_deploy_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+        deploy({})
+
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
+
+        job_2_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_2_stdout).to match('message on stdout of job 2 post-deploy script')
+      end
+
+      it 'runs does not run post-deploy scripts on stopped vms' do
+        deploy({})
+
+        agent_id_1 = director.vm('job_with_post_deploy_script', '0').agent_id
+        agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+
+        stop_job("another_job_with_post_deploy_script/0")
+
+        agent_id_1 = director.vm('job_with_post_deploy_script', '0').agent_id
+        agent_id_2 = director.vm('another_job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(2)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(2)
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+      end
+
+      it 'runs the post-deploy script when a vms is resurrected' do
+        current_sandbox.with_health_monitor_running do
+          deploy({})
+
+          agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+          agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+
+          resurected_vm = director.kill_vm_and_wait_for_resurrection(director.vm('job_with_post_deploy_script', '0'))
+
+          agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{resurected_vm.agent_id}.log")
+          expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        end
+      end
+    end
+
+    context 'when the post-deploy scripts exit with error' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_3_with_broken_post_deploy_script'}
+                               ],
+                               instances: 1)]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'exits with error if post-deploy errors, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+        expect{deploy({})}.to raise_error(RuntimeError, /result: 1 of 2 post-deploy scripts failed. Failed Jobs: job_3_with_broken_post_deploy_script. Successful Jobs: job_1_with_post_deploy_script./)
+
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log).to include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+        expect(agent_log).to include("/jobs/job_3_with_broken_post_deploy_script/bin/post-deploy' script has failed with error")
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
+
+        job_3_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post-deploy.stdout.log")
+        expect(job_3_stdout).to match('message on stdout of job 3 post-deploy script')
+
+        job_3_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_3_with_broken_post_deploy_script/post-deploy.stderr.log")
+        expect(job_3_stderr).not_to be_empty
+      end
+    end
+
+    context 'when nothing has changed in the deployment it does not run the post-deploy script' do
+      before do
+        create_and_upload_test_release
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_post_deploy_script',
+                               templates: [
+                                   {'name' => 'job_1_with_post_deploy_script'},
+                                   {'name' => 'job_2_with_post_deploy_script'}
+                               ],
+                               instances: 1),
+                           Bosh::Spec::Deployments.job_with_many_templates(
+                               name: 'job_with_errand',
+                               templates: [
+                                   {'name' => 'errand1'}
+                               ],
+                               instances: 1,
+                               lifecycle: 'errand')]
+            })
+        set_deployment(manifest_hash: manifest)
+
+      end
+
+      it 'should not run the post deploy script if no changes have been made in deployment' do
+        deploy({})
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+
+        deploy({})
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+      end
+
+      it 'should not run post deploy script on jobs with no vm_cid' do
+        deploy({})
+        agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+        agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+        expect(agent_log.scan("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+        expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
+
+        job_1_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(job_1_stdout).to match("message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1")
+
+        job_1_stderr = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")
+        expect(job_1_stderr).to match('message on stderr of job 1 post-deploy script')
+
+        expect(File.file?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_with_errand/post-deploy.stdout.log")).to be_falsey
+      end
+    end
+  end
+
+  context 'it does not support running post-deploy scripts' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+
+      create_and_upload_test_release
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'job_with_post_deploy_script',
+                             templates: [
+                                 {'name' => 'job_1_with_post_deploy_script'},
+                                 {'name' => 'job_2_with_post_deploy_script'}
+                             ],
+                             instances: 1),
+                         Bosh::Spec::Deployments.job_with_many_templates(
+                             name: 'another_job_with_post_deploy_script',
+                             templates: [
+                                 {'name' => 'job_1_with_post_deploy_script'},
+                                 {'name' => 'job_2_with_post_deploy_script'}
+                             ],
+                             instances: 1)]
+          })
+      set_deployment(manifest_hash: manifest)
+    end
+
+    it 'runs the post-deploy scripts on the agent vm, and redirects stdout/stderr to post-deploy.stdout.log/post-deploy.stderr.log for each job' do
+      deploy({})
+
+      agent_id = director.vm('job_with_post_deploy_script', '0').agent_id
+
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id}.log")
+      expect(agent_log).to_not include("/jobs/job_1_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+      expect(agent_log).to_not include("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed")
+
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stderr.log")).to be_falsey
+      expect(File.exists?("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id}/data/sys/log/job_2_with_post_deploy_script/post-deploy.stdout.log")).to be_falsey
+    end
+  end
+
+  context 'when deployment manifest has local templates properties defined' do
+    before do
+      target_and_login
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_stemcell
+      create_and_upload_test_release
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                  name: 'job_with_templates_having_properties',
+                  templates: [
+                      {'name' => 'job_1_with_many_properties',
+                       'properties' => {
+                           'smurfs' => {
+                               'color' => 'red'
+                           },
+                           'gargamel' => {
+                               'color' => 'black'
+                           }
+                       }
+                      },
+                      {'name' => 'job_2_with_many_properties'}
+                  ],
+                  instances: 1,
+                  properties: {
+                      'snoopy' => 'happy',
+                      'smurfs' => {
+                          'color' => 'yellow'
+                      },
+                      'gargamel' => {
+                          'color' => 'blue'
+                      }
+                  })]
+          })
+      set_deployment(manifest_hash: manifest)
+    end
+
+    it 'these templates should use the properties defined in their scope' do
+      deploy({})
+      target_vm = director.vm('job_with_templates_having_properties', '0')
+      template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+      template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+      expect(template_1['properties_list']['smurfs_color']).to eq('red')
+      expect(template_1['properties_list']['gargamel_color']).to eq('black')
+
+      expect(template_2['properties_list']['smurfs_color']).to eq('yellow')
+      expect(template_2['properties_list']['gargamel_color']).to eq('blue')
+    end
+
+    it 'should update the job when template properties change' do
+      deploy({})
+
+      manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                  name: 'job_with_templates_having_properties',
+                  templates: [
+                      {'name' => 'job_1_with_many_properties',
+                       'properties' => {
+                           'smurfs' => {
+                               'color' => 'reddish'
+                           },
+                           'gargamel' => {
+                               'color' => 'blackish'
+                           }
+                       }
+                      },
+                      {'name' => 'job_2_with_many_properties'}
+                  ],
+                  instances: 1,
+                  properties: {
+                      'snoopy' => 'happy',
+                      'smurfs' => {
+                          'color' => 'yellow'
+                      },
+                      'gargamel' => {
+                          'color' => 'blue'
+                      }
+                  })]
+          })
+      set_deployment(manifest_hash: manifest)
+
+      output = deploy({})
+      expect(output).to include("Started updating job job_with_templates_having_properties")
+    end
+
+    it 'should not update the job when template properties are the same' do
+      deploy({})
+      output = deploy({})
+      expect(output).to_not include("Started updating job job_with_templates_having_properties")
+    end
+
+
+    context 'when the template has local properties defined but missing some of them' do
+      before do
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                    name: 'job_with_templates_having_properties',
+                    templates: [
+                        {'name' => 'job_1_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'red'
+                             }
+                         }
+                        },
+                        {'name' => 'job_2_with_many_properties'}
+                    ],
+                    instances: 1,
+                    properties: {
+                        'snoopy' => 'happy',
+                        'smurfs' => {
+                            'color' => 'yellow'
+                        },
+                        'gargamel' => {
+                            'color' => 'black'
+                        }
+                    })]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'should fail even if the properties are defined outside the template scope' do
+        output, exit_code = deploy(failure_expected: true, return_exit_code: true)
+
+        expect(exit_code).to_not eq(0)
+        expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job job_with_templates_having_properties. Errors are:
+     - Unable to render release templates for release job job_1_with_many_properties. Errors are:
+       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+        EOF
+      end
+    end
+
+    context 'when multiple templates has local properties' do
+      before do
+        manifest = Bosh::Spec::Deployments.test_release_manifest.merge(
+            {
+                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+                    name: 'job_with_templates_having_properties',
+                    templates: [
+                        {'name' => 'job_1_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'pink'
+                             },
+                             'gargamel' => {
+                                 'color' => 'orange'
+                             }
+                         }
+                        },
+                        {'name' => 'job_2_with_many_properties',
+                         'properties' => {
+                             'smurfs' => {
+                                 'color' => 'brown'
+                             },
+                             'gargamel' => {
+                                 'color' => 'purple'
+                             }
+                         }
+                        }
+                    ],
+                    instances: 1,
+                    properties: {
+                        'snoopy' => 'happy',
+                        'smurfs' => {
+                            'color' => 'yellow'
+                        },
+                        'gargamel' => {
+                            'color' => 'black'
+                        }
+                    })]
+            })
+        set_deployment(manifest_hash: manifest)
+      end
+
+      it 'should not cross reference them' do
+        deploy({})
+        target_vm = director.vm('job_with_templates_having_properties', '0')
+        template_1 = YAML.load(target_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2 = YAML.load(target_vm.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        expect(template_1['properties_list']['smurfs_color']).to eq('pink')
+        expect(template_1['properties_list']['gargamel_color']).to eq('orange')
+
+        expect(template_2['properties_list']['smurfs_color']).to eq('brown')
+        expect(template_2['properties_list']['gargamel_color']).to eq('purple')
+      end
+    end
+
+    context 'when same template is referenced in multiple deployment jobs' do
+
+      let (:manifest) do
+        Bosh::Spec::Deployments.test_release_manifest.merge(
+          {
+              'jobs' => [
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                      name: 'worker_1',
+                      templates: [
+                          {'name' => 'job_1_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'pink'
+                               },
+                               'gargamel' => {
+                                   'color' => 'orange'
+                               }
+                           }
+                          },
+                          {'name' => 'job_2_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'yellow'
+                               },
+                               'gargamel' => {
+                                   'color' => 'green'
+                               }
+                           }
+                          }
+                      ],
+                      instances: 1
+                  ),
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                      name: 'worker_2',
+                      templates: [
+                          {'name' => 'job_1_with_many_properties',
+                           'properties' => {
+                               'smurfs' => {
+                                   'color' => 'navy'
+                               },
+                               'gargamel' => {
+                                   'color' => 'red'
+                               }
+                           }
+                          },
+                          {'name' => 'job_2_with_many_properties'}
+                      ],
+                      instances: 1,
+                      properties: {
+                          'snoopy' => 'happy',
+                          'smurfs' => {
+                              'color' => 'brown'
+                          },
+                          'gargamel' => {
+                              'color' => 'grey'
+                          }
+                      }
+                  )
+              ]
+          })
+      end
+
+      it 'should not expose the local properties across deployment jobs' do
+        set_deployment(manifest_hash: manifest)
+        deploy({})
+
+        target_vm_1 = director.vm('worker_1', '0')
+        template_1_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2_in_worker_1 = YAML.load(target_vm_1.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        target_vm_2 = director.vm('worker_2', '0')
+        template_1_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        template_2_in_worker_2 = YAML.load(target_vm_2.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+
+        expect(template_1_in_worker_1['properties_list']['smurfs_color']).to eq('pink')
+        expect(template_1_in_worker_1['properties_list']['gargamel_color']).to eq('orange')
+        expect(template_2_in_worker_1['properties_list']['smurfs_color']).to eq('yellow')
+        expect(template_2_in_worker_1['properties_list']['gargamel_color']).to eq('green')
+
+        expect(template_1_in_worker_2['properties_list']['smurfs_color']).to eq('navy')
+        expect(template_1_in_worker_2['properties_list']['gargamel_color']).to eq('red')
+        expect(template_2_in_worker_2['properties_list']['smurfs_color']).to eq('brown')
+        expect(template_2_in_worker_2['properties_list']['gargamel_color']).to eq('grey')
+      end
+
+      it 'should only complain about non-property satisfied template when missing properties' do
+        manifest['jobs'][1]['properties'] = {}
+        set_deployment(manifest_hash: manifest)
+
+        output, exist_code = deploy({return_exit_code: true, failure_expected: true})
+
+        expect(exist_code).to_not eq(0)
+        expect(output).to include <<-EOF
+Error 100: Unable to render jobs for deployment. Errors are:
+   - Unable to render deployment job templates for job worker_2. Errors are:
+     - Unable to render release templates for release job job_2_with_many_properties. Errors are:
+       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+        EOF
+      end
+    end
+  end
+
   it 'supports scaling down and then scaling up' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -343,84 +871,77 @@ Deployed `simple' to `Test Director'
   end
 
   context 'it supports compiled releases' do
-    before {
-      target_and_login
-
-      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-    }
-
-    context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
+    context 'release and stemcell have been uploaded' do
       before {
-        cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
-        cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
-        cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
-        upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       }
 
-      context 'and they contain identical packages' do
-        before {
-          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
-          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
-          deployment_manifest['releases'][0]['version'] = '4'
-          set_deployment({manifest_hash: deployment_manifest })
-        }
-
-        it 'does not compile any packages' do
-          out = deploy({})
-
-          expect(out).to_not include("Started compiling packages")
+      context 'it uploads the compiled release when there is no corresponding stemcell' do
+        it 'should not raise an error' do
+          bosh_runner.run('delete stemcell bosh-aws-xen-hvm-centos-7-go_agent 3001')
+          bosh_runner.run('delete release test_release')
+          expect {
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+          }.to_not raise_exception
+          out = bosh_runner.run('inspect release test_release/1')
+          expect(out).to include('| pkg_1                    | 16b4c8ef1574b3f98303307caad40227c208371f | (no source)   |                                      |                                          |
+|                          |                                          | centos-7/3001 |')
         end
       end
 
-      context 'and they contain one different package' do
+      context 'when older compiled and newer non-compiled (source release) versions of the same release are uploaded' do
         before {
-          bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
-          deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
-          deployment_manifest['releases'][0]['version'] = '3'
-          set_deployment({manifest_hash: deployment_manifest })
+          cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
+          cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+          cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
+          upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
         }
 
-        it 'compiles only the package with the different version and those that depend on it' do
-          out = deploy({})
-          expect(out).to include("Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f")
-          expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
-
-          expect(out).to_not include('Started compiling packages > pkg_2/')
-          expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
-          expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
-        end
-      end
-
-      context 'when deploying with a stemcell that does not match the compiled release' do
-        before {
-          # switch deployment to use "ubuntu-stemcell/1"
-          bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-          upload_cloud_config
-          set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5') })
-        }
-
-        it 'fails with an error message saying there is no way to compile for that stemcell' do
-          out = deploy(failure_expected: true)
-          expect(out).to include("Error 60001:")
-
-          expect(out).to match_output %(
-            Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
-             - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
-             - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
-             - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
-             - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
-             - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
-          )
-        end
-
-        context 'and multiple releases are referenced in the current deployment' do
+        context 'and they contain identical packages' do
           before {
-            bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')}")
-            set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_referencing_multiple_releases})
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
+            deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+            deployment_manifest['releases'][0]['version'] = '4'
+            set_deployment({manifest_hash: deployment_manifest })
           }
 
-          it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
+          it 'does not compile any packages' do
+            out = deploy({})
+
+            expect(out).to_not include('Started compiling packages')
+          end
+        end
+
+        context 'and they contain one different package' do
+          before {
+            bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
+            deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+            deployment_manifest['releases'][0]['version'] = '3'
+            set_deployment({manifest_hash: deployment_manifest })
+          }
+
+          it 'compiles only the package with the different version and those that depend on it' do
+            out = deploy({})
+            expect(out).to include('Started compiling packages > pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f')
+            expect(out).to include('Started compiling packages > pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
+
+            expect(out).to_not include('Started compiling packages > pkg_2/')
+            expect(out).to_not include('Started compiling packages > pkg_3_depends_on_2/')
+            expect(out).to_not include('Started compiling packages > pkg_4_depends_on_3/')
+          end
+        end
+
+        context 'when deploying with a stemcell that does not match the compiled release' do
+          before {
+            # switch deployment to use "ubuntu-stemcell/1"
+            bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+            upload_cloud_config
+            set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5') })
+          }
+
+          it 'fails with an error message saying there is no way to compile for that stemcell' do
             out = deploy(failure_expected: true)
             expect(out).to include("Error 60001:")
 
@@ -428,18 +949,180 @@ Deployed `simple' to `Test Director'
               Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
                - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
                - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
-            )
-
-            expect(out).to match_output %(
-              Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
-               - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
-               - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
                - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
                - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
                - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
             )
           end
+
+          context 'and multiple releases are referenced in the current deployment' do
+            before {
+              bosh_runner.run("upload release #{spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')}")
+              set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_referencing_multiple_releases})
+            }
+
+            it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
+              out = deploy(failure_expected: true)
+              expect(out).to include("Error 60001:")
+
+              expect(out).to match_output %(
+                Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+                 - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+                 - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+              )
+
+              expect(out).to match_output %(
+                Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+                 - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+                 - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+                 - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+                 - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+                 - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
+              )
+            end
+          end
         end
+      end
+    end
+
+    context 'it exercises the entire compiled release lifecycle' do
+      it 'exports, deletes deployment & stemcell, uploads compiled, uploads patch-level stemcell, deploys' do
+        target_and_login
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['resource_pools'][0]['stemcell']['version'] = 'latest'
+        upload_cloud_config({:cloud_config_hash => cloud_config_hash})
+
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+        [
+          'jobs/job_with_blocking_compilation',
+          'packages/blocking_package',
+          'jobs/fails_with_too_much_output',
+          'packages/fails_with_too_much_output',
+        ].each do |release_path|
+          FileUtils.rm_rf(File.join(ClientSandbox.test_release_dir, release_path))
+        end
+
+        create_and_upload_test_release(:force => true)
+
+        set_deployment({
+                         manifest_hash: Bosh::Spec::Deployments.test_release_manifest.merge(
+                           {
+                             'jobs' => [
+                               {
+                                 'name' => 'job_with_many_packages',
+                                 'templates' => [
+                                   {
+                                     'name' => 'job_with_many_packages'
+                                   }
+                                 ],
+                                 'resource_pool' => 'a',
+                                 'instances' => 1,
+                                 'networks' => [{'name' => 'a'}],
+                               }
+                             ]
+                           }
+                         )
+                       })
+        deploy({})
+
+        bosh_runner.run('export release bosh-release/0.1-dev toronto-os/1')
+
+        bosh_runner.run('delete deployment simple')
+        bosh_runner.run('delete release bosh-release')
+        bosh_runner.run('delete stemcell ubuntu-stemcell 1')
+
+        bosh_runner.run("upload release #{File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')}/release-bosh-release-0.1-dev-on-toronto-os-stemcell-1.tgz")
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_1_1.tgz')}")
+
+        create_call_count = current_sandbox.cpi.invocations_for_method('create_vm').size
+        deploy({})
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').size).to eq(create_call_count + 1)
+      end
+    end
+  end
+
+  context 'when the deployment manifest file is large' do
+    before do
+      release_filename = spec_asset('test_release.tgz')
+
+      minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.minimal_manifest)
+      minimal_manifest["properties"] = {}
+      for i in 0..10000
+        minimal_manifest["properties"]["property#{i}"] = "value#{i}"
+      end
+
+      deployment_manifest = yaml_file('minimal', minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+
+      target_and_login
+      bosh_runner.run("upload release #{release_filename}")
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+    end
+
+    it 'deploys successfully' do
+      output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
+      expect(output).to include("Deployed `minimal' to")
+      expect(exit_code).to eq(0)
+    end
+  end
+
+  context 'when errand jobs are used' do
+    let(:manifest) {
+      Bosh::Spec::Deployments.test_release_manifest.merge({
+        'jobs' => [
+          Bosh::Spec::Deployments.job_with_many_templates(
+            name: 'job_with_post_deploy_script',
+            templates: [
+              {'name' => 'job_1_with_post_deploy_script'},
+              {'name' => 'job_2_with_post_deploy_script'}
+            ],
+            instances: 1),
+          Bosh::Spec::Deployments.simple_errand_job.merge({
+              'name' => 'alive-errand',
+            }),
+          Bosh::Spec::Deployments.simple_errand_job.merge({
+              'name' => 'dead-errand',
+            }),
+        ]
+      })
+    }
+
+    before do
+      prepare_for_deploy()
+      deploy_simple_manifest(manifest_hash: manifest)
+    end
+
+    context 'when errand has been run with --keep-alive' do
+      it 'immediately updates the errand job' do
+        bosh_runner.run('download manifest simple')
+
+        bosh_runner.run('run errand alive-errand --keep-alive')
+
+        job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+        expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_falsey
+
+        job_with_errand_vm = director.vm('alive-errand', '0')
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/errand1/bin/run'))).to be_truthy
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_falsey
+
+        new_manifest = manifest
+        new_manifest['jobs'][0]['templates'] << {'name' => 'foobar'}
+        new_manifest['jobs'][1]['templates'] << {'name' => 'foobar'}
+        new_manifest['jobs'][2]['templates'] << {'name' => 'foobar'}
+        deploy_simple_manifest(manifest_hash: new_manifest)
+
+        job_with_post_deploy_script_vm = director.vm('job_with_post_deploy_script', '0')
+        expect(File.exists?(job_with_post_deploy_script_vm.file_path('jobs/foobar/monit'))).to be_truthy
+
+        job_with_errand_vm = director.vm('alive-errand', '0')
+        expect(File.exists?(job_with_errand_vm.file_path('jobs/foobar/monit'))).to be_truthy
+
+        expect {
+          director.vm('dead-errand', '0')
+        }.to raise_error(RuntimeError, 'Failed to find vm dead-errand/0')
       end
     end
   end

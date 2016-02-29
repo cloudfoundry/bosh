@@ -43,62 +43,63 @@ module Bosh::Director
       instance = instance_plan.instance
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
-      @canary = options.fetch(:canary, false)
+      InstanceUpdater::InstanceState.with_instance_update(instance.model) do
+        # Optimization to only update DNS if nothing else changed.
+        if dns_change_only?(instance_plan)
+          @logger.debug('Only change is DNS configuration')
+          update_dns(instance_plan)
+          return
+        end
 
-      # Optimization to only update DNS if nothing else changed.
-      if dns_change_only?(instance_plan)
-        @logger.debug('Only change is DNS configuration')
-        update_dns(instance_plan)
-        return
-      end
-
-      unless instance_plan.currently_detached?
-        Preparer.new(instance_plan, agent(instance), @logger).prepare
-
-        stop(instance_plan)
-        take_snapshot(instance)
-      end
-
-      if instance.state == 'detached'
-        @logger.info("Detaching instance #{instance}")
         unless instance_plan.currently_detached?
+          Preparer.new(instance_plan, agent(instance), @logger).prepare
+
+          stop(instance_plan)
+          take_snapshot(instance)
+        end
+
+        if instance.state == 'detached'
+          @logger.info("Detaching instance #{instance}")
+          unless instance_plan.currently_detached?
+            @disk_manager.unmount_disk_for(instance_plan)
+            instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+            @vm_deleter.delete_for_instance(instance_model)
+          end
+          release_obsolete_ips(instance_plan)
+          instance.update_state
+          return
+        end
+
+        recreated = false
+        if needs_recreate?(instance_plan)
+          @logger.debug('Failed to update in place. Recreating VM')
           @disk_manager.unmount_disk_for(instance_plan)
-          instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
-          @vm_deleter.delete_for_instance(instance_model)
+          @vm_recreator.recreate_vm(instance_plan, nil)
+          recreated = true
         end
+
         release_obsolete_ips(instance_plan)
-        instance.update_state
-        return
-      end
 
-      recreated = false
-      if needs_recreate?(instance_plan)
-        @logger.debug('Failed to update in place. Recreating VM')
-        @disk_manager.unmount_disk_for(instance_plan)
-        @vm_recreator.recreate_vm(instance_plan, nil)
-        recreated = true
-      end
+        update_dns(instance_plan)
+        @disk_manager.update_persistent_disk(instance_plan, @vm_recreator)
 
-      release_obsolete_ips(instance_plan)
-
-      update_dns(instance_plan)
-      @disk_manager.update_persistent_disk(instance_plan, @vm_recreator)
-
-      unless recreated
-        if instance.trusted_certs_changed?
-          @logger.debug('Updating trusted certs')
-          instance.update_trusted_certs
+        unless recreated
+          if instance.trusted_certs_changed?
+            @logger.debug('Updating trusted certs')
+            instance.update_trusted_certs
+          end
         end
+
+        cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
+        state_applier = InstanceUpdater::StateApplier.new(
+          instance_plan,
+          agent(instance),
+          cleaner,
+          @logger,
+          canary: options[:canary]
+        )
+        state_applier.apply(instance_plan.desired_instance.job.update)
       end
-
-      cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
-      state_applier = InstanceUpdater::StateApplier.new(instance_plan, agent(instance), cleaner, @logger)
-      state_applier.apply
-
-      job = instance_plan.desired_instance.job
-      min_watch_time = get_min_watch_time(job.update)
-      max_watch_time = get_max_watch_time(job.update)
-      state_applier.post_start(min_watch_time, max_watch_time)
     end
 
     private
@@ -130,18 +131,6 @@ module Bosh::Director
 
       @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)
       @dns_manager.flush_dns_cache
-    end
-
-    def get_min_watch_time(update_config)
-      canary? ? update_config.min_canary_watch_time : update_config.min_update_watch_time
-    end
-
-    def get_max_watch_time(update_config)
-      canary? ? update_config.max_canary_watch_time : update_config.max_update_watch_time
-    end
-
-    def canary?
-      @canary
     end
 
     def dns_change_only?(instance_plan)

@@ -1,6 +1,7 @@
 require 'cli/core_ext'
 require 'cli/errors'
 require 'cli/cloud_config'
+require 'cli/runtime_config'
 
 require 'json'
 require 'httpclient'
@@ -127,12 +128,20 @@ module Bosh
           get_json("/deployments/#{deployment_name}/errands")
         end
 
-        def list_running_tasks(verbose = 1)
-          get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
+        def list_running_tasks(verbose = 1, deployment_name = nil)
+          if deployment_name
+            get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}&deployment=#{deployment_name}")
+          else
+            get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
+          end
         end
 
-        def list_recent_tasks(count = 30, verbose = 1)
-          get_json("/tasks?limit=#{count}&verbose=#{verbose}")
+        def list_recent_tasks(count = 30, verbose = 1, deployment_name = nil)
+          if deployment_name
+            get_json("/tasks?limit=#{count}&verbose=#{verbose}&deployment=#{deployment_name}")
+          else
+            get_json("/tasks?limit=#{count}&verbose=#{verbose}")
+          end
         end
 
         def get_release(name)
@@ -666,6 +675,22 @@ module Bosh
 
         def update_cloud_config(cloud_config_yaml)
           status, _ = post('/cloud_configs', 'text/yaml', cloud_config_yaml)
+          status == 201
+        end
+
+        def get_runtime_config
+          _, runtime_configs = get_json_with_status('/runtime_configs?limit=1')
+          latest = runtime_configs.first
+
+          if !latest.nil?
+            Bosh::Cli::RuntimeConfig.new(
+                properties: latest["properties"],
+                created_at: latest["created_at"])
+          end
+        end
+
+        def update_runtime_config(runtime_config_yaml)
+          status, _ = post('/runtime_configs', 'text/yaml', runtime_config_yaml)
           status == 201
         end
 

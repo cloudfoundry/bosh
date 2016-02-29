@@ -27,6 +27,8 @@ gem 'json', '=1.8.3'
 
 gem 'talentbox-delayed_job_sequel', '~> 4.1'
 
+gem 'bundler', '~>1.11.0'
+
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director

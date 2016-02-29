@@ -15,26 +15,41 @@ module Bosh::Director
       @logger = logger
     end
 
-    def create
-      template = create_template
+    def update(template)
+      template.release = @release_model
+      template.name = @name
+      template.sha1 = @sha1
+      template.fingerprint = @fingerprint
+      template.version = @version
+
       unpack
 
       job_manifest = load_manifest
       validate_templates(job_manifest)
       validate_monit
 
+      if template.blobstore_id
+        begin
+          @logger.info("Deleting blob for template '#{@name}/#{@version}' with blobstore_id '#{template.blobstore_id}'")
+          BlobUtil.delete_blob(template.blobstore_id)
+          template.blobstore_id = nil
+        rescue Bosh::Blobstore::BlobstoreError => e
+          @logger.info("Error deleting blob for template '#{@name}/#{@version}' with blobstore_id '#{template.blobstore_id}': #{e.inspect}")
+        end
+      end
+
       template.blobstore_id = BlobUtil.create_blob(job_tgz)
       template.package_names = parse_package_names(job_manifest)
 
       validate_logs(job_manifest)
-      template.logs = job_manifest['logs'] if job_manifest['logs']
+      template.logs = job_manifest['logs']
 
       validate_properties(job_manifest)
-      template.properties = job_manifest['properties'] if job_manifest['properties']
+      template.properties = job_manifest['properties']
 
       validate_links(job_manifest)
       template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.requires = job_manifest['requires'] if job_manifest['requires']
+      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
 
       template.save
     end
@@ -61,21 +76,6 @@ module Bosh::Director
     def job_dir
       @job_dir ||= File.join(@release_dir, 'jobs', @name)
     end
-
-    def create_template
-      template_attrs = {
-        :release => @release_model,
-        :name => @name,
-        :sha1 => @sha1,
-        :fingerprint => @fingerprint,
-        :version => @version
-      }
-
-      @logger.info("Creating job template `#{@name}/#{@version}' " +
-          'from provided bits')
-      Models::Template.new(template_attrs)
-    end
-
 
     def load_manifest
       manifest_file = File.join(job_dir, 'job.MF')
@@ -149,21 +149,21 @@ module Bosh::Director
 
     def validate_links(job_manifest)
       parse_links(job_manifest['provides'], 'provides') if job_manifest['provides']
-      parse_links(job_manifest['requires'], 'requires') if job_manifest['requires']
+      parse_links(job_manifest['consumes'], 'consumes') if job_manifest['consumes']
     end
 
-    def parse_links(links, desc)
+    def parse_links(links, kind)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-          "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of strings or hashes with name and type"
+              "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}
       links.each do |link_spec|
-        parsed_link = DeploymentPlan::TemplateLink.parse(link_spec)
+        parsed_link = DeploymentPlan::TemplateLink.parse(kind, link_spec)
         if parsed_links[parsed_link.name]
           raise JobDuplicateLinkName,
-            "Job '#{@name}' '#{desc}' specifies links with duplicate name '#{parsed_link.name}'"
+            "Job '#{@name}' '#{kind}' specifies links with duplicate name '#{parsed_link.name}'"
         end
 
         parsed_links[parsed_link.name] = true

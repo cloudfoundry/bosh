@@ -35,6 +35,7 @@ describe 'director.yml.erb.erb' do
           'max_tasks' => 100,
           'max_threads' => 32,
           'enable_snapshots' => true,
+          'enable_post_deploy' => false,
           'ignore_missing_gateway' => false,
           'disks' => {
             'max_orphaned_age_in_days' => 3,
@@ -91,6 +92,10 @@ describe 'director.yml.erb.erb' do
 
     it 'should contain the trusted_certs field' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
+    end
+
+    it 'should keep dynamic, COMPONENT-based logging paths' do
+      expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
     end
 
     context 'when domain name specified without all other dns properties' do

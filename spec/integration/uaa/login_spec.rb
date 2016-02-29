@@ -5,7 +5,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+      bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
       bosh_runner.run('logout')
     end
 
@@ -57,6 +57,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(exit_code).to eq(0)
     end
 
+    it 'can handle long-running http requests' do
+      client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
+
+      `dd if=/dev/urandom of=#{ClientSandbox.test_release_dir}/src/a/bigfile.txt bs=512 count=604800`
+      _, exit_code = create_and_upload_test_release(env: client_env, return_exit_code: true, force: true)
+
+      expect(exit_code).to eq(0)
+    end
+
     it 'fails to log in when incorrect credentials were provided' do
       bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Email:'
@@ -103,7 +112,7 @@ CERT
         cert_path = File.join(tmpdir, 'invalid_cert.pem')
         File.write(cert_path, invalid_ca_cert)
 
-        output = bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{cert_path}", failure_expected: true)
+        output = bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: cert_path, failure_expected: true})
         expect(output).to include('Invalid SSL Cert')
       end
     end
@@ -181,7 +190,7 @@ CERT
     with_reset_sandbox_before_each(user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+      bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
       bosh_runner.run('logout')
     end
 
@@ -202,8 +211,7 @@ CERT
 
     it 'fails to target when correct certificate is passed in' do
       output = bosh_runner.run(
-        "target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}",
-        failure_expected: true
+        "target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path, failure_expected: true}
       )
       expect(output).to include('Invalid SSL Cert')
     end

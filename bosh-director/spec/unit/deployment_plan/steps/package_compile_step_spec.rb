@@ -38,7 +38,7 @@ module Bosh::Director
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter)}
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter)
+      DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, plan, logger, instance_deleter, 4)
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -50,9 +50,8 @@ module Bosh::Director
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
 
-
     before do
-      allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
+      allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
@@ -82,13 +81,14 @@ module Bosh::Director
     def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
       transitive_dependencies = release_version_model.transitive_dependencies(package)
       package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
 
       CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       Models::CompiledPackage.make(package: package,
         dependency_key: package_dependency_key,
-        stemcell: stemcell,
+        stemcell_os: stemcell.operating_system,
+        stemcell_version: stemcell.version,
         build: 1,
         sha1: sha1,
         blobstore_id: blobstore_id)
@@ -96,8 +96,8 @@ module Bosh::Director
 
     def prepare_samples
       @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'cf-release', model: release_version_model)
-      @stemcell_a = make_stemcell
-      @stemcell_b = make_stemcell
+      @stemcell_a = make_stemcell(operating_system: 'chrome-os', version: '3146.1')
+      @stemcell_b = make_stemcell(operating_system: 'chrome-os', version: '3146.2')
 
       @p_common = make_package('common')
       @p_syslog = make_package('p_syslog')
@@ -154,6 +154,25 @@ module Bosh::Director
       (@package_set_a + @package_set_b + @package_set_c).each do |package|
         release_version_model.packages << package
       end
+    end
+
+    def compile_package_stub(args)
+      name = args[2]
+      dot = args[3].rindex('.')
+      version, build = args[3][0..dot-1], args[3][dot+1..-1]
+
+      package = Models::Package.find(name: name, version: version)
+      expect(args[0]).to eq(package.blobstore_id)
+      expect(args[1]).to eq(package.sha1)
+
+      expect(args[4]).to be_a(Hash)
+
+      {
+        'result' => {
+          'sha1' => "compiled #{package.id}",
+          'blobstore_id' => "blob #{package.id}"
+        }
+      }
     end
 
     context 'when all needed packages are compiled' do
@@ -217,22 +236,7 @@ module Bosh::Director
         agent_client = instance_double('Bosh::Director::AgentClient')
         allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
         expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
-          name = args[2]
-          dot = args[3].rindex('.')
-          version, build = args[3][0..dot-1], args[3][dot+1..-1]
-
-          package = Models::Package.find(name: name, version: version)
-          expect(args[0]).to eq(package.blobstore_id)
-          expect(args[1]).to eq(package.sha1)
-
-          expect(args[4]).to be_a(Hash)
-
-          {
-            'result' => {
-              'sha1' => "compiled #{package.id}",
-              'blobstore_id' => "blob #{package.id}"
-            }
-          }
+          compile_package_stub(args)
         end
 
         @package_set_a.each do |package|
@@ -259,6 +263,89 @@ module Bosh::Director
 
         @package_set_b.each do |package|
           expect(package.compiled_packages.size).to be >= 1
+        end
+      end
+    end
+
+    context 'when there are compiled packages with the same major version number but different patch number' do
+
+      before do
+        prepare_samples
+
+        @j_dea = instance_double('Bosh::Director::DeploymentPlan::Job',
+          name: 'dea',
+          release: @release,
+          templates: [@t_dea, @t_warden],
+          vm_type: @vm_type_large,
+          stemcell: @stemcell_b
+        )
+      end
+
+      context 'and we are using a source release' do
+        it 'compiles all packages' do
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+            [@j_dea],
+            compilation_config,
+            compilation_instance_pool,
+            logger,
+            Config.event_log,
+            @director_job
+          )
+
+          @package_set_a.each do |package|
+            cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
+            expect(@j_dea).not_to receive(:use_compiled_package).with(cp1)
+            expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+          end
+
+          expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times
+
+          agent_client = instance_double('Bosh::Director::AgentClient')
+          allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
+            compile_package_stub(args)
+          end
+
+          expect(@director_job).to receive(:task_checkpoint).once
+
+          compiler.perform
+          # For @stemcell_b we need to compile:
+          # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
+          expect(compiler.compile_tasks_count).to eq(6)
+          # and they should be recompiled
+          expect(compiler.compilations_performed).to eq(6)
+
+          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+        end
+      end
+
+      context 'and we are using a compiled release' do
+        it 'does not compile any packages' do
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(
+            [@j_dea],
+            compilation_config,
+            compilation_instance_pool,
+            logger,
+            Config.event_log,
+            @director_job
+          )
+
+          @package_set_a.each do |package|
+            package.blobstore_id = nil
+            package.sha1 = nil
+            cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
+            expect(@j_dea).to receive(:use_compiled_package).with(cp1)
+            expect(compiler).not_to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+          end
+
+          compiler.perform
+          # For @stemcell_b we need to compile:
+          # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
+          expect(compiler.compile_tasks_count).to eq(6)
+          # and they should be recompiled
+          expect(compiler.compilations_performed).to eq(0)
+
+          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
         end
       end
     end
@@ -360,7 +447,7 @@ module Bosh::Director
         stemcell = make_stemcell
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', stemcell: stemcell)
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
-          fingerprint: 'deadbeef')
+          fingerprint: 'deadbeef', blobstore_id: 'fake_id')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
 
@@ -580,7 +667,7 @@ module Bosh::Director
         compiled_package = instance_double(
           'Bosh::Director::Models::CompiledPackage',
           name: 'fake-package-name', package: package,
-          stemcell: stemcell, blobstore_id: 'some blobstore id')
+          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id')
         expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
         expect(BlobUtil).to receive(:save_to_global_cache).with(compiled_package, cache_key)
         allow(compiler).to receive(:prepare_vm)
@@ -633,7 +720,8 @@ module Bosh::Director
 
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
-          allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
+          allow(instance_reuser).to receive(:add_in_use_instance)
+          allow(instance_reuser).to receive(:total_instance_count).and_return(3)
           allow(ip_provider).to receive(:reserve).with(instance_of(Bosh::Director::DesiredNetworkReservation))
 
           expect(instance_reuser).to receive(:remove_instance).ordered
