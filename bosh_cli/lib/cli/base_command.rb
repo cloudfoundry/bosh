@@ -121,7 +121,6 @@ module Bosh::Cli
         elsif username && password
           @credentials = Client::BasicCredentials.new(username, password)
         end
-
         @credentials
       end
 
@@ -145,7 +144,7 @@ module Bosh::Cli
 
     def auth_info
       @auth_info ||= begin
-        ca_cert = config.ca_cert(target)
+        ca_cert = options[:ca_cert] || config.ca_cert(target)
         director_client = Client::Director.new(target, nil, ca_cert: ca_cert)
         Client::Uaa::AuthInfo.new(director_client, ENV, ca_cert)
       end

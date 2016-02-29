@@ -297,6 +297,48 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'when configured with addons' do
+    with_reset_sandbox_before_each
+    with_tmp_dir_before_all
+
+    let(:runtime_config_hash) {
+      config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
+      config_hash['releases'][0]['name'] = 'bosh-release'
+      config_hash['releases'][0]['version'] = '0.1-dev'
+      config_hash['addons'][0]['jobs'][0]['release'] = 'bosh-release'
+      config_hash['addons'][0]['jobs'][0]['name'] = 'has_drain_script'
+      config_hash
+    }
+
+    let(:manifest_with_errand) do
+      errand = Bosh::Spec::Deployments.manifest_with_errand
+      errand['jobs'][1]['templates'] << {
+                                          'release' => 'bosh-release',
+                                          'name' => 'foobar_without_packages',
+                                        }
+      errand
+    end
+
+    it 'does not stop jobs after the errand has run' do
+      deploy_from_scratch(manifest_hash: manifest_with_errand,
+        runtime_config_hash: runtime_config_hash)
+      _, exit_code = bosh_runner.run("run errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}",{return_exit_code: true})
+      expect(exit_code).to eq(0)
+
+      vm = director.vm('fake-errand-name', '0')
+      agent_log = File.read("#{current_sandbox.agent_tmp_path}/agent.#{vm.agent_id}.log")
+
+      # executed once each, but is echoed in the logs twice
+      expect(agent_log.scan('{"protocol":2,"method":"drain"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"stop"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_script","arguments":["pre-start",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"start"').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_script","arguments":["post-start",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"run_errand",').size).to eq(2)
+      expect(agent_log.scan('{"protocol":2,"method":"fetch_logs",').size).to eq(2)
+    end
+  end
+
   def expect_errands(*expected_errands)
     output, _ = bosh_runner.run('errands')
     expected_errands.each do |errand|

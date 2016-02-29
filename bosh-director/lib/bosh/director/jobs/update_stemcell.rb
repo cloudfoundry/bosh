@@ -61,7 +61,7 @@ module Bosh::Director
           stemcell_manifest = Psych.load_file(stemcell_manifest_file)
 
           @name = safe_property(stemcell_manifest, "name", :class => String)
-          @operating_system = safe_property(stemcell_manifest, "operating_system", :class => String, :optional => true)
+          @operating_system = safe_property(stemcell_manifest, "operating_system", :class => String, :optional => true, :default => @name)
           @version = safe_property(stemcell_manifest, "version", :class => String)
           @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
           @sha1 = safe_property(stemcell_manifest, "sha1", :class => String)

@@ -57,7 +57,7 @@ module Bosh::Director
           instance = filter_by(deployment, uuid: index_or_id).first
         end
 
-        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options])
+        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment.name)
       end
 
       def ssh(username, deployment, options)

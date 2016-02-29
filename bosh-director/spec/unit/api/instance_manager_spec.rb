@@ -24,7 +24,7 @@ module Bosh::Director
           instance.update(index: index)
 
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, index, options)).to eq(task)
         end
@@ -35,7 +35,7 @@ module Bosh::Director
 
         it 'enqueues a resque job' do
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, uuid, options)).to eq(task)
         end

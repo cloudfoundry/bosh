@@ -44,6 +44,8 @@ module Bosh::Director
           resolver = instance_double('Bosh::Director::ProblemResolver').as_null_object
           expect(ProblemResolver).to receive(:new).with(deployment).and_return(resolver)
           allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+          allow(resolver).to receive(:apply_resolutions).and_return(0)
+          allow(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
 
           scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
           expect(ProblemScanner::Scanner).to receive(:new).and_return(scanner)
@@ -63,6 +65,8 @@ module Bosh::Director
           resolver = instance_double('Bosh::Director::ProblemResolver').as_null_object
           expect(ProblemResolver).to receive(:new).with(deployment).and_return(resolver)
           allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+          allow(resolver).to receive(:apply_resolutions).and_return(1)
+          allow(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
 
           scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
           expect(ProblemScanner::Scanner).to receive(:new).and_return(scanner)
@@ -77,16 +81,77 @@ module Bosh::Director
         scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
         allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
         allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+        allow(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
 
         resolver = instance_double('Bosh::Director::ProblemResolver')
         expect(ProblemResolver).to receive(:new).and_return(resolver)
-        expect(resolver).to receive(:apply_resolutions).with(resolutions)
+        expect(resolver).to receive(:apply_resolutions).with(resolutions).and_return(0)
+
+        scan_and_fix.perform
+      end
+
+      it 'should call the post_deploy script runner' do
+        scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
+        allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
+        allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+
+        resolver = instance_double('Bosh::Director::ProblemResolver')
+        allow(ProblemResolver).to receive(:new).and_return(resolver)
+        allow(resolver).to receive(:apply_resolutions).with(resolutions).and_return(1)
+
+        expect(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection).with(deployment)
 
         scan_and_fix.perform
       end
 
       it 'should create a list of resolutions' do
         expect(scan_and_fix.resolutions(jobs)).to eq(resolutions)
+      end
+    end
+
+    context 'an error occurs' do
+      before do
+        scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
+        allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
+        allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+      end
+
+      it 'should give a nice message for Lock::TimeoutError' do
+        resolver = instance_double('Bosh::Director::ProblemResolver')
+        allow(ProblemResolver).to receive(:new).and_return(resolver)
+        allow(resolver).to receive(:apply_resolutions).and_raise(Lock::TimeoutError, 'this original error message will change')
+
+        expect{scan_and_fix.perform}.to raise_error(RuntimeError, /Unable to get deployment lock, maybe a deployment is in progress. Try again later./)
+        expect(PostDeploymentScriptRunner).to_not receive(:run_post_deploys_after_resurrection)
+      end
+
+      it 'should pass on other exceptions' do
+        error = RuntimeError.new('This is not supposed to happen')
+        resolver = instance_double('Bosh::Director::ProblemResolver')
+        allow(ProblemResolver).to receive(:new).and_return(resolver)
+        allow(resolver).to receive(:apply_resolutions).and_raise(error)
+
+        expect{scan_and_fix.perform}.to raise_error(error)
+        expect(PostDeploymentScriptRunner).to_not receive(:run_post_deploys_after_resurrection)
+      end
+    end
+
+    describe '#perform' do
+      context 'when problem resolution fails' do
+        it 'raises an error' do
+          scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
+          allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
+          allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
+
+          resolver = instance_double('Bosh::Director::ProblemResolver')
+          expect(ProblemResolver).to receive(:new).and_return(resolver)
+          expect(resolver).to receive(:apply_resolutions).and_return([1, "error message"])
+          expect(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
+
+          expect{
+            scan_and_fix.perform
+          }.to raise_error(Bosh::Director::ProblemHandlerError)
+        end
       end
     end
 

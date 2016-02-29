@@ -70,7 +70,17 @@ module Bosh::Director
       end
 
       def parse_jobs
+        if @deployment_manifest.has_key?('jobs') && @deployment_manifest.has_key?('instance_groups')
+          raise JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed"
+        end
+
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
+        instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
+
+        if !instance_groups.empty?
+          jobs = instance_groups
+        end
+
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))

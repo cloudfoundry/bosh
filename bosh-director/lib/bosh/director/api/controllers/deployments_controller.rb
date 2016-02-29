@@ -73,10 +73,16 @@ module Bosh::Director
           }
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
-        manifest = ((request.content_length.nil? || request.content_length.to_i == 0) && (params['state'])) ? StringIO.new(deployment.manifest) : request.body
+
+        if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+        else
+          manifest_file_path = prepare_yml_file(request.body, 'deployment')
+        end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
+        latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -98,9 +104,15 @@ module Bosh::Director
         }
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
 
-        manifest = (request.content_length.nil? || request.content_length.to_i == 0) ? StringIO.new(deployment.manifest) : request.body
+        if (request.content_length.nil?  || request.content_length.to_i == 0)
+          manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)
+        else
+          manifest_file_path = prepare_yml_file(request.body, 'deployment')
+        end
+
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
+        latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, params[:deployment], options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -304,6 +316,8 @@ module Bosh::Director
       end
 
       post '/', authorization: [director: :create_deployment], :consumes => :yaml do
+        manifest_file_path = prepare_yml_file(request.body, 'deployment')
+
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
@@ -311,16 +325,27 @@ module Bosh::Director
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
           cloud_config = Api::CloudConfigManager.new.find_by_id(context['cloud_config_id'])
+          runtime_config = Api::RuntimeConfigManager.new.find_by_id(context['runtime_config_id'])
         else
           cloud_config = Api::CloudConfigManager.new.latest
+          runtime_config = Api::RuntimeConfigManager.new.latest
+        end
+
+        deployment = Psych.load(File.read(manifest_file_path), manifest_file_path)
+
+        if deployment
+          deployment_name = deployment['name']
         end
 
         options.merge!('scopes' => token_scopes)
-        task = @deployment_manager.create_deployment(current_user, request.body, cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
+
         redirect "/tasks/#{task.id}"
       end
 
       post '/:deployment/diff', authorization: false, :consumes => :yaml do
+        manifest_text = request.body.read
+        validate_manifest_yml(manifest_text)
         deployment = Models::Deployment.find(name: params[:deployment])
 
         if deployment
@@ -328,31 +353,34 @@ module Bosh::Director
             throw(:halt, [401, 'Insufficient privileges'])
           end
 
-          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config)
+          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)
           before_manifest.resolve_aliases
         else
           unless @permission_authorizer.is_granted?(:director, :create_deployment, token_scopes)
             throw(:halt, [401, 'Insufficient privileges'])
           end
 
-          before_manifest = Manifest.load_from_text(nil, nil)
+          before_manifest = Manifest.load_from_text(nil, nil, nil)
         end
 
         after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
         after_manifest = Manifest.load_from_text(
-          request.body,
-          after_cloud_config
+          manifest_text,
+          after_cloud_config,
+          after_runtime_config
         )
         after_manifest.resolve_aliases
 
         diff = before_manifest.diff(after_manifest)
 
         json_encode({
-          'context' => {
-            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
-          },
-          'diff' => diff.map { |l| [l.to_s, l.status] }
-        })
+            'context' => {
+              'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+              'runtime_config_id' => after_runtime_config ? after_runtime_config.id : nil
+            },
+            'diff' => diff.map { |l| [l.to_s, l.status] }
+          })
       end
 
       post '/:deployment/errands/:errand_name/runs' do
@@ -364,16 +392,21 @@ module Bosh::Director
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
           [deployment.name, errand_name, keep_alive],
+          deployment.name
         )
 
         redirect "/tasks/#{task.id}"
       end
 
       get '/:deployment/errands', authorization: [:deployment => :read] do
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
-        deployment_plan = planner_factory.create_from_model(deployment)
-        errands = deployment_plan.jobs.select(&:can_run_as_errand?)
-        errand_data = errands.map { |errand| {"name" => errand.name} }
+        deployment_plan = load_deployment_plan
+
+        errands = deployment_plan.jobs.select(&:is_errand?)
+
+        errand_data = errands.map do |errand|
+          {"name" => errand.name}
+        end
+
         json_encode(errand_data)
       end
 
@@ -381,6 +414,11 @@ module Bosh::Director
 
       def deployment
         params['deployment_model']
+      end
+
+      def load_deployment_plan
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
+        planner_factory.create_from_model(deployment)
       end
 
       def convert_job_instance_hash(hash)

@@ -8,11 +8,13 @@ module Bosh::Director
       deployment_model = Models::Deployment.make(
         name: 'current-deployment',
         cloud_config: cloud_config,
+        runtime_config: runtime_config
       )
       DeploymentPlan::Planner.new(
         {name: 'current-deployment', properties: {}},
         '',
         cloud_config,
+        runtime_config,
         deployment_model
       )
     end
@@ -20,11 +22,13 @@ module Bosh::Director
     describe 'reserved_legacy_networks' do
       context 'when current deployment is using cloud config' do
         let(:cloud_config) { Models::CloudConfig.make }
+        let(:runtime_config) { Models::RuntimeConfig.make }
 
         it 'returns manual network ranges with the same name from legacy deployments' do
           Models::Deployment.make(
             name: 'other-deployment-1',
             cloud_config: nil,
+            runtime_config: nil,
             manifest: Psych.dump({
               'networks' => [
                 {
@@ -53,6 +57,7 @@ module Bosh::Director
           Models::Deployment.make(
             name: 'other-deployment-2',
             cloud_config: nil,
+            runtime_config: nil,
             manifest: Psych.dump({
                 'networks' => [{
                     'name' => 'network-a',
@@ -67,6 +72,7 @@ module Bosh::Director
           Models::Deployment.make(
             name: 'other-deployment-3',
             cloud_config: nil,
+            runtime_config: nil,
             manifest: Psych.dump({
                 'networks' => [{
                     'name' => 'network-a',
@@ -91,6 +97,7 @@ module Bosh::Director
           Models::Deployment.make(
             name: 'other-deployment',
             cloud_config: nil,
+            runtime_config: nil,
             manifest: nil
           )
 
@@ -102,6 +109,7 @@ module Bosh::Director
           Models::Deployment.make(
             name: 'other-deployment-1',
             cloud_config: cloud_config,
+            runtime_config: runtime_config,
             manifest: Psych.dump({
                 'networks' => [{
                     'name' => 'network-a',
@@ -119,11 +127,13 @@ module Bosh::Director
 
       context 'when current deployment is not using cloud config' do
         let(:cloud_config) { nil }
+        let(:runtime_config) { nil }
 
         before do
           Models::Deployment.make(
             name: 'other-deployment',
             cloud_config: nil,
+            runtime_config: nil,
             manifest: Psych.dump({
                 'networks' => [{
                     'name' => 'network-a',

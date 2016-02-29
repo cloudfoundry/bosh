@@ -98,6 +98,69 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         }.to raise_error BD::CompilationConfigCloudPropertiesNotAllowed,
           "Compilation config is using vm type 'my-foo-compilation' and should not be configuring cloud_properties."
       end
+
+      context 'when vm_extensions are configured' do
+        let(:vm_extension_1) {BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
+        let(:vm_extensions) { [vm_extension_1] }
+
+        it 'should parse the property' do
+          config = BD::DeploymentPlan::CompilationConfig.new(
+              {
+                  'workers' => 2,
+                  'network' => 'foo',
+                  'vm_type' => 'my-foo-compilation',
+                  'vm_extensions' => ['my-foo-compilation-extension']
+              },
+              {},
+              [vm_type],
+              vm_extensions
+          )
+
+          expect(config.vm_extensions).to eq(vm_extensions)
+        end
+
+        it 'it should error if the vm_extension is not actually configured' do
+          expect {
+            BD::DeploymentPlan::CompilationConfig.new(
+                {
+                    'workers' => 2,
+                    'network' => 'foo',
+                    'vm_type' => 'my-foo-compilation',
+                    'vm_extensions' => ['my-foo-compilation-extension', 'undefined-vm']
+                },
+                {},
+                [vm_type],
+                [vm_extension_1]
+            )
+          }.to raise_error BD::CompilationConfigInvalidVmExtension,
+                           "Compilation config references unknown vm extension 'undefined-vm'. Known vm extensions are: my-foo-compilation-extension"
+        end
+
+
+      end
+    end
+
+    context 'when vm_type is not configured' do
+      context 'when vm_extensions are configured' do
+        let(:vm_extension_1) { BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'}) }
+        let(:vm_extensions) { [vm_extension_1] }
+
+        it 'should parse the property' do
+          expect {
+            BD::DeploymentPlan::CompilationConfig.new(
+                {
+                    'workers' => 2,
+                    'network' => 'foo',
+                    'cloud_properties' => {'instance_type' => 'super-large'},
+                    'vm_extensions' => ['my-foo-compilation-extension']
+                },
+                {},
+                [],
+                vm_extensions
+            ) }.to raise_error BD::CompilationConfigVmTypeRequired,
+                               "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type."
+        end
+      end
     end
 
     context 'when availability zone is not specified' do

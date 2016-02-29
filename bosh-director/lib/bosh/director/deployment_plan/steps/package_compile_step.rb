@@ -63,7 +63,7 @@ module Bosh::Director
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log)
             if compiled_package.nil?
-              build = Models::CompiledPackage.generate_build_number(package, stemcell.model)
+              build = Models::CompiledPackage.generate_build_number(package, stemcell.model.operating_system, stemcell.model.version)
               task_result = nil
 
               prepare_vm(stemcell) do |instance|
@@ -82,7 +82,8 @@ module Bosh::Director
 
               compiled_package = Models::CompiledPackage.create do |p|
                 p.package = package
-                p.stemcell = stemcell.model
+                p.stemcell_os = stemcell.os
+                p.stemcell_version = stemcell.version
                 p.sha1 = task_result['sha1']
                 p.build = build
                 p.blobstore_id = task_result['blobstore_id']

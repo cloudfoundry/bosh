@@ -49,6 +49,7 @@ module Bosh
     class InvalidManifest        < CliError; error_code(514); end
     class PropertyMismatch       < CliError; error_code(515); end
     class InvalidPropertyMapping < CliError; error_code(516); end
+    class InvalidLinks           < CliError; error_code(517); end
 
     class ReleaseVersionError    < CliError; error_code(600); end
   end

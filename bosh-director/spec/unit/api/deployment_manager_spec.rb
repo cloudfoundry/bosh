@@ -28,23 +28,24 @@ module Bosh::Director
         it 'enqueues a resque job' do
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
           cloud_config = instance_double(Bosh::Director::Models::CloudConfig, id: 123)
+          runtime_config = instance_double(Bosh::Director::Models::RuntimeConfig, id: 456)
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          create_task = subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', cloud_config, options)
+          create_task = subject.create_deployment(username, 'FAKE_TMPDIR/deployment-FAKE_UUID', cloud_config, runtime_config, deployment.name, options)
 
           expect(create_task).to eq(task)
           expect(job_queue).to have_received(:enqueue).with(
-              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, cloud_config.id, options])
+              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, cloud_config.id, runtime_config.id, options], deployment.name)
         end
 
-        it 'passes a nil cloud config id if there is no cloud config' do
+        it 'passes a nil cloud config id and runtime config id if there is no cloud config or runtime config' do
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', nil, options)
+          subject.create_deployment(username, 'FAKE_TMPDIR/deployment-FAKE_UUID', nil, nil, deployment.name, options)
 
           expect(job_queue).to have_received(:enqueue).with(
-              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, nil, options])
+              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, nil, nil, options], deployment.name)
         end
       end
     end
@@ -52,7 +53,7 @@ module Bosh::Director
     describe '#delete_deployment' do
       it 'enqueues a resque job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options]).and_return(task)
+          username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment.name).and_return(task)
 
         expect(subject.delete_deployment(username, deployment, options)).to eq(task)
       end

@@ -64,69 +64,102 @@ describe 'cli: deployment process', type: :integration do
           Deployments total: 2
         ))
       end
-    end
 
-    it 'shows a diff of the manifest with cloud config changes' do
-      old_manifest = Bosh::Spec::Deployments.simple_manifest
-      old_manifest['releases'].first['version'] = '0+dev.1' # latest is converted to release version in new format
-      deploy_from_scratch(manifest_hash: old_manifest)
+      context 'properties from first deployment are modified in second deployment' do
+        let(:old_manifest) do
+          old_manifest = Bosh::Spec::Deployments.simple_manifest
+          old_manifest['releases'].first['version'] = '0+dev.1' # latest is converted to release version in new format
 
-      new_manifest = Bosh::Spec::Deployments.simple_manifest
-      job_spec = Bosh::Spec::Deployments.simple_job(
-        name: 'new_job',
-        templates: [{'name' => 'foobar_without_packages'}]
-      )
-      job_spec['properties'] = {'foo' => 'bar'}
-      new_manifest['jobs'] = [job_spec]
+          old_job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'job1',
+              templates: [{'name' => 'foobar_without_packages'}]
+          )
+          old_job_spec['properties'] = {
+              'foobar' => {'foo' => "baaar\nbaz"},
+              'array_property' => ['value1', 'value2'],
+              'hash_array_property' => [{'a' => 'b'}, {'b' => 'c'}, {'y' => 'z'}],
+              'name_range_hash_array_property' => [{'name' => 'old_name'}, {'range' => 'old_range'}],
+              'old_property' => 'delete_me'}
 
-      new_manifest['releases'].first['version'] = 'latest'
+          old_manifest['jobs'] = [old_job_spec]
+          old_manifest
+        end
 
-      new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      new_cloud_config['resource_pools'] = [
-        {
-          'name' => 'a',
-          'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
-          'stemcell' => {
-            'name' => 'ubuntu-stemcell',
-            'version' => 'latest',
-          },
-        }
-      ]
+        let(:new_manifest) do
+          new_manifest = Bosh::Spec::Deployments.simple_manifest
 
-      upload_cloud_config(cloud_config_hash: new_cloud_config)
-      output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
+          new_job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'job1',
+              templates: [{'name' => 'foobar_without_packages'}]
+          )
+          new_job_spec['properties'] = {
+              'foobar' => { 'foo' => "bar\nbaz"},
+              'array_property' => ['valuee1', 'value2', 'value3'],
+              'hash_array_property' => [{'a' => 'b'}, {'b' => 'd'}, {'e' => 'f'}],
+              'name_range_hash_array_property' => [{'name' => 'new_name'}, {'range' => 'new_range'}],
+              'new_property' => 'add_me'}
 
-      expect(output).to include(<<-DIFF
-  resource_pools:
+          new_manifest['jobs'] = [new_job_spec]
+          new_manifest['releases'].first['version'] = 'latest'
+          new_manifest
+        end
+
+        let(:new_cloud_config) do
+          new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          new_cloud_config['resource_pools'] = [
+              {
+                  'name' => 'a',
+                  'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
+                  'stemcell' => {
+                      'name' => 'ubuntu-stemcell',
+                      'version' => 'latest',
+                  },
+              }
+          ]
+          new_cloud_config
+        end
+
+        it 'shows a diff of the manifest with cloud config changes and redacted properties' do
+          deploy_from_scratch(manifest_hash: old_manifest)
+          upload_cloud_config(cloud_config_hash: new_cloud_config)
+          output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
+
+          expect(output).to_not include('stemcell')
+          expect(output).to_not include('releases')
+          expect(output).to match(/  resource_pools:
   - name: a
     cloud_properties:
-+     name: new_property
-+     size: large
+\+     name: new_property
+\+     size: large
 -   env:
 -     bosh:
--       password: <redacted>
+-       password: "?<redacted>"?
   jobs:
-+ - name: new_job
-+   templates:
-+   - name: foobar_without_packages
-+   resource_pool: a
-+   instances: 3
-+   networks:
-+   - name: a
-+   properties:
-+     foo: <redacted>
-- - name: foobar
--   templates:
--   - name: foobar
--   resource_pool: a
--   instances: 3
--   networks:
--   - name: a
--   properties: {}
-DIFF
-)
-      expect(output).to_not include('stemcell')
-      expect(output).to_not include('releases')
+  - name: job1
+    properties:
+      foobar:
+-       foo: "?<redacted>"?
+\+       foo: "?<redacted>"?
+      array_property:
+\+     - "?<redacted>"?
+\+     - "?<redacted>"?
+-     - "?<redacted>"?
+      hash_array_property:
+\+     - b: "?<redacted>"?
+\+     - e: "?<redacted>"?
+-     - b: "?<redacted>"?
+-     - y: "?<redacted>"?
+      name_range_hash_array_property:
+\+     - name: "?<redacted>"?
+\+     - range: "?<redacted>"?
+-     - name: "?<redacted>"?
+-     - range: "?<redacted>"?
+-     old_property: "?<redacted>"?
+\+     new_property: "?<redacted>"?
+/)
+
+        end
+      end
     end
 
     context 'when cloud config is updated during deploy' do
@@ -152,11 +185,9 @@ DIFF
 
           runner.send_keys 'yes'
           expect(runner).to have_output "Deployed `simple'"
-          puts runner.output
         end
 
         output = deploy_simple_manifest
-        puts output
         expect(output).to include(<<-DIFF
   resource_pools:
   - name: a

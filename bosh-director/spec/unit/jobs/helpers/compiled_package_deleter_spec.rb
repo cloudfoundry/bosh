@@ -11,7 +11,7 @@ module Bosh::Director
       it 'deletes the compiled package' do
         compiled_package = Models::CompiledPackage.make(
           package: Models::Package.make(name: 'package-name', version: 'version'),
-          blobstore_id: 'compiled-package-blb-1')
+          blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
         expect(blobstore).to receive(:delete).with('compiled-package-blb-1')
 
@@ -27,7 +27,7 @@ module Bosh::Director
         it 'returns an error AND does not delete the compiled package from the database' do
           compiled_package = Models::CompiledPackage.make(
             package: Models::Package.make(name: 'package-name', version: 'version'),
-            blobstore_id: 'compiled-package-blb-1')
+            blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
           errors = package_deleter.delete(compiled_package)
           expect(errors.count).to eq(1)
@@ -38,7 +38,7 @@ module Bosh::Director
           it 'deletes the compiled package from the database' do
             compiled_package = Models::CompiledPackage.make(
               package: Models::Package.make(name: 'package-name', version: 'version'),
-              blobstore_id: 'compiled-package-blb-1')
+              blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
             package_deleter.delete(compiled_package, {'force' => true})
             expect(Models::CompiledPackage.all).to be_empty
@@ -47,7 +47,7 @@ module Bosh::Director
           it 'does not raise error' do
             compiled_package = Models::CompiledPackage.make(
               package: Models::Package.make(name: 'package-name', version: 'version'),
-              blobstore_id: 'compiled-package-blb-1')
+              blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
             expect { package_deleter.delete(compiled_package, {'force' => true}) }.not_to raise_error
           end

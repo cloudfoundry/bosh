@@ -190,6 +190,20 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
             "network `net_a' range")
     end
 
+    it 'should allow the reserved range to include the gateway, broadcast and network addresses' do
+      expect {
+        make_subnet(
+          {
+            'range' => '192.168.0.0/24',
+            'reserved' => ['192.168.0.0','192.168.0.1','192.168.0.255'],
+            'gateway' => '192.168.0.1',
+            'cloud_properties' => {'foo' => 'bar'}
+          },
+          []
+        )
+      }.to_not raise_error
+    end
+
     it 'should fail when the static IP is not valid' do
       expect {
         make_subnet(
@@ -219,8 +233,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           []
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP `192.168.0.5' is out of " +
-            "network `net_a' range")
+          "Static IP `192.168.0.5' is in network `net_a' reserved range")
     end
 
     describe 'availability zone(s)' do

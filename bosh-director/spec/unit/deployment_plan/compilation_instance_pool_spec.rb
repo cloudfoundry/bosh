@@ -227,6 +227,13 @@ module Bosh::Director
           end
           expect(vm_instance.availability_zone_name).to eq('foo-az')
         end
+
+        it 'saves az name in database' do
+          allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1')
+          compilation_instance_pool.with_reused_vm(stemcell) {}
+
+          expect(Models::Instance.find(uuid: 'instance-uuid-1').availability_zone).to eq('foo-az')
+        end
       end
 
       context 'when vm_type is specified' do

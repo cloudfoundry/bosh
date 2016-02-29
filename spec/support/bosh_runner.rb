@@ -32,11 +32,12 @@ module Bosh::Spec
     def run_in_dir(cmd, working_dir, options = {})
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
+      ca_cert = options.fetch(:ca_cert, nil) ? "--ca-cert #{options[:ca_cert]}" : ''
 
       config_path = options.fetch(:config_path, @bosh_config)
 
       @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
-      command   = "bosh #{interactive_mode} -c #{config_path} #{cmd}"
+      command   = "bosh #{ca_cert} #{interactive_mode} -c #{config_path} #{cmd}"
       output    = nil
       env = options.fetch(:env, {})
       exit_code = 0

@@ -26,11 +26,11 @@ packages:
 - ruby
 
 properties:
-  director.env.http_proxy:
+  env.http_proxy:
     description: HTTP proxy that the director, scheduler and workers should use
-  director.env.https_proxy:
+  env.https_proxy:
     description: HTTPS proxy that the director, scheduler and workers should use
-  director.env.no_proxy:
+  env.no_proxy:
     description: List of comma-separated hosts that should skip connecting to the proxy in the director, scheduler and workers
   director.name:
     description: Name of the director
@@ -43,6 +43,9 @@ properties:
   director.nginx.workers:
     description: Number of nginx workers for director
     default: 2
+  director.workers:
+    description: Number of director workers
+    default: 3
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -93,6 +96,9 @@ properties:
     default: 5
   director.debug.keep_unreachable_vms:
     description: When a bosh deploy fails, the failed VM will be kept instead of destroyed
+    default: false
+  director.enable_post_deploy:
+    description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup

@@ -35,7 +35,7 @@ module Bosh::Director
         fake_locks
         allow(cloud).to receive(:delete_stemcell)
 
-        stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', version: '1')
+        stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
         Models::Stemcell.make(name: 'stemcell-b', version: '2')
 
         release_version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
@@ -43,7 +43,8 @@ module Bosh::Director
 
         package = Models::Package.make(release: release_1, blobstore_id: 'package_blob_id_1')
         package.add_release_version(release_version_1)
-        Models::CompiledPackage.make(package: package, stemcell: stemcell_1, blobstore_id: 'compiled-package-1')
+        Models::CompiledPackage.make(package: package, stemcell_os: stemcell_1.operating_system,
+            stemcell_version: stemcell_1.version, blobstore_id: 'compiled-package-1')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(stage)
@@ -52,11 +53,14 @@ module Bosh::Director
         allow(Config).to receive(:cloud).and_return(cloud)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
 
-        allow(blobstore).to receive(:delete).with('compiled-package-1')
         allow(blobstore).to receive(:delete).with('blobstore-id-1')
       end
 
       context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
+        before do
+          expect(blobstore).to receive(:delete).with('compiled-package-1')
+        end
+
         context 'when there are orphaned disks' do
           before do
             Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
@@ -132,6 +136,8 @@ module Bosh::Director
 
         context 'when there are more than 2 stemcells and/or releases' do
           it 'keeps the 2 latest versions of each stemcell' do
+            expect(blobstore).not_to receive(:delete).with('compiled-package-1')
+
             Models::Stemcell.make(name: 'stemcell-a', version: '10')
             Models::Stemcell.make(name: 'stemcell-a', version: '9')
             Models::Stemcell.make(name: 'stemcell-b', version: '10')
@@ -154,6 +160,8 @@ module Bosh::Director
           end
 
           it 'keeps the last 2 most recently used releases' do
+            expect(blobstore).to receive(:delete).with('compiled-package-1')
+
             Models::ReleaseVersion.make(version: 10, release: release_1)
             Models::ReleaseVersion.make(version: 10, release: release_2)
             Models::ReleaseVersion.make(version: 9, release: release_1)
@@ -218,6 +226,7 @@ module Bosh::Director
         before do
           Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
           Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+          expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
         it 're-raises the error' do
           allow(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))

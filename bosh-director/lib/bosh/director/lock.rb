@@ -34,7 +34,7 @@ module Bosh::Director
         sleep_interval = [1.0, @expiration/2].max
         begin
           loop do
-            @logger.debug("Renewing lock: #@name")
+            @logger.debug("Renewing lock: #@name, id: #@id")
             redis.watch(@name)
             existing_lock = redis.get(@name)
             lock_id = existing_lock.split(":")[1]
@@ -82,7 +82,7 @@ module Bosh::Director
                           "else: #{existing_lock}")
         if lock_expired?(existing_lock)
           @logger.debug("Lock #@name is already expired, " +
-                            "trying to take it back")
+                            "trying to take it back, id: #@id")
           replaced_lock = redis.getset(@name, "#{lock_expiration}:#@id")
           if replaced_lock == existing_lock
             @logger.debug("Lock #@name was revoked and relocked")

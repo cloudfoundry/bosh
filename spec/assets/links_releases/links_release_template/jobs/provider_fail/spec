@@ -1,0 +1,19 @@
+---
+name: provider_fail
+templates: {}
+
+provides:
+  - name: provider_fail
+    type: provider
+    properties:
+    - a
+    - b
+    - c
+
+properties:
+  a:
+    description: "description for a"
+    default: "default_a"
+  c:
+    description: "description for c"
+    default: "default_c"

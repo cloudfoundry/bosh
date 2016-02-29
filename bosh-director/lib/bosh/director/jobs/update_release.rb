@@ -214,7 +214,7 @@ module Bosh::Director
             end
           end
 
-          packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
+          packages = Models::Package.where(fingerprint: package_meta['fingerprint']).all
 
           if packages.empty?
             new_packages << package_meta
@@ -223,8 +223,8 @@ module Bosh::Director
 
           existing_package = packages.find do |package|
             package.release_id == @release_model.id &&
-            package.name == package_meta["name"] &&
-            package.version == package_meta["version"]
+            package.name == package_meta['name'] &&
+            package.version == package_meta['version']
           end
 
           if existing_package
@@ -240,8 +240,8 @@ module Bosh::Director
               if existing_package.blobstore_id.nil?
                 packages.each do |package|
                   unless package.blobstore_id.nil?
-                    package_meta["blobstore_id"] = package.blobstore_id
-                    package_meta["sha1"] = package.sha1
+                    package_meta['blobstore_id'] = package.blobstore_id
+                    package_meta['sha1'] = package.sha1
                     break
                   end
                 end
@@ -257,8 +257,8 @@ module Bosh::Director
             # of the package blob and create a new db entry for it
             packages.each do |package|
               unless package.blobstore_id.nil?
-                package_meta["blobstore_id"] = package.blobstore_id
-                package_meta["sha1"] = package.sha1
+                package_meta['blobstore_id'] = package.blobstore_id
+                package_meta['sha1'] = package.sha1
                 break
               end
             end
@@ -267,21 +267,19 @@ module Bosh::Director
           end
         end
 
-        package_stemcell_hashes1 = create_packages(new_packages, release_dir)
+        created_package_refs = create_packages(new_packages, release_dir)
 
-        package_stemcell_hashes2 = use_existing_packages(existing_packages, release_dir)
+        existing_package_refs = use_existing_packages(existing_packages, release_dir)
 
         if @compiled_release
-          compatible_stemcell_combos = registered_packages.flat_map do |pkg, pkg_meta|
-            stemcells_used_by_package(pkg_meta).map do |stemcell|
-              {
-                  package: pkg,
-                  stemcell: stemcell
-              }
-            end
+          registered_package_refs = registered_packages.map do |pkg, pkg_meta|
+            {
+              package: pkg,
+              package_meta: pkg_meta,
+            }
           end
-          consolidated_package_stemcell_hashes = Array(package_stemcell_hashes1) | Array(package_stemcell_hashes2) | compatible_stemcell_combos
-          create_compiled_packages(consolidated_package_stemcell_hashes, release_dir, packages_existing_from_other_releases)
+          all_package_refs = Array(created_package_refs) | Array(existing_package_refs) | registered_package_refs
+          create_compiled_packages(all_package_refs, release_dir, packages_existing_from_other_releases)
         else
           backfill_source_for_packages(registered_packages, release_dir)
         end
@@ -307,13 +305,13 @@ module Bosh::Director
 
       # Points release DB model to existing packages described by given metadata
       # @param [Array<Array>] packages Existing packages metadata.
-      # @return [Array<Hash>] package & stemcell matching pairs that were registered. empty if no packages were changed.
+      # @return [Array<Hash>] array of registered package models and their metadata, empty if no packages were changed.
       def use_existing_packages(packages, release_dir)
         if packages.empty?
           return []
         end
 
-        package_stemcell_hashes = []
+        package_refs = []
 
         single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
           packages.each do |package, package_meta|
@@ -322,11 +320,10 @@ module Bosh::Director
             register_package(package)
 
             if compiled_release
-              stemcells = stemcells_used_by_package(package_meta)
-              stemcells.each do |stemcell|
-                hash = { package: package, stemcell: stemcell}
-                package_stemcell_hashes << hash
-              end
+              package_refs << {
+                package: package,
+                package_meta: package_meta,
+              }
             end
 
             if source_release && (package.blobstore_id.nil? || @fix)
@@ -336,19 +333,19 @@ module Bosh::Director
           end
         end
 
-        return package_stemcell_hashes
+        return package_refs
       end
 
       # Creates packages using provided metadata
       # @param [Array<Hash>] packages Packages metadata
       # @param [String] release_dir local path to the unpacked release
-      # @return [Array<Hash>, boolean] array of compiled package & stemcell matching pairs that were registered, and a
+      # @return [Array<Hash>, boolean] array of package models and their metadata, empty if no packages were changed.
       def create_packages(package_metas, release_dir)
         if package_metas.empty?
           return []
         end
 
-        package_stemcell_hashes = []
+        package_refs = []
 
         event_log.begin_stage("Creating new packages", package_metas.size)
 
@@ -362,15 +359,14 @@ module Bosh::Director
           end
 
           if @compiled_release
-            stemcells = stemcells_used_by_package(package_meta)
-            stemcells.each do |stemcell|
-              hash = { package: package, stemcell: stemcell}
-              package_stemcell_hashes << hash
-            end
+            package_refs << {
+              package: package,
+              package_meta: package_meta,
+            }
           end
         end
 
-        return package_stemcell_hashes
+        return package_refs
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
@@ -382,19 +378,20 @@ module Bosh::Director
 
         all_compiled_packages.each do |compiled_package_spec|
           package = compiled_package_spec[:package]
-          stemcell = compiled_package_spec[:stemcell]
+          stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id, :stemcell_id => stemcell.id)
+          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id,
+            :stemcell_os => stemcell[:os], :stemcell_version => stemcell[:version])
           if existing_compiled_packages.empty?
 
-            package_desc = "#{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}"
+            package_desc = "#{package.name}/#{package.version} for #{stemcell[:os]}/#{stemcell[:version]}"
             event_log.track(package_desc) do
               other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
               if @fix && !other_compiled_package.nil?
                 fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
               end
-              create_compiled_package(package, stemcell, release_dir, other_compiled_package)
+              create_compiled_package(package, stemcell[:os], stemcell[:version], release_dir, other_compiled_package)
               had_effect = true
             end
           elsif @fix
@@ -413,7 +410,8 @@ module Bosh::Director
           if other_package_meta["fingerprint"] == package.fingerprint
             packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
             packages.each do |pkg|
-              other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_id => stemcell.id).first
+              other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_os => stemcell[:os],
+                :stemcell_version => stemcell[:version]).first
               break unless other_compiled_package.nil?
             end
           end
@@ -421,27 +419,7 @@ module Bosh::Director
         other_compiled_package
       end
 
-      def stemcells_used_by_package(package_meta)
-        if package_meta['stemcell'].nil?
-          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
-        end
-
-        values = package_meta['stemcell'].split('/', 2)
-        operating_system = values[0]
-        stemcell_version = values[1]
-        unless operating_system && stemcell_version
-          raise 'stemcell informatiom(operating system/version) should be listed for each package of a compiled tarball'
-        end
-
-        stemcells = Models::Stemcell.where(:operating_system => operating_system, :version => stemcell_version)
-        if stemcells.empty?
-          raise "No stemcells matching OS #{operating_system} version #{stemcell_version}"
-        end
-
-        stemcells
-      end
-
-      def create_compiled_package(package, stemcell, release_dir, other_compiled_package)
+      def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
         if other_compiled_package.nil?
           tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           validate_tgz(tgz, "#{package.name}.tgz")
@@ -459,9 +437,11 @@ module Bosh::Director
         transitive_dependencies = @release_version_model.transitive_dependencies(package)
         compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
 
-        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell)
+        compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
         compiled_package.package_id = package.id
-        compiled_package.stemcell_id = stemcell.id
+
+        compiled_package.stemcell_os = stemcell_os
+        compiled_package.stemcell_version = stemcell_version
 
         compiled_package.save
       end
@@ -673,8 +653,8 @@ with blobstore_id '#{package.blobstore_id}'")
       def delete_compiled_packages(package)
         package.compiled_packages.each do |compiled_pkg|
           unless BlobUtil.verify_blob(compiled_pkg.blobstore_id, compiled_pkg.sha1)
-            logger.info("Deleting compiled package '#{compiled_pkg.name}' \
-for '#{compiled_pkg.stemcell.name}/#{compiled_pkg.stemcell.version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
+            logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
+'#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
             begin
               logger.info("Deleting compiled package '#{compiled_pkg.name}'")
               BlobUtil.delete_blob(compiled_pkg.blobstore_id)
@@ -689,8 +669,8 @@ for '#{compiled_pkg.stemcell.name}/#{compiled_pkg.stemcell.version}' with blobst
 
       def fix_compiled_package(compiled_pkg, compiled_pkg_tgz)
         begin
-          logger.info("Deleting compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
-for '#{compiled_pkg.stemcell.name}/#{compiled_pkg.stemcell.version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
+          logger.info("Deleting compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' for \
+'#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
           BlobUtil.delete_blob compiled_pkg.blobstore_id
         rescue Bosh::Blobstore::BlobstoreError => e
           logger.info("Error deleting compiled package '#{compiled_pkg.name}' \

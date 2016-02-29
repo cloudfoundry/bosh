@@ -266,6 +266,32 @@ describe Bosh::Cli::Client::Director do
       @director.list_stemcells
     end
 
+    it 'retrieves latest cloud config' do
+      expect(@director).to receive(:get).with('/cloud_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_cloud_config
+    end
+
+    it 'updates cloud config' do
+      expect(@director).to receive(:post).
+          with('/cloud_configs', 'text/yaml', 'cloud config manifest').
+          and_return(true)
+      @director.update_cloud_config('cloud config manifest')
+    end
+
+    it 'retrieves latest runtime config' do
+      expect(@director).to receive(:get).with('/runtime_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_runtime_config
+    end
+
+    it 'updates runtime config' do
+      expect(@director).to receive(:post).
+          with('/runtime_configs', 'text/yaml', 'runtime config manifest').
+          and_return(true)
+      @director.update_runtime_config('runtime config manifest')
+    end
+
     it 'lists releases' do
       expect(@director).to receive(:get).with('/releases', 'application/json').
         and_return([200, JSON.generate([]), {}])
@@ -296,6 +322,12 @@ describe Bosh::Cli::Client::Director do
              'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
+
+      expect(@director).to receive(:get).
+          with('/tasks?state=processing,cancelling,queued&verbose=1&deployment=deployment-name',
+               'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_running_tasks(1, 'deployment-name')
     end
 
     it 'lists recent tasks' do
@@ -313,6 +345,11 @@ describe Bosh::Cli::Client::Director do
         with('/tasks?limit=50&verbose=2', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(50, 2)
+
+      expect(@director).to receive(:get).
+          with('/tasks?limit=50&verbose=2&deployment=deployment-name', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_recent_tasks(50, 2, 'deployment-name')
     end
 
     it 'uploads local release' do
@@ -632,7 +669,7 @@ describe Bosh::Cli::Client::Director do
 
       it 'reports timeout if the director can not be restarted in time' do
         expect(@director).to receive(:get).
-                                 with('/info', 'application/json').twice.
+                                 with('/info', 'application/json').at_least(:once).
                                  and_return([200, '{}'])
         expect(@director.check_director_restart(1, 1)).to eql(false)
       end

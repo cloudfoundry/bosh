@@ -1,0 +1,12 @@
+---
+name: job_1_with_post_deploy_script
+templates:
+  post-deploy.erb: bin/post-deploy
+  job_1_ctl: bin/job_1_ctl
+
+packages: []
+
+properties:
+  post_deploy_message_1:
+    description: A message echoed by the post-deploy script 1
+    default: this is post_deploy_message_1

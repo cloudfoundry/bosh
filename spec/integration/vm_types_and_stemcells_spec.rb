@@ -209,4 +209,76 @@ stemcells:
       expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
     end
   end
+
+  context 'cloud config has vm_extensions and compilation consuming some vm extensions' do
+
+    let(:vm_extension_1) do {
+          'name' => 'vm-extension-1-name',
+          'cloud_properties' => {'prop1' => 'val1', 'prop2' => 'val2'}
+    } end
+
+    let(:vm_extension_2) do {
+        'name' => 'vm-extension-2-name',
+        'cloud_properties' => {'prop3' => 'val3', 'prop2' => 'val4'}
+    } end
+
+    let(:vm_extension_3) do {
+        'name' => 'vm-extension-3-name',
+        'cloud_properties' => {'prop1' => 'val8', 'prop3' => 'val3'}
+    } end
+
+    let(:vm_type_1) do {
+        'name' => 'vm-type-1-name',
+        'cloud_properties' => {'prop1' => 'val5', 'prop4' => 'val6'}
+    } end
+
+    let(:az_1) do {
+        'name' => 'a',
+        'cloud_properties' => {'prop5' => 'val7', 'prop1' => 'val1_overwritten', 'prop4' => 'val2_overwritten'}
+    } end
+
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash['vm_extensions'] = [vm_extension_1, vm_extension_2, vm_extension_3]
+      cloud_config_hash['vm_types'] = [vm_type_1]
+      cloud_config_hash['azs'] = [az_1]
+      cloud_config_hash['networks'].first['subnets'].first['az'] = 'a'
+      cloud_config_hash['compilation']['az'] = 'a'
+      cloud_config_hash['compilation']['vm_extensions'] = ['vm-extension-1-name', 'vm-extension-3-name']
+      cloud_config_hash['compilation']['vm_type'] = 'vm-type-1-name'
+      cloud_config_hash
+    end
+
+    context 'deployment instance group uses other vm_extensions' do
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash.delete('resource_pools')
+        manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+        manifest_hash['jobs'] = [{
+            'name' => 'foobar',
+            'templates' => ['name' => 'foobar'],
+            'vm_type' => 'vm-type-1-name',
+            'vm_extensions' => ['vm-extension-1-name', 'vm-extension-2-name'],
+            'azs' => ['a'],
+            'stemcell' => 'default',
+            'instances' => 1,
+            'networks' => [{ 'name' => 'a' }],
+            'properties' => {},
+            'env' => env_hash
+          }]
+        manifest_hash
+      end
+
+      it 'deploys with merged cloud_properties for compiled and non-compiled vms' do
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+        create_compiled_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm').first
+        expect(create_compiled_vm_invocation.inputs['cloud_properties']).to eq({'prop1' => 'val8', 'prop2' => 'val2', 'prop3' => 'val3', 'prop4' => 'val6', 'prop5' => 'val7'})
+
+        create_instance_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm').last
+        expect(create_instance_vm_invocation.inputs['cloud_properties']).to eq({'prop1' => 'val1', 'prop2' => 'val4', 'prop3' => 'val3', 'prop4' => 'val6', 'prop5' => 'val7'})
+      end
+    end
+  end
 end

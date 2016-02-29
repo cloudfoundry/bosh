@@ -68,5 +68,107 @@ module Bosh::Common::Version
       end
     end
 
+    describe '#matches' do
+      context 'using the static helper method' do
+        it 'calls the instance method' do
+          fake_version_a = instance_double(described_class)
+          expect(described_class).to receive(:parse).with('1.0').and_return(fake_version_a)
+
+          fake_version_b = instance_double(described_class)
+          expect(described_class).to receive(:parse).with('1.1').and_return(fake_version_b)
+
+          expect(fake_version_a).to receive(:matches).with(fake_version_b)
+          described_class.match('1.0', '1.1')
+        end
+      end
+
+      context 'when stemcell uses semi-semantic versioning' do
+        it 'matches the same version' do
+          version = described_class.parse('1')
+          same = described_class.parse('1')
+          expect(version.matches(same)).to be(true)
+        end
+
+        it 'matches a newer patch' do
+          version = described_class.parse('1')
+          newer_patch = described_class.parse('1.1')
+          expect(version.matches(newer_patch)).to be(true)
+        end
+
+        it 'matches an older patch' do
+          version = described_class.parse('1.2')
+          older_patch = described_class.parse('1.1')
+          expect(version.matches(older_patch)).to be(true)
+        end
+
+        it 'does not match a newer version' do
+          version = described_class.parse('1')
+          newer_version = described_class.parse('2')
+          expect(version.matches(newer_version)).to be(false)
+        end
+
+        it 'does not match an older version' do
+          version = described_class.parse('2')
+          older_version = described_class.parse('1')
+          expect(version.matches(older_version)).to be(false)
+        end
+
+        it 'ignores all non-release segments' do
+          version = described_class.parse('1.0')
+          version_with_pre_release = described_class.parse('1.0-alpha.1')
+          version_with_post_release = described_class.parse('1.0+build.1')
+          expect(version.matches(version_with_pre_release)).to be(true)
+          expect(version.matches(version_with_post_release)).to be(true)
+          expect(version_with_pre_release.matches(version_with_post_release)).to be(true)
+        end
+      end
+
+      context 'when stemcell uses semantic versioning' do
+        let(:version) {
+          described_class.parse('1.1.1')
+        }
+
+        it 'matches the same version' do
+          newer_patch = described_class.parse('1.1.1')
+          expect(version.matches(newer_patch)).to be(true)
+        end
+
+        context 'comparing to other patch versions' do
+          it 'matches a newer patch version' do
+            newer_patch = described_class.parse('1.1.2')
+            expect(version.matches(newer_patch)).to be(true)
+          end
+
+          it 'matches an older patch version' do
+            older_patch = described_class.parse('1.1.0')
+            expect(version.matches(older_patch)).to be(true)
+          end
+        end
+
+        context 'comparing to other minor versions' do
+          it 'matches a newer minor version' do
+            newer_minor_version = described_class.parse('1.2.0')
+            expect(version.matches(newer_minor_version)).to be(true)
+          end
+
+          it 'matches an older minor version' do
+            older_minor_version = described_class.parse('1.0.9')
+            expect(version.matches(older_minor_version)).to be(true)
+          end
+        end
+
+        context 'comparing to other major versions' do
+          it 'does not match a newer major version' do
+            newer_major_version = described_class.parse('2.0.0')
+            expect(version.matches(newer_major_version)).to be(false)
+          end
+
+          it 'does not match an older major version' do
+            older_major_version = described_class.parse('0.9.9')
+            expect(version.matches(older_major_version)).to be(false)
+          end
+        end
+      end
+    end
   end
 end

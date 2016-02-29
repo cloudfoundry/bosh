@@ -1,38 +1,53 @@
 module Bosh::Director
   class InstanceUpdater::StateApplier
-    def initialize(instance_plan, agent_client, rendered_job_templates_cleaner, logger)
+    def initialize(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
       @instance_plan = instance_plan
       @instance = @instance_plan.instance
       @agent_client = agent_client
       @rendered_job_templates_cleaner = rendered_job_templates_cleaner
       @logger = logger
+      @is_canary = options.fetch(:canary, false)
     end
 
-    def apply
+    def apply(update_config)
       @instance.apply_vm_state(@instance_plan.spec)
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
 
       if @instance.state == 'started'
+        @logger.info("Running pre-start for #{@instance}")
         @agent_client.run_script('pre-start', {})
+
+        @logger.info("Starting instance #{@instance}")
         @agent_client.start
       end
+
+      # for backwards compatibility with instances that don't have update config
+      if update_config
+        min_watch_time = @is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
+        max_watch_time = @is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
+
+        post_start(min_watch_time, max_watch_time)
+      end
     end
+
+    private
 
     def post_start(min_watch_time, max_watch_time)
       current_state = wait_until_desired_state(min_watch_time, max_watch_time)
 
-      failing_jobs = []
-      current_state['processes'].each do |process|
-        if process['state'] != "starting"
-          failing_jobs.push(process['name'])
-        end
-      end
-
       if @instance.state == 'started'
         if current_state['job_state'] != 'running'
-          raise AgentJobNotRunning, "`#{@instance}' is not running after update. Review logs for failed jobs: #{failing_jobs.join(", ")}"
+          failing_jobs = Array(current_state['processes']).map do |process|
+            process['name'] if process['state'] != 'running'
+          end.compact
+
+          error_message = "`#{@instance}' is not running after update."
+          error_message += " Review logs for failed jobs: #{failing_jobs.join(", ")}" if !failing_jobs.empty?
+
+          raise AgentJobNotRunning, error_message
         else
+          @logger.info("Running post-start for #{@instance}")
           @agent_client.run_script('post-start', {})
         end
       end
@@ -43,8 +58,6 @@ module Bosh::Director
 
       @instance.update_state
     end
-
-    private
 
     def wait_until_desired_state(min_watch_time, max_watch_time)
       current_state = {}

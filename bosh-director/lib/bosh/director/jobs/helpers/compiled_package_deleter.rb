@@ -8,10 +8,9 @@ module Bosh::Director::Jobs
 
       def delete(compiled_package, options = {})
         package = compiled_package.package
-        stemcell = compiled_package.stemcell
         @logger.info('Deleting compiled package: ' +
             "#{package.name}/#{package.version}" +
-            "for #{stemcell.name}/#{stemcell.version}")
+            "for #{compiled_package.stemcell_os}/#{compiled_package.stemcell_version}")
 
         errors = []
         if @blob_deleter.delete(compiled_package.blobstore_id, errors,  options['force'])

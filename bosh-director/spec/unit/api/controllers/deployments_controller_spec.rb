@@ -30,8 +30,9 @@ module Bosh::Director
         config
       end
 
-      let(:manifest_with_errand) {
+      def manifest_with_errand(deployment_name='errand')
         manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+        manifest_hash['name'] = deployment_name
         manifest_hash['jobs'] << {
           'name' => 'another-errand',
           'template' => 'errand1',
@@ -41,7 +42,8 @@ module Bosh::Director
           'networks' => [{'name' => 'a'}]
         }
         Psych.dump(manifest_hash)
-      }
+      end
+
       let(:cloud_config) { Models::CloudConfig.make }
       before do
         App.new(config)
@@ -69,6 +71,24 @@ module Bosh::Director
             post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
             expect(last_response.status).to eq(404)
           end
+
+          it 'gives a nice error when request body is not a valid yml' do
+            post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          end
+
+          it 'gives a nice error when request body is empty' do
+            post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Manifest should not be empty',
+            )
+          end
         end
 
         describe 'updating a deployment' do
@@ -78,7 +98,7 @@ module Bosh::Director
             it 'does not skip draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -89,7 +109,7 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), hash_including('skip_drain' => '*'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -100,12 +120,24 @@ module Bosh::Director
             it 'skips draining' do
               allow_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
+                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'))
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
+
+          context 'updates using a manifest with deployment name' do
+            it 'calls create deployment with deployment name' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_excluding('skip_drain'))
+                          .and_return(OpenStruct.new(:id => 1))
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
         end
 
         describe 'deleting deployment' do
@@ -129,11 +161,12 @@ module Bosh::Director
 
             it 'allows to change state with content_length of 0' do
               RSpec::Matchers.define :not_to_have_body do |unexpected|
-                match { |actual| actual.read != unexpected.read }
+                match { |actual| actual != unexpected }
               end
               manifest = spec_asset('test_conf.yaml')
+              manifest_path = asset('test_conf.yaml')
               allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                  with(anything(), not_to_have_body(StringIO.new(manifest)), anything(), anything()).
+                  with(anything(), not_to_have_body(manifest_path), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(deployment: deployment, job: 'dea', index: '2', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')
@@ -175,6 +208,32 @@ module Bosh::Director
             put '/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
             expect(instance.reload.resurrection_paused).to be(true)
+          end
+
+          it 'gives a nice error when uploading non valid manifest' do
+            deployment = Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started')
+
+            put "/foo/jobs/dea", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440001)
+            expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          end
+
+          it 'should not validate body content when content.length is zero' do
+            deployment = Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started')
+
+            put "/foo/jobs/dea/0?state=started", "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+
+            expect(last_response.status).to eq(302)
           end
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
@@ -220,7 +279,7 @@ module Bosh::Director
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), hash_excluding('skip_drain'))
+                            .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
                             .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -234,7 +293,7 @@ module Bosh::Director
                 allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
                 allow_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                            .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
                             .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -295,7 +354,6 @@ module Bosh::Director
           before { basic_authorize 'reader', 'reader' }
 
           it 'lists deployment info in deployment name order' do
-
             release_1 = Models::Release.create(:name => 'release-1')
             release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
             release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
@@ -597,8 +655,15 @@ module Bosh::Director
             end
 
             context 'authenticated access' do
-              before { authorize 'admin', 'admin' }
-              before { basic_authorize 'reader', 'reader' }
+              before do
+                authorize 'admin', 'admin'
+                release = Models::Release.make(name: 'bosh-release')
+                template1 = Models::Template.make(name: 'foobar', release: release)
+                template2 = Models::Template.make(name: 'errand1', release: release)
+                release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+                release_version.add_template(template1)
+                release_version.add_template(template2)
+              end
 
               it 'returns errands in deployment' do
                 response = perform
@@ -650,6 +715,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
+                    'fake-dep-name'
                   ).and_return(task)
 
                   perform({})
@@ -661,6 +727,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
+                    'fake-dep-name'
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
@@ -688,11 +755,14 @@ module Bosh::Director
             )
           end
           let(:cloud_config) { Models::CloudConfig.make(manifest: {'azs' => []}) }
+          let(:runtime_config) { Models::RuntimeConfig.make(manifest: {'addons' => []}) }
+
           before do
             Models::Deployment.create(
               :name => 'fake-dep-name',
               :manifest => Psych.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}),
-              cloud_config: cloud_config
+              cloud_config: cloud_config,
+              runtime_config: runtime_config
             )
           end
 
@@ -701,7 +771,25 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+            end
+
+            it 'gives a nice error when request body is not a valid yml' do
+              post '/fake-dep-name/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+            end
+
+            it 'gives a nice error when request body is empty' do
+              post '/fake-dep-name/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                  'code' => 440001,
+                  'description' => 'Manifest should not be empty',
+              )
             end
           end
 
@@ -717,8 +805,17 @@ module Bosh::Director
       end
 
       describe 'authorization' do
-        let!(:owned_deployment) { Models::Deployment.create(:name => 'owned_deployment', teams:'dev', manifest: manifest_with_errand, cloud_config: cloud_config) }
-        let!(:other_deployment) { Models::Deployment.create(:name => 'other_deployment', teams:'other', manifest: manifest_with_errand, cloud_config: cloud_config) }
+        before do
+          release = Models::Release.make(name: 'bosh-release')
+          template1 = Models::Template.make(name: 'foobar', release: release)
+          template2 = Models::Template.make(name: 'errand1', release: release)
+          release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+          release_version.add_template(template1)
+          release_version.add_template(template2)
+        end
+
+        let!(:owned_deployment) { Models::Deployment.create(:name => 'owned_deployment', teams:'dev', manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
+        let!(:other_deployment) { Models::Deployment.create(:name => 'other_deployment', teams:'other', manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
         describe 'when a user has dev team admin membership' do
 
           before {
@@ -741,7 +838,7 @@ module Bosh::Director
 
           context 'PUT /:deployment/jobs/:job' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+              expect(put('/owned_deployment/jobs/dea', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
             end
 
             it 'denies access to other deployment' do

@@ -18,7 +18,7 @@ module Bosh
           {'type' => 'basic', 'options' => {}}
         end
 
-        def get_user(request_env)
+        def get_user(request_env, _)
           auth ||= Rack::Auth::Basic::Request.new(request_env)
           raise AuthenticationError unless auth.provided? && auth.basic? && auth.credentials
 
