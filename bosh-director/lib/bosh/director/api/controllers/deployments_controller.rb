@@ -297,8 +297,14 @@ module Bosh::Director
           runtime_config = Api::RuntimeConfigManager.new.latest
         end
 
+        deployment = Psych.load(File.read(manifest_file_path), manifest_file_path)
+
+        if deployment
+          deployment_name = deployment['name']
+        end
+
         options.merge!('scopes' => token_scopes)
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, nil, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
 
         redirect "/tasks/#{task.id}"
       end

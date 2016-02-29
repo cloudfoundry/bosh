@@ -102,6 +102,18 @@ module Bosh::Director
               expect(last_response).to be_redirect
             end
           end
+
+          context 'updates using a manifest with deployment name' do
+            it 'calls create deployment with deployment name' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_excluding('skip_drain'))
+                          .and_return(OpenStruct.new(:id => 1))
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
         end
 
         describe 'deleting deployment' do
