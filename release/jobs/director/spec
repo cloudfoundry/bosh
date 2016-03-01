@@ -244,6 +244,8 @@ properties:
   blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  blobstore.s3_signature_version:
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -302,6 +304,8 @@ properties:
   compiled_package_cache.options.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  compiled_package_cache.options.s3_signature_version:
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
 
   ntp:
     description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
@@ -343,6 +347,8 @@ properties:
   agent.blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  agent.blobstore.s3_signature_version
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:
