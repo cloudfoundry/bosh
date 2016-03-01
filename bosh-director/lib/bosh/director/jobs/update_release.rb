@@ -381,10 +381,16 @@ module Bosh::Director
           stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          existing_compiled_packages = Models::CompiledPackage.where(:package_id => package.id,
-            :stemcell_os => stemcell[:os], :stemcell_version => stemcell[:version])
-          if existing_compiled_packages.empty?
+          transitive_dependencies = @release_version_model.transitive_dependencies(package)
+          dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+          existing_compiled_packages = Models::CompiledPackage.where(
+              :package_id => package.id,
+              :stemcell_os => stemcell[:os],
+              :stemcell_version => stemcell[:version],
+              :dependency_key => dependency_key
+          )
 
+          if existing_compiled_packages.empty?
             package_desc = "#{package.name}/#{package.version} for #{stemcell[:os]}/#{stemcell[:version]}"
             event_log.track(package_desc) do
               other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
@@ -406,12 +412,14 @@ module Bosh::Director
 
       def get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
         other_compiled_package = nil
+        transitive_dependencies = @release_version_model.transitive_dependencies(package)
+        dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
         packages_existing_from_other_releases.each do |other_package_meta|
           if other_package_meta["fingerprint"] == package.fingerprint
             packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
             packages.each do |pkg|
               other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_os => stemcell[:os],
-                :stemcell_version => stemcell[:version]).first
+                :stemcell_version => stemcell[:version], :dependency_key => dependency_key).first
               break unless other_compiled_package.nil?
             end
           end

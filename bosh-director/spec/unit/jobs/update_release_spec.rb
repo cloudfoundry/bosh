@@ -999,10 +999,21 @@ module Bosh::Director
             release_version_model.add_package(package)
             package
           end
+          let!(:existing_compiled_package_with_different_dependencies) do
+            compiled_package = Models::CompiledPackage.make(
+              blobstore_id: 'fake-compiled-blobstore-id-2',
+              dependency_key: 'blarg',
+              sha1: 'fake-compiled-sha-1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1'
+            )
+            package.add_compiled_package compiled_package
+            compiled_package
+          end
           let!(:compiled_package) do
             compiled_package = Models::CompiledPackage.make(
               blobstore_id: 'fake-compiled-blobstore-id-1',
-              dependency_key: 'fake-compiled-dependency-key-1',
+              dependency_key: '[]',
               sha1: 'fake-compiled-sha-1',
               stemcell_os: 'macintosh os',
               stemcell_version: '7.1'
@@ -1018,7 +1029,7 @@ module Bosh::Director
             ).and_return('new-compiled-blobstore-id-after-fix')
             expect{
               job.perform
-            }.to change { Models::CompiledPackage.dataset.first.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
+            }.to change { compiled_package.reload.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
           end
         end
 
@@ -1043,10 +1054,21 @@ module Bosh::Director
             old_release_version_model.add_package(package)
             package
           end
+          let!(:existing_compiled_package_with_different_dependencies) do
+            existing_compiled_package = Models::CompiledPackage.make(
+                blobstore_id: 'fake-existing-compiled-blobstore-id-2',
+                dependency_key: 'fake-existing-compiled-dependency-key-1-other',
+                sha1: 'fake-existing-compiled-sha-1',
+                stemcell_os: 'macintosh os',
+                stemcell_version: '7.1',
+            )
+            existing_package.add_compiled_package existing_compiled_package
+            existing_compiled_package
+          end
           let!(:existing_compiled_package) do
             existing_compiled_package = Models::CompiledPackage.make(
               blobstore_id: 'fake-existing-compiled-blobstore-id-1',
-              dependency_key: 'fake-existing-compiled-dependency-key-1',
+              dependency_key: '[]',
               sha1: 'fake-existing-compiled-sha-1',
               stemcell_os: 'macintosh os',
               stemcell_version: '7.1'
@@ -1065,7 +1087,7 @@ module Bosh::Director
             expect{
               job.perform
             }.to change {
-              Models::CompiledPackage.where(package_id: existing_compiled_package.package_id).first.blobstore_id
+              existing_compiled_package.reload.blobstore_id
             }.from('fake-existing-compiled-blobstore-id-1').to('new-existing-compiled-blobstore-id-after-fix')
           end
         end
