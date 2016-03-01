@@ -67,6 +67,10 @@ module Bosh::Director
       def task_manager
         @task_manager ||= Api::TaskManager.new
       end
+
+      def event_manager
+        @event_manager ||= Api::EventManager.new
+      end
     end
   end
 end

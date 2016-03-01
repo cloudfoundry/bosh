@@ -148,6 +148,7 @@ require 'bosh/director/blobstores'
 require 'bosh/director/api/director_uuid_provider'
 require 'bosh/director/api/local_identity_provider'
 require 'bosh/director/api/uaa_identity_provider'
+require 'bosh/director/api/event_manager'
 require 'bosh/director/app'
 
 module Bosh::Director
@@ -173,4 +174,5 @@ require 'bosh/director/api/controllers/cloud_configs_controller'
 require 'bosh/director/api/controllers/runtime_configs_controller'
 require 'bosh/director/api/controllers/locks_controller'
 require 'bosh/director/api/controllers/restore_controller'
+require 'bosh/director/api/controllers/events_controller'
 require 'bosh/director/api/route_configuration'
