@@ -619,10 +619,10 @@ describe 'deploy', type: :integration do
 
         expect(exit_code).to_not eq(0)
         expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job job_with_templates_having_properties. Errors are:
-     - Unable to render release templates for release job job_1_with_many_properties. Errors are:
-       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
         EOF
       end
     end
@@ -776,10 +776,10 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
         expect(exist_code).to_not eq(0)
         expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job worker_2. Errors are:
-     - Unable to render release templates for release job job_2_with_many_properties. Errors are:
-       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'worker_2'. Errors are:
+     - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
         EOF
       end
     end

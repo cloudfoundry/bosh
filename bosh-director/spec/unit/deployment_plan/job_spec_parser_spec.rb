@@ -86,7 +86,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobInvalidLifecycle,
-          "Invalid lifecycle `unknown' for `fake-job-name', valid lifecycle profiles are: service, errand",
+          "Invalid lifecycle 'unknown' for 'fake-job-name', valid lifecycle profiles are: service, errand",
         )
       end
     end
@@ -107,7 +107,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownRelease,
-          "Job `fake-job-name' references an unknown release `unknown-release-name'",
+          "Instance group 'fake-job-name' references an unknown release 'unknown-release-name'",
         )
       end
 
@@ -221,8 +221,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         parser.parse(job_spec)
         expect(event_log).to have_received(:warn_deprecated).with(
-          "Please use `templates' when specifying multiple templates for a job. "\
-          "`template' for multiple templates will soon be unsupported."
+          "Please use 'templates' when specifying multiple templates for a job. "\
+          "'template' for multiple templates will soon be unsupported."
         )
       end
 
@@ -242,7 +242,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobMissingRelease,
-          "Cannot tell what release job `fake-job-name' is supposed to use, please explicitly specify one",
+          "Cannot tell what release job 'fake-job-name' is supposed to use, please explicitly specify one",
         )
       end
     end
@@ -394,7 +394,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release template `fake-template-name' (job `fake-job-name') is supposed to use, please explicitly specify one",
+                  "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
             end
@@ -426,7 +426,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                   parser.parse(job_spec)
                 }.to raise_error(
                   Bosh::Director::JobMissingRelease,
-                  "Cannot tell what release template `fake-template-name' (job `fake-job-name') is supposed to use, please explicitly specify one",
+                  "Cannot tell what release template 'fake-template-name' (instance group 'fake-job-name') is supposed to use, please explicitly specify one",
                 )
               end
             end
@@ -452,7 +452,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobUnknownRelease,
-              "Template `fake-template-name' (job `fake-job-name') references an unknown release `fake-template-release'",
+              "Job 'fake-template-name' (instance group 'fake-job-name') references an unknown release 'fake-template-release'",
             )
           end
         end
@@ -494,7 +494,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobInvalidTemplates,
-              "Colocated job template `fake-template-name1' has the same name in multiple releases. " +
+              "Colocated job template 'fake-template-name1' has the same name in multiple releases. " +
               "BOSH cannot currently colocate two job templates with identical names from separate releases.",
             )
           end
@@ -557,7 +557,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::ValidationMissingField,
-              "Required property `name' was not specified in object ({})",
+              "Required property 'name' was not specified in object ({})",
             )
           end
         end
@@ -569,7 +569,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::ValidationInvalidType,
-              %{Object ("not-a-hash") did not match the required type `Hash'},
+              %{Object ("not-a-hash") did not match the required type 'Hash'},
             )
           end
         end
@@ -628,7 +628,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::ValidationInvalidType,
-            %{Property `#{keyword}' (value "not-an-array") did not match the required type `Array'},
+            %{Property '#{keyword}' (value "not-an-array") did not match the required type 'Array'},
           )
         end
       end
@@ -655,7 +655,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::JobInvalidTemplates,
-            "Job `fake-job-name' specifies both template and templates keys, only one is allowed"
+            "Instance group 'fake-job-name' specifies both template and templates keys, only one is allowed"
           )
         end
       end
@@ -670,7 +670,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
                                                    Bosh::Director::JobInvalidTemplates,
-                                                   "Job `fake-job-name' specifies both templates and jobs keys, only one is allowed"
+                                                   "Instance group 'fake-job-name' specifies both templates and jobs keys, only one is allowed"
                                                )
         end
       end
@@ -685,7 +685,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'raises' do
           expect { parser.parse(job_spec) }.to raise_error(
              Bosh::Director::ValidationMissingField,
-             "Job `fake-job-name' does not specify template, templates, or jobs keys, one is required"
+             "Instance group 'fake-job-name' does not specify template, templates, or jobs keys, one is required"
           )
         end
       end
@@ -710,7 +710,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobInvalidPersistentDisk,
-          "Job `fake-job-name' references an invalid persistent disk size `-300'"
+          "Instance group 'fake-job-name' references an invalid persistent disk size '-300'"
         )
       end
     end
@@ -736,7 +736,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownDiskType,
-          "Job `fake-job-name' references an unknown disk type `unknown-disk-pool'"
+          "Instance group 'fake-job-name' references an unknown disk type 'unknown-disk-pool'"
         )
       end
     end
@@ -762,7 +762,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobUnknownDiskType,
-            "Job `fake-job-name' references an unknown disk pool `unknown-disk-pool'"
+            "Instance group 'fake-job-name' references an unknown disk pool 'unknown-disk-pool'"
           )
       end
     end
@@ -776,7 +776,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
-            "Job `fake-job-name' references both a persistent disk size `300' and a persistent disk pool `fake-disk-pool-name'"
+            "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk pool 'fake-disk-pool-name'"
           )
       end
       it 'raises an error if persistent_disk and persistent_disk_type are both present' do
@@ -787,7 +787,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
-            "Job `fake-job-name' references both a persistent disk size `300' and a persistent disk type `fake-disk-pool-name'"
+            "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk type 'fake-disk-pool-name'"
           )
       end
       it 'raises an error if persistent_disk_type and persistent_disk_pool are both present' do
@@ -798,7 +798,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
             Bosh::Director::JobInvalidPersistentDisk,
-            "Job `fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
+            "Instance group 'fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
               "'disk_pools' key will be DEPRECATED in the future."
           )
       end
@@ -831,7 +831,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobAmbiguousEnv,
-              "Job 'fake-job-name' and resource pool: 'fake-resource-pool-name' both declare env properties"
+              "Instance group 'fake-job-name' and resource pool: 'fake-resource-pool-name' both declare env properties"
             )
         end
       end
@@ -861,7 +861,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           parser.parse(job_spec)
         }.to raise_error(
           Bosh::Director::JobUnknownResourcePool,
-          "Job `fake-job-name' references an unknown resource pool `unknown-resource-pool'"
+          "Instance group 'fake-job-name' references an unknown resource pool 'unknown-resource-pool'"
         )
       end
     end
@@ -914,7 +914,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'errors out' do
           expect{parser.parse(job_spec)}.to raise_error(
               Bosh::Director::JobUnknownVmType,
-              "Job `fake-job-name' references an unknown vm type `fake-vm-type'"
+              "Instance group 'fake-job-name' references an unknown vm type 'fake-vm-type'"
             )
         end
       end
@@ -927,7 +927,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         it 'errors out' do
           expect{parser.parse(job_spec)}.to raise_error(
               Bosh::Director::JobUnknownStemcell,
-              "Job `fake-job-name' references an unknown stemcell `fake-stemcell'"
+              "Instance group 'fake-job-name' references an unknown stemcell 'fake-stemcell'"
             )
         end
       end
@@ -1037,7 +1037,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::JobNetworkInstanceIpMismatch,
-            "Job `fake-job-name' has 4 instances but was allocated 3 static IPs",
+            "Instance group 'fake-job-name' has 4 instances but was allocated 3 static IPs",
           )
         end
       end
@@ -1049,7 +1049,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::JobNetworkInstanceIpMismatch,
-            "Job `fake-job-name' has 2 instances but was allocated 3 static IPs",
+            "Instance group 'fake-job-name' has 2 instances but was allocated 3 static IPs",
           )
         end
       end
@@ -1073,7 +1073,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobNetworkMultipleDefaults,
-              "Job `fake-job-name' specified more than one network to contain default. " +
+              "Instance group 'fake-job-name' specified more than one network to contain default. " +
                 "'dns' has default networks: 'fake-network-name', 'duped-network'. "+
                 "'gateway' has default networks: 'fake-network-name', 'duped-network'."
             )
@@ -1118,7 +1118,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::JobMissingAvailabilityZones, "Job 'fake-job-name' has empty availability zones"
+              Bosh::Director::JobMissingAvailabilityZones, "Instance group 'fake-job-name' has empty availability zones"
             )
         end
       end
@@ -1138,7 +1138,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::JobInvalidAvailabilityZone, "Job 'fake-job-name' has invalid availability zone '3', string expected"
+              Bosh::Director::JobInvalidAvailabilityZone, "Instance group 'fake-job-name' has invalid availability zone '3', string expected"
             )
         end
 
@@ -1151,7 +1151,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::JobUnknownAvailabilityZone, "Job 'fake-job-name' references unknown availability zone 'nonexistent_zone'"
+              Bosh::Director::JobUnknownAvailabilityZone, "Instance group 'fake-job-name' references unknown availability zone 'nonexistent_zone'"
             )
         end
 
@@ -1162,7 +1162,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
               Bosh::Director::JobNetworkMissingRequiredAvailabilityZone,
-                "Job 'fake-job-name' must specify availability zone that matches availability zones of network 'fake-network-name'"
+                "Instance group 'fake-job-name' must specify availability zone that matches availability zones of network 'fake-network-name'"
             )
         end
 
@@ -1203,7 +1203,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::ValidationInvalidType, "Property `azs' (value 3) did not match the required type `Array'"
+              Bosh::Director::ValidationInvalidType, "Property 'azs' (value 3) did not match the required type 'Array'"
             )
         end
       end
@@ -1245,8 +1245,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidMigratedFromJob,
-                "Job 'job-1' specified for migration to job 'fake-job-name' refers to availability zone 'unknown_az'. " +
-                  "Az 'unknown_az' is not in the list of availability zones of job 'fake-job-name'."
+                "Instance group 'job-1' specified for migration to instance group 'fake-job-name' refers to availability zone 'unknown_az'. " +
+                  "Az 'unknown_az' is not in the list of availability zones of instance group 'fake-job-name'."
               )
           end
         end

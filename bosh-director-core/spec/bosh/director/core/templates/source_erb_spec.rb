@@ -26,7 +26,7 @@ module Bosh::Director::Core::Templates
         let(:original_error) { "undefined method `no_method' for nil:NilClass" }
 
         let(:expected_message) do
-          "Error filling in release template `source-name.erb' (line 1: #{original_error})"
+          "Error filling in template 'source-name.erb' (line 1: #{original_error})"
         end
 
         it 'logs the error and the new message with the original backtrace' do

@@ -24,7 +24,7 @@ module Bosh::Director::Core::Templates
       line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
       template_name, line = line.split(':')
 
-      message = "Error filling in release template `#{File.basename(template_name)}' (line #{line}: #{e})"
+      message = "Error filling in template '#{File.basename(template_name)}' (line #{line}: #{e})"
 
       logger.debug("#{message}\n#{e.backtrace.join("\n")}")
       raise message

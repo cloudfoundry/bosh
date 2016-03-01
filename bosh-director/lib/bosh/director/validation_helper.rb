@@ -5,7 +5,7 @@ module Bosh::Director
 
       if hash && !hash.kind_of?(Hash)
         raise Bosh::Director::ValidationInvalidType,
-              "Object (#{hash.inspect}) did not match the required type `Hash'"
+              "Object (#{hash.inspect}) did not match the required type 'Hash'"
 
       elsif hash && hash.has_key?(property)
         result = hash[property]
@@ -27,12 +27,12 @@ module Bosh::Director
 
         if options[:min] && result < options[:min]
           raise ValidationViolatedMin,
-                "`#{property}' value (#{result.inspect}) should be greater than #{options[:min].inspect}"
+                "'#{property}' value (#{result.inspect}) should be greater than #{options[:min].inspect}"
         end
 
         if options[:max] && result > options[:max]
           raise ValidationViolatedMax,
-                "`#{property}' value (#{result.inspect}) should be less than #{options[:max].inspect}"
+                "'#{property}' value (#{result.inspect}) should be less than #{options[:max].inspect}"
         end
 
       elsif options[:default]
@@ -40,7 +40,7 @@ module Bosh::Director
 
       elsif !options[:optional]
         raise ValidationMissingField,
-              "Required property `#{property}' was not specified in object (#{hash.inspect})"
+              "Required property '#{property}' was not specified in object (#{hash.inspect})"
       end
 
       result
@@ -48,7 +48,7 @@ module Bosh::Director
 
     def invalid_type(property, klass, value)
       raise ValidationInvalidType,
-            "Property `#{property}' (value #{value.inspect}) did not match the required type `#{klass}'"
+            "Property '#{property}' (value #{value.inspect}) did not match the required type '#{klass}'"
     end
   end
 end

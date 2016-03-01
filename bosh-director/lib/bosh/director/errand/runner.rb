@@ -18,7 +18,7 @@ module Bosh::Director
     # @return [String] short description of the errand result
     def run(&blk)
       unless instance
-        raise DirectorError, 'Must have at least one job instance to run an errand'
+        raise DirectorError, 'Must have at least one instance group instance to run an errand'
       end
 
       agent_task_result = nil

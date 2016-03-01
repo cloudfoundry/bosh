@@ -210,7 +210,7 @@ describe 'Links', type: :integration do
         it 'throws an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(out).to include("Error 190016: Cannot resolve link path 'simple.postgres.backup_database.backup_db' required for link 'optional_link_name' in job 'my_api' on template 'api_server_with_optional_links_1'")
+          expect(out).to include("Error 190016: Cannot resolve link path 'simple.postgres.backup_database.backup_db' required for link 'optional_link_name' in instance group 'my_api' on job 'api_server_with_optional_links_1'")
         end
       end
 
@@ -292,7 +292,7 @@ describe 'Links', type: :integration do
           it 'should throw an error' do
             out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
             expect(exit_code).not_to eq(0)
-            expect(out).to include("Error 140014: Link path was not provided for required link 'db' in job 'my_api'")
+            expect(out).to include("Error 140014: Link path was not provided for required link 'db' in instance group 'my_api'")
           end
         end
       end
@@ -346,10 +346,10 @@ describe 'Links', type: :integration do
         it 'should throw a legitimate error if link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(out).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job my_api. Errors are:
-     - Unable to render release templates for release job api_server_with_bad_optional_links. Errors are:
-       - Error filling in release template `config.yml.erb' (line 3: Can't find link 'optional_link_name')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'my_api'. Errors are:
+     - Unable to render templates for job 'api_server_with_bad_optional_links'. Errors are:
+       - Error filling in template 'config.yml.erb' (line 3: Can't find link 'optional_link_name')
           EOF
         end
       end
@@ -857,7 +857,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
            expect {
              deploy_simple_manifest(manifest_hash: second_manifest)
-           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
          end
 
          context 'when provider job has more than one instances' do
@@ -877,7 +877,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
              expect {
                deploy_simple_manifest(manifest_hash: second_manifest)
-             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
            end
          end
 
@@ -898,7 +898,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
              expect {
                deploy_simple_manifest(manifest_hash: second_manifest)
-             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in job 'second_deployment_node' on template 'node' over network 'invalid-network'. The available networks are: a\./)
+             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
            end
          end
        end
@@ -915,7 +915,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
-         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in job 'second_deployment_node' on template 'node' in deployment 'second'. Please make sure the link was provided and shared\./)
+         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second'. Please make sure the link was provided and shared\./)
        end
      end
 
@@ -963,7 +963,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network\./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in instance group 'my_api' on job 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network\./)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -979,7 +979,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in job 'my_api' on template 'api_server' over network 'global_network'. The available networks are: a, dynamic-network\./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in instance group 'my_api' on job 'api_server' over network 'global_network'. The available networks are: a, dynamic-network\./)
         end
       end
 
@@ -1278,7 +1278,7 @@ Error 100: Unable to render jobs for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Properties [\"doesntExist\"] defined in job jobby are not defined in the corresponding release")
+      expect(out).to include("Properties [\"doesntExist\"] defined in instance group 'jobby' are not defined in the corresponding release")
     end
 
   end

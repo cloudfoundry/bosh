@@ -40,7 +40,7 @@ module Bosh::Director
         @model = @release.get_template_model_by_name(@name)
 
         if @model.nil?
-          raise DeploymentUnknownTemplate, "Can't find template `#{@name}'"
+          raise DeploymentUnknownTemplate, "Can't find job '#{@name}'"
         end
 
         @package_models = @model.package_names.map do |name|
@@ -58,14 +58,14 @@ module Bosh::Director
         uuid = SecureRandom.uuid
         path = File.join(Dir.tmpdir, "template-#{uuid}")
 
-        @logger.debug("Downloading template `#{@name}' (#{blobstore_id})...")
+        @logger.debug("Downloading job '#{@name}' (#{blobstore_id})...")
         t1 = Time.now
 
         File.open(path, "w") do |f|
           App.instance.blobstores.blobstore.get(blobstore_id, f)
         end
 
-        @logger.debug("Template `#{@name}' downloaded to #{path} " +
+        @logger.debug("Job '#{@name}' downloaded to #{path} " +
                       "(took #{Time.now - t1}s)")
 
         path
@@ -186,7 +186,7 @@ module Bosh::Director
           if job_template_scoped_properties != nil
             unlisted_property_names = job_template_scoped_properties.keys - properties_object.keys
             if unlisted_property_names.length > 0
-              raise "Properties #{unlisted_property_names} defined in job #{job_name} are not defined in the corresponding release"
+              raise "Properties #{unlisted_property_names} defined in instance group '#{job_name}' are not defined in the corresponding release"
             end
           end
 
@@ -223,7 +223,7 @@ module Bosh::Director
       # @return [Models::Template]
       def present_model
         if @model.nil?
-          raise DirectorError, "Template `#{@name}' model is unbound"
+          raise DirectorError, "Job '#{@name}' model is unbound"
         end
         @model
       end

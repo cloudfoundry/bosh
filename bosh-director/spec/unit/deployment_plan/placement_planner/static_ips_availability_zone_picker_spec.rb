@@ -162,7 +162,7 @@ module Bosh::Director::DeploymentPlan
           let(:desired_instance_count) { 1 }
 
           it 'raises an exception' do
-            expect{instance_plans}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Job 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
+            expect{instance_plans}.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch, "Instance group 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
           end
         end
 
@@ -333,7 +333,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises an error' do
             expect{ instance_plans }.to raise_error(
                 Bosh::Director::JobNetworkInstanceIpMismatch,
-                "Failed to evenly distribute static IPs between zones for job 'fake-job'"
+                "Failed to evenly distribute static IPs between zones for instance group 'fake-job'"
               )
           end
         end

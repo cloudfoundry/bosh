@@ -142,9 +142,9 @@ describe Bosh::Director::DeploymentPlan::Job do
           job.bind_properties
         }.to raise_error(
           Bosh::Director::JobIncompatibleSpecs,
-          "Job `foobar' has specs with conflicting property definition styles" +
+          "Instance group 'foobar' has specs with conflicting property definition styles" +
           ' between its job spec templates.  This may occur if colocating jobs, one of which has a spec file' +
-          " including `properties' and one which doesn't."
+          " including 'properties' and one which doesn't."
         )
       end
     end
@@ -326,8 +326,8 @@ describe Bosh::Director::DeploymentPlan::Job do
             job.validate_package_names_do_not_collide!
           }.to raise_error(
             Bosh::Director::JobPackageCollision,
-            "Package name collision detected in job `foobar': template `release1/foo' depends on package `release1/same-name',"\
-            " template `bar_release/bar' depends on `bar_release/same-name'. " +
+            "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
+            " job 'bar_release/bar' depends on 'bar_release/same-name'. " +
               'BOSH cannot currently collocate two packages with identical names from separate releases.',
           )
         end

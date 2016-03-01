@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
         it 'raises an error' do
           expect {
             networks_to_static_ips.validate_azs_are_declared_in_job_and_subnets(desired_azs)
-          }.to raise_error Bosh::Director::JobInvalidAvailabilityZone, "Job 'fake-job' subnets declare availability zones and the job does not"
+          }.to raise_error Bosh::Director::JobInvalidAvailabilityZone, "Instance group 'fake-job' subnets declare availability zones and the instance group does not"
         end
       end
 
@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
           expect {
             networks_to_static_ips.validate_ips_are_in_desired_azs(desired_azs)
           }.to raise_error Bosh::Director::JobStaticIpsFromInvalidAvailabilityZone,
-            "Job 'fake-job' declares static ip '192.168.0.1' which does not belong to any of the job's availability zones."
+            "Instance group 'fake-job' declares static ip '192.168.0.1' which does not belong to any of the instance group's availability zones."
         end
       end
 
@@ -128,7 +128,7 @@ module Bosh::Director::DeploymentPlan
             expect {
               PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
             }.to raise_error(Bosh::Director::JobNetworkInstanceIpMismatch,
-                "Job 'fake-job' with network 'network_A' declares static ip '192.168.1.244', which belongs to no subnet")
+                "Instance group 'fake-job' with network 'network_A' declares static ip '192.168.1.244', which belongs to no subnet")
           end
         end
 

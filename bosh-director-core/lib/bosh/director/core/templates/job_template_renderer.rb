@@ -33,7 +33,7 @@ module Bosh::Director::Core::Templates
       end
 
       if errors.length > 0
-        message = "Unable to render release templates for release job #{@name}. Errors are:"
+        message = "Unable to render templates for job '#{@name}'. Errors are:"
 
         errors.each do |e|
           message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"

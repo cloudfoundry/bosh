@@ -41,7 +41,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_availability_zones) { |az| az.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateAvailabilityZoneName, "Duplicate az name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateAvailabilityZoneName, "Duplicate az name '#{duplicates.first.name}'"
         end
 
         parsed_availability_zones
@@ -65,13 +65,13 @@ module Bosh::Director
               VipNetwork.new(network_spec, @logger)
             else
               raise DeploymentInvalidNetworkType,
-                "Invalid network type `#{type}'"
+                "Invalid network type '#{type}'"
           end
         end
 
         duplicates = detect_duplicates(parsed_networks) { |network| network.canonical_name }
         unless duplicates.empty?
-          raise DeploymentCanonicalNetworkNameTaken, "Invalid network name `#{duplicates.first.name}', canonical name already taken"
+          raise DeploymentCanonicalNetworkNameTaken, "Invalid network name '#{duplicates.first.name}', canonical name already taken"
         end
 
         parsed_networks
@@ -85,7 +85,7 @@ module Bosh::Director
         if compilation_network.nil?
           raise CompilationConfigUnknownNetwork,
             "Compilation config references an unknown " +
-              "network `#{config.network_name}'"
+              "network '#{config.network_name}'"
         end
 
         unless compilation_network.has_azs?([config.availability_zone_name])
@@ -113,7 +113,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_resource_pools) { |rp| rp.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateResourcePoolName, "Duplicate resource pool name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateResourcePoolName, "Duplicate resource pool name '#{duplicates.first.name}'"
         end
 
         parsed_resource_pools
@@ -128,7 +128,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_vm_types) { |vmt| vmt.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateVmTypeName, "Duplicate vm type name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateVmTypeName, "Duplicate vm type name '#{duplicates.first.name}'"
         end
 
         parsed_vm_types
@@ -143,7 +143,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_vm_extensions) { |vmt| vmt.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateVmExtensionName, "Duplicate vm extension name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateVmExtensionName, "Duplicate vm extension name '#{duplicates.first.name}'"
         end
 
         parsed_vm_extensions
@@ -174,7 +174,7 @@ module Bosh::Director
 
         duplicates = detect_duplicates(parsed_disk_types) { |dp| dp.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateDiskTypeName, "Duplicate disk #{disk_source} name `#{duplicates.first.name}'"
+          raise DeploymentDuplicateDiskTypeName, "Duplicate disk #{disk_source} name '#{duplicates.first.name}'"
         end
 
         parsed_disk_types
