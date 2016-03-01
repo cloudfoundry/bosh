@@ -5,7 +5,9 @@ module Bosh::Director
     module DeploymentScoping
       def route(verb, path, options = {}, &block)
         options[:scope] ||= :authorization
-        options[:authorization] ||= [:deployment => :admin]
+        if options[:authorization].nil?
+          options[:authorization] = [:deployment => :admin]
+        end
         super(verb, path, options, &block)
       end
 
