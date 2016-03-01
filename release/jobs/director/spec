@@ -347,7 +347,7 @@ properties:
   agent.blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
-  agent.blobstore.s3_signature_version
+  agent.blobstore.s3_signature_version:
     description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   agent.nats.address:
     description: Address for agent to connect to nats
