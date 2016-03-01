@@ -153,10 +153,19 @@ module Bosh::Director
           :dependency_key => dependency_key
         ).all
 
-        compiled_package = compiled_package_list.select do |compiled_pkg|
-          Bosh::Common::Version::StemcellVersion.match(compiled_pkg.stemcell_version, stemcell.version)
+        compiled_package = compiled_package_list.select do |compiled_package_model|
+          compiled_package_model.stemcell_version == stemcell.version
         end.first
+
+        unless compiled_package
+          compiled_package = compiled_package_list.select do |compiled_package_model|
+            Bosh::Common::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
+          end.sort_by do |compiled_package_model|
+            SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
+          end.last
+        end
       end
+
       if compiled_package
         logger.info("Found compiled version of package `#{package.desc}' " +
                        "for stemcell `#{stemcell.desc}'")
@@ -171,7 +180,7 @@ module Bosh::Director
         end
 
         if compiled_package
-          logger.info("Package `Found compiled version of package `#{package.desc}'" +
+          logger.info("Found compiled version of package `#{package.desc}'" +
                          "for stemcell `#{stemcell.desc}' in global cache")
         else
           logger.info("Package `#{package.desc}' " +

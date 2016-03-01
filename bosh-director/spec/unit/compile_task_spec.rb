@@ -253,6 +253,29 @@ module Bosh::Director
           package.sha1 = nil
         end
 
+        context 'when the stemcell os matches and there is an exact patch-level match' do
+          it 'returns an exact match' do
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.2', dependency_key: dependency_key)
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.0', dependency_key: dependency_key)
+
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log).stemcell_version).to eq('48.0')
+          end
+        end
+
+        context 'when the stemcell os matches but there is not an exact patch-level match' do
+          it 'returns the highest patch level' do
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48', dependency_key: dependency_key)
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key)
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.3', dependency_key: dependency_key)
+            Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.2', dependency_key: dependency_key)
+
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log).stemcell_version).to eq('48.3')
+          end
+        end
+
         context 'when the stemcell os matches but the version differs by patch-level' do
           let!(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: stemcell.os, stemcell_version: '48.1', dependency_key: dependency_key) }
 
