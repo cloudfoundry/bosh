@@ -1,51 +1,43 @@
 require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
-  module Api::Extensions
-    module DeploymentScoping
+  module Api::Controllers
+    module DeploymentsSecurity
       def route(verb, path, options = {}, &block)
         options[:scope] ||= :authorization
-        if options[:authorization].nil?
-          options[:authorization] = [:deployment => :admin]
-        end
+        options[:authorization] ||= :admin
         super(verb, path, options, &block)
       end
 
-      def authorization(authorization)
-        return unless authorization
+      def authorization(perm)
+        return unless perm
 
         condition do
-          authz_subject = authorization.first[0]
-          authz_permission = authorization.first[1]
           subject = :director
+          permission = perm
 
-          if :diff == authz_permission
+          if :diff == permission
             begin
               @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
               subject = @deployment
-              authz_permission = :admin
+              permission = :admin
             rescue DeploymentNotFound
-              authz_permission = :create_deployment
+              permission = :create_deployment
             end
           else
             if params.has_key?('deployment')
               @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-
-              if :deployment == authz_subject
-                subject = @deployment
-              end
+              subject = @deployment
             end
           end
 
-          @permission_authorizer.granted_or_raise(subject, authz_permission, token_scopes)
+          @permission_authorizer.granted_or_raise(subject, permission, token_scopes)
         end
       end
     end
-  end
 
-  module Api::Controllers
     class DeploymentsController < BaseController
-      register Bosh::Director::Api::Extensions::DeploymentScoping
+      register DeploymentsSecurity
 
       def initialize(config)
         super(config)
@@ -185,7 +177,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', authorization: [director: :list_deployments] do
+      get '/', authorization: :list_deployments do
         latest_cloud_config = Api::CloudConfigManager.new.latest
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
@@ -219,11 +211,11 @@ module Bosh::Director
         json_encode(deployments)
       end
 
-      get '/:deployment', authorization: [:deployment => :read] do
+      get '/:deployment', authorization: :read do
         Yajl::Encoder.encode({'manifest' => deployment.manifest})
       end
 
-      get '/:deployment/vms', authorization: [:deployment => :read] do
+      get '/:deployment/vms', authorization: :read do
         format = params[:format]
         if format == 'full'
           task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
@@ -323,7 +315,7 @@ module Bosh::Director
         end
       end
 
-      post '/', authorization: [director: :create_deployment], :consumes => :yaml do
+      post '/', authorization: :create_deployment, :consumes => :yaml do
         manifest_file_path = prepare_yml_file(request.body, 'deployment')
 
         options = {}
@@ -351,7 +343,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/diff', authorization: [:deployment => :diff], :consumes => :yaml do
+      post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
         manifest_text = request.body.read
         validate_manifest_yml(manifest_text)
 
@@ -397,7 +389,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:deployment/errands', authorization: [:deployment => :read] do
+      get '/:deployment/errands', authorization: :read do
         deployment_plan = load_deployment_plan
 
         errands = deployment_plan.jobs.select(&:is_errand?)
