@@ -61,7 +61,9 @@ module Bosh::Director::DeploymentPlan
         network_name = network_spec['name']
         spec = instance_spec.as_apply_spec
         expect(spec['deployment']).to eq('fake-deployment')
+        expect(spec['name']).to eq('fake-job')
         expect(spec['job']).to eq(job_spec)
+        expect(spec['az']).to eq('foo-az')
         expect(spec['index']).to eq(index)
         expect(spec['networks']).to include(network_name)
 
@@ -118,6 +120,7 @@ module Bosh::Director::DeploymentPlan
           spec = instance_spec.as_template_spec
 
           expect(spec['deployment']).to eq('fake-deployment')
+          expect(spec['name']).to eq('fake-job')
           expect(spec['job']).to eq(job_spec)
           expect(spec['index']).to eq(index)
           expect(spec['networks']).to include(network_name)
@@ -148,6 +151,7 @@ module Bosh::Director::DeploymentPlan
           network_name = network_spec['name']
           spec = instance_spec.as_template_spec
           expect(spec['deployment']).to eq('fake-deployment')
+          expect(spec['name']).to eq('fake-job')
           expect(spec['job']).to eq(job_spec)
           expect(spec['index']).to eq(index)
           expect(spec['networks']).to include(network_name)
