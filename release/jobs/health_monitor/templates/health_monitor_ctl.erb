@@ -11,6 +11,19 @@ export PATH=/var/vcap/packages/ruby/bin:$PATH
 export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.1.0
 export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
 
+<% if_p('env.http_proxy') do |http_proxy| %>
+export HTTP_PROXY=<%= http_proxy %>
+export http_proxy=<%= http_proxy %>
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+export HTTPS_PROXY=<%= https_proxy %>
+export https_proxy=<%= https_proxy %>
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+export NO_PROXY=<%= no_proxy %>
+export no_proxy=<%= no_proxy %>
+<% end %>
+
 function pid_exists() {
   ps -p $1 &> /dev/null
 }
