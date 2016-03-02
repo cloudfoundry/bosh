@@ -15,21 +15,29 @@ module Bosh::Director
         return unless authorization
 
         condition do
-          authorization_subject = authorization.first[0]
-          required_right = authorization.first[1]
+          authz_subject = authorization.first[0]
+          authz_permission = authorization.first[1]
           subject = :director
 
-          if params.has_key?('deployment')
-            params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-
-            if :deployment == authorization_subject
+          if :diff == authz_permission
+            begin
+              params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
               subject = params['deployment_model']
+              authz_permission = :admin
+            rescue DeploymentNotFound
+              authz_permission = :create_deployment
+            end
+          else
+            if params.has_key?('deployment')
+              params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
+
+              if :deployment == authz_subject
+                subject = params['deployment_model']
+              end
             end
           end
 
-          if !@permission_authorizer.is_granted?(subject, required_right, token_scopes)
-            throw(:halt, [401, 'Insufficient privileges'])
-          end
+          @permission_authorizer.granted_or_raise(subject, authz_permission, token_scopes)
         end
       end
     end
@@ -53,7 +61,7 @@ module Bosh::Director
         instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
 
         response = {
-          deployment: params[:deployment],
+          deployment: deployment.name,
           job: instance.job,
           index: instance.index,
           id: instance.uuid,
@@ -114,7 +122,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, params[:deployment], options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -345,23 +353,14 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/diff', authorization: false, :consumes => :yaml do
+      post '/:deployment/diff', authorization: [:deployment => :diff], :consumes => :yaml do
         manifest_text = request.body.read
         validate_manifest_yml(manifest_text)
-        deployment = Models::Deployment.find(name: params[:deployment])
 
         if deployment
-          unless @permission_authorizer.is_granted?(deployment, :admin, token_scopes)
-            throw(:halt, [401, 'Insufficient privileges'])
-          end
-
           before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)
           before_manifest.resolve_aliases
         else
-          unless @permission_authorizer.is_granted?(:director, :create_deployment, token_scopes)
-            throw(:halt, [401, 'Insufficient privileges'])
-          end
-
           before_manifest = Manifest.load_from_text(nil, nil, nil)
         end
 

@@ -13,7 +13,7 @@ module Bosh::Director
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
-    let(:requested_access) { [] }
+    let(:requested_access) { :read }
     let(:uaa_user) { identity_provider.get_user(request_env, options) }
     let(:options) { {} }
 
@@ -54,112 +54,11 @@ module Bosh::Director
       context 'when token is encoded with symmetric key' do
         let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: 'symmetric-key') }
 
-        context 'when director is configured with the same symmetric key' do
-          let(:skey) { 'symmetric-key' }
-
-          context 'when user has bosh.admin' do
-
-            it 'returns an authorized User with the username' do
-              expect(uaa_user.username).to eq('marissa')
-            end
-
-            it 'has access' do
-              expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
-            end
-          end
-
-          context 'when user scope is bosh.<DIRECTOR-UUID>.admin' do
-            context 'when uuid matches current director' do
-              let(:scope) { ['bosh.fake-director-uuid.admin'] }
-
-              it 'returns the username of the authenticated user' do
-                expect(uaa_user.username).to eq('marissa')
-              end
-            end
-
-            context 'when uuid does not match current director' do
-              let(:scope) { ['bosh.other-director-uuid.admin'] }
-
-              it 'returns false' do
-                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-              end
-            end
-          end
-
-          context 'when user scope is not bosh.admin' do
-            let(:scope) { [] }
-
-            it 'returns false' do
-              expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-            end
-
-            context 'when requested_access is read' do
-              let(:requested_access) { :read }
-
-              it 'returns false' do
-                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-                expect(identity_provider.required_scopes(requested_access)).to eq(['bosh.admin', 'bosh.fake-director-uuid.admin', 'bosh.read', 'bosh.fake-director-uuid.read'])
-              end
-
-              context 'when user scope contains bosh.read' do
-                let(:scope) { ['bosh.read'] }
-
-                it 'returns user' do
-                  expect(uaa_user.username).to eq('marissa')
-                end
-              end
-
-              context 'when user scope contains bosh.<DIRECTOR-UUID>.read' do
-                context 'when uuid matches current director' do
-                  let(:scope) { ['bosh.fake-director-uuid.read'] }
-
-                  it 'returns user' do
-                    expect(uaa_user.username).to eq('marissa')
-                  end
-                end
-
-                context 'when uuid does not match current director' do
-                  let(:scope) { ['bosh.other-director-uuid.read'] }
-
-                  it 'returns false' do
-                    expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-                    expect(identity_provider.required_scopes(requested_access)).to eq(%w(bosh.admin bosh.fake-director-uuid.admin bosh.read bosh.fake-director-uuid.read))
-                  end
-                end
-              end
-            end
-
-            context 'when user scope is bosh.teams.<TEAM-NAME>.admin' do
-              let(:scope) { ['bosh.teams.my_team.admin'] }
-
-              it 'returns an authorized User with the username' do
-                expect(uaa_user.username).to eq('marissa')
-              end
-
-              it 'has access to manage deployments' do
-                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
-              end
-            end
-
-            context 'when user scope has a bad scope' do
-              let(:scope) { ['bosh.teams.my.cool.team.admin'] }
-
-              it 'returns an authorized User with the username' do
-                expect(uaa_user.username).to eq('marissa')
-              end
-
-              it 'does not have access to manage deployments' do
-                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
-              end
-            end
-          end
-        end
-
         context 'when director is configured with another symmetric key' do
           let(:skey) { 'bad-key' }
 
           it 'raises an error' do
-            expect{uaa_user.has_access?(requested_access)}.to raise_error(AuthenticationError)
+            expect{uaa_user}.to raise_error(AuthenticationError)
           end
         end
 
@@ -167,7 +66,7 @@ module Bosh::Director
           let(:skey) { nil }
 
           it 'raises an error' do
-            expect{uaa_user.has_access?(requested_access)}.to raise_error(AuthenticationError)
+            expect{uaa_user}.to raise_error(AuthenticationError)
           end
         end
 
@@ -175,7 +74,7 @@ module Bosh::Director
           let(:token_expiry_time) { (Time.now - 1000).to_i }
 
           it 'raises an error' do
-            expect{uaa_user.has_access?(requested_access)}.to raise_error(AuthenticationError)
+            expect{uaa_user}.to raise_error(AuthenticationError)
           end
         end
       end
@@ -190,10 +89,6 @@ module Bosh::Director
           it 'returns user' do
             expect(uaa_user.username).to eq('marissa')
           end
-
-          it 'has access' do
-            expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
-          end
         end
 
         context 'when director is configured with another public key' do
@@ -201,7 +96,7 @@ module Bosh::Director
           let(:pkey) { another_rsa_key.public_key }
 
           it 'raises an error' do
-            expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
+            expect { uaa_user }.to raise_error(AuthenticationError)
           end
         end
 
@@ -209,7 +104,7 @@ module Bosh::Director
           let(:pkey) { nil }
 
           it 'raises an error' do
-            expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
+            expect { uaa_user }.to raise_error(AuthenticationError)
           end
         end
 
@@ -217,7 +112,7 @@ module Bosh::Director
           let(:token_expiry_time) { (Time.now - 1000).to_i }
 
           it 'raises' do
-            expect {  identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
+            expect {  uaa_user }.to raise_error(AuthenticationError)
           end
         end
       end
@@ -234,27 +129,6 @@ module Bosh::Director
           expect(uaa_user.username).to eq('fake-client-id')
         end
       end
-
-      context 'when extended_token_timeout is requested' do
-        let(:request_env) { { 'HTTP_X_BOSH_UPLOAD_REQUEST_TIME' => 30, 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" } }
-        let(:token_expiry_time) { Time.now.to_i - 10 }
-        let(:options) { { extended_token_timeout: true } }
-        let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: 'symmetric-key') }
-        let(:skey) { 'symmetric-key' }
-
-        it 'decodes the token at the time request started' do
-          expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
-        end
-
-        context 'when request took longer than 1 hour' do
-          let(:request_env) { { 'HTTP_X_BOSH_UPLOAD_REQUEST_TIME' => 60*60, 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" } }
-          let(:token_expiry_time) { Time.now.to_i - 61*60 }
-
-          it 'only decodes token 1 hour ago' do
-            expect { identity_provider.valid_access?(uaa_user, requested_access) }.to raise_error(AuthenticationError)
-          end
-        end
-      end
     end
 
     context 'when no Uaa token is given' do
@@ -262,7 +136,7 @@ module Bosh::Director
         let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
 
         it 'raises' do
-          expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
+          expect { uaa_user }.to raise_error(AuthenticationError)
         end
       end
 
@@ -270,7 +144,7 @@ module Bosh::Director
         let(:request_env) { { } }
 
         it 'raises' do
-          expect { identity_provider.get_user(request_env, options) }.to raise_error(AuthenticationError)
+          expect { uaa_user }.to raise_error(AuthenticationError)
         end
       end
 

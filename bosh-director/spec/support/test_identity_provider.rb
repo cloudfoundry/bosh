@@ -28,21 +28,6 @@ module Support
       'fake-client-info'
     end
 
-    def valid_access?(user, requested_access)
-      @scope = requested_access
-
-      if user.scopes
-        required_scopes = required_scopes(requested_access)
-        return @permission_authorizer.has_admin_or_director_scope?(user.scopes) ||
-          @permission_authorizer.contains_requested_scope?(required_scopes, user.scopes)
-      end
-      false
-    end
-
-    def required_scopes(_)
-      ['fake-valid-scope-1', 'fake-valid-scope-2']
-    end
-
     private
 
     def user_scopes

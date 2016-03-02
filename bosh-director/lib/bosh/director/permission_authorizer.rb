@@ -4,31 +4,6 @@ module Bosh::Director
       @director_uuid = Bosh::Director::Models::DirectorAttribute.uuid
     end
 
-    def has_admin_or_director_scope?(token_scopes)
-      !(intersect(permissions[:write], token_scopes).empty?)
-    end
-
-    def has_admin_or_director_read_scope?(token_scopes)
-      !(intersect(permissions[:read], token_scopes).empty?)
-    end
-
-    def contains_requested_scope?(valid_scopes, token_scopes)
-      return false unless valid_scopes
-      !(intersect(valid_scopes, token_scopes).empty?)
-    end
-
-    def permissions
-      {
-        :read  => ['bosh.admin', "bosh.#{@director_uuid}.admin", 'bosh.read', "bosh.#{@director_uuid}.read"],
-        :write => ['bosh.admin', "bosh.#{@director_uuid}.admin"]
-      }
-    end
-
-    def is_authorized_to_read?(provided_scopes, token_scopes)
-      has_admin_or_director_read_scope?(token_scopes) ||
-        contains_requested_scope?(provided_scopes, token_scopes)
-    end
-
     def transform_admin_team_scope_to_teams(token_scopes)
       return [] if token_scopes.nil?
       team_scopes = token_scopes.map do |scope|
@@ -45,51 +20,66 @@ module Bosh::Director
       end
     end
 
-    def is_granted?(subject, right, user_scopes)
-      director_permissions = permissions
+    def granted_or_raise(subject, permission, user_scopes)
+      if !is_granted?(subject, permission, user_scopes)
+        raise UnauthorizedToAccessDeployment, "Require one of the scopes: #{list_expected_scope(subject, permission, user_scopes).join(', ')}"
+      end
+    end
 
-      allowed_scope = [director_permissions[:write]]
+    def is_granted?(subject, permission, user_scopes)
+      !intersect(user_scopes, list_expected_scope(subject, permission, user_scopes)).empty?
+    end
+
+    def list_expected_scope(subject, permission, user_scopes)
+      expected_scope = director_permissions[:admin]
 
       if subject.instance_of? Models::Deployment
-        allowed_scope << deployment_team_scopes(subject, 'admin')
+        expected_scope << deployment_team_scopes(subject, 'admin')
 
-        if :admin == right
-          # already allowed with initial allowed_scope
-        elsif :read == right
-          allowed_scope << director_permissions[:read]
-          allowed_scope << deployment_team_scopes(subject, 'read')
+        if :admin == permission
+          # already allowed with initial expected_scope
+        elsif :read == permission
+          expected_scope << director_permissions[:read]
+          expected_scope << deployment_team_scopes(subject, 'read')
         else
-          raise ArgumentError, "Unexpected right for deployment: #{right}"
+          raise ArgumentError, "Unexpected permission for deployment: #{permission}"
         end
       elsif :director == subject
-        if :admin == right
-          # already allowed with initial allowed_scope
-        elsif :create_deployment == right
-          allowed_scope << user_scopes.select do |scope|
+        if :admin == permission
+          # already allowed with initial expected_scope
+        elsif :create_deployment == permission
+          expected_scope << user_scopes.select do |scope|
             scope.match(/\Abosh\.teams\.([^\.]*)\.admin\z/)
           end
-        elsif :list_deployments == right
-          allowed_scope << director_permissions[:read]
-          allowed_scope << user_scopes.select do |scope|
+        elsif :list_deployments == permission
+          expected_scope << director_permissions[:read]
+          expected_scope << user_scopes.select do |scope|
             scope.match(/\Abosh\.teams\.([^\.]*)\.(admin|read)\z/)
           end
-        elsif :read == right
-          allowed_scope << director_permissions[:read]
+        elsif :read == permission
+          expected_scope << director_permissions[:read]
         else
-          raise ArgumentError, "Unexpected right for director: #{right}"
+          raise ArgumentError, "Unexpected permission for director: #{permission}"
         end
       else
         raise ArgumentError, "Unexpected subject: #{subject}"
       end
 
-      !intersect(user_scopes, allowed_scope.flatten).empty?
+      expected_scope.flatten.uniq
     end
 
     private
 
-    def deployment_team_scopes(deployment, right)
-      rights = deployment.teams.nil? ? [] : deployment.teams.split(',')
-      rights.map{ |team_name| "bosh.teams.#{team_name}.#{right}" }
+    def director_permissions
+      {
+        read: ['bosh.read', "bosh.#{@director_uuid}.read"],
+        admin: ['bosh.admin', "bosh.#{@director_uuid}.admin"],
+      }
+    end
+
+    def deployment_team_scopes(deployment, permission)
+      permissions = deployment.teams.nil? ? [] : deployment.teams.split(',')
+      permissions.map{ |team_name| "bosh.teams.#{team_name}.#{permission}" }
     end
 
     def intersect(valid_scopes, token_scopes)

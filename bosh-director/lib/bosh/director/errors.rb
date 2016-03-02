@@ -279,5 +279,5 @@ module Bosh::Director
   RuntimeInvalidDeploymentRelease = err(530003)
 
   # Authorization errors
-  UnauthorizedToAccessDeployment = err(600000, FORBIDDEN)
+  UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 end

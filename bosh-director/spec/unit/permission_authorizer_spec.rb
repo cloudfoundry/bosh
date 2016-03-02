@@ -127,7 +127,7 @@ module Bosh::Director
           it 'raises an exception' do
             expect{
               subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
-            }.to raise_error ArgumentError, "Unexpected right for director: #{acl_right}"
+            }.to raise_error ArgumentError, "Unexpected permission for director: #{acl_right}"
           end
         end
       end
@@ -203,7 +203,7 @@ module Bosh::Director
           it 'raises an exception' do
             expect{
               subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
-            }.to raise_error ArgumentError, "Unexpected right for deployment: #{acl_right}"
+            }.to raise_error ArgumentError, "Unexpected permission for deployment: #{acl_right}"
           end
         end
       end
@@ -216,98 +216,6 @@ module Bosh::Director
           expect{
             subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
           }.to raise_error ArgumentError, "Unexpected subject: #{acl_subject}"
-        end
-      end
-    end
-
-    describe '#has_admin_or_director_scope?' do
-      it 'should return true for bosh.admin' do
-        token_scope = ['bosh.admin']
-        expect(subject.has_admin_or_director_scope?(token_scope)).to eq(true)
-      end
-
-      it 'should return false for an empty scope parameter' do
-        expect(subject.has_admin_or_director_scope?([])).to eq(false)
-      end
-
-      it 'should return false for a different director' do
-        token_scope = ['bosh.director-that-does-not-exist.admin']
-        expect(subject.has_admin_or_director_scope?(token_scope)).to eq(false)
-      end
-    end
-
-    describe '#has_admin_or_director_read_scope?' do
-      it 'should return true for bosh.admin' do
-        token_scope = ['bosh.admin']
-        expect(subject.has_admin_or_director_read_scope?(token_scope)).to eq(true)
-      end
-
-      it 'should return true for bosh.read' do
-        token_scope = ['bosh.read']
-        expect(subject.has_admin_or_director_read_scope?(token_scope)).to eq(true)
-      end
-
-      it 'should return false for an empty scope parameter' do
-        expect(subject.has_admin_or_director_read_scope?([])).to eq(false)
-      end
-
-      it 'should return false for a different director' do
-        token_scope = ['bosh.director-that-does-not-exist.read']
-        expect(subject.has_admin_or_director_read_scope?(token_scope)).to eq(false)
-      end
-
-      it 'should return true for a director readonly permissions' do
-        token_scope = ['bosh.fake-director-uuid.read']
-        expect(subject.has_admin_or_director_read_scope?(token_scope)).to eq(true)
-      end
-    end
-
-    describe '#contains_requested_scope?' do
-      it 'should return true for bosh.admin' do
-        valid_scope = ['bosh.admin']
-        token_scope = ['bosh.admin']
-
-        expect(subject.contains_requested_scope?(valid_scope, token_scope)).to eq(true)
-      end
-
-      it 'should return false for non-overlapping scopes' do
-        valid_scope = ['bosh.admin']
-        token_scope = ['bosh.teams.dev.admin']
-
-        expect(subject.contains_requested_scope?(valid_scope, token_scope)).to eq(false)
-      end
-    end
-
-    describe '#is_authorized_to_read?' do
-      context 'token scope has admin scope' do
-        it 'returns true' do
-          valid_scope = ['bosh.teams.dev.admin']
-          token_scope = ['bosh.admin']
-          expect(subject.is_authorized_to_read?(valid_scope, token_scope)).to eq(true)
-        end
-      end
-
-      context 'token scope has team scope' do
-        it 'returns true' do
-          valid_scope = ['bosh.teams.dev.admin', 'bosh.teams.prod.admin']
-          token_scope = ['bosh.teams.dev.admin']
-          expect(subject.is_authorized_to_read?(valid_scope, token_scope)).to eq(true)
-        end
-      end
-
-      context 'token scope has director readonly scope' do
-        it 'returns true' do
-          valid_scope = []
-          token_scope = ['bosh.fake-director-uuid.read']
-          expect(subject.is_authorized_to_read?(valid_scope, token_scope)).to eq(true)
-        end
-      end
-
-      context 'token scope has no team scope' do
-        it 'returns false' do
-          valid_scope = ['bosh.teams.dev.admin']
-          token_scope = ['bosh.teams.prod.admin']
-          expect(subject.is_authorized_to_read?(valid_scope, token_scope)).to eq(false)
         end
       end
     end

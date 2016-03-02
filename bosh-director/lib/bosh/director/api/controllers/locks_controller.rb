@@ -6,7 +6,7 @@ module Bosh::Director
 
         locks = []
         lock_keys = redis.keys('lock:*')
-        # Deliberatelly not using redis futures here as we expect that the number of lock keys will be very small
+        # Deliberately not using redis futures here as we expect that the number of lock keys will be very small
         lock_keys.each do |lock_key|
           lock_value = redis.get(lock_key)
           unless lock_value.nil?

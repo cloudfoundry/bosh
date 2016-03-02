@@ -7,7 +7,12 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { Api::Controllers::CloudConfigsController.new(config) }
-    let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
+    let(:identity_provider) { Support::TestIdentityProvider.new }
+    let(:config) do
+      config = Config.load_hash(Psych.load(spec_asset('test-director-config.yml')))
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      config
+    end
 
     describe 'POST', '/' do
       it 'creates a new cloud config' do
@@ -41,6 +46,16 @@ module Bosh::Director
             'code' => 440001,
             'description' => 'Manifest should not be empty',
         )
+      end
+
+      it 'denies access when read-only' do
+        basic_authorize('reader', 'reader')
+
+        expect(post('/', '', {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+      end
+
+      it 'denies access when not authenticated' do
+        expect(post('/').status).to eq(401)
       end
     end
 
@@ -85,21 +100,9 @@ module Bosh::Director
         expect(last_response.status).to eq(400)
         expect(last_response.body).to eq("limit is invalid: 'foo' is not an integer")
       end
-    end
 
-    describe 'scope' do
-      let(:identity_provider) { Support::TestIdentityProvider.new }
-      before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
-
-      it 'accepts read scope for routes allowing read access' do
-        authorize 'admin', 'admin'
-
-        get '/'
-        expect(identity_provider.scope).to eq(:read)
-
-        header 'Content-Type', 'text/yaml'
-        post '/'
-        expect(identity_provider.scope).to eq(:write)
+      it 'denies access when not authenticated' do
+        expect(get('/').status).to eq(401)
       end
     end
   end

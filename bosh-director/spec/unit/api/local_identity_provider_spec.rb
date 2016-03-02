@@ -28,11 +28,6 @@ module Bosh::Director
         local_user = identity_provider.get_user(request_env, {})
         expect(local_user.username).to eq('admin')
       end
-
-      it 'validates user access' do
-        local_user = identity_provider.get_user(request_env, {})
-        expect(identity_provider.valid_access?(local_user, {})).to be(true)
-      end
     end
 
     context 'given bogus HTTP basic authentication credentials' do
