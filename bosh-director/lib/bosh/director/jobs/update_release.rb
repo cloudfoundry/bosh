@@ -381,23 +381,23 @@ module Bosh::Director
           stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          transitive_dependencies = @release_version_model.transitive_dependencies(package)
-          dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
           existing_compiled_packages = Models::CompiledPackage.where(
               :package_id => package.id,
               :stemcell_os => stemcell[:os],
               :stemcell_version => stemcell[:version],
-              :dependency_key => dependency_key
+              :dependency_key => dependency_key(package)
           )
 
           if existing_compiled_packages.empty?
             package_desc = "#{package.name}/#{package.version} for #{stemcell[:os]}/#{stemcell[:version]}"
             event_log.track(package_desc) do
-              other_compiled_package = get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
-              if @fix && !other_compiled_package.nil?
-                fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
+              other_compiled_packages = compiled_packages_matching(package, packages_existing_from_other_releases, stemcell)
+              if @fix
+                other_compiled_packages.each do |other_compiled_package|
+                  fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
+                end
               end
-              create_compiled_package(package, stemcell[:os], stemcell[:version], release_dir, other_compiled_package)
+              create_compiled_package(package, stemcell[:os], stemcell[:version], release_dir, other_compiled_packages.first)
               had_effect = true
             end
           elsif @fix
@@ -410,21 +410,24 @@ module Bosh::Director
         had_effect
       end
 
-      def get_other_compiled_package(package, packages_existing_from_other_releases, stemcell)
-        other_compiled_package = nil
-        transitive_dependencies = @release_version_model.transitive_dependencies(package)
-        dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+      def compiled_packages_matching(package, packages_existing_from_other_releases, stemcell)
+        other_compiled_packages = []
+        dependency_key = dependency_key(package)
         packages_existing_from_other_releases.each do |other_package_meta|
           if other_package_meta["fingerprint"] == package.fingerprint
             packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
             packages.each do |pkg|
-              other_compiled_package = Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_os => stemcell[:os],
-                :stemcell_version => stemcell[:version], :dependency_key => dependency_key).first
-              break unless other_compiled_package.nil?
+              other_compiled_packages.concat(Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_os => stemcell[:os],
+                :stemcell_version => stemcell[:version], :dependency_key => dependency_key).all)
             end
           end
         end
-        other_compiled_package
+        other_compiled_packages
+      end
+
+      def dependency_key(package)
+        transitive_dependencies = @release_version_model.transitive_dependencies(package)
+        Models::CompiledPackage.create_dependency_key(transitive_dependencies)
       end
 
       def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
