@@ -5,9 +5,15 @@ module Bosh::Director
   module Api
     describe Extensions::Scoping do
       include Rack::Test::Methods
+      let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
 
-      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider), true) }
-      let(:identity_provider) { Support::TestIdentityProvider.new }
+      let(:config) do
+        config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
+      let(:app) { Support::TestController.new(config, true) }
 
       describe 'scope' do
         context 'when authorization is provided'do
@@ -62,7 +68,7 @@ module Bosh::Director
             it 'return generic error message' do
               get '/test_route'
               expect(last_response.status).to eq(401)
-              expect(last_response.body).to eq("Not authorized: '/test_route'\n")
+              expect(last_response.body).to include('Require one of the scopes:')
             end
           end
         end
@@ -79,7 +85,7 @@ module Bosh::Director
               end
             end
 
-            let(:app) { NonsecureController.new(double(:config, identity_provider: identity_provider)) }
+            let(:app) { NonsecureController.new(config) }
 
             it 'succeeds' do
               get '/'

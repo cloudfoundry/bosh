@@ -43,7 +43,14 @@ module Bosh::Director
     describe 'a request (controller integration)' do
       include Rack::Test::Methods
 
-      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
+      let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+      let(:config) do
+        config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
+      let(:app) { Support::TestController.new(config) }
 
       context 'given valid HTTP basic authentication credentials' do
         it 'is successful' do

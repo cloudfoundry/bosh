@@ -5,6 +5,8 @@ module Bosh::Director
     before do
       Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
     end
+    let(:config) { double(:config, :uuid => 'fake-director-uuid') }
+    subject(:app) { Bosh::Director::PermissionAuthorizer.new(Api::DirectorUUIDProvider.new(config)) }
 
     describe '#is_granted?' do
       describe 'director subject' do
@@ -217,30 +219,6 @@ module Bosh::Director
             subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])
           }.to raise_error ArgumentError, "Unexpected subject: #{acl_subject}"
         end
-      end
-    end
-
-    describe '#transform_team_scope_to_teams' do
-      it 'returns an array of team names from scope format' do
-        token_scopes = ['bosh.teams.prod.admin']
-        expect(subject.transform_admin_team_scope_to_teams(token_scopes)).to eq(['prod'])
-      end
-
-      it 'returns an empty array if no valid token_scopes are found' do
-        token_scopes = ['bosh.admin']
-        expect(subject.transform_admin_team_scope_to_teams(token_scopes)).to eq([])
-      end
-    end
-
-    describe '#transform_teams_to_team_scopes' do
-      it 'returns an array of team names in scope format' do
-        teams = ['prod']
-        expect(subject.transform_teams_to_team_scopes(teams)).to eq(['bosh.teams.prod.admin'])
-      end
-
-      it 'returns an empty array if no valid team names are used' do
-        teams = []
-        expect(subject.transform_teams_to_team_scopes(teams)).to eq([])
       end
     end
   end

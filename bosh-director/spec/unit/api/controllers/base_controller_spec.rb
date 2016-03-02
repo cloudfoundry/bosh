@@ -13,7 +13,7 @@ module Bosh
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
-          let(:identity_provider) { Support::TestIdentityProvider.new }
+          let(:identity_provider) { Support::TestIdentityProvider.new(config.get_uuid_provider) }
 
           let(:temp_dir) { Dir.mktmpdir }
           let(:test_config) { base_config }

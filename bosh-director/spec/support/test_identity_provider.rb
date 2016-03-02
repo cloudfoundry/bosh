@@ -6,9 +6,9 @@ module Support
 
     attr_accessor :scope
 
-    def initialize
+    def initialize(uuid_provider)
       @has_access = false
-      @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
+      @permission_authorizer = Bosh::Director::PermissionAuthorizer.new(uuid_provider)
     end
 
     def get_user(request_env, _)

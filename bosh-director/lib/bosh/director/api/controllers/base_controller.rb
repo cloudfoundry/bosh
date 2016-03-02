@@ -10,7 +10,7 @@ module Bosh::Director
           @config = config
           @logger = Config.logger
           @identity_provider = config.identity_provider
-          @permission_authorizer = PermissionAuthorizer.new()
+          @permission_authorizer = PermissionAuthorizer.new(config.get_uuid_provider)
           @backup_manager = BackupManager.new
           @restore_manager = RestoreManager.new
           @resurrector_manager = ResurrectorManager.new

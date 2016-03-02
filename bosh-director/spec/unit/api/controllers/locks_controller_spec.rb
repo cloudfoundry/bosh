@@ -7,9 +7,9 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { described_class.new(config) }
-    let(:identity_provider) { Support::TestIdentityProvider.new }
     let(:config) do
       config = Config.load_hash(Psych.load(spec_asset('test-director-config.yml')))
+      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       config
     end

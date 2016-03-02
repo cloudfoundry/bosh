@@ -12,7 +12,13 @@ module Bosh::Director
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
-    let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
+    let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+    let(:config) do
+      config = Config.load_hash(test_config)
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      config
+    end
+    let(:app) { Support::TestController.new(config) }
     let(:requested_access) { :read }
     let(:uaa_user) { identity_provider.get_user(request_env, options) }
     let(:options) { {} }

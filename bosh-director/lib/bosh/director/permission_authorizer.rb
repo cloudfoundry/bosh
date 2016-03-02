@@ -1,23 +1,7 @@
 module Bosh::Director
   class PermissionAuthorizer
-    def initialize
-      @director_uuid = Bosh::Director::Models::DirectorAttribute.uuid
-    end
-
-    def transform_admin_team_scope_to_teams(token_scopes)
-      return [] if token_scopes.nil?
-      team_scopes = token_scopes.map do |scope|
-        match = scope.match(/\Abosh\.teams\.([^\.]*)\.admin\z/)
-        match[1] unless match.nil?
-      end
-      team_scopes.compact
-    end
-
-    def transform_teams_to_team_scopes(teams)
-      return [] if teams.nil?
-      teams.map do |team|
-        "bosh.teams.#{team}.admin"
-      end
+    def initialize(uuid_provider)
+      @uuid_provider = uuid_provider
     end
 
     def granted_or_raise(subject, permission, user_scopes)
@@ -72,8 +56,8 @@ module Bosh::Director
 
     def director_permissions
       {
-        read: ['bosh.read', "bosh.#{@director_uuid}.read"],
-        admin: ['bosh.admin', "bosh.#{@director_uuid}.admin"],
+        read: ['bosh.read', "bosh.#{@uuid_provider.uuid}.read"],
+        admin: ['bosh.admin', "bosh.#{@uuid_provider.uuid}.admin"],
       }
     end
 

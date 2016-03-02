@@ -9,7 +9,6 @@ module Bosh
         def initialize(options)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
-          @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
@@ -43,12 +42,6 @@ module Bosh
           UaaUser.new(token)
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
-        end
-
-        private
-
-        def has_valid_team_scope?(token_scopes)
-          !@permission_authorizer.transform_admin_team_scope_to_teams(token_scopes).empty?
         end
       end
 

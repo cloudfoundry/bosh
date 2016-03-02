@@ -22,9 +22,9 @@ module Bosh::Director
         config
       end
 
-      let(:identity_provider) { Support::TestIdentityProvider.new }
       let(:config) do
         config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
       end

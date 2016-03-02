@@ -54,7 +54,6 @@ module Bosh::Director
         @problem_manager = Api::ProblemManager.new
         @property_manager = Api::PropertyManager.new
         @instance_manager = Api::InstanceManager.new
-        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
