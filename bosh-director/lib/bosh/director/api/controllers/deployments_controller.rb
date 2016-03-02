@@ -21,18 +21,18 @@ module Bosh::Director
 
           if :diff == authz_permission
             begin
-              params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-              subject = params['deployment_model']
+              @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
+              subject = @deployment
               authz_permission = :admin
             rescue DeploymentNotFound
               authz_permission = :create_deployment
             end
           else
             if params.has_key?('deployment')
-              params['deployment_model'] = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
+              @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
 
               if :deployment == authz_subject
-                subject = params['deployment_model']
+                subject = @deployment
               end
             end
           end
@@ -45,7 +45,6 @@ module Bosh::Director
 
   module Api::Controllers
     class DeploymentsController < BaseController
-
       register Bosh::Director::Api::Extensions::DeploymentScoping
 
       def initialize(config)
@@ -412,9 +411,7 @@ module Bosh::Director
 
       private
 
-      def deployment
-        params['deployment_model']
-      end
+      attr_accessor :deployment
 
       def load_deployment_plan
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)
