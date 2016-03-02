@@ -18,7 +18,7 @@ stop_workers()
     if [ -f "$pid_file" ] ; then
       worker_pid=`cat ${pid_file}`
       # Stop DJ workers from accepting any new jobs
-      kill -s INT ${worker_pid}
+      kill -s USR2 ${worker_pid}
     fi
   done
 }

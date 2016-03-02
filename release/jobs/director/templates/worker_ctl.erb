@@ -63,7 +63,7 @@ case $1 in
   stop)
     PID=$(head -1 $PIDFILE)
     kill_process $PID # prevent the parent from fork()ing new children
-    for CHILD in list_child_processes; do
+    for CHILD in $(list_child_processes $INDEX); do
       kill_process $CHILD
     done
     rm -f $PIDFILE

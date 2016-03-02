@@ -22,8 +22,7 @@ function kill_process {
 function list_child_processes {
   ps -eo pid,command |
     grep bosh-director-worker |
-    grep "worker_$INDEX.yml" |
+    grep "worker_$1.yml" |
     awk '{print $1}' |
     grep -v ^$1$
 }
-

@@ -49,38 +49,8 @@ begin
     config = Bosh::Director::Config.load_file(config_file)
   end
   config.db
-  Delayed::Worker.logger = config.worker_logger
 
-  index = 0 if index.nil?
-  Bosh::Director::App.new(config)
-
-  Delayed::Worker.backend = :sequel
-  Delayed::Worker.destroy_failed_jobs = true
-  Delayed::Worker.sleep_delay = ENV['INTERVAL'] || 1
-  Delayed::Worker.max_attempts = 0
-  Delayed::Worker.max_run_time = 31536000
-
-  worker = nil
-  queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
-
-  worker = Delayed::Worker.new({:queues => queues})
-
-  worker.name = "worker_#{index}"
-  worker.logger.info("Starting worker #{worker.name}.")
-  begin
-    @worker_retries ||= 0
-
-    # raise Exception.new if @worker_retries<5
-    worker.start
-
-  rescue Exception => e
-    worker.logger.error("Something goes wrong during worker start. Attempt #{@worker_retries}. Error: #{e.inspect}")
-    while @worker_retries < 10
-      @worker_retries += 1
-      sleep 0.5
-      retry
-    end
-    worker.logger.error("Max retries reached. Error: #{e.inspect}")
-    raise e
-  end
+  worker = Bosh::Director::Worker.new(config)
+  worker.prep
+  worker.start
 end

@@ -36,5 +36,28 @@ function test_kill_process {
   fi
 }
 
+function test_list_child_processes {
+  function ps {
+    cat <<EOF
+21 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_1.yml -i 1
+22 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -i 2
+23 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/worker_2.yml -i 2
+1     init
+EOF
+  }
+
+  CHILD_PID=$(list_child_processes 2)
+
+  if [ "$CHILD_PID" = "22
+23" ]; then
+    echo "list_child_processes finds its 2 children"
+  else
+    echo "FAILED: list_child_processes can't find its children"
+  fi
+}
+
 test_pid_exists
 test_kill_process
+test_list_child_processes
+unset kill
+unset ps
