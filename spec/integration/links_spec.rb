@@ -353,6 +353,38 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           EOF
         end
       end
+
+      context 'when multiple links with same type being provided' do
+        let(:api_server_with_optional_db_links)do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'optional_db',
+              templates: [{'name' => 'api_server_with_optional_db_link'}],
+              instances: 1,
+              static_ips: ['192.168.1.13']
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [api_server_with_optional_db_links, mysql_job_spec, postgres_job_spec]
+          manifest
+        end
+
+        it 'fails when the consumed optional link `from` key is not explicitly set in the deployment manifest' do
+          output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+
+          expect(exit_code).not_to eq(0)
+          expect(output).to include <<-EOF
+Error 100: Unable to process links for deployment. Errors are:
+   - "Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+     simple.mysql.database.db
+     simple.postgres.backup_database.backup_db"
+          EOF
+        end
+      end
+
     end
 
     context 'when exporting a release with templates that have links' do
@@ -387,6 +419,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
         expect(out).to include('Started copying jobs > api_server/8c6864dd746cadc5c39259b0b7a1fe9f40205b65. Done')
         expect(out).to include('Started copying jobs > api_server_with_bad_link_types/5efc0322b51eace0b355e7613f06b7238d2a04c7. Done')
         expect(out).to include('Started copying jobs > api_server_with_bad_optional_links/1df8cd1987c1711bb04af2f43378715296070765. Done')
+        expect(out).to include('Started copying jobs > api_server_with_optional_db_link/a6b38c8f5a66e09e54c33ec92238d282e7de95b0. Done')
         expect(out).to include('Started copying jobs > api_server_with_optional_links_1/5ae8a1435d098577de613fe4de18c252b1a624d3. Done')
         expect(out).to include('Started copying jobs > api_server_with_optional_links_2/a4c1f8bc664578874ea9de1dc0618b9f3e811172. Done')
         expect(out).to include('Started copying jobs > backup_database/c6802f3d21e6c2367520629c691ab07e0e49be6d. Done')
