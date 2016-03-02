@@ -2,6 +2,7 @@ module Bosh::Cli::Command
   class Events < Base
     usage 'events'
     desc 'Show all deployment events'
+    option '--before-id id', Integer, 'Show all events with id less or equal to given id'
 
     def list
       auth_required
@@ -10,7 +11,7 @@ module Bosh::Cli::Command
 
     private
     def show_events
-      events = director.list_events
+      events = director.list_events(options)
       if events.empty?
         nl
         say('No events')
@@ -27,16 +28,16 @@ module Bosh::Cli::Command
           id  = event['id']
           id  = "#{id} <- #{event['parent_id']}" if event['parent_id']
           row << id
-          row << Time.at(event['timestamp']).utc.strftime('%a %b %e %H:%M:%S %Z %Y')
+          row << Time.at(event['timestamp']).utc.strftime('%a %b %d %H:%M:%S %Z %Y')
           row << event['user']
           row << event['action']
           row << event['object_type']
           row << event['object_name']
-          row << event.fetch('task', "-")
-          row << event.fetch('deployment', "-")
-          row << event.fetch('instance', "-")
-          context = event["error"] ? {"error" => event["error"].to_s.truncate(80)}.merge(event["context"]) : event["context"]
-          context = context.empty? ? "-" : context.map { |k, v| "#{k}: #{v}" }.join(",\n")
+          row << event.fetch('task', '-')
+          row << event.fetch('deployment', '-')
+          row << event.fetch('instance', '-')
+          context = event['error'] ? {'error' => event['error'].to_s.truncate(80)}.merge(event['context']) : event['context']
+          context = context.empty? ? '-' : context.map { |k, v| "#{k}: #{v}" }.join(",\n")
           row << context
           t << row
         end

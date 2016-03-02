@@ -13,48 +13,50 @@ describe Bosh::Cli::Command::Events do
     let(:target) { 'http://example.org' }
     let(:event_1) do
       {
-          "id"          => "1",
-          "timestamp"   => 1455635708,
-          "user"        => "admin",
-          "action"      => "create",
-          "object_type" => "deployment",
-          "object_name" => "depl1",
-          "task"        => "1",
-          "context"     => {}
+        'id' => '1',
+        'timestamp' => 1455635708,
+        'user' => 'admin',
+        'action' => 'create',
+        'object_type' => 'deployment',
+        'object_name' => 'depl1',
+        'task' => '1',
+        'context' => {}
       }
     end
     let(:event_2) do
       {
-          "id"          => "2",
-          "parent_id"   => "1",
-          "timestamp"   => 1455635708,
-          "user"        => "admin",
-          "action"      => "create",
-          "object_type" => "deployment",
-          "object_name" => "depl1",
-          "task"        => "5",
-          "context"     => {"information" => "blah blah"}
+        'id' => '2',
+        'parent_id' => '1',
+        'timestamp' => 1455635708,
+        'user' => 'admin',
+        'action' => 'create',
+        'object_type' => 'deployment',
+        'object_name' => 'depl1',
+        'task' => '5',
+        'context' => {'information' => 'blah blah'}
       }
     end
     let(:event_3) do
       {
-          "id"          => "3",
-          "timestamp"   => 1455635708,
-          "user"        => "admin",
-          "action"      => "rename",
-          "error"       => "Someting went wrong",
-          "object_type" => "deployment",
-          "object_name" => "depl1",
-          "task"        => "6",
-          "context"     => {"new name" => "depl2"}
+        'id' => '3',
+        'timestamp' => 1455635708,
+        'user' => 'admin',
+        'action' => 'rename',
+        'error' => 'Someting went wrong',
+        'object_type' => 'deployment',
+        'object_name' => 'depl1',
+        'task' => '6',
+        'context' => {'new name' => 'depl2'}
       }
     end
+    let(:events) { [event_3, event_2, event_1] }
+
     context 'when there are events' do
-      before { expect(director).to receive(:list_events) { [event_3, event_2, event_1] } }
+      before { expect(director).to receive(:list_events) { events } }
 
       it 'lists all events' do
         expect(command).to receive(:say) do |display_output|
-          expect(display_output.to_s).to match_output "
+          expect(display_output.to_s).to match_output '
 +--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
 | ID     | Time                         | User  | Action | Object type | Object ID | Task | Dep | Inst | Context                     |
 +--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
@@ -63,7 +65,7 @@ describe Bosh::Cli::Command::Events do
 | 2 <- 1 | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 5    | -   | -    | information: blah blah      |
 | 1      | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 1    | -   | -    | -                           |
 +--------+------------------------------+-------+--------+-------------+-----------+------+-----+------+-----------------------------+
-"
+'
         end
         command.list
       end
@@ -78,6 +80,22 @@ describe Bosh::Cli::Command::Events do
         end
         command.list
       end
+    end
+
+    it 'can list events before a given id' do
+      expect(director).to receive(:list_events).with({before_id: 2}).and_return([event_1])
+      expect(command).to receive(:say) do |display_output|
+        expect(display_output.to_s).to match_output '
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+| ID | Time                         | User  | Action | Object type | Object ID | Task | Dep | Inst | Context |
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+| 1  | Tue Feb 16 15:15:08 UTC 2016 | admin | create | deployment  | depl1     | 1    | -   | -    | -       |
++----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
+        '
+      end
+
+      command.options = {before_id: 2}
+      command.list
     end
   end
 end

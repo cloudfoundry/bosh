@@ -4,6 +4,7 @@ require_relative '../../spec/support/deployments'
 Sham.define do
   name             { |index| "name-#{index}" }
   username         { |index| "username-#{index}" }
+  object_name      { |index| "deployment-#{index}" }
   password         { |index| "password-#{index}" }
   version          { |index| "version-#{index}" }
   manifest         { |index| "manifest-#{index}" }
@@ -175,6 +176,10 @@ module Bosh::Director::Models
   end
 
   Event.blueprint do
+    action      { 'create'}
+    object_type {'deployment' }
+    object_name { Sham.object_name }
+    user        { Sham.username }
     timestamp   { Time.now }
   end
 

@@ -4,19 +4,19 @@ module Bosh::Director
 
       def event_to_hash(event)
         {
-            "id"          => event.id.to_s,
-            "parent_id"   => event.parent_id.to_s,
-            "timestamp"   => event.timestamp.to_i,
-            "user"        => event.user,
-            "action"      => event.action,
-            "object_type" => event.object_type,
-            "object_name" => event.object_name,
-            "error"       => event.error,
-            "task"        => event.task,
-            "deployment"  => event.deployment,
-            "instance"    => event.instance,
-            "context"     => event.context
-        }.reject { |k, v| v.nil? || v == "" }
+            'id' => event.id.to_s,
+            'parent_id' => event.parent_id.to_s,
+            'timestamp' => event.timestamp.to_i,
+            'user' => event.user,
+            'action' => event.action,
+            'object_type' => event.object_type,
+            'object_name' => event.object_name,
+            'error' => event.error,
+            'task' => event.task,
+            'deployment' => event.deployment,
+            'instance' => event.instance,
+            'context' => event.context
+        }.reject { |k, v| v.nil? || v == '' }
       end
 
       def create_event(options)
