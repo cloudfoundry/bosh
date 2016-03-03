@@ -125,6 +125,67 @@ describe 'Links', type: :integration do
 
     let(:links) {{}}
 
+    context 'properties with aliased links' do
+      let(:db3_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'db3',
+            templates: [
+                {'name' => 'http_server_with_provides', 'provides' => {'http_endpoint' => {'as' => 'http_endpoint2', 'shared' => true}}},
+                {'name' => 'kv_http_server'}
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value"}}
+        job_spec
+      end
+
+      let(:other2_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'other2',
+            templates: [
+                {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => nil}},
+                {'name' => 'http_server_with_provides', 'properties' => {'listen_port' => 8446}}
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:new_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'new_job',
+            templates: [
+                {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => nil}},
+                {'name' => 'http_server_with_provides', 'provides'=>{'http_endpoint' => {'as' =>'new_provides'}}}
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [db3_job, other2_job, new_job]
+        manifest['properties'] = {'listen_port' => 9999}
+        manifest
+      end
+
+      it 'is able to pick the right value for the property from global, job, template and default values' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        vms = director.vms
+        link_vm = find_vm(vms, 'other2', '0')
+        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}}])
+
+        link_vm = find_vm(vms, 'new_job', '0')
+        template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']).to contain_exactly(["address", "192.168.1.4"], ["properties", {"listen_port"=>9999, "name_space"=>{"prop_a"=>"default"}}])
+      end
+    end
+
     context 'when link is provided' do
       let(:links) do
         {

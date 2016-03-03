@@ -1,0 +1,18 @@
+---
+name: kv_http_server
+
+description: This job can run as a cluster.
+
+templates:
+  ctl.sh: bin/ctl
+
+consumes:
+- {name: kv_http_server, type: kv_http_server}
+
+provides:
+- {name: kv_http_server, type: kv_http_server}
+
+properties:
+  kv_http_server.listen_port:
+    description: "Port to listen on"
+    default: 8080
