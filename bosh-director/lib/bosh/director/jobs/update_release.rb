@@ -30,8 +30,6 @@ module Bosh::Director
           @release_path = release_path
         end
 
-        @release_model, @release_version_model, @manifest, @name, @version = nil, nil, nil, nil, nil
-
         @rebase = !!options['rebase']
         @fix = !!options['fix']
       end
@@ -133,10 +131,10 @@ module Bosh::Director
 
         @version = next_release_version if @rebase
 
-        version_attrs = { :release => @release_model, :version => @version.to_s }
-
         release_is_new = false
-        @release_version_model = Models::ReleaseVersion.find_or_create(version_attrs){ release_is_new = true }
+        @release_version_model = Models::ReleaseVersion.find_or_create(release: @release_model, version: @version.to_s) do
+          release_is_new = true
+        end
 
         if release_is_new
           @release_version_model.uncommitted_changes = @uncommitted_changes if @uncommitted_changes
@@ -381,15 +379,13 @@ module Bosh::Director
           stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
           compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
 
-          existing_compiled_packages = Models::CompiledPackage.where(
-              :package_id => package.id,
-              :stemcell_os => stemcell[:os],
-              :stemcell_version => stemcell[:version],
-              :dependency_key => dependency_key(package)
-          )
+          stemcell_os = stemcell[:os]
+          stemcell_version = stemcell[:version]
+
+          existing_compiled_packages = find_compiled_packages(package.id, stemcell_os, stemcell_version, dependency_key(package))
 
           if existing_compiled_packages.empty?
-            package_desc = "#{package.name}/#{package.version} for #{stemcell[:os]}/#{stemcell[:version]}"
+            package_desc = "#{package.name}/#{package.version} for #{stemcell_os}/#{stemcell_version}"
             event_log.track(package_desc) do
               other_compiled_packages = compiled_packages_matching(package, packages_existing_from_other_releases, stemcell)
               if @fix
@@ -397,7 +393,7 @@ module Bosh::Director
                   fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
                 end
               end
-              create_compiled_package(package, stemcell[:os], stemcell[:version], release_dir, other_compiled_packages.first)
+              create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
               had_effect = true
             end
           elsif @fix
@@ -417,17 +413,11 @@ module Bosh::Director
           if other_package_meta["fingerprint"] == package.fingerprint
             packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
             packages.each do |pkg|
-              other_compiled_packages.concat(Models::CompiledPackage.where(:package_id => pkg.id, :stemcell_os => stemcell[:os],
-                :stemcell_version => stemcell[:version], :dependency_key => dependency_key).all)
+              other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
             end
           end
         end
         other_compiled_packages
-      end
-
-      def dependency_key(package)
-        transitive_dependencies = @release_version_model.transitive_dependencies(package)
-        Models::CompiledPackage.create_dependency_key(transitive_dependencies)
       end
 
       def create_compiled_package(package, stemcell_os, stemcell_version, release_dir, other_compiled_package)
@@ -444,9 +434,11 @@ module Bosh::Director
         compiled_package = Models::CompiledPackage.new
         compiled_package.blobstore_id = blobstore_id
         compiled_package.sha1 = sha1
-
-        transitive_dependencies = @release_version_model.transitive_dependencies(package)
-        compiled_package.dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+        release_version_model_dependency_key = dependency_key(package)
+        if release_version_model_dependency_key != CompiledRelease::Manifest.new(@manifest).dependency_key(package.name)
+          raise ReleasePackageDependencyKeyMismatch, "The uploaded release contains package dependencies in '#{package.name}' that do not match database records."
+        end
+        compiled_package.dependency_key = release_version_model_dependency_key
 
         compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
         compiled_package.package_id = package.id
@@ -630,6 +622,19 @@ module Bosh::Director
       end
 
       private
+
+      def dependency_key(package)
+        Models::CompiledPackage.create_dependency_key(@release_version_model.transitive_dependencies(package))
+      end
+
+      def find_compiled_packages(pkg_id, stemcell_os, stemcell_version, dependency_key)
+        Models::CompiledPackage.where(
+            :package_id => pkg_id,
+            :stemcell_os => stemcell_os,
+            :stemcell_version => stemcell_version,
+            :dependency_key => dependency_key
+        )
+      end
 
       # Marks job template model as being used by release version
       # @param [Models::Template] template Job template model
