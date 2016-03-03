@@ -23,10 +23,7 @@ module Bosh::Director
       def perform
         instance = @instance_manager.find_instance(@instance_id)
 
-        deployment = instance.deployment
-        with_deployment_lock(deployment) do
-          @logs_fetcher.fetch(instance, @log_type, @filters)
-        end
+        @logs_fetcher.fetch(instance, @log_type, @filters)
       end
     end
   end
