@@ -1,14 +1,14 @@
 module Bosh::Director
   class Worker
 
-    def initialize(config)
+    def initialize(config, index=0)
       @config = config
+      @index = index
     end
 
     def prep
       Delayed::Worker.logger = @config.worker_logger
 
-      @index = 0 if @index.nil?
       Bosh::Director::App.new(@config)
 
       Delayed::Worker.backend = :sequel

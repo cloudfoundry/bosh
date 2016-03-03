@@ -50,7 +50,7 @@ begin
   end
   config.db
 
-  worker = Bosh::Director::Worker.new(config)
+  worker = Bosh::Director::Worker.new(config, index)
   worker.prep
   worker.start
 end
