@@ -7,7 +7,7 @@ module Bosh::Director
 
     before { DBSpecHelper.migrate_all_before(migration_file) }
     after { DBSpecHelper.reset_database }
-    
+
     it 'runs set_value_to_cloud_properties_json migration' do
       db[:deployments] << {id: 1, name: 'fake-deployment-name', manifest: '{}'}
       db[:vms] << {
@@ -34,6 +34,7 @@ module Bosh::Director
       DBSpecHelper.migrate(migration_file)
 
       expect(db[:persistent_disks].first[:cloud_properties_json]).to eq('{}')
+
     end
   end
 end
