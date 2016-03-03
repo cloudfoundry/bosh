@@ -32,7 +32,8 @@ params = {
     'enabled'=> p('director.enable_snapshots')
   },
   'max_vm_create_tries' => p('director.max_vm_create_tries'),
-  'enable_post_deploy' => p('director.enable_post_deploy')
+  'enable_post_deploy' => p('director.enable_post_deploy'),
+  'generate_vm_password' => p('director.generate_vm_password')
 }
 
 if_p('resque.loglevel') do |resque_loglevel|

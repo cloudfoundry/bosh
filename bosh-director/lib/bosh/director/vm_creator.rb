@@ -1,4 +1,5 @@
 require 'common/deep_copy'
+require 'securerandom'
 
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
@@ -103,6 +104,12 @@ module Bosh::Director
         env['bosh'] ||= {}
         env['bosh']['credentials'] = credentials
         options[:credentials] = credentials
+      end
+
+      password = env.fetch('bosh', {}).fetch('password', "")
+      if Config.generate_vm_password && password == ""
+        env['bosh'] ||= {}
+        env['bosh']['password'] = SecureRandom.hex(4)
       end
 
       count = 0

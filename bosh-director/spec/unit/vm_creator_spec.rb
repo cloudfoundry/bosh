@@ -224,4 +224,58 @@ describe Bosh::Director::VmCreator do
       subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
+
+  context 'Config.generate_vm_password flag is true' do
+    before {
+      Bosh::Director::Config.generate_vm_password = true
+    }
+
+    context 'no password is specified' do
+      it 'should generate a random VM password' do
+        expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+          expect(env['bosh']['password'].length).to eq(8)
+        end.and_return('new-vm-cid')
+
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+      end
+    end
+
+    context 'password is specified' do
+      let(:env) { Bosh::Director::DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
+      it 'should generate a random VM password' do
+        expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+          expect(env['bosh']['password']).to eq('custom-password')
+        end.and_return('new-vm-cid')
+
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+      end
+    end
+  end
+
+  context 'Config.generate_vm_password flag is false' do
+    before {
+      Bosh::Director::Config.generate_vm_password = false
+    }
+
+    context 'no password is specified' do
+      it 'should generate a random VM password' do
+        expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+          expect(env['bosh']).to be_nil
+        end.and_return('new-vm-cid')
+
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+      end
+    end
+
+    context 'password is specified' do
+      let(:env) { Bosh::Director::DeploymentPlan::Env.new({'bosh' => {'password' => 'custom-password'}}) }
+      it 'should generate a random VM password' do
+        expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+          expect(env['bosh']['password']).to eq('custom-password')
+        end.and_return('new-vm-cid')
+
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+      end
+    end
+  end
 end

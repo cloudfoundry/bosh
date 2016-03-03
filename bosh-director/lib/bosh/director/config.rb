@@ -34,7 +34,8 @@ module Bosh::Director
         :nats_uri,
         :default_ssh_options,
         :keep_unreachable_vms,
-        :enable_post_deploy
+        :enable_post_deploy,
+        :generate_vm_password,
       )
 
       attr_reader(
@@ -165,6 +166,7 @@ module Bosh::Director
 
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
         @enable_post_deploy = config.fetch('enable_post_deploy', false)
+        @generate_vm_password = config.fetch('generate_vm_password', false)
 
         Bosh::Clouds::Config.configure(self)
 
