@@ -21,7 +21,9 @@ module Bosh::Director
       queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
 
       @delayed_job_worker = Delayed::Worker.new({:queues => queues})
-      trap('USR2') { @delayed_job_worker.queues = [] } #stop accepting new jobs when USR2 is sent
+      trap('USR1') {
+        @delayed_job_worker.queues = [ 'non_existent_queue' ]
+      } #stop accepting new jobs when USR1 is sent
     end
 
     def start
@@ -31,7 +33,6 @@ module Bosh::Director
       begin
         @delayed_job_worker_retries ||= 0
         @delayed_job_worker.start
-
       rescue Exception => e
         @delayed_job_worker.logger.error("Something goes wrong during worker start. Attempt #{@delayed_job_worker_retries}. Error: #{e.inspect}")
         while @delayed_job_worker_retries < 10
