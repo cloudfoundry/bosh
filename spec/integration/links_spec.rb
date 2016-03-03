@@ -419,7 +419,7 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(out).to include('Started copying jobs > api_server/8c6864dd746cadc5c39259b0b7a1fe9f40205b65. Done')
         expect(out).to include('Started copying jobs > api_server_with_bad_link_types/5efc0322b51eace0b355e7613f06b7238d2a04c7. Done')
         expect(out).to include('Started copying jobs > api_server_with_bad_optional_links/1df8cd1987c1711bb04af2f43378715296070765. Done')
-        expect(out).to include('Started copying jobs > api_server_with_optional_db_link/a6b38c8f5a66e09e54c33ec92238d282e7de95b0. Done')
+        expect(out).to include('Started copying jobs > api_server_with_optional_db_link/0546154e8a50dd973e8480e69638645583cb38d9. Done')
         expect(out).to include('Started copying jobs > api_server_with_optional_links_1/5ae8a1435d098577de613fe4de18c252b1a624d3. Done')
         expect(out).to include('Started copying jobs > api_server_with_optional_links_2/a4c1f8bc664578874ea9de1dc0618b9f3e811172. Done')
         expect(out).to include('Started copying jobs > backup_database/c6802f3d21e6c2367520629c691ab07e0e49be6d. Done')
