@@ -7,7 +7,7 @@ module Bosh::Director
         manifest_text = request.body.read
         validate_manifest_yml(manifest_text)
 
-        Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
+        Bosh::Director::Api::CloudConfigManager.new.update(manifest_text, @event_manager, current_user)
         status(201)
       end
 

@@ -5,12 +5,8 @@ describe 'cli: events', type: :integration do
 
   it 'displays deployment events' do
     deploy_from_scratch
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['instances'] = 1
-    deploy_simple_manifest(manifest_hash)
 
     director.vm('foobar', '0').fail_job
-
     deploy(failure_expected: true)
 
     bosh_runner.run('delete deployment simple')
@@ -27,19 +23,19 @@ describe 'cli: events', type: :integration do
     expect(output).to include('Inst')
     expect(output).to include('Context')
     expect(scrub_random_numbers(output)).to match_output %(
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple    | x    | -   | -    | error: `foobar/x (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment  | simple    | x    | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment  | simple    | x    | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment   | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment   | simple    | x      | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple    | x      | -   | -    | error: `foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple    | x      | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment   | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment   | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config | -         | -    | -   | -    | -                                                                                        |
 )
   end
 
   def scrub_random_numbers(bosh_output)
-    bosh_output=scrub_random_ids(bosh_output).gsub /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx'
-    bosh_output.gsub /[0-9]+/, "x"
+    bosh_output = scrub_random_ids(bosh_output).gsub /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx'
+    bosh_output = bosh_output.gsub /[0-9]{1,} <- [0-9]{1,} [ ]{0,}/, "x <- x "
+    bosh_output.gsub /[ ][0-9]{1,} [ ]{0,}/, " x      "
   end
 end

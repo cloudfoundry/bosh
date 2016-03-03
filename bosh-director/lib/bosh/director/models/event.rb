@@ -3,7 +3,7 @@
 module Bosh::Director::Models
   class Event < Sequel::Model(Bosh::Director::Config.db)
     def validate
-      validates_presence [:timestamp, :action, :object_type, :object_name]
+      validates_presence [:timestamp, :action, :object_type]
     end
 
     def context

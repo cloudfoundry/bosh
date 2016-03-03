@@ -57,6 +57,19 @@ module Bosh::Director
       it 'denies access when not authenticated' do
         expect(post('/').status).to eq(401)
       end
+
+      it 'creates a new event' do
+        authorize('admin', 'admin')
+
+        properties = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
+        expect {
+          post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
+        }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+        event = Bosh::Director::Models::Event.first
+        expect(event.object_type).to eq("cloud-config")
+        expect(event.action).to eq("update")
+        expect(event.user).to eq("admin")
+      end
     end
 
     describe 'GET', '/' do

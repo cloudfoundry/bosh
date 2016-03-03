@@ -32,7 +32,7 @@ module Bosh::Cli::Command
           row << event['user']
           row << event['action']
           row << event['object_type']
-          row << event['object_name']
+          row << event.fetch('object_name', '-')
           row << event.fetch('task', '-')
           row << event.fetch('deployment', '-')
           row << event.fetch('instance', '-')

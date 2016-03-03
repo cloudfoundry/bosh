@@ -7,7 +7,7 @@ Sequel.migration do
       Time :timestamp, :index => true, :null => false
       String :action, :null => false
       String :object_type, :null => false
-      String :object_name, :null => false
+      String :object_name
       String :error
       String :task
       String :deployment
