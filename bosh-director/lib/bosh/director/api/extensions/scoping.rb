@@ -13,7 +13,7 @@ module Bosh::Director
         end
 
         def self.registered(app)
-          app.set default_scope: :write
+          app.set default_scope: :admin
           app.helpers(Helpers)
         end
 
@@ -32,13 +32,13 @@ module Bosh::Director
               scope = allowed_scope
             end
 
-            if requires_authentication? && (@user.nil? || !identity_provider.valid_access?(@user, scope))
+            if requires_authentication?
               if @user.nil?
-                message = "Not authorized: '#{request.path}'\n"
-              else
-                message = "Not authorized: '#{request.path}' requires one of the scopes: #{identity_provider.required_scopes(scope).join(", ")}\n"
+                # this should already be happening in base_controller#authentication
+                throw(:halt, [401, "Not authorized: '#{request.path}'\n"])
               end
-              throw(:halt, [401, message])
+
+              @permission_authorizer.granted_or_raise(:director, scope, @user.scopes)
             end
           end
         end

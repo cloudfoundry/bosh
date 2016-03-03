@@ -28,23 +28,23 @@ module Bosh::Cli
       end
 
       unless @manifest["jobs"].is_a?(Array)
-        bad_manifest("Invalid jobs format in deployment " +
+        bad_manifest("Invalid instance groups format in deployment " +
           "manifest, Array expected, #{@manifest["jobs"].class} given")
       end
 
       @manifest["jobs"].each do |job|
         unless job.is_a?(Hash)
-          bad_manifest("Invalid job spec in the manifest " +
+          bad_manifest("Invalid instance group spec in the manifest " +
                        "Hash expected, #{job.class} given")
         end
 
         job_name = job["name"]
         if job_name.nil?
-          bad_manifest("Manifest contains at least one job without name")
+          bad_manifest("Manifest contains at least one instance group without name")
         end
 
         if job["template"].nil?
-          bad_manifest("Job '#{job_name}' doesn't have a template")
+          bad_manifest("Instance group '#{job_name}' doesn't have a job")
         end
       end
 
@@ -68,7 +68,7 @@ module Bosh::Cli
       built_job = @built_jobs[job_spec["template"]]
 
       if built_job.nil?
-        raise CliError, "Job '#{job_spec["template"]}' has not been built"
+        raise CliError, "Instance group '#{job_spec["template"]}' has not been built"
       end
 
       collection = JobPropertyCollection.new(

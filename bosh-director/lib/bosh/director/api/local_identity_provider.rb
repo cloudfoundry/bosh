@@ -28,14 +28,6 @@ module Bosh
 
           LocalUser.new(*auth.credentials)
         end
-
-        def valid_access?(user, _)
-          @user_manager.authenticate(user.username, user.password)
-        end
-
-        def required_scopes(_)
-          raise NotImplemented
-        end
       end
 
       class LocalUser < Struct.new(:username, :password)

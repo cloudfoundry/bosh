@@ -47,7 +47,7 @@ module Bosh::Director
       def fetch_logs(username, deployment, job, index_or_id, options = {})
         if deployment.nil? || job.nil? || index_or_id.nil?
           raise DirectorError,
-                'deployment, job and index/id parameters are required'
+                'deployment, instance group and index/id parameters are required'
         end
 
         # This is for backwards compatibility and can be removed when we move to referencing job by instance id only.

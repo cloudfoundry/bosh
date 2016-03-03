@@ -619,10 +619,10 @@ describe 'deploy', type: :integration do
 
         expect(exit_code).to_not eq(0)
         expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job job_with_templates_having_properties. Errors are:
-     - Unable to render release templates for release job job_1_with_many_properties. Errors are:
-       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
+     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
         EOF
       end
     end
@@ -776,10 +776,10 @@ Error 100: Unable to render jobs for deployment. Errors are:
 
         expect(exist_code).to_not eq(0)
         expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job worker_2. Errors are:
-     - Unable to render release templates for release job job_2_with_many_properties. Errors are:
-       - Error filling in release template `properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'worker_2'. Errors are:
+     - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
         EOF
       end
     end
@@ -1125,5 +1125,33 @@ Deployed `simple' to `Test Director'
         }.to raise_error(RuntimeError, 'Failed to find vm dead-errand/0')
       end
     end
+  end
+
+  it 'saves instance name, deployment name, az, and id to the file system on the instance' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    manifest_hash['jobs'].first['azs'] = ['zone-1']
+
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['azs'] = [
+        {'name' => 'zone-1', 'cloud_properties' => {}},
+    ]
+    cloud_config_hash['compilation']['az'] = 'zone-1'
+    cloud_config_hash['networks'].first['subnets'].first['az'] = 'zone-1'
+
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
+
+    instance = director.instances.first
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
+
+    instance_name = File.read("#{agent_dir}/bosh/etc/instance/name")
+    deployment_name = File.read("#{agent_dir}/bosh/etc/instance/deployment")
+    az_name = File.read("#{agent_dir}/bosh/etc/instance/az")
+    id = File.read("#{agent_dir}/bosh/etc/instance/id")
+
+    expect(instance_name).to eq('fake-name1')
+    expect(deployment_name).to eq('simple')
+    expect(az_name).to eq('zone-1')
+    expect(id).to eq(instance.id)
   end
 end

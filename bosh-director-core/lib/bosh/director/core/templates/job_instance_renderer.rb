@@ -22,7 +22,7 @@ module Bosh::Director::Core::Templates
       end
 
       if errors.length > 0
-        message = "Unable to render deployment job templates for job #{spec['job']['name']}. Errors are:"
+        message = "Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:"
 
         errors.each do |e|
           message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"

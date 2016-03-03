@@ -16,11 +16,11 @@ module Bosh::Director
         version = safe_property(spec, "version", :class => String)
 
         if name.nil? && os.nil?
-          raise ValidationMissingField, "Required property `os' or `name' was not specified in object (#{spec})"
+          raise ValidationMissingField, "Required property 'os' or 'name' was not specified in object (#{spec})"
         end
 
         if !name.nil? && !os.nil?
-          raise StemcellBothNameAndOS, "Properties `os' and `name' are both specified for stemcell, choose one. (#{spec})"
+          raise StemcellBothNameAndOS, "Properties 'os' and 'name' are both specified for stemcell, choose one. (#{spec})"
         end
 
         new(name_alias, name, os, version)

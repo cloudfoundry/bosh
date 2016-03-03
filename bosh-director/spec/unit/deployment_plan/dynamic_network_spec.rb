@@ -521,7 +521,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         expect {
           dynamic_network.validate_reference_from_job!(job_network_spec, 'job-name')
-        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Job 'job-name' using dynamic network 'dynamic' cannot specify static IP(s)"
+        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Instance group 'job-name' using dynamic network 'dynamic' cannot specify static IP(s)"
       end
     end
   end

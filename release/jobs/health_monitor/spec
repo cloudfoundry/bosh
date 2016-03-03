@@ -234,3 +234,10 @@ properties:
   hm.syslog_event_forwarder.custom_rule:
     description: Custom rule for syslog event forwarder
     default: ""
+
+  env.http_proxy:
+    description: HTTP proxy that the health monitor should use
+  env.https_proxy:
+    description: HTTPS proxy that the health monitor should use
+  env.no_proxy:
+    description: List of comma-separated hosts that should skip connecting to the proxy in the health monitor

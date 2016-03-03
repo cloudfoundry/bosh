@@ -256,7 +256,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::DeploymentInvalidLink,
             "Cannot resolve link path 'fake-deployment.mysql.mysql-template.db' " +
-              "required for link 'db' in job 'api-server' on template 'api-server-template'"
+              "required for link 'db' in instance group 'api-server' on job 'api-server-template'"
       end
     end
 
@@ -337,7 +337,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't resolve link 'c' in job 'api-server' on template 'api-server-template' in deployment 'fake-deployment'\"")
+   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'\"")
       end
     end
 
@@ -352,7 +352,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
-            "Template 'api-server-template' in job 'api-server' specifies link 'db', " +
+            "Job 'api-server-template' in instance group 'api-server' specifies link 'db', " +
               "but the release job does not consume it."
       end
     end

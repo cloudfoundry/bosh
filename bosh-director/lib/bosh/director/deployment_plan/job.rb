@@ -271,9 +271,9 @@ module Bosh::Director
             offending_template2 = templates.find { |t| t.release == release2 }
 
             raise JobPackageCollision,
-              "Package name collision detected in job `#{@name}': "\
-                  "template `#{release1.name}/#{offending_template1.name}' depends on package `#{release1.name}/#{package_name}', "\
-                  "template `#{release2.name}/#{offending_template2.name}' depends on `#{release2.name}/#{package_name}'. " +
+              "Package name collision detected in instance group '#{@name}': "\
+                  "job '#{release1.name}/#{offending_template1.name}' depends on package '#{release1.name}/#{package_name}', "\
+                  "job '#{release2.name}/#{offending_template2.name}' depends on '#{release2.name}/#{package_name}'. " +
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
           end
         end
@@ -350,9 +350,9 @@ module Bosh::Director
         end
 
         raise JobIncompatibleSpecs,
-          "Job `#{name}' has specs with conflicting property definition styles between" +
+          "Instance group '#{name}' has specs with conflicting property definition styles between" +
             " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
-            " `properties' and one which doesn't."
+            " 'properties' and one which doesn't."
       end
 
       def extract_template_properties(collection)

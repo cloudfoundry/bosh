@@ -42,12 +42,12 @@ module Bosh::Director
 
           unless job.is_errand?
             raise RunErrandError,
-              "Job `#{job.name}' is not an errand. To mark a job as an errand " +
+              "Instance group '#{job.name}' is not an errand. To mark an instance group as an errand " +
                 "set its lifecycle to 'errand' in the deployment manifest."
           end
 
           if job.instances.empty?
-            raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
+            raise InstanceNotFound, "Instance '#{@deployment_name}/#{@errand_name}/0' doesn't exist"
           end
 
           logger.info('Starting to prepare for deployment')

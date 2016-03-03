@@ -255,7 +255,7 @@ module Bosh::Director
         it 'raises an error' do
           expect { subject.run }.to raise_error(
             DirectorError,
-            /Must have at least one job instance to run an errand/,
+            /Must have at least one instance group instance to run an errand/,
           )
         end
       end

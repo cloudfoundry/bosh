@@ -23,9 +23,10 @@ module Bosh::Director
         config
       end
 
-      let(:identity_provider) { Support::TestIdentityProvider.new }
+
       let(:config) do
         config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
       end
@@ -1087,6 +1088,10 @@ module Bosh::Director
           end
 
           context 'POST /:deployment/diff' do
+            it 'allows access to new deployment' do
+              expect(post('/new_deployment/diff', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(200)
+            end
+
             it 'allows access to owned deployment' do
               expect(post('/owned_deployment/diff', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(200)
             end
