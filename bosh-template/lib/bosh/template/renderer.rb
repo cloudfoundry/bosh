@@ -12,7 +12,7 @@ module Bosh
       def render(template_name)
         spec = JSON.parse(@context)
         evaluation_context = EvaluationContext.new(spec)
-        template = ERB.new(File.read(template_name))
+        template = ERB.new(File.read(template_name), safe_level = nil, trim_mode = "-")
         template.result(evaluation_context.get_binding)
       end
     end
