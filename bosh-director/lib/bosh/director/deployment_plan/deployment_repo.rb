@@ -1,9 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
     class DeploymentRepo
-      def initialize
-        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
-      end
 
       def find_or_create_by_name(name, options={})
         attributes = {name: name}
@@ -12,7 +9,7 @@ module Bosh::Director
         return deployment if deployment
 
         if options['scopes']
-          team_scopes = @permission_authorizer.transform_admin_team_scope_to_teams(options['scopes'])
+          team_scopes = Bosh::Director::Models::Deployment.transform_admin_team_scope_to_teams(options['scopes'])
           attributes.merge!(teams: team_scopes.join(','))
         end
 

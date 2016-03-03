@@ -460,6 +460,10 @@ module Bosh::Director
       Config.configure(hash)
     end
 
+    def get_uuid_provider
+      Bosh::Director::Api::DirectorUUIDProvider.new(Config)
+    end
+
     private
 
     attr_reader :hash
