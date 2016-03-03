@@ -109,6 +109,7 @@ module Bosh
             networks: networks,
             vm: { name: "vm-#{agent_id}" },
             cert: '',
+            env: env,
             mbus: @options['nats'],
           })
 

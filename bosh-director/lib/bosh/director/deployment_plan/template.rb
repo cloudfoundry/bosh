@@ -40,7 +40,7 @@ module Bosh::Director
         @model = @release.get_template_model_by_name(@name)
 
         if @model.nil?
-          raise DeploymentUnknownTemplate, "Can't find template `#{@name}'"
+          raise DeploymentUnknownTemplate, "Can't find job '#{@name}'"
         end
 
         @package_models = @model.package_names.map do |name|
@@ -58,14 +58,14 @@ module Bosh::Director
         uuid = SecureRandom.uuid
         path = File.join(Dir.tmpdir, "template-#{uuid}")
 
-        @logger.debug("Downloading template `#{@name}' (#{blobstore_id})...")
+        @logger.debug("Downloading job '#{@name}' (#{blobstore_id})...")
         t1 = Time.now
 
         File.open(path, "w") do |f|
           App.instance.blobstores.blobstore.get(blobstore_id, f)
         end
 
-        @logger.debug("Template `#{@name}' downloaded to #{path} " +
+        @logger.debug("Job '#{@name}' downloaded to #{path} " +
                       "(took #{Time.now - t1}s)")
 
         path
@@ -174,6 +174,41 @@ module Bosh::Director
         end
         @template_scoped_properties[deployment_job_name] = bound_template_scoped_properties
       end
+      
+      def assign_link_property_values(properties_json, job_name)
+        # only 'provides' needs to worry about properties
+        if !@link_infos[job_name] || !@link_infos[job_name]['provides']
+          return
+        end
+
+        init_link_properties(job_name)
+        job_template_scoped_properties = @template_scoped_properties[job_name]
+
+        if properties_json != nil
+          properties_object = JSON.parse(properties_json)
+
+          if job_template_scoped_properties != nil
+            unlisted_property_names = job_template_scoped_properties.keys - properties_object.keys
+            if unlisted_property_names.length > 0
+              raise "Properties #{unlisted_property_names} defined in instance group '#{job_name}' are not defined in the corresponding release"
+            end
+          end
+
+          @link_infos[job_name]['provides'].each do |link_name, link_values|
+            link_values['mapped_properties'].each do |property_key, _|
+              if properties_object.has_key?(property_key)
+                if job_template_scoped_properties != nil && job_template_scoped_properties.has_key?(property_key)
+                  link_values['mapped_properties'][property_key] = job_template_scoped_properties[property_key]
+                elsif properties_object[property_key]['default']
+                  link_values['mapped_properties'][property_key] = properties_object[property_key]['default']
+                end
+              else
+                raise "Property listed in property list for link #{link_name} is not defined in the properties list in release spec"
+              end
+            end
+          end
+        end
+      end
 
       private
 
@@ -181,7 +216,7 @@ module Bosh::Director
       # @return [Models::Template]
       def present_model
         if @model.nil?
-          raise DirectorError, "Template `#{@name}' model is unbound"
+          raise DirectorError, "Job '#{@name}' model is unbound"
         end
         @model
       end

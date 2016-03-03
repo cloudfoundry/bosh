@@ -272,7 +272,7 @@ module Bosh::Director
 
               expect {
                 subject.perform
-              }.to raise_error(RunErrandError, /Job `fake-errand-name' is not an errand/)
+              }.to raise_error(RunErrandError, /Instance group 'fake-errand-name' is not an errand/)
             end
           end
         end

@@ -72,7 +72,7 @@ module Bosh::Director
             expect {
               parsed_deployment.stemcells
             }.to raise_error Bosh::Director::ValidationMissingField,
-                "Required property `alias' was not specified in object " +
+                "Required property 'alias' was not specified in object " +
                   '({"name"=>"bosh-aws-xen-hvm-ubuntu-trusty-go_agent", "version"=>"1234"})'
           end
         end
@@ -257,7 +257,7 @@ module Bosh::Director
               parsed_deployment
             }.to raise_error(
               ValidationMissingField,
-              /Required property `releases' was not specified in object .+/,
+              /Required property 'releases' was not specified in object .+/,
             )
           end
         end
@@ -286,7 +286,7 @@ module Bosh::Director
               parsed_deployment
             }.to raise_error(
               ValidationMissingField,
-              /Required property `update' was not specified in object .+/,
+              /Required property 'update' was not specified in object .+/,
             )
           end
         end
@@ -384,7 +384,7 @@ module Bosh::Director
                 parsed_deployment
               }.to raise_error(
                 DeploymentCanonicalJobNameTaken,
-                "Invalid job name `job2-name', canonical name already taken",
+                "Invalid instance group name 'job2-name', canonical name already taken",
               )
             end
           end

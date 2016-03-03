@@ -39,7 +39,7 @@ module Bosh::Director
       if @instance.state == 'started'
         if current_state['job_state'] != 'running'
           failing_jobs = Array(current_state['processes']).map do |process|
-            process['name'] if process['state'] != 'starting' && process['state'] != 'running'
+            process['name'] if process['state'] != 'running'
           end.compact
 
           error_message = "`#{@instance}' is not running after update."

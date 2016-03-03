@@ -23,6 +23,15 @@ module Bosh::Director::Models
     def link_spec=(data)
       self.link_spec_json = Yajl::Encoder.encode(data)
     end
+
+    def self.transform_admin_team_scope_to_teams(token_scopes)
+      return [] if token_scopes.nil?
+      team_scopes = token_scopes.map do |scope|
+        match = scope.match(/\Abosh\.teams\.([^\.]*)\.admin\z/)
+        match[1] unless match.nil?
+      end
+      team_scopes.compact
+    end
   end
 
   Deployment.plugin :association_dependencies

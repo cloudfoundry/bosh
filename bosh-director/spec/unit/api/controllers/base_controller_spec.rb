@@ -13,7 +13,7 @@ module Bosh
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
-          let(:identity_provider) { Support::TestIdentityProvider.new }
+          let(:identity_provider) { Support::TestIdentityProvider.new(config.get_uuid_provider) }
 
           let(:temp_dir) { Dir.mktmpdir }
           let(:test_config) { base_config }
@@ -43,7 +43,7 @@ module Bosh
             expect(last_response.status).to eq(401)
           end
 
-          context 'when authorizaion is provided' do
+          context 'when authorization is provided' do
             let(:authenticates_successfully) { true }
             before { basic_authorize 'admin', 'admin' }
 
@@ -51,15 +51,6 @@ module Bosh
               header('X-Test-Header', 'Value')
               get '/test_route'
               expect(identity_provider.request_env['HTTP_X_TEST_HEADER']).to eq('Value')
-            end
-
-            it 'passes the access to identity provider' do
-              header('X-Test-Header', 'Value')
-              get '/test_route'
-              expect(identity_provider.scope).to eq(:write)
-
-              get '/read'
-              expect(identity_provider.scope).to eq(:read)
             end
 
             context 'when authenticating successfully' do

@@ -211,7 +211,7 @@ module Bosh::Director
       def add_job(job)
         if @jobs_canonical_name_index.include?(job.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
-            "Invalid job name `#{job.name}', canonical name already taken"
+            "Invalid instance group name '#{job.name}', canonical name already taken"
         end
 
         @jobs << job

@@ -57,7 +57,7 @@ module Bosh::Director
         def resolutions(jobs)
           all_resolutions = {}
           jobs.each do |job, index|
-            instance = @instance_manager.find_by_name(@deployment.name, job, index)
+            instance = @instance_manager.find_by_name(@deployment, job, index)
             next if instance.resurrection_paused
             problems = Models::DeploymentProblem.filter(deployment: @deployment, resource_id: instance.id, state: 'open')
             problems.each do |problem|
@@ -74,7 +74,7 @@ module Bosh::Director
           return @jobs if @fix_stateful_jobs
 
           @jobs.reject do |job, index|
-            instance = @instance_manager.find_by_name(@deployment.name, job, index)
+            instance = @instance_manager.find_by_name(@deployment, job, index)
             instance.persistent_disk
           end
         end

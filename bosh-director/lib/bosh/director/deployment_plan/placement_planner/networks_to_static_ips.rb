@@ -19,7 +19,7 @@ module Bosh
                 subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
                 if subnet_for_ip.nil?
                   raise JobNetworkInstanceIpMismatch,
-                    "Job '#{job_name}' with network '#{job_network.name}' declares static ip '#{format_ip(static_ip)}', " +
+                    "Instance group '#{job_name}' with network '#{job_network.name}' declares static ip '#{format_ip(static_ip)}', " +
                       "which belongs to no subnet"
                 end
                 az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
@@ -44,7 +44,7 @@ module Bosh
               end
 
               raise JobInvalidAvailabilityZone,
-                "Job '#{@job_name}' subnets declare availability zones and the job does not"
+                "Instance group '#{@job_name}' subnets declare availability zones and the instance group does not"
             end
           end
 
@@ -59,7 +59,7 @@ module Bosh
 
               if non_desired_ip_to_az
                 raise JobStaticIpsFromInvalidAvailabilityZone,
-                  "Job '#{@job_name}' declares static ip '#{format_ip(non_desired_ip_to_az.ip)}' which does not belong to any of the job's availability zones."
+                  "Instance group '#{@job_name}' declares static ip '#{format_ip(non_desired_ip_to_az.ip)}' which does not belong to any of the instance group's availability zones."
               end
             end
           end
@@ -79,7 +79,7 @@ module Bosh
           def distribute_evenly_per_zone
             best_combination = BruteForceIpAllocation.new(@networks_to_static_ips).find_best_combination
             if best_combination.nil?
-              raise JobNetworkInstanceIpMismatch, "Failed to evenly distribute static IPs between zones for job '#{@job_name}'"
+              raise JobNetworkInstanceIpMismatch, "Failed to evenly distribute static IPs between zones for instance group '#{@job_name}'"
             end
             @networks_to_static_ips = best_combination
           end

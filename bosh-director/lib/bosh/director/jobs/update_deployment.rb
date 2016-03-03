@@ -119,7 +119,7 @@ module Bosh::Director
         end
 
         if errors.length > 0
-          message = 'Unable to render jobs for deployment. Errors are:'
+          message = 'Unable to render instance groups for deployment. Errors are:'
 
           errors.each do |e|
             message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"

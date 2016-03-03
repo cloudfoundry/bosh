@@ -134,47 +134,6 @@ describe Bosh::Cli::Command::Deployment do
     end
   end
 
-  describe 'bosh validate jobs' do
-    let(:manifest) do
-      {
-        'name' => 'example',
-        'release' => {
-          'name' => 'sample-release',
-          'version' => 'latest'
-        },
-        'jobs' => [
-          {
-            'name' => 'sample-job',
-            'template' => []
-          }
-        ],
-        'properties' => {}
-      }
-    end
-
-    before do
-      release_source.add_dir('jobs')
-      release_source.add_dir('packages')
-      release_source.add_dir('src')
-      release_source.add_dir('config')
-    end
-
-    it 'does not raise with a dummy manifest' do
-      # NOTE: the point is to add coverage to catch
-      # the signature change to Package.discover
-      release = double('release')
-      cmd.options[:dir] = release_source.path
-      allow(release).to receive(:dev_name).and_return('sample-release')
-
-      allow(cmd).to receive(:prepare_deployment_manifest).and_return(double(:manifest, hash: manifest))
-      allow(cmd).to receive(:release).and_return(release)
-
-      Dir.chdir(release_source.path) do
-        cmd.validate_jobs
-      end
-    end
-  end
-
   describe 'deploy' do
     it 'returns error when release has version create but no url' do
       manifest = {

@@ -1,23 +1,17 @@
 module Bosh::Director
   module DeploymentPlan
     class DeploymentRepo
-      def initialize
-        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
-      end
 
       def find_or_create_by_name(name, options={})
         attributes = {name: name}
         deployment = Bosh::Director::Models::Deployment.find(attributes)
 
-        if options['scopes']
-          attributes.merge!(scopes: options['scopes'].join(','))
-        end
-
-        if options['scopes'] && deployment
-          @permission_authorizer.raise_error_if_unauthorized(options['scopes'], deployment.scopes.split(','))
-        end
-
         return deployment if deployment
+
+        if options['scopes']
+          team_scopes = Bosh::Director::Models::Deployment.transform_admin_team_scope_to_teams(options['scopes'])
+          attributes.merge!(teams: team_scopes.join(','))
+        end
 
         create_for_attributes(attributes)
       end
