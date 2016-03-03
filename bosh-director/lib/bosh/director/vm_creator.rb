@@ -5,6 +5,7 @@ module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
   class VmCreator
     include EncryptionHelper
+    include PasswordHelper
 
     def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer)
       @cloud = cloud
@@ -109,7 +110,7 @@ module Bosh::Director
       password = env.fetch('bosh', {}).fetch('password', "")
       if Config.generate_vm_password && password == ""
         env['bosh'] ||= {}
-        env['bosh']['password'] = SecureRandom.hex(4)
+        env['bosh']['password'] = sha512_hashed_password
       end
 
       count = 0
