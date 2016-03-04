@@ -4,7 +4,9 @@ describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays deployment events' do
-    deploy_from_scratch
+    deploy_from_scratch(runtime_config_hash: {
+        'releases' => [{"name" => 'bosh-release', "version" => "0.1-dev"}]
+    })
 
     director.vm('foobar', '0').fail_job
     deploy(failure_expected: true)
@@ -23,13 +25,14 @@ describe 'cli: events', type: :integration do
     expect(output).to include('Inst')
     expect(output).to include('Context')
     expect(scrub_random_numbers(output)).to match_output %(
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment   | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment   | simple    | x      | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple    | x      | -   | -    | error: `foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple    | x      | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment   | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment   | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config | -         | -    | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | error: `foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -         | -    | -   | -    | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -         | -    | -   | -    | -                                                                                        |
 )
   end
 
