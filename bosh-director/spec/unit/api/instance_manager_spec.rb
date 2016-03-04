@@ -33,7 +33,7 @@ module Bosh::Director
       context 'when uuid is provided' do
         let(:uuid) { 'fakeId123' }
 
-        it 'enqueues a resque job' do
+        it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
             username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
 
