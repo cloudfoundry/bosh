@@ -5,18 +5,6 @@ module Bosh::Director::Models
     let(:package) { Package.make }
     let(:stemcell) { Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
 
-    describe 'self.create_dependency_key' do
-      let(:package1) { Package.new(name: 'package1', version: '123') }
-
-      let(:package2) { Package.new(name: 'package2', version: '456') }
-
-      it 'generates serialized JSON of the supplied package names and their fingerprint' do
-        expect(CompiledPackage.create_dependency_key([])).to eq('[]')
-        expect(CompiledPackage.create_dependency_key([package1])).to eq('[["package1","123"]]')
-        expect(CompiledPackage.create_dependency_key([package1, package2])).to eq('[["package1","123"],["package2","456"]]')
-      end
-    end
-
     describe 'self.create_cache_key' do
       let(:package1) { Package.new(name: 'package1', fingerprint: '<package1-fingerprint>') }
 

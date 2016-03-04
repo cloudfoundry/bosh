@@ -20,6 +20,7 @@ module Bosh::Director
                       'version' => 'fake-pkg2-version',
                       'fingerprint' => 'fake-pkg2-fingerprint',
                       'stemcell' => 'ubuntu-trusty/3000',
+                      'dependencies' => []
                   },
                   {
                       'name' => 'fake-pkg3',

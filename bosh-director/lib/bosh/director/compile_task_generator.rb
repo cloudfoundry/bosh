@@ -25,7 +25,7 @@ module Bosh::Director
       release_version = template.release.model
 
       transitive_dependencies = release_version.transitive_dependencies(package)
-      package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+      package_dependency_key = DependencyKeyGenerator.new.generate_from_models(package, release_version)
       package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model.sha1)
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)

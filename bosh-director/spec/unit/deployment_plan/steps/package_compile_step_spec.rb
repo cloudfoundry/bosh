@@ -82,7 +82,7 @@ module Bosh::Director
 
     def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
       transitive_dependencies = release_version_model.transitive_dependencies(package)
-      package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+      package_dependency_key = DependencyKeyGenerator.new.generate_from_models(package, release_version_model)
       package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
 
       CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
@@ -444,12 +444,11 @@ module Bosh::Director
         )
 
         network = double('network', name: 'network_name')
-        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
+        release_version_model = Models::ReleaseVersion.make
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell = make_stemcell
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', stemcell: stemcell)
-        package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
-          fingerprint: 'deadbeef', blobstore_id: 'fake_id')
+        package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
 
