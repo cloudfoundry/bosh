@@ -78,6 +78,7 @@ module Bosh::Director
   ReleaseExistingJobFingerprintMismatch = err(30013)
   ReleaseVersionCommitHashMismatch = err(30014)
   ReleaseSha1DoesNotMatch = err(30015)
+  ReleasePackageDependencyKeyMismatch = err(30016)
 
   ValidationInvalidType = err(40000)
   ValidationMissingField = err(40001)
@@ -279,5 +280,5 @@ module Bosh::Director
   RuntimeInvalidDeploymentRelease = err(530003)
 
   # Authorization errors
-  UnauthorizedToAccessDeployment = err(600000)
+  UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 end

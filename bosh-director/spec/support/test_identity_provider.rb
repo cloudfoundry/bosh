@@ -4,10 +4,11 @@ module Support
   class TestIdentityProvider
     attr_reader :request_env
 
-    attr_accessor :scope, :user_access
+    attr_accessor :scope
 
-    def initialize
+    def initialize(uuid_provider)
       @has_access = false
+      @permission_authorizer = Bosh::Director::PermissionAuthorizer.new(uuid_provider)
     end
 
     def get_user(request_env, _)
@@ -15,8 +16,9 @@ module Support
 
       auth = Rack::Auth::Basic::Request.new(request_env)
       username = auth.credentials.first if auth
-      if !username.nil? && user_access[username]
-        TestUser.new(username)
+      password = auth.credentials[1] if auth
+      if !username.nil? && username == password && user_scopes[username]
+        TestUser.new(username, user_scopes[username])
       else
         raise Bosh::Director::AuthenticationError
       end
@@ -26,25 +28,24 @@ module Support
       'fake-client-info'
     end
 
-    def valid_access?(user, requested_access)
-      @scope = requested_access
-      user_access[user.username] == requested_access
-    end
-
-    def required_scopes(_)
-      ['fake-valid-scope-1', 'fake-valid-scope-2']
-    end
-
     private
 
-    def user_access
+    def user_scopes
       {
-        'admin' => :write,
-        'reader' => :read
+        'admin' => ['bosh.admin'],
+        'reader' => ['bosh.read'],
+        'dev-team-member' => ['bosh.teams.dev.admin'],
+        'dev-team-read-member' => ['bosh.teams.dev.read']
       }
     end
 
   end
 
-  class TestUser < Struct.new(:username); end
+  class TestUser
+    attr_reader :username, :scopes
+    def initialize(username, scopes)
+      @username = username
+      @scopes = scopes
+    end
+  end
 end

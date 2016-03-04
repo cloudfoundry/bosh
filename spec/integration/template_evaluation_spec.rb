@@ -75,11 +75,11 @@ describe 'template', type: :integration do
     output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
 
     expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job foobar. Errors are:
-     - Unable to render release templates for release job foobar_with_bad_properties. Errors are:
-       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
-       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'foobar'. Errors are:
+     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+       - Error filling in template 'foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in template 'drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
     EOF
   end
 
@@ -105,14 +105,14 @@ Error 100: Unable to render jobs for deployment. Errors are:
     output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
 
     expect(output).to include <<-EOF
-Error 100: Unable to render jobs for deployment. Errors are:
-   - Unable to render deployment job templates for job foobar. Errors are:
-     - Unable to render release templates for release job foobar_with_bad_properties. Errors are:
-       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
-       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
-     - Unable to render release templates for release job foobar_with_bad_properties_2. Errors are:
-       - Error filling in release template `foobar_ctl' (line 8: Can't find property `["test_property"]')
-       - Error filling in release template `drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+Error 100: Unable to render instance groups for deployment. Errors are:
+   - Unable to render jobs for instance group 'foobar'. Errors are:
+     - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
+       - Error filling in template 'foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in template 'drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
+     - Unable to render templates for job 'foobar_with_bad_properties_2'. Errors are:
+       - Error filling in template 'foobar_ctl' (line 8: Can't find property `["test_property"]')
+       - Error filling in template 'drain.erb' (line 4: Can't find property `["dynamic_drain_wait1"]')
     EOF
   end
 end

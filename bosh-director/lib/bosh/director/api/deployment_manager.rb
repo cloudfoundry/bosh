@@ -4,18 +4,15 @@ module Bosh::Director
       include ApiHelper
 
       def initialize
-        @permission_authorizer = Bosh::Director::PermissionAuthorizer.new
+        @deployment_lookup = DeploymentLookup.new
       end
 
       def find_by_name(name)
-        DeploymentLookup.new.by_name(name)
+        @deployment_lookup.by_name(name)
       end
 
-      def find_available(token_scopes)
-        deployments = Bosh::Director::Models::Deployment.order_by(:name.asc).all
-        deployments.select do |deployment|
-          @permission_authorizer.is_authorized?(deployment.scopes.split((',')), token_scopes)
-        end
+      def all_by_name_asc
+        Bosh::Director::Models::Deployment.order_by(:name.asc).all
       end
 
       def create_deployment(username, deployment_manifest_file_path, cloud_config, runtime_config, deployment_name, options = {})
@@ -28,28 +25,8 @@ module Bosh::Director
         JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment.name)
       end
 
-      def deployment_to_json(deployment)
-        result = {
-          'manifest' => deployment.manifest,
-        }
-
-        Yajl::Encoder.encode(result)
-      end
-
-      def deployment_instances_to_json(deployment)
-        instances = []
-        filters = {:deployment_id => deployment.id}
-        Models::Instance.filter(filters).exclude(vm_cid: nil).each do |instance|
-          instances << {
-            'agent_id' => instance.agent_id,
-            'cid' => instance.vm_cid,
-            'job' => instance.job,
-            'index' => instance.index,
-            'id' => instance.uuid
-          }
-        end
-
-        Yajl::Encoder.encode(instances)
+      def deployment_instances_with_vms(deployment)
+        Models::Instance.where(deployment: deployment).exclude(vm_cid: nil)
       end
     end
   end

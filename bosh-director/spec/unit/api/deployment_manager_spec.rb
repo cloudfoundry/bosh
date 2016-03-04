@@ -84,41 +84,5 @@ module Bosh::Director
         expect(subject.find_by_name(deployment.name)).to eq deployment
       end
     end
-
-    describe '#find_available' do
-      context 'when there is a deployment with scope bosh.admin' do
-        it 'should find this deployment when provided scope contains bosh.admin' do
-          deployment = BD::Models::Deployment.make(name: 'admin-visible', scopes: 'bosh.admin')
-
-          expect(subject.find_available(%w(bosh.admin bosh.team.prod.admin))).to eq [deployment]
-        end
-      end
-
-      context 'when there is a deployment with non-admin scope' do
-        it 'should find this deployment when provided scope contains bosh.admin' do
-          deployment = BD::Models::Deployment.make(name: 'prod-team-visible', scopes: 'bosh.team.prod.admin')
-
-          expect(subject.find_available(%w(bosh.admin bosh.team.dev.admin))).to eq [deployment]
-        end
-
-        it 'should find this deployment when provided scope contains deployment scope' do
-          deployment = BD::Models::Deployment.make(name: 'prod-team-visible', scopes: 'bosh.team.prod.admin')
-
-          expect(subject.find_available(['bosh.team.prod.admin'])).to eq [deployment]
-        end
-
-        it 'should find this deployment when provided scope contains bosh.<DIRECTOR-UUID>.admin scope' do
-          deployment = BD::Models::Deployment.make(name: 'prod-team-visible', scopes: 'bosh.team.prod.admin')
-
-          expect(subject.find_available(['bosh.fake-director-uuid.admin'])).to eq [deployment]
-        end
-
-        it 'should not find this deployment when provided scope does not contain deployment scope and is not admin' do
-          deployment = BD::Models::Deployment.make(name: 'prod-team-visible', scopes: 'bosh.team.prod.admin')
-
-          expect(subject.find_available(['bosh.tea.dev.admin'])).to be_empty
-        end
-      end
-    end
   end
 end

@@ -22,7 +22,12 @@ module Bosh::Director
         config
       end
 
-      let(:config) { Config.load_hash(test_config) }
+      let(:config) do
+        config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
 
       after { FileUtils.rm_rf(temp_dir) }
 
@@ -43,73 +48,90 @@ module Bosh::Director
         expect(last_response.status).to eq(200)
       end
 
+      it "allows Basic HTTP Auth with admin/admin credentials for test purposes (even though user doesn't exist)" do
+        basic_authorize 'reader', 'reader'
+        get '/'
+        expect(last_response.status).to eq(200)
+      end
+
       describe 'API calls' do
         before(:each) { basic_authorize 'admin', 'admin' }
 
         describe 'GET /' do
-          context "verbose" do
-            let(:concise_task_types) {
-              %w[
-                attach_disk
-                create_snapshot
-                delete_deployment
-                delete_release
-                delete_snapshot
-                delete_stemcell
-                run_errand
-                snapshot_deployment
-                update_deployment
-                update_release
-                update_stemcell
-              ]
-            }
-
-            let!(:all_tasks) do # one task of every type
-              (
-                Bosh::Director::Jobs.constants.inject([]) { |memo, const|
-                  klass = Bosh::Director::Jobs.const_get(const)
-                  if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
-                    memo << klass
-                  end
-                  memo
-                } - [Bosh::Director::Jobs::BaseJob]
-              ).map(&:job_type).map { |job_type|
-                Models::Task.make(type: job_type)
+          context 'when user has admin access' do
+            context "verbose" do
+              let(:concise_task_types) {
+                %w[
+                  attach_disk
+                  create_snapshot
+                  delete_deployment
+                  delete_release
+                  delete_snapshot
+                  delete_stemcell
+                  run_errand
+                  snapshot_deployment
+                  update_deployment
+                  update_release
+                  update_stemcell
+                ]
               }
-            end
 
-            context "when verbose is set to 1" do
-              it "filters all but the expected task types" do
-                get "/?verbose=1"
-                expect(last_response.status).to eq(200)
-                body = Yajl::Parser.parse(last_response.body)
-                actual_ids = body.map { |attributes| attributes["id"] }
-                actual_tasks = Models::Task.filter(id: actual_ids)
+              let!(:all_tasks) do # one task of every type
+                (
+                  Bosh::Director::Jobs.constants.inject([]) { |memo, const|
+                    klass = Bosh::Director::Jobs.const_get(const)
+                    if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
+                      memo << klass
+                    end
+                    memo
+                  } - [Bosh::Director::Jobs::BaseJob]
+                ).map(&:job_type).map { |job_type|
+                  Models::Task.make(type: job_type)
+                }
+              end
 
-                expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
+              context "when verbose is set to 1" do
+                it "filters all but the expected task types" do
+                  get "/?verbose=1"
+                  expect(last_response.status).to eq(200)
+                  body = Yajl::Parser.parse(last_response.body)
+                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_tasks = Models::Task.filter(id: actual_ids)
+
+                  expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
+                end
+              end
+
+              context "when verbose is set to 2" do
+                it "does not filter tasks by type" do
+                  get "/?verbose=2"
+                  expect(last_response.status).to eq(200)
+                  body = Yajl::Parser.parse(last_response.body)
+                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_tasks = Models::Task.filter(id: actual_ids)
+                  expect(actual_tasks).to match(all_tasks)
+                end
+              end
+
+              context "when verbose is not set" do
+                it "filters all but the expected task types" do
+                  get "/"
+                  expect(last_response.status).to eq(200)
+                  body = Yajl::Parser.parse(last_response.body)
+                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_tasks = Models::Task.filter(id: actual_ids)
+
+                  expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
+                end
               end
             end
 
-            context "when verbose is set to 2" do
-              it "does not filter tasks by type" do
-                get "/?verbose=2"
-                expect(last_response.status).to eq(200)
-                body = Yajl::Parser.parse(last_response.body)
-                actual_ids = body.map { |attributes| attributes["id"] }
-                actual_tasks = Models::Task.filter(id: actual_ids)
-                expect(actual_tasks).to match(all_tasks)
-              end
-            end
+            context 'when user has readonly access' do
+              before { basic_authorize 'reader', 'reader' }
 
-            context "when verbose is not set" do
-              it "filters all but the expected task types" do
+              it 'provides access' do
                 get "/"
                 expect(last_response.status).to eq(200)
-                body = Yajl::Parser.parse(last_response.body)
-                actual_ids = body.map { |attributes| attributes["id"] }
-                actual_tasks = Models::Task.filter(id: actual_ids)
-
-                expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
               end
             end
           end
@@ -192,139 +214,140 @@ module Bosh::Director
         end
 
         describe 'polling task status' do
-          it 'has API call that return task status' do
-            task = Models::Task.make(state: 'queued', description: 'fake-description')
+          context 'user has admin access' do
+            it 'has API call that return task status' do
+              task = Models::Task.make(state: 'queued', description: 'fake-description')
 
-            get "/#{task.id}"
-            expect(last_response.status).to eq(200)
-            task_json = Yajl::Parser.parse(last_response.body)
-            expect(task_json['id']).to eq(task.id)
-            expect(task_json['state']).to eq('queued')
-            expect(task_json['description']).to eq('fake-description')
+              get "/#{task.id}"
+              expect(last_response.status).to eq(200)
+              task_json = Yajl::Parser.parse(last_response.body)
+              expect(task_json['id']).to eq(task.id)
+              expect(task_json['state']).to eq('queued')
+              expect(task_json['description']).to eq('fake-description')
 
-            task.state = 'processed'
-            task.save
+              task.state = 'processed'
+              task.save
 
-            get "/#{task.id}"
-            expect(last_response.status).to eq(200)
-            task_json = Yajl::Parser.parse(last_response.body)
-            expect(task_json['id']).to eq(1)
-            expect(task_json['state']).to eq('processed')
-            expect(task_json['description']).to eq('fake-description')
-          end
+              get "/#{task.id}"
+              expect(last_response.status).to eq(200)
+              task_json = Yajl::Parser.parse(last_response.body)
+              expect(task_json['id']).to eq(1)
+              expect(task_json['state']).to eq('processed')
+              expect(task_json['description']).to eq('fake-description')
+            end
 
-          it 'has API call that return task output and task output with ranges' do
-            output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
-            output_file.print('Test output')
-            output_file.close
-
-            task = Models::Task.make(output: temp_dir)
-
-            get "/#{task.id}/output"
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('Test output')
-          end
-
-          it 'has API call that return task output with ranges' do
-            output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
-            output_file.print('Test output')
-            output_file.close
-
-            task = Models::Task.make(output: temp_dir)
-
-            # Range test
-            get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
-            expect(last_response.status).to eq(206)
-            expect(last_response.body).to eq('Test')
-            expect(last_response.headers['Content-Length']).to eq('4')
-            expect(last_response.headers['Content-Range']).to eq('bytes 0-3/11')
-
-            # Range test
-            get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
-            expect(last_response.status).to eq(206)
-            expect(last_response.body).to eq('output')
-            expect(last_response.headers['Content-Length']).to eq('6')
-            expect(last_response.headers['Content-Range']).to eq('bytes 5-10/11')
-          end
-
-          it 'supports returning different types of output (debug, cpi, event)' do
-            %w(debug event cpi).each do |log_type|
-              output_file = File.new(File.join(temp_dir, log_type), 'w+')
-              output_file.print("Test output #{log_type}")
+            it 'has API call that return task output and task output with ranges' do
+              output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
+              output_file.print('Test output')
               output_file.close
-            end
 
-            task = Models::Task.new
-            task.state = 'done'
-            task.type = :update_deployment
-            task.timestamp = Time.now.to_i
-            task.description = 'description'
-            task.output = temp_dir
-            task.save
+              task = Models::Task.make(output: temp_dir)
 
-            %w(debug event cpi).each do |log_type|
-              get "/#{task.id}/output?type=#{log_type}"
+              get "/#{task.id}/output"
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq("Test output #{log_type}")
+              expect(last_response.body).to eq('Test output')
             end
 
-            # Backward compatibility: when log_type=soap return cpi log
-            get "/#{task.id}/output?type=soap"
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('Test output cpi')
+            it 'has API call that return task output with ranges' do
+              output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
+              output_file.print('Test output')
+              output_file.close
 
-            # Default output is debug
-            get "/#{task.id}/output"
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('Test output debug')
+              task = Models::Task.make(output: temp_dir)
+
+              # Range test
+              get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
+              expect(last_response.status).to eq(206)
+              expect(last_response.body).to eq('Test')
+              expect(last_response.headers['Content-Length']).to eq('4')
+              expect(last_response.headers['Content-Range']).to eq('bytes 0-3/11')
+
+              # Range test
+              get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
+              expect(last_response.status).to eq(206)
+              expect(last_response.body).to eq('output')
+              expect(last_response.headers['Content-Length']).to eq('6')
+              expect(last_response.headers['Content-Range']).to eq('bytes 5-10/11')
+            end
+
+            it 'supports returning different types of output (debug, cpi, event)' do
+              %w(debug event cpi).each do |log_type|
+                output_file = File.new(File.join(temp_dir, log_type), 'w+')
+                output_file.print("Test output #{log_type}")
+                output_file.close
+              end
+
+              task = Models::Task.new
+              task.state = 'done'
+              task.type = :update_deployment
+              task.timestamp = Time.now.to_i
+              task.description = 'description'
+              task.output = temp_dir
+              task.save
+
+              %w(debug event cpi).each do |log_type|
+                get "/#{task.id}/output?type=#{log_type}"
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq("Test output #{log_type}")
+              end
+
+              # Backward compatibility: when log_type=soap return cpi log
+              get "/#{task.id}/output?type=soap"
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('Test output cpi')
+
+              # Default output is debug
+              get "/#{task.id}/output"
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('Test output debug')
+            end
+
+            it 'supports returning old soap logs when type = (cpi || soap)' do
+              output_file = File.new(File.join(temp_dir, 'soap'), 'w+')
+              output_file.print('Test output soap')
+              output_file.close
+
+              task = Models::Task.new
+              task.state = 'done'
+              task.type = :update_deployment
+              task.timestamp = Time.now.to_i
+              task.description = 'description'
+              task.output = temp_dir
+              task.save
+
+              %w(soap cpi).each do |log_type|
+                get "/#{task.id}/output?type=#{log_type}"
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq('Test output soap')
+              end
+            end
           end
 
-          it 'supports returning old soap logs when type = (cpi || soap)' do
-            output_file = File.new(File.join(temp_dir, 'soap'), 'w+')
-            output_file.print('Test output soap')
-            output_file.close
+          context 'user has readonly access' do
+            let(:task) { Models::Task.make(state: 'queued', description: 'fake-description') }
 
-            task = Models::Task.new
-            task.state = 'done'
-            task.type = :update_deployment
-            task.timestamp = Time.now.to_i
-            task.description = 'description'
-            task.output = temp_dir
-            task.save
+            before(:each) { basic_authorize 'reader', 'reader' }
 
-            %w(soap cpi).each do |log_type|
-              get "/#{task.id}/output?type=#{log_type}"
+            it 'provides access if accessing task' do
+              get "/#{task.id}"
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('Test output soap')
+            end
+
+            it 'provides access for event output type' do
+              get "/#{task.id}/output?type=event"
+              expect(last_response.status).to eq(204)
+            end
+
+            it 'returns 401 for debug output type' do
+              get "/#{task.id}/output?type=debug"
+              expect(last_response.status).to eq(401)
+            end
+
+            it 'returns 401 for cpi output type' do
+              get "/#{task.id}/output?type=cpi"
+              expect(last_response.status).to eq(401)
             end
           end
-        end
-      end
-
-      describe 'scope' do
-        before(:each) { basic_authorize 'admin', 'admin' }
-        let(:identity_provider) { Support::TestIdentityProvider.new }
-        let(:config) do
-          config = Config.load_hash(test_config)
-          allow(config).to receive(:identity_provider).and_return(identity_provider)
-          config
-        end
-
-        it 'accepts read scope for routes allowing read access' do
-          get '/'
-          expect(identity_provider.scope).to eq(:read)
-
-          get '/task-id'
-          expect(identity_provider.scope).to eq(:read)
-
-          get '/task-id/output?type=event'
-          expect(identity_provider.scope).to eq(:read)
-
-          get '/task-id/output?type=debug'
-          expect(identity_provider.scope).to eq(:write)
-
-          get '/task-id/output?type=cpi'
-          expect(identity_provider.scope).to eq(:write)
         end
       end
     end

@@ -77,7 +77,7 @@ module Bosh::Director
 
               templates_from_model = Models::Template.where(:name => job['name'], :release_id => deployment_release_ids)
               if templates_from_model == nil
-                raise "Template #{job['name']} not found in Template table"
+                raise "Job '#{job['name']}' not found in Template table"
               end
 
               release = @deployment.release(job['release'])

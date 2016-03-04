@@ -7,9 +7,8 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:config) { Config.load_hash(test_config) }
 
-      let(:temp_dir) { Dir.mktmpdir}
+      let(:temp_dir) { Dir.mktmpdir }
       let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
         FileUtils.mkdir_p(blobstore_dir)
@@ -24,6 +23,29 @@ module Bosh::Director
         config
       end
 
+
+      let(:config) do
+        config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
+
+      def manifest_with_errand(deployment_name='errand')
+        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+        manifest_hash['name'] = deployment_name
+        manifest_hash['jobs'] << {
+          'name' => 'another-errand',
+          'template' => 'errand1',
+          'lifecycle' => 'errand',
+          'resource_pool' => 'a',
+          'instances' => 1,
+          'networks' => [{'name' => 'a'}]
+        }
+        Psych.dump(manifest_hash)
+      end
+
+      let(:cloud_config) { Models::CloudConfig.make }
       before do
         App.new(config)
         basic_authorize 'admin', 'admin'
@@ -31,9 +53,12 @@ module Bosh::Director
 
       after { FileUtils.rm_rf(temp_dir) }
 
-      it 'sets the date header' do
-        get '/'
-        expect(last_response.headers['Date']).to be
+      describe 'the date header' do
+        it 'is present' do
+          basic_authorize 'reader', 'reader'
+          get '/'
+          expect(last_response.headers['Date']).to be
+        end
       end
 
       describe 'API calls' do
@@ -159,22 +184,19 @@ module Bosh::Director
           end
 
           context 'for all jobs in deployment' do
-            let (:path) { '/foo/jobs/*?state=stopped'
-            }
+            let (:path) { '/foo/jobs/*?state=stopped' }
             it_behaves_like 'change state'
           end
           context 'for one job in deployment' do
-            let (:path) { '/foo/jobs/dea?state=stopped'
-            }
+            let (:path) { '/foo/jobs/dea?state=stopped' }
             it_behaves_like 'change state'
           end
-          context 'for job instance in deployment' do
-            let (:path) { '/foo/jobs/dea/2?state=stopped'
-            }
+          context 'for job instance in deployment by index' do
+            let (:path) { '/foo/jobs/dea/2?state=stopped' }
             it_behaves_like 'change state'
-
-            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped'
-            }
+          end
+          context 'for job instance in deployment by id' do
+            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped' }
             it_behaves_like 'change state'
           end
 
@@ -216,6 +238,7 @@ module Bosh::Director
           end
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
+            deployment = Models::Deployment.create(:name => 'foo')
             put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect(last_response.status).to eq(400)
           end
@@ -247,7 +270,7 @@ module Bosh::Director
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'})) }
-            let(:instance) {Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started')}
+            let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started') }
             before do
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
@@ -281,21 +304,21 @@ module Bosh::Director
 
             context 'when there is a job instance' do
               let(:path) { "/test_deployment/jobs/job_name/0" }
-              let(:drain_option) {"?skip_drain=true"}
+              let(:drain_option) { "?skip_drain=true" }
               let(:drain_target) { "job_name" }
               it_behaves_like 'skip_drain'
             end
 
             context 'when there is a  job' do
               let(:path) { "/test_deployment/jobs/job_name?state=stop" }
-              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_option) { "&skip_drain=true" }
               let(:drain_target) { "job_name" }
               it_behaves_like 'skip_drain'
             end
 
             context 'when  deployment' do
               let(:path) { "/test_deployment/jobs/*?state=stop" }
-              let(:drain_option) {"&skip_drain=true"}
+              let(:drain_option) { "&skip_drain=true" }
               let(:drain_target) { "*" }
               it_behaves_like 'skip_drain'
             end
@@ -322,15 +345,16 @@ module Bosh::Director
 
           it '404 if no deployment' do
             deployment = Models::Deployment.
-                create(:name => 'bar', :manifest => Psych.dump({'foo' => 'bar'}))
+              create(:name => 'bar', :manifest => Psych.dump({'foo' => 'bar'}))
             get '/bar/jobs/nats/0/logs', {}
             expect(last_response.status).to eq(404)
           end
         end
 
         describe 'listing deployments' do
-          it 'lists deployment info in deployment name order' do
+          before { basic_authorize 'reader', 'reader' }
 
+          it 'lists deployment info in deployment name order' do
             release_1 = Models::Release.create(:name => 'release-1')
             release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
             release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
@@ -408,6 +432,8 @@ module Bosh::Director
         end
 
         describe 'getting deployment info' do
+          before { basic_authorize 'reader', 'reader' }
+
           it 'returns manifest' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
@@ -421,6 +447,8 @@ module Bosh::Director
         end
 
         describe 'getting deployment vms info' do
+          before { basic_authorize 'reader', 'reader' }
+
           it 'returns a list of agent_ids, jobs and indices' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
@@ -639,22 +667,12 @@ module Bosh::Director
             end
 
             let!(:deployment_model) do
-              manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
-              manifest_hash['jobs'] << {
-                'name' => 'another-errand',
-                'template' => 'errand1',
-                'lifecycle' => 'errand',
-                'resource_pool' => 'a',
-                'instances' => 1,
-                'networks' => [{'name' => 'a'}]
-              }
               Models::Deployment.make(
                 name: 'fake-dep-name',
-                manifest: Psych.dump(manifest_hash),
+                manifest: manifest_with_errand,
                 cloud_config: cloud_config
               )
             end
-            let(:cloud_config) { Models::CloudConfig.make }
 
             context 'authenticated access' do
               before do
@@ -687,6 +705,8 @@ module Bosh::Director
           describe 'POST', '/:deployment_name/errands/:name/runs' do
             before { Config.base_dir = Dir.mktmpdir }
             after { FileUtils.rm_rf(Config.base_dir) }
+
+            let!(:deployment) { Models::Deployment.make(name: 'fake-dep-name')}
 
             def perform(post_body)
               post(
@@ -804,38 +824,350 @@ module Bosh::Director
         end
       end
 
-      describe 'scope' do
-        let(:identity_provider) { Support::TestIdentityProvider.new }
-        let(:config) do
-          config = Config.load_hash(test_config)
-          allow(config).to receive(:identity_provider).and_return(identity_provider)
-          config
+      describe 'authorization' do
+        before do
+          release = Models::Release.make(name: 'bosh-release')
+          template1 = Models::Template.make(name: 'foobar', release: release)
+          template2 = Models::Template.make(name: 'errand1', release: release)
+          release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+          release_version.add_template(template1)
+          release_version.add_template(template2)
         end
 
-        it 'accepts read scope for routes allowing read access' do
-          read_routes = [
-            '/',
-            '/deployment-name',
-            '/deployment-name/errands',
-            '/deployment-name/vms'
-          ]
+        let!(:owned_deployment) { Models::Deployment.create(:name => 'owned_deployment', teams:'dev', manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
+        let!(:other_deployment) { Models::Deployment.create(:name => 'other_deployment', teams:'other', manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
+        describe 'when a user has dev team admin membership' do
 
-          read_routes.each do |route|
-            get route
-            expect(identity_provider.scope).to eq(:read)
+          before {
+            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started)
+            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started)
+          }
+
+          # dev-team-member has scopes ['bosh.teams.dev.admin']
+          before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+          context 'GET /:deployment/jobs/:job/:index_or_id' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/jobs/dea/0').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/jobs/dea/0').status).to eq(401)
+            end
           end
 
-          non_read_routes = [
-            [:get, '/deployment-name/jobs/fake-job/0'],
-            [:put, '/deployment-name/jobs/0'],
-            [:post, '/deployment-name/ssh'],
-            [:post, '/deployment-name/scans'],
-          ]
+          context 'PUT /:deployment/jobs/:job' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/jobs/dea', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+            end
 
-          non_read_routes.each do |method, route|
-            method(method).call(route)
-            expect(identity_provider.scope).to eq(:write)
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/jobs/dea', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+            end
           end
+
+          context 'PUT /:deployment/jobs/:job/:index_or_id' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/jobs/:job/:index_or_id/logs' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/jobs/dea/0/logs').status).to eq(302)
+            end
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/jobs/dea/0/logs').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/snapshots' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/snapshots').status).to eq(200)
+            end
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/snapshots').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/jobs/:job/:index/snapshots' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/jobs/dea/0/snapshots').status).to eq(200)
+            end
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/jobs/dea/0/snapshots').status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/snapshots' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/snapshots').status).to eq(302)
+            end
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/snapshots').status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/jobs/:job/:index_or_id/resurrection' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
+            end
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/jobs/:job/:index_or_id/snapshots' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/jobs/dea/0/snapshots').status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/jobs/dea/0/snapshots').status).to eq(401)
+            end
+          end
+
+          context 'DELETE /:deployment/snapshots' do
+            it 'allows access to owned deployment' do
+              expect(delete('/owned_deployment/snapshots').status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(delete('/other_deployment/snapshots').status).to eq(401)
+            end
+          end
+
+          context 'DELETE /:deployment/snapshots/:cid' do
+            before do
+              instance = Models::Instance.make(deployment: owned_deployment)
+              persistent_disk = Models::PersistentDisk.make(instance: instance)
+              Models::Snapshot.make(persistent_disk: persistent_disk, snapshot_cid: 'cid-1')
+            end
+
+            it 'allows access to owned deployment' do
+              expect(delete('/owned_deployment/snapshots/cid-1').status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(delete('/other_deployment/snapshots/cid-1').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/vms' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/vms').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/vms').status).to eq(401)
+            end
+          end
+
+          context 'DELETE /:deployment' do
+            it 'allows access to owned deployment' do
+              expect(delete('/owned_deployment').status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(delete('/other_deployment').status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/ssh' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/ssh', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/ssh', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/properties' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/properties').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/properties').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/properties/:property' do
+            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/properties/prop').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/properties/prop').status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/properties' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/properties', '{"name": "prop", "value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(204)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/properties', '{"name": "prop", "value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/properties/:property' do
+            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/properties/prop', '{"value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(204)
+            end
+
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/properties/prop', '{"value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'DELETE /:deployment/properties/:property' do
+            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
+            it 'allows access to owned deployment' do
+              expect(delete('/owned_deployment/properties/prop').status).to eq(204)
+            end
+
+            it 'denies access to other deployment' do
+              expect(delete('/other_deployment/properties/prop').status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/scans' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/scans').status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/scans').status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/problems' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/problems').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/problems').status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/problems' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/problems', '{"resolutions": {}}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/problems', '', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/problems' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/problems', '{"resolutions": {}}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/problems', '{"resolutions": {}}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/scan_and_fix' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/scan_and_fix', '{"jobs": []}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/scan_and_fix', '{"jobs": []}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          describe 'POST /' do
+            it 'allows' do
+              expect(post('/', manifest_with_errand, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+            end
+          end
+
+          context 'POST /:deployment/diff' do
+            it 'allows access to new deployment' do
+              expect(post('/new_deployment/diff', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(200)
+            end
+
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/diff', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/diff', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+            end
+          end
+
+          context 'POST /:deployment/errands/:errand_name/runs' do
+            it 'allows access to owned deployment' do
+              expect(post('/owned_deployment/errands/errand_job/runs', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(302)
+            end
+
+            it 'denies access to other deployment' do
+              expect(post('/other_deployment/errands/errand_job/runs', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'GET /:deployment/errands' do
+            it 'allows access to owned deployment' do
+              expect(get('/owned_deployment/errands').status).to eq(200)
+            end
+
+            it 'denies access to other deployment' do
+              expect(get('/other_deployment/errands').status).to eq(401)
+            end
+          end
+
+          context 'GET /' do
+            it 'allows access to owned deployments' do
+              response = get('/')
+              expect(response.status).to eq(200)
+              expect(response.body).to include('"owned_deployment"')
+              expect(response.body).to_not include('"other_deployment"')
+            end
+          end
+        end
+
+        describe 'when the user has bosh.read scope' do
+          describe 'read endpoints' do
+            before { basic_authorize 'reader', 'reader' }
+
+            it 'allows access' do
+              expect(get('/',).status).to eq(200)
+              expect(get('/owned_deployment').status).to eq(200)
+              expect(get('/owned_deployment/vms').status).to eq(200)
+              # expect(get('/no_deployment/errands').status).to eq(200)
+            end
+          end
+        end
+      end
+
+      describe 'when the user merely has team read scope' do
+        before { basic_authorize 'dev-team-read-member', 'dev-team-read-member' }
+        it 'denies access to POST /' do
+          expect(post('/', '{}', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
         end
       end
     end

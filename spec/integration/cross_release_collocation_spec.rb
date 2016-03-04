@@ -75,7 +75,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("deployment #{deployment_manifest.path}")
 
       output = bosh_runner.run("deploy", failure_expected: true)
-      expect(output).to match(%r[Package name collision detected in job `foobar': template `dummy/dummy_with_package' depends on package `dummy/dummy_package',])
+      expect(output).to match(%r[Package name collision detected in instance group 'foobar': job 'dummy/dummy_with_package' depends on package 'dummy/dummy_package',])
     end
   end
 end

@@ -15,7 +15,12 @@ describe 'User authorization with UAA', type: :integration do
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'].first['name'] = 'fake-name1'
-    deploy_simple_manifest(no_login: true, env: client_env, manifest_hash: manifest_hash)
+    deploy_simple_manifest(no_login: true, no_track: true, env: client_env, manifest_hash: manifest_hash)
+
+    # TODO: once tasks get deployment-team-specific privileges we can
+    # re-enable tracking of the deploy to know when it finishes. In the
+    # meantime, we're sleeping and hoping it finishes...
+    sleep(30)
 
     output = bosh_runner.run('deployments', env: client_env)
     expect(output).to match /Deployments total: 1/

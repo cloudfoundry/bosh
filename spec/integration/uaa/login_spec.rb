@@ -138,17 +138,17 @@ CERT
 
       it 'can only access task default logs' do
         admin_client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         create_and_upload_test_release(env: admin_client_env)
 
+        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('task latest', env: read_client_env)
         expect(output).to match /release has been created/
 
         output = bosh_runner.run('task latest --debug', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
+        expect(output).to include('Require one of the scopes:')
 
         output = bosh_runner.run('task latest --cpi', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
+        expect(output).to include('Require one of the scopes:')
 
         output = bosh_runner.run('task latest --debug', env: admin_client_env)
         expect(output).to match /DEBUG/
@@ -166,7 +166,16 @@ CERT
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin, bosh.read, bosh.deadbeef.read`)
+        expect(output).to include('Require one of the scopes:')
+      end
+
+      it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
+        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        deploy_from_scratch(no_login: true, env: client_env)
+
+        client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
+        output = bosh_runner.run('delete deployment simple', env: client_env, failure_expected: true)
+        expect(output).to include('Require one of the scopes:')
       end
     end
 

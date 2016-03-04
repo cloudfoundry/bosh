@@ -24,7 +24,8 @@ params = {
     'enabled'=> p('director.enable_snapshots')
   },
   'max_vm_create_tries' => p('director.max_vm_create_tries'),
-  'enable_post_deploy' => p('director.enable_post_deploy')
+  'enable_post_deploy' => p('director.enable_post_deploy'),
+  'generate_vm_password' => p('director.generate_vm_password')
 }
 
 params['scheduled_jobs'] = []
@@ -118,6 +119,10 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold|
      blobstore_options['s3_multipart_threshold'] = s3_multipart_threshold
   end
+
+  if_p('blobstore.s3_signature_version') do |s3_signature_version|
+     blobstore_options['s3_signature_version'] = s3_signature_version
+  end
 else
   blobstore_options = {
     'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",
@@ -194,6 +199,10 @@ if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
 
   if_p('compiled_package_cache.options.s3_multipart_threshold') do |s3_multipart_threshold|
      options['s3_multipart_threshold'] = s3_multipart_threshold
+  end
+
+  if_p('compiled_package_cache.options.s3_signature_version') do |s3_signature_version|
+     options['s3_signature_version'] = s3_signature_version
   end
 end
 
@@ -473,49 +482,53 @@ params['cloud']['properties']['agent'] = {
  'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p(['agent.nats.address', 'nats.address'])}:#{p('nats.port')}"
 }
 
-options =  params['cloud']['properties']['agent']['blobstore']['options']
+agent_blobstore_options =  params['cloud']['properties']['agent']['blobstore']['options']
 if p('blobstore.provider') == "s3"
-  options['bucket_name'] = p('blobstore.bucket_name')
-  options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
-  options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
-  options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
-  options['region'] = p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil)
+  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
+  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
+  agent_blobstore_options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
+  agent_blobstore_options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
+  agent_blobstore_options['region'] = p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil)
 
   port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil)
   unless port.nil?
-      options['port'] = port
+      agent_blobstore_options['port'] = port
   end
 
   host = p(['agent.blobstore.host', 'blobstore.host'], nil)
   unless host.nil?
-    options['host'] = host
+    agent_blobstore_options['host'] = host
   end
 
   use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil)
   unless use_ssl.nil?
-    options['use_ssl'] = use_ssl
+    agent_blobstore_options['use_ssl'] = use_ssl
   end
 
   ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil)
   unless ssl_verify_peer.nil?
-    options['ssl_verify_peer'] = ssl_verify_peer
+    agent_blobstore_options['ssl_verify_peer'] = ssl_verify_peer
   end
 
   s3_force_path_style = p(['agent.blobstore.s3_force_path_style', 'blobstore.s3_force_path_style'], nil)
   unless s3_force_path_style.nil?
-    options['s3_force_path_style'] = s3_force_path_style
+    agent_blobstore_options['s3_force_path_style'] = s3_force_path_style
   end
 
   s3_multipart_threshold = p(['agent.blobstore.s3_multipart_threshold', 'blobstore.s3_multipart_threshold'], nil)
   unless s3_multipart_threshold.nil?
-    options['s3_multipart_threshold'] = s3_multipart_threshold
+    agent_blobstore_options['s3_multipart_threshold'] = s3_multipart_threshold
   end
 
-  else
-    options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
-    options['user'] = p('blobstore.agent.user')
-    options['password'] = p('blobstore.agent.password')
+  s3_signature_version = p(['agent.blobstore.s3_signature_version', 'blobstore.s3_signature_version'], nil)
+  unless s3_signature_version.nil?
+    agent_blobstore_options['s3_signature_version'] = s3_signature_version
   end
+else
+  agent_blobstore_options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
+  agent_blobstore_options['user'] = p('blobstore.agent.user')
+  agent_blobstore_options['password'] = p('blobstore.agent.password')
+end
 
 JSON.dump(params)
 %>

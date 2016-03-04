@@ -51,7 +51,7 @@ module Bosh
               manifest_validator.validate(manifest_hash, nil)
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidProperty,
-                "Deployment manifest jobs contain 'migrated_from', but it can only be used with cloud-config."
+                "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config."
               )
           end
         end

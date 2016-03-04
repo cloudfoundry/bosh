@@ -7,7 +7,12 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { described_class.new(config) }
-    let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
+    let(:config) do
+      config = Config.load_hash(Psych.load(spec_asset('test-director-config.yml')))
+      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      config
+    end
     before { allow(Api::ResourceManager).to receive(:new) }
 
     context 'authenticated access' do
@@ -53,6 +58,22 @@ module Bosh::Director
       end
     end
 
+    context 'when user has readonly access' do
+      before { authorize 'reader', 'reader' }
+
+      context 'when there are not any locks' do
+        let(:locks) { [] }
+
+        it 'should list the current locks' do
+          get '/'
+          expect(last_response.status).to eq(200)
+
+          body = Yajl::Parser.parse(last_response.body)
+          expect(body).to eq([])
+        end
+      end
+    end
+
     context 'accessing with invalid credentials' do
       before { authorize 'invalid-user', 'invalid-password' }
 
@@ -66,17 +87,6 @@ module Bosh::Director
       it 'returns 401' do
         get '/'
         expect(last_response.status).to eq(401)
-      end
-    end
-
-    describe 'scope' do
-      let(:identity_provider) { Support::TestIdentityProvider.new }
-      before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
-
-      it 'accepts read scope for routes allowing read access' do
-        authorize 'admin', 'admin'
-        get '/'
-        expect(identity_provider.scope).to eq(:read)
       end
     end
   end

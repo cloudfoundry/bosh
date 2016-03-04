@@ -83,3 +83,7 @@ mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
   sha: 74dd87a9537f98fc93cace2252424ae1c6c46fbf
   size: 519628
+mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
+  object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
+  sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
+  size: 4639216

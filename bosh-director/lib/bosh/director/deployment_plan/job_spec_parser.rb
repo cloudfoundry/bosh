@@ -66,7 +66,7 @@ module Bosh::Director
 
         unless Job::VALID_LIFECYCLE_PROFILES.include?(lifecycle)
           raise JobInvalidLifecycle,
-            "Invalid lifecycle `#{lifecycle}' for `#{@job.name}', " +
+            "Invalid lifecycle '#{lifecycle}' for '#{@job.name}', " +
             "valid lifecycle profiles are: #{Job::VALID_LIFECYCLE_PROFILES.join(', ')}"
         end
 
@@ -85,7 +85,7 @@ module Bosh::Director
 
           if @job.release.nil?
             raise JobUnknownRelease,
-                  "Job `#{@job.name}' references an unknown release `#{release_name}'"
+                  "Instance group '#{@job.name}' references an unknown release '#{release_name}'"
           end
         end
       end
@@ -95,8 +95,8 @@ module Bosh::Director
         if template_names
           if template_names.is_a?(Array)
             @event_log.warn_deprecated(
-              "Please use `templates' when specifying multiple templates for a job. " +
-              "`template' for multiple templates will soon be unsupported."
+              "Please use 'templates' when specifying multiple templates for a job. " +
+              "'template' for multiple templates will soon be unsupported."
             )
           end
 
@@ -105,7 +105,7 @@ module Bosh::Director
           end
 
           unless @job.release
-            raise JobMissingRelease, "Cannot tell what release job `#{@job.name}' is supposed to use, please explicitly specify one"
+            raise JobMissingRelease, "Cannot tell what release job '#{@job.name}' is supposed to use, please explicitly specify one"
           end
 
           Array(template_names).each do |template_name|
@@ -137,12 +137,12 @@ module Bosh::Director
               release = @deployment.release(release_name)
               unless release
                 raise JobUnknownRelease,
-                      "Template `#{template_name}' (job `#{@job.name}') references an unknown release `#{release_name}'"
+                      "Job '#{template_name}' (instance group '#{@job.name}') references an unknown release '#{release_name}'"
               end
             else
               release = @job.release
               unless release
-                raise JobMissingRelease, "Cannot tell what release template `#{template_name}' (job `#{@job.name}') is supposed to use, please explicitly specify one"
+                raise JobMissingRelease, "Cannot tell what release template '#{template_name}' (instance group '#{@job.name}') is supposed to use, please explicitly specify one"
               end
             end
 
@@ -158,7 +158,7 @@ module Bosh::Director
             template = release.get_or_create_template(template_name)
 
             if current_template_model == nil
-              raise "Template #{template_name} not found in Template table"
+              raise "Job '#{template_name}' not found in Template table"
             end
 
             if current_template_model.consumes_json != nil
@@ -199,7 +199,7 @@ module Bosh::Director
         @job.templates.each do |template|
           if all_names.count(template.name) > 1
             raise JobInvalidTemplates,
-                  "Colocated job template `#{template.name}' has the same name in multiple releases. " +
+                  "Colocated job template '#{template.name}' has the same name in multiple releases. " +
                   "BOSH cannot currently colocate two job templates with identical names from separate releases."
           end
         end
@@ -212,7 +212,7 @@ module Bosh::Director
 
         if disk_type_name && disk_pool_name
           raise JobInvalidPersistentDisk,
-            "Job `#{@job.name}' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
+            "Instance group '#{@job.name}' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
               "'disk_pools' key will be DEPRECATED in the future."
         end
 
@@ -226,14 +226,14 @@ module Bosh::Director
 
         if disk_size && disk_name
           raise JobInvalidPersistentDisk,
-            "Job `#{@job.name}' references both a persistent disk size `#{disk_size}' " +
-              "and a persistent disk #{disk_source} `#{disk_name}'"
+            "Instance group '#{@job.name}' references both a persistent disk size '#{disk_size}' " +
+              "and a persistent disk #{disk_source} '#{disk_name}'"
         end
 
         if disk_size
           if disk_size < 0
             raise JobInvalidPersistentDisk,
-              "Job `#{@job.name}' references an invalid persistent disk size `#{disk_size}'"
+              "Instance group '#{@job.name}' references an invalid persistent disk size '#{disk_size}'"
           else
             @job.persistent_disk = disk_size
           end
@@ -243,7 +243,7 @@ module Bosh::Director
           disk_type = @deployment.disk_type(disk_name)
           if disk_type.nil?
             raise JobUnknownDiskType,
-                  "Job `#{@job.name}' references an unknown disk #{disk_source} `#{disk_name}'"
+                  "Instance group '#{@job.name}' references an unknown disk #{disk_source} '#{disk_name}'"
           else
             @job.persistent_disk_type = disk_type
           end
@@ -263,7 +263,7 @@ module Bosh::Director
 
           if resolved.nil?
             raise JobInvalidPropertyMapping,
-                  "Cannot satisfy property mapping `#{to}: #{from}', as `#{from}' is not in deployment properties"
+                  "Cannot satisfy property mapping '#{to}: #{from}', as '#{from}' is not in deployment properties"
           end
 
           @job.all_properties[to] = resolved
@@ -278,7 +278,7 @@ module Bosh::Director
           resource_pool = @deployment.resource_pool(resource_pool_name)
           if resource_pool.nil?
             raise JobUnknownResourcePool,
-              "Job `#{@job.name}' references an unknown resource pool `#{resource_pool_name}'"
+              "Instance group '#{@job.name}' references an unknown resource pool '#{resource_pool_name}'"
           end
 
           vm_type = VmType.new({
@@ -292,7 +292,7 @@ module Bosh::Director
 
           if !env_hash.empty? && !resource_pool.env.empty?
             raise JobAmbiguousEnv,
-              "Job '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
+              "Instance group '#{@job.name}' and resource pool: '#{resource_pool_name}' both declare env properties"
           end
 
           if env_hash.empty?
@@ -303,7 +303,7 @@ module Bosh::Director
           vm_type = @deployment.vm_type(vm_type_name)
           if vm_type.nil?
             raise JobUnknownVmType,
-              "Job `#{@job.name}' references an unknown vm type `#{vm_type_name}'"
+              "Instance group '#{@job.name}' references an unknown vm type '#{vm_type_name}'"
           end
 
           vm_extension_names = Array(safe_property(@job_spec, 'vm_extensions', class: Array, optional: true))
@@ -313,7 +313,7 @@ module Bosh::Director
           stemcell = @deployment.stemcell(stemcell_name)
           if stemcell.nil?
             raise JobUnknownStemcell,
-              "Job `#{@job.name}' references an unknown stemcell `#{stemcell_name}'"
+              "Instance group '#{@job.name}' references an unknown stemcell '#{stemcell_name}'"
           end
         end
 
@@ -337,14 +337,14 @@ module Bosh::Director
           static_ips = network.static_ips
           if static_ips && static_ips.size != job_size
             raise JobNetworkInstanceIpMismatch,
-              "Job `#{@job.name}' has #{job_size} instances but was allocated #{static_ips.size} static IPs"
+              "Instance group '#{@job.name}' has #{job_size} instances but was allocated #{static_ips.size} static IPs"
           end
         end
 
         instance_states.each_pair do |index_or_id, state|
           unless Job::VALID_JOB_STATES.include?(state)
             raise JobInvalidInstanceState,
-              "Invalid state `#{state}' for `#{@job.name}/#{index_or_id}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
+              "Invalid state '#{state}' for '#{@job.name}/#{index_or_id}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
           end
 
           @job.instance_states[index_or_id] = state
@@ -352,7 +352,7 @@ module Bosh::Director
 
         if @job.state && !Job::VALID_JOB_STATES.include?(@job.state)
           raise JobInvalidJobState,
-            "Invalid state `#{@job.state}' for `#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
+            "Invalid state '#{@job.state}' for '#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times.map { DesiredInstance.new(@job, @deployment) }
@@ -366,8 +366,8 @@ module Bosh::Director
           unless az.nil?
             unless @job.availability_zones.to_a.map(&:name).include?(az)
               raise DeploymentInvalidMigratedFromJob,
-              "Job '#{name}' specified for migration to job '#{@job.name}' refers to availability zone '#{az}'. " +
-                "Az '#{az}' is not in the list of availability zones of job '#{@job.name}'."
+              "Instance group '#{name}' specified for migration to instance group '#{@job.name}' refers to availability zone '#{az}'. " +
+                "Az '#{az}' is not in the list of availability zones of instance group '#{@job.name}'."
             end
           end
           @job.migrated_from << MigratedFromJob.new(name, az)
@@ -380,20 +380,20 @@ module Bosh::Director
         jobs_property = safe_property(@job_spec, 'jobs', optional: true)
 
         if template_property && templates_property
-          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and templates keys, only one is allowed"
+          raise JobInvalidTemplates, "Instance group '#{@job.name}' specifies both template and templates keys, only one is allowed"
         end
 
         if templates_property && jobs_property
-          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both templates and jobs keys, only one is allowed"
+          raise JobInvalidTemplates, "Instance group '#{@job.name}' specifies both templates and jobs keys, only one is allowed"
         end
 
         if template_property && jobs_property
-          raise JobInvalidTemplates, "Job `#{@job.name}' specifies both template and jobs keys, only one is allowed"
+          raise JobInvalidTemplates, "Instance group '#{@job.name}' specifies both template and jobs keys, only one is allowed"
         end
 
         if [template_property, templates_property, jobs_property].compact.empty?
           raise ValidationMissingField,
-                "Job `#{@job.name}' does not specify template, templates, or jobs keys, one is required"
+                "Instance group '#{@job.name}' does not specify template, templates, or jobs keys, one is required"
         end
       end
 

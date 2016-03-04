@@ -14,7 +14,7 @@ module Bosh::Director
 
             unless valid_network
               available_networks = link_provider_job.networks.map { |network| network.name }.join(', ')
-              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks}."
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in instance group '#{consumes_job}' on job '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks}."
             end
           end
 
@@ -31,7 +31,7 @@ module Bosh::Director
             valid_network = link_spec['available_networks'].include? link_network
 
             unless valid_network
-              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in job '#{consumes_job}' on template '#{consumes_template}' over network '#{link_network}'. The available networks are: #{link_spec['available_networks'].join(', ')}."
+              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in instance group '#{consumes_job}' on job '#{consumes_template}' over network '#{link_network}'. The available networks are: #{link_spec['available_networks'].join(', ')}."
             end
           end
 
