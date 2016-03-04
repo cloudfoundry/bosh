@@ -169,13 +169,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                            "id" => instance1.uuid,
                            "az" => nil,
                            "address" => "127.0.0.3",
-                           "properties" => {"mysql" => {"mysql" => nil}}},
+                           },
 
                           {"name" => "mysql",
                            "index" => 1,
                            "id" => instance2.uuid,
                            "az" => nil, "address" => "127.0.0.4",
-                           "properties" => {"mysql" => {"mysql" => nil}}}
+                           }
                       ]
             }})
         end
@@ -216,16 +216,14 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       'index' => 0,
                       'id' => instance1.uuid,
                       'az' => nil,
-                      'address' => '127.0.0.4',
-                      'properties'=>{'mysql'=>{"mysql"=>nil}}
+                      'address' => '127.0.0.4'
                     },
                     {
                       'name' => 'mysql',
                       'index' => 1,
                       'id' => instance2.uuid,
                       'az' => nil,
-                      'address' => '127.0.0.5',
-                      'properties'=>{'mysql'=>{"mysql"=>nil}}
+                      'address' => '127.0.0.5'
                     }
                   ]
                 }
@@ -282,7 +280,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'id' => instance1.uuid,
                     'az' => nil,
                     'address' => '127.0.0.3',
-                    'properties'=>{'mysql'=>{"mysql"=>nil}}
                   },
                   {
                     'name' => 'mysql',
@@ -290,7 +287,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'id' => instance2.uuid,
                     'az' => nil,
                     'address' => '127.0.0.4',
-                    'properties'=>{'mysql'=>{"mysql"=>nil}}
                   }
                 ]
               }
@@ -499,7 +495,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'id' => instance1.uuid,
                     'az' => 'az1',
                     'address' => '127.0.0.3',
-                    'properties'=>{'mysql'=>{"mysql"=>nil}}
                   },
                   {
                     'name' => 'mysql',
@@ -507,7 +502,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     'id' => instance2.uuid,
                     'az' => 'az1',
                     'address' => '127.0.0.4',
-                    'properties'=>{'mysql'=>{"mysql"=>nil}}
                   }
                 ]
               }

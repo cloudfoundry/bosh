@@ -26,7 +26,6 @@ module Bosh::Director
               'az' => availability_zone,
               'address' => instance_plan.network_address(@network_name),
               'addresses' => instance_plan.network_addresses,
-              'properties' => @template.template_scoped_properties,
             }
           end
         }

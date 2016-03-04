@@ -139,7 +139,6 @@ module Bosh::Director
             @link_infos[job_name][kind][link_name][key] = value
           end
         end
-
       end
 
       def consumes_link_info(job_name, link_name)
@@ -147,7 +146,12 @@ module Bosh::Director
       end
 
       def provides_link_info(job_name, link_name)
-        @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
+        @link_infos.fetch(job_name, {}).fetch('provides', {}).each do |index, link|
+          if link['as'] == link_name
+            return link
+          end
+        end
+        return @link_infos.fetch(job_name, {}).fetch('provides', {}).fetch(link_name, {})
       end
 
       def add_template_scoped_properties(template_scoped_properties, deployment_job_name)
@@ -171,53 +175,7 @@ module Bosh::Director
         @template_scoped_properties[deployment_job_name] = bound_template_scoped_properties
       end
 
-      def assign_link_property_values(properties_json, job_name)
-        # only 'provides' needs to worry about properties
-        if !@link_infos[job_name] || !@link_infos[job_name]['provides']
-          return
-        end
-
-        init_link_properties(job_name)
-        job_template_scoped_properties = @template_scoped_properties[job_name]
-
-        if properties_json != nil
-          properties_object = JSON.parse(properties_json)
-
-          if job_template_scoped_properties != nil
-            unlisted_property_names = job_template_scoped_properties.keys - properties_object.keys
-            if unlisted_property_names.length > 0
-              raise "Properties #{unlisted_property_names} defined in instance group '#{job_name}' are not defined in the corresponding release"
-            end
-          end
-
-          @link_infos[job_name]['provides'].each do |link_name, link_values|
-            link_values['mapped_properties'].each do |property_key, _|
-              if properties_object.has_key?(property_key)
-                if job_template_scoped_properties != nil && job_template_scoped_properties.has_key?(property_key)
-                  link_values['mapped_properties'][property_key] = job_template_scoped_properties[property_key]
-                elsif properties_object[property_key]['default']
-                  link_values['mapped_properties'][property_key] = properties_object[property_key]['default']
-                end
-              else
-                raise "Property listed in property list for link #{link_name} is not defined in the properties list in release spec"
-              end
-            end
-          end
-        end
-      end
-
       private
-
-      def init_link_properties(job_name)
-        @link_infos[job_name]['provides'].each do |_, link_params|
-          link_params['mapped_properties'] = {}
-          if link_params['properties']
-            link_params['properties'].each do |key|
-              link_params['mapped_properties'][key] = nil
-            end
-          end
-        end
-      end
 
       # Returns model only if it's present, fails otherwise
       # @return [Models::Template]
