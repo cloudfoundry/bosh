@@ -61,6 +61,7 @@ describe 'cli: cloudcheck', type: :integration do
     cloudcheck_response = bosh_run_cck_with_resolution(1)
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('1 missing'))
+    expect(cloudcheck_response).to match(regexp('Disk \`................................\' \(foobar\/........-....-....-....-............, 100M\) is missing'))
     expect(cloudcheck_response).to match(regexp('1. Skip for now
   2. Delete disk reference (DANGEROUS!)') )
   end
