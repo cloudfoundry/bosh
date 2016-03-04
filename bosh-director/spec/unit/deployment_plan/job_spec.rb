@@ -67,9 +67,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     allow(foo_template).to receive(:has_template_scoped_properties).and_return(false)
     allow(bar_template).to receive(:has_template_scoped_properties).and_return(false)
-
-    allow(foo_template).to receive(:assign_link_property_values).and_return(nil)
-    allow(bar_template).to receive(:assign_link_property_values).and_return(nil)
   end
 
   describe '#bind_properties' do

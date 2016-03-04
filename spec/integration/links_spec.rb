@@ -1158,7 +1158,7 @@ Error 100: Unable to process links for deployment. Errors are:
       end
 
       it 'fails if the property specified for links is not provided by job template' do
-        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(RuntimeError, /Property listed in property list for link provider_fail is not defined in the properties list in release spec/)
+        expect{ deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(RuntimeError, /Link property b in template provider_fail is not defined in release spec/)
       end
     end
 
@@ -1372,7 +1372,7 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Properties [\"doesntExist\"] defined in instance group 'jobby' are not defined in the corresponding release")
+      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
     end
 
   end
