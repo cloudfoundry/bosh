@@ -523,6 +523,7 @@ GEM
     trollop (1.16.2)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
+    unix-crypt (1.3.0)
     vcr (2.9.3)
     vegas (0.1.11)
       rack (>= 1.0.0)
@@ -584,6 +585,7 @@ DEPENDENCIES
   specinfra (= 1.15.0)
   sqlite3
   timecop (~> 0.7.1)
+  unix-crypt
   vcr
   webmock
 

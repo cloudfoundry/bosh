@@ -174,6 +174,11 @@ module Bosh::Director::Models
     value { "value" }
   end
 
+  LogBundle.blueprint do
+    timestamp { Time.now }
+    blobstore_id { Sham.blobstore_id }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }

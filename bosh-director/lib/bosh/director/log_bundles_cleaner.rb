@@ -1,5 +1,6 @@
 module Bosh::Director
   class LogBundlesCleaner
+
     def initialize(blobstore, log_bundle_ttl, logger)
       @blobstore = blobstore
       @bundle_lifetime = log_bundle_ttl

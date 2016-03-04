@@ -233,7 +233,7 @@ describe Bosh::Director::VmCreator do
     context 'no password is specified' do
       it 'should generate a random VM password' do
         expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
-          expect(env['bosh']['password'].length).to eq(8)
+          expect(env['bosh']['password'].length).to_not eq(0)
         end.and_return('new-vm-cid')
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
