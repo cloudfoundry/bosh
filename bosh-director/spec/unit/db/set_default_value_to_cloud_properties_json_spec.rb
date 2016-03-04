@@ -24,7 +24,7 @@ module Bosh::Director
       db[:persistent_disks] << {
 
           instance_id: 1,
-          disk_cid: 'original-disk-cid',
+          disk_cid: 'fake-disk-cid',
           size: 50,
           active: true,
           cloud_properties_json: ''

@@ -8,9 +8,6 @@ module Bosh::Director
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
 
-    before { DBSpecHelper.reset_database }
-    after { DBSpecHelper.reset_database }
-
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
 
