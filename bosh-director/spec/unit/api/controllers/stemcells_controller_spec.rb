@@ -6,7 +6,12 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { described_class.new(config) }
-    let(:config) { Config.load_hash(test_config) }
+    let(:config) do
+      config = Config.load_hash(test_config)
+      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      config
+    end
     let(:temp_dir) { Dir.mktmpdir}
     let(:test_config) do
       config = Psych.load(spec_asset('test-director-config.yml'))
@@ -68,6 +73,15 @@ module Bosh::Director
       end
 
       context 'unauthenticated access' do
+        it 'returns 401' do
+          post '/', '', { 'CONTENT_TYPE' => 'application/json' }
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'team admin access' do
+        before { authorize 'dev-team-member', 'dev-team-member' }
+
         it 'returns 401' do
           post '/', '', { 'CONTENT_TYPE' => 'application/json' }
           expect(last_response.status).to eq(401)
@@ -166,6 +180,16 @@ module Bosh::Director
         it 'returns 401' do
           perform
           expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'team admin access' do
+        before { authorize 'dev-team-member', 'dev-team-member' }
+        let(:stemcells) { [] }
+
+        it 'returns stemcells if any' do
+          perform
+          expect(last_response.status).to eq(200)
         end
       end
     end
