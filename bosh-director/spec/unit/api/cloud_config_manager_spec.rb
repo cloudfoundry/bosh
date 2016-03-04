@@ -9,7 +9,7 @@ describe Bosh::Director::Api::CloudConfigManager do
   describe '#update' do
     it 'saves the cloud config' do
       expect {
-        manager.update(valid_cloud_manifest, event_manager, user)
+        manager.update(valid_cloud_manifest)
       }.to change(Bosh::Director::Models::CloudConfig, :count).from(0).to(1)
 
       cloud_config = Bosh::Director::Models::CloudConfig.first
@@ -17,39 +17,13 @@ describe Bosh::Director::Api::CloudConfigManager do
       expect(cloud_config.properties).to eq(valid_cloud_manifest)
     end
 
-    it 'saves the event' do
-      expect {
-        manager.update(valid_cloud_manifest, event_manager, user)
-      }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
-
-      event = Bosh::Director::Models::Event.first
-      expect(event.object_type).to eq("cloud-config")
-      expect(event.action).to eq("update")
-      expect(event.user).to eq(user)
-    end
-
     context 'when cloud config is failing to parse' do
       it 'returns an error' do
         cloud_config_yaml = 'invalid cloud config'
         expect {
-          manager.update(cloud_config_yaml, event_manager, user)
+          manager.update(cloud_config_yaml)
         }.to raise_error Bosh::Director::ValidationInvalidType
         expect(Bosh::Director::Models::CloudConfig.count).to eq(0)
-      end
-
-      it 'saves the event with error information' do
-        cloud_config_yaml = 'invalid cloud config'
-        expect(manager).to receive(:validate_manifest!).and_raise Bosh::Director::DeploymentNoResourcePools, 'No resource_pools specified'
-        expect {
-          manager.update(cloud_config_yaml, event_manager, user)
-        }.to raise_error Bosh::Director::DeploymentNoResourcePools
-        expect(Bosh::Director::Models::Event.count).to eq(1)
-
-        event = Bosh::Director::Models::Event.first
-        expect(event.object_type).to eq("cloud-config")
-        expect(event.action).to eq("update")
-        expect(event.user).to eq(user)
-        expect(event.error).to eq('No resource_pools specified')
       end
     end
   end

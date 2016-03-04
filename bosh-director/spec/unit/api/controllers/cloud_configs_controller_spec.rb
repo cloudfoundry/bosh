@@ -70,6 +70,18 @@ module Bosh::Director
         expect(event.action).to eq("update")
         expect(event.user).to eq("admin")
       end
+
+      it 'creates a new event with error' do
+        authorize('admin', 'admin')
+        expect {
+          post '/', {}, {'CONTENT_TYPE' => 'text/yaml'}
+        }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+        event = Bosh::Director::Models::Event.first
+        expect(event.object_type).to eq("cloud-config")
+        expect(event.action).to eq("update")
+        expect(event.user).to eq("admin")
+        expect(event.error).to eq("Manifest should not be empty")
+      end
     end
 
     describe 'GET', '/' do
