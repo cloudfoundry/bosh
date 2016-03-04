@@ -225,9 +225,9 @@ describe Bosh::Director::VmCreator do
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
-  context 'Config.generate_vm_password flag is true' do
+  context 'Config.generate_vm_passwords flag is true' do
     before {
-      Bosh::Director::Config.generate_vm_password = true
+      Bosh::Director::Config.generate_vm_passwords = true
     }
 
     context 'no password is specified' do
@@ -252,9 +252,9 @@ describe Bosh::Director::VmCreator do
     end
   end
 
-  context 'Config.generate_vm_password flag is false' do
+  context 'Config.generate_vm_passwords flag is false' do
     before {
-      Bosh::Director::Config.generate_vm_password = false
+      Bosh::Director::Config.generate_vm_passwords = false
     }
 
     context 'no password is specified' do

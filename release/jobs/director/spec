@@ -100,7 +100,7 @@ properties:
   director.enable_post_deploy:
     description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
-  director.generate_vm_password:
+  director.generate_vm_passwords:
     description: When true, a random unique password will be used for each vm if user has not specified a password
     default: false
 

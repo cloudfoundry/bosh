@@ -1157,7 +1157,7 @@ Deployed `simple' to `Test Director'
 
   context 'password' do
     context 'deployment manifest specifies VM password' do
-      context 'director deployment does not set generate_vm_password' do
+      context 'director deployment does not set generate_vm_passwords' do
         it 'uses specified VM password' do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -1173,8 +1173,8 @@ Deployed `simple' to `Test Director'
         end
       end
 
-      context 'director deployment sets generate_vm_password as true' do
-        with_reset_sandbox_before_each(generate_vm_password: true)
+      context 'director deployment sets generate_vm_passwords as true' do
+        with_reset_sandbox_before_each(generate_vm_passwords: true)
         it 'does not generate a random password and instead uses specified VM password' do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -1199,7 +1199,7 @@ Deployed `simple' to `Test Director'
         cloud_config_hash
       end
 
-      context 'director deployment does not set generate_vm_password' do
+      context 'director deployment does not set generate_vm_passwords' do
         it 'does not override default VM password' do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
@@ -1214,8 +1214,8 @@ Deployed `simple' to `Test Director'
         end
       end
 
-      context 'director deployment sets generate_vm_password as true' do
-        with_reset_sandbox_before_each(generate_vm_password: true)
+      context 'director deployment sets generate_vm_passwords as true' do
+        with_reset_sandbox_before_each(generate_vm_passwords: true)
         it 'generates a random unique password for each vm' do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           manifest_hash['jobs'].first['instances'] = 2
