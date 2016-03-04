@@ -1361,7 +1361,7 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Can't find property `[\"b\"]")
+      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
     end
 
     it 'should raise an error when a deployment template property is not defined in the release properties' do
