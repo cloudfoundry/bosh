@@ -149,7 +149,16 @@ module Bosh::Dev::Sandbox
     def stop_workers
       # wait for workers in parallel for fastness
       stop_monitor_workers
-      @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
+      @worker_processes.map { |worker_process| Thread.new {
+        child_processes = worker_process.get_child_pids
+        worker_process.stop
+        child_processes.each do |pid|
+          # if we kill worker children before the parent, the parent sees the
+          # failed child process and marks the task as a failure which is not
+          # what we are wanting to simulate with this sort of stop
+          worker_process.kill_pid(pid, 'KILL')
+        end
+      } }.each(&:join)
     end
 
     def start_monitor_workers
