@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-PACKAGE_DIR=/var/vcap/packages/postgres-9.4.5
+PACKAGE_DIR=/var/vcap/packages/postgres-9.4
 PACKAGE_DIR_OLD=/var/vcap/packages/postgres
 
 STORE_DIR=/var/vcap/store
@@ -9,13 +9,13 @@ STORE_DIR=/var/vcap/store
 DATA_DIR_OLD=$STORE_DIR/postgres
 
 # then we switched to including version so it is easier to detect version changes
-DATA_DIR=$STORE_DIR/postgres-9.4.5
+DATA_DIR=$STORE_DIR/postgres-9.4
 
 # and we'll keep the previous version's data intact to easy recovery, if necessary
 DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
 
-JOB_DIR=/var/vcap/jobs/postgres-9.4.5
-RUN_DIR=/var/vcap/sys/run/postgres-9.4.5
+JOB_DIR=/var/vcap/jobs/postgres-9.4
+RUN_DIR=/var/vcap/sys/run/postgres-9.4
 PIDFILE=$RUN_DIR/postgres.pid
 
 HOST=<%= p("postgres.listen_address") %>
