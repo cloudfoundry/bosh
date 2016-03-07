@@ -1,6 +1,11 @@
 # abort script on any command that exit with a non zero value
 set -e
 
+if grep -qi centos /etc/os-release ; then
+  echo 'ERROR: The mysql package cannot be compiled on CentOS stemcells.' >&2
+  exit 1
+fi
+
 MYSQL_VERSION='5.7.10-3-Linux.x86_64.ssl100'
 # `mysqldump` (only) from Percona binary Linux build
 tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
