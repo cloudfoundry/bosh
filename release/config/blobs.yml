@@ -91,3 +91,7 @@ mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
   sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
   size: 4639216
+postgres/postgresql-9.4.6.tar.gz:
+  object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
+  sha: bd031beebd86bf149c497525dccf57eebe5a6add
+  size: 23249307
