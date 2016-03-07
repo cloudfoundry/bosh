@@ -554,12 +554,7 @@ module Bosh
             body = nil if response_code == 416
           end
 
-          # backward compatible with renaming soap log to cpi log
-          if response_code == 204 && log_type == 'cpi'
-            get_task_output(task_id, offset, 'soap')
-          else
-            [body, new_offset]
-          end
+          [body, new_offset]
         end
 
         def cancel_task(task_id)

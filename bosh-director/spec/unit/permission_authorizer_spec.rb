@@ -87,9 +87,7 @@ module Bosh::Director
           end
         end
 
-        describe 'checking for list_deployments rights' do
-          let(:acl_right) { :list_deployments }
-
+        shared_examples :admin_read_team_admin_scopes do
           it 'allows global admin scope' do
             expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
           end
@@ -110,10 +108,6 @@ module Bosh::Director
             expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
           end
 
-          it 'allows team read scope' do
-            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
-          end
-
           it 'denies others' do
             expect(subject.is_granted?(acl_subject, acl_right, [
                   'bosh.unexpected-uuid.admin', # other director-specific admin scope
@@ -121,6 +115,26 @@ module Bosh::Director
                   'bosh.teams.security.unexpected',  # abnormal team-specific scope
                 ])).to eq(false)
           end
+        end
+
+        describe 'checking for read_releases rights' do
+          let(:acl_right) { :read_releases }
+          it_behaves_like :admin_read_team_admin_scopes
+        end
+
+        describe 'checking for list_deployments rights' do
+          let(:acl_right) { :list_deployments }
+          it_behaves_like :admin_read_team_admin_scopes
+        end
+
+        describe 'checking for read_stemcells rights' do
+          let(:acl_right) { :read_stemcells }
+          it_behaves_like :admin_read_team_admin_scopes
+        end
+
+        describe 'checking for list_tasks rights' do
+          let(:acl_right) { :list_tasks }
+          it_behaves_like :admin_read_team_admin_scopes
         end
 
         describe 'checking for invalid rights' do
@@ -184,10 +198,6 @@ module Bosh::Director
 
           it 'allows team admin scope' do
             expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
-          end
-
-          it 'allows team read scope' do
-            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
           end
 
           it 'denies others' do

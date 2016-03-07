@@ -24,7 +24,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: :read do
+      get '/', scope: :read_releases do
         releases = @release_manager.get_all_releases
 
         json_encode(releases)
@@ -45,7 +45,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:name', scope: :read do
+      get '/:name', scope: :read_releases do
         name = params[:name].to_s.strip
 
         if params['version']

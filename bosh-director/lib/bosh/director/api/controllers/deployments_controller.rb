@@ -45,6 +45,7 @@ module Bosh::Director
         @problem_manager = Api::ProblemManager.new
         @property_manager = Api::PropertyManager.new
         @instance_manager = Api::InstanceManager.new
+        @deployments_repo = DeploymentPlan::DeploymentRepo.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -321,6 +322,8 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
+        options.merge!('scopes' => token_scopes)
+
         if params['context']
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
@@ -335,9 +338,11 @@ module Bosh::Director
 
         if deployment
           deployment_name = deployment['name']
+          if deployment_name
+            @deployments_repo.find_or_create_by_name(deployment_name, options)
+          end
         end
 
-        options.merge!('scopes' => token_scopes)
         task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
 
         redirect "/tasks/#{task.id}"
