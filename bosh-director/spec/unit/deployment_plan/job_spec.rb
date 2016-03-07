@@ -121,6 +121,17 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
     end
 
+    context 'when user specifies invalid property type for job' do
+      let(:props) { {'deep_property' => false} }
+
+      it 'raises an exception explaining which property is the wrong type' do
+        expect {
+          job.bind_properties
+        }.to raise_error Bosh::Template::InvalidPropertyType,
+          "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
+      end
+    end
+
     context 'when none of the job specs (aka templates) specify properties' do
       let(:foo_properties) { nil }
       let(:bar_properties) { nil }
