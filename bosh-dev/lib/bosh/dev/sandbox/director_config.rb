@@ -14,7 +14,7 @@ module Bosh::Dev::Sandbox
       :trusted_certs,
       :users_in_manifest,
       :enable_post_deploy,
-      :generate_vm_password
+      :generate_vm_passwords
 
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
@@ -39,7 +39,7 @@ module Bosh::Dev::Sandbox
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
       @enable_post_deploy = attrs.fetch(:enable_post_deploy, false)
-      @generate_vm_password = attrs.fetch(:generate_vm_password, false)
+      @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
     end
 
     def render(template_path)

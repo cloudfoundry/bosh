@@ -36,30 +36,10 @@ describe Bosh::Director::Api::TaskManager do
     let(:task) { task = double(Bosh::Director::Models::Task) }
     let(:task_dir) { '/var/vcap/store/director/tasks/1' }
 
-    context 'backward compatibility' do
-      it 'should return the task output contents if the task output contents is not a directory' do
-        allow(task).to receive_messages(output: 'task output')
+    it 'should return the task output contents if the task output contents is not a directory' do
+      allow(task).to receive_messages(output: 'task output')
 
-        expect(manager.log_file(task, 'type')).to eq('task output')
-      end
-
-      it 'should return the cpi log when the soap log does not exist' do
-        allow(manager).to receive(:decompress)
-        allow(task).to receive_messages(output: task_dir)
-        expect(File).to receive(:directory?).with(task_dir).and_return(true)
-        expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
-
-        expect(manager.log_file(task, 'soap')).to match(%{/cpi})
-      end
-
-      it 'should return the soap log if it exist' do
-        allow(manager).to receive(:decompress)
-        allow(task).to receive_messages(output: task_dir)
-        expect(File).to receive(:directory?).with(task_dir).and_return(true)
-        expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(true)
-
-        expect(manager.log_file(task, 'cpi')).to match(%{/soap})
-      end
+      expect(manager.log_file(task, 'type')).to eq('task output')
     end
 
     it 'should return the task log path' do
@@ -67,7 +47,6 @@ describe Bosh::Director::Api::TaskManager do
       allow(manager).to receive(:decompress)
 
       expect(File).to receive(:directory?).with(task_dir).and_return(true)
-      expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
 
       manager.log_file(task, 'cpi')
     end
