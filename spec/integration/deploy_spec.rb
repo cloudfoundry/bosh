@@ -1144,10 +1144,10 @@ Deployed `simple' to `Test Director'
     instance = director.instances.first
     agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
 
-    instance_name = File.read("#{agent_dir}/bosh/etc/instance/name")
-    deployment_name = File.read("#{agent_dir}/bosh/etc/instance/deployment")
-    az_name = File.read("#{agent_dir}/bosh/etc/instance/az")
-    id = File.read("#{agent_dir}/bosh/etc/instance/id")
+    instance_name = File.read("#{agent_dir}/instance/name")
+    deployment_name = File.read("#{agent_dir}/instance/deployment")
+    az_name = File.read("#{agent_dir}/instance/az")
+    id = File.read("#{agent_dir}/instance/id")
 
     expect(instance_name).to eq('fake-name1')
     expect(deployment_name).to eq('simple')
