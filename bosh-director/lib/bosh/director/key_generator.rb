@@ -53,7 +53,7 @@ module Bosh
           package['version']
         ].tap do |output|
           if package['dependencies'] && package['dependencies'].length > 0
-            output << package['dependencies'].map { |sub_dep| arrayify(find_package_hash(sub_dep), remaining_packages) }
+            output << package['dependencies'].sort.map { |sub_dep| arrayify(find_package_hash(sub_dep), remaining_packages) }
           end
           output
         end

@@ -231,12 +231,13 @@ module Bosh::Director
     context 'when comparing dependency keys from the release manifest and Models::Package' do
       let(:package) do
         package_d = Models::Package.make(name: 'd', version: '1.4', release: release)
-        package_b = Models::Package.make(name: 'b', version: '1.7', release: release)
+        package_b = Models::Package.make(name: 'b', version: '1.7', release: release, dependency_set_json: ['d', 'z'].shuffle.to_json)
         package_x = Models::Package.make(name: 'x', version: '1.7', release: release)
+        package_z = Models::Package.make(name: 'z', version: '1.7', release: release)
 
-        [package_x, package_b, package_d].shuffle.each { |p| release_version.packages << p }
+        [package_x, package_b, package_d, package_z].shuffle.each { |p| release_version.packages << p }
 
-        Models::Package.make(name: 'parent', version: '1.1', release: release, dependency_set_json: ['d', 'b', 'x'].shuffle.to_json)
+        Models::Package.make(name: 'parent', version: '1.1', release: release, dependency_set_json: ['b', 'x'].shuffle.to_json)
       end
 
       let(:compiled_packages) do
@@ -246,7 +247,7 @@ module Bosh::Director
             'version' => '1.1',
             'fingerprint' => 'fake-pkg1-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => ['x', 'b', 'd'].shuffle
+            'dependencies' => ['x', 'b'].shuffle
           },
           {
             'name' => 'd',
@@ -260,10 +261,17 @@ module Bosh::Director
             'version' => '1.7',
             'fingerprint' => 'fake-pkg3-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => []
+            'dependencies' => ['d', 'z'].shuffle
           },
           {
             'name' => 'x',
+            'version' => '1.7',
+            'fingerprint' => 'fake-pkg3-fingerprint',
+            'stemcell' => 'ubuntu-trusty/3000',
+            'dependencies' => []
+          },
+          {
+            'name' => 'z',
             'version' => '1.7',
             'fingerprint' => 'fake-pkg3-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
