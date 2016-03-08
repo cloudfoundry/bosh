@@ -7,7 +7,7 @@ module Bosh::Director
 
     def compiled_packages
       @compiled_packages ||= @release_version.packages.map do |package|
-        package_dependency_key = DependencyKeyGenerator.new.generate_from_models(package, @release_version)
+        package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, @release_version)
 
         Models::CompiledPackage[
           :package_id => package.id,

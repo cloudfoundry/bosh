@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       def dependency_key(package_name)
-        DependencyKeyGenerator.new.generate_from_manifest(package_name, @manifest['compiled_packages'])
+        KeyGenerator.new.dependency_key_from_manifest(package_name, @manifest['compiled_packages'])
       end
 
       private

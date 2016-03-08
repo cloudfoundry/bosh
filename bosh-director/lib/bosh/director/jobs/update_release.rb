@@ -624,7 +624,7 @@ module Bosh::Director
       private
 
       def dependency_key(package)
-        DependencyKeyGenerator.new.generate_from_models(package, @release_version_model)
+        KeyGenerator.new.dependency_key_from_models(package, @release_version_model)
       end
 
       def find_compiled_packages(pkg_id, stemcell_os, stemcell_version, dependency_key)

@@ -1,12 +1,12 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe DependencyKeyGenerator do
+  describe KeyGenerator do
     let(:release) { Models::Release.make(name: 'release-1') }
     let(:release_version) do
       Models::ReleaseVersion.make(release: release)
     end
-    let(:key_generator) { DependencyKeyGenerator.new }
+    let(:key_generator) { KeyGenerator.new }
 
     context 'when generating from compiled packages key from the release manifest' do
       context 'when there are no compiled packages' do
@@ -14,7 +14,7 @@ module Bosh::Director
 
         it 'raise an error' do
           expect {
-            key_generator.generate_from_manifest('bad-package', compiled_packages)
+            key_generator.dependency_key_from_manifest('bad-package', compiled_packages)
           }.to raise_error ReleaseExistingPackageHashMismatch, "Package 'bad-package' not found in the release manifest."
         end
       end
@@ -40,7 +40,7 @@ module Bosh::Director
         end
 
         it 'should generate a dependency key' do
-          key = key_generator.generate_from_manifest('fake-pkg0', compiled_packages)
+          key = key_generator.dependency_key_from_manifest('fake-pkg0', compiled_packages)
           expect(key).to eq('[]')
         end
       end
@@ -80,10 +80,10 @@ module Bosh::Director
         end
 
         it 'should generate a dependency key' do
-          key = key_generator.generate_from_manifest('fake-pkg0', compiled_packages)
+          key = key_generator.dependency_key_from_manifest('fake-pkg0', compiled_packages)
           expect(key).to eq('[["fake-pkg2","fake-pkg2-version",[["fake-pkg3","fake-pkg3-version"]]]]')
 
-          key = key_generator.generate_from_manifest('fake-pkg2', compiled_packages)
+          key = key_generator.dependency_key_from_manifest('fake-pkg2', compiled_packages)
           expect(key).to eq('[["fake-pkg3","fake-pkg3-version"]]')
         end
       end
@@ -116,7 +116,7 @@ module Bosh::Director
         end
 
         it 'should generate a dependency key' do
-          key = key_generator.generate_from_manifest('fake-pkg1', compiled_packages)
+          key = key_generator.dependency_key_from_manifest('fake-pkg1', compiled_packages)
           expect(key).to eq('[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]')
         end
       end
@@ -133,7 +133,7 @@ module Bosh::Director
         end
 
         it 'should generate a dependency key' do
-          expect(key_generator.generate_from_models(package, release_version)).to eq('[]')
+          expect(key_generator.dependency_key_from_models(package, release_version)).to eq('[]')
         end
       end
 
@@ -151,7 +151,7 @@ module Bosh::Director
           end
 
           it 'should generate a dependency key' do
-            expect(key_generator.generate_from_models(package, release_version)).to eq('[["pkg-2","1.4"],["pkg-3","1.7"]]')
+            expect(key_generator.dependency_key_from_models(package, release_version)).to eq('[["pkg-2","1.4"],["pkg-3","1.7"]]')
           end
         end
 
@@ -175,7 +175,7 @@ module Bosh::Director
           end
 
           it 'should generate a dependency key specific to the release version' do
-            expect(key_generator.generate_from_models(package, release_version_2)).to eq('[["pkg-2","1.5"],["pkg-3","1.8"]]')
+            expect(key_generator.dependency_key_from_models(package, release_version_2)).to eq('[["pkg-2","1.5"],["pkg-3","1.8"]]')
           end
         end
 
@@ -202,7 +202,7 @@ module Bosh::Director
           end
 
           it 'should generate a dependency key specific to the release version' do
-            expect(key_generator.generate_from_models(package, new_release_version)).to eq('[["pkg-2","1.5"]]')
+            expect(key_generator.dependency_key_from_models(package, new_release_version)).to eq('[["pkg-2","1.5"]]')
           end
         end
       end
@@ -222,7 +222,7 @@ module Bosh::Director
           end
 
           it 'should generate a dependency key' do
-            expect(key_generator.generate_from_models(package, release_version)).to eq('[["pkg-2","1.4",[["pkg-4","3.7"]]],["pkg-3","1.7"]]')
+            expect(key_generator.dependency_key_from_models(package, release_version)).to eq('[["pkg-2","1.4",[["pkg-4","3.7"]]],["pkg-3","1.7"]]')
           end
         end
       end
@@ -273,7 +273,7 @@ module Bosh::Director
       end
 
       it 'should be equal regardless of the order of dependencies' do
-        expect(key_generator.generate_from_models(package, release_version)).to eq(key_generator.generate_from_manifest('parent', compiled_packages))
+        expect(key_generator.dependency_key_from_models(package, release_version)).to eq(key_generator.dependency_key_from_manifest('parent', compiled_packages))
       end
     end
   end

@@ -1,7 +1,7 @@
 module Bosh
   module Director
-    class DependencyKeyGenerator
-      def generate_from_models(package, release_version)
+    class KeyGenerator
+      def dependency_key_from_models(package, release_version)
         @all_packages = release_version.packages.map do |p|
           {
             'name' => p.name,
@@ -18,7 +18,7 @@ module Bosh
         end.to_json
       end
 
-      def generate_from_manifest(package_name, compiled_packages)
+      def dependency_key_from_manifest(package_name, compiled_packages)
         @all_packages = compiled_packages
         package = compiled_packages.find { |package| package['name'] == package_name }
         raise ReleaseExistingPackageHashMismatch, "Package '#{package_name}' not found in the release manifest." if package.nil?
