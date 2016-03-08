@@ -19,6 +19,15 @@ PATH=/var/vcap/bosh/bin:$PATH
 
 REGISTRY_EXISTS=false
 
+for i in $(seq 60)
+do
+    if ! monit summary | grep -q ' pending$' ; then
+        break
+    fi
+
+    sleep 5
+done
+
 if monit summary | grep -q registry ; then
   REGISTRY_EXISTS=true
 fi
