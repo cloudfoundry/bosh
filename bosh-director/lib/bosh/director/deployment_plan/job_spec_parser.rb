@@ -33,6 +33,8 @@ module Bosh::Director
         parse_disk
         parse_properties
         parse_resource_pool
+        check_remove_dev_tools
+
         parse_update_config
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
@@ -401,6 +403,15 @@ module Bosh::Director
         Network::VALID_DEFAULTS.each do |property|
           network = networks.find { |network| network.default_for?(property) }
           @job.default_network[property] = network.name if network
+        end
+      end
+
+      def check_remove_dev_tools
+        if Config.remove_dev_tools
+          @job.env.spec['bosh'] ||= {}
+          unless @job.env.spec['bosh'].has_key?('remove_dev_tools')
+            @job.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+          end
         end
       end
     end
