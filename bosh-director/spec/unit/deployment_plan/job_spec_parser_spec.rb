@@ -797,7 +797,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.name).to eq('fake-stemcell-name')
         expect(job.stemcell.version).to eq('1')
-        expect(job.env.spec).to eq({'key' => 'value'})
+        expect(job.env.spec).to eq({'key' => 'value', 'bosh' => {'remove_dev_tools' => true}})
       end
 
       context 'when env is also declared in the job spec' do
@@ -829,7 +829,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         it 'should assign the job env to the job' do
           job = parser.parse(job_spec)
-          expect(job.env.spec).to eq({'job' => 'env'})
+          expect(job.env.spec).to eq({'job' => 'env', 'bosh' => {'remove_dev_tools' => true}})
         end
       end
 
@@ -884,8 +884,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.alias).to eq('fake-stemcell')
         expect(job.stemcell.version).to eq('1')
-        expect(job.env.spec).to eq({'key' => 'value'})
-
+        expect(job.env.spec).to eq({'key' => 'value', 'bosh' => {'remove_dev_tools' => true}})
       end
 
       context 'vm type cannot be found' do
@@ -1233,6 +1232,11 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           end
         end
       end
+    end
+
+    it 'fills remove_dev_tools key by default' do
+      job = parser.parse(job_spec)
+      expect(job.env.spec['bosh']['remove_dev_tools']).to eq(true)
     end
 
     def set_up_azs!(azs, job_spec, deployment_plan)

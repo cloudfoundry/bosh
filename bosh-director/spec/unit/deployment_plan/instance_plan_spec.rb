@@ -211,7 +211,7 @@ module Bosh::Director::DeploymentPlan
           instance_plan.existing_instance.update(spec: {
               'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
               'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-              'env' => {'bosh' => { 'password' => 'foobar'}}
+              'env' => {'bosh' => { 'password' => 'foobar', 'remove_dev_tools' => true }}
             })
         end
 
@@ -247,7 +247,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the env has changed' do
         let(:cloud_config_manifest) do
           cloud_manifest = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value'}
+          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value', 'bosh' => {'remove_dev_tools' => true}}
           cloud_manifest
         end
 
@@ -255,7 +255,7 @@ module Bosh::Director::DeploymentPlan
           instance_plan.existing_instance.update(spec: {
                                                    'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
                                                    'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-                                                   'env' => {'key' => 'previous-value'},
+                                                   'env' => {'key' => 'previous-value', 'bosh' => {'remove_dev_tools' => true}},
                                                  })
         end
 
@@ -264,8 +264,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'log the change reason' do
-          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
-                ' on instance ' + "#{instance_plan.existing_instance}")
+          expect(logger).to receive(:debug).with(
+            'env_changed? changed FROM: {"key"=>"previous-value", "bosh"=>{"remove_dev_tools"=>true}} TO: {"key"=>"changed-value", "bosh"=>{"remove_dev_tools"=>true}}' +
+            ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.needs_shutting_down?
         end
       end
