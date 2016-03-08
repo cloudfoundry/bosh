@@ -407,9 +407,12 @@ module Bosh::Director
       end
 
       def check_remove_dev_tools
-        # Dev Tools should be removed by default
-        @job.env.spec['bosh'] = {} unless @job.env.spec.has_key?('bosh') && @job.env.spec['bosh']
-        @job.env.spec['bosh']['remove_dev_tools'] = true unless @job.env.spec['bosh'].has_key? 'remove_dev_tools'
+        if Config.remove_dev_tools
+          @job.env.spec['bosh'] ||= {}
+          unless @job.env.spec['bosh'].has_key?('remove_dev_tools')
+            @job.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+          end
+        end
       end
     end
   end

@@ -797,7 +797,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.name).to eq('fake-stemcell-name')
         expect(job.stemcell.version).to eq('1')
-        expect(job.env.spec).to eq({'key' => 'value', 'bosh' => {'remove_dev_tools' => true}})
+        expect(job.env.spec).to eq({'key' => 'value'})
       end
 
       context 'when env is also declared in the job spec' do
@@ -829,7 +829,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         it 'should assign the job env to the job' do
           job = parser.parse(job_spec)
-          expect(job.env.spec).to eq({'job' => 'env', 'bosh' => {'remove_dev_tools' => true}})
+          expect(job.env.spec).to eq({'job' => 'env'})
         end
       end
 
@@ -884,7 +884,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.vm_type.cloud_properties).to eq({})
         expect(job.stemcell.alias).to eq('fake-stemcell')
         expect(job.stemcell.version).to eq('1')
-        expect(job.env.spec).to eq({'key' => 'value', 'bosh' => {'remove_dev_tools' => true}})
+        expect(job.env.spec).to eq({'key' => 'value'})
       end
 
       context 'vm type cannot be found' do
@@ -1234,9 +1234,41 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    it 'fills remove_dev_tools key by default' do
-      job = parser.parse(job_spec)
-      expect(job.env.spec['bosh']['remove_dev_tools']).to eq(true)
+    describe 'remove_dev_tools' do
+      let(:resource_pool_env) { {} }
+      before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(false) }
+
+      it 'does not add remove_dev_tools by default' do
+        job = parser.parse(job_spec)
+        expect(job.env.spec['bosh']).to eq(nil)
+      end
+
+      it 'does what the job env says' do
+        job_spec['env'] = {'bosh' => {'remove_dev_tools' => 'custom'}}
+        job = parser.parse(job_spec)
+        expect(job.env.spec['bosh']['remove_dev_tools']).to eq('custom')
+      end
+
+      describe 'when director manifest specifies director.remove_dev_tools' do
+        before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(true) }
+
+        it 'should do what director wants' do
+          job = parser.parse(job_spec)
+          expect(job.env.spec['bosh']['remove_dev_tools']).to eq(true)
+        end
+      end
+
+      describe 'when both the job and director specify' do
+        before do
+          allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(true)
+          job_spec['env'] = {'bosh' => {'remove_dev_tools' => false}}
+        end
+
+        it 'defers to the job' do
+          job = parser.parse(job_spec)
+          expect(job.env.spec['bosh']['remove_dev_tools']).to eq(false)
+        end
+      end
     end
 
     def set_up_azs!(azs, job_spec, deployment_plan)
