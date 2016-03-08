@@ -66,6 +66,16 @@ module Bosh::Director
       end
     end
 
+    describe '#find_instances_by_deployment' do
+      it 'uses InstanceLookup#by_deployment' do
+        deployment = Models::Deployment.make(name: 'given_deployment')
+
+        expect_any_instance_of(Api::InstanceLookup).to receive(:by_deployment).with(deployment)
+
+        subject.find_instances_by_deployment(deployment)
+      end
+    end
+
     describe '#find_by_name' do
       let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
       let(:job) { 'FAKE_JOB' }
@@ -84,6 +94,34 @@ module Bosh::Director
     describe '#filter_by' do
       it 'filters by given criteria' do
         expect(subject.filter_by(deployment, uuid: instance.uuid)).to eq [instance]
+      end
+    end
+
+    describe '#fetch_instances_with_vm' do
+
+      before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+      it 'enqueues a resque job' do
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
+
+        expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment.name).and_return(task)
+
+        expect(subject.fetch_instances_with_vm(username, deployment, 'FAKE_FORMAT')).to eq(task)
+      end
+    end
+
+    describe '#fetch_instances' do
+
+      before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+      it 'enqueues a resque job' do
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
+
+        expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT', true], deployment.name).and_return(task)
+
+        expect(subject.fetch_instances(username, deployment, 'FAKE_FORMAT')).to eq(task)
       end
     end
   end

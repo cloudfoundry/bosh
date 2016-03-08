@@ -449,7 +449,7 @@ module Bosh::Director
         describe 'getting deployment vms info' do
           before { basic_authorize 'reader', 'reader' }
 
-          it 'returns a list of agent_ids, jobs and indices' do
+          it 'returns a list of instances with vms (vm_cid != nil)' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
                        :manifest => Psych.dump({'foo' => 'bar'}))
@@ -462,8 +462,9 @@ module Bosh::Director
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
                 'agent_id' => "agent-#{i}",
-                'vm_cid' => "cid-#{i}",
               }
+
+              instance_params['vm_cid'] = "cid-#{i}" if i < 8
               Models::Instance.create(instance_params)
             end
 
@@ -471,14 +472,54 @@ module Bosh::Director
 
             expect(last_response.status).to eq(200)
             body = Yajl::Parser.parse(last_response.body)
-            expect(body.size).to eq(15)
+            expect(body.size).to eq(8)
 
-            15.times do |i|
-              expect(body[i]).to eq(
+            body.each_with_index do |instance_with_vm, i|
+              expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
+                  'id' => "instance-#{i}"
+              )
+            end
+          end
+        end
+
+        describe 'getting deployment instances' do
+          before { basic_authorize 'reader', 'reader' }
+
+          it 'returns a list of all instances' do
+            deployment = Models::Deployment.
+                create(:name => 'test_deployment',
+                       :manifest => Psych.dump({'foo' => 'bar'}))
+
+
+            15.times do |i|
+              instance_params = {
+                'deployment_id' => deployment.id,
+                'job' => "job-#{i}",
+                'index' => i,
+                'state' => 'started',
+                'uuid' => "instance-#{i}",
+                'agent_id' => "agent-#{i}",
+              }
+
+              Models::Instance.create(instance_params)
+            end
+
+            get '/test_deployment/instances'
+
+            expect(last_response.status).to eq(200)
+            body = Yajl::Parser.parse(last_response.body)
+            expect(body.size).to eq(15)
+
+            body.each_with_index do |instance, i|
+              expect(instance).to eq(
+                  'agent_id' => "agent-#{i}",
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'cid' => nil,
                   'id' => "instance-#{i}"
               )
             end

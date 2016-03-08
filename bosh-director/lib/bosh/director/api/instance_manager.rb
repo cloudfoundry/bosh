@@ -21,6 +21,10 @@ module Bosh::Director
         end
       end
 
+      def find_instances_by_deployment(deployment)
+        InstanceLookup.new.by_deployment(deployment)
+      end
+
       # @param [Models::Deployment] deployment
       # @param [Hash] filter Sequel-style DB record filter
       # @return [Array] List of instances that matched the filter
@@ -58,6 +62,14 @@ module Bosh::Director
         end
 
         JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment.name)
+      end
+
+      def fetch_instances(username, deployment, format)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format, true], deployment.name)
+      end
+
+      def fetch_instances_with_vm(username, deployment, format)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format], deployment.name)
       end
 
       def ssh(username, deployment, options)
