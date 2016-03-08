@@ -264,7 +264,7 @@ module Bosh::Director
                 sha1: 'cpkg4_sha4',
                 stemcell_os: 'ubuntu-trusty',
                 stemcell_version: '3000',
-                dependency_key: '[["fake-pkg1","fake-pkg1-version"],["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
+                dependency_key: '[["fake-pkg1","fake-pkg1-version",[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]]]',
             )
           end
 

@@ -8,26 +8,31 @@ module Bosh::Director
     describe '#generate!' do
       subject(:generator) { described_class.new(logger, event_log) }
 
-      let(:release_version_model) { instance_double('Bosh::Director::Models::ReleaseVersion') }
+      let(:release_version_model) { Models::ReleaseVersion.make }
       let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
 
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', use_compiled_package: nil) }
       let(:template) { instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version) }
 
-      let(:package_a) { Bosh::Director::Models::Package.make(name: 'package_a') }
-      let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b') }
-      let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c') }
+      let(:package_a) { Bosh::Director::Models::Package.make(name: 'package_a', dependency_set_json: ['package_b'].to_json) }
+      let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b', version: '2') }
+      let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c', version: '3') }
 
       let(:stemcell) { make_stemcell({operating_system: 'chrome-os', version: 'latest'}) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }
 
-      def expect_package_compilation(release_version_model, stemcell, package, dependencies, transitive_dependencies, dependency_key, cache_key)
+      def expect_package_compilation(release_version_model, stemcell, package, dependencies, transitive_dependencies, cache_key)
         expect(release_version_model).to receive(:dependencies).with(package).and_return(dependencies)
         expect(release_version_model).to receive(:transitive_dependencies).with(package).and_return(transitive_dependencies)
-        expect(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies).and_return(dependency_key)
         expect(Bosh::Director::Models::CompiledPackage).to receive(:create_cache_key).with(package, transitive_dependencies, stemcell.model.sha1).and_return(cache_key)
+      end
+
+      before do
+        release_version_model.packages << package_a
+        release_version_model.packages << package_b
+        release_version_model.packages << package_c
       end
 
       context 'when existing compiled packages do not exist' do
@@ -37,21 +42,18 @@ module Bosh::Director
               package_a,
               [package_b],
               [package_b, package_c],
-              'dependency-key-a',
               'package-cache-key-a')
 
             expect_package_compilation(release_version_model, stemcell,
               package_b,
               [package_c],
               [package_c],
-              'dependency-key-b',
               'package-cache-key-b')
 
             expect_package_compilation(release_version_model, stemcell,
               package_c,
               [],
               [],
-              'dependency-key-c',
               'package-cache-key-c')
 
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
@@ -73,42 +75,42 @@ module Bosh::Director
             expect(task_b.cache_key).to eq('package-cache-key-b')
             expect(task_c.cache_key).to eq('package-cache-key-c')
 
-            expect(task_a.dependency_key).to eq('dependency-key-a')
-            expect(task_b.dependency_key).to eq('dependency-key-b')
-            expect(task_c.dependency_key).to eq('dependency-key-c')
+            expect(task_a.dependency_key).to eq('[["package_b","2"]]')
+            expect(task_b.dependency_key).to eq('[]')
+            expect(task_c.dependency_key).to eq('[]')
           end
         end
 
         context 'when two packages share a dependency' do
-          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d') }
+          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d', dependency_set_json: ['package_c', 'package_b'].to_json) }
+
+          before do
+            release_version_model.packages << package_d
+          end
 
           it 'correctly adds dependencies' do
             expect_package_compilation(release_version_model, stemcell,
               package_a,
               [package_b, package_c],
               [package_b, package_c, package_d],
-              'dependency-key-a',
               'package-cache-key-a')
 
             expect_package_compilation(release_version_model, stemcell,
               package_b,
               [package_d],
               [package_d],
-              'dependency-key-b',
               'package-cache-key-b')
 
             expect_package_compilation(release_version_model, stemcell,
               package_c,
               [package_d],
               [package_d],
-              'dependency-key-c',
               'package-cache-key-c')
 
             expect_package_compilation(release_version_model, stemcell,
               package_d,
               [],
               [],
-              'dependency-key-d',
               'package-cache-key-d')
 
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
@@ -133,16 +135,16 @@ module Bosh::Director
             expect(task_c.cache_key).to eq('package-cache-key-c')
             expect(task_d.cache_key).to eq('package-cache-key-d')
 
-            expect(task_a.dependency_key).to eq('dependency-key-a')
-            expect(task_b.dependency_key).to eq('dependency-key-b')
-            expect(task_c.dependency_key).to eq('dependency-key-c')
-            expect(task_d.dependency_key).to eq('dependency-key-d')
+            expect(task_a.dependency_key).to eq('[["package_b","2"]]')
+            expect(task_b.dependency_key).to eq('[]')
+            expect(task_c.dependency_key).to eq('[]')
+            expect(task_d.dependency_key).to eq('[["package_b","2"],["package_c","3"]]')
           end
         end
       end
 
       context 'when existing compiled packages exist' do
-        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: 'dependency-key-c') }
+        let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: '[]') }
 
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
@@ -150,21 +152,18 @@ module Bosh::Director
               package_a,
               [package_b],
               [package_b, package_c],
-              'dependency-key-a',
               'package-cache-key-a')
 
             expect_package_compilation(release_version_model, stemcell,
               package_b,
               [package_c],
               [package_c],
-              'dependency-key-b',
               'package-cache-key-b')
 
             expect_package_compilation(release_version_model, stemcell,
               package_c,
               [],
               [],
-              'dependency-key-c',
               'package-cache-key-c')
 
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
@@ -188,42 +187,42 @@ module Bosh::Director
             expect(task_b.cache_key).to eq('package-cache-key-b')
             expect(task_c.cache_key).to eq('package-cache-key-c')
 
-            expect(task_a.dependency_key).to eq('dependency-key-a')
-            expect(task_b.dependency_key).to eq('dependency-key-b')
-            expect(task_c.dependency_key).to eq('dependency-key-c')
+            expect(task_a.dependency_key).to eq('[["package_b","2"]]')
+            expect(task_b.dependency_key).to eq('[]')
+            expect(task_c.dependency_key).to eq('[]')
           end
         end
 
         context 'when two packages share a dependency' do
-          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d') }
+          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d', dependency_set_json: ['package_c', 'package_b'].to_json) }
+
+          before do
+            release_version_model.packages << package_d
+          end
 
           it 'correctly adds dependencies' do
             expect_package_compilation(release_version_model, stemcell,
               package_a,
               [package_b, package_c],
               [package_b, package_c, package_d],
-              'dependency-key-a',
               'package-cache-key-a')
 
             expect_package_compilation(release_version_model, stemcell,
               package_b,
               [package_d],
               [package_d],
-              'dependency-key-b',
               'package-cache-key-b')
 
             expect_package_compilation(release_version_model, stemcell,
               package_c,
               [package_d],
               [package_d],
-              'dependency-key-c',
               'package-cache-key-c')
 
             expect_package_compilation(release_version_model, stemcell,
               package_d,
               [],
               [],
-              'dependency-key-d',
               'package-cache-key-d')
 
             generator.generate!(compile_tasks, job, template, package_a, stemcell)
@@ -250,10 +249,10 @@ module Bosh::Director
             expect(task_c.cache_key).to eq('package-cache-key-c')
             expect(task_d.cache_key).to eq('package-cache-key-d')
 
-            expect(task_a.dependency_key).to eq('dependency-key-a')
-            expect(task_b.dependency_key).to eq('dependency-key-b')
-            expect(task_c.dependency_key).to eq('dependency-key-c')
-            expect(task_d.dependency_key).to eq('dependency-key-d')
+            expect(task_a.dependency_key).to eq('[["package_b","2"]]')
+            expect(task_b.dependency_key).to eq('[]')
+            expect(task_c.dependency_key).to eq('[]')
+            expect(task_d.dependency_key).to eq('[["package_b","2"],["package_c","3"]]')
           end
         end
       end
@@ -267,14 +266,12 @@ module Bosh::Director
             package_a,
             [package_b],
             [package_b],
-            'dependency-key-a',
             'package-cache-key-a')
 
           expect_package_compilation(release_version_model, stemcell,
             package_b,
             [],
             [],
-            'dependency-key-b',
             'package-cache-key-b')
         end
 
