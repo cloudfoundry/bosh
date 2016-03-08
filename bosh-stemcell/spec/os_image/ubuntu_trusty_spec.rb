@@ -297,4 +297,10 @@ EOF
       end
     end
   end
+
+  context 'ensure sendmail is removed (stig: V-38671)' do
+    describe command('dpkg -s sendmail') do
+      its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
+    end
+  end
 end

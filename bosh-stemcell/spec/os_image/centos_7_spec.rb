@@ -100,4 +100,10 @@ describe 'CentOS 7 OS image', os_image: true do
       its (:stdout) { should include('CentOS 7 Official Signing Key') }
     end
   end
+
+  context 'ensure sendmail is removed (stig: V-38671)' do
+    describe command('rpm -q sendmail') do
+      its (:stdout) { should include ('package sendmail is not installed')}
+    end
+  end
 end
