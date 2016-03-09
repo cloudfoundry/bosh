@@ -15,7 +15,7 @@ module Bosh::Director
       def spec
         {
           'available_networks' => @source.networks.map { |network| network.name },
-          'link_properties' => @template.provides_link_info(@source.name, @name)['mapped_properties'],
+          'properties' => @template.provides_link_info(@source.name, @name)['mapped_properties'],
           'instances' => @source.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
