@@ -16,7 +16,7 @@ module Bosh::Dev::Sandbox
       :users_in_manifest,
       :enable_post_deploy,
       :generate_vm_passwords,
-      :remove_dev_tools,
+      :remove_dev_tools
 
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
