@@ -60,6 +60,7 @@ require 'bosh/director/agent_client'
 require 'cloud'
 require 'bosh/director/compile_task'
 require 'bosh/director/key_generator'
+require 'bosh/director/package_dependencies_manager'
 
 require 'bosh/director/job_renderer'
 require 'bosh/director/cycle_helper'

@@ -11,7 +11,7 @@ module Bosh
         end
 
         root_package_hash = {'name' => package.name, 'version' => package.version, 'dependencies' => package.dependency_set}
-        package_hashes = transitive_dependencies(root_package_hash)
+        package_hashes = PackageDependenciesManager.new(release_version).transitive_dependencies(package)
 
         root_package_hash['dependencies'].sort.map do |dependency_name|
           arrayify(find_package_hash(dependency_name), package_hashes.dup)
@@ -31,19 +31,6 @@ module Bosh
       private
 
       attr_reader :all_packages
-
-      def transitive_dependencies(package)
-        dependency_set = Set.new
-        dependencies(package).each do |dependency|
-          dependency_set << dependency
-          dependency_set.merge(transitive_dependencies(dependency))
-        end
-        dependency_set
-      end
-
-      def dependencies(package)
-        package['dependencies'].map { |package_name| find_package_hash(package_name) }.to_set
-      end
 
       def arrayify(package, remaining_packages)
         remaining_packages.delete(package)

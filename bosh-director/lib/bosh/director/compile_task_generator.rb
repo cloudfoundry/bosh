@@ -23,8 +23,8 @@ module Bosh::Director
       end
 
       release_version = template.release.model
-
-      transitive_dependencies = release_version.transitive_dependencies(package)
+      package_dependency_manager = PackageDependenciesManager.new(release_version)
+      transitive_dependencies = package_dependency_manager.transitive_dependencies(package)
       package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version)
       package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model.sha1)
 
@@ -36,7 +36,7 @@ module Bosh::Director
       end
 
       @logger.info("Processing package `#{package.desc}' dependencies")
-      dependencies = release_version.dependencies(package)
+      dependencies = package_dependency_manager.dependencies(package)
       dependencies.each do |dependency|
         @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
         dependency_task = generate!(compile_tasks, job, template, dependency, stemcell)
