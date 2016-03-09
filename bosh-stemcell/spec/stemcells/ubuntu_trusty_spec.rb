@@ -36,6 +36,12 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
+  context 'installed by dev_tools_config' do
+    describe file('/var/vcap/bosh/etc/dev_tools_file_list') do
+      it { should contain('/usr/bin/gcc') }
+    end
+  end
+
   context 'installed by bosh_harden' do
     describe 'disallow unsafe setuid binaries' do
       subject { backend.run_command('find -L / -xdev -perm +6000 -a -type f')[:stdout].split }
