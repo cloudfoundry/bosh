@@ -155,20 +155,7 @@ module Bosh::Director
           'template_hashes',
           'rendered_templates_archive',
         ]
-        @full_spec = @full_spec.select {|k,_| keys.include?(k) }
-
-        # remove template_scoped_properties from each template in each job
-        if @full_spec && @full_spec['job']
-          @full_spec['job'].delete('template_scoped_properties')
-          if @full_spec['job']['templates']
-            @full_spec['job']['templates'].map! {|template|
-              template.delete('template_scoped_properties')
-              template
-            }
-          end
-        end
-
-        @full_spec
+        @full_spec.select {|k,_| keys.include?(k) }
       end
     end
   end
