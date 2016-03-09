@@ -11,7 +11,7 @@ module Bosh::Director
 
         @logger.debug("Validating packages for release '#{release_desc}'")
         release_version_model.packages.each do |package|
-          packages_list = release_version_model.transitive_dependencies(package)
+          packages_list = Bosh::Director::PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
           packages_list << package
           packages_list.each do |needed_package|
             if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
