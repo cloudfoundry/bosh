@@ -154,7 +154,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'tftp is not installed (stig: V-38701)' do
+  context 'tftp is not installed (stig: V-38701, V-38609, V-38606)' do
     it "shouldn't be installed" do
       expect(package('tftp')).to_not be_installed
       expect(package('tftpd')).to_not be_installed
