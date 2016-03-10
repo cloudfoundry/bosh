@@ -73,7 +73,7 @@ describe 'deploy job template', type: :integration do
 
       # delete this assertion on heartbeat output if it fails... This assertion adds ~60s to the suite. It's not worth it.
       waiter.wait(120) do
-        expect(health_monitor.read_log).to match(/\[HEARTBEAT\] Heartbeat from \w.*\/\w.* \(agent_id=\w.* node_id=\w.*\)/)
+        expect(health_monitor.read_log).to match(/\[HEARTBEAT\] Heartbeat from \w.*\/\w.* \(agent_id=\w.*\)/)
       end
     end
   end

@@ -31,7 +31,7 @@ module Bosh::Monitor
       if @deployment && @job && @instance_id
         name = "#{@deployment}: #{@job}(#{@instance_id}) [id=#{@id}, "
 
-        if @index && !@index.empty?
+        if @index
           name = name + "index=#{@index}, "
         end
 
