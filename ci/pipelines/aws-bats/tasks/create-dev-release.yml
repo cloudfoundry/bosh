@@ -1,0 +1,11 @@
+---
+platform: linux
+image: docker:///boshcpi/aws-cpi-release
+inputs:
+  - name: bosh-src
+outputs:
+  - name: bosh-dev-release
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/create-dev-release.sh
+
+
