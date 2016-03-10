@@ -28,14 +28,8 @@ module Bosh::Monitor
     end
 
     def name
-      if @deployment && @job && @instance_id
-        name = "#{@deployment}: #{@job}(#{@instance_id}) [id=#{@id}, "
-
-        if @index && !@index.empty?
-          name = name + "index=#{@index}, "
-        end
-
-        name + "cid=#{@cid}]"
+      if @deployment && @job && @index
+        "#{@deployment}: #{@job}(#{@index}) [id=#{@id}, instance_id=#{@instance_id}, cid=#{@cid}]"
       else
         state = ATTRIBUTES.inject([]) do |acc, attribute|
           value = send(attribute)

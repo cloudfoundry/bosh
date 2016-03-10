@@ -71,11 +71,11 @@ module Bosh::Monitor
 
       #should an individual alert or heartbeat be forwarded as a consul event
       def forward_this_event?(event)
-        @use_events && (event.is_a?(Bosh::Monitor::Events::Alert) || ( event.is_a?(Bosh::Monitor::Events::Heartbeat) && @heartbeats_as_alerts && event.node_id))
+        @use_events && ( event.is_a?(Bosh::Monitor::Events::Alert) || ( event.is_a?(Bosh::Monitor::Events::Heartbeat) && @heartbeats_as_alerts) )
       end
 
       def forward_this_ttl?(event)
-        @use_ttl && event.is_a?(Bosh::Monitor::Events::Heartbeat) && event.node_id
+         @use_ttl && event.is_a?(Bosh::Monitor::Events::Heartbeat)
       end
 
       def get_path_for_note_type(event, note_type)
@@ -105,7 +105,7 @@ module Bosh::Monitor
       end
 
       def label_for_ttl(event)
-        "#{@namespace}#{event.job}_#{event.node_id}"
+        "#{@namespace}#{event.job}_#{event.index}"
       end
 
       # Notify consul of an event
@@ -136,8 +136,7 @@ module Bosh::Monitor
           #this should yield consistent results from the values method
           {
             :agent  => body[:agent_id],
-            :name   => "#{body[:job]}/#{body[:node_id]}",
-            :id     => body[:node_id],
+            :name   => "#{body[:job]}/#{body[:index]}",
             :state  => "#{body[:job_state]}",
             :data   => {
                 :cpu => vitals['cpu'].values,
