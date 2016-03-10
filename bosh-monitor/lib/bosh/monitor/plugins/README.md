@@ -32,7 +32,8 @@ The Consul plugin works by forwarding nats heartbeat events and alerts to a cons
 ```ruby
 {
   :agent  => agent_id,
-  :name   => "job_name / index",
+  :name   => "job_name / node_id",
+  :id     => node_id,
   :state  => job_state,
   :data   => {
       :cpu => [sys, user, wait]

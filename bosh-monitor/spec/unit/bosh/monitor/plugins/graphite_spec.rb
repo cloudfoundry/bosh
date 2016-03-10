@@ -56,16 +56,28 @@ describe Bhm::Plugins::Graphite do
     end
 
     context "when event is of type Heartbeat" do
-      let(:event) { make_heartbeat(timestamp: Time.now.to_i) }
-
       it "sends metrics to Graphite" do
+        event = make_heartbeat(timestamp: Time.now.to_i)
         EM.run do
           plugin.run
 
           event.metrics.each do |metric|
-            metric_name = "#{event.deployment}.#{event.job}.#{event.index}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
+            metric_name = "#{event.deployment}.#{event.job}.#{event.node_id}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
             expect(connection).to receive(:send_metric).with(metric_name, metric.value, metric.timestamp)
           end
+
+          plugin.process(event)
+
+          EM.stop
+        end
+      end
+
+      it "skips sending metrics if node_id is missing" do
+        event = make_heartbeat(timestamp: Time.now.to_i, node_id: nil)
+        EM.run do
+          plugin.run
+
+          expect(connection).not_to receive(:send_metric)
 
           plugin.process(event)
 

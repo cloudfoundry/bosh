@@ -19,7 +19,7 @@ describe Bhm::Events::Alert do
   end
 
   it "has short description" do
-    expect(make_alert.short_description).to eq("Severity 2: mysql_node/0 Test Alert")
+    expect(make_alert.short_description).to eq("Severity 2: mysql_node/node_id_abc Test Alert")
   end
 
   it "has hash representation" do
@@ -30,7 +30,7 @@ describe Bhm::Events::Alert do
       :severity   => 2,
       :title      => "Test Alert",
       :summary    => "Everything is down",
-      :source     => "mysql_node/0",
+      :source     => "mysql_node/node_id_abc",
       :created_at => ts.to_i
     })
   end
@@ -38,7 +38,7 @@ describe Bhm::Events::Alert do
   it "has plain text representation" do
     ts = Time.now
     expect(make_alert(:created_at => ts.to_i).to_plain_text).to eq <<-EOS.gsub(/^\s*/, "")
-      mysql_node/0
+      mysql_node/node_id_abc
       Test Alert
       Severity: 2
       Summary: Everything is down
