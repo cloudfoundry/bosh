@@ -32,7 +32,7 @@ module Bosh
           use_ssl: @options.fetch(:use_ssl, true),
           host: @options[:host],
           port: @options[:port],
-          region: @options.fetch(:region, DEFAULT_REGION),
+          region: @options[:region] || DEFAULT_REGION,
           s3_force_path_style: @options.fetch(:s3_force_path_style, false),
           ssl_verify_peer:  @options.fetch(:ssl_verify_peer, true),
           credentials_source: @options.fetch(:credentials_source, 'static'),
