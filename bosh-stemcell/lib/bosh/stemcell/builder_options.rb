@@ -73,7 +73,7 @@ module Bosh::Stemcell
 
     def bosh_micro_options
       {
-        'bosh_micro_enabled' => 'yes',
+        'bosh_micro_enabled' => environment.fetch('BOSH_MICRO_ENABLED', 'yes'),
         'bosh_micro_package_compiler_path' => File.join(source_root, 'bosh-release'),
         'bosh_micro_manifest_yml_path' => File.join(source_root, 'release', 'micro', "#{infrastructure.name}.yml"),
         'bosh_micro_release_tgz_path' => bosh_micro_release_tgz_path,

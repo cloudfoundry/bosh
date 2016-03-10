@@ -130,6 +130,17 @@ module Bosh::Stemcell
       end
       # rubocop:enable MethodLength
 
+      describe 'microbosh' do
+        context 'when BOSH_MICRO_ENABLED set to no' do
+          let(:env) { { 'BOSH_MICRO_ENABLED' => 'no' } }
+
+          it 'has "bosh_micro_enabled" key' do
+            result = stemcell_builder_options.default
+            expect(result['bosh_micro_enabled']).to eq('no')
+          end
+        end
+      end
+
       describe 'infrastructure variation' do
         context 'when infrastruture is aws' do
           let(:infrastructure) { Infrastructure.for('aws') }
