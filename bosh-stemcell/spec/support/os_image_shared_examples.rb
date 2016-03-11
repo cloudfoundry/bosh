@@ -254,4 +254,10 @@ shared_examples_for 'every OS image' do
       its (:stdout) { should eq("root:x:0:0:root:/root:/bin/bash\n") }
     end
   end
+
+  context 'The /etc/shadow file must have mode 0000 (stig: V-38504)' do
+    describe file('/etc/shadow') do
+      it { should be_mode 000 }
+    end
+  end
 end
