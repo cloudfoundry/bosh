@@ -138,4 +138,19 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'ensure ypbind is not installed nor enabled (stig: V-38604)' do
+    describe package('ypbind') do
+      it('should not be installed') { should_not be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/ypbind.service') do
+      it { should_not be_file }
+    end
+  end
+
 end

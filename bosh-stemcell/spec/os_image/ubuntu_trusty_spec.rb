@@ -317,4 +317,13 @@ EOF
       it('should be enabled') { should be_enabled }
     end
   end
+
+  context 'ensure ypbind is not running (stig: V-38604)' do
+    describe package('nis') do
+      it { should_not be_installed }
+    end
+    describe file('/var/run/ypbind.pid') do
+      it { should_not be_file }
+    end
+  end
 end
