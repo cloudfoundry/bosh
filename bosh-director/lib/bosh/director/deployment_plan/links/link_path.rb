@@ -53,9 +53,9 @@ module Bosh::Director
           if !link_network || provides_job.has_network?(link_network)
             provides_job.templates.each do |provides_template|
               if provides_template.link_infos.has_key?(provides_job.name) && provides_template.link_infos[provides_job.name].has_key?('provides')
-                matching_links = provides_template.link_infos[provides_job.name]["provides"].select { |k,v| v["type"] == link_type }
-                if matching_links.size > 0
-                  link_name = matching_links.values()[0].has_key?("as") ? matching_links.values()[0]['as'] : matching_links.values()[0]['name']
+                matching_links = provides_template.link_infos[provides_job.name]["provides"].select { |_,v| v["type"] == link_type }
+                matching_links.each do |_, matching_link_values|
+                  link_name = matching_link_values.has_key?("as") ? matching_link_values['as'] : matching_link_values['name']
                   found_link_paths.push({:deployment => @deployment_plan.name, :job => provides_job.name, :template => provides_template.name, :name => link_name})
                 end
               end

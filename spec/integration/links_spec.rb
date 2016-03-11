@@ -635,16 +635,44 @@ Error 100: Unable to process links for deployment. Errors are:
     end
 
     context 'when provide and consume links are set in spec, and implied by deployment manifest, but there are multiple provide links with same type' do
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
-        manifest
+
+      context 'when both provided links are on separate templates' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
+          manifest
+        end
+
+        it 'raises error before deploying vms' do
+          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(director.vms('simple')).to eq([])
+        end
       end
 
-      it 'raises error before deploying vms' do
-        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        expect(exit_code).not_to eq(0)
-        expect(director.vms('simple')).to eq([])
+      context 'when both provided links are in same template' do
+        let(:job_with_same_type_links) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'duplicate_link_type_job',
+              templates: [{'name' => 'database_with_two_provided_link_of_same_type'}],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [implied_job_spec, job_with_same_type_links]
+          manifest
+        end
+
+        it 'raises error' do
+          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(director.vms('simple')).to eq([])
+        end
+
       end
     end
 
