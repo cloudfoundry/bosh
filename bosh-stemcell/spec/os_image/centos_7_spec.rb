@@ -107,7 +107,20 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  describe package('cronie') do
-    it('should be installed (stig: V-38605)') { should be_installed }
+  context 'ensure cron is installed and enabled' do
+    describe package('cronie') do
+      it('should be installed (stig: V-38605)') { should be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/crond.service') do
+      it { should be_file }
+      its(:content) { should match /^ExecStart=\/usr\/sbin\/crond/ }
+    end
   end
+
 end
