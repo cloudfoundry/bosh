@@ -167,13 +167,19 @@ namespace :stemcell do
 
   desc 'Build a stemcell using a local pre-built base OS image'
   task :build_with_local_os_image, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path] do |_, args|
+
     begin
       require 'bosh/dev/build'
 
       # download bosh release from bucket
       build = Bosh::Dev::Build.candidate
       build_number = build.number
-      release_tarball_path = build.release_tarball_path
+
+      if 'no' == ENV['BOSH_MICRO_ENABLED']
+        release_tarball_path = '/dev/null'
+      else
+        release_tarball_path = build.release_tarball_path
+      end
     rescue RuntimeError => e
       print_help
       raise e

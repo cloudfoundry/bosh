@@ -303,4 +303,12 @@ EOF
       its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
     end
   end
+
+  describe package('cron') do
+    it('should be installed (stig: V-38605)') { should be_installed }
+  end
+
+  describe service('cron') do
+    it('should be enabled (stig: V-38605)') { should be_enabled }
+  end
 end

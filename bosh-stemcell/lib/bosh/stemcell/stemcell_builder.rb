@@ -11,7 +11,10 @@ module Bosh::Stemcell
     end
 
     def build
-      gem_components.build_release_gems
+      unless 'no' == ENV['BOSH_MICRO_ENABLED']
+        gem_components.build_release_gems
+      end
+
       environment.prepare_build
 
       stemcell_stages = collection.extract_operating_system_stages +

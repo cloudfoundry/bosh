@@ -106,4 +106,8 @@ describe 'CentOS 7 OS image', os_image: true do
       its (:stdout) { should include ('package sendmail is not installed')}
     end
   end
+
+  describe package('cronie') do
+    it('should be installed (stig: V-38605)') { should be_installed }
+  end
 end
