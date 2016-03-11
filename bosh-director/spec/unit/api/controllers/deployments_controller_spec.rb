@@ -812,8 +812,12 @@ module Bosh::Director
             before { authorize 'admin', 'admin' }
 
             it 'returns diff with resolved aliases' do
-              perform
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+              post(
+                '/fake-dep-name/diff',
+                "---\nname: fake-dep-name\nreleases: [{'name':'new','version':5}]",
+                { 'CONTENT_TYPE' => 'text/yaml' },
+              )
+              # expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
             end
 
             it 'gives a nice error when request body is not a valid yml' do
@@ -842,6 +846,42 @@ module Bosh::Director
               perform
               expect(last_response.status).to eq(401)
             end
+          end
+
+          context 'redacting' do
+
+            let(:manifest) do
+                <<-EOS
+---
+name: fake-dep-name
+releases: [{'name':'simple','version':5}]
+jobs: [{'name': 'test', 'properties': { 'a': 'super-secret'}}]
+              EOS
+            end
+
+            before { authorize 'admin', 'admin' }
+
+            it 'redacts by default when no redact param is passed in' do
+              response = post(
+                '/fake-dep-name/diff',
+                manifest,
+                {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(response.body).to include('<redacted>')
+            end
+
+            context 'when redact param is present and set to false' do
+              it 'returns an un-redacted diff' do
+                response = post(
+                  '/fake-dep-name/diff?redact=false',
+                  manifest,
+                  {'CONTENT_TYPE' => 'text/yaml'}
+                )
+                expect(response.body).not_to include('<redacted>')
+              end
+            end
+
+
           end
         end
       end

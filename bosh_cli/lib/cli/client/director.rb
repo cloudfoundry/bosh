@@ -275,12 +275,15 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
-        def diff_deployment(name, manifest_yaml)
-          status, body = post("/deployments/#{name}/diff", 'text/yaml', manifest_yaml)
+        def diff_deployment(name, manifest_yaml, no_redact = false)
+          redact_param = no_redact ? '?redact=false' : ''
+          uri = "/deployments/#{name}/diff#{redact_param}"
+          status, body = post(uri, 'text/yaml', manifest_yaml)
+
           if status == 200
             JSON.parse(body)
           else
-            err(parse_error_message(status, body))
+            err(parse_error_message(status, body, uri))
           end
         end
 
