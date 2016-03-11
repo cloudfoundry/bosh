@@ -5,34 +5,11 @@ module Bosh::Director
     class LinkLookupFactory
       def self.create(consumed_link, link_path, deployment_plan, link_network, consumes_job, consumes_template)
         if link_path.deployment == deployment_plan.name
-          if link_network
-            link_provider_job = deployment_plan.job(link_path.job)
-
-            valid_network = link_provider_job.networks.any? do |network|
-              network.name == link_network
-            end
-
-            unless valid_network
-              available_networks = link_provider_job.networks.map { |network| network.name }.join(', ')
-              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in instance group '#{consumes_job}' on job '#{consumes_template}' over network '#{link_network}'. The available networks are: #{available_networks}."
-            end
-          end
-
           PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
         else
           deployment = Models::Deployment.find(name: link_path.deployment)
           unless deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
-          end
-
-          if link_network
-            link_spec = deployment.link_spec[link_path.job][link_path.template][link_path.name][consumed_link.type]
-
-            valid_network = link_spec['available_networks'].include? link_network
-
-            unless valid_network
-              raise "Cannot use link path '#{link_path}' required for link '#{consumed_link.name}' in instance group '#{consumes_job}' on job '#{consumes_template}' over network '#{link_network}'. The available networks are: #{link_spec['available_networks'].join(', ')}."
-            end
           end
 
           DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)

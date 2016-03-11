@@ -333,7 +333,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'\"")
+   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.\"")
       end
     end
 
