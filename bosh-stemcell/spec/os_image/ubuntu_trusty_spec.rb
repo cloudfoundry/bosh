@@ -326,4 +326,10 @@ EOF
       it { should_not be_file }
     end
   end
+
+  context 'ensure ypserv is not installed (stig: V-38603)' do
+    describe package('nis') do
+      it { should_not be_installed }
+    end
+  end
 end

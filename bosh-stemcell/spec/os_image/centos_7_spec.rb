@@ -153,4 +153,10 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'ensure ypserv is not installed (stig: V-38603)' do
+    describe package('ypserv') do
+      it('should not be installed') { should_not be_installed }
+    end
+  end
+
 end
