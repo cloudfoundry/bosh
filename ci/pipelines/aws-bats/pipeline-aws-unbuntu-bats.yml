@@ -44,7 +44,7 @@ jobs:
 
       - task: run-bats
         file: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.yml
-        tags: ["bosh-integration"]
+        tags: ["bosh-integration-4"]
         config:
           params:
             base_os:                    Ubuntu

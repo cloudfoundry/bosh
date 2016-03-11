@@ -8,6 +8,9 @@ inputs:
   - name: bosh-dev-release          # -\
   - name: stemcell               # -/
 
+outputs:
+  - name: setup-director
+
 run:
   path: bosh-src/ci/pipelines/aws-bats/tasks/setup-director.sh
 params:
