@@ -43,7 +43,7 @@ You can use `run` to start a container which has mounted your project to `/opt/b
 
     vagrant$ ./run
     container$ bundle install --local
-    container$ bundle exec rake stemcell:build[aws,hvm,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
+    container$ bundle exec rake stemcell:build[aws,xen,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
 
 
 ## Docker Hub
