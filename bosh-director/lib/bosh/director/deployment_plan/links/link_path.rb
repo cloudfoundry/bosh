@@ -153,7 +153,7 @@ module Bosh::Director
             deployment_link_spec[job][template].keys.each do |link|
               if link == name
                 deployment_link_spec[job][template][link].keys.each do |type|
-                  if !link_network || (deployment_link_spec[job][template][link][type]['available_networks'].include? link_network)
+                  if !link_network || (deployment_link_spec[job][template][link][type]['networks'].include? link_network)
                     found_link_paths.push({:deployment => deployment.name, :job => job, :template => template, :name => name})
                   end
                 end
