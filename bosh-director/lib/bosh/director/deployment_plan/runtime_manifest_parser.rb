@@ -87,14 +87,14 @@ module Bosh::Director
 
               deployment_jobs.each do |j|
                 templates_from_model.each do |template_from_model|
-                  if template_from_model.consumes_json != nil
-                    JSON.parse(template_from_model.consumes_json).each do |consumes_json|
-                      template.add_link_info(j.name, 'consumes', consumes_json["name"], consumes_json)
+                  if template_from_model.consumes != nil
+                    template_from_model.consumes.each do |consumes|
+                      template.add_link_info(j.name, 'consumes', consumes["name"], consumes)
                     end
                   end
-                  if template_from_model.provides_json != nil
-                    JSON.parse(template_from_model.provides_json).each do |provides_json|
-                      template.add_link_info(j.name, 'provides', provides_json["name"], provides_json)
+                  if template_from_model.provides != nil
+                    template_from_model.provides.each do |provides|
+                      template.add_link_info(j.name, 'provides', provides["name"], provides)
                     end
                   end
                 end

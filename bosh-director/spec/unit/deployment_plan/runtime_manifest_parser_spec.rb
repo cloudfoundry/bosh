@@ -75,6 +75,39 @@ module Bosh::Director
           expect(deployment.release('test_release_2').version).to eq("2")
         end
 
+        it "does not throw an error when the consumes_json and provides_json are set to the string \"null\"" do
+          release_model = Bosh::Director::Models::Release.make(name: 'dummy2')
+          release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model)
+          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, provides_json: "null", consumes_json: "null"))
+
+          runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+          job_parser = DeploymentPlan::JobSpecParser.new(deployment, event_log, logger)
+
+          release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy2', 'version' => '0.2-dev'})
+          deployment.add_release(release)
+
+          deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(@logger).parse(cloud_config.manifest,
+            DeploymentPlan::GlobalNetworkResolver.new(deployment),
+            DeploymentPlan::IpProviderFactory.new(deployment.using_global_networking?, @logger))
+
+          deployment.add_job(job_parser.parse({
+                                                  'name' => 'dummy',
+                                                  'templates' => [{'name'=> 'dummy', 'release' => 'dummy2'}],
+                                                  'resource_pool' => 'a',
+                                                  'networks' => [{'name' => 'a'}],
+                                                  'instances' => 1,
+                                                  'update' => {
+                                                      'canaries'          => 2,
+                                                      'canary_watch_time' => 4000,
+                                                      'max_in_flight'     => 1,
+                                                      'update_watch_time' => 20
+                                                  }
+                                              }))
+
+          subject.parse(runtime_manifest)
+        end
+
         it "appends addon jobs to deployment job templates and addon properties to deployment job properties" do
           release_model = Bosh::Director::Models::Release.make(name: 'dummy')
           release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model)
