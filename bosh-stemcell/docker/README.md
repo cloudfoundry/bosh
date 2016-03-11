@@ -13,6 +13,13 @@ The `/opt/bosh` directory will point to bosh project directory on your host...
 
     vagrant$ cd /opt/bosh/bosh-stemcell/docker
 
+To test if docker is installed and running...
+
+    vagrant$ docker daemon
+
+If docker daemon isn't running, try this:
+
+    host$ vagrant box destroy; vagrant box update; vagrant up
 
 ## Rebuilding the Container Image
 
