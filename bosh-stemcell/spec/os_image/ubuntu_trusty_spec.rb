@@ -304,11 +304,17 @@ EOF
     end
   end
 
-  describe package('cron') do
-    it('should be installed (stig: V-38605)') { should be_installed }
+  describe service('xinetd') do
+    it('should be disabled (stig: V-38582)') { should_not be_enabled }
   end
 
-  describe service('cron') do
-    it('should be enabled (stig: V-38605)') { should be_enabled }
+  context 'ensure cron is installed and enabled (stig: V-38605)' do
+    describe package('cron') do
+      it('should be installed') { should be_installed }
+    end
+
+    describe service('cron') do
+      it('should be enabled') { should be_enabled }
+    end
   end
 end

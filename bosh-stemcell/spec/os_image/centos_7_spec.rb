@@ -107,9 +107,9 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'ensure cron is installed and enabled' do
+  context 'ensure cron is installed and enabled (stig: V-38605)' do
     describe package('cronie') do
-      it('should be installed (stig: V-38605)') { should be_installed }
+      it('should be installed') { should be_installed }
     end
 
     describe file('/etc/systemd/system/default.target') do
@@ -120,6 +120,21 @@ describe 'CentOS 7 OS image', os_image: true do
     describe file('/etc/systemd/system/multi-user.target.wants/crond.service') do
       it { should be_file }
       its(:content) { should match /^ExecStart=\/usr\/sbin\/crond/ }
+    end
+  end
+
+  context 'ensure xinetd is not installed nor enabled (stig: V-38582)' do
+    describe package('xinetd') do
+      it('should not be installed') { should_not be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/xinetd.service') do
+      it { should_not be_file }
     end
   end
 

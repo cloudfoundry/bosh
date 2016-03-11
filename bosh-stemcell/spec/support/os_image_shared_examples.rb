@@ -245,7 +245,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe service('xinetd') do
-    it('should be disabled (stig: V-38582)') { should_not be_enabled }
+  describe package('xinetd') do
+    it('should not be installed (stig: V-38582)') { should_not be_installed }
   end
 end

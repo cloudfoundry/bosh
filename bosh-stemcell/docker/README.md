@@ -15,7 +15,7 @@ The `/opt/bosh` directory will point to bosh project directory on your host...
 
 To test if docker is installed and running...
 
-    vagrant$ docker daemon
+    vagrant$ docker version
 
 If docker daemon isn't running, try this:
 
