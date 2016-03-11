@@ -248,4 +248,10 @@ shared_examples_for 'every OS image' do
   describe package('xinetd') do
     it('should not be installed (stig: V-38582)') { should_not be_installed }
   end
+
+  context 'The root account must be the only account having a UID of 0 (stig: V-38500)' do
+    describe command("awk -F: '($3 == 0) {print}' /etc/passwd") do
+      its (:stdout) { should eq("root:x:0:0:root:/root:/bin/bash\n") }
+    end
+  end
 end
