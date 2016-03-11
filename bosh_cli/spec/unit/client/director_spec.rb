@@ -561,6 +561,59 @@ describe Bosh::Cli::Client::Director do
       @director.delete_snapshot('foo', 'snap0a')
     end
 
+    describe '#diff_deployment' do
+
+      let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
+
+      let(:manifest) do
+        <<-MANIFEST
+---
+name: test
+releases:
+- name: simple
+  version: 2
+resource_pools:
+- name: rp
+  stemcell:
+    name: ubuntu
+    version: 1
+networks:
+- name: default
+jobs:
+- name: job1
+  template: xyz
+  networks:
+  - name: default
+- name: old_job
+  template: xyz
+  networks:
+  - name: default
+        MANIFEST
+      end
+
+      context 'redacting' do
+        it 'does not pass redact=false parameter' do
+          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff').
+            with(headers: request_headers).
+            to_return(status: 200, body: '{}')
+          expect(@director).to receive(:post).with('/deployments/foo/diff', 'text/yaml', manifest)
+                                 .and_return([200, '{}'])
+          @director.diff_deployment('foo', manifest)
+        end
+      end
+
+      context 'not redacting' do
+        it 'passes redact=false parameter' do
+          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff?redact=false').
+            with(headers: request_headers).
+            to_return(status: 200, body: '{}')
+          expect(@director).to receive(:post).with('/deployments/foo/diff?redact=false', 'text/yaml', manifest)
+                                 .and_return([200, '{}'])
+          @director.diff_deployment('foo', manifest, true)
+        end
+      end
+    end
+
     it 'ssh setup' do
       payload = {
           'command'         => 'setup',
