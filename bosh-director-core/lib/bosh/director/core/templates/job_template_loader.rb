@@ -17,14 +17,12 @@ module Bosh::Director::Core::Templates
 
       source_erbs = []
 
-      template_name = manifest.fetch('name', {})
-
       manifest.fetch('templates', {}).each_pair do |src_name, dest_name|
         erb_file = File.read(File.join(template_dir, 'templates', src_name))
         source_erbs << SourceErb.new(src_name, dest_name, erb_file, job_template.name)
       end
 
-      JobTemplateRenderer.new(job_template.name, template_name, monit_source_erb, source_erbs, @logger)
+      JobTemplateRenderer.new(job_template.name, monit_source_erb, source_erbs, @logger)
     ensure
       FileUtils.rm_rf(template_dir) if template_dir
     end

@@ -184,6 +184,8 @@ module Bosh::Director
             "blobstore_id" => first_template.blobstore_id
           }
 
+          result['template_scoped_properties'] = first_template.template_scoped_properties[@name] unless first_template.template_scoped_properties[@name].nil?
+
           if first_template.logs
             result["logs"] = first_template.logs
           end
@@ -196,6 +198,8 @@ module Bosh::Director
               "sha1" => template.sha1,
               "blobstore_id" => template.blobstore_id
             }
+
+            template_entry['template_scoped_properties'] = template.template_scoped_properties[@name] unless template.template_scoped_properties[@name].nil?
 
             if template.logs
               template_entry["logs"] = template.logs
@@ -343,12 +347,8 @@ module Bosh::Director
       # @param [Hash] collection All properties collection
       # @return [Hash] Properties required by templates included in this job
       def filter_properties(collection)
-        if @templates.none? { |template| template.properties}
-          result = {}
-          @templates.each do |template|
-            result[template.name] = collection
-          end
-          return result
+        if @templates.none? { |template| template.properties }
+          return collection
         end
 
         if @templates.all? { |template| template.properties }
@@ -370,13 +370,11 @@ module Bosh::Director
           # make them available to other templates in the same deployment job. That can
           # be done by checking @template_scoped_properties variable of each
           # template
-          result[template.name] ||= {}
           if template.has_template_scoped_properties(@name)
             template.bind_template_scoped_properties(@name)
-            result[template.name] = template.template_scoped_properties[@name]
           else
             template.properties.each_pair do |name, definition|
-              copy_property(result[template.name], collection, name, definition["default"])
+              copy_property(result, collection, name, definition["default"])
             end
           end
         end

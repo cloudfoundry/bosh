@@ -105,19 +105,19 @@ describe Bosh::Director::DeploymentPlan::Job do
       it 'should drop deployment manifest properties not specified in the job spec properties' do
         job.bind_properties
         expect(job.properties).to_not have_key('cc')
-        expect(job.properties['foo']['deep_property']).to_not have_key('unneeded')
+        expect(job.properties['deep_property']).to_not have_key('unneeded')
       end
 
       it 'should include properties that are in the job spec properties but not in the deployment manifest' do
         job.bind_properties
-        expect(job.properties['foo']['dea_min_memory']).to eq(512)
-        expect(job.properties['foo']['deep_property']['new_property']).to eq('jkl')
+        expect(job.properties['dea_min_memory']).to eq(512)
+        expect(job.properties['deep_property']['new_property']).to eq('jkl')
       end
 
       it 'should not override deployment manifest properties with job_template defaults' do
         job.bind_properties
-        expect(job.properties['bar']['dea_max_memory']).to eq(1024)
-        expect(job.properties['foo']['deep_property']['dont_override']).to eq('def')
+        expect(job.properties['dea_max_memory']).to eq(1024)
+        expect(job.properties['deep_property']['dont_override']).to eq('def')
       end
     end
 
@@ -138,8 +138,7 @@ describe Bosh::Director::DeploymentPlan::Job do
 
       it 'should use the properties specified throughout the deployment manifest' do
         job.bind_properties
-        expect(job.properties['foo']).to eq(props)
-        expect(job.properties['bar']).to eq(props)
+        expect(job.properties).to eq(props)
       end
     end
 
@@ -161,13 +160,12 @@ describe Bosh::Director::DeploymentPlan::Job do
     context 'when the deployment manifest specifies properties for templates' do
       before do
         allow(foo_template).to receive(:has_template_scoped_properties).and_return(true)
-        allow(foo_template).to receive(:template_scoped_properties).and_return({"foobar"=>{"dea_max_memory"=>1024}})
       end
 
-      it 'only bind the local properties ' do
+      it 'only bond the local properties ' do
         expect(foo_template).to receive(:bind_template_scoped_properties)
         job.bind_properties
-        expect(job.properties['foo']).to eq({"dea_max_memory"=>1024})
+        expect(job.properties).to eq({"dea_max_memory"=>1024})
       end
     end
   end
@@ -218,14 +216,12 @@ describe Bosh::Director::DeploymentPlan::Job do
       job.bind_properties
 
       expect(job.properties).to eq(
-                                    'foo' => {
-                                        'db' => {
-                                            'user' => 'admin',
-                                            'password' => '12321',
-                                            'host' => 'localhost'
-                                        },
-                                        'mem' => 2048
-                                    }
+                                  'db' => {
+                                    'user' => 'admin',
+                                    'password' => '12321',
+                                    'host' => 'localhost'
+                                  },
+                                  'mem' => 2048,
                                 )
     end
   end
