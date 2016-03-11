@@ -65,6 +65,9 @@ module Bosh::Director
 
       describe 'API calls' do
         describe 'GET /' do
+
+          let(:parsed_body) {Yajl::Parser.parse(last_response.body)}
+
           context 'when user has admin access' do
             before(:each) { basic_authorize 'admin', 'admin' }
 
@@ -96,9 +99,7 @@ module Bosh::Director
                 it 'filters tasks with that deployment name' do
                   get "/?deployment=#{deployment_name_1}"
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  actual_ids = body.map { |attributes| attributes["id"] }
-
+                  actual_ids = parsed_body.map { |attributes| attributes["id"] }
                   expect(actual_ids).to match([8, 3, 1])
                 end
               end
@@ -114,8 +115,7 @@ module Bosh::Director
                 )
                 get '/?state=queued'
                 expect(last_response.status).to eq(200)
-                body = Yajl::Parser.parse(last_response.body)
-                actual_ids = body.map { |attributes| attributes["id"] }
+                actual_ids = parsed_body.map { |attributes| attributes["id"] }
                 actual_tasks = Models::Task.filter(id: actual_ids).to_a
                 expect(actual_tasks.map(&:id)).to eq([expected_task.id])
               end
@@ -135,8 +135,7 @@ module Bosh::Director
                 it "limits the tasks returned to 1" do
                   get '/?limit=0'
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  expect(body.size).to eq(1)
+                  expect(parsed_body.size).to eq(1)
                 end
               end
 
@@ -144,8 +143,7 @@ module Bosh::Director
                 it "limits the tasks returned to the limit provided" do
                   get '/?limit=10'
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  expect(body.size).to eq(10)
+                  expect(parsed_body.size).to eq(10)
                 end
               end
             end
@@ -185,10 +183,8 @@ module Bosh::Director
                 it "filters all but the expected task types" do
                   get "/?verbose=1"
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_ids = parsed_body.map { |attributes| attributes["id"] }
                   actual_tasks = Models::Task.filter(id: actual_ids)
-
                   expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
                 end
               end
@@ -197,8 +193,7 @@ module Bosh::Director
                 it "does not filter tasks by type" do
                   get "/?verbose=2"
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_ids = parsed_body.map { |attributes| attributes["id"] }
                   actual_tasks = Models::Task.filter(id: actual_ids)
                   expect(actual_tasks).to match(all_tasks)
                 end
@@ -208,8 +203,7 @@ module Bosh::Director
                 it "filters all but the expected task types" do
                   get "/"
                   expect(last_response.status).to eq(200)
-                  body = Yajl::Parser.parse(last_response.body)
-                  actual_ids = body.map { |attributes| attributes["id"] }
+                  actual_ids = parsed_body.map { |attributes| attributes["id"] }
                   actual_tasks = Models::Task.filter(id: actual_ids)
 
                   expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
@@ -228,8 +222,7 @@ module Bosh::Director
               it 'returns task if deployment is not specified' do
                 get "/"
                 expect(last_response.status).to eq(200)
-                body = Yajl::Parser.parse(last_response.body)
-                expect(body.size).to eq(1)
+                expect(parsed_body.size).to eq(1)
               end
 
               it 'returns 404 if requested deployment is deleted' do
@@ -261,12 +254,16 @@ module Bosh::Director
             it 'provides list of tasks of deployments you have access to' do
               get '/'
               expect(last_response.status).to eq(200)
-              body = Yajl::Parser.parse(last_response.body)
-              expect(body.size).to eq(10)
+              expect(parsed_body.size).to eq(10)
             end
           end
 
           context 'when user has team admin permissions' do
+            before do
+              Models::Task.make(type: 'update_stemcell', deployment_name: nil)
+              Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1)
+            end
+
             before do
               Models::Deployment.make(:name => deployment_name_1,
                 :teams => 'team-rocket,dev'
@@ -282,6 +279,7 @@ module Bosh::Director
               it 'filters tasks with that deployment name' do
                 get "/?deployment=#{deployment_name_1}"
                 expect(last_response.status).to eq(200)
+                expect(parsed_body.size).to eq(1)
               end
             end
 
@@ -296,6 +294,14 @@ module Bosh::Director
               it 'returns 404' do
                 get '/?deployment=missing'
                 expect(last_response.status).to eq(404)
+              end
+            end
+
+            context 'when task has empty deployment_name' do
+              it 'does not show up in the response' do
+                get '/'
+                expect(last_response.status).to eq(200)
+                expect(parsed_body.size).to eq(1)
               end
             end
           end

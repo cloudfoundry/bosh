@@ -163,14 +163,14 @@ module Bosh::Director
               raise "Job '#{template_name}' not found in Template table"
             end
 
-            if current_template_model.consumes_json != nil
-              JSON.parse(current_template_model.consumes_json).each do |consumes_json|
-                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json)
+            if current_template_model.consumes != nil
+              current_template_model.consumes.each do |consumes|
+                template.add_link_info(@job.name,'consumes', consumes["name"], consumes)
               end
             end
-            if current_template_model.provides_json != nil
-              JSON.parse(current_template_model.provides_json).each do |provides_json|
-                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json)
+            if current_template_model.provides != nil
+              current_template_model.provides.each do |provides|
+                template.add_link_info(@job.name, 'provides', provides["name"], provides)
               end
             end
 

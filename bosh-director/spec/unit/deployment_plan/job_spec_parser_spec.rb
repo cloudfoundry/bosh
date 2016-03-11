@@ -601,6 +601,51 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           end
         end
+
+        context 'when consumes_json and provides_json in template model have value "null"' do
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
+
+          before do
+            job_spec['templates'] = [
+                {'name' => 'fake-template-name',
+                 'links' => {'db' => 'a.b.c'},
+                 'properties' => {
+                     'property_1' => 'property_1_value',
+                     'property_2' => {
+                         'life' => 'isInteresting'
+                     }
+                 }
+                }
+            ]
+            job_spec['release'] = 'fake-job-release'
+
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model, consumes_json: "null", provides_json: "null"))
+          end
+
+          it "does not throw an error" do
+            allow(deployment_plan).to receive(:release)
+                                          .with('fake-job-release')
+                                          .and_return(job_rel_ver)
+
+            template = make_template('fake-template-name', nil)
+            allow(job_rel_ver).to receive(:get_or_create_template)
+                                      .with('fake-template-name')
+                                      .and_return(template)
+            allow(template).to receive(:add_template_scoped_properties)
+                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
+
+            parser.parse(job_spec)
+          end
+        end
       end
 
       context 'when value is not an array' do

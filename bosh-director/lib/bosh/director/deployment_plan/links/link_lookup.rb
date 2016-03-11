@@ -11,7 +11,7 @@ module Bosh::Director
           unless deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-
+          
           DeploymentLinkSpecLookup.new(consumed_link, link_path, deployment.link_spec, link_network)
         end
       end

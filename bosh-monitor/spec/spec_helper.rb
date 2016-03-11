@@ -44,7 +44,7 @@ def make_alert(attrs = {})
       :severity => 2,
       :title => "Test Alert",
       :summary => "Everything is down",
-      :source => "mysql_node/0",
+      :source => "mysql_node/node_id_abc",
       :created_at => Time.now.to_i
   }
   Bhm::Events::Alert.new(defaults.merge(attrs))
