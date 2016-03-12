@@ -188,6 +188,7 @@ shared_examples_for 'every OS image' do
     describe file('/etc/passwd') do
       it('should be owned by root user (stig: V-38450)') { should be_owned_by('root') }
       it('should be group-owned by root group (stig: V-38451)') { should be_grouped_into('root') }
+      it('should have mode 0644 (stig: V-38457)') { should be_mode('644') }
     end
 
     context 'should not contain password hash (stig: V-38499)' do
