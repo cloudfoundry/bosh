@@ -255,9 +255,9 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'The /etc/shadow file must have mode 0000 (stig: V-38504)' do
-    describe file('/etc/shadow') do
-      it { should be_mode 000 }
-    end
+  describe file('/etc/shadow') do
+    it('should be owned by root user (stig: V-38502)') { should be_owned_by('root') }
+    it('should be owned by root group (stig: V-38503)') { should be_grouped_into('root') }
+    it('should have mode 0 (stig: V-38504)') { should be_mode('0') }
   end
 end
