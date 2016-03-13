@@ -26,9 +26,17 @@ then
 
   run_in_chroot $chroot "yum -y install /tmp/google-compute-daemon-*.rpm /tmp/google-startup-scripts-*.rpm"
 
+  # Hack: enable systemd google services (rpm control script does not detect systemd)
+  run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
+  run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-address-manager.service"
+  run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-clock-sync-manager.service"
+
   rm -f /tmp/google-compute-daemon-*.rpm
   rm -f /tmp/google-startup-scripts-*.rpm
 else
   echo "Unknown OS, exiting"
   exit 2
 fi
+
+# Avoid collissions recreating the host keys
+run_in_chroot $chroot "rm -fr /usr/share/google/regenerate-host-keys"
