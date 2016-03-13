@@ -19,6 +19,15 @@ PATH=/var/vcap/bosh/bin:$PATH
 
 REGISTRY_EXISTS=false
 
+for i in $(seq 60)
+do
+    if ! monit summary | grep -q ' pending$' ; then
+        break
+    fi
+
+    sleep 5
+done
+
 if monit summary | grep -q registry ; then
   REGISTRY_EXISTS=true
 fi
@@ -53,15 +62,6 @@ done
 
 if [ "$adapter" = 'postgres' ];then
     export PGPASSWORD=$pass
-    monit restart postgres
-
-    for i in $(seq 60)
-    do
-        sleep 10
-        if [ -n "$(monit summary | grep '^Process.*postgres.*running$')" ];then
-            break
-        fi
-    done
 
     tar -xzvf $backup_file -O | psql -U$user -h$host $db_name
 

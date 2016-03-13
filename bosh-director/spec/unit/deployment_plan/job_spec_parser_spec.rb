@@ -289,18 +289,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
               allow(template).to receive(:add_template_scoped_properties)
-              allow(template).to receive(:assign_link_property_values)
             end
 
             it 'sets job template from release specified in a hash' do
               job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
             end
-
-            # it 'sets link paths specified in templates' do
-            #   job = parser.parse(job_spec)
-            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
-            # end
           end
 
           context 'when job does not specify a release' do
@@ -329,18 +323,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                             .and_return(template)
               allow(template).to receive(:add_link_info)
               allow(template).to receive(:add_template_scoped_properties)
-              allow(template).to receive(:assign_link_property_values)
             end
 
             it 'sets job template from release specified in a hash' do
               job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
             end
-
-            # it 'sets link paths specified in templates' do
-            #   job = parser.parse(job_spec)
-            #   expect(job.link_path('fake-template-name', 'a').path).to eq('deployment.job_name.template_name.link_name')
-            # end
           end
         end
 
@@ -372,7 +360,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               template = make_template('fake-template-name', nil)
               allow(template).to receive(:add_template_scoped_properties)
-              allow(template).to receive(:assign_link_property_values)
               expect(job_rel_ver).to receive(:get_or_create_template)
                 .with('fake-template-name')
                 .and_return(template)
@@ -405,7 +392,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               before do
                 allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
                 allow(template).to receive(:add_template_scoped_properties)
-                allow(template).to receive(:assign_link_property_values)
               end
 
               it 'sets job template from deployment release because first release assumed as default' do
@@ -483,7 +469,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             allow(job_rel_ver).to receive(:get_or_create_template) do |name|
               template = instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
               allow(template).to receive(:add_template_scoped_properties)
-              allow(template).to receive(:assign_link_property_values)
               template
             end
           end
@@ -525,7 +510,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template1 = make_template('fake-template-name1', rel_ver1)
             allow(template1).to receive(:add_template_scoped_properties)
-            allow(template1).to receive(:assign_link_property_values)
 
             expect(rel_ver1).to receive(:get_or_create_template)
                                .with('fake-template-name1')
@@ -539,7 +523,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template2 = make_template('fake-template-name2', rel_ver2)
             allow(template2).to receive(:add_template_scoped_properties)
-            allow(template2).to receive(:assign_link_property_values)
 
             expect(rel_ver2).to receive(:get_or_create_template)
                                .with('fake-template-name2')
@@ -609,11 +592,55 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                           .and_return(job_rel_ver)
 
             template = make_template('fake-template-name', nil)
-            allow(template).to receive(:assign_link_property_values)
             allow(job_rel_ver).to receive(:get_or_create_template)
                                       .with('fake-template-name')
                                       .and_return(template)
             expect(template).to receive(:add_template_scoped_properties)
+                                    .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
+
+            parser.parse(job_spec)
+          end
+        end
+
+        context 'when consumes_json and provides_json in template model have value "null"' do
+          let(:job_rel_ver) do
+            instance_double(
+                'Bosh::Director::DeploymentPlan::ReleaseVersion',
+                name: 'fake-template-release',
+                version: '1',
+                template: nil,
+            )
+          end
+
+          before do
+            job_spec['templates'] = [
+                {'name' => 'fake-template-name',
+                 'links' => {'db' => 'a.b.c'},
+                 'properties' => {
+                     'property_1' => 'property_1_value',
+                     'property_2' => {
+                         'life' => 'isInteresting'
+                     }
+                 }
+                }
+            ]
+            job_spec['release'] = 'fake-job-release'
+
+            fake_template_release_model = Bosh::Director::Models::Release.make(name: 'fake-template-release')
+            fake_template_release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: fake_template_release_model)
+            fake_template_release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'fake-template-name', release: fake_template_release_model, consumes_json: "null", provides_json: "null"))
+          end
+
+          it "does not throw an error" do
+            allow(deployment_plan).to receive(:release)
+                                          .with('fake-job-release')
+                                          .and_return(job_rel_ver)
+
+            template = make_template('fake-template-name', nil)
+            allow(job_rel_ver).to receive(:get_or_create_template)
+                                      .with('fake-template-name')
+                                      .and_return(template)
+            allow(template).to receive(:add_template_scoped_properties)
                                     .with({"property_1"=>"property_1_value", "property_2"=>{'life' => 'isInteresting'}}, 'fake-job-name')
 
             parser.parse(job_spec)
@@ -903,7 +930,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         expect(job.stemcell.alias).to eq('fake-stemcell')
         expect(job.stemcell.version).to eq('1')
         expect(job.env.spec).to eq({'key' => 'value'})
-
       end
 
       context 'vm type cannot be found' do
@@ -1249,6 +1275,43 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                   "Az 'unknown_az' is not in the list of availability zones of instance group 'fake-job-name'."
               )
           end
+        end
+      end
+    end
+
+    describe 'remove_dev_tools' do
+      let(:resource_pool_env) { {} }
+      before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(false) }
+
+      it 'does not add remove_dev_tools by default' do
+        job = parser.parse(job_spec)
+        expect(job.env.spec['bosh']).to eq(nil)
+      end
+
+      it 'does what the job env says' do
+        job_spec['env'] = {'bosh' => {'remove_dev_tools' => 'custom'}}
+        job = parser.parse(job_spec)
+        expect(job.env.spec['bosh']['remove_dev_tools']).to eq('custom')
+      end
+
+      describe 'when director manifest specifies director.remove_dev_tools' do
+        before { allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(true) }
+
+        it 'should do what director wants' do
+          job = parser.parse(job_spec)
+          expect(job.env.spec['bosh']['remove_dev_tools']).to eq(true)
+        end
+      end
+
+      describe 'when both the job and director specify' do
+        before do
+          allow(Bosh::Director::Config).to receive(:remove_dev_tools).and_return(true)
+          job_spec['env'] = {'bosh' => {'remove_dev_tools' => false}}
+        end
+
+        it 'defers to the job' do
+          job = parser.parse(job_spec)
+          expect(job.env.spec['bosh']['remove_dev_tools']).to eq(false)
         end
       end
     end

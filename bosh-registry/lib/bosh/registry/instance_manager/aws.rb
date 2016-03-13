@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
 
 module Bosh::Registry
 
@@ -31,14 +30,17 @@ module Bosh::Registry
         end
 
         # credentials_source could be static (default) or env_or_profile
-        # static credentials must be included in aws_properties
-        # env_or_profile credentials will use the AWS DefaultCredentialsProvider
-        # to find AWS credentials in environment variables or EC2 instance profiles
+        # - if "static", credentials must be provided
+        # - if "env_or_profile", credentials are read from instance metadata
+        credentials_source = cloud_config['aws']['credentials_source'] || 'static'
+        static_credentials = {}
 
-        if cloud_config['aws']['credentials_source'] == 'static' || cloud_config['aws']['credentials_source'].nil?
-          @aws_options[:access_key_id] = cloud_config['aws']['access_key_id']
-          @aws_options[:secret_access_key] = cloud_config['aws']['secret_access_key']
+        if credentials_source == 'static'
+          static_credentials[:access_key_id] = cloud_config['aws']['access_key_id']
+          static_credentials[:secret_access_key] = cloud_config['aws']['secret_access_key']
         end
+
+        @aws_options[:credential_provider] = Bosh::Registry::AWSCredentialsProvider.new(static_credentials)
 
         @ec2 = AWS::EC2.new(@aws_options)
       end

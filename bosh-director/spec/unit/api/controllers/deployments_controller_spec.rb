@@ -449,7 +449,7 @@ module Bosh::Director
         describe 'getting deployment vms info' do
           before { basic_authorize 'reader', 'reader' }
 
-          it 'returns a list of agent_ids, jobs and indices' do
+          it 'returns a list of instances with vms (vm_cid != nil)' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
                        :manifest => Psych.dump({'foo' => 'bar'}))
@@ -462,8 +462,9 @@ module Bosh::Director
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
                 'agent_id' => "agent-#{i}",
-                'vm_cid' => "cid-#{i}",
               }
+
+              instance_params['vm_cid'] = "cid-#{i}" if i < 8
               Models::Instance.create(instance_params)
             end
 
@@ -471,14 +472,54 @@ module Bosh::Director
 
             expect(last_response.status).to eq(200)
             body = Yajl::Parser.parse(last_response.body)
-            expect(body.size).to eq(15)
+            expect(body.size).to eq(8)
 
-            15.times do |i|
-              expect(body[i]).to eq(
+            body.each_with_index do |instance_with_vm, i|
+              expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
+                  'id' => "instance-#{i}"
+              )
+            end
+          end
+        end
+
+        describe 'getting deployment instances' do
+          before { basic_authorize 'reader', 'reader' }
+
+          it 'returns a list of all instances' do
+            deployment = Models::Deployment.
+                create(:name => 'test_deployment',
+                       :manifest => Psych.dump({'foo' => 'bar'}))
+
+
+            15.times do |i|
+              instance_params = {
+                'deployment_id' => deployment.id,
+                'job' => "job-#{i}",
+                'index' => i,
+                'state' => 'started',
+                'uuid' => "instance-#{i}",
+                'agent_id' => "agent-#{i}",
+              }
+
+              Models::Instance.create(instance_params)
+            end
+
+            get '/test_deployment/instances'
+
+            expect(last_response.status).to eq(200)
+            body = Yajl::Parser.parse(last_response.body)
+            expect(body.size).to eq(15)
+
+            body.each_with_index do |instance, i|
+              expect(instance).to eq(
+                  'agent_id' => "agent-#{i}",
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'cid' => nil,
                   'id' => "instance-#{i}"
               )
             end
@@ -771,8 +812,12 @@ module Bosh::Director
             before { authorize 'admin', 'admin' }
 
             it 'returns diff with resolved aliases' do
-              perform
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+              post(
+                '/fake-dep-name/diff',
+                "---\nname: fake-dep-name\nreleases: [{'name':'new','version':5}]",
+                { 'CONTENT_TYPE' => 'text/yaml' },
+              )
+              # expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
             end
 
             it 'gives a nice error when request body is not a valid yml' do
@@ -801,6 +846,42 @@ module Bosh::Director
               perform
               expect(last_response.status).to eq(401)
             end
+          end
+
+          context 'redacting' do
+
+            let(:manifest) do
+                <<-EOS
+---
+name: fake-dep-name
+releases: [{'name':'simple','version':5}]
+jobs: [{'name': 'test', 'properties': { 'a': 'super-secret'}}]
+              EOS
+            end
+
+            before { authorize 'admin', 'admin' }
+
+            it 'redacts by default when no redact param is passed in' do
+              response = post(
+                '/fake-dep-name/diff',
+                manifest,
+                {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(response.body).to include('<redacted>')
+            end
+
+            context 'when redact param is present and set to false' do
+              it 'returns an un-redacted diff' do
+                response = post(
+                  '/fake-dep-name/diff?redact=false',
+                  manifest,
+                  {'CONTENT_TYPE' => 'text/yaml'}
+                )
+                expect(response.body).not_to include('<redacted>')
+              end
+            end
+
+
           end
         end
       end

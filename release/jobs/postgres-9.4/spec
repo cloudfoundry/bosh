@@ -1,5 +1,5 @@
 ---
-name: postgres-9.4.5
+name: postgres-9.4
 
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
@@ -9,7 +9,7 @@ templates:
 
 packages:
   - postgres
-  - postgres-9.4.5
+  - postgres-9.4
 
 properties:
   postgres.user:

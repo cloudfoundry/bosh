@@ -40,6 +40,8 @@ describe 'director.yml.erb.erb' do
           'max_threads' => 32,
           'enable_snapshots' => true,
           'enable_post_deploy' => false,
+          'generate_vm_passwords' => false,
+          'remove_dev_tools' => false,
           'ignore_missing_gateway' => false,
           'disks' => {
             'max_orphaned_age_in_days' => 3,

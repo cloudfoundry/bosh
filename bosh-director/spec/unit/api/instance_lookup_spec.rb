@@ -66,6 +66,31 @@ module Bosh::Director
           expect(instance_lookup.find_all).to eq [instance]
         end
       end
+
+      describe '#by_deployment' do
+
+        context 'when multiple deployments have instances' do
+
+          before do
+            other_deployment = Models::Deployment.make(name: 'other_deployment')
+            Models::Instance.make(deployment: other_deployment)
+            @deployment = Models::Deployment.make(name: 'given_deployment')
+            @instance = Models::Instance.make(deployment: @deployment)
+          end
+
+          it 'finds only the instance from given deployment' do
+            expect(subject.by_deployment(@deployment)).to eq [@instance]
+          end
+        end
+
+        context 'when deployment has no instances' do
+          it 'finds no instances' do
+            deployment = Models::Deployment.make(name: 'deployment_without_instance')
+
+            expect(subject.by_deployment(deployment)).to eq []
+          end
+        end
+      end
     end
   end
 end

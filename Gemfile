@@ -81,4 +81,6 @@ group :development, :test do
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'
   gem 'blue-shell'
+
+  gem 'unix-crypt'
 end

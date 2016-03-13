@@ -45,6 +45,7 @@ module Bosh::Director
         @problem_manager = Api::ProblemManager.new
         @property_manager = Api::PropertyManager.new
         @instance_manager = Api::InstanceManager.new
+        @deployments_repo = DeploymentPlan::DeploymentRepo.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -218,21 +219,22 @@ module Bosh::Director
       get '/:deployment/vms', authorization: :read do
         format = params[:format]
         if format == 'full'
-          task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
+          task = @instance_manager.fetch_instances_with_vm(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
           instances = @deployment_manager.deployment_instances_with_vms(deployment)
-          instance_hashes = []
-          instances.each do |instance|
-            instance_hashes << {
-              'agent_id' => instance.agent_id,
-              'cid' => instance.vm_cid,
-              'job' => instance.job,
-              'index' => instance.index,
-              'id' => instance.uuid
-            }
-          end
-          Yajl::Encoder.encode(instance_hashes)
+          Yajl::Encoder.encode(create_instances_response(instances))
+        end
+      end
+
+      get '/:deployment/instances', authorization: :read do
+        format = params[:format]
+        if format == 'full'
+          task = @instance_manager.fetch_instances(current_user, deployment, format)
+          redirect "/tasks/#{task.id}"
+        else
+          instances = @instance_manager.find_instances_by_deployment(deployment)
+          Yajl::Encoder.encode(create_instances_response(instances))
         end
       end
 
@@ -321,6 +323,8 @@ module Bosh::Director
         options = {}
         options['recreate'] = true if params['recreate'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
+        options.merge!('scopes' => token_scopes)
+
         if params['context']
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
@@ -335,9 +339,11 @@ module Bosh::Director
 
         if deployment
           deployment_name = deployment['name']
+          if deployment_name
+            @deployments_repo.find_or_create_by_name(deployment_name, options)
+          end
         end
 
-        options.merge!('scopes' => token_scopes)
         task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
 
         redirect "/tasks/#{task.id}"
@@ -363,7 +369,9 @@ module Bosh::Director
         )
         after_manifest.resolve_aliases
 
-        diff = before_manifest.diff(after_manifest)
+        redact =  params['redact'] != 'false'
+
+        diff = before_manifest.diff(after_manifest, redact)
 
         json_encode({
             'context' => {
@@ -430,6 +438,18 @@ module Bosh::Director
           if str !~ /^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{27}$/
             raise InstanceInvalidIndex, "Invalid instance index or id `#{str}'"
           end
+        end
+      end
+
+      def create_instances_response(instances)
+        instances.map do |instance|
+          {
+              'agent_id' => instance.agent_id,
+              'cid' => instance.vm_cid,
+              'job' => instance.job,
+              'index' => instance.index,
+              'id' => instance.uuid
+          }
         end
       end
     end

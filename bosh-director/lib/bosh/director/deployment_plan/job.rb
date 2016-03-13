@@ -296,6 +296,12 @@ module Bosh::Director
         end
       end
 
+      def has_network?(network_name)
+        networks.any? do |network|
+          network.name == network_name
+        end
+      end
+
       def is_service?
         @lifecycle == 'service'
       end

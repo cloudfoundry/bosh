@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/template/property_helper'
+require 'bosh/template/invalid_property_type'
 
 module Bosh
   module Template
@@ -30,6 +31,16 @@ module Bosh
         src = {}
         @helper.copy_property(dst, src, 'foo.bar', 'foobar')
         expect(dst).to eq({'foo' => {'bar' => 'foobar'}})
+      end
+
+      context 'when src parameter is not a hash' do
+        it 'should raise a useful exception' do
+          dst = {}
+          src = false
+          expect {
+            @helper.copy_property(dst, src, 'foo.bar', 'foobar')
+          }.to raise_error(InvalidPropertyType, "Property 'foo.bar' expects a hash, but received '#{src.class}'")
+        end
       end
 
       it "should return the 'false' value when parsing a boolean false value" do

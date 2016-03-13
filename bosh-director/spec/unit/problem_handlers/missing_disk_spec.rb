@@ -12,7 +12,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
   let(:instance) do
     Bosh::Director::Models::Instance.
-      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'})
+      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'}, uuid: "uuid-42")
   end
 
   let!(:disk) do
@@ -27,7 +27,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   end
 
   it 'has well-formed description' do
-    expect(handler.description).to eq("Disk `disk-cid' (mysql_node/3, 300M) is missing")
+    expect(handler.description).to eq("Disk `disk-cid' (mysql_node/uuid-42, 300M) is missing")
   end
 
   describe 'resolutions' do

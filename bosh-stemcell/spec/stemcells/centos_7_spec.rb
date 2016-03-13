@@ -59,6 +59,12 @@ HERE
       it { should contain('"Type": "HTTP"') }
     end
   end
+
+  context 'installed by dev_tools_config' do
+    describe file('/var/vcap/bosh/etc/dev_tools_file_list') do
+      it { should contain('/usr/bin/gcc') }
+    end
+  end
 end
 
 describe 'CentOS 7 stemcell tarball', stemcell_tarball: true do

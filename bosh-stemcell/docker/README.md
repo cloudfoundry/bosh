@@ -13,6 +13,13 @@ The `/opt/bosh` directory will point to bosh project directory on your host...
 
     vagrant$ cd /opt/bosh/bosh-stemcell/docker
 
+To test if docker is installed and running...
+
+    vagrant$ docker version
+
+If docker daemon isn't running, try this:
+
+    host$ vagrant box destroy; vagrant box update; vagrant up
 
 ## Rebuilding the Container Image
 
@@ -43,7 +50,7 @@ You can use `run` to start a container which has mounted your project to `/opt/b
 
     vagrant$ ./run
     container$ bundle install --local
-    container$ bundle exec rake stemcell:build[aws,hvm,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
+    container$ bundle exec rake stemcell:build[aws,xen,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
 
 
 ## Docker Hub

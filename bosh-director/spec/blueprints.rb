@@ -175,6 +175,11 @@ module Bosh::Director::Models
     value { "value" }
   end
 
+  LogBundle.blueprint do
+    timestamp { Time.now }
+    blobstore_id { Sham.blobstore_id }
+  end
+
   Event.blueprint do
     action      { 'create'}
     object_type {'deployment' }

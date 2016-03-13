@@ -100,6 +100,12 @@ properties:
   director.enable_post_deploy:
     description: When true, all templates will run their post_deploy script once deployment is complete
     default: false
+  director.generate_vm_passwords:
+    description: When true, a random unique password will be used for each vm if user has not specified a password
+    default: false
+  director.remove_dev_tools:
+    description: When true, remove dev tool packages from non-compilation VMs
+    default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:

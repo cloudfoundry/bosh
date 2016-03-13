@@ -15,7 +15,7 @@ module Bosh::Monitor
       end
 
       def process(event)
-        if event.is_a? Bosh::Monitor::Events::Heartbeat
+        if (event.is_a? Bosh::Monitor::Events::Heartbeat) && event.node_id
           aws_cloud_watch.put_metric_data(heartbeat_to_cloudwatch_metric(event))
         end
       end
@@ -35,9 +35,10 @@ module Bosh::Monitor
         @dimensions ||= [
             {name: "job", value: heartbeat.job},
             {name: "index", value: heartbeat.index},
-            {name: "name", value: "#{heartbeat.job}/#{heartbeat.index}"},
+            {name: "name", value: "#{heartbeat.job}/#{heartbeat.node_id}"},
             {name: "deployment", value: heartbeat.deployment},
-            {name: "agent_id", value: heartbeat.agent_id}
+            {name: "agent_id", value: heartbeat.agent_id},
+            {name: "id", value: heartbeat.node_id}
         ]
       end
 

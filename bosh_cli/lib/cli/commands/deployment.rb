@@ -82,13 +82,15 @@ module Bosh::Cli::Command
     desc 'Deploy according to the currently selected deployment manifest'
     option '--recreate', 'Recreate all VMs in deployment'
     option '--redact-diff', 'Redact manifest value changes in deployment'
+    option '--no-redact', 'do not redact'
     option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
     def perform
       auth_required
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
-
+      no_redact = !options[:no_redact].nil?
       manifest = build_manifest
+
       if manifest.hash['releases']
         manifest.hash['releases'].each do |release|
           if release['url'].blank?
@@ -138,7 +140,7 @@ module Bosh::Cli::Command
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
+      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff, no_redact: no_redact})
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')
@@ -185,69 +187,6 @@ module Bosh::Cli::Command
         task_report(status, result, "Deleted deployment `#{deployment_name}'")
       rescue Bosh::Cli::ResourceNotFound
         task_report(:done, nil, "Skipped delete of missing deployment `#{deployment_name}'")
-      end
-    end
-
-    # bosh validate jobs
-    usage 'validate jobs'
-    desc 'Validates all jobs in the current release using current ' +
-        'deployment manifest as the source of properties'
-    def validate_jobs
-      check_if_release_dir
-      manifest = prepare_deployment_manifest(:resolve_properties => true, show_state: true)
-
-      if manifest.hash['release']
-        release_name = manifest.hash['release']['name']
-      elsif manifest.hash['releases'].count > 1
-        err('Cannot validate a deployment manifest with more than 1 release')
-      else
-        release_name = manifest.hash['releases'].first['name']
-      end
-      if release_name == release.dev_name || release_name == release.final_name
-        nl
-        say('Analyzing release directory...'.make_yellow)
-      else
-        err('This release was not found in deployment manifest')
-      end
-
-      say(' - discovering packages')
-      packages = Bosh::Cli::Resources::Package.discover(work_dir)
-
-      say(' - discovering jobs')
-      jobs = Bosh::Cli::Resources::Job.discover(
-        work_dir,
-        # TODO: be sure this is covered in integration
-        packages.map {|package| package['name']}
-      )
-
-      say(' - validating properties')
-      validator = Bosh::Cli::JobPropertyValidator.new(jobs, manifest.hash)
-      validator.validate
-
-      unless validator.jobs_without_properties.empty?
-        nl
-        say('Legacy jobs (no properties defined): '.make_yellow)
-        validator.jobs_without_properties.sort { |a, b|
-          a.name <=> b.name
-        }.each do |job|
-          say(" - #{job.name}")
-        end
-      end
-
-      if validator.template_errors.empty?
-        nl
-        say('No template errors found'.make_green)
-      else
-        nl
-        say('Template errors: '.make_yellow)
-        validator.template_errors.each do |error|
-          nl
-          path = Pathname.new(error.template_path)
-          rel_path = path.relative_path_from(Pathname.new(release.dir))
-
-          say(" - #{rel_path}:")
-          say("     line #{error.line}:".make_yellow + " #{error.exception.to_s}")
-        end
       end
     end
 

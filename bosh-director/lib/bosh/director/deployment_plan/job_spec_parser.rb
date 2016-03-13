@@ -33,6 +33,8 @@ module Bosh::Director
         parse_disk
         parse_properties
         parse_resource_pool
+        check_remove_dev_tools
+
         parse_update_config
 
         networks = JobNetworksParser.new(Network::VALID_DEFAULTS).parse(@job_spec, @job.name, @deployment.networks)
@@ -161,14 +163,14 @@ module Bosh::Director
               raise "Job '#{template_name}' not found in Template table"
             end
 
-            if current_template_model.consumes_json != nil
-              JSON.parse(current_template_model.consumes_json).each do |consumes_json|
-                template.add_link_info(@job.name,'consumes', consumes_json["name"], consumes_json)
+            if current_template_model.consumes != nil
+              current_template_model.consumes.each do |consumes|
+                template.add_link_info(@job.name,'consumes', consumes["name"], consumes)
               end
             end
-            if current_template_model.provides_json != nil
-              JSON.parse(current_template_model.provides_json).each do |provides_json|
-                template.add_link_info(@job.name, 'provides', provides_json["name"], provides_json)
+            if current_template_model.provides != nil
+              current_template_model.provides.each do |provides|
+                template.add_link_info(@job.name, 'provides', provides["name"], provides)
               end
             end
 
@@ -182,12 +184,12 @@ module Bosh::Director
               template.add_link_info(@job.name, 'consumes', link_name, source)
             end
 
-            template.add_template_scoped_properties(
-                safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
-                @job.name
-            )
-
-            template.assign_link_property_values(current_template_model.properties_json, @job.name)
+            if template_spec.has_key?("properties")
+              template.add_template_scoped_properties(
+                  safe_property(template_spec, 'properties', class: Hash, optional: true, default: nil),
+                  @job.name
+              )
+            end
 
             @job.templates << template
           end
@@ -401,6 +403,15 @@ module Bosh::Director
         Network::VALID_DEFAULTS.each do |property|
           network = networks.find { |network| network.default_for?(property) }
           @job.default_network[property] = network.name if network
+        end
+      end
+
+      def check_remove_dev_tools
+        if Config.remove_dev_tools
+          @job.env.spec['bosh'] ||= {}
+          unless @job.env.spec['bosh'].has_key?('remove_dev_tools')
+            @job.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+          end
         end
       end
     end

@@ -46,9 +46,9 @@ describe Bhm::Agent do
     agent.deployment = "oleg-cloud"
     expect(agent.name).to eq("agent zb [deployment=oleg-cloud, instance_id=iuuid, cid=deadbeef]")
     agent.job = "mysql_node"
-    expect(agent.name).to eq("agent zb [deployment=oleg-cloud, job=mysql_node, instance_id=iuuid, cid=deadbeef]")
+    expect(agent.name).to eq("oleg-cloud: mysql_node(iuuid) [id=zb, cid=deadbeef]")
     agent.index = "0"
-    expect(agent.name).to eq("oleg-cloud: mysql_node(0) [id=zb, instance_id=iuuid, cid=deadbeef]")
+    expect(agent.name).to eq("oleg-cloud: mysql_node(iuuid) [id=zb, index=0, cid=deadbeef]")
   end
 
 end

@@ -23,8 +23,8 @@ module Bosh::Director
 
       def description
         job = @instance.job || "unknown job"
-        index = @instance.index || "unknown index"
-        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        uuid = @instance.uuid || "unknown id"
+        disk_label = "`#{@disk.disk_cid}' (#{job}/#{uuid}, #{@disk.size.to_i}M)"
         "Disk #{disk_label} is missing"
       end
 

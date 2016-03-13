@@ -211,7 +211,7 @@ module Bosh::Director::DeploymentPlan
           instance_plan.existing_instance.update(spec: {
               'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
               'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-              'env' => {'bosh' => { 'password' => 'foobar'}}
+              'env' => {'bosh' => { 'password' => 'foobar' }}
             })
         end
 
@@ -264,8 +264,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'log the change reason' do
-          expect(logger).to receive(:debug).with('env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
-                ' on instance ' + "#{instance_plan.existing_instance}")
+          expect(logger).to receive(:debug).with(
+            'env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
+            ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.needs_shutting_down?
         end
       end

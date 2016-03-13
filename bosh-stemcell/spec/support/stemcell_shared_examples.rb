@@ -43,13 +43,13 @@ shared_examples_for 'All Stemcells' do
       it('should be owned by root user (stig: V-38466)') { should be_owned_by('root') }
     end
 
-    describe file('/usr/lib64') do
-      it('should be owned by root user (stig: V-38466)') { should be_owned_by('root') }
+    describe command('if [ -e /usr/lib64 ]; then stat -c "%U" /usr/lib64 ; else echo "root" ; fi') do
+      its (:stdout) { should eq("root\n") }
     end
   end
 
   context 'Library files must have mode 0755 or less permissive (stig: V-38465)' do
-    describe command('find -L /lib /lib64 /usr/lib /usr/lib64 -perm /022 -type f') do
+    describe command("find -L /lib /lib64 /usr/lib $( [ ! -e /usr/lib64 ] || echo '/usr/lib64' ) -perm /022 -type f") do
       its (:stdout) { should eq('') }
     end
   end

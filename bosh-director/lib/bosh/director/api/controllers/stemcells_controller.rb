@@ -22,7 +22,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: :read do
+      get '/', scope: :read_stemcells do
         stemcells = @stemcell_manager.find_all_stemcells
         json_encode(stemcells)
       end

@@ -146,6 +146,15 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when user has team admin permission' do
+          before { authorize 'dev-team-member', 'dev-team-member' }
+
+          it 'returns versions' do
+            get '/'
+            expect(last_response.status).to eq(200)
+          end
+        end
       end
 
       describe 'POST', '/export' do
@@ -176,6 +185,15 @@ module Bosh::Director
               perform
               expect(last_response.status).to eq(401)
             end
+          end
+        end
+
+        context 'when user has team admin permission' do
+          before { authorize 'dev-team-member', 'dev-team-member' }
+
+          it 'returns versions' do
+            perform
+            expect(last_response.status).to eq(401)
           end
         end
       end
@@ -209,6 +227,15 @@ module Bosh::Director
               delete '/test_release?version=1'
               expect(last_response.status).to eq(401)
             end
+          end
+        end
+
+        context 'when user has team admin permission' do
+          before { authorize 'dev-team-member', 'dev-team-member' }
+
+          it 'returns 401' do
+            delete '/test_release?version=1'
+            expect(last_response.status).to eq(401)
           end
         end
       end
@@ -274,6 +301,15 @@ module Bosh::Director
           it 'returns 401' do
             get '/test_release'
             expect(last_response.status).to eq(401)
+          end
+        end
+
+        context 'when user has team admin permission' do
+          before { authorize 'dev-team-member', 'dev-team-member' }
+
+          it 'returns versions' do
+            get '/test_release'
+            expect(last_response.status).to eq(200)
           end
         end
       end

@@ -9,13 +9,15 @@ module Bosh::Director
         :vms
       end
 
-      def initialize(deployment_id, format)
+      def initialize(deployment_id, format, state_for_missing_vms = false)
         @deployment_id = deployment_id
         @format = format
+        @state_for_missing_vms = state_for_missing_vms
       end
 
       def perform
-        instances = Models::Instance.filter(:deployment_id => @deployment_id).exclude(vm_cid: nil)
+        instances = Models::Instance.filter(:deployment_id => @deployment_id)
+        instances = instances.exclude(vm_cid: nil) unless @state_for_missing_vms
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           instances.each do |instance|
             pool.process do
@@ -30,27 +32,9 @@ module Bosh::Director
       end
 
       def process_instance(instance)
-        ips = []
         dns_records = []
-        job_state = nil
-        job_vitals = nil
-        processes = []
 
-        begin
-          agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
-          agent_state = agent.get_state(@format)
-          agent_state['networks'].each_value do |network|
-            ips << network['ip']
-          end
-
-          job_state = agent_state['job_state']
-          if agent_state['vitals']
-            job_vitals = agent_state['vitals']
-          end
-          processes = agent_state['processes'] if agent_state['processes']
-        rescue Bosh::Director::RpcTimeout
-          job_state = 'unresponsive agent'
-        end
+        job_state, job_vitals, processes, ips = vm_details(instance)
 
         if dns_manager.dns_enabled?
           dns_records = dns_manager.find_dns_record_names_by_instance(instance)
@@ -80,6 +64,35 @@ module Bosh::Director
       end
 
       private
+
+      def vm_details(instance)
+        ips = []
+        processes = []
+        job_vitals = nil
+        job_state = nil
+
+        if instance.vm_cid
+          begin
+            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
+            agent_state = agent.get_state(@format)
+            agent_state['networks'].each_value do |network|
+              ips << network['ip']
+            end
+
+            job_state = agent_state['job_state']
+            if agent_state['vitals']
+              job_vitals = agent_state['vitals']
+            end
+            processes = agent_state['processes'] if agent_state['processes']
+          rescue Bosh::Director::RpcTimeout
+            job_state = 'unresponsive agent'
+          end
+        else
+          job_state = 'missing vm'
+        end
+
+        return job_state, job_vitals, processes, ips
+      end
 
       def get_index(agent_state)
         index = agent_state['index']

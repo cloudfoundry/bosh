@@ -67,9 +67,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     allow(foo_template).to receive(:has_template_scoped_properties).and_return(false)
     allow(bar_template).to receive(:has_template_scoped_properties).and_return(false)
-
-    allow(foo_template).to receive(:assign_link_property_values).and_return(nil)
-    allow(bar_template).to receive(:assign_link_property_values).and_return(nil)
   end
 
   describe '#bind_properties' do
@@ -121,6 +118,17 @@ describe Bosh::Director::DeploymentPlan::Job do
         job.bind_properties
         expect(job.properties['dea_max_memory']).to eq(1024)
         expect(job.properties['deep_property']['dont_override']).to eq('def')
+      end
+    end
+
+    context 'when user specifies invalid property type for job' do
+      let(:props) { {'deep_property' => false} }
+
+      it 'raises an exception explaining which property is the wrong type' do
+        expect {
+          job.bind_properties
+        }.to raise_error Bosh::Template::InvalidPropertyType,
+          "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'"
       end
     end
 

@@ -32,8 +32,8 @@ module Bosh::Director
       end
     end
 
-    def diff(other_manifest)
-      Changeset.new(to_hash, other_manifest.to_hash).diff.order
+    def diff(other_manifest, redact)
+      Changeset.new(to_hash, other_manifest.to_hash, redact).diff.order
     end
 
     def to_hash

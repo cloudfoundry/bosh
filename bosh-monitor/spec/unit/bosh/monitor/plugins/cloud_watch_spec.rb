@@ -14,9 +14,10 @@ describe Bhm::Plugins::CloudWatch do
       expected_dimensions = [
           {name: "job", value: "mysql_node"},
           {name: "index", value: "0"},
-          {name: "name", value: "mysql_node/0"},
+          {name: "name", value: "mysql_node/node_id_abc"},
           {name: "deployment", value: "oleg-cloud"},
-          {name: "agent_id", value: "deadbeef"}
+          {name: "agent_id", value: "deadbeef"},
+          {name: "id", value: "node_id_abc"}
       ]
 
       expect(aws_cloud_watch).to receive(:put_metric_data) do |data|
@@ -56,6 +57,13 @@ describe Bhm::Plugins::CloudWatch do
       end
 
       heartbeat = make_heartbeat(timestamp: time)
+      subject.process(heartbeat)
+    end
+
+    it "drops event if node id is missing" do
+      expect(aws_cloud_watch).not_to receive(:put_metric_data)
+      heartbeat = make_heartbeat({timestamp: Time.now, node_id: nil})
+
       subject.process(heartbeat)
     end
   end

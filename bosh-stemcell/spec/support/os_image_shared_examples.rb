@@ -154,7 +154,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'tftp is not installed (stig: V-38701)' do
+  context 'tftp is not installed (stig: V-38701, V-38609, V-38606)' do
     it "shouldn't be installed" do
       expect(package('tftp')).to_not be_installed
       expect(package('tftpd')).to_not be_installed
@@ -245,7 +245,13 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe service('xinetd') do
-    it('should be disabled (stig: V-38582)') { should_not be_enabled }
+  describe package('xinetd') do
+    it('should not be installed (stig: V-38582)') { should_not be_installed }
+  end
+
+  context 'The root account must be the only account having a UID of 0 (stig: V-38500)' do
+    describe command("awk -F: '($3 == 0) {print}' /etc/passwd") do
+      its (:stdout) { should eq("root:x:0:0:root:/root:/bin/bash\n") }
+    end
   end
 end
