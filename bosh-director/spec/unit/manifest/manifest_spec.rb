@@ -121,6 +121,46 @@ module Bosh::Director
       end
     end
 
+    describe '#diff' do
+      subject(:new_manifest) { described_class.new(new_manifest_hash, new_cloud_config_hash, new_runtime_config_hash) }
+      let(:new_manifest_hash) do
+        {
+          'jobs' => [
+            {
+              'name' => 'useful',
+              'properties' => {
+                'inner' => 'secrets',
+              },
+            },
+          ],
+          'properties' => {
+            'something' => 'worth-redacting',
+          },
+        }
+      end
+      let(:new_cloud_config_hash) { cloud_config_hash }
+      let(:new_runtime_config_hash) { runtime_config_hash }
+      let(:diff) do
+        manifest.diff(new_manifest, redact).map(&:text).join("\n")
+      end
+
+      context 'when redact is true' do
+        let(:redact) { true }
+
+        it 'redacts properties' do
+          expect(diff).to include('<redacted>')
+        end
+      end
+
+      context 'when redact is false' do
+        let(:redact) { false }
+
+        it 'redacts properties' do
+          expect(diff).to_not include('<redacted>')
+        end
+      end
+    end
+
     describe 'to_hash' do
       context 'when runtime config contains same release/version as deployment manifest' do
         let(:manifest_hash) do

@@ -126,38 +126,38 @@ describe 'cli: deployment process', type: :integration do
 
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
-          expect(output).to match(/  resource_pools:
+          expect(output).to include(<<-EOS)
+  resource_pools:
   - name: a
     cloud_properties:
-\+     name: new_property
-\+     size: large
++     name: new_property
++     size: large
 -   env:
 -     bosh:
--       password: "?<redacted>"?
+-       password: <redacted>
   jobs:
   - name: job1
     properties:
       foobar:
--       foo: "?<redacted>"?
-\+       foo: "?<redacted>"?
+-       foo: <redacted>
++       foo: <redacted>
       array_property:
-\+     - "?<redacted>"?
-\+     - "?<redacted>"?
--     - "?<redacted>"?
++     - <redacted>
++     - <redacted>
+-     - <redacted>
       hash_array_property:
-\+     - b: "?<redacted>"?
-\+     - e: "?<redacted>"?
--     - b: "?<redacted>"?
--     - y: "?<redacted>"?
++     - b: <redacted>
++     - e: <redacted>
+-     - b: <redacted>
+-     - y: <redacted>
       name_range_hash_array_property:
-\+     - name: "?<redacted>"?
-\+     - range: "?<redacted>"?
--     - name: "?<redacted>"?
--     - range: "?<redacted>"?
--     old_property: "?<redacted>"?
-\+     new_property: "?<redacted>"?
-/)
-
++     - name: <redacted>
++     - range: <redacted>
+-     - name: <redacted>
+-     - range: <redacted>
+-     old_property: <redacted>
++     new_property: <redacted>
+EOS
         end
 
         context 'option --no-redact' do

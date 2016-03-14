@@ -84,11 +84,13 @@ module Bosh::Cli::Command
     option '--redact-diff', 'Redact manifest value changes in deployment'
     option '--no-redact', 'do not redact'
     option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
+
     def perform
       auth_required
       recreate = !!options[:recreate]
-      redact_diff = !!options[:redact_diff]
-      no_redact = !options[:no_redact].nil?
+
+      redact_diff = !!options[:no_redact].nil?
+
       manifest = build_manifest
 
       if manifest.hash['releases']
@@ -140,7 +142,7 @@ module Bosh::Cli::Command
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff, no_redact: no_redact})
+      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')

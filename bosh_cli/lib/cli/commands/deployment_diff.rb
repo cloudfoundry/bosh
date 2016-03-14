@@ -6,9 +6,9 @@ module Bosh::Cli::Command
     end
 
     def print(options)
+      redact_diff = options[:redact_diff]
       begin
-        no_redact = options[:no_redact]
-        changes = @director.diff_deployment(@manifest.name, @manifest.yaml, no_redact)
+        changes = @director.diff_deployment(@manifest.name, @manifest.yaml, redact_diff)
         diff = changes['diff']
 
         header('Detecting deployment changes')
@@ -43,7 +43,7 @@ module Bosh::Cli::Command
       rescue Bosh::Cli::ResourceNotFound
         inspect_deployment_changes(
           @manifest,
-          redact_diff: options[:redact_diff]
+          redact_diff: redact_diff
         )
 
         nil

@@ -275,8 +275,8 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
-        def diff_deployment(name, manifest_yaml, no_redact = false)
-          redact_param = no_redact ? '?redact=false' : ''
+        def diff_deployment(name, manifest_yaml, redact_diff = true)
+          redact_param = redact_diff ? '' : '?redact=false'
           uri = "/deployments/#{name}/diff#{redact_param}"
           status, body = post(uri, 'text/yaml', manifest_yaml)
 
