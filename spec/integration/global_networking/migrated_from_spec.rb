@@ -528,7 +528,7 @@ describe 'migrated from', type: :integration do
     end
   end
 
-  it 'updates dns records', dns: true do
+  it 'updates dns records' do
     original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
     job_spec = etcd_z1_job
     job_spec['azs'] = ['my-az-1']
