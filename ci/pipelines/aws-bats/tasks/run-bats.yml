@@ -5,7 +5,7 @@ inputs:
 - name: bosh-src
 - name: stemcell
 - name: bats
-- name: setup-director
+- name: setup-director-output
 run:
   path: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.sh
 params:

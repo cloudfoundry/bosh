@@ -9,7 +9,7 @@ inputs:
   - name: stemcell               # -/
 
 outputs:
-  - name: setup-director
+  - name: setup-director-output
 
 run:
   path: bosh-src/ci/pipelines/aws-bats/tasks/setup-director.sh

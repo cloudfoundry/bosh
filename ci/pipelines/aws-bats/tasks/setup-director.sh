@@ -32,7 +32,7 @@ AWS_NETWORK_GATEWAY=$(get_stack_info_of "${stack_info}" "${stack_prefix}Gateway"
 PRIVATE_DIRECTOR_STATIC_IP=$(get_stack_info_of "${stack_info}" "${stack_prefix}DirectorStaticIP")
 
 cpi_release_name=bosh-aws-cpi
-deployment_dir="${PWD}/deployment"
+deployment_dir="${PWD}-output/deployment"
 manifest_filename="director-manifest.yml"
 private_key=${deployment_dir}/bats.pem
 

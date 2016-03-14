@@ -37,7 +37,7 @@ BAT_NETWORK_STATIC_IP=$(get_stack_info_of "${stack_info}" "${stack_prefix}Static
 BAT_SECOND_STATIC_IP=$(get_stack_info_of "${stack_info}" "${stack_prefix}StaticIP2")
 
 eval $(ssh-agent)
-private_key=${PWD}/setup-director/deployment/bats.pem
+private_key=${PWD}/setup-director-output/deployment/bats.pem
 ssh-add ${private_key}
 
 export BAT_DIRECTOR=$DIRECTOR
