@@ -5,12 +5,13 @@ describe Bosh::Cli::Command::Events do
 
   before do
     allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil)
+    command.options[:target] = target
   end
 
   let(:director) { double(Bosh::Cli::Client::Director) }
+  let(:target) { 'http://example.org' }
 
   describe '#list' do
-    let(:target) { 'http://example.org' }
     let(:event_1) do
       {
         'id' => '1',
@@ -83,7 +84,7 @@ describe Bosh::Cli::Command::Events do
     end
 
     it 'can list events before a given id' do
-      expect(director).to receive(:list_events).with({before_id: 2}).and_return([event_1])
+      expect(director).to receive(:list_events).with({before_id: 2, target: target}).and_return([event_1])
       expect(command).to receive(:say) do |display_output|
         expect(display_output.to_s).to match_output '
 +----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
@@ -93,8 +94,7 @@ describe Bosh::Cli::Command::Events do
 +----+------------------------------+-------+--------+-------------+-----------+------+-----+------+---------+
         '
       end
-
-      command.options = {before_id: 2}
+      command.options = {before_id: 2, target: target}
       command.list
     end
   end
