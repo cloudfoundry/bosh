@@ -38,5 +38,8 @@ else
   exit 2
 fi
 
-# Avoid collissions recreating the host keys
+# Hack: avoid collissions recreating the host keys (bosh agent will do it for us)
 run_in_chroot $chroot "rm -fr /usr/share/google/regenerate-host-keys"
+
+# Hack: replace google metadata hostname with ip address (bosh agent might set a dns that it's unable to resolve the hostname)
+run_in_chroot $chroot "find /usr/share/google -type f -exec sed -i 's/metadata.google.internal/169.254.169.254/g' {} +"
