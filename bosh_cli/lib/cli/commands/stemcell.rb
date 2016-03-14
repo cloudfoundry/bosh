@@ -75,7 +75,8 @@ If --name & --version are provided, they will be used for checking if stemcell e
             say("Stemcell `#{name}/#{version}' already exists. Skipping upload.")
             return
           else
-            err("Stemcell `#{name}/#{version}' already exists. Increment the version if it has changed.")
+            say("Stemcell `#{name}/#{version}' already exists. Increment the version if it has changed.")
+            return
           end
         end
 
