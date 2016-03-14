@@ -70,6 +70,12 @@ params['scheduled_jobs'] << {
   'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
 }
 
+params['scheduled_jobs'] << {
+  'command' => 'ScheduledEventsCleanup',
+  'schedule' => p('director.events.cleanup_schedule'),
+  'params' => [{'max_events' => p('director.events.max_events')}]
+}
+
 if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
   params['keep_unreachable_vms'] = keep_unreachable_vms
 end

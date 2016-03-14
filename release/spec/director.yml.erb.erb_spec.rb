@@ -47,6 +47,10 @@ describe 'director.yml.erb.erb' do
             'max_orphaned_age_in_days' => 3,
             'cleanup_schedule' => '0 0,30 * * * * UTC',
           },
+          'events' => {
+            'max_events' => 10000,
+            'cleanup_schedule' => '0 * * * * * UTC'
+          },
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',

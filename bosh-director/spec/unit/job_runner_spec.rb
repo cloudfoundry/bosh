@@ -88,7 +88,6 @@ module Bosh::Director
       end
 
       make_runner(job, 42).run
-
       task.reload
       expect(task.state).to eq('cancelled')
     end

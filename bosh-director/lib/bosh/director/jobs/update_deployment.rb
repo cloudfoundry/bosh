@@ -38,7 +38,7 @@ module Bosh::Director
 
         deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model, runtime_config_model)
         @deployment_name = deployment_manifest.to_hash['name']
-        parent_id        = add_event
+        parent_id = add_event
 
         with_deployment_lock(@deployment_name) do
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
@@ -149,7 +149,7 @@ module Bosh::Director
       end
 
       def deployment_new?
-        @deployment_new ||= Models::Deployment[name: @deployment_name].nil?
+        @deployment_new ||= Models::Deployment.exclude(manifest: nil)[name: @deployment_name].nil?
       end
     end
   end

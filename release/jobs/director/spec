@@ -213,6 +213,14 @@ properties:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
+  # Events
+  director.events.max_events:
+    description: Max number of events to keep
+    default: 10000
+  director.events.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of events
+    default: '0 * * * * UTC'
+
   # Blobstore
   blobstore.provider:
     description: Provider of the blobstore used by director and agent (dav|simple|s3)
