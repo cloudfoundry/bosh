@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'global networking', type: :integration do
+describe 'resurrector', type: :integration, hm: true do
   with_reset_sandbox_before_each
 
   before do
