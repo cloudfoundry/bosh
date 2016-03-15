@@ -1391,26 +1391,24 @@ Error 100: Unable to process links for deployment. Errors are:
       job_spec
     end
 
-    it 'should raise an error when consuming links without properties' do
+    it 'should not raise an error when consuming links without properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_nil_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
-      expect(exit_code).not_to eq(0)
-      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
+      expect(exit_code).to eq(0)
     end
 
-    it 'should raise an error when a deployment template property is not defined in the release properties' do
+    it 'should not raise an error when a deployment template property is not defined in the release properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
-      expect(exit_code).not_to eq(0)
-      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
+      expect(exit_code).to eq(0)
     end
 
   end

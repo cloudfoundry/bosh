@@ -194,9 +194,6 @@ module Bosh
               if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
                 if default_properties['properties'][link_property].has_key?('default')
                   previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
-                else
-                  e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} has no default value or value supplied by the deployment manifest")
-                  errors.push(e)
                 end
               else
                 e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
@@ -205,15 +202,6 @@ module Bosh
             else
               previous_property_in_loop[property_path.last()] = current_property_in_loop
             end
-
-            # if use_defaults && !default_properties.has_key?("properties") && !default_properties['properties'][link_property].has_key?('default')
-            #   e = Exception.new("Property #{link_property} in template #{default_properties['template_name']} has no default value or value supplied by the deployment manifest")
-            #   errors.push(e)
-            # elsif use_defaults
-            #   previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
-            # else
-            #   previous_property_in_loop[property_path.last()] = current_property_in_loop
-            # end
           end
           return mapped_properties
         end
