@@ -17,30 +17,28 @@ jobs:
 
       - task: teardown-infrastructure
         file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
-        config: *recreate-primary-config
+        params: *recreate-primary-params
 
       - task: setup-infrastructure
         file: bosh-src/ci/pipelines/aws-bats/tasks/setup-infrastructure.yml
-        config: &recreate-primary-config
-          params:
-            aws_access_key_id:        {{aws_access_key__primary}}
-            aws_secret_access_key:    {{aws_secret_key__primary}}
-            region_name:              {{aws_region__primary}}
-            stack_name:               primary
+        params: &recreate-primary-params
+          aws_access_key_id:        {{aws_access_key__primary}}
+          aws_secret_access_key:    {{aws_secret_key__primary}}
+          region_name:              {{aws_region__primary}}
+          stack_name:               primary
 
       - task: create-dev-release
         file: bosh-src/ci/pipelines/aws-bats/tasks/create-dev-release.yml
 
       - task: setup-director
         file: bosh-src/ci/pipelines/aws-bats/tasks/setup-director.yml
-        config:
-          params:
-            base_os:                    Ubuntu
-            aws_access_key_id:          {{aws_access_key__primary}}
-            aws_secret_access_key:      {{aws_secret_key__primary}}
-            region_name:                {{aws_region__primary}}
-            private_key_data:           {{bosh_private_key}}
-            stack_name:                 primary
+        params:
+          base_os:                    Ubuntu
+          aws_access_key_id:          {{aws_access_key__primary}}
+          aws_secret_access_key:      {{aws_secret_key__primary}}
+          region_name:                {{aws_region__primary}}
+          private_key_data:           {{bosh_private_key}}
+          stack_name:                 primary
 
       - task: run-bats
         file: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.yml
