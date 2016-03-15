@@ -79,32 +79,31 @@ jobs:
           - build-vsphere-esxi-centos-7
       - task: copy-artifacts
         file: bosh-src/ci/pipelines/stemcell/tasks/publish.yml
-        config:
-          params:
-            AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
-            AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
-            BUCKET_NAME: {{stemcell_bucket}}
-            CANDIDATE_PREFIX: bosh-stemcell-candidate/
-            PUBLISHED_PREFIX: bosh-stemcell/
-            COPY_KEYS: |
-              aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
-              aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
-              aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz.sha1
-              aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
-              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
-              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
-              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
-              openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
-              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz.sha1
-              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
-              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
-              openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
-              vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
-              vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
-              vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz.sha1
-              vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
-              vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
-              vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+        params:
+          AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
+          AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
+          BUCKET_NAME: {{stemcell_bucket}}
+          CANDIDATE_PREFIX: bosh-stemcell-candidate/
+          PUBLISHED_PREFIX: bosh-stemcell/
+          COPY_KEYS: |
+            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
+            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
+            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz.sha1
+            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
+            vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz.sha1
+            vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
+            vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
+            vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
 
   - name: build-aws-xen-ubuntu-trusty
     plan:
@@ -122,12 +121,11 @@ jobs:
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
-        config:
-          params:
-            IAAS:       aws
-            HYPERVISOR: xen
-            OS_NAME:    ubuntu
-            OS_VERSION: trusty
+        params:
+          IAAS:       aws
+          HYPERVISOR: xen
+          OS_NAME:    ubuntu
+          OS_VERSION: trusty
       - aggregate:
         - put: aws-xen-ubuntu-trusty
           params:
@@ -152,12 +150,11 @@ jobs:
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
-        config:
-          params:
-            IAAS:       aws
-            HYPERVISOR: xen
-            OS_NAME:    centos
-            OS_VERSION: 7
+        params:
+          IAAS:       aws
+          HYPERVISOR: xen
+          OS_NAME:    centos
+          OS_VERSION: 7
       - aggregate:
         - put: aws-xen-centos-7
           params:
