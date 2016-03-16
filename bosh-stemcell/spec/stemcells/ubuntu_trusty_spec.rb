@@ -253,4 +253,10 @@ describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do
       it { should contain 'ubuntu-minimal' }
     end
   end
+
+  context 'installed by dev_tools_config stage' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/dev_tools_file_list.txt") do
+      it { should be_file }
+    end
+  end
 end
