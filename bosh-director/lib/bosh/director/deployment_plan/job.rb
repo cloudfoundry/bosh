@@ -347,8 +347,12 @@ module Bosh::Director
       # @param [Hash] collection All properties collection
       # @return [Hash] Properties required by templates included in this job
       def filter_properties(collection)
-        if @templates.none? { |template| template.properties }
-          return collection
+        if @templates.none? { |template| template.properties}
+          result = {}
+          @templates.each do |template|
+            result[template.name] = collection
+          end
+          return result
         end
 
         if @templates.all? { |template| template.properties }
@@ -356,9 +360,9 @@ module Bosh::Director
         end
 
         raise JobIncompatibleSpecs,
-          "Instance group '#{name}' has specs with conflicting property definition styles between" +
-            " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
-            " 'properties' and one which doesn't."
+              "Instance group '#{name}' has specs with conflicting property definition styles between" +
+                  " its job spec templates.  This may occur if colocating jobs, one of which has a spec file including" +
+                  " 'properties' and one which doesn't."
       end
 
       def extract_template_properties(collection)
@@ -370,11 +374,13 @@ module Bosh::Director
           # make them available to other templates in the same deployment job. That can
           # be done by checking @template_scoped_properties variable of each
           # template
+          result[template.name] ||= {}
           if template.has_template_scoped_properties(@name)
             template.bind_template_scoped_properties(@name)
+            result[template.name] = template.template_scoped_properties[@name]
           else
             template.properties.each_pair do |name, definition|
-              copy_property(result, collection, name, definition["default"])
+              copy_property(result[template.name], collection, name, definition["default"])
             end
           end
         end
