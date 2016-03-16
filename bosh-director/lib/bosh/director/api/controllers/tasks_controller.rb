@@ -71,7 +71,7 @@ module Bosh::Director
             }.map { |deployment| deployment.name }
 
           tasks = tasks.select do |task|
-            return false unless task.deployment_name
+            next false unless task.deployment_name
             permitted_deployments.include?(task.deployment_name)
           end
         end

@@ -82,6 +82,7 @@ describe Bhm::Plugins::DataDog do
       tags = %w[
           job:mysql_node
           index:0
+          id:node_id_abc
           deployment:oleg-cloud
           agent:deadbeef
       ]
@@ -109,6 +110,12 @@ describe Bhm::Plugins::DataDog do
       end
 
       heartbeat = make_heartbeat(timestamp: time.to_i)
+      subject.process(heartbeat)
+    end
+
+    it "should do nothing if node_id is missing" do
+      expect(EM).to_not receive(:defer)
+      heartbeat = make_heartbeat({ timestamp: Time.now.to_i, node_id: nil })
       subject.process(heartbeat)
     end
   end
@@ -140,7 +147,7 @@ describe Bhm::Plugins::DataDog do
         expect(msg).to eq("Everything is down")
         expect(options[:msg_title]).to eq("Test Alert")
         expect(options[:date_happened]).to eq(time)
-        expect(options[:tags]).to match_array(["source:mysql_node/0"])
+        expect(options[:tags]).to match_array(["source:mysql_node/node_id_abc"])
         expect(options[:priority]).to eq("normal")
       }.and_return(fake_event)
 

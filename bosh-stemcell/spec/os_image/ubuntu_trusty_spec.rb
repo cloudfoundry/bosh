@@ -297,4 +297,39 @@ EOF
       end
     end
   end
+
+  context 'ensure sendmail is removed (stig: V-38671)' do
+    describe command('dpkg -s sendmail') do
+      its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
+    end
+  end
+
+  describe service('xinetd') do
+    it('should be disabled (stig: V-38582)') { should_not be_enabled }
+  end
+
+  context 'ensure cron is installed and enabled (stig: V-38605)' do
+    describe package('cron') do
+      it('should be installed') { should be_installed }
+    end
+
+    describe service('cron') do
+      it('should be enabled') { should be_enabled }
+    end
+  end
+
+  context 'ensure ypbind is not running (stig: V-38604)' do
+    describe package('nis') do
+      it { should_not be_installed }
+    end
+    describe file('/var/run/ypbind.pid') do
+      it { should_not be_file }
+    end
+  end
+
+  context 'ensure ypserv is not installed (stig: V-38603)' do
+    describe package('nis') do
+      it { should_not be_installed }
+    end
+  end
 end

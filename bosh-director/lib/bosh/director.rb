@@ -60,6 +60,9 @@ require 'bosh/director/blob_util'
 require 'bosh/director/agent_client'
 require 'cloud'
 require 'bosh/director/compile_task'
+require 'bosh/director/key_generator'
+require 'bosh/director/package_dependencies_manager'
+
 require 'bosh/director/job_renderer'
 require 'bosh/director/cycle_helper'
 require 'bosh/director/encryption_helper'
@@ -100,6 +103,7 @@ require 'bosh/director/sequel'
 require 'common/thread_pool'
 
 require 'bosh/director/manifest/manifest'
+require 'bosh/director/manifest/redactor'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/diff_lines'
 

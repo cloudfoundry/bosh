@@ -161,8 +161,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
 
           expect(api_server_job.link_spec).to eq(
-            {"db" => {"available_networks" => ["fake-manual-network", "fake-dynamic-network"],
-                      "link_properties" => {"mysql" => nil},
+            {"db" => {"networks" => ["fake-manual-network", "fake-dynamic-network"],
+                      "properties" => {"mysql" => nil},
                       "instances" => [
                           {"name" => "mysql",
                            "index" => 0,
@@ -208,8 +208,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           expect(api_server_job.link_spec).to eq({
                 'db' => {
-                  'available_networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                  "link_properties"=>{"mysql"=>nil},
+                  'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+                  "properties"=>{"mysql"=>nil},
                   'instances' => [
                     {
                       'name' => 'mysql',
@@ -271,8 +271,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         expect(api_server_job.link_spec).to eq({
               'backup_db' => {
-                'available_networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                "link_properties"=>{"mysql"=>nil},
+                'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+                "properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',
@@ -333,7 +333,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'\"")
+   - \"Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.\"")
       end
     end
 
@@ -486,8 +486,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
         expect(api_server_job.link_spec).to eq({
               'db' => {
-                'available_networks' => ['fake-manual-network', 'fake-dynamic-network'],
-                "link_properties"=>{"mysql"=>nil},
+                'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+                "properties"=>{"mysql"=>nil},
                 'instances' => [
                   {
                     'name' => 'mysql',

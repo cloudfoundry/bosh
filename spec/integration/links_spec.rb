@@ -635,16 +635,44 @@ Error 100: Unable to process links for deployment. Errors are:
     end
 
     context 'when provide and consume links are set in spec, and implied by deployment manifest, but there are multiple provide links with same type' do
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
-        manifest
+
+      context 'when both provided links are on separate templates' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
+          manifest
+        end
+
+        it 'raises error before deploying vms' do
+          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(director.vms('simple')).to eq([])
+        end
       end
 
-      it 'raises error before deploying vms' do
-        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        expect(exit_code).not_to eq(0)
-        expect(director.vms('simple')).to eq([])
+      context 'when both provided links are in same template' do
+        let(:job_with_same_type_links) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'duplicate_link_type_job',
+              templates: [{'name' => 'database_with_two_provided_link_of_same_type'}],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [implied_job_spec, job_with_same_type_links]
+          manifest
+        end
+
+        it 'raises error' do
+          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(director.vms('simple')).to eq([])
+        end
+
       end
     end
 
@@ -951,28 +979,7 @@ Error 100: Unable to process links for deployment. Errors are:
 
            expect {
              deploy_simple_manifest(manifest_hash: second_manifest)
-           }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
-         end
-
-         context 'when provider job has more than one instances' do
-           let(:first_deployment_job_spec) do
-             job_spec = Bosh::Spec::Deployments.simple_job(
-                 name: 'first_deployment_node',
-                 templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
-                 instances: 2,
-                 static_ips: ['192.168.1.10', '192.168.1.12'],
-             )
-             job_spec['azs'] = ['z1']
-             job_spec
-           end
-
-           it 'shows the available networks with no duplicates' do
-             deploy_simple_manifest(manifest_hash: first_manifest)
-
-             expect {
-               deploy_simple_manifest(manifest_hash: second_manifest)
-             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
-           end
+           }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second' and network 'invalid-network''. Please make sure the link was provided and shared\./)
          end
 
          context 'when provider job has 0 instances' do
@@ -987,12 +994,12 @@ Error 100: Unable to process links for deployment. Errors are:
              job_spec
            end
 
-           it 'shows the available networks' do
+           it 'raises the error' do
              deploy_simple_manifest(manifest_hash: first_manifest)
 
              expect {
                deploy_simple_manifest(manifest_hash: second_manifest)
-             }.to raise_error(RuntimeError, /Cannot use link path 'first.first_deployment_node.node.node1' required for link 'node1' in instance group 'second_deployment_node' on job 'node' over network 'invalid-network'. The available networks are: a\./)
+             }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second' and network 'invalid-network''. Please make sure the link was provided and shared\./)
            end
          end
        end
@@ -1057,7 +1064,7 @@ Error 100: Unable to process links for deployment. Errors are:
               'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in instance group 'my_api' on job 'api_server' over network 'invalid_network'. The available networks are: a, dynamic-network\./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'invalid_network'./)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -1073,8 +1080,39 @@ Error 100: Unable to process links for deployment. Errors are:
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Cannot use link path 'simple.mysql.database.db' required for link 'db' in instance group 'my_api' on job 'api_server' over network 'global_network'. The available networks are: a, dynamic-network\./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'global_network'./)
         end
+
+        context 'user has duplicate implicit links provided in two jobs over seprate networks' do
+
+          let(:mysql_job_spec) do
+            job_spec = Bosh::Spec::Deployments.simple_job(
+                name: 'mysql',
+                templates: [{'name' => 'database'}],
+                instances: 2,
+                static_ips: ['192.168.1.10', '192.168.1.11']
+            )
+            job_spec['azs'] = ['z1']
+            job_spec['networks'] = [{
+                'name' => 'dynamic-network',
+                'default' => ['dns', 'gateway']
+            }]
+            job_spec
+          end
+
+          let(:links) do
+            {
+                'db' => {'network' => 'dynamic-network'},
+                'backup_db' => {'network' => 'a'}
+            }
+          end
+
+          it "should choose link from correct network" do
+            upload_cloud_config(cloud_config_hash: cloud_config)
+            deploy_simple_manifest(manifest_hash: manifest)
+          end
+        end
+
       end
 
       context 'when user does not specify a network in consumes' do
@@ -1353,26 +1391,24 @@ Error 100: Unable to process links for deployment. Errors are:
       job_spec
     end
 
-    it 'should raise an error when consuming links without properties' do
+    it 'should not raise an error when consuming links without properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_nil_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
-      expect(exit_code).not_to eq(0)
-      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
+      expect(exit_code).to eq(0)
     end
 
-    it 'should raise an error when a deployment template property is not defined in the release properties' do
+    it 'should not raise an error when a deployment template property is not defined in the release properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
-      expect(exit_code).not_to eq(0)
-      expect(out).to include("Link property b in template provider has no default value or value supplied by the deployment manifest")
+      expect(exit_code).to eq(0)
     end
 
   end
@@ -1402,9 +1438,9 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error 100: Unable to process links for deployment. Errors are:
-   - \"Can't find link with type: bad_link in deployment simple\"
-   - \"Can't find link with type: bad_link_2 in deployment simple\"
-   - \"Can't find link with type: bad_link_3 in deployment simple\"")
+   - \"Can't find link with type: 'bad_link' in deployment 'simple'\"
+   - \"Can't find link with type: 'bad_link_2' in deployment 'simple'\"
+   - \"Can't find link with type: 'bad_link_3' in deployment 'simple'\"")
     end
   end
 end

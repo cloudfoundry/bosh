@@ -59,11 +59,23 @@ HERE
       it { should contain('"Type": "HTTP"') }
     end
   end
+
+  context 'installed by dev_tools_config' do
+    describe file('/var/vcap/bosh/etc/dev_tools_file_list') do
+      it { should contain('/usr/bin/gcc') }
+    end
+  end
 end
 
 describe 'CentOS 7 stemcell tarball', stemcell_tarball: true do
   context 'installed by bosh_rpm_list stage' do
     describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/stemcell_rpm_qa.txt") do
+      it { should be_file }
+    end
+  end
+
+  context 'installed by dev_tools_config stage' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/dev_tools_file_list.txt") do
       it { should be_file }
     end
   end

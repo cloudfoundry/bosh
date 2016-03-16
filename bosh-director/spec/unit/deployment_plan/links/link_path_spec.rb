@@ -141,7 +141,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'when consumes block does not have from key, and an invalid link type' do
     let(:path) { {"name" => "link_name", "type" => "invalid_type"} }
     it 'should throw an error' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with type: invalid_type in deployment deployment_name")
+      expect{link_path.parse(path)}.to raise_error("Can't find link with type: 'invalid_type' in deployment 'deployment_name'")
     end
 
     context 'when the link is optional' do
@@ -155,13 +155,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a deployment that does not provide the correct link' do
     let(:path) { {"from" => 'deployment_name.unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
     end
 
     context "when link is optional and the 'from' is explicitly set" do
       let(:path) { {"from" => 'deployment_name.unprovided_link_name', "optional" => true} }
       it 'should throw an error' do
-        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
       end
     end
   end
@@ -183,13 +183,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   context 'given a bad link name' do
     let(:path) { {"from" => 'unprovided_link_name'} }
     it 'should raise an exception' do
-      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'")
+      expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
     end
 
     context 'when link is optional' do
       let(:path) { {"from" => 'unprovided_link_name', "optional" => true} }
       it 'should still throw an error because the user intent has not been met' do
-        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'")
+        expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
       end
     end
 

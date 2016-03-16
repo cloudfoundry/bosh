@@ -124,7 +124,7 @@ module Bosh::Monitor
         return false
       end
 
-      @logger.info("Adding agent #{vm_data['agent_id']} (#{vm_data['job']}/#{vm_data['index']}) to #{deployment_name}...")
+      @logger.info("Adding agent #{vm_data['agent_id']} (#{vm_data['job']}/#{vm_data['id']}) to #{deployment_name}...")
 
       agent_id = vm_data['agent_id']
 

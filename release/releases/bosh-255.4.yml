@@ -1,0 +1,116 @@
+---
+packages:
+- name: health_monitor
+  version: b9281e95c9eb964544f27489ee7adad4c0253001
+  fingerprint: b9281e95c9eb964544f27489ee7adad4c0253001
+  sha1: 6a959cfd0948c5b8df73e285a3ae5d4058848f2b
+  dependencies:
+  - ruby
+- name: nginx
+  version: 1d356bbd17ed8c349fd1053093222d78559687ec
+  fingerprint: 1d356bbd17ed8c349fd1053093222d78559687ec
+  sha1: 87140247eb270d10f90febf3ca79db23c5bf19eb
+  dependencies: []
+- name: genisoimage
+  version: 008d332ba1471bccf9d9aeb64c258fdd4bf76201
+  fingerprint: 008d332ba1471bccf9d9aeb64c258fdd4bf76201
+  sha1: 2acf8da0250db31e762a23756fd0e12cfa947eb9
+  dependencies: []
+- name: postgres-9.4
+  version: 83e114e2fc524e9a7dfc27866f5d81e7c588642f
+  fingerprint: 83e114e2fc524e9a7dfc27866f5d81e7c588642f
+  sha1: 03fac26169fb671bb1b72d4f11dc7166b6748775
+  dependencies: []
+- name: registry
+  version: 57c8fedef0a40d00f4177dcc019ee8c80c246de6
+  fingerprint: 57c8fedef0a40d00f4177dcc019ee8c80c246de6
+  sha1: 7f15ae6270b4b00bc6128686e29aecdacbbcbcd6
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+- name: ruby
+  version: 030e3d4eafd00b10bbfa879bcf44fba62139205e
+  fingerprint: 030e3d4eafd00b10bbfa879bcf44fba62139205e
+  sha1: 8f8332533bc9867c5a6ceb8eb532f4e477c36b91
+  dependencies: []
+- name: postgres
+  version: 55dbf1828bbb8e5fcd7dc7550cfb73de89312458
+  fingerprint: 55dbf1828bbb8e5fcd7dc7550cfb73de89312458
+  sha1: f63ade76434a17c6711cd68f437daca342ef3b1d
+  dependencies: []
+- name: director
+  version: fa2f3f1816be35991d4deb02defdb432b9b20b35
+  fingerprint: fa2f3f1816be35991d4deb02defdb432b9b20b35
+  sha1: 0a0cab1474173c00c8afcd2c4d87be2206e8eb5d
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+- name: redis
+  version: 37eae530889cb9ef4e84f9c3d0827bab5ae5cb66
+  fingerprint: 37eae530889cb9ef4e84f9c3d0827bab5ae5cb66
+  sha1: e3ef83d1342827a667c9adfbb510e560028f109b
+  dependencies: []
+- name: libpq
+  version: 09c8f60b87c9bd41b37b0f62159c9d77163f52b8
+  fingerprint: 09c8f60b87c9bd41b37b0f62159c9d77163f52b8
+  sha1: bea6de3f405e843638fc56b3e9d7f935792d1f4f
+  dependencies: []
+- name: powerdns
+  version: 256336d00b1689138490c385c03ad3a8f54b4a9e
+  fingerprint: 256336d00b1689138490c385c03ad3a8f54b4a9e
+  sha1: caedada8f5a0fc37aaf0d816c5bcc428d6579440
+  dependencies: []
+- name: mysql
+  version: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
+  fingerprint: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
+  sha1: 1f6d26944b9a05ceb2adab457882ce6397cb3ca2
+  dependencies: []
+- name: nats
+  version: 6a31c7bb0d5ffa2a9f43c7fd7193193438e20e92
+  fingerprint: 6a31c7bb0d5ffa2a9f43c7fd7193193438e20e92
+  sha1: dee70fef63aa35a0d8e1d8fe730b5596904c4a59
+  dependencies:
+  - ruby
+jobs:
+- name: health_monitor
+  version: cfe20dfb6bd6daab58c55b38493c45120a557329
+  fingerprint: cfe20dfb6bd6daab58c55b38493c45120a557329
+  sha1: 7cd37a3fd5e6d80dabbc8a588c7a939845950b92
+- name: postgres-9.4
+  version: d5f6d7409b0f030b0eb677cdfc48bbb5c283ac17
+  fingerprint: d5f6d7409b0f030b0eb677cdfc48bbb5c283ac17
+  sha1: 321d96f110bf3486a71693050715766652697644
+- name: registry
+  version: cb87e2ee9c510212a3c28b106206f3b444980236
+  fingerprint: cb87e2ee9c510212a3c28b106206f3b444980236
+  sha1: 3401a86554db5e4c3ecc679ed7ef6b5171d30964
+- name: postgres
+  version: 24fe5261816d5bf75caab258ce1b2ee15b4ad2e0
+  fingerprint: 24fe5261816d5bf75caab258ce1b2ee15b4ad2e0
+  sha1: a7003a2811a052fe89c514fe29e2f5dc0024b074
+- name: blobstore
+  version: 267710c9165f827561b14b020c1181b098df27cf
+  fingerprint: 267710c9165f827561b14b020c1181b098df27cf
+  sha1: b22a7964c3660eaf654442707e998c8afe18b145
+- name: director
+  version: 2074b22decbb3c5bed4a5d65a27bf4fe24807b6f
+  fingerprint: 2074b22decbb3c5bed4a5d65a27bf4fe24807b6f
+  sha1: 767da814db786d53bd05ee519e842a7dfa5958f3
+- name: redis
+  version: 708da93eea8f2c36fd576d6b349e78ab80bdedfa
+  fingerprint: 708da93eea8f2c36fd576d6b349e78ab80bdedfa
+  sha1: e754e430b46a15dce645310c01ff0e985ae60faa
+- name: powerdns
+  version: df20bcfaa20062ef2e0136f6b6a5dbdc62f7b6a8
+  fingerprint: df20bcfaa20062ef2e0136f6b6a5dbdc62f7b6a8
+  sha1: 6758d5bd60c6f21a852a42fac9ed0bd52915b748
+- name: nats
+  version: 329a9df8c4b7d3655c57e59d8fe2a03d65843cac
+  fingerprint: 329a9df8c4b7d3655c57e59d8fe2a03d65843cac
+  sha1: 73de8659da15387295b879d8190c2d6d79037ac8
+commit_hash: e628c2a0
+uncommitted_changes: true
+name: bosh
+version: '255.4'

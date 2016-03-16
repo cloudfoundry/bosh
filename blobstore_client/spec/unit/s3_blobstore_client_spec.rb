@@ -85,6 +85,26 @@ module Bosh::Blobstore
         end
       end
 
+      context 'when region has been set to nil' do
+        let(:region) { nil }
+        let(:options) { default_options.merge({region: region}) }
+
+        it 'uses the default region' do
+          expect(Aws::S3::Object).to receive(:new).with(
+             key: 'fake-key',
+             bucket_name: 'test',
+             region: 'us-east-1',
+             access_key_id: 'KEY',
+             secret_access_key: 'SECRET',
+             ssl_verify_peer: true,
+             force_path_style: false,
+             signature_version: 's3'
+           ).twice.and_return(blob)
+
+          client.create_file('fake-key', 'file')
+        end
+      end
+
       context 'when using a region that does not require v4' do
         let(:region) { 'us-east-1' }
         let(:options) { default_options.merge({region: region}) }

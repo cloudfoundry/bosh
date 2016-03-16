@@ -43,6 +43,10 @@ module Bosh::Director
       def find_all
         Models::Instance.all
       end
+
+      def by_deployment(deployment)
+        Models::Instance.filter(deployment: deployment).all
+      end
     end
   end
 end

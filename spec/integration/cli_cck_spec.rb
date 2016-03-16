@@ -58,9 +58,10 @@ describe 'cli: cloudcheck', type: :integration do
 
   it 'provides resolution options for missing disks' do
     current_sandbox.cpi.delete_disk(current_sandbox.cpi.disk_cids.first)
-    cloudcheck_response = bosh_run_cck_with_resolution(1)
+    cloudcheck_response = scrub_random_cids(scrub_random_ids(bosh_run_cck_with_resolution(1)))
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('1 missing'))
+    expect(cloudcheck_response).to match(regexp('Disk `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\' (foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, 100M) is missing'))
     expect(cloudcheck_response).to match(regexp('1. Skip for now
   2. Delete disk reference (DANGEROUS!)') )
   end

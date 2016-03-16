@@ -292,6 +292,15 @@ module Bosh::Cli::Command
 
   describe 'older tests' do
     before do
+      @original_bosh_config = ENV['BOSH_CONFIG']
+      ENV['BOSH_CONFIG'] = "/tmp/bosh_cli_micro_spec.bosh_config"
+    end
+
+    after do
+      ENV['BOSH_CONFIG'] = @original_bosh_config
+    end
+
+    before do
       @cmd = Bosh::Cli::Command::Micro.new(nil)
       @cmd.add_option(:non_interactive, true)
       @cmd.add_option(:config, nil)

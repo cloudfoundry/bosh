@@ -239,6 +239,13 @@ LOGMESSAGE
                                           'name' => 'link_name',
                                           'type' => 'link_type'
                                       }
+                                  },
+                                  'provides' => {
+                                      'link_name_2' => {
+                                          'properties' => [
+                                              'a'
+                                          ]
+                                      }
                                   }
                               }
                           }
@@ -314,6 +321,41 @@ LOGMESSAGE
                   expect(job1).to_not receive(:add_link_path)
                   planner
                 end
+
+                context 'when template properties_json has the value "null"' do
+                  it 'should not throw an error' do
+                    allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                    allow(template1).to receive(:release).and_return(release)
+                    allow(template1).to receive(:template_scoped_properties).and_return({})
+                    allow(job1).to receive(:all_properties).and_return({})
+                    allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
+                    allow(skipped_link_path).to receive(:parse)
+
+                    templateModel = Models::Template.where(name: 'provides_template').first
+                    templateModel.properties_json = 'null'
+                    templateModel.save
+
+                    expect(subject).to_not receive(:process_link_properties).with({}, {'properties'=>nil, 'template_name'=>'provides_template'}, ['a'], [])
+                    planner
+                  end
+                end
+
+                context 'when link property has no default value and no value is set in the deployment manifest' do
+                  it 'should not throw an error' do
+                    allow(DeploymentPlan::Job).to receive(:parse).and_return(job1)
+                    allow(template1).to receive(:release).and_return(release)
+                    allow(template1).to receive(:template_scoped_properties).and_return({})
+                    allow(job1).to receive(:all_properties).and_return({})
+                    allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
+                    allow(skipped_link_path).to receive(:parse)
+
+                    templateModel = Models::Template.where(name: 'provides_template').first
+                    templateModel.properties = {"a" => {}}
+                    templateModel.save
+
+                    planner
+                  end
+                end
               end
           end
         end
@@ -330,7 +372,7 @@ LOGMESSAGE
             job = manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
-            template2 = Models::Template.make(name: 'provides_template', release: release, properties: {"a" => "b"})
+            template2 = Models::Template.make(name: 'provides_template', release: release, properties: {"a" => {default: "b"}})
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
             release_version.add_template(template2)

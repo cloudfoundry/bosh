@@ -10,7 +10,7 @@ module Bosh::Monitor
 
       SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
 
-      attr_reader :agent_id, :deployment, :job, :index, :metrics
+      attr_reader :agent_id, :deployment, :job, :index, :metrics, :node_id
 
       def initialize(attributes = {})
         super
@@ -30,7 +30,7 @@ module Bosh::Monitor
         @tags = {}
         @tags["job"] = @job if @job
         @tags["index"] = @index if @index
-        @tags["node_id"] = @node_id if @node_id
+        @tags["id"] = @node_id if @node_id
         @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
@@ -60,7 +60,13 @@ module Bosh::Monitor
       end
 
       def short_description
-        "Heartbeat from #{@job}/#{@index} (agent_id=#{@agent_id} node_id=#{@node_id}) @ #{@timestamp.utc}"
+        description = "Heartbeat from #{@job}/#{@node_id} (agent_id=#{@agent_id}"
+
+        if @index && !@index.empty?
+          description = description + " index=#{@index}"
+        end
+
+        description + ") @ #{@timestamp.utc}"
       end
 
       def to_s
