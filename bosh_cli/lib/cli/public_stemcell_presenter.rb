@@ -18,7 +18,7 @@ module Bosh::Cli
       end
 
       @ui.say(stemcells_table.render)
-      @ui.say("To download use `bosh download public stemcell <stemcell_name>'. For full url use --full.")
+      @ui.say('To download use `bosh download public stemcell <stemcell_name>`. For full url use --full.')
     end
 
     def download(stemcell_name)
@@ -26,8 +26,8 @@ module Bosh::Cli
         @ui.err("'#{stemcell_name}' not found.")
       end
 
-      if File.exists?(stemcell_name) && !@ui.confirmed?("Overwrite existing file `#{stemcell_name}'?")
-        @ui.err("File `#{stemcell_name}' already exists")
+      if File.exists?(stemcell_name) && !@ui.confirmed?("Overwrite existing file '#{stemcell_name}'?")
+        @ui.err("File '#{stemcell_name}' already exists")
       end
 
       stemcell = @public_stemcells.find(stemcell_name)

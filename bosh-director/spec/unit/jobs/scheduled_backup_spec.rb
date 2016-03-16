@@ -34,7 +34,7 @@ describe Bosh::Director::Jobs::ScheduledBackup do
     end
 
     it 'returns a string when successful' do
-      expect(task.perform).to eq "Stored `backup-2013-07-02T09:55:40Z.tgz' in backup blobstore"
+      expect(task.perform).to eq "Stored 'backup-2013-07-02T09:55:40Z.tgz' in backup blobstore"
     end
   end
 

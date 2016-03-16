@@ -17,7 +17,7 @@ module Bosh::Director::Api
       subject(:remover) { described_class.new(3) }
       let(:default_type) { 'type' }
       let(:second_type) { 'type1' }
-      context 'when there are fewer than `max_tasks` task of the given type in the database' do
+      context 'when there are fewer than max_tasks task of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(2)
@@ -40,7 +40,7 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there are exactly `max_tasks` of the given type in the database' do
+      context 'when there are exactly max_tasks of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(3)
@@ -63,13 +63,13 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there is one more than `max_tasks` tasks of the given type in the database' do
+      context 'when there is one more than max_tasks tasks of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(4)
         }
 
-        it 'keeps the latest `max_tasks` tasks files' do
+        it 'keeps the latest max_tasks tasks files' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -82,7 +82,7 @@ module Bosh::Director::Api
           expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
         end
 
-        it 'keeps the latest `max_tasks` tasks in the database' do
+        it 'keeps the latest max_tasks tasks in the database' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -92,13 +92,13 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there are 2 more than `max_tasks` task of the given type in the database' do
+      context 'when there are 2 more than max_tasks task of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(5)
         }
 
-        it 'removes the oldest 2 tasks files because it eventually converges to `max_tasks`' do
+        it 'removes the oldest 2 tasks files because it eventually converges to max_tasks' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -111,7 +111,7 @@ module Bosh::Director::Api
           expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
         end
 
-        it 'removes the oldest 2 database entries because it eventually converges to `max_tasks`' do
+        it 'removes the oldest 2 database entries because it eventually converges to max_tasks' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -121,13 +121,13 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there are 10 more than `max_tasks` task of the given type in the database' do
+      context 'when there are 10 more than max_tasks task of the given type in the database' do
         before {
           make_n_tasks(1, second_type)
           make_n_tasks(13)
         }
 
-        it 'removes 2 files older than the latest `max_tasks` because it eventually converges to `max_tasks`' do
+        it 'removes 2 files older than the latest max_tasks because it eventually converges to max_tasks' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -141,7 +141,7 @@ module Bosh::Director::Api
           expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
         end
 
-        it 'removes the 2 database entries older than the latest `max_tasks` because it eventually converges to `max_tasks`' do
+        it 'removes the 2 database entries older than the latest max_tasks because it eventually converges to max_tasks' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -151,7 +151,7 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there are 2 types with more than `max_tasks` tasks in the database' do
+      context 'when there are 2 types with more than max_tasks tasks in the database' do
         before {
           make_n_tasks(4, second_type)
           make_n_tasks(4)
@@ -181,7 +181,7 @@ module Bosh::Director::Api
           running_task.update({:state => :processing})
         end
 
-        it 'removes file older than the latest `max_tasks` that do not correspond to a task that is in a `processing` state' do
+        it 'removes file older than the latest max_tasks that do not correspond to a task that is in a processing state' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -194,7 +194,7 @@ module Bosh::Director::Api
           expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
         end
 
-        it 'removes the database entry for a task of the given type older than the latest `max_tasks` that is not in a `processing` state' do
+        it 'removes the database entry for a task of the given type older than the latest max_tasks that is not in a processing state' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -212,7 +212,7 @@ module Bosh::Director::Api
           running_task.update({:state => :queued})
         end
 
-        it 'removes file older than the latest `max_tasks` that do not correspond to a task that is in a `queued` state' do
+        it 'removes file older than the latest max_tasks that do not correspond to a task that is in a queued state' do
           expect {
             remover.remove(default_type)
           }.to change {
@@ -225,7 +225,7 @@ module Bosh::Director::Api
           expect(File.exist?("/director/tasks/#{second_type}_0")).to be(true)
         end
 
-        it 'removes the database entry for a task of the given type older than the latest `max_tasks` that is not in a `queued` state' do
+        it 'removes the database entry for a task of the given type older than the latest max_tasks that is not in a queued state' do
           expect {
             remover.remove(default_type)
           }.to change {

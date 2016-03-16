@@ -341,12 +341,12 @@ module Bosh::Director
 
       def check_model_bound
         if @model.nil?
-          raise DirectorError, "Instance `#{self}' model is not bound"
+          raise DirectorError, "Instance '#{self}' model is not bound"
         end
       end
 
       def check_model_not_bound
-        raise DirectorError, "Instance `#{self}' model is already bound" if @model
+        raise DirectorError, "Instance '#{self}' model is already bound" if @model
       end
 
       def log_changes(method_sym, old_state, new_state)

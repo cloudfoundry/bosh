@@ -18,11 +18,11 @@ module Bosh::Cli
       @private_config_file = File.join(config_dir, "private.yml")
 
       unless File.directory?(dir)
-        err("Cannot find release directory `#{dir}'")
+        err("Cannot find release directory '#{dir}'")
       end
 
       unless File.directory?(config_dir)
-        err("Cannot find release config directory `#{config_dir}'")
+        err("Cannot find release config directory '#{config_dir}'")
       end
 
       @final_config = load_config(@final_config_file)
@@ -159,7 +159,7 @@ module Bosh::Cli
       # to migrate while the old one tells you to upgrade.
       if @dev_config.has_key?("blobstore_options") &&
           @dev_config["blobstore_options"] != "deprecated"
-        say("Found legacy dev config file `#{@dev_config_file}'".make_yellow)
+        say("Found legacy dev config file '#{@dev_config_file}'".make_yellow)
 
         new_dev_config = {
           "dev_name" => @dev_config["name"],

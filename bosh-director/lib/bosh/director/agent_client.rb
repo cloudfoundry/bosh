@@ -206,7 +206,7 @@ module Bosh::Director
           unless timeout > 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
-              "Timed out sending `#{method_name}' to #{@client_id} " +
+              "Timed out sending '#{method_name}' to #{@client_id} " +
                 "after #{@timeout} seconds"
           end
           cond.wait(timeout)

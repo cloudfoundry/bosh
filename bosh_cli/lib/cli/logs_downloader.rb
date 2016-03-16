@@ -19,7 +19,7 @@ module Bosh::Cli
 
         FileUtils.mv(tmp_file, logs_destination_path)
 
-        @ui.say("Logs saved in `#{logs_destination_path.make_green}'")
+        @ui.say("Logs saved in '#{logs_destination_path.make_green}'")
         @ui.nl
 
       rescue Bosh::Cli::DirectorError => e

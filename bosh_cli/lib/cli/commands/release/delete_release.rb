@@ -14,14 +14,14 @@ module Bosh::Cli::Command
         desc << "/#{version}" if version
 
         if force
-          say("Deleting `#{desc}' (FORCED DELETE, WILL IGNORE ERRORS)".make_red)
+          say("Deleting '#{desc}' (FORCED DELETE, WILL IGNORE ERRORS)".make_red)
         else
-          say("Deleting `#{desc}'".make_red)
+          say("Deleting '#{desc}'".make_red)
         end
 
         if confirmed?
           status, task_id = director.delete_release(name, force: force, version: version)
-          task_report(status, task_id, "Deleted `#{desc}'")
+          task_report(status, task_id, "Deleted '#{desc}'")
         else
           say('Canceled deleting release'.make_green)
         end

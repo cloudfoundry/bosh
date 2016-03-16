@@ -54,7 +54,7 @@ module Bosh::Cli::Command
         end
       end
 
-      err("No help found for command `#{keywords.join(' ')}'. Run 'bosh help --all' to see all available BOSH commands.") if good_matches.empty?
+      err("No help found for command '#{keywords.join(' ')}'. Run `bosh help --all` to see all available BOSH commands.") if good_matches.empty?
 
       self.class.list_commands(good_matches)
     end

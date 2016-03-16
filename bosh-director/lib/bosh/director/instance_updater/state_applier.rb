@@ -42,7 +42,7 @@ module Bosh::Director
             process['name'] if process['state'] != 'running'
           end.compact
 
-          error_message = "`#{@instance}' is not running after update."
+          error_message = "'#{@instance}' is not running after update."
           error_message += " Review logs for failed jobs: #{failing_jobs.join(", ")}" if !failing_jobs.empty?
 
           raise AgentJobNotRunning, error_message
@@ -53,7 +53,7 @@ module Bosh::Director
       end
 
       if @instance.state == 'stopped' && current_state['job_state'] == 'running'
-        raise AgentJobNotStopped, "`#{@instance}' is still running despite the stop command"
+        raise AgentJobNotStopped, "'#{@instance}' is still running despite the stop command"
       end
 
       @instance.update_state

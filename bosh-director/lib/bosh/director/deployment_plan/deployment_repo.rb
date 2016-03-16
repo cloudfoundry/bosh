@@ -25,7 +25,7 @@ module Bosh::Director
           Bosh::Director::Models::Deployment.each do |other|
             if Canonicalizer.canonicalize(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,
-                "Invalid deployment name `#{attributes[:name]}', canonical name already taken (`#{canonical_name}')"
+                "Invalid deployment name '#{attributes[:name]}', canonical name already taken ('#{canonical_name}')"
             end
           end
           Bosh::Director::Models::Deployment.create(attributes)

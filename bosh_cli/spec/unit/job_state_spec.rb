@@ -35,7 +35,7 @@ module Bosh::Cli
 
         expect {
           job_state.change(:start, 'fake job', 'fake index', force)
-        }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+        }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use '--force' to override.")
 
         expect(director).to_not have_received(:change_job_state)
       end
@@ -75,7 +75,7 @@ module Bosh::Cli
 
           job_state.change(:start,'fake job', 'fake index', force)
 
-          expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+          expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use '--force' to override.")
           expect(director).to have_received(:change_job_state).
               with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'started', force)
         end

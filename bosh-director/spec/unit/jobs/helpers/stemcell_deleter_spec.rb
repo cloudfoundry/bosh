@@ -34,7 +34,7 @@ module Bosh::Director
 
         expect {
           stemcell_deleter.delete(stemcell)
-        }.to raise_error StemcellInUse, "Stemcell `test_stemcell/test_version' is still in use by: test-1, test-2"
+        }.to raise_error StemcellInUse, "Stemcell 'test_stemcell/test_version' is still in use by: test-1, test-2"
       end
     end
 

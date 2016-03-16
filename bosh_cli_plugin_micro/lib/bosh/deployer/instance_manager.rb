@@ -163,7 +163,7 @@ module Bosh::Deployer
       renderer.enter_stage('Delete micro BOSH', 7)
       agent_stop
       if state.disk_cid
-        step "Deleting persistent disk `#{state.disk_cid}'" do
+        step "Deleting persistent disk '#{state.disk_cid}'" do
           delete_disk(state.disk_cid, state.vm_cid)
           state.disk_cid = nil
           save_state

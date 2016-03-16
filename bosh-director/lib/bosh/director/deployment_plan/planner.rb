@@ -179,7 +179,7 @@ module Bosh::Director
       def add_release(release)
         if @releases.has_key?(release.name)
           raise DeploymentDuplicateReleaseName,
-            "Duplicate release name `#{release.name}'"
+            "Duplicate release name '#{release.name}'"
         end
         @releases[release.name] = release
       end

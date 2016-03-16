@@ -180,7 +180,7 @@ module Bosh
           expect(eval_template("<%= p('vfalse') %>", @context)).to eq('false')
           expect {
             eval_template("<%= p('bar.baz') %>", @context)
-          }.to raise_error(UnknownProperty, "Can't find property `[\"bar.baz\"]'")
+          }.to raise_error(UnknownProperty, "Can't find property '[\"bar.baz\"]'")
           expect(eval_template("<%= p('bar.baz', 22) %>", @context)).to eq('22')
         end
 
@@ -200,7 +200,7 @@ module Bosh
           <%= p(%w(a b c)) %>
             TMPL
           }.to raise_error(UnknownProperty,
-                           "Can't find property `[\"a\", \"b\", \"c\"]'")
+                           "Can't find property '[\"a\", \"b\", \"c\"]'")
 
           expect(eval_template(<<-TMPL, @context).strip).to eq('22')
         <%= p(%w(a b c), 22) %>

@@ -7,7 +7,7 @@ module Bosh::Cpi::CompatibilityHelpers
         it "raises VMNotFound error" do
           expect {
             cpi.delete_vm(vm_cid)
-          }.to raise_error(Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found")
+          }.to raise_error(Bosh::Clouds::VMNotFound, "VM '#{vm_cid}' not found")
         end
       end
     end

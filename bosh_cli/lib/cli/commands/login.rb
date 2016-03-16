@@ -24,7 +24,7 @@ module Bosh::Cli::Command
       target_required
       config.set_credentials(target, nil)
       config.save
-      say("You are no longer logged in to `#{target}'".make_yellow)
+      say("You are no longer logged in to '#{target}'".make_yellow)
     end
 
     private

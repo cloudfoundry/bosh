@@ -66,7 +66,7 @@ module Bosh::Director
           @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
           @sha1 = safe_property(stemcell_manifest, "sha1", :class => String)
 
-          logger.info("Found stemcell image `#{@name}/#{@version}', " +
+          logger.info("Found stemcell image '#{@name}/#{@version}', " +
                       "cloud properties are #{@cloud_properties.inspect}")
 
           logger.info("Verifying stemcell image")
@@ -80,7 +80,7 @@ module Bosh::Director
         track_and_log("Checking if this stemcell already exists") do
           begin
             stemcell = @stemcell_manager.find_by_name_and_version @name, @version
-            raise StemcellAlreadyExists, "Stemcell `#{@name}/#{@version}' already exists" unless @fix
+            raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists" unless @fix
           rescue StemcellNotFound => e
             stemcell = Models::Stemcell.new
             stemcell.name = @name
@@ -110,7 +110,7 @@ module Bosh::Director
       def verify_sha1
         stemcell_hash = Digest::SHA1.file(@stemcell_path).hexdigest
         if stemcell_hash != @stemcell_sha1
-          raise StemcellSha1DoesNotMatch, "Stemcell SHA1 `#{stemcell_hash}' does not match the expected SHA1 `#{@stemcell_sha1}'"
+          raise StemcellSha1DoesNotMatch, "Stemcell SHA1 '#{stemcell_hash}' does not match the expected SHA1 '#{@stemcell_sha1}'"
         end
       end
 

@@ -268,14 +268,14 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'downloads errand logs and shows downloaded location' do
-      expect(@output =~ /Logs saved in `(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+      expect(@output =~ /Logs saved in '(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
       logs_file = Bosh::Spec::TarFileInspector.new($1)
       expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
       expect(logs_file.smallest_file_size).to be > 0
     end
 
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
-      expect(@output).to include('Errand `fake-errand-name\' completed successfully (exit code 0)')
+      expect(@output).to include("Errand 'fake-errand-name' completed successfully (exit code 0)")
       expect(@exit_code).to eq(0)
     end
   end

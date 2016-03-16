@@ -88,7 +88,7 @@ module Bosh::Director
             instance_memo = InstanceMemo.new(@instance_provider, stemcell)
             @instance_reuser.add_in_use_instance(instance_memo, stemcell)
           else
-            @logger.info("Reusing compilation VM `#{instance_memo.instance.model.vm_cid}' for stemcell `#{stemcell.model.desc}'")
+            @logger.info("Reusing compilation VM '#{instance_memo.instance.model.vm_cid}' for stemcell '#{stemcell.model.desc}'")
           end
         end
         return instance_memo

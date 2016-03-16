@@ -31,16 +31,16 @@ module Bosh::Director::Jobs
         unless deployments.empty?
           names = deployments.map { |d| d.name }.join(', ')
           raise Bosh::Director::ReleaseInUse,
-            "Release `#{release.name}' is still in use by: #{names}"
+            "Release '#{release.name}' is still in use by: #{names}"
         end
         @release_deleter.delete(release, force)
       end
 
       def delete_release_version(release, version, force)
-        @logger.info("Looking up release version `#{release.name}/#{version}'")
+        @logger.info("Looking up release version '#{release.name}/#{version}'")
         release_version = @release_manager.find_version(release, version)
         # found version may be different than the requested version, due to version formatting
-        @logger.info("Found release version: `#{release.name}/#{release_version.version}'")
+        @logger.info("Found release version: '#{release.name}/#{release_version.version}'")
         @release_version_deleter.delete(release_version, release, force)
       end
     end

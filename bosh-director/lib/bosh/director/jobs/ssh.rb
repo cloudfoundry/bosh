@@ -31,7 +31,7 @@ module Bosh::Director
         ssh_info = instances.map do |instance|
           agent = @instance_manager.agent_client_for(instance)
 
-          logger.info("ssh #{@command} `#{instance.job}/#{instance.uuid}'")
+          logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
           result = agent.ssh(@command, @params)
           if target.ids_provided?
             result["id"] = instance.uuid

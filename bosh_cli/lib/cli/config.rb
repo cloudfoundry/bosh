@@ -34,7 +34,7 @@ module Bosh::Cli
     # @return [void]
     def self.register_command(command)
       if @commands.has_key?(command.usage)
-        raise CliError, "Duplicate command `#{command.usage}'"
+        raise CliError, "Duplicate command '#{command.usage}'"
       end
       @commands[command.usage] = command
     end

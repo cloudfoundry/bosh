@@ -34,13 +34,13 @@ class Listener
     @nats = NATS.connect(nats_client_options)
 
     if nats_subject
-      puts "> NATS subject is set to `#{nats_subject}'"
+      puts "> NATS subject is set to '#{nats_subject}'"
     else
       nats_subject = "bosh.hm.events"
     end
 
     if filter
-      puts "> Filter is set to `#{filter}'"
+      puts "> Filter is set to '#{filter}'"
     end
 
     puts "> Subscribing to events"

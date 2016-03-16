@@ -78,7 +78,7 @@ module Bosh::Monitor
       }
 
       Bhm.nats = NATS.connect(nats_client_options) do
-        @logger.info("Connected to NATS at `#{@mbus.endpoint}'")
+        @logger.info("Connected to NATS at '#{@mbus.endpoint}'")
       end
     end
 
@@ -151,9 +151,9 @@ module Bosh::Monitor
       deployments.each do |deployment|
         deployment_name = deployment["name"]
 
-        @logger.info "Found deployment `#{deployment_name}'"
+        @logger.info "Found deployment '#{deployment_name}'"
 
-        @logger.debug "Fetching VMs information for `#{deployment_name}'..."
+        @logger.debug "Fetching VMs information for '#{deployment_name}'..."
         vms = @director.get_deployment_vms(deployment_name)
 
         @agent_manager.sync_agents(deployment_name, vms)

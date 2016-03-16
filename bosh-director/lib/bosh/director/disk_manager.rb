@@ -150,7 +150,7 @@ module Bosh::Director
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
-                "`#{instance_model}' VM should have persistent disk attached " +
+                "'#{instance_model}' VM should have persistent disk attached " +
                     "but it doesn't (according to CPI)"
         end
       end
@@ -223,14 +223,14 @@ module Bosh::Director
         @logger.debug('Disk is already detached')
       elsif agent_disk_cid != instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
-          "`#{instance}' has invalid disks: agent reports " +
-            "`#{agent_disk_cid}' while director record shows " +
-            "`#{instance.model.persistent_disk_cid}'"
+          "'#{instance}' has invalid disks: agent reports " +
+            "'#{agent_disk_cid}' while director record shows " +
+            "'#{instance.model.persistent_disk_cid}'"
       end
 
       instance.model.persistent_disks.each do |disk|
         unless disk.active
-          @logger.warn("`#{instance}' has inactive disk #{disk.disk_cid}")
+          @logger.warn("'#{instance}' has inactive disk #{disk.disk_cid}")
         end
       end
     end

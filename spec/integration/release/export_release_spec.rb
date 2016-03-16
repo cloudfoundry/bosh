@@ -210,26 +210,26 @@ Can't use release 'test_release/1'. It references packages without source code a
     it 'returns an error when the release does not exist' do
       expect {
         bosh_runner.run("export release app/1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30005: Release `app' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 30005: Release 'app' doesn't exist/)
     end
 
     it 'returns an error when the release version does not exist' do
       expect {
         bosh_runner.run("export release test_release/0.1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30006: Release version `test_release\/0.1' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 30006: Release version 'test_release\/0.1' doesn't exist/)
     end
 
     it 'returns an error when the stemcell os and version does not exist' do
       expect {
         bosh_runner.run("export release test_release/1 nonexistos/1")
-      }.to raise_error(RuntimeError, /Error 50003: Stemcell version `1' for OS `nonexistos' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 50003: Stemcell version '1' for OS 'nonexistos' doesn't exist/)
     end
 
     it 'raises an error when exporting a release version not matching the manifest release version' do
       bosh_runner.run("upload release #{spec_asset('valid_release.tgz')}")
       expect {
         bosh_runner.run("export release appcloud/0.1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30011: Release version `appcloud\/0.1' not found in deployment `minimal' manifest/)
+      }.to raise_error(RuntimeError, /Error 30011: Release version 'appcloud\/0.1' not found in deployment 'minimal' manifest/)
     end
 
     it 'puts a tarball in the blobstore' do
@@ -338,7 +338,7 @@ Can't use release 'test_release/1'. It references packages without source code a
         expect(output).to include('Done compiling packages')
         expect(output).to include('Done copying packages')
         expect(output).to include('Done copying jobs')
-        expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
+        expect(output).to include("Exported release 'test_release/1' for 'centos-7/3001'")
       end
     end
 
@@ -360,7 +360,7 @@ Can't use release 'test_release/1'. It references packages without source code a
         expect(output).to include('Done compiling packages')
         expect(output).to include('Done copying packages')
         expect(output).to include('Done copying jobs')
-        expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
+        expect(output).to include("Exported release 'test_release/1' for 'centos-7/3001'")
       end
     end
   end

@@ -56,7 +56,7 @@ describe Bosh::Cli::Command::Backup do
         expect(command.director).to receive(:create_backup).and_return [:done, 42]
         expect(command.director).to receive(:fetch_backup).and_return download_path
 
-        expect(command).to receive(:say).with("Backup of BOSH director was put in `#{dest}'.")
+        expect(command).to receive(:say).with("Backup of BOSH director was put in '#{dest}'.")
         command.backup(dest)
       end
 
@@ -99,7 +99,7 @@ describe Bosh::Cli::Command::Backup do
             expect {
               command.backup(dest)
             }.to raise_error(Bosh::Cli::CliError,
-                             "There is already an existing file at `#{dest}'. " +
+                             "There is already an existing file at '#{dest}'. " +
                                'To overwrite it use the --force option.')
           end
         end

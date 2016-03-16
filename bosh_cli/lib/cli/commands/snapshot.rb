@@ -50,7 +50,7 @@ module Bosh::Cli::Command
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
       unless job && index
-        unless confirmed?("Are you sure you want to take a snapshot of all deployment `#{deployment_name}'?")
+        unless confirmed?("Are you sure you want to take a snapshot of all deployment '#{deployment_name}'?")
           say('Canceled taking snapshot'.make_green)
           return
         end
@@ -68,14 +68,14 @@ module Bosh::Cli::Command
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
-      unless confirmed?("Are you sure you want to delete snapshot `#{snapshot_cid}'?")
+      unless confirmed?("Are you sure you want to delete snapshot '#{snapshot_cid}'?")
         say('Canceled deleting snapshot'.make_green)
         return
       end
 
       status, task_id = director.delete_snapshot(deployment_name, snapshot_cid)
 
-      task_report(status, task_id, "Deleted Snapshot `#{snapshot_cid}'")
+      task_report(status, task_id, "Deleted Snapshot '#{snapshot_cid}'")
     end
 
     usage 'delete snapshots'
@@ -85,14 +85,14 @@ module Bosh::Cli::Command
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
-      unless confirmed?("Are you sure you want to delete all snapshots of deployment `#{deployment_name}'?")
+      unless confirmed?("Are you sure you want to delete all snapshots of deployment '#{deployment_name}'?")
         say('Canceled deleting snapshots'.make_green)
         return
       end
 
       status, task_id = director.delete_all_snapshots(deployment_name)
 
-      task_report(status, task_id, "Deleted all snapshots of deployment `#{deployment_name}'")
+      task_report(status, task_id, "Deleted all snapshots of deployment '#{deployment_name}'")
     end
   end
 end

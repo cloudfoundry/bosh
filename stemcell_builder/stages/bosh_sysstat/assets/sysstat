@@ -10,7 +10,7 @@ ENABLED="true"
 
 # Additional options passed to sa1 by /etc/init.d/sysstat
 # and /etc/cron.d/sysstat
-# By default contains the `-S DISK' option responsible for
+# By default contains the '-S DISK' option responsible for
 # generating disk statisitcs.
 SA1_OPTIONS="-S DISK"
 

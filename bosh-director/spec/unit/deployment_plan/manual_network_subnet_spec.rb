@@ -186,8 +186,8 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           []
         )
       }.to raise_error(Bosh::Director::NetworkReservedIpOutOfRange,
-          "Reserved IP `192.167.0.5' is out of " +
-            "network `net_a' range")
+          "Reserved IP '192.167.0.5' is out of " +
+            "network 'net_a' range")
     end
 
     it 'should allow the reserved range to include the gateway, broadcast and network addresses' do
@@ -216,8 +216,8 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           []
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP `192.167.0.5' is out of " +
-            "network `net_a' range")
+          "Static IP '192.167.0.5' is out of " +
+            "network 'net_a' range")
     end
 
     it 'should fail when the static IP is in reserved range' do
@@ -233,7 +233,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           []
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP `192.168.0.5' is in network `net_a' reserved range")
+          "Static IP '192.168.0.5' is in network 'net_a' reserved range")
     end
 
     describe 'availability zone(s)' do

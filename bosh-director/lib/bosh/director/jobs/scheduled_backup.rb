@@ -23,7 +23,7 @@ module Bosh::Director
           @backup_destination.create(f, blobstore_path)
         end
 
-        "Stored `#{blobstore_path}' in backup blobstore"
+        "Stored '#{blobstore_path}' in backup blobstore"
       ensure
         FileUtils.rm_f(@backup_job.backup_file)
       end

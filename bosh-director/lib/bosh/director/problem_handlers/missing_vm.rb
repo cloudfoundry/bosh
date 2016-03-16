@@ -26,7 +26,7 @@ module Bosh::Director
       end
 
       def description
-        "VM with cloud ID `#{@instance.vm_cid}' missing."
+        "VM with cloud ID '#{@instance.vm_cid}' missing."
       end
     end
   end

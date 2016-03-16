@@ -32,7 +32,7 @@ describe Bhm::Events::Base do
   it "whines on unknown event kinds" do
     expect {
       Bhm::Events::Base.create!(:foobar, { })
-    }.to raise_error(Bhm::InvalidEvent, "Cannot find `foobar' event handler")
+    }.to raise_error(Bhm::InvalidEvent, "Cannot find 'foobar' event handler")
   end
 
   it "normalizes attributes" do
@@ -46,7 +46,7 @@ describe Bhm::Events::Base do
     [:validate, :to_plain_text, :to_hash, :to_json, :metrics].each do |method|
       expect {
         event.send(method)
-      }.to raise_error(Bhm::FatalError, "`#{method}' is not implemented by Bosh::Monitor::Events::Base")
+      }.to raise_error(Bhm::FatalError, "'#{method}' is not implemented by Bosh::Monitor::Events::Base")
     end
   end
 

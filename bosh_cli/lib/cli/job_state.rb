@@ -52,7 +52,7 @@ module Bosh::Cli
       end
 
       @command.nl
-      @command.say("Performing `#{operation_desc}'...")
+      @command.say("Performing '#{operation_desc}'...")
       @command.director.change_job_state(@manifest.name, @manifest.yaml, job, index_or_id, new_state, @options)
     end
 
@@ -61,7 +61,7 @@ module Bosh::Cli
       other_changes_present = @command.inspect_deployment_changes(@manifest, show_empty_changeset: false)
 
       if other_changes_present && !force
-        @command.err("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+        @command.err("Cannot perform job management when other deployment changes are present. Please use '--force' to override.")
       end
     end
 

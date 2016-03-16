@@ -286,7 +286,7 @@ describe 'Links', type: :integration do
         it 'should not throw an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
           expect(exit_code).to eq(0)
-          expect(out).to include("Deployed `simple' to `Test Director'")
+          expect(out).to include("Deployed 'simple' to 'Test Director'")
         end
       end
 
@@ -294,7 +294,7 @@ describe 'Links', type: :integration do
         it 'should fail when uploading the release' do
           expect {
             bosh_runner.run("upload release #{spec_asset('links_releases/corrupted_release_optional_provides-0+dev.1.tgz')}")
-          }.to raise_error(RuntimeError, /Error 80013: Link 'node1' of type 'node1' is a provides link, not allowed to have `optional' key/)
+          }.to raise_error(RuntimeError, /Error 80013: Link 'node1' of type 'node1' is a provides link, not allowed to have 'optional' key/)
         end
       end
 
@@ -489,7 +489,7 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(out).to include('Started copying jobs > node/9bf2cb66c06889609404fbe10b3c8f597463bdb5. Done')
         expect(out).to include('Done copying jobs')
 
-        expect(out).to include('Exported release `bosh-release/0+dev.1` for `toronto-os/1`')
+        expect(out).to include("Exported release 'bosh-release/0+dev.1' for 'toronto-os/1'")
       end
     end
 
@@ -959,7 +959,7 @@ Error 100: Unable to process links for deployment. Errors are:
 
            second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
            second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
-           
+
            expect(second_deployment_template['instances']['node1_ips'].first).to match(/.test./)
            expect(second_deployment_template['instances']['node2_ips'].first).to eq('192.168.1.11')
          end

@@ -209,8 +209,8 @@ module Bosh::Director
         # But they are already compiled!
         expect(compiler.compilations_performed).to eq(0)
 
-        expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
-        expect(log_string).to include("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.model.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
       end
     end
 
@@ -317,7 +317,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(6)
 
-          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
         end
       end
 
@@ -347,7 +347,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(0)
 
-          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
         end
       end
     end

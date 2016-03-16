@@ -54,7 +54,7 @@ module Bosh::Cli::Command
     desc 'bootstrap full bosh deployment'
     def bootstrap_bosh(config_file = nil)
       target_required
-      err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
+      err "To bootstrap BOSH, first log in to '#{config.target}'" unless logged_in?
 
       options[:hm_director_user] ||= 'hm'
       options[:hm_director_password] = SecureRandom.base64

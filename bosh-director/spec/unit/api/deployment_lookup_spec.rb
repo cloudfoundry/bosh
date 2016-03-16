@@ -24,7 +24,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               deployment_lookup.by_name(deployment_name)
-            }.to raise_error(DeploymentNotFound, "Deployment `bob' doesn't exist")
+            }.to raise_error(DeploymentNotFound, "Deployment 'bob' doesn't exist")
           end
         end
       end

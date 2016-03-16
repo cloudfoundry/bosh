@@ -38,7 +38,7 @@ module Bosh::Director::Core::Templates
       output = `tar -C #{template_dir} -xzf #{temp_path} 2>&1`
       if $?.exitstatus != 0
         raise JobTemplateUnpackFailed,
-              "Cannot unpack `#{job_template.name}' job template, " +
+              "Cannot unpack '#{job_template.name}' job template, " +
                 "tar returned #{$?.exitstatus}, " +
                 "tar output: #{output}"
       end

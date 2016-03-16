@@ -14,8 +14,8 @@ module Bosh::Director
       rescue Sequel::ValidationFailed => e
         if e.errors[[:name, :deployment_id]].include?(:unique)
           raise PropertyAlreadyExists,
-                "Property `#{property_name}' already exists " +
-                "for deployment `#{deployment.name}'"
+                "Property '#{property_name}' already exists " +
+                "for deployment '#{deployment.name}'"
         end
         invalid_property(e.errors)
       end
@@ -38,8 +38,8 @@ module Bosh::Director
         property = Models::DeploymentProperty.find(filters)
         if property.nil?
           raise PropertyNotFound,
-                "Property `#{property_name}' not found " +
-                "for deployment `#{deployment.name}'"
+                "Property '#{property_name}' not found " +
+                "for deployment '#{deployment.name}'"
         end
         property
       end

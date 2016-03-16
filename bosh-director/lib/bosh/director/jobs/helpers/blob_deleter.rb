@@ -12,7 +12,7 @@ module Bosh::Director::Jobs
           @blobstore.delete(blobstore_id)
           return true
         rescue Exception => e
-          @logger.warn("Could not delete blob with id `#{blobstore_id}`from blobstore: #{e}\n " + e.backtrace.join("\n"))
+          @logger.warn("Could not delete blob with id '#{blobstore_id}' from blobstore: #{e}\n " + e.backtrace.join("\n"))
           errors << e
         end
 

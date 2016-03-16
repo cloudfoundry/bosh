@@ -366,7 +366,7 @@ module Bosh::Director
 
           expect {
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package `fake-name-2' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
+          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package 'fake-name-2' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
         end
       end
 
@@ -428,7 +428,7 @@ module Bosh::Director
 
           expect {
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job `fake-job-1' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
+          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job 'fake-job-1' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
         end
 
         it "creates jobs that don't already exist" do

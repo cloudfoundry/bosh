@@ -51,7 +51,7 @@ module Bosh::Director
 
         with_release_lock(@name) { process_release(release_dir) }
 
-        "Created release `#{@name}/#{@version}'"
+        "Created release '#{@name}/#{@version}'"
 
       rescue Exception => e
         raise e
@@ -110,7 +110,7 @@ module Bosh::Director
       def verify_sha1
         release_hash = Digest::SHA1.file(release_path).hexdigest
         if release_hash != sha1
-          raise ReleaseSha1DoesNotMatch, "Release SHA1 `#{release_hash}' does not match the expected SHA1 `#{sha1}'"
+          raise ReleaseSha1DoesNotMatch, "Release SHA1 '#{release_hash}' does not match the expected SHA1 '#{sha1}'"
         end
       end
 
@@ -142,7 +142,7 @@ module Bosh::Director
           @release_version_model.save
         else
           if @release_version_model.commit_hash != @commit_hash || @release_version_model.uncommitted_changes != @uncommitted_changes
-            raise ReleaseVersionCommitHashMismatch, "release `#{@name}/#{@version}' has already been uploaded with commit_hash as `#{@commit_hash}' and uncommitted_changes as `#{@uncommitted_changes}'"
+            raise ReleaseVersionCommitHashMismatch, "release '#{@name}/#{@version}' has already been uploaded with commit_hash as '#{@commit_hash}' and uncommitted_changes as '#{@uncommitted_changes}'"
           end
         end
 
@@ -187,7 +187,7 @@ module Bosh::Director
           name = package["name"]
           dependencies = package["dependencies"]
           all_dependencies = result[:connected_vertices][name]
-          logger.info("Resolved package dependencies for `#{name}': #{dependencies.pretty_inspect} => #{all_dependencies.pretty_inspect}")
+          logger.info("Resolved package dependencies for '#{name}': #{dependencies.pretty_inspect} => #{all_dependencies.pretty_inspect}")
         end
       end
 
@@ -208,7 +208,7 @@ module Bosh::Director
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
           @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
             if package.fingerprint != package_meta['fingerprint']
-              raise ReleaseInvalidPackage, "package `#{package_meta['name']}' had different fingerprint in previously uploaded release `#{@name}/#{@version}'"
+              raise ReleaseInvalidPackage, "package '#{package_meta['name']}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'"
             end
           end
 
@@ -291,7 +291,7 @@ module Bosh::Director
         single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
           packages.each do |package, package_meta|
             package_desc = "#{package.name}/#{package.version}"
-            logger.info("Adding source for package `#{package_desc}'")
+            logger.info("Adding source for package '#{package_desc}'")
             had_effect |= save_package_source_blob(package, package_meta, release_dir)
             package.save
             @packages[package.name] = package
@@ -314,7 +314,7 @@ module Bosh::Director
         single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
           packages.each do |package, package_meta|
             package_desc = "#{package.name}/#{package.version}"
-            logger.info("Using existing package `#{package_desc}'")
+            logger.info("Using existing package '#{package_desc}'")
             register_package(package)
 
             if compiled_release
@@ -351,7 +351,7 @@ module Bosh::Director
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           package = nil
           event_log.track(package_desc) do
-            logger.info("Creating new package `#{package_desc}'")
+            logger.info("Creating new package '#{package_desc}'")
             package = create_package(package_meta, release_dir)
             register_package(package)
           end
@@ -548,7 +548,7 @@ module Bosh::Director
           # Checking whether we might have the same bits somewhere
           @release_version_model.templates.select { |t| t.name == job_meta["name"] }.each do |tmpl|
             if tmpl.fingerprint != job_meta["fingerprint"]
-              raise ReleaseExistingJobFingerprintMismatch, "job `#{job_meta["name"]}' had different fingerprint in previously uploaded release `#{@name}/#{@version}'"
+              raise ReleaseExistingJobFingerprintMismatch, "job '#{job_meta["name"]}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'"
             end
           end
 
@@ -581,7 +581,7 @@ module Bosh::Director
         jobs.each do |job_meta|
           job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
           event_log.track(job_desc) do
-            logger.info("Creating new template `#{job_desc}'")
+            logger.info("Creating new template '#{job_desc}'")
             template = create_job(job_meta, release_dir)
             register_template(template)
           end
@@ -592,7 +592,7 @@ module Bosh::Director
 
       def create_job(job_meta, release_dir)
         release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
-        logger.info("Creating job template `#{job_meta['name']}/#{job_meta['version']}' " +
+        logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " +
             'from provided bits')
         release_job.update(Models::Template.new())
       end
@@ -607,11 +607,11 @@ module Bosh::Director
             job_desc = "#{template.name}/#{template.version}"
 
             if @fix
-              logger.info("Fixing existing job `#{job_desc}'")
+              logger.info("Fixing existing job '#{job_desc}'")
               release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
               release_job.update(template)
             else
-              logger.info("Using existing job `#{job_desc}'")
+              logger.info("Using existing job '#{job_desc}'")
             end
 
             register_template(template) unless template.release_versions.include? @release_version_model

@@ -40,7 +40,7 @@ describe Bosh::Cli::DeploymentManifestCompiler do
     MANIFEST
 
     compiler = make_compiler(raw_manifest, { "dea.max_memory" => 8192 })
-    error_msg = "Cannot resolve deployment property `missing.property'"
+    error_msg = "Cannot resolve deployment property 'missing.property'"
 
     expect {
       compiler.result

@@ -17,7 +17,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         runner.send_keys 'koala'
         expect(runner).to have_output 'One Time Code'
         runner.send_keys '' # UAA only uses this for SAML, but always prompts for it
-        expect(runner).to have_output "Logged in as `marissa'"
+        expect(runner).to have_output "Logged in as 'marissa'"
       end
 
       output = bosh_runner.run('status')
@@ -121,7 +121,7 @@ CERT
       it 'can only access read resources' do
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true)
-        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin`)
+        expect(output).to include("Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin")
 
         output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
         expect(output).to match /No deployments/

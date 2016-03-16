@@ -8,7 +8,7 @@ module Bosh::Director
     def initialize(job_class, task_id)
       unless job_class.kind_of?(Class) &&
         job_class <= Jobs::BaseJob
-        raise DirectorError, "Invalid director job class `#{job_class}'"
+        raise DirectorError, "Invalid director job class '#{job_class}'"
       end
 
       @task_id = task_id

@@ -21,7 +21,7 @@ module Bosh::Director
         if runtime_manifest['release']
           if runtime_manifest['releases']
             raise RuntimeAmbiguousReleaseSpec,
-                  "Runtime manifest contains both `release' and `releases' " +
+                  "Runtime manifest contains both 'release' and 'releases' " +
                       'sections, please use one of the two.'
           end
           @release_specs << runtime_manifest['release']
@@ -34,7 +34,7 @@ module Bosh::Director
         @release_specs.each do |release_spec|
           if release_spec['version'] == 'latest'
             raise RuntimeInvalidReleaseVersion,
-                  "Runtime manifest contains the release `#{release_spec['name']}' with version as `latest'. " +
+                  "Runtime manifest contains the release '#{release_spec['name']}' with version as 'latest'. " +
                       "Please specify the actual version string."
           end
 
@@ -42,8 +42,8 @@ module Bosh::Director
             deployment_release = @deployment.release(release_spec["name"])
             if deployment_release
               if deployment_release.version != release_spec["version"]
-                raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release `#{release_spec["name"]}' with version as `#{release_spec["version"]}'. " +
-                      "This conflicts with version `#{deployment_release.version}' specified in the deployment manifest."
+                raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release '#{release_spec["name"]}' with version as '#{release_spec["version"]}'. " +
+                      "This conflicts with version '#{deployment_release.version}' specified in the deployment manifest."
               else
                 next
               end
@@ -67,7 +67,7 @@ module Bosh::Director
           addon_jobs.each do |job|
             if !@release_specs.find { |release_spec| release_spec['name'] == job['release'] }
               raise RuntimeReleaseNotListedInReleases,
-                    "Runtime manifest specifies job `#{job['name']}' which is defined in `#{job['release']}', but `#{job['release']}' is not listed in the releases section."
+                    "Runtime manifest specifies job '#{job['name']}' which is defined in '#{job['release']}', but '#{job['release']}' is not listed in the releases section."
             end
 
             if @deployment

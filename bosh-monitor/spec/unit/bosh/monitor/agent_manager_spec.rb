@@ -218,7 +218,7 @@ describe Bhm::AgentManager do
     it "raises an error" do
       expect {
         manager.setup_events
-      }.to raise_error(Bhm::PluginError, "Cannot find `joes_plugin_thing' plugin")
+      }.to raise_error(Bhm::PluginError, "Cannot find 'joes_plugin_thing' plugin")
     end
   end
 end

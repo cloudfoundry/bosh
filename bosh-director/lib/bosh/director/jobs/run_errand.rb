@@ -37,7 +37,7 @@ module Bosh::Director
           job = deployment.job(@errand_name)
 
           if job.nil?
-            raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
+            raise JobNotFound, "Errand '#{@errand_name}' doesn't exist"
           end
 
           unless job.is_errand?

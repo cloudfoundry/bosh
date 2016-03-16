@@ -27,7 +27,7 @@ module Bosh::Director
           end
         end
 
-        "snapshots of deployment `#{deployment.name}' deleted"
+        "snapshots of deployment '#{deployment.name}' deleted"
       end
     end
   end

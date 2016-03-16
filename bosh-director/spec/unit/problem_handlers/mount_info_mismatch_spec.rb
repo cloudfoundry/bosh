@@ -37,20 +37,20 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
       @disk.destroy
       expect {
         make_handler(@disk.id)
-      }.to raise_error("Disk `#{@disk.id}' is no longer in the database")
+      }.to raise_error("Disk '#{@disk.id}' is no longer in the database")
     end
 
     it 'is invalid if disk no longer has associated instance' do
       @instance.update(vm_cid: nil)
       expect {
         make_handler(@disk.id)
-      }.to raise_error("Can't find corresponding vm-cid for disk `disk-cid'")
+      }.to raise_error("Can't find corresponding vm-cid for disk 'disk-cid'")
     end
 
     describe 'reattach_disk' do
       it 'attaches disk' do
         expect(@cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-        expect(@cloud).not_to receive(:reboot_vm)        
+        expect(@cloud).not_to receive(:reboot_vm)
         expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
       end

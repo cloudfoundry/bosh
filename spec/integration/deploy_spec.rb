@@ -622,7 +622,7 @@ describe 'deploy', type: :integration do
 Error 100: Unable to render instance groups for deployment. Errors are:
    - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
      - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
         EOF
       end
     end
@@ -779,7 +779,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 Error 100: Unable to render instance groups for deployment. Errors are:
    - Unable to render jobs for instance group 'worker_2'. Errors are:
      - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
         EOF
       end
     end
@@ -866,7 +866,7 @@ Started		#{date_regex}
 Finished	#{date_regex}
 Duration	#{duration_regex}
 
-Deployed `simple' to `Test Director'
+Deployed 'simple' to 'Test Director'
     OUT
   end
 
@@ -1064,7 +1064,7 @@ Deployed `simple' to `Test Director'
 
     it 'deploys successfully' do
       output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
-      expect(output).to include("Deployed `minimal' to")
+      expect(output).to include("Deployed 'minimal' to")
       expect(exit_code).to eq(0)
     end
   end

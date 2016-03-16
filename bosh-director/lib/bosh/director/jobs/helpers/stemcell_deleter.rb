@@ -17,7 +17,7 @@ module Bosh::Director::Jobs
           unless deployments.empty?
             names = deployments.map { |d| d.name }.join(', ')
             raise Bosh::Director::StemcellInUse,
-              "Stemcell `#{stemcell.name}/#{stemcell.version}' is still in use by: #{names}"
+              "Stemcell '#{stemcell.name}/#{stemcell.version}' is still in use by: #{names}"
           end
 
           begin
