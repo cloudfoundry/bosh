@@ -82,3 +82,4 @@ cd bats
 ./write_gemfile
 bundle install
 bundle exec rspec spec
+bosh -n -t $BAT_DIRECTOR cleanup --all

@@ -5,7 +5,7 @@ set -e
 source /etc/profile.d/chruby.sh
 chruby 2.1.2
 
-initver=$(cat setup-director-output/bosh-init/version)
+initver=$(cat ${PWD}/setup-director-output/bosh-init/version)
 initexe="${PWD}/setup-director-output/bosh-init/bosh-init-${initver}-linux-amd64"
 chmod +x ${initexe}
 
