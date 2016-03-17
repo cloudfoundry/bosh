@@ -207,6 +207,7 @@ EOF
 initver=$(cat bosh-init/version)
 initexe="$PWD/bosh-init/bosh-init-${initver}-linux-amd64"
 chmod +x ${initexe}
+cp bosh-init/version ${PWD}/setup-director-output/bosh-init/version
 
 echo "using bosh-init CLI version..."
 $initexe version
