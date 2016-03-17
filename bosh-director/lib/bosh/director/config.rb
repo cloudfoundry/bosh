@@ -460,6 +460,10 @@ module Bosh::Director
       hash['backup_destination']
     end
 
+    def log_access_events_to_syslog
+      hash['log_access_events_to_syslog']
+    end
+
     def configure_evil_config_singleton!
       Config.configure(hash)
     end

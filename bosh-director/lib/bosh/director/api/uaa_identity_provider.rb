@@ -52,8 +52,16 @@ module Bosh
           @token = token
         end
 
-        def username
+        def username_or_client
           @token['user_name'] || @token['client_id']
+        end
+
+        def client
+          @token['client_id']
+        end
+
+        def username
+          @token['user_name']
         end
 
         def scopes
