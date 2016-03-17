@@ -77,10 +77,12 @@ module Bosh::Director
         end
 
         stemcell = nil
+	      stemcell_exists = false
         track_and_log("Checking if this stemcell already exists") do
           begin
             stemcell = @stemcell_manager.find_by_name_and_version @name, @version
-            raise StemcellAlreadyExists, "Stemcell '#{@name}/#{@version}' already exists" unless @fix
+            #raise StemcellAlreadyExists, "Stemcell `#{@name}/#{@version}' already exists" unless @fix
+            stemcell_exists = true
           rescue StemcellNotFound => e
             stemcell = Models::Stemcell.new
             stemcell.name = @name
@@ -90,13 +92,15 @@ module Bosh::Director
           end
         end
 
-        track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
-          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
-          logger.info("Cloud created stemcell: #{stemcell.cid}")
-        end
+        unless stemcell_exists
+          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
+            stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+            logger.info("Cloud created stemcell: #{stemcell.cid}")
+          end
 
-        track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})") do
-          stemcell.save
+          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})") do
+            stemcell.save
+          end
         end
 
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
