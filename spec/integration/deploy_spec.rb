@@ -1243,4 +1243,54 @@ Deployed 'simple' to 'Test Director'
       end
     end
   end
+
+  context 'when a release job modifies a global property in the ERB script' do
+    include Bosh::Spec::CreateReleaseOutputParsers
+    before do
+      release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
+        FileUtils.rm_rf('dev_releases')
+        output = bosh_runner.run_in_current_dir('create release --with-tarball')
+        parse_release_tarball_path(output)
+      end
+
+      minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.test_release_manifest)
+
+      minimal_manifest["properties"] = {"some_namespace" => {"test_property" => "initial value"}}
+      minimal_manifest["instance_groups"] = [{"name" => "test_group",
+        "instances" => 1,
+        "jobs" => [
+          {"name" => "job_that_modifies_properties", "release" => "bosh-release"}
+        ],
+        'networks' => [{'name' => 'a'}],
+        'resource_pool' => 'a'
+      }]
+
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+      deployment_manifest = yaml_file('minimal', minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+
+      target_and_login
+      bosh_runner.run("upload release #{release_filename}")
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+    end
+
+    it 'does not modify the property for other release jobs' do
+      output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
+      expect(output).to include("Deployed 'simple' to")
+      expect(exit_code).to eq(0)
+
+      target_vm = director.vm('test_group', '0')
+
+      ctl_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/job_that_modifies_properties_ctl')
+
+      expect(ctl_script).to include('test_property initially was initial value')
+
+      other_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/another_script')
+
+      expect(other_script).to include('test_property initially was initial value')
+    end
+  end
 end

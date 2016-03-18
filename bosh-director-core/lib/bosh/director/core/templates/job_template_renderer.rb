@@ -21,12 +21,16 @@ module Bosh::Director::Core::Templates
         spec = remove_unused_properties(spec)
       end
 
-      template_context = Bosh::Template::EvaluationContext.new(spec)
+      spec_yaml = spec.to_yaml
+
+      template_context = Bosh::Template::EvaluationContext.new(Psych.load(spec_yaml))
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
+        template_context = Bosh::Template::EvaluationContext.new(Psych.load(spec_yaml))
+
         begin
           file_contents = source_erb.render(template_context, @logger)
         rescue Exception => e

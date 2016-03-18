@@ -106,7 +106,7 @@ module Bosh::Director::Core::Templates
                   },
                   "properties_need_filtering" => true
               }
-          )
+          ).at_least(2).times
         end
 
       end
