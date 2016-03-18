@@ -21,15 +21,13 @@ module Bosh::Director::Core::Templates
         spec = remove_unused_properties(spec)
       end
 
-      spec_yaml = spec.to_yaml
-
-      template_context = Bosh::Template::EvaluationContext.new(Psych.load(spec_yaml))
+      template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
-        template_context = Bosh::Template::EvaluationContext.new(Psych.load(spec_yaml))
+        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
 
         begin
           file_contents = source_erb.render(template_context, @logger)

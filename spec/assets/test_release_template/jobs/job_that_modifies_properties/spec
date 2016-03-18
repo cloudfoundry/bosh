@@ -1,0 +1,14 @@
+---
+name: job_that_modifies_properties
+templates:
+  job_that_modifies_properties_ctl: bin/job_that_modifies_properties_ctl
+  another_script.erb: bin/another_script
+
+packages:
+- foo
+- bar
+
+properties:
+  some_namespace.test_property:
+    description: A test property
+    default: 1

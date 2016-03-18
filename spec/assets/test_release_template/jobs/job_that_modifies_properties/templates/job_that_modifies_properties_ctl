@@ -1,0 +1,27 @@
+#!/bin/bash
+
+PIDFILE=/var/vcap/sys/run/job_that_modifies_properties.pid
+
+case $1 in
+
+  start)
+    echo "test_property initially was <%= p('some_namespace')['test_property'] %>"
+    <% p('some_namespace')["test_property"] = 123123 %>
+    echo "test property is now <%= p('some_namespace')['test_property'] %>
+
+    echo $$ > $PIDFILE
+
+    exec /bin/sh /var/vcap/packages/bar/run.sh
+    ;;
+
+  stop)
+    tail -1 $PIDFILE | xargs kill
+
+    rm -rf $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: job_that_modifies_properties_ctl {start|stop}" ;;
+esac
+
+exit 0
