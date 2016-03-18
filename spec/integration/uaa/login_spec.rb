@@ -179,7 +179,7 @@ CERT
       end
     end
 
-    describe 'health monitor' do
+    describe 'health monitor', hm: true do
       before { current_sandbox.health_monitor_process.start }
       after { current_sandbox.health_monitor_process.stop }
 

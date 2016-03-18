@@ -17,6 +17,12 @@ namespace :spec do
       run_integration_specs
     end
 
+    desc 'Run health monitor integration tests against a local sandbox'
+    task :health_monitor => :install_dependencies do
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      run_integration_specs(tags: 'hm')
+    end
+
     desc 'Install BOSH integration test dependencies (currently Nginx)'
     task :install_dependencies do
       unless ENV['SKIP_DEPS'] == 'true'
@@ -47,13 +53,14 @@ namespace :spec do
       end
     end
 
-    def run_integration_specs
+    def run_integration_specs(run_options={})
       Bosh::Dev::Sandbox::Workspace.clean
 
       num_processes   = ENV['NUM_GROUPS']
       num_processes ||= ENV['TRAVIS'] ? 4 : nil
 
       options = {}
+      options.merge!(run_options)
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
@@ -65,11 +72,12 @@ namespace :spec do
       spec_path = ENV['SPEC_PATH']
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
+      tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
       command = begin
         if spec_path
-          "https_proxy= http_proxy= bundle exec rspec #{spec_path}"
+          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
-          "https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
+          "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
         end
       end
       puts command

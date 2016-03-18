@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe 'health_monitor: 1', type: :integration do
+describe 'health_monitor: 1', type: :integration, hm: true do
   with_reset_sandbox_before_each
 
   before { current_sandbox.health_monitor_process.start }

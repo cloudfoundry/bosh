@@ -336,7 +336,7 @@ describe 'deploy', type: :integration do
         expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
       end
 
-      it 'runs the post-deploy script when a vms is resurrected' do
+      it 'runs the post-deploy script when a vms is resurrected', hm: true do
         current_sandbox.with_health_monitor_running do
           deploy({})
 
