@@ -207,7 +207,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
+      tags: ["bosh-integration"]
       params:
         RUBY_VERSION: 2.1.7
         LEGACY: false
@@ -228,7 +228,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
+      tags: ["bosh-integration"]
       params:
         RUBY_VERSION: 2.1.7
         LEGACY: true
@@ -250,7 +250,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
+      tags: ["bosh-integration"]
       params:
         RUBY_VERSION: 2.1.7
       on_failure:
