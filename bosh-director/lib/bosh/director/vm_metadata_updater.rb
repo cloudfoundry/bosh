@@ -15,8 +15,10 @@ module Bosh::Director
         metadata = metadata.merge(@director_metadata)
         metadata[:deployment] = instance.deployment.name
 
+        metadata[:id] = instance.uuid
         metadata[:job] = instance.job
         metadata[:index] = instance.index.to_s
+        metadata[:name] = "#{instance.job}/#{instance.uuid}"
 
         metadata[:created_at] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
