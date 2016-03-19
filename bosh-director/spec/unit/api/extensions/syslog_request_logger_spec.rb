@@ -23,6 +23,15 @@ module Bosh::Director
 
         before { allow(Syslog::Logger).to receive(:new).with('bosh.director').and_return(syslog) }
         before { allow(Socket).to receive(:gethostname).and_return('director-hostname') }
+        before do
+          allow(Socket).to receive(:ip_address_list).and_return([
+            instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4_loopback?: true, ipv6_loopback?: false),
+            instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+            instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4_loopback?: false, ipv6_loopback?: true),
+            instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+            instance_double(Addrinfo, ip_address: 'no-ip', ip?: false, ipv4_loopback?: false, ipv6_loopback?: false)
+          ])
+        end
         let(:expected_status) { 401 }
 
         let(:log_hash) do
@@ -31,7 +40,12 @@ module Bosh::Director
           allow(syslog).to receive(:info) do |json_string|
             hash = JSON.parse(json_string)
           end
-          header 'header-key', 'header-value'
+          header 'random-header',      'should-be-ignored'
+          header 'HOST',               'fake-host.com'
+          header 'X_REAL_IP',          '5.6.7.8'
+          header 'X_FORWARDED_FOR',    '1.2.3.4'
+          header 'X_FORWARDED_PROTO',  'https'
+          header 'USER_AGENT',         'Fake Agent'
           expect(get(test_path, query).status).to eq(expected_status)
           hash
         end
@@ -55,7 +69,7 @@ module Bosh::Director
             end
 
             it 'should log to response status code' do
-              expect(log_hash['client']['ip']).to eq('127.0.0.1')
+              expect(log_hash['client']['ip']).to eq('1.2.3.4')
             end
 
             context 'http section' do
@@ -74,7 +88,13 @@ module Bosh::Director
               end
 
               it 'should log the headers' do
-                expect(log_hash['http']['headers']).to eq([['HEADER_KEY', 'header-value'], ['HOST', 'example.org'], ['COOKIE', '']])
+                expect(log_hash['http']['headers']).to eq([
+                      ['HOST', 'fake-host.com'],
+                      ['X_REAL_IP', '5.6.7.8'],
+                      ['X_FORWARDED_FOR', '1.2.3.4'],
+                      ['X_FORWARDED_PROTO', 'https'],
+                      ['USER_AGENT', 'Fake Agent']
+                    ])
               end
             end
 
@@ -97,6 +117,10 @@ module Bosh::Director
 
               it 'should log component hostname' do
                 expect(log_hash['component']['hostname']).to eq('director-hostname')
+              end
+
+              it 'should log the director ips' do
+                expect(log_hash['component']['ips']).to eq(['10.10.0.6', 'fe80::10bf:eff:fe2c:7405%eth0'])
               end
             end
 
@@ -122,7 +146,7 @@ module Bosh::Director
               end
             end
 
-            context 'when basic auth is provided' do
+            context 'when auth is provided' do
               let(:authorize!) { basic_authorize('admin', 'admin') }
               let(:expected_status) { 200 }
 
