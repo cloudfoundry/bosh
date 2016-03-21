@@ -174,7 +174,6 @@ EOS
             expect(output).to_not match(/<redacted>/)
             expect(output).to include("---this property---\n")
             expect(output).to include("spans multiple\n")
-            expect(output).to include("lines'\n")
           end
         end
       end
