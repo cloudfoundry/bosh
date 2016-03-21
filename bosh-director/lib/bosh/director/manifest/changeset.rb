@@ -54,9 +54,8 @@ module Bosh::Director
 
     def yaml_lines(value, indent, state)
       lines = DiffLines.new
-      value.to_yaml(indent: Line::INDENT).gsub("---\n", '').split("\n").each do |line|
+      value.to_yaml(indent: Line::INDENT).gsub(/^---\n/, '').split("\n").each do |line|
         lines << Line.new(indent, line, state)
-
       end
       lines
     end
