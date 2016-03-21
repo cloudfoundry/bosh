@@ -42,7 +42,7 @@ jobs:
 
       - task: run-bats
         file: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.yml
-        tags: ["bosh-integration-3"]
+        tags: ["bosh-integration"]
         params:
           base_os:                    Ubuntu
           aws_access_key_id:          {{aws_access_key__primary}}

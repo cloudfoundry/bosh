@@ -4,6 +4,7 @@ image: docker:///boshcpi/aws-cpi-release
 inputs:
 - name: bosh-src
 - name: setup-director-output
+- name: bosh-init
 run:
   path: bosh-src/ci/pipelines/aws-bats/tasks/teardown-director.sh
 params:
