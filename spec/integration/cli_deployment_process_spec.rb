@@ -98,9 +98,9 @@ describe 'cli: deployment process', type: :integration do
               'hash_array_property' => [{'a' => 'b'}, {'b' => 'd'}, {'e' => 'f'}],
               'name_range_hash_array_property' => [{'name' => 'new_name'}, {'range' => 'new_range'}],
               'new_property' => 'add_me',
-              'multi-line' => '---this property---
+              'multi-line' => "---this property---
 spans multiple
-lines'}
+lines"}
 
           new_manifest['jobs'] = [new_job_spec]
           new_manifest['releases'].first['version'] = 'latest'
@@ -172,7 +172,9 @@ EOS
             expect(output).to_not include('stemcell')
             expect(output).to_not include('releases')
             expect(output).to_not match(/<redacted>/)
-            expect(output).to include("---this property---\n+       spans multiple\n+       lines\n")
+            expect(output).to include("---this property---\n")
+            expect(output).to include("spans multiple\n")
+            expect(output).to include("lines'\n")
           end
         end
       end
