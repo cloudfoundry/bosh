@@ -179,7 +179,7 @@ module Bosh::Director
       def configure_db(db_config)
         patch_sqlite if db_config['adapter'] == 'sqlite'
 
-        connection_options = db_config.delete('connection_options') {{}}
+        connection_options = db_config.fetch('connection_options') {{}}
         db_config.delete_if { |_, v| v.to_s.empty? }
         db_config = db_config.merge(connection_options)
 

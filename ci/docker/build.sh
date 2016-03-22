@@ -2,7 +2,7 @@
 
 set -e
 
-DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/main}
+DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/main-no-redis}
 
 docker login
 
