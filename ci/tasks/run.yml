@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///bosh/main
+image: docker:///bosh/main-no-redis
 
 inputs:
 - name: bosh-src
