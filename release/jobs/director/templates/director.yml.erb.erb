@@ -9,14 +9,6 @@ params = {
     'level' => 'DEBUG',
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
-  'redis' => {
-    'host' => p('redis.address'),
-    'port' => p('redis.port'),
-    'password' => p('redis.password'),
-    'logging' => {
-      'level' => p('redis.loglevel')
-    }
-  },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'dir' => '/var/vcap/store/director',
   'db' => {
@@ -37,10 +29,6 @@ params = {
   'remove_dev_tools' => p('director.remove_dev_tools'),
   'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
 }
-
-if_p('resque.loglevel') do |resque_loglevel|
-  params['resque'] = {'logging' => {'level' => resque_loglevel}}
-end
 
 params['scheduled_jobs'] = []
 

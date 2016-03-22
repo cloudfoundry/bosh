@@ -35,7 +35,6 @@ RUN apt-get install -y postgresql-client-9.4 && apt-get clean
 RUN apt-get install -y libpq-dev && apt-get clean
 RUN apt-get install -y sqlite3 && apt-get clean
 RUN apt-get install -y libsqlite3-dev && apt-get clean
-RUN apt-get install -y redis-server && apt-get clean
 RUN apt-get install -y mercurial && apt-get clean
 RUN apt-get install -y lsof && apt-get clean
 RUN apt-get install -y unzip && apt-get clean

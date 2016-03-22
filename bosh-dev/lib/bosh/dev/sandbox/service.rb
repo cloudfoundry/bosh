@@ -59,6 +59,16 @@ module Bosh::Dev::Sandbox
       end
     end
 
+    def get_child_pids
+      `ps -eo pid,ppid`.split(/\n/).map(&:split).select { |pid| pid[1] == @pid.to_s }.map(&:first).map(&:to_i)
+    end
+
+    def kill_pid(pid_to_stop, signal = 'TERM')
+      if running?(pid_to_stop)
+        kill_process(signal, pid_to_stop)
+      end
+    end
+
     def stdout_contents
       stdout ? File.read(stdout) : ''
     end

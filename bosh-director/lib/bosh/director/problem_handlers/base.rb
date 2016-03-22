@@ -47,7 +47,7 @@ module Bosh::Director
       end
 
       # Talking to cloud should only be possible
-      # in the context of Resque job
+      # in the context of DJ job
       def cloud
         if @job.nil?
           handler_error("Cannot talk to cloud outside of job context")

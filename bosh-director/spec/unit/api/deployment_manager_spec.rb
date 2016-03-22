@@ -25,7 +25,7 @@ module Bosh::Director
           allow(Dir).to receive_messages(tmpdir: 'FAKE_TMPDIR')
         end
 
-        it 'enqueues a resque job' do
+        it 'enqueues a DJ job' do
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
           cloud_config = instance_double(Bosh::Director::Models::CloudConfig, id: 123)
           runtime_config = instance_double(Bosh::Director::Models::RuntimeConfig, id: 456)
@@ -51,7 +51,7 @@ module Bosh::Director
     end
 
     describe '#delete_deployment' do
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment.name).and_return(task)
 

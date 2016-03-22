@@ -31,6 +31,7 @@ Sham.define do
                      octet = index % 255
                      "#{octet}.#{octet}.#{octet}.in-addr.arpa"
                    }
+  lock_name     { |index| "lock-resource-entity#{index}"}
 end
 
 module Bosh::Director::Models
@@ -38,7 +39,7 @@ module Bosh::Director::Models
   DirectorAttribute.blueprint do
     name { 'uuid' }
     value { Sham.director_uuid }
-    end
+  end
 
   Release.blueprint do
     name { Sham.name }
@@ -172,6 +173,12 @@ module Bosh::Director::Models
     deployment { Deployment.make }
     name { Sham.name }
     value { "value" }
+  end
+
+  Lock.blueprint do
+    name        { Sham.lock_name }
+    expired_at  { Time.now }
+    uid         { SecureRandom.uuid }
   end
 
   LogBundle.blueprint do

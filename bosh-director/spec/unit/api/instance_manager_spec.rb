@@ -33,7 +33,7 @@ module Bosh::Director
       context 'when uuid is provided' do
         let(:uuid) { 'fakeId123' }
 
-        it 'enqueues a resque job' do
+        it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
             username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
 
@@ -52,7 +52,7 @@ module Bosh::Director
         }
       end
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 
@@ -101,7 +101,7 @@ module Bosh::Director
 
       before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
@@ -115,7 +115,7 @@ module Bosh::Director
 
       before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
