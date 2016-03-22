@@ -23,7 +23,7 @@ module Bosh::Director
       def self.parse_provides_link(link_def)
         if link_def.is_a?(Hash) && link_def.has_key?('type') && link_def.has_key?('name')
           if link_def.has_key?('optional')
-            raise JobInvalidLinkSpec, "Link '#{link_def['name']}' of type '#{link_def['type']}' is a provides link, not allowed to have `optional' key"
+            raise JobInvalidLinkSpec, "Link '#{link_def['name']}' of type '#{link_def['type']}' is a provides link, not allowed to have 'optional' key"
           elsif link_def.has_key?('as')
             return new(link_def['as'], link_def['type'], false, link_def['shared'] || false)
           else

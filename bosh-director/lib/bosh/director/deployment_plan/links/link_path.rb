@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       def parse(link_info)
-        # in case the link was explicitly set to the string `nil', do not add it
+        # in case the link was explicitly set to the string 'nil', do not add it
         # to the link paths, even if the link provider exist, since the user intent
         # was explicitly set to not consume any link
 

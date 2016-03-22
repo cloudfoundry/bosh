@@ -27,7 +27,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   end
 
   it 'has well-formed description' do
-    expect(handler.description).to eq("Disk `disk-cid' (mysql_node/uuid-42, 300M) is missing")
+    expect(handler.description).to eq("Disk 'disk-cid' (mysql_node/uuid-42, 300M) is missing")
   end
 
   describe 'resolutions' do

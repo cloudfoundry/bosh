@@ -144,7 +144,7 @@ describe UpdateElbForWebsockets do
 
         expect {
           UpdateElbForWebsockets::WebSocketElbHelpers.find_server_certificate_from_listeners(mock_elb, port: 443, protocol: :https)
-        }.to raise_error Bosh::Cli::CliError, /Could not find listener with params `{:port=>443, :protocol=>:https}' on ELB `cfrouter'/
+        }.to raise_error Bosh::Cli::CliError, /Could not find listener with params '{:port=>443, :protocol=>:https}' on ELB 'cfrouter'/
       end
 
       it "errors if server certificate can't be found" do
@@ -154,7 +154,7 @@ describe UpdateElbForWebsockets do
 
         expect {
           UpdateElbForWebsockets::WebSocketElbHelpers.find_server_certificate_from_listeners(mock_elb, port: 443, protocol: :https)
-        }.to raise_error Bosh::Cli::CliError, /Could not find server certificate for listener with params `{:port=>443, :protocol=>:https}' on ELB `cfrouter'/
+        }.to raise_error Bosh::Cli::CliError, /Could not find server certificate for listener with params '{:port=>443, :protocol=>:https}' on ELB 'cfrouter'/
       end
 
     end

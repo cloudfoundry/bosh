@@ -35,11 +35,11 @@ module Bosh::Director
 
         release = @manager.find_by_name(@name)
         @model = @manager.find_version(release, @version)
-        @logger.debug("Found release `#{@name}/#{@version}'")
+        @logger.debug("Found release '#{@name}/#{@version}'")
 
         unless @deployment_model.release_versions.include?(@model)
-          @logger.debug("Binding release `#{@name}/#{@version}' " +
-                        "to deployment `#{@deployment_model.name}'")
+          @logger.debug("Binding release '#{@name}/#{@version}' " +
+                        "to deployment '#{@deployment_model.name}'")
           @deployment_model.add_release_version(@model)
         end
       end
@@ -58,9 +58,9 @@ module Bosh::Director
         # have been parsed, so we can assume @templates contains
         # the list of templates that need to be bound
         @templates.each_value do |template|
-          @logger.debug("Binding template `#{template.name}'")
+          @logger.debug("Binding template '#{template.name}'")
           template.bind_models
-          @logger.debug("Bound template `#{template.name}'")
+          @logger.debug("Bound template '#{template.name}'")
         end
       end
 

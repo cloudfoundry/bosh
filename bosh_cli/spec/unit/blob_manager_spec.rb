@@ -22,7 +22,7 @@ describe Bosh::Cli::BlobManager do
       FileUtils.rm_rf(@src_dir)
       expect {
         make_manager(@release)
-      }.to raise_error("`src' directory is missing")
+      }.to raise_error("'src' directory is missing")
     end
 
     it "creates necessary directories in release dir" do
@@ -72,14 +72,14 @@ describe Bosh::Cli::BlobManager do
     it "cannot add non-existing file" do
       expect {
         @manager.add_blob("tmp/foobar.tgz", "test")
-      }.to raise_error("File `tmp/foobar.tgz' not found")
+      }.to raise_error("File 'tmp/foobar.tgz' not found")
     end
 
     it "cannot add directory" do
       tmp_dir = Dir.mktmpdir
       expect {
         @manager.add_blob(tmp_dir, "test")
-      }.to raise_error("`#{tmp_dir}' is a directory")
+      }.to raise_error("'#{tmp_dir}' is a directory")
     end
 
     it "cannot use absolute path as blob destination" do
@@ -91,7 +91,7 @@ describe Bosh::Cli::BlobManager do
     it "cannot use 'blobs' prefix for blob destination" do
       expect {
         @manager.add_blob(@blob.path, "blobs/foo/bar")
-      }.to raise_error("Blob path should not start with `blobs/'")
+      }.to raise_error("Blob path should not start with 'blobs/'")
     end
 
     it "cannot use directory as blob destination" do
@@ -99,7 +99,7 @@ describe Bosh::Cli::BlobManager do
       FileUtils.mkdir(foo_dir)
       expect {
         @manager.add_blob(@blob.path, "foo")
-      }.to raise_error("`#{foo_dir}' is a directory, " +
+      }.to raise_error("'#{foo_dir}' is a directory, " +
                        "please pick a different path")
     end
 

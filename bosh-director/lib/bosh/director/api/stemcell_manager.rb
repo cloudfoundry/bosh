@@ -10,7 +10,7 @@ module Bosh::Director
         stemcell = Models::Stemcell[:name => name, :version => version]
         if stemcell.nil?
           raise StemcellNotFound,
-                "Stemcell `#{name}/#{version}' doesn't exist"
+                "Stemcell '#{name}/#{version}' doesn't exist"
         end
         stemcell
       end
@@ -32,7 +32,7 @@ module Bosh::Director
 
         if stemcells.nil? || stemcells.empty?
           raise StemcellNotFound,
-            "Stemcell with Operating System `#{os}' doesn't exist"
+            "Stemcell with Operating System '#{os}' doesn't exist"
         end
 
         find_latest(stemcells)
@@ -43,7 +43,7 @@ module Bosh::Director
 
         if stemcells.nil? || stemcells.empty?
           raise StemcellNotFound,
-            "Stemcell `#{name}' doesn't exist"
+            "Stemcell '#{name}' doesn't exist"
         end
 
         find_latest(stemcells)
@@ -54,7 +54,7 @@ module Bosh::Director
             dataset.order(:name)[:operating_system => os, :version => version]
         if stemcell.nil?
           raise StemcellNotFound,
-                "Stemcell version `#{version}' for OS `#{os}' doesn't exist"
+                "Stemcell version '#{version}' for OS '#{os}' doesn't exist"
         end
         stemcell
       end

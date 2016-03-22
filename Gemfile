@@ -52,7 +52,7 @@ group :development, :test do
   gem 'rspec-instafail'
 
   gem 'rubocop', require: false
-  gem 'parallel_tests'
+  gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
   gem 'webmock'
   gem 'fakefs'

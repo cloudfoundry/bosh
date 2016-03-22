@@ -67,9 +67,8 @@ jobs:
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
-        config:
-          params:
-            RUBY_VERSION: 1.9.3
+        params:
+          RUBY_VERSION: 1.9.3
 
   - name: unit-2.1
     public: true
@@ -79,9 +78,8 @@ jobs:
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
-        config:
-          params:
-            RUBY_VERSION: 2.1.7
+        params:
+          RUBY_VERSION: 2.1.7
 
   - name: blobstore-client-integration
     public: true
@@ -90,61 +88,114 @@ jobs:
       - { get: bosh-src, trigger: true, passed: [start-job] }
       - task: test
         file: bosh-src/ci/tasks/test-blobstore-client-integration.yml
-        config:
-          params:
-            access_key_id: {{blobstore_client_aws_access_key_id}}
-            secret_access_key: {{blobstore_client_aws_secret_access_key}}
-            s3_region: {{blobstore_client_aws_s3_region}}
-            s3_host: {{blobstore_client_aws_s3_host}}
-            run_aws_tests: "Not null"
+        params:
+          access_key_id: {{blobstore_client_aws_access_key_id}}
+          secret_access_key: {{blobstore_client_aws_secret_access_key}}
+          s3_region: {{blobstore_client_aws_s3_region}}
+          s3_host: {{blobstore_client_aws_s3_host}}
+          run_aws_tests: "Not null"
 
   - name: integration-1.9-postgres
     public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file:  bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-1"]
-        config:
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-1"]
           params:
             DB:           postgresql
             RUBY_VERSION: 1.9.3
-            NUM_GROUPS: 8
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-2"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-3"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 1.9.3
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
 
   - name: integration-2.1-mysql
     public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-2"]
-        config:
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-4"]
           params:
             DB:           mysql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 8
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-5"]
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-6"]
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
 
   - name: integration-2.1-postgres
     public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-3"]
-        config:
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-7"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.1.7
-            NUM_GROUPS: 8
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-8"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-9"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
 
   - name: load-tests
     public: true
@@ -156,11 +207,10 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
-      config:
-        params:
-          RUBY_VERSION: 2.1.7
-          LEGACY: false
+      tags: ["bosh-integration"]
+      params:
+        RUBY_VERSION: 2.1.7
+        LEGACY: false
       on_failure:
         put: slack-alert
         params:
@@ -178,11 +228,10 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
-      config:
-        params:
-          RUBY_VERSION: 2.1.7
-          LEGACY: true
+      tags: ["bosh-integration"]
+      params:
+        RUBY_VERSION: 2.1.7
+        LEGACY: true
       on_failure:
         put: slack-alert
         params:
@@ -201,10 +250,9 @@ jobs:
     - task: test
       privileged: true
       file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration-4"]
-      config:
-        params:
-          RUBY_VERSION: 2.1.7
+      tags: ["bosh-integration"]
+      params:
+        RUBY_VERSION: 2.1.7
       on_failure:
         put: slack-alert
         params:
@@ -217,22 +265,32 @@ jobs:
     serial: true
     plan:
       - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9, blobstore-client-integration]
+        passed:
+        - integration-2.1-mysql
+        - integration-1.9-postgres
+        - integration-2.1-postgres
+        - unit-2.1
+        - unit-1.9
+        - blobstore-client-integration
         get: bosh-src
       - task: publish
         file: bosh-src/ci/tasks/publish-coverage.yml
-        config:
-          params:
-            CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
+        params:
+          CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
   - name: promote-candidate
     public: true
     serial: true
     plan:
       - trigger: true
-        passed: [integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9, blobstore-client-integration]
+        passed:
+        - integration-2.1-mysql
+        - integration-1.9-postgres
+        - integration-2.1-postgres
+        - unit-2.1
+        - unit-1.9
+        - blobstore-client-integration
         get: bosh-src
-
       - {put: bosh-candidate, params: {repository: bosh-src}}
 
 resources:

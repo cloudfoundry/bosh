@@ -298,7 +298,7 @@ module Bosh
 
         def disk_size
           if @instance.model.nil?
-            raise DirectorError, "Instance `#{@instance}' model is not bound"
+            raise DirectorError, "Instance '#{@instance}' model is not bound"
           end
 
           if @instance.model.persistent_disk
@@ -310,7 +310,7 @@ module Bosh
 
         def disk_cloud_properties
           if @instance.model.nil?
-            raise DirectorError, "Instance `#{@instance}' model is not bound"
+            raise DirectorError, "Instance '#{@instance}' model is not bound"
           end
 
           if @instance.model.persistent_disk

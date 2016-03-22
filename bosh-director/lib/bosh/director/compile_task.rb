@@ -114,8 +114,8 @@ module Bosh::Director
         unless dep_task.compiled?
           raise DirectorError,
                 "Cannot generate package dependency spec " +
-                "for `#{@package.name}', " +
-                "`#{dep_task.package.name}' hasn't been compiled yet"
+                "for '#{@package.name}', " +
+                "'#{dep_task.package.name}' hasn't been compiled yet"
         end
 
         compiled_package = dep_task.compiled_package

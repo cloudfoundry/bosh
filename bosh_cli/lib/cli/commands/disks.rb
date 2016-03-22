@@ -6,7 +6,7 @@ module Bosh::Cli::Command
     def list
       auth_required
       unless options[:orphaned]
-        err('Only `bosh disks --orphaned` is supported')
+        err("Only 'bosh disks --orphaned' is supported")
       end
 
       disks = sort(director.list_orphan_disks)

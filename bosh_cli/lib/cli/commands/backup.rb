@@ -15,7 +15,7 @@ module Bosh::Cli::Command
       if status == :done
         tmp_path = director.fetch_backup
         FileUtils.mv(tmp_path, path)
-        say("Backup of BOSH director was put in `#{path.make_green}'.")
+        say("Backup of BOSH director was put in '#{path.make_green}'.")
       else
         [status, task_id]
       end
@@ -31,7 +31,7 @@ module Bosh::Cli::Command
       path = Bosh::Cli::BackupDestinationPath.new(director).create_from_path(dest_path)
 
       if File.exists?(path) && !force?
-        err("There is already an existing file at `#{path}'. " +
+        err("There is already an existing file at '#{path}'. " +
               'To overwrite it use the --force option.')
       end
 

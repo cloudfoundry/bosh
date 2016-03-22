@@ -23,7 +23,7 @@ module Bosh::Director
       def self.create_by_type(type, resource_id, data)
         handler_class = Base.handlers[type.to_s]
         if handler_class.nil?
-          raise "Cannot find handler for `#{type}' problem"
+          raise "Cannot find handler for '#{type}' problem"
         end
 
         handler_class.new(resource_id, data)
@@ -78,7 +78,7 @@ module Bosh::Director
       def apply_resolution(resolution)
         action = self.class.action_for(resolution)
         if action.nil?
-          handler_error("Cannot find `#{resolution}' resolution for `#{self.class}'")
+          handler_error("Cannot find '#{resolution}' resolution for '#{self.class}'")
         end
         instance_eval(&action)
       end

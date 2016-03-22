@@ -7,7 +7,6 @@ module Support
     attr_accessor :scope
 
     def initialize(uuid_provider)
-      @has_access = false
       @permission_authorizer = Bosh::Director::PermissionAuthorizer.new(uuid_provider)
     end
 
@@ -18,14 +17,15 @@ module Support
       username = auth.credentials.first if auth
       password = auth.credentials[1] if auth
       if !username.nil? && username == password && user_scopes[username]
-        TestUser.new(username, user_scopes[username])
+        client_id = client[username]
+        TestUser.new(client_id ? nil : username, user_scopes[username], client_id)
       else
         raise Bosh::Director::AuthenticationError
       end
     end
 
     def client_info
-      'fake-client-info'
+      { 'type' => 'test-auth-type', 'stuff' => 'fake-client-info' }
     end
 
     private
@@ -33,19 +33,28 @@ module Support
     def user_scopes
       {
         'admin' => ['bosh.admin'],
+        'client-username' => ['bosh.admin'],
         'reader' => ['bosh.read'],
         'dev-team-member' => ['bosh.teams.dev.admin'],
         'dev-team-read-member' => ['bosh.teams.dev.read']
       }
     end
 
+    def client
+      {'client-username' => 'client-id'}
+    end
   end
 
   class TestUser
-    attr_reader :username, :scopes
-    def initialize(username, scopes)
+    attr_reader :username, :scopes, :client
+    def initialize(username, scopes, client)
       @username = username
       @scopes = scopes
+      @client = client
+    end
+
+    def username_or_client
+      @username || @client
     end
   end
 end

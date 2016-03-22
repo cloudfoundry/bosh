@@ -122,11 +122,11 @@ describe Bosh::Cli::Command::User do
           it "deletes the user" do
             expect(command).
               to receive(:confirmed?).
-              with("Are you sure you would like to delete the user `#{user_to_delete}'?").
+              with("Are you sure you would like to delete the user '#{user_to_delete}'?").
               and_return(true)
 
             expect(director).to receive(:delete_user).with(user_to_delete).and_return(true)
-            expect(command).to receive(:say).with("User `#{user_to_delete}' has been deleted")
+            expect(command).to receive(:say).with("User '#{user_to_delete}' has been deleted")
 
             command.delete(user_to_delete)
           end
@@ -136,7 +136,7 @@ describe Bosh::Cli::Command::User do
           it "does not delete the user" do
             expect(command).
               to receive(:confirmed?).
-              with("Are you sure you would like to delete the user `#{user_to_delete}'?").
+              with("Are you sure you would like to delete the user '#{user_to_delete}'?").
               and_return(false)
 
             expect(director).not_to receive(:delete_user)
@@ -149,7 +149,7 @@ describe Bosh::Cli::Command::User do
             expect(command).to receive(:ask).with("Username to delete: ").and_return("r00t")
             expect(command).
               to receive(:confirmed?).
-              with("Are you sure you would like to delete the user `r00t'?").
+              with("Are you sure you would like to delete the user 'r00t'?").
               and_return(true)
             expect(director).to receive(:delete_user).with("r00t").and_return(true)
 

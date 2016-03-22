@@ -62,7 +62,7 @@ module Bosh::Cli::Command
 
       if old_director_ip != ip
         set_target(ip)
-        say "#{'WARNING!'.make_red} Your target has been changed to `#{target.make_red}'!"
+        say "#{'WARNING!'.make_red} Your target has been changed to '#{target.make_red}'!"
       end
 
       say "Deployment set to '#{manifest_filename.make_green}'"
@@ -125,7 +125,7 @@ module Bosh::Cli::Command
 
       rel_path = strip_relative_path(deployment)
 
-      desc = "`#{rel_path.make_green}' to `#{target_name.make_green}'"
+      desc = "'#{rel_path.make_green}' to '#{target_name.make_green}'"
 
       if deployer.exists?
         if !options[:update_if_exists] && !update
@@ -198,7 +198,7 @@ module Bosh::Cli::Command
       name = deployer.state.name
 
       say(
-        "\nYou are going to delete micro BOSH deployment `#{name}'.\n\n" +
+        "\nYou are going to delete micro BOSH deployment '#{name}'.\n\n" +
         "THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red
       )
 
@@ -309,7 +309,7 @@ AGENT_HELP
         manifest_filename ||= deployment
 
         unless File.exists?(manifest_filename)
-          err("Cannot find deployment manifest in `#{manifest_filename}'")
+          err("Cannot find deployment manifest in '#{manifest_filename}'")
         end
 
         manifest = load_yaml_file(manifest_filename)

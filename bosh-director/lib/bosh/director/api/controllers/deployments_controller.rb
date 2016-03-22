@@ -436,7 +436,7 @@ module Bosh::Director
           Integer(str)
         rescue ArgumentError
           if str !~ /^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{27}$/
-            raise InstanceInvalidIndex, "Invalid instance index or id `#{str}'"
+            raise InstanceInvalidIndex, "Invalid instance index or id '#{str}'"
           end
         end
       end

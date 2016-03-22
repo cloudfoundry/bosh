@@ -22,7 +22,7 @@ describe "cli cloud config", type: :integration do
     bosh_runner.run("login test test")
 
     # no file
-    expect(bosh_runner.run("update cloud-config /some/nonsense/file", failure_expected: true)).to include("Cannot find file `/some/nonsense/file'")
+    expect(bosh_runner.run("update cloud-config /some/nonsense/file", failure_expected: true)).to include("Cannot find file '/some/nonsense/file'")
 
     # file not yaml
     Dir.mktmpdir do |tmpdir|

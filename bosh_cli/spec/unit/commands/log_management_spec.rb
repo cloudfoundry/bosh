@@ -45,7 +45,7 @@ describe Bosh::Cli::Command::LogManagement do
     it 'tells the user that --no-track is unsupported' do
       command.options[:no_track] = true
 
-      expect(command).to receive(:say).with("Ignoring `--no-track' option")
+      expect(command).to receive(:say).with("Ignoring '--no-track' option")
       command.fetch_logs(job, index)
     end
 

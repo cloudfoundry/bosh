@@ -16,11 +16,11 @@ module Bosh::Director
     def self.validate_dns_name(string)
       if string =~ /^(\d|-)/
         raise DnsInvalidCanonicalName,
-              "Invalid DNS canonical name `#{string}', must begin with a letter"
+              "Invalid DNS canonical name '#{string}', must begin with a letter"
       end
       if string =~ /-$/
         raise DnsInvalidCanonicalName,
-              "Invalid DNS canonical name `#{string}', can't end with a hyphen"
+              "Invalid DNS canonical name '#{string}', can't end with a hyphen"
       end
       string
     end

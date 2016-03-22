@@ -27,7 +27,7 @@ describe Bosh::Registry::Runner do
     it "fails if config file not found" do
       expect {
         make_runner("foo")
-      }.to raise_error(Bosh::Registry::ConfigError, "Cannot find file `foo'")
+      }.to raise_error(Bosh::Registry::ConfigError, "Cannot find file 'foo'")
     end
 
     it "fails when config file has incorrect format" do

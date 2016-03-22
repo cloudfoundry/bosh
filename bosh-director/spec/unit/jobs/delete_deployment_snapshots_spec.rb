@@ -36,7 +36,7 @@ module Bosh::Director
       expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([])
       expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([snap4a])
 
-      expect(subject.perform).to eq "snapshots of deployment `deployment' deleted"
+      expect(subject.perform).to eq "snapshots of deployment 'deployment' deleted"
     end
   end
 end

@@ -47,7 +47,7 @@ module Bosh::Director
     end
 
     it 'has description' do
-      expect(handler.description).to match(/VM with cloud ID `vm-cid' missing./)
+      expect(handler.description).to match(/VM with cloud ID 'vm-cid' missing./)
     end
 
     describe 'Resolutions:' do

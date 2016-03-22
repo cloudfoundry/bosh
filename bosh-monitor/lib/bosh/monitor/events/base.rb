@@ -27,7 +27,7 @@ module Bosh::Monitor
         when "alert"
           klass = Bhm::Events::Alert
         else
-          raise InvalidEvent, "Cannot find `#{kind}' event handler"
+          raise InvalidEvent, "Cannot find '#{kind}' event handler"
         end
 
         event = klass.new(attributes)
@@ -62,7 +62,7 @@ module Bosh::Monitor
 
       [:validate, :to_plain_text, :to_hash, :to_json, :metrics].each do |method|
         define_method(method) do
-          raise FatalError, "`#{method}' is not implemented by #{self.class}"
+          raise FatalError, "'#{method}' is not implemented by #{self.class}"
         end
       end
     end

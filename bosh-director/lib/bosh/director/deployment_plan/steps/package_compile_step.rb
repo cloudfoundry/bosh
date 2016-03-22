@@ -34,7 +34,7 @@ module Bosh::Director
 
           @compile_tasks.each_value do |task|
             if task.ready_to_compile?
-              @logger.info("Package `#{task.package.desc}' is ready to be compiled for stemcell `#{task.stemcell.desc}'")
+              @logger.info("Package '#{task.package.desc}' is ready to be compiled for stemcell '#{task.stemcell.desc}'")
               @ready_tasks << task
             end
           end
@@ -136,9 +136,9 @@ module Bosh::Director
                 # it's obscure which double is at fault
                 release_name = t.release.name
                 template_name = t.name
-                "`#{release_name}/#{template_name}'"
+                "'#{release_name}/#{template_name}'"
               end
-              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.desc}'")
+              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
 
               job.templates.each do |template|
                 template.package_models.each do |package|
@@ -182,10 +182,10 @@ module Bosh::Director
 
         def enqueue_unblocked_tasks(task)
           @tasks_mutex.synchronize do
-            @logger.info("Unblocking dependents of `#{task.package.desc}` for `#{task.stemcell.desc}`")
+            @logger.info("Unblocking dependents of '#{task.package.desc}' for '#{task.stemcell.desc}'")
             task.dependent_tasks.each do |dep_task|
               if dep_task.ready_to_compile?
-                @logger.info("Package `#{dep_task.package.desc}' now ready to be compiled for `#{dep_task.stemcell.desc}'")
+                @logger.info("Package '#{dep_task.package.desc}' now ready to be compiled for '#{dep_task.stemcell.desc}'")
                 @ready_tasks << dep_task
               end
             end
@@ -195,7 +195,7 @@ module Bosh::Director
         def process_task(task)
           package_desc = task.package.desc
           stemcell_desc = task.stemcell.desc
-          task_desc = "package `#{package_desc}' for stemcell `#{stemcell_desc}'"
+          task_desc = "package '#{package_desc}' for stemcell '#{stemcell_desc}'"
 
           with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
             if director_job_cancelled?

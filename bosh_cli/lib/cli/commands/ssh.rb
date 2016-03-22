@@ -31,7 +31,7 @@ module Bosh::Cli
         if command.empty?
           setup_interactive_shell(manifest.name, job, id)
         else
-          say("Executing `#{command.join(' ')}' on #{job}/#{id}")
+          say("Executing '#{command.join(' ')}' on #{job}/#{id}")
           perform_operation(:exec, manifest.name, job, id, command)
         end
       end
@@ -107,7 +107,7 @@ module Bosh::Cli
       # @param [optional,String] password
       def setup_ssh(deployment_name, job, id, password)
 
-        say("Target deployment is `#{deployment_name}'")
+        say("Target deployment is '#{deployment_name}'")
         nl
         say('Setting up ssh artifacts')
 

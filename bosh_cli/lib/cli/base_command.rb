@@ -208,7 +208,7 @@ module Bosh::Cli
 
     def no_track_unsupported
       if @options.delete(:no_track)
-        say('Ignoring `' + '--no-track'.make_yellow + "' option")
+        say("Ignoring '" + '--no-track'.make_yellow + "' option")
       end
     end
 

@@ -38,11 +38,11 @@ module Bosh::Director
       def agent_client_for(instance)
         unless instance.vm_cid
           raise InstanceVmMissing,
-                "`#{instance}' doesn't reference a VM"
+                "'#{instance}' doesn't reference a VM"
         end
 
         unless instance.agent_id
-          raise VmAgentIdMissing, "VM `#{instance.vm_cid}' doesn't have an agent id"
+          raise VmAgentIdMissing, "VM '#{instance.vm_cid}' doesn't have an agent id"
         end
 
         AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)

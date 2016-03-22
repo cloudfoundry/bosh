@@ -39,7 +39,7 @@ module Bosh::Director
       def find_by_name(name)
         release = Models::Release[:name => name]
         if release.nil?
-          raise ReleaseNotFound, "Release `#{name}' doesn't exist"
+          raise ReleaseNotFound, "Release '#{name}' doesn't exist"
         end
         release
       end
@@ -64,7 +64,7 @@ module Bosh::Director
           end
           if release_version.nil?
             raise ReleaseVersionNotFound,
-                  "Release version `#{release.name}/#{version}' doesn't exist"
+                  "Release version '#{release.name}/#{version}' doesn't exist"
           end
         end
 

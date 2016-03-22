@@ -8,21 +8,27 @@ module Bosh::Director::Core::Templates
   class JobTemplateRenderer
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(name, monit_erb, source_erbs, logger)
+    def initialize(name, template_name, monit_erb, source_erbs, logger)
       @name = name
+      @template_name = template_name
       @monit_erb = monit_erb
       @source_erbs = source_erbs
       @logger = logger
     end
 
     def render(spec)
-      template_context = Bosh::Template::EvaluationContext.new(adjust_template_properties(spec,@name))
+      if spec['properties_need_filtering']
+        spec = remove_unused_properties(spec)
+      end
 
+      template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
+        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec))
+
         begin
           file_contents = source_erb.render(template_context, @logger)
         rescue Exception => e
@@ -47,28 +53,21 @@ module Bosh::Director::Core::Templates
 
     private
 
-    # This method will check if the current template has any properties that were
-    # defined at the template level in the deployment manifest; if yes, it will make
-    # a deep copy of the spec and change the spec.properties to <current-template>.template_scoped_properties.
-    # This is due to the requirement that limits the available properties for a template
-    # by the properties defined in the template scope in the deployment manifest, if they exist.
-    # We make a deep copy of the spec to be safe, as we are modifying it.
-    def adjust_template_properties(spec, current_template_name)
-      result = spec
-      if spec['job'].is_a?(Hash) && !spec['job']['templates'].nil?
-        current_template = spec['job']['templates'].find {|template| template['name'] == current_template_name }
+    def remove_unused_properties(spec)
+      if spec.nil?
+        return nil
+      end
 
-        if !current_template['template_scoped_properties'].nil?
-          # Make a deep copy of the spec and replace the properties with
-          # the specific template properties.
-          altered_spec = Bosh::Common::DeepCopy.copy(spec)
-          altered_spec['properties'] = Bosh::Common::DeepCopy.copy(
-              current_template['template_scoped_properties']
-          )
-          result = altered_spec
+      modified_spec = Bosh::Common::DeepCopy.copy(spec)
+
+      if modified_spec.has_key?('properties')
+        if modified_spec['properties'][@template_name]
+          properties_template = modified_spec['properties'][@template_name]
+          modified_spec['properties'] = properties_template
         end
       end
-      result
+
+      modified_spec
     end
 
   end

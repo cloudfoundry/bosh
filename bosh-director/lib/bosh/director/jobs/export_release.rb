@@ -40,7 +40,7 @@ module Bosh::Director
         release_version_model = release_manager.find_version(release, @release_version)
 
         unless deployment_manifest_has_release?(targeted_deployment.manifest)
-          raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
+          raise ReleaseNotMatchingManifest, "Release version '#{@release_name}/#{@release_version}' not found in deployment '#{@deployment_name}' manifest"
         end
 
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)

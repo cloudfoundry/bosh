@@ -16,7 +16,7 @@ module Bosh::Cli::Command
         deps = director.list_deployments
         err('No deployments') if deps.empty?
         deps.each do |dep|
-          say("Deployment `#{dep['name'].make_green}'")
+          say("Deployment '#{dep['name'].make_green}'")
           show_deployment(dep['name'], options)
         end
       else

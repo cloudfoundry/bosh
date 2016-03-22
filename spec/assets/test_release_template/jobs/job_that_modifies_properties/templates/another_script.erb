@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "test_property initially was <%= p('some_namespace')['test_property'] %>"
+<% p('some_namespace')["test_property"] = 123123 %>
+echo "test property is now <%= p('some_namespace')['test_property'] %>

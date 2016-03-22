@@ -21,7 +21,7 @@ describe Bosh::Registry::InstanceManager do
       expect {
         manager.read_settings("foo")
       }.to raise_error(Bosh::Registry::InstanceNotFound,
-                       "Can't find instance `foo'")
+                       "Can't find instance 'foo'")
     end
   end
 
@@ -47,14 +47,14 @@ describe Bosh::Registry::InstanceManager do
       expect {
         manager.read_settings("foo")
       }.to raise_error(Bosh::Registry::InstanceNotFound,
-                       "Can't find instance `foo'")
+                       "Can't find instance 'foo'")
     end
 
     it "raises an error if instance not found" do
       expect {
         manager.delete_settings("foo")
       }.to raise_error(Bosh::Registry::InstanceNotFound,
-                       "Can't find instance `foo'")
+                       "Can't find instance 'foo'")
     end
   end
 end

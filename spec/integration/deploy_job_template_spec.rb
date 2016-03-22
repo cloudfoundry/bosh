@@ -54,7 +54,7 @@ describe 'deploy job template', type: :integration do
     expect(template).to include("spec.address=#{vm.instance_uuid}.foobar.a.simple.bosh")
   end
 
-  context 'health monitor' do
+  context 'health monitor', hm: true do
     before { current_sandbox.health_monitor_process.start }
     after { current_sandbox.health_monitor_process.stop }
 

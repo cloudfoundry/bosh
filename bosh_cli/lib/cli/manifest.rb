@@ -13,7 +13,7 @@ module Bosh::Cli
 
     def load
       unless File.exists?(@deployment_file)
-        err("Cannot find deployment manifest in `#{@deployment_file}'")
+        err("Cannot find deployment manifest in '#{@deployment_file}'")
       end
 
       @hash = load_yaml_file(@deployment_file)
@@ -49,7 +49,7 @@ module Bosh::Cli
       end
 
       if name.blank? || @hash['director_uuid'].blank?
-        err("Invalid manifest `#{File.basename(@deployment_file)}': " +
+        err("Invalid manifest '#{File.basename(@deployment_file)}': " +
             'name and director UUID are required')
       end
 
@@ -84,7 +84,7 @@ module Bosh::Cli
         if stemcell['version'] == 'latest'
           latest_version = latest_stemcells[stemcell['name']]
           if latest_version.nil?
-            err("Latest version for stemcell `#{stemcell['name']}' is unknown")
+            err("Latest version for stemcell '#{stemcell['name']}' is unknown")
           end
           stemcell['version'] = latest_version
         end

@@ -3,6 +3,10 @@ require 'spec_helper'
 describe 'CPI calls', type: :integration do
   with_reset_sandbox_before_each
 
+  def expect_name(invocation)
+    expect(invocation.inputs['metadata']['name']).to eq("#{invocation.inputs['metadata']['job']}/#{invocation.inputs['metadata']['id']}")
+  end
+
   describe 'deploy' do
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
@@ -40,11 +44,15 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
+      expect_name(invocations[2])
       compilation_vm_id = invocations[2].inputs['vm_cid']
 
       expect(invocations[3].method_name).to eq('set_vm_metadata')
@@ -53,11 +61,15 @@ describe 'CPI calls', type: :integration do
         'metadata' => {
           'compiling' => 'foo',
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
       }
       })
+      expect_name(invocations[3])
       expect(invocations[4].method_name).to eq('delete_vm')
       expect(invocations[4].inputs).to match({'vm_cid' => compilation_vm_id})
 
@@ -85,11 +97,15 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
+      expect_name(invocations[6])
       compilation_vm_id = invocations[6].inputs['vm_cid']
 
       expect(invocations[7].method_name).to eq('set_vm_metadata')
@@ -97,12 +113,16 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => compilation_vm_id,
         'metadata' => {
           'compiling' => 'bar',
+          'created_at' => kind_of(String),
           'director' => 'Test Director',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
           'index' => '0',
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
+      expect_name(invocations[7])
 
       expect(invocations[8].method_name).to eq('delete_vm')
       expect(invocations[8].inputs).to match({'vm_cid' => compilation_vm_id})
@@ -131,11 +151,15 @@ describe 'CPI calls', type: :integration do
         'vm_cid' => String,
         'metadata' => {
           'director' => 'Test Director',
+          'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => 'foobar',
           'index' => '0',
+          'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          'name' => /foobar\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
+      expect_name(invocations[10])
 
       expect(invocations.size).to eq(11)
     end
@@ -191,11 +215,15 @@ describe 'CPI calls', type: :integration do
           'vm_cid' => String,
           'metadata' => {
             'director' => 'Test Director',
+            'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
+        expect_name(first_deploy_invocations[2])
         vm_cid = first_deploy_invocations[2].inputs['vm_cid']
 
         expect(first_deploy_invocations[3].method_name).to eq('create_disk')
@@ -259,11 +287,16 @@ describe 'CPI calls', type: :integration do
           'vm_cid' => String,
           'metadata' => {
             'director' => 'Test Director',
+            'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
             'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
+
+        expect_name(second_deploy_invocations[3])
 
         new_vm_cid = second_deploy_invocations[3].inputs['vm_cid']
 

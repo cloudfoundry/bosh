@@ -45,8 +45,8 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
       expect(output).to include("[stdout]\nNone")
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
-      expect(output).to include("Errand `fake-errand-name' completed with error (exit code 23)")
-      expect(output =~ /Logs saved in `(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+      expect(output).to include("Errand 'fake-errand-name' completed with error (exit code 23)")
+      expect(output =~ /Logs saved in '(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
       logs_file = Bosh::Spec::TarFileInspector.new($1)
       expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
       expect(logs_file.smallest_file_size).to be > 0
@@ -107,7 +107,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       expect(output).to match(
         %r{Error 450001: (.*Running errand script:.*jobs/foobar/bin/run: no such file or directory)}
       )
-      expect(output).to include("Errand `foobar' did not complete")
+      expect(output).to include("Errand 'foobar' did not complete")
       expect(exit_code).to eq(1)
     end
   end
@@ -121,8 +121,8 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       output, exit_code = bosh_runner.run('run errand unknown-errand-name',
                                           {failure_expected: true, return_exit_code: true})
 
-      expect(output).to include("Errand `unknown-errand-name' doesn't exist")
-      expect(output).to include("Errand `unknown-errand-name' did not complete")
+      expect(output).to include("Errand 'unknown-errand-name' doesn't exist")
+      expect(output).to include("Errand 'unknown-errand-name' did not complete")
       expect(exit_code).to eq(1)
     end
   end

@@ -28,7 +28,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   it 'has well-formed description' do
-    expect(@handler.description).to eq("Disk `disk-cid' (300M) for instance `mysql_node/52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7 (3)' is inactive")
+    expect(@handler.description).to eq("Disk 'disk-cid' (300M) for instance 'mysql_node/52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7 (3)' is inactive")
   end
 
   describe 'invalid states' do
@@ -36,14 +36,14 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       @disk.destroy
       expect {
         make_handler(@disk.id)
-      }.to raise_error("Disk `#{@disk.id}' is no longer in the database")
+      }.to raise_error("Disk '#{@disk.id}' is no longer in the database")
     end
 
     it 'is invalid if disk is active' do
       @disk.update(:active => true)
       expect {
         make_handler(@disk.id)
-      }.to raise_error("Disk `disk-cid' is no longer inactive")
+      }.to raise_error("Disk 'disk-cid' is no longer inactive")
     end
   end
 

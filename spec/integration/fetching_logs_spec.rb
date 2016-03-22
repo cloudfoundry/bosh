@@ -24,7 +24,7 @@ describe 'fetching logs', type: :integration do
 
     expect(output).to include("Logs saved in")
 
-    tarball_path = %r{Logs saved in `(?'log_location'.*)'}.match(output)[:log_location]
+    tarball_path = %r{Logs saved in '(?'log_location'.*)'}.match(output)[:log_location]
 
     Bosh::Spec::TarFileInspector.new(tarball_path).file_names
   end

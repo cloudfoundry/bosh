@@ -56,7 +56,7 @@ module Bosh::Director
       loop do
         wait_time = drain_time.abs
         if wait_time > 0
-          @logger.info("`#{@instance_model}' is draining: checking back in #{wait_time}s")
+          @logger.info("'#{@instance_model}' is draining: checking back in #{wait_time}s")
           sleep(wait_time)
         end
 

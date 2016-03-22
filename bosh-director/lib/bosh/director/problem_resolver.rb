@@ -79,7 +79,7 @@ module Bosh::Director
     private
 
     def log_resolution_error(problem, error)
-      error_message = "Error resolving problem `#{problem.id}': #{error}"
+      error_message = "Error resolving problem '#{problem.id}': #{error}"
       logger.error(error_message)
       logger.error(error.backtrace.join("\n"))
       @resolution_error_logs.puts(error_message)

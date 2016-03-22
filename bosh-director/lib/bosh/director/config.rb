@@ -179,11 +179,12 @@ module Bosh::Director
       def configure_db(db_config)
         patch_sqlite if db_config['adapter'] == 'sqlite'
 
-        connection_options = db_config.fetch('connection_options') {{}}
-        db_config.delete_if { |_, v| v.to_s.empty? }
-        db_config = db_config.merge(connection_options)
+        connection_config = db_config.dup
+        connection_options = connection_config.delete('connection_options') {{}}
+        connection_config.delete_if { |_, v| v.to_s.empty? }
+        connection_config = connection_config.merge(connection_options)
 
-        db = Sequel.connect(db_config)
+        db = Sequel.connect(connection_config)
 
         Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Exception]) do
           db.extension :connection_validator
@@ -420,6 +421,10 @@ module Bosh::Director
 
     def backup_blobstore_config
       hash['backup_destination']
+    end
+
+    def log_access_events_to_syslog
+      hash['log_access_events_to_syslog']
     end
 
     def configure_evil_config_singleton!

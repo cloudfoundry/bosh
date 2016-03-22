@@ -132,7 +132,7 @@ module Bosh::Director
         end
 
         it 'returns client id' do
-          expect(uaa_user.username).to eq('fake-client-id')
+          expect(uaa_user.username_or_client).to eq('fake-client-id')
         end
       end
     end

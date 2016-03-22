@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe 'health_monitor: 2', type: :integration do
+describe 'health_monitor: 2', type: :integration, hm: true do
   context 'if fix_stateful_nodes director option is not set' do
     with_reset_sandbox_before_each(director_fix_stateful_nodes: false)
     before { current_sandbox.health_monitor_process.start }

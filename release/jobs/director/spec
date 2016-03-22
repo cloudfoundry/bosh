@@ -107,6 +107,9 @@ properties:
   director.remove_dev_tools:
     description: When true, remove dev tool packages from non-compilation VMs
     default: false
+  director.log_access_events_to_syslog:
+    description: Access to api is logged to the syslog
+    default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:

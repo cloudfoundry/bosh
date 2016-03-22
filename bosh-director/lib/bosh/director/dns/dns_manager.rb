@@ -35,7 +35,7 @@ module Bosh::Director
           dns = NetAddr::CIDR.create(dns)
           unless dns.size == 1
             raise NetworkInvalidDns,
-              "Invalid DNS for network `#{network}': must be a single IP"
+              "Invalid DNS for network '#{network}': must be a single IP"
           end
 
           servers << dns.ip
@@ -160,7 +160,7 @@ module Bosh::Director
           dns = NetAddr::CIDR.create(dns)
           unless dns.size == 1
             raise NetworkInvalidDns,
-              "Invalid DNS for network `#{network}': must be a single IP"
+              "Invalid DNS for network '#{network}': must be a single IP"
           end
 
           servers << dns.ip

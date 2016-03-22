@@ -4,7 +4,7 @@ module Bosh::Director
       def by_name(name)
         deployment = Models::Deployment[name: name]
         if deployment.nil?
-          raise DeploymentNotFound, "Deployment `#{name}' doesn't exist"
+          raise DeploymentNotFound, "Deployment '#{name}' doesn't exist"
         end
         deployment
       end

@@ -33,7 +33,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               instance_lookup.by_attributes(deployment, job_name, '7')
-            }.to raise_error(InstanceNotFound, "`#{deployment.name}/#{job_name}/7' doesn't exist")
+            }.to raise_error(InstanceNotFound, "'#{deployment.name}/#{job_name}/7' doesn't exist")
           end
         end
 

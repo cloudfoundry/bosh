@@ -77,7 +77,7 @@ module Bosh::Deployer
         Kernel.sleep 0.5
         _, status = Process.waitpid2(@registry_pid, Process::WNOHANG)
         if status
-          err "`#{cmd}` failed, exit status=#{status.exitstatus}"
+          err "'#{cmd}' failed, exit status=#{status.exitstatus}"
         end
       end
     end

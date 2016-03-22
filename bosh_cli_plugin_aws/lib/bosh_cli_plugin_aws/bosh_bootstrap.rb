@@ -27,7 +27,7 @@ module Bosh
 
         if existing_deployments.include? manifest.bosh_deployment_name
           raise BootstrapError, <<-MSG
-Deployment `#{manifest.bosh_deployment_name}' already exists.
+Deployment '#{manifest.bosh_deployment_name}' already exists.
 This command should be used for bootstrapping bosh from scratch.
           MSG
         end

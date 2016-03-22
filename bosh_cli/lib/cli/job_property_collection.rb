@@ -42,8 +42,8 @@ module Bosh::Cli
 
         if resolved.nil?
           raise InvalidPropertyMapping,
-                "Cannot satisfy property mapping `#{to}: #{from}', " +
-                "as `#{from}' is not in deployment properties"
+                "Cannot satisfy property mapping '#{to}: #{from}', " +
+                "as '#{from}' is not in deployment properties"
         end
 
         @job_properties[to] = resolved

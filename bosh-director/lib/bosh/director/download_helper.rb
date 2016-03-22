@@ -13,7 +13,7 @@ module Bosh::Director
     def download_remote_file(resource, remote_file, local_file, num_redirects = 0)
       @logger.info("Downloading remote #{resource} from #{remote_file}") if @logger
       uri = URI.parse(remote_file)
-      Net::HTTP.start(uri.host, uri.port, 
+      Net::HTTP.start(uri.host, uri.port,
                       :use_ssl => uri.scheme == 'https',
                       :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
         http.request_get(uri.request_uri) do |response|
@@ -26,23 +26,23 @@ module Bosh::Director
               end
 
             when Net::HTTPFound
-              raise ResourceError, "Too many redirects at `#{remote_file}'." if num_redirects >= 9
+              raise ResourceError, "Too many redirects at '#{remote_file}'." if num_redirects >= 9
               location = response.header['location']
-              raise ResourceError, "No location header for redirect found at `#{remote_file}'." if location.nil?
+              raise ResourceError, "No location header for redirect found at '#{remote_file}'." if location.nil?
 
               location = URI.join(uri, location).to_s
               download_remote_file(resource, location, local_file, num_redirects + 1)
 
             when Net::HTTPNotFound
               @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{response.message}") if @logger
-              raise ResourceNotFound, "No #{resource} found at `#{remote_file}'."
+              raise ResourceNotFound, "No #{resource} found at '#{remote_file}'."
 
             else
               @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{response.message}") if @logger
               raise ResourceError, "Downloading remote #{resource} failed. Check task debug log for details."
           end
         end
-      end       
+      end
     rescue URI::Error, SocketError, Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
            Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
       @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{e.inspect}") if @logger

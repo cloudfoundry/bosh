@@ -22,7 +22,10 @@ module Bosh::Director
           @disk_manager = DiskManager.new(nil, @logger)
         end
 
-        register Bosh::Director::Api::Extensions::Scoping
+        register(Bosh::Director::Api::Extensions::SyslogRequestLogger)
+        log_request_to_syslog
+
+        register(Bosh::Director::Api::Extensions::Scoping)
 
         mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'

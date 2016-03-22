@@ -140,7 +140,7 @@ module Bosh::Director
 
         expect {
           foo_task.dependency_spec
-        }.to raise_error(DirectorError, /`bar' hasn't been compiled yet/i)
+        }.to raise_error(DirectorError, /'bar' hasn't been compiled yet/i)
 
         bar_task.use_compiled_package(cp)
 

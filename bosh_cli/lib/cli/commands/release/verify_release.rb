@@ -14,13 +14,13 @@ module Bosh::Cli::Command
         nl
 
         if tarball.valid?
-          say("`#{tarball_path}' is a valid release".make_green)
+          say("'#{tarball_path}' is a valid release".make_green)
         else
           say('Validation errors:'.make_red)
           tarball.errors.each do |error|
             say("- #{error}")
           end
-          err("`#{tarball_path}' is not a valid release".make_red)
+          err("'#{tarball_path}' is not a valid release".make_red)
         end
       end
     end

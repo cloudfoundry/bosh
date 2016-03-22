@@ -175,7 +175,7 @@ describe Bosh::Cli::Command::Base do
       expect {
         @cmd.delete('foo', '111')
       }.to raise_error(Bosh::Cli::CliError,
-                           "Stemcell `foo/111' does not exist")
+                           "Stemcell 'foo/111' does not exist")
     end
   end
 

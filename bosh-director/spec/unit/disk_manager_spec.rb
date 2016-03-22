@@ -54,7 +54,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-            }.to raise_error AgentDiskOutOfSync, "`job-name/1 (uuid-1)' has invalid disks: agent reports `random-disk-cid' while director record shows `disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (uuid-1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
 
@@ -76,7 +76,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-            }.to raise_error AgentDiskOutOfSync, "`job-name/1 (123-456-789)' has invalid disks: agent reports `random-disk-cid' while director record shows `disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (123-456-789)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
       end
@@ -93,7 +93,7 @@ module Bosh::Director
         end
 
         it 'logs when the disks are inactive' do
-          expect(logger).to receive(:warn).with("`job-name/1 (uuid-1)' has inactive disk inactive-disk")
+          expect(logger).to receive(:warn).with("'job-name/1 (uuid-1)' has inactive disk inactive-disk")
           disk_manager.update_persistent_disk(instance_plan, vm_recreator)
         end
 
@@ -317,7 +317,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-            }.to raise_error AgentDiskOutOfSync, "`job-name/1 (uuid-1)' has invalid disks: agent reports `' while director record shows `disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (uuid-1)' has invalid disks: agent reports '' while director record shows 'disk123'"
           end
         end
       end

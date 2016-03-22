@@ -51,7 +51,7 @@ module Bosh::Director
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
         # and it is still referenced in DB. In that case it makes sense
-        # to ignore "VM not found" errors in `delete_vm' and let the method
+        # to ignore "VM not found" errors in `delete_vm` and let the method
         # proceed creating a new VM. Other errors are not forgiven.
 
         @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
@@ -148,7 +148,7 @@ module Bosh::Director
     def agent_timeout_guard(vm_cid, vm_credentials, agent_id, &block)
       yield agent_client(vm_credentials, agent_id)
     rescue Bosh::Director::RpcTimeout
-      handler_error("VM `#{vm_cid}' is not responding")
+      handler_error("VM '#{vm_cid}' is not responding")
     end
 
     def vm_deleter

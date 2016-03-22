@@ -39,7 +39,7 @@ module Bosh::Director
           disk_size = safe_property(dp_spec, 'disk_size', class: Integer)
           if disk_size < 0
             raise DiskTypeInvalidDiskSize,
-              "Disk types `#{name}' references an invalid persistent disk size `#{disk_size}'"
+              "Disk types '#{name}' references an invalid persistent disk size '#{disk_size}'"
           end
 
           cloud_properties = safe_property(dp_spec, 'cloud_properties', class: Hash, default: {})

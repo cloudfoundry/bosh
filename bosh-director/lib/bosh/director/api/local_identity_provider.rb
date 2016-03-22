@@ -34,6 +34,14 @@ module Bosh
         def scopes
           ['bosh.admin']
         end
+
+        def username_or_client
+          username
+        end
+
+        def client
+          nil
+        end
       end
     end
   end

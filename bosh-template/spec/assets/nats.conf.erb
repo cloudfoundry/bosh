@@ -1,4 +1,4 @@
-<% self_ip = spec.networks.send(properties.networks.apps).ip %>
+<% self_ip = spec.networks.send(properties.networks.apps).ip -%>
 net: "<%= self_ip %>"
 port: <%= p("nats.port") %>
 prof_port: <%= p("nats.prof_port") %>
@@ -27,8 +27,8 @@ timeout: <%= p("nats.authorization_timeout") %>
 }
 
 routes = [
-<% (p("nats.machines") - [self_ip]).each do |address| %>
+<% (p("nats.machines") - [self_ip]).each do |address| -%>
     nats-route://<%= p("nats.user") %>:<%= p("nats.password") %>@<%= address %>:<%= p("nats.port") + 1 %>
-<% end %>
+<% end -%>
 ]
 }

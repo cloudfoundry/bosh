@@ -11,7 +11,7 @@ describe 'delete release', type: :integration do
     bosh_runner.run("upload release #{release_filename}")
 
     out = bosh_runner.run('delete release test_release')
-    expect(out).to match regexp('Deleted `test_release')
+    expect(out).to match regexp("Deleted 'test_release")
 
     expect { bosh_runner.run('releases') }
       .to raise_error(RuntimeError, /No releases/)
@@ -26,7 +26,7 @@ describe 'delete release', type: :integration do
     out = bosh_runner.run("delete release hello-go 50")
     expect(out).to match regexp("Started deleting packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393. Done")
     expect(out).to match regexp("Started deleting jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08. Done")
-    expect(out).to match regexp('Deleted `hello-go/50')
+    expect(out).to match regexp("Deleted 'hello-go/50'")
   end
 
   # ~22s
@@ -37,7 +37,7 @@ describe 'delete release', type: :integration do
     bosh_runner.run("upload release #{release_filename}")
 
     out = bosh_runner.run('delete release test_release 1')
-    expect(out).to match regexp('Deleted `test_release/1')
+    expect(out).to match regexp("Deleted 'test_release/1'")
   end
 
   it 'fails to delete release in use but deletes a different release' do
@@ -65,9 +65,9 @@ describe 'delete release', type: :integration do
     bosh_runner.run('deploy')
 
     out = bosh_runner.run('delete release bosh-release', failure_expected: true)
-    expect(out).to match /Error 30007: Release `bosh-release' is still in use/
+    expect(out).to match /Error 30007: Release 'bosh-release' is still in use/
 
     out = bosh_runner.run('delete release bosh-release 0.2-dev')
-    expect(out).to match %r{Deleted `bosh-release/0.2-dev'}
+    expect(out).to match %r{Deleted 'bosh-release/0.2-dev'}
   end
 end

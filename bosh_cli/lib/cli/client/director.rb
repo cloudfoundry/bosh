@@ -411,7 +411,7 @@ module Bosh
             tmp_file
           else
             raise DirectorError,
-                  "Cannot download resource `#{id}': HTTP status #{status}"
+                  "Cannot download resource '#{id}': HTTP status #{status}"
           end
         end
 

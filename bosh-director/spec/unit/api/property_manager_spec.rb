@@ -15,7 +15,7 @@ module Bosh::Director
       property_manager.create_property(deployment, 'foo', 'bar')
       expect {
         property_manager.create_property(deployment, 'foo', 'baz')
-      }.to raise_error(PropertyAlreadyExists, "Property `foo' already exists for deployment `mycloud'")
+      }.to raise_error(PropertyAlreadyExists, "Property 'foo' already exists for deployment 'mycloud'")
     end
 
     it "doesn't allow invalid properties" do
@@ -45,7 +45,7 @@ module Bosh::Director
     it "doesn't allow invalid updates" do
       expect {
         property_manager.update_property(deployment, 'foo', 'baz')
-      }.to raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
+      }.to raise_error(PropertyNotFound, "Property 'foo' not found for deployment 'mycloud'")
 
       property_manager.create_property(deployment, 'foo', 'bar')
 
@@ -66,7 +66,7 @@ module Bosh::Director
     it "doesn't allow invalid deletes" do
       expect {
         property_manager.delete_property(deployment, 'foo')
-      }.to raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
+      }.to raise_error(PropertyNotFound, "Property 'foo' not found for deployment 'mycloud'")
     end
 
     it 'lists all properties' do

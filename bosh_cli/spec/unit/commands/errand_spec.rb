@@ -111,7 +111,7 @@ describe Bosh::Cli::Command::Errand do
                   [stderr]
                   fake-stderr
 
-                  Errand `fake-errand-name' completed successfully (exit code 0)
+                  Errand 'fake-errand-name' completed successfully (exit code 0)
                 )
               end
             end
@@ -124,7 +124,7 @@ describe Bosh::Cli::Command::Errand do
                   perform
                 }.to raise_error(
                   Bosh::Cli::CliError,
-                  /Errand `fake-errand-name' completed with error \(exit code 123\)/,
+                  /Errand 'fake-errand-name' completed with error \(exit code 123\)/,
                 )
 
                 expect(actual).to match_output %(
@@ -145,7 +145,7 @@ describe Bosh::Cli::Command::Errand do
                   perform
                 }.to raise_error(
                   Bosh::Cli::CliError,
-                  /Errand `fake-errand-name' was canceled \(exit code 143\)/,
+                  /Errand 'fake-errand-name' was canceled \(exit code 143\)/,
                 )
 
                 expect(actual).to match_output %(
@@ -170,7 +170,7 @@ describe Bosh::Cli::Command::Errand do
                   [stderr]
                   fake-stderr
 
-                  Errand `fake-errand-name' completed successfully (exit code 0)
+                  Errand 'fake-errand-name' completed successfully (exit code 0)
                 )
               end
             end
@@ -187,7 +187,7 @@ describe Bosh::Cli::Command::Errand do
                   [stderr]
                   None
 
-                  Errand `fake-errand-name' completed successfully (exit code 0)
+                  Errand 'fake-errand-name' completed successfully (exit code 0)
                 )
               end
             end
@@ -204,7 +204,7 @@ describe Bosh::Cli::Command::Errand do
                   [stderr]
                   fake-stderr
 
-                  Errand `fake-errand-name' completed successfully (exit code 0)
+                  Errand 'fake-errand-name' completed successfully (exit code 0)
                 )
               end
             end
@@ -221,7 +221,7 @@ describe Bosh::Cli::Command::Errand do
                   [stderr]
                   None
 
-                  Errand `fake-errand-name' completed successfully (exit code 0)
+                  Errand 'fake-errand-name' completed successfully (exit code 0)
                 )
               end
             end
@@ -271,7 +271,7 @@ describe Bosh::Cli::Command::Errand do
                       fake-stderr
 
                       fake-download-output
-                      Errand `fake-errand-name' completed successfully (exit code 0)
+                      Errand 'fake-errand-name' completed successfully (exit code 0)
                     )
                   end
                 end
@@ -291,7 +291,7 @@ describe Bosh::Cli::Command::Errand do
                         [stderr]
                         fake-stderr
 
-                        Errand `fake-errand-name' completed successfully (exit code 0)
+                        Errand 'fake-errand-name' completed successfully (exit code 0)
                       )
                     end
                   end
@@ -304,7 +304,7 @@ describe Bosh::Cli::Command::Errand do
                         perform
                       }.to raise_error(
                         Bosh::Cli::CliError,
-                        /Errand `fake-errand-name' completed with error \(exit code 123\)/,
+                        /Errand 'fake-errand-name' completed with error \(exit code 123\)/,
                       )
 
                       expect(actual).to match_output %(
@@ -325,7 +325,7 @@ describe Bosh::Cli::Command::Errand do
                         perform
                       }.to raise_error(
                         Bosh::Cli::CliError,
-                        /Errand `fake-errand-name' was canceled \(exit code 143\)/,
+                        /Errand 'fake-errand-name' was canceled \(exit code 143\)/,
                       )
 
                       expect(actual).to match_output %(
@@ -364,7 +364,7 @@ describe Bosh::Cli::Command::Errand do
             it 'reports task information to the user' do
               perform
               expect(actual).to match_output %(
-                Errand `fake-errand-name' did not complete
+                Errand 'fake-errand-name' did not complete
 
                 For a more detailed error report, run: bosh task fake-task-id --debug
               )

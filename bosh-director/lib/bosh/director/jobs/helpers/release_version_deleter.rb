@@ -19,7 +19,7 @@ module Bosh::Director::Jobs
         unless deployments.empty?
           names = deployments.map { |d| d.name }.join(', ')
           raise Bosh::Director::ReleaseVersionInUse,
-            "ReleaseVersion `#{release.name}/#{release_version.version}' is still in use by: #{names}"
+            "ReleaseVersion '#{release.name}/#{release_version.version}' is still in use by: #{names}"
         end
 
         delete_release_version(release_version, force)

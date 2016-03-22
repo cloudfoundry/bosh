@@ -11,7 +11,7 @@ module Bosh::Cli
 
     def property(name)
       @properties[name] || raise(UndefinedProperty,
-                                 "Cannot resolve deployment property `#{name}'")
+                                 "Cannot resolve deployment property '#{name}'")
     end
 
     def result

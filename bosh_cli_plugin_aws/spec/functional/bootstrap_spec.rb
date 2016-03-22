@@ -247,7 +247,7 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'bails telling the user this command is only useful for the initial deployment' do
-        expect { aws.bootstrap_bosh }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
+        expect { aws.bootstrap_bosh }.to raise_error(/Deployment '#{deployment_name}' already exists\./)
       end
     end
 

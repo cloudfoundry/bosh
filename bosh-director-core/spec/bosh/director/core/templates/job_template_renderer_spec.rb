@@ -33,7 +33,7 @@ module Bosh::Director::Core::Templates
       let(:logger) { instance_double('Logger', debug: nil) }
 
       subject(:job_template_renderer) do
-        JobTemplateRenderer.new('template-name', monit_erb, [source_erb], logger)
+        JobTemplateRenderer.new('fake-job-name', 'template-name', monit_erb, [source_erb], logger)
       end
 
       context 'when templates do not contain local properties' do
@@ -68,17 +68,16 @@ module Bosh::Director::Core::Templates
                         "version"=>"1bbe5ab00082797999e2101d730de64aeb601b6a",
                         "sha1"=>"728399f9ef342532c6224bce4eb5331b5c38d595",
                         "blobstore_id"=>"6c1eec85-3c08-4464-8b11-dc43acaa79f9",
-                        "template_scoped_properties"=>
-                            {"inside"=>"insideValue",
-                             "smurfs"=>{"name"=>"snoopy"}
-                            }
                        }
                       ],
               },
               "properties"=> {
-                  "noway"=> "idont exist",
-                  "hello"=> {"not"=>"alive"}
-              }
+                  "template-name" => {
+                      "inside"=>"insideValue",
+                      "smurfs"=>{"name"=>"snoopy"},
+                  }
+              },
+              "properties_need_filtering" => true
           }
         end
 
@@ -98,19 +97,16 @@ module Bosh::Director::Core::Templates
                             'version'=>'1bbe5ab00082797999e2101d730de64aeb601b6a',
                             'sha1'=>'728399f9ef342532c6224bce4eb5331b5c38d595',
                             'blobstore_id'=>'6c1eec85-3c08-4464-8b11-dc43acaa79f9',
-                            'template_scoped_properties'=> {
-                                'inside'=>'insideValue',
-                                'smurfs'=>{'name'=>'snoopy'}
-                            }
                            }
                           ],
                   },
                   "properties"=> {
                       "inside"=> "insideValue",
                       "smurfs"=> {'name'=>'snoopy'}
-                  }
+                  },
+                  "properties_need_filtering" => true
               }
-          )
+          ).at_least(2).times
         end
 
       end

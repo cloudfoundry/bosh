@@ -47,7 +47,7 @@ module Bosh::Cli
 
     def compile
       if exists?
-        quit("You already have this version in `#{tarball_path.make_green}'")
+        quit("You already have this version in '#{tarball_path.make_green}'")
       end
 
       packages = @packages
@@ -114,7 +114,7 @@ module Bosh::Cli
 
       if found_build.nil?
         say("MISSING".make_red)
-        err("Cannot find #{build_type} with checksum `#{build.sha1}'")
+        err("Cannot find #{build_type} with checksum '#{build.sha1}'")
       end
 
       sha1 = found_build["sha1"]
