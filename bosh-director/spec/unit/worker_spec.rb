@@ -23,6 +23,7 @@ describe 'worker' do
       worker.prep
       expect(worker.queues).to eq(['normal'])
       Process.kill('USR1', Process.pid)
+      sleep 0.1 # Ruby 1.9 fails without the sleep due to a race condition between rspec assertion and actually killing the process
       expect(worker.queues).to eq(['non_existent_queue'])
     end
   end
