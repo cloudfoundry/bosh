@@ -88,7 +88,7 @@ PATH
     bosh-monitor (1.3215.0)
       aws-sdk (= 1.60.2)
       cf-uaa-lib (~> 3.2.1)
-      dogapi (~> 1.6.0)
+      dogapi (~> 1.21.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.0.0)
       httpclient (= 2.7.1)
@@ -269,8 +269,8 @@ GEM
     daemons (1.2.3)
     diff-lcs (1.2.5)
     docile (1.1.5)
-    dogapi (1.6.0)
-      json (>= 1.5.1)
+    dogapi (1.21.0)
+      multi_json
     em-http-request (0.3.0)
       addressable (>= 2.0.0)
       escape_utils
