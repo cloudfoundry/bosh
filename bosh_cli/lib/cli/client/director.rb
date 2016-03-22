@@ -124,6 +124,14 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_events(options={})
+          if options[:before_id]
+            get_json("/events?before_id=#{options[:before_id]}")
+          else
+            get_json('/events')
+          end
+        end
+
         def list_errands(deployment_name)
           get_json("/deployments/#{deployment_name}/errands")
         end

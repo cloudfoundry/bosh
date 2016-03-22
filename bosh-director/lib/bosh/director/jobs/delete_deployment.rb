@@ -19,7 +19,7 @@ module Bosh::Director
 
       def perform
         logger.info("Deleting: #{@deployment_name}")
-
+        parent_id = add_event
         with_deployment_lock(@deployment_name) do
           deployment_model = @deployment_manager.find_by_name(@deployment_name)
 
@@ -32,9 +32,29 @@ module Bosh::Director
 
           vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, force: @force)
           deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter)
+          add_event(parent_id)
 
           "/deployments/#{@deployment_name}"
         end
+      rescue Exception => e
+        add_event(parent_id, e)
+        raise e
+      end
+
+      private
+      def add_event(parent_id = nil, error = nil)
+        @user  = @user ||= task_manager.find_task(task_id).username
+        event  = event_manager.create_event(
+            {
+                parent_id:   parent_id,
+                user:        @user,
+                action:      "delete",
+                object_type: "deployment",
+                object_name: @deployment_name,
+                task:        task_id,
+                error:       error
+            })
+        event.id
       end
     end
   end
