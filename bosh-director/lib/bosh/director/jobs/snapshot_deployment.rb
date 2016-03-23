@@ -31,6 +31,10 @@ module Bosh::Director
       end
 
       def snapshot(instance)
+        if instance.vm_cid.nil?
+          logger.info('No vm attached to this instance, no snapshot; skipping')
+          return
+        end
         logger.info("taking snapshot of: #{instance.job}/#{instance.index} (#{instance.vm_cid})")
         Bosh::Director::Api::SnapshotManager.take_snapshot(instance, @options)
       rescue Bosh::Clouds::CloudError => e
@@ -54,4 +58,3 @@ module Bosh::Director
     end
   end
 end
-
