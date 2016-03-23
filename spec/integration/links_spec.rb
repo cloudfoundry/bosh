@@ -136,7 +136,7 @@ describe 'Links', type: :integration do
             instances: 1
         )
         job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value"}}
+        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value", "fibonacci" => 1}}
         job_spec
       end
 
@@ -178,7 +178,7 @@ describe 'Links', type: :integration do
         vms = director.vms
         link_vm = find_vm(vms, 'other2', '0')
         template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}}])
+        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}, "fibonacci"=>1}])
 
         link_vm = find_vm(vms, 'new_job', '0')
         template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
@@ -1410,7 +1410,6 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).to eq(0)
     end
-
   end
 
   context 'when link is not satisfied in deployment' do

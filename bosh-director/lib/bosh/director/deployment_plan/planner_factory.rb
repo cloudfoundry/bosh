@@ -194,6 +194,8 @@ module Bosh
               if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
                 if default_properties['properties'][link_property].has_key?('default')
                   previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
+                else
+                  previous_property_in_loop[property_path.last()] = nil
                 end
               else
                 e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
