@@ -150,7 +150,6 @@ module Bosh::Director
           resolve_package_dependencies(@manifest[@packages_folder])
         end
 
-        @packages = {}
         process_packages(release_dir)
         process_jobs(release_dir)
 
@@ -202,7 +201,6 @@ module Bosh::Director
         new_packages = []
         existing_packages = []
         registered_packages = []
-        packages_existing_from_other_releases = []
 
         @manifest[@packages_folder].each do |package_meta|
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
@@ -261,7 +259,6 @@ module Bosh::Director
               end
             end
             new_packages << package_meta
-            packages_existing_from_other_releases << package_meta
           end
         end
 
@@ -277,7 +274,7 @@ module Bosh::Director
             }
           end
           all_package_refs = Array(created_package_refs) | Array(existing_package_refs) | registered_package_refs
-          create_compiled_packages(all_package_refs, release_dir, packages_existing_from_other_releases)
+          create_compiled_packages(all_package_refs, release_dir)
         else
           backfill_source_for_packages(registered_packages, release_dir)
         end
@@ -294,7 +291,6 @@ module Bosh::Director
             logger.info("Adding source for package '#{package_desc}'")
             had_effect |= save_package_source_blob(package, package_meta, release_dir)
             package.save
-            @packages[package.name] = package
           end
         end
 
@@ -364,11 +360,11 @@ module Bosh::Director
           end
         end
 
-        return package_refs
+        package_refs
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.
-      def create_compiled_packages(all_compiled_packages, release_dir, packages_existing_from_other_releases)
+      def create_compiled_packages(all_compiled_packages, release_dir)
         return false if all_compiled_packages.nil?
 
         event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
@@ -387,7 +383,7 @@ module Bosh::Director
           if existing_compiled_packages.empty?
             package_desc = "#{package.name}/#{package.version} for #{stemcell_os}/#{stemcell_version}"
             event_log.track(package_desc) do
-              other_compiled_packages = compiled_packages_matching(package, packages_existing_from_other_releases, stemcell)
+              other_compiled_packages = compiled_packages_matching(package, stemcell)
               if @fix
                 other_compiled_packages.each do |other_compiled_package|
                   fix_compiled_package(other_compiled_package, compiled_pkg_tgz)
@@ -398,7 +394,6 @@ module Bosh::Director
             end
           elsif @fix
             existing_compiled_package = existing_compiled_packages.first
-            @packages[existing_compiled_package.name] = existing_compiled_package
             fix_compiled_package(existing_compiled_package, compiled_pkg_tgz)
           end
         end
@@ -406,16 +401,12 @@ module Bosh::Director
         had_effect
       end
 
-      def compiled_packages_matching(package, packages_existing_from_other_releases, stemcell)
+      def compiled_packages_matching(package, stemcell)
         other_compiled_packages = []
         dependency_key = dependency_key(package)
-        packages_existing_from_other_releases.each do |other_package_meta|
-          if other_package_meta["fingerprint"] == package.fingerprint
-            packages = Models::Package.where(fingerprint: other_package_meta["fingerprint"]).all
-            packages.each do |pkg|
-              other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
-            end
-          end
+        packages = Models::Package.where(fingerprint: package.fingerprint).all
+        packages.each do |pkg|
+          other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
         end
         other_compiled_packages
       end
@@ -529,7 +520,6 @@ module Bosh::Director
       # @param [Models::Package] package Package model
       # @return [void]
       def register_package(package)
-        @packages[package.name] = package
         @release_version_model.add_package(package)
       end
 
@@ -591,7 +581,7 @@ module Bosh::Director
       end
 
       def create_job(job_meta, release_dir)
-        release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
+        release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
         logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " +
             'from provided bits')
         release_job.update(Models::Template.new())
@@ -608,7 +598,7 @@ module Bosh::Director
 
             if @fix
               logger.info("Fixing existing job '#{job_desc}'")
-              release_job = ReleaseJob.new(job_meta, @release_model, release_dir, @packages, logger)
+              release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
               release_job.update(template)
             else
               logger.info("Using existing job '#{job_desc}'")
