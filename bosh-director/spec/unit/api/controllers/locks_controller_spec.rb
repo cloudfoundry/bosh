@@ -31,7 +31,7 @@ module Bosh::Director
       end
 
       context 'when there are current locks' do
-        let(:lock_timeout) { Time.now }
+        let(:lock_timeout) { Time.now + 1.second }
 
         let(:lock_uid) { SecureRandom.uuid }
 
@@ -54,6 +54,33 @@ module Bosh::Director
             { 'type' => 'release', 'resource' => %w(test-release), 'timeout' => timeout_str },
             { 'type' => 'compile', 'resource' => %w(test-package test-stemcell), 'timeout' => timeout_str },
           ])
+        end
+      end
+
+      context 'when there are expired locks' do
+        let(:lock_uid) { SecureRandom.uuid }
+
+        before do
+          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: Time.now - 1.day)
+          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: Time.now - 1.second)
+          Models::Lock.make(name: 'lock:release:test-release', expired_at: Time.now - 1.minute)
+          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes)
+        end
+
+        it 'should not list any locks' do
+          get '/'
+          expect(last_response.status).to eq(200)
+
+          body = Yajl::Parser.parse(last_response.body)
+          expect(body).to be_empty
+        end
+
+        it 'should delete all locks that have expired more than a minute ago from the database' do
+          expect(Models::Lock.count).to eq 4
+
+          get '/'
+
+          expect(Models::Lock.map(&:name)).to eq ['lock:stemcells:test-stemcell']
         end
       end
     end
