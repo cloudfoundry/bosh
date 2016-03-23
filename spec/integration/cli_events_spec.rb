@@ -27,7 +27,7 @@ describe 'cli: events', type: :integration do
     expect(scrub_random_numbers(output)).to match_output %(
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | error: `foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |

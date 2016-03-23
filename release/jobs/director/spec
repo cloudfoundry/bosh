@@ -206,6 +206,9 @@ properties:
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # Events
+  director.events.record_events:
+    description: Enable recording of events to the database
+    default: false
   director.events.max_events:
     description: Max number of events to keep
     default: 10000

@@ -41,7 +41,8 @@ module Bosh::Director
 
       attr_reader(
         :db_config,
-        :ignore_missing_gateway
+        :ignore_missing_gateway,
+        :record_events,
       )
 
       def clear
@@ -154,6 +155,7 @@ module Bosh::Director
         @enable_post_deploy = config.fetch('enable_post_deploy', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
+        @record_events = config.fetch('record_events', false)
 
         Bosh::Clouds::Config.configure(self)
 
@@ -433,6 +435,10 @@ module Bosh::Director
 
     def get_uuid_provider
       Bosh::Director::Api::DirectorUUIDProvider.new(Config)
+    end
+
+    def record_events
+      hash.fetch('record_events', false)
     end
 
     private

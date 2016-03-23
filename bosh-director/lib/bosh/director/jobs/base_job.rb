@@ -69,7 +69,7 @@ module Bosh::Director
       end
 
       def event_manager
-        @event_manager ||= Api::EventManager.new
+        @event_manager ||= Api::EventManager.new(Config.record_events)
       end
     end
   end

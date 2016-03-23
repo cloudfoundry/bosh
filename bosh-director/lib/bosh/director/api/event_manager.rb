@@ -1,6 +1,9 @@
 module Bosh::Director
   module Api
     class EventManager
+      def initialize(record_events)
+        @record_events = record_events
+      end
 
       def event_to_hash(event)
         {
@@ -20,6 +23,10 @@ module Bosh::Director
       end
 
       def create_event(options)
+        unless @record_events
+          return Models::Event.new
+        end
+
         parent_id   = options.fetch(:parent_id, nil)
         user        = options[:user]
         action      = options[:action]

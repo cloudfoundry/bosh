@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::Api::EventManager do
-  let(:manager) { described_class.new }
+  let(:manager) { described_class.new(true) }
 
   describe '#store_event' do
     it 'should create a new event model' do
