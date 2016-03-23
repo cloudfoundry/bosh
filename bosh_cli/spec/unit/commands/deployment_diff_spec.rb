@@ -188,6 +188,27 @@ Detecting deployment changes
         end
       end
 
+      context 'when diffing incompatible manifests' do
+        let(:diff_json) do
+          {
+            'context' => {'cloud_config_id' => 47},
+            'diff' => [],
+            'error' => 'Unable to diff manifest: something went wrong'
+          }
+        end
+
+        it 'displays the error returned by the controller' do
+          output = ''
+          allow(Bosh::Cli::Config).to receive_message_chain(:output, :print) do |e|
+            output += e
+          end
+
+          deployment_diff.print(options)
+
+          expect(output).to include('Unable to diff manifest:')
+        end
+      end
+
       it 'returns update config' do
         expect(deployment_diff.print(options)).to eq({'cloud_config_id' => 47})
       end

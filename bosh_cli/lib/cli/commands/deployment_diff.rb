@@ -10,6 +10,7 @@ module Bosh::Cli::Command
         no_redact = options[:no_redact]
         changes = @director.diff_deployment(@manifest.name, @manifest.yaml, no_redact)
         diff = changes['diff']
+        error = changes['error']
 
         header('Detecting deployment changes')
 
@@ -38,6 +39,8 @@ module Bosh::Cli::Command
             end
           end
         end
+
+        say(error) if error
 
         changes['context']
       rescue Bosh::Cli::ResourceNotFound
