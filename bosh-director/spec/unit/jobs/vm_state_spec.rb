@@ -236,7 +236,7 @@ module Bosh::Director
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
-            expect(status['job_state']).to eq('missing vm')
+            expect(status['job_state']).to eq(nil)
           end
 
           expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
