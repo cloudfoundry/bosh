@@ -10,7 +10,6 @@ module Bosh::Director
     let!(:instance2) { Models::Instance.make(deployment: deployment) }
     let!(:instance3) { Models::Instance.make(deployment: deployment) }
     let!(:instance4) { Models::Instance.make }
-    let!(:instance5) { Models::Instance.make(deployment: deployment, vm_cid: nil) }
 
     subject { described_class.new(deployment_name) }
 
@@ -38,11 +37,12 @@ module Bosh::Director
       end
 
       context 'when vm is not attached' do
+        let!(:instance5) { Models::Instance.make(deployment: deployment, vm_cid: nil) }
+
         it 'should snapshot all instance that have a vms attached' do
-          expect(subject).to receive(:snapshot).with(instance1)
-          expect(subject).to receive(:snapshot).with(instance2)
-          expect(subject).to receive(:snapshot).with(instance3)
-          expect(subject).to receive(:snapshot).with(instance5).and_return(nil)
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
           expect(Api::SnapshotManager).not_to receive(:take_snapshot).with(instance5, {})
 
           expect(subject.perform).to eq "snapshots of deployment 'deployment' created"
