@@ -837,6 +837,21 @@ module Bosh::Director
                   'description' => 'Manifest should not be empty',
               )
             end
+
+            it 'returns 200 with an empty diff and an error message if the diffing fails' do
+              jobAsAHashInsteadOfArray = {}
+              post '/fake-dep-name/diff', {'jobs' => jobAsAHashInsteadOfArray, 'releases' => [{'name' => 'simple', 'version' => 5}]}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)).to eq(
+                  'context' => {
+                    'cloud_config_id' => 1,
+                    'runtime_config_id' => 1
+                  },
+                  'diff' => [],
+                  'error' => "Unable to diff manifest: undefined method `deep_merge' for []:Array"
+                )
+            end
           end
 
           context 'accessing with invalid credentials' do
@@ -1220,7 +1235,7 @@ jobs: [{'name': 'test', 'properties': { 'a': 'super-secret'}}]
               expect(get('/',).status).to eq(200)
               expect(get('/owned_deployment').status).to eq(200)
               expect(get('/owned_deployment/vms').status).to eq(200)
-              # expect(get('/no_deployment/errands').status).to eq(200)
+              expect(get('/no_deployment/errands').status).to eq(404)
             end
           end
         end
