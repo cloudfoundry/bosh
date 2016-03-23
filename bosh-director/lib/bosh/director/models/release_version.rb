@@ -12,7 +12,9 @@ module Bosh::Director::Models
     end
 
     def package_by_name(package_name)
-      packages_by_name.fetch(package_name)
+      packages_by_name.fetch(package_name) do
+        raise "Package name '#{package_name}' not found in release '#{release.name}/#{version}'"
+      end
     end
 
     private
