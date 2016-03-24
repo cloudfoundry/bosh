@@ -739,5 +739,38 @@ module Bosh::Director
       end
     end
 
+    context 'property was an array, but is now a hash' do
+      let(:old) do
+        {
+          'stuff' => {
+            'things' => ['apples', 'oranges', 'bananas']
+          }
+        }
+      end
+
+      let(:new) do
+        {
+          'stuff' => {
+            'things' => {
+              'cheese' => 123,
+              'wine' => 456
+            }
+          }
+        }
+      end
+
+      it 'treats subnets with the same range as equivalent' do
+        expect(changeset).to eq([
+          ['stuff:', nil],
+          ['  things:', 'removed'],
+          ['  - apples', 'removed'],
+          ['  - oranges', 'removed'],
+          ['  - bananas', 'removed'],
+          ['  things:', 'added'],
+          ['    cheese: 123', 'added'],
+          ['    wine: 456', 'added'],
+        ])
+      end
+    end
   end
 end

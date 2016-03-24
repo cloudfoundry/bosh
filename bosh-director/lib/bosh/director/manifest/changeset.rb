@@ -39,8 +39,12 @@ module Bosh::Director
         elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
           lines.concat(compare_arrays(@before[key], @after[key], @redacted_before[key], @redacted_after[key], key, indent))
 
+        elsif @before[key].is_a?(Array) && @after[key].is_a?(Hash)
+          lines.concat(yaml_lines({key => @redacted_before[key]}, indent, 'removed'))
+          lines.concat(yaml_lines({key => @redacted_after[key]}, indent, 'added'))
+
         elsif value.is_a?(Hash)
-          changeset = Changeset.new(@before[key], @after[key],@redact, @redacted_before[key], @redacted_after[key])
+          changeset = Changeset.new(@before[key], @after[key], @redact, @redacted_before[key], @redacted_after[key])
           diff_lines = changeset.diff(indent+1)
           unless diff_lines.empty?
             lines << Line.new(indent, "#{key}:", nil)
@@ -62,6 +66,8 @@ module Bosh::Director
       end
       lines
     end
+
+    private
 
     def compare_arrays(old_value, new_value, redacted_old_value, redacted_new_value, parent_name, indent)
       # combine arrays of redacted and unredacted values. unredacted arrays for diff logic, and redacted arrays for output
