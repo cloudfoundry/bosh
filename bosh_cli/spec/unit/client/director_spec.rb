@@ -623,7 +623,7 @@ jobs:
             to_return(status: 200, body: '{}')
           expect(@director).to receive(:post).with('/deployments/foo/diff?redact=false', 'text/yaml', manifest)
                                  .and_return([200, '{}'])
-          @director.diff_deployment('foo', manifest, false)
+          @director.diff_deployment('foo', manifest, true)
         end
       end
     end

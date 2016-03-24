@@ -33,19 +33,7 @@ module Bosh::Director
     end
 
     def diff(other_manifest, redact)
-      new_manifest = other_manifest.to_hash
-      old_manifest = to_hash
-
-      if redact
-        new_manifest = Redactor.mark_properties_for_redaction(new_manifest)
-        old_manifest = Redactor.mark_properties_for_redaction(old_manifest)
-      end
-
-      change_set = Changeset.new(old_manifest, new_manifest).diff.order
-
-      change_set = Redactor.redact_difflines_marked_for_redaction(change_set) if redact
-
-      change_set
+      Changeset.new(to_hash, other_manifest.to_hash, redact).diff.order
     end
 
     def to_hash
