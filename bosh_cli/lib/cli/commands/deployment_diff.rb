@@ -7,8 +7,7 @@ module Bosh::Cli::Command
 
     def print(options)
       begin
-        no_redact = options[:no_redact]
-        changes = @director.diff_deployment(@manifest.name, @manifest.yaml, no_redact)
+        changes = @director.diff_deployment(@manifest.name, @manifest.yaml)
         diff = changes['diff']
 
         header('Detecting deployment changes')

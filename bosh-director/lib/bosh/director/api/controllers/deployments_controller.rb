@@ -369,9 +369,7 @@ module Bosh::Director
         )
         after_manifest.resolve_aliases
 
-        redact =  params['redact'] != 'false'
-
-        diff = before_manifest.diff(after_manifest, redact)
+        diff = before_manifest.diff(after_manifest)
 
         json_encode({
             'context' => {

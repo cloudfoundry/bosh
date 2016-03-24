@@ -103,7 +103,6 @@ require 'bosh/director/sequel'
 require 'common/thread_pool'
 
 require 'bosh/director/manifest/manifest'
-require 'bosh/director/manifest/redactor'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/diff_lines'
 
