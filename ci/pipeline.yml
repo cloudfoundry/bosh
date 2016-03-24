@@ -251,13 +251,13 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
+      branch: {{branch}}
 
   - name: bosh-load-tests-workspace
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-      branch: master
+      branch: {{branch}}
 
   - name: bosh-candidate
     type: git
