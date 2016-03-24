@@ -298,6 +298,16 @@ module Bosh::Director
           allow(result_file).to receive(:write)
         }
 
+        it 'should order the files in the tarball' do
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create)
+          expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
+            expect(sources).to eq(['release.MF', 'jobs', 'compiled_packages'])
+            File.write(output_path, 'Some glorious content')
+          }
+          job.perform
+        end
+
         it 'should contain all compiled packages & jobs' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
 
