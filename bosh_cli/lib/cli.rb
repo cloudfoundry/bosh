@@ -43,6 +43,7 @@ end
 
 require 'common/common'
 require 'common/exec'
+require 'common/release/release_directory'
 require 'common/version/release_version'
 require 'common/version/release_version_list'
 require 'common/version/bosh_version'
