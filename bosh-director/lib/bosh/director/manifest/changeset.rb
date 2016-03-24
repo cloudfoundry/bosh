@@ -30,6 +30,8 @@ module Bosh::Director
       end
     end
 
+    # redacts properties from ruby object to avoid having to use a regex to redact properties from diff output
+    # please do not use regexes for diffing/redacting
     def self.redact_properties!(obj, redact_key_is_ancestor = false)
       if redact_key_is_ancestor
         if obj.respond_to?(:key?)
@@ -65,30 +67,38 @@ module Bosh::Director
       obj
     end
 
-    def diff(indent = 0)
+    def diff(redact=true, indent = 0)
       lines = DiffLines.new
+
+      if redact
+        output_values_before = @redacted_before
+        output_values_after = @redacted_after
+      else
+        output_values_before = @before
+        output_values_after = @after
+      end
 
       @merged.each_pair do |key, value|
         if @before.nil? || @before[key].nil?
-          lines.concat(yaml_lines({key => @redacted_after[key]}, indent, 'added'))
+          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
 
         elsif @after.nil? || @after[key].nil?
-          lines.concat(yaml_lines({key => @redacted_before[key]}, indent, 'removed'))
+          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
 
         elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
-          lines.concat(compare_arrays(@before[key], @after[key], @redacted_before[key], @redacted_after[key], key, indent))
+          lines.concat(compare_arrays(@before[key], @after[key], output_values_before[key], output_values_after[key], key, redact, indent))
 
         elsif value.is_a?(Hash)
-          changeset = Changeset.new(@before[key], @after[key], @redacted_before[key], @redacted_after[key])
-          diff_lines = changeset.diff(indent+1)
+          changeset = Changeset.new(@before[key], @after[key], output_values_before[key], output_values_after[key])
+          diff_lines = changeset.diff(redact, indent+1)
           unless diff_lines.empty?
             lines << Line.new(indent, "#{key}:", nil)
             lines.concat(diff_lines)
           end
 
         elsif @before[key] != @after[key]
-          lines.concat(yaml_lines({key => @redacted_before[key]}, indent, 'removed'))
-          lines.concat(yaml_lines({key => @redacted_after[key]}, indent, 'added'))
+          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
+          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
         end
       end
       lines
@@ -102,10 +112,10 @@ module Bosh::Director
       lines
     end
 
-    def compare_arrays(old_value, new_value, redacted_old_value, redacted_new_value, parent_name, indent)
+    def compare_arrays(old_value, new_value, output_old_value, output_new_value, parent_name, redact, indent)
       # combine arrays of redacted and unredacted values. unredacted arrays for diff logic, and redacted arrays for output
-      combined_old_value = old_value.zip redacted_old_value
-      combined_new_value = new_value.zip redacted_new_value
+      combined_old_value = old_value.zip output_old_value
+      combined_new_value = new_value.zip output_new_value
       added = combined_new_value - combined_old_value
       removed = combined_old_value - combined_new_value
 
@@ -127,7 +137,7 @@ module Bosh::Director
 
             if removed_same_name_element
               changeset = Changeset.new(removed_same_name_element.first, elem, removed_same_name_element.last, redacted_elem)
-              diff_lines = changeset.diff(indent+1)
+              diff_lines = changeset.diff(redact, indent+1)
 
               unless diff_lines.empty?
                 # write name if elem has been changed

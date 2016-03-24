@@ -127,6 +127,8 @@ lines"}
           upload_cloud_config(cloud_config_hash: new_cloud_config)
           output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
+          puts output
+
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
           expect(output).to match(/  resource_pools:
@@ -161,6 +163,18 @@ lines"}
 \+     new_property: "?<redacted>"?
 /)
 
+        end
+
+        context 'option --no-redact' do
+          it 'shows a diff of the manifest with cloud config changes and not redacted properties' do
+            deploy_from_scratch(manifest_hash: old_manifest)
+            upload_cloud_config(cloud_config_hash: new_cloud_config)
+            output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true, no_redact: true)
+
+            expect(output).to_not include('stemcell')
+            expect(output).to_not include('releases')
+            expect(output).to_not match(/<redacted>/)
+          end
         end
       end
     end
