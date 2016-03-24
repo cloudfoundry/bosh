@@ -3,6 +3,8 @@ require 'spec_helper'
 describe Bosh::Director::Api::CloudConfigManager do
   subject(:manager) { Bosh::Director::Api::CloudConfigManager.new }
   let(:valid_cloud_manifest) { Psych.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:user) {'username-1'}
+  let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
 
   describe '#update' do
     it 'saves the cloud config' do

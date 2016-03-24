@@ -12,6 +12,7 @@ provides:
   properties:
   - listen_port
   - name_space.prop_a
+  - name_space.fibonacci
 
 properties:
   listen_port:
@@ -20,3 +21,5 @@ properties:
   name_space.prop_a:
     description: "a name spaced property"
     default: "default"
+  name_space.fibonacci:
+    description: "has no default value"

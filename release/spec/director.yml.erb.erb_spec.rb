@@ -44,6 +44,11 @@ describe 'director.yml.erb.erb' do
             'max_orphaned_age_in_days' => 3,
             'cleanup_schedule' => '0 0,30 * * * * UTC',
           },
+          'events' => {
+            'record_events' => false,
+            'max_events' => 10000,
+            'cleanup_schedule' => '0 * * * * * UTC'
+          },
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',
@@ -144,6 +149,32 @@ describe 'director.yml.erb.erb' do
           'all_the_things' => true
         }
       })
+    end
+
+    context 'events configuration' do
+      context 'when enabled' do
+        before do
+          deployment_manifest_fragment['properties']['director']['events']['record_events'] = true
+        end
+
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(true)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to include('ScheduledEventsCleanup')
+        end
+      end
+
+      context 'when disabled' do
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(false)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
+        end
+      end
     end
   end
 

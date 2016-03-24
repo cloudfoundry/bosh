@@ -5,8 +5,14 @@ module Bosh::Director
 
     subject(:package_dependency_manager){ PackageDependenciesManager.new(release_version) }
 
+    let(:release) do
+      Models::Release.make(name: 'that-release')
+    end
+
     let(:release_version) do
       release_version = Models::ReleaseVersion.new
+      release_version.release = release
+      release_version.version = '1'
       release_version.packages << package1
       release_version.packages << package2
       release_version.packages << package3
@@ -55,7 +61,7 @@ module Bosh::Director
 
           expect {
             package_dependency_manager.transitive_dependencies(package2)
-          }.to raise_error 'key not found: "package3"'
+          }.to raise_error "Package name 'package3' not found in release 'that-release/1'"
         end
       end
     end
@@ -73,7 +79,7 @@ module Bosh::Director
 
           expect {
             package_dependency_manager.dependencies(package2)
-          }.to raise_error 'key not found: "package3"'
+          }.to raise_error "Package name 'package3' not found in release 'that-release/1'"
         end
       end
     end

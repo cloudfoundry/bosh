@@ -29,13 +29,18 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(TOMCAT_DIR)
 
       tomcat_url = "https://s3.amazonaws.com/bosh-dependencies/#{TOMCAT_VERSIONED_FILENAME}.tar.gz"
-      out = `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
-      raise out unless $? == 0
+
+      retryable.retryer do
+        `curl -L #{tomcat_url} | (cd #{INSTALL_DIR} && tar xfz -)`
+        $? == 0
+      end
 
       uaa_url = "https://s3.amazonaws.com/bosh-dependencies/#{UAA_VERSION}.war"
 
-      out = `curl --output #{webapp_path} -L #{uaa_url}`
-      raise out unless $? == 0
+      retryable.retryer do
+        `curl --output #{webapp_path} -L #{uaa_url}`
+        $? == 0
+      end
     end
 
     def start
@@ -58,6 +63,10 @@ module Bosh::Dev::Sandbox
     end
 
     private
+
+    def self.retryable
+      Bosh::Retryable.new({tries: 6})
+    end
 
     def uaa_process
       return @uaa_process if @uaa_process

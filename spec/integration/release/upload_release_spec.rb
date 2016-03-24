@@ -553,6 +553,25 @@ describe 'upload release', type: :integration do
     end
   end
 
+  describe 'uploading two compiled releases that both have an identical compiled package' do
+    before do
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    end
+
+    it 'should find the common compiled package uploaded in the first release when uploading the second release' do
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to include('Release uploaded')
+
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-different-name-51-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to include('Release uploaded')
+
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-2.tgz')}")
+      expect(output).to include('Release uploaded')
+      expect(output).to include('hello-go (b3df8c27c4525622aacc0d7013af30a9f2195393) SKIP')
+    end
+  end
+
   describe 'uploading release with --fix' do
     def get_blob_ids(table_string)
       table_string.lines.inject([]) do |result, line|

@@ -155,7 +155,7 @@ module Bosh::Director
       context 'when redact is false' do
         let(:redact) { false }
 
-        it 'redacts properties' do
+        it 'doesn\'t redact properties' do
           expect(diff).to_not include('<redacted>')
         end
       end

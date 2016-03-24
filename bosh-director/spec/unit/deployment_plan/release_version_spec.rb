@@ -120,14 +120,14 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect(release.get_template_model_by_name('stager')).to eq(nil)
 
       expect(release.get_package_model_by_name('ruby18')).to eq(p1)
-      expect { release.get_package_model_by_name('ruby19') }.to raise_error /key not found/
-      expect { release.get_package_model_by_name('ruby20') }.to raise_error /key not found/
+      expect { release.get_package_model_by_name('ruby19') }.to raise_error /Package name 'ruby19' not found in release 'foo\/42'/
+      expect { release.get_package_model_by_name('ruby20') }.to raise_error /Package name 'ruby20' not found in release 'foo\/42'/
 
       release = make(deployment, {'name' => 'bar', 'version' => '55'})
       release.bind_model
       expect(release.get_template_model_by_name('dea')).to eq(nil)
       expect(release.get_template_model_by_name('stager')).to eq(t2)
-      expect { release.get_package_model_by_name('ruby18') }.to raise_error /key not found/
+      expect { release.get_package_model_by_name('ruby18') }.to raise_error /Package name 'ruby18' not found in release 'bar\/55'/
       expect(release.get_package_model_by_name('ruby19')).to eq(p2)
       expect(release.get_package_model_by_name('ruby20')).to eq(p3)
     end

@@ -81,14 +81,12 @@ module Bosh::Cli::Command
     usage 'deploy'
     desc 'Deploy according to the currently selected deployment manifest'
     option '--recreate', 'Recreate all VMs in deployment'
-    option '--redact-diff', 'Redact manifest value changes in deployment'
-    option '--no-redact', 'do not redact'
+    option '--no-redact', 'Redact manifest value changes in deployment'
     option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
-
     def perform
       auth_required
-      recreate = !!options[:recreate]
 
+      recreate = !!options[:recreate]
       redact_diff = !!options[:no_redact].nil?
 
       manifest = build_manifest

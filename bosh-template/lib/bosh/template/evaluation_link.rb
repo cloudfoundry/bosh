@@ -26,12 +26,12 @@ module Bosh
       def if_p(*names)
         values = names.map do |name|
           value = lookup_property(@properties, name)
-          return ActiveElseBlock.new(self) if value.nil?
+          return Bosh::Template::EvaluationContext::ActiveElseBlock.new(self) if value.nil?
           value
         end
 
         yield *values
-        InactiveElseBlock.new
+        Bosh::Template::EvaluationContext::InactiveElseBlock.new
       end
     end
   end

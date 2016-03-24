@@ -5,9 +5,15 @@ module Bosh::Director
     class CloudConfigsController < BaseController
       post '/', :consumes => :yaml do
         manifest_text = request.body.read
-        validate_manifest_yml(manifest_text)
+        begin
+          validate_manifest_yml(manifest_text)
+          Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
+          create_event
+        rescue => e
+          create_event e
+          raise e
+        end
 
-        Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
         status(201)
       end
 
@@ -35,6 +41,16 @@ module Bosh::Director
             }
         end
         )
+      end
+
+      private
+      def create_event(error = nil)
+        @event_manager.create_event({
+            user:        current_user,
+            action:      "update",
+            object_type: "cloud-config",
+            error:       error
+        })
       end
     end
   end

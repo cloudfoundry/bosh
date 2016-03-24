@@ -9,7 +9,6 @@ module Bosh::Director
     def full_indent
       indent + text[/^ */].size / INDENT
     end
-
   end
 
   class DiffLines < Array

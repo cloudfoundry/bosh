@@ -202,6 +202,20 @@ describe Bosh::Cli::Client::Director do
       end
     end
 
+    describe '#list_events' do
+      it 'can list events before a given id' do
+        expect(@director).to receive(:get).with('/events?before_id=4', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({before_id: 4})
+      end
+
+      it 'can list all events' do
+        expect(@director).to receive(:get).with('/events', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events
+      end
+    end
+
     it 'creates user' do
       expect(@director).to receive(:post).
         with('/users', 'application/json',

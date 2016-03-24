@@ -4,22 +4,21 @@ describe 'cli: locks', type: :integration do
   include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
-  context 'when a deployment is in progress' do
-    it 'lists a deployment lock' do
+  context 'when a previous task fails' do
+    it 'returns no locks' do
       prepare_for_deploy
 
-      with_blocking_deploy do
-        output = bosh_runner.run_until_succeeds('locks', number_of_retries: 30)
-        expect(output).to match(/\s*\|\s*deployment\s*\|\s*blocking\s*\|/)
-      end
-    end
-  end
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 1, template: 'job_with_blocking_compilation')
+      Bosh::Spec::DeployHelper.start_deploy(manifest)
 
-  context 'when nothing is in progress' do
-    it 'returns no locks' do
-      target_and_login
-      expect { bosh_runner.run('locks') }
-        .to raise_error(RuntimeError, /No locks/)
+      director.wait_for_first_available_vm
+
+      expect(bosh_runner.run('locks')).to match(/\s*\|\s*deployment\s*\|\s*blocking\s*\|/)
+
+      current_sandbox.director_service.hard_stop
+      current_sandbox.director_service.start(current_sandbox.director_config)
+
+      waiter.wait(10) {expect(bosh_runner.run('locks')).to match /No locks/}
     end
   end
 end

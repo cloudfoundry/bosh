@@ -136,7 +136,7 @@ describe 'Links', type: :integration do
             instances: 1
         )
         job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value"}}
+        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value", "fibonacci" => 1}}
         job_spec
       end
 
@@ -178,7 +178,7 @@ describe 'Links', type: :integration do
         vms = director.vms
         link_vm = find_vm(vms, 'other2', '0')
         template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}}])
+        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}, "fibonacci"=>1}])
 
         link_vm = find_vm(vms, 'new_job', '0')
         template = YAML.load(link_vm.read_job_template('http_proxy_with_requires', 'config/config.yml'))
@@ -799,7 +799,7 @@ Error 100: Unable to process links for deployment. Errors are:
       let(:first_node_job_spec) do
         Bosh::Spec::Deployments.simple_job(
           name: 'first_node',
-          templates: [{'name' => 'node', 'consumes' => first_node_links}],
+          templates: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           azs: ["z1"]
@@ -809,14 +809,14 @@ Error 100: Unable to process links for deployment. Errors are:
       let(:first_node_links) do
         {
           'node1' => {'from' => 'simple.node1'},
-          'node2' => {'from' => 'simple.node2'}
+          'node2' => {'from' => 'alias2'}
         }
       end
 
       let(:second_node_job_spec) do
         Bosh::Spec::Deployments.simple_job(
           name: 'second_node',
-          templates: [{'name' => 'node', 'consumes' => second_node_links}],
+          templates: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.11'],
           azs: ["z1"]
@@ -835,15 +835,10 @@ Error 100: Unable to process links for deployment. Errors are:
         puts output
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
-        expect(output).to include("Error 100: Unable to process links for deployment. Errors are:
-   - \"Cannot resolve ambiguous link 'simple.first_node.node.node1\' in deployment simple:
-     simple.first_node.node.node1
-     simple.second_node.node.node1\"
-   - \"Cannot resolve ambiguous link 'simple.first_node.node.node2' in deployment simple:
-     simple.first_node.node.node2
-     simple.second_node.node.node2\"
-   - \"Can't find deployment broken\"
-   - \"Can't find deployment other\"")
+        expect(output).to include("Cannot resolve ambiguous link 'node1' (job: node, instance group: first_node). All of these match:")
+        expect(output).to include("Cannot resolve ambiguous link 'alias2' (job: node, instance group: first_node). All of these match:")
+        expect(output).to include("Can't find deployment broken")
+        expect(output).to include("Can't find deployment other")
       end
   end
 
@@ -1410,7 +1405,6 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).to eq(0)
     end
-
   end
 
   context 'when link is not satisfied in deployment' do
@@ -1438,9 +1432,9 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error 100: Unable to process links for deployment. Errors are:
-   - \"Can't find link with type: 'bad_link' in deployment 'simple'\"
-   - \"Can't find link with type: 'bad_link_2' in deployment 'simple'\"
-   - \"Can't find link with type: 'bad_link_3' in deployment 'simple'\"")
+   - \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
+   - \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
+   - \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
     end
   end
 end

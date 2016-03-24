@@ -42,3 +42,4 @@ user_management:
   local:
     users:
     - {name: admin, password: admin}
+record_events: true

@@ -124,6 +124,14 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_events(options={})
+          if options[:before_id]
+            get_json("/events?before_id=#{options[:before_id]}")
+          else
+            get_json('/events')
+          end
+        end
+
         def list_errands(deployment_name)
           get_json("/deployments/#{deployment_name}/errands")
         end
@@ -279,11 +287,10 @@ module Bosh
           redact_param = redact_diff ? '' : '?redact=false'
           uri = "/deployments/#{name}/diff#{redact_param}"
           status, body = post(uri, 'text/yaml', manifest_yaml)
-
           if status == 200
             JSON.parse(body)
           else
-            err(parse_error_message(status, body, uri))
+            err(parse_error_message(status, body))
           end
         end
 

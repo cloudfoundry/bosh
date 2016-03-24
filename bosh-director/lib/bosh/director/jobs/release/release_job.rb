@@ -3,13 +3,12 @@ module Bosh::Director
 
     attr_accessor :packages
 
-    def initialize(job_meta, release_model, release_dir, packages, logger)
+    def initialize(job_meta, release_model, release_dir, logger)
       @name = job_meta['name']
       @version = job_meta['version']
       @sha1 = job_meta['sha1']
       @fingerprint = job_meta['fingerprint']
 
-      @packages = packages
       @release_model = release_model
       @release_dir = release_dir
       @logger = logger
@@ -63,8 +62,8 @@ module Bosh::Director
       result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
       if result.failed?
         @logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
-            "tar returned #{result.exit_status}, " +
-            "output: #{result.output}")
+          "tar returned #{result.exit_status}, " +
+          "output: #{result.output}")
         raise JobInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
       end
     end
@@ -109,24 +108,10 @@ module Bosh::Director
     end
 
     def parse_package_names(job_manifest)
-      package_names = []
-      if job_manifest['packages']
-        unless job_manifest['packages'].is_a?(Array)
-          raise JobInvalidPackageSpec,
-            "Job '#{@name}' has invalid package spec format"
-        end
-
-        job_manifest['packages'].each do |package_name|
-          package = @packages[package_name]
-          if package.nil?
-            raise JobMissingPackage,
-              "Job '#{@name}' is referencing " +
-                "a missing package '#{package_name}'"
-          end
-          package_names << package.name
-        end
+      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
+        raise JobInvalidPackageSpec, "Job '#{@name}' has invalid package spec format"
       end
-      package_names
+      job_manifest['packages'] || []
     end
 
     def validate_logs(job_manifest)
@@ -155,7 +140,7 @@ module Bosh::Director
     def parse_links(links, kind)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-              "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
+          "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}
