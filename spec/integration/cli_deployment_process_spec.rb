@@ -171,35 +171,6 @@ describe 'cli: deployment process', type: :integration do
             expect(output).to_not match(/<redacted>/)
           end
         end
-
-        context 'when the data type of a property differs between manifests' do
-          let(:new_manifest) do
-            new_manifest = Bosh::Spec::Deployments.simple_manifest
-
-            new_job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'job1',
-              templates: [{'name' => 'foobar_without_packages'}]
-            )
-            new_job_spec['properties'] = {
-              'foobar' => { 'foo' => "bar\nbaz"},
-              'array_property' => {}, # use a hash instead of an array
-              'hash_array_property' => [{'a' => 'b'}, {'b' => 'd'}, {'e' => 'f'}],
-              'name_range_hash_array_property' => [{'name' => 'new_name'}, {'range' => 'new_range'}],
-              'new_property' => 'add_me'}
-
-            new_manifest['jobs'] = [new_job_spec]
-            new_manifest['releases'].first['version'] = 'latest'
-            new_manifest
-          end
-
-          it 'displays an error, but deploy succeeds' do
-            deploy_from_scratch(manifest_hash: old_manifest)
-            upload_cloud_config(cloud_config_hash: new_cloud_config)
-            output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
-
-            expect(output).to include('Unable to diff manifest')
-          end
-        end
       end
     end
 
