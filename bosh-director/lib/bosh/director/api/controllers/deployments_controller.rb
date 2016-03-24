@@ -370,15 +370,23 @@ module Bosh::Director
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'
-        diff = before_manifest.diff(after_manifest, redact)
 
-        json_encode({
-            'context' => {
-              'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
-              'runtime_config_id' => after_runtime_config ? after_runtime_config.id : nil
-            },
-            'diff' => diff.map { |l| [l.to_s, l.status] }
-          })
+        result = {
+          'context' => {
+            'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+            'runtime_config_id' => after_runtime_config ? after_runtime_config.id : nil
+          }
+        }
+
+        begin
+          diff = before_manifest.diff(after_manifest, redact)
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff manifest: #{error}"
+        end
+
+        json_encode(result)
       end
 
       post '/:deployment/errands/:errand_name/runs' do

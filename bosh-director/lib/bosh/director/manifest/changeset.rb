@@ -88,6 +88,10 @@ module Bosh::Director
         elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
           lines.concat(compare_arrays(@before[key], @after[key], output_values_before[key], output_values_after[key], key, redact, indent))
 
+        elsif @before[key].is_a?(Array) && @after[key].is_a?(Hash)
+          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
+          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
+
         elsif value.is_a?(Hash)
           changeset = Changeset.new(@before[key], @after[key], output_values_before[key], output_values_after[key])
           diff_lines = changeset.diff(redact, indent+1)
