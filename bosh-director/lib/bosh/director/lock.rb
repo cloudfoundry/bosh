@@ -27,6 +27,11 @@ module Bosh::Director
     #   the lock.
     # @return [void]
     def lock
+      puts "Someone is trying to lock a resource"
+      puts caller[0]
+      puts "Number of threads running when trying to lock: #{Thread.list.count}"
+      puts "And the threads are:"
+      Thread.list.map {|t| puts t.backtrace; puts "\n"}
       acquire
 
       @refresh_thread = Thread.new do
@@ -52,6 +57,7 @@ module Bosh::Director
         begin
           yield
         ensure
+          puts("ensuring release...")
           release
         end
       end
@@ -68,7 +74,7 @@ module Bosh::Director
     private
 
     def acquire
-      @logger.debug("Acquiring lock: #@name")
+      @logger.debug("Acquiring lock: #{@name}")
       started = Time.now
 
       lock_expiration = Time.now.to_f + @expiration + 1
@@ -92,15 +98,18 @@ module Bosh::Director
       end
 
       @lock_expiration = lock_expiration
-      @logger.debug("Acquired lock: #@name")
+      @logger.debug("Acquired lock: #{@name}")
+      puts("Acquired lock: #{@name}")
     end
 
 
     def delete
       if Models::Lock.where(name: @name, uid: @uid).delete > 0
         @logger.debug("Deleted lock: #{@name} uid: #{@uid}")
+        puts("Deleted lock: #{@name} uid: #{@uid}")
       else
         @logger.debug("Can not find lock: #{@name} - uid: #{@uid}")
+        puts("Can not find lock: #{@name} - uid: #{@uid}")
       end
     end
 

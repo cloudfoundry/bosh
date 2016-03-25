@@ -103,7 +103,7 @@ namespace :spec do
 
   def unit_cmd(build, log_file = nil)
     "".tap do |cmd|
-      cmd << "rspec --tty --backtrace -c -f p #{unit_files(build)}"
+      cmd << "rspec --tty --backtrace -c -f d #{unit_files(build)}"
       cmd << " > #{log_file} 2>&1" if log_file
     end
   end
@@ -132,6 +132,7 @@ namespace :spec do
 
       max_threads = ENV.fetch('BOSH_MAX_THREADS', 10).to_i
       null_logger = Logging::Logger.new('Ignored')
+
       Bosh::ThreadPool.new(max_threads: max_threads, logger: null_logger).wrap do |pool|
         unit_builds.each do |build|
           pool.process do
