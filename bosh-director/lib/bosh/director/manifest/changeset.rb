@@ -1,10 +1,3 @@
-class ::Hash
-  def deep_merge(second)
-    merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
-    self.merge(second, &merger)
-  end
-end
-
 module Bosh::Director
   class Changeset
     KEY_NAME = 'name'
@@ -22,7 +15,7 @@ module Bosh::Director
       @after = after
 
       if @before && @after
-        @merged = @before.deep_merge(@after)
+        @merged = deep_merge(@before, @after)
       elsif @before
         @merged = @before
       else
@@ -104,6 +97,13 @@ module Bosh::Director
         end
       end
       lines
+    end
+
+    private
+
+    def deep_merge(first, second)
+      merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
+      first.merge(second, &merger)
     end
 
     def yaml_lines(value, indent, state)
