@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       def all_by_name_asc
-        Bosh::Director::Models::Deployment.order_by(:name.asc).all
+        Bosh::Director::Models::Deployment.order_by(Sequel.asc(:name)).all
       end
 
       def create_deployment(username, deployment_manifest_file_path, cloud_config, runtime_config, deployment_name, options = {})
