@@ -1,0 +1,25 @@
+---
+platform: linux
+
+image: docker:///bosh/compiled-release
+
+inputs:
+  - name: bosh-src
+  - name: bosh-release
+  - name: bosh-aws-cpi-release
+  - name: stemcell
+
+outputs:
+  - name: director-state
+
+run:
+  path: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.sh
+
+params:
+  BOSH_INIT_ACCESS_KEY: required
+  BOSH_INIT_SECRET_KEY: required
+  BOSH_SSH_TUNNEL_KEY:  required
+  BOSH_TARGET_IP: required
+  BOSH_USERNAME: admin
+  BOSH_PASSWORD: admin
+  BOSH_RESERVED_RANGES: required
