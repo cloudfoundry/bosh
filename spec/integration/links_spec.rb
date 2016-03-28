@@ -1370,6 +1370,22 @@ Error 100: Unable to process links for deployment. Errors are:
       job_spec
     end
 
+    let (:job_with_manual_consumes_link) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'property_job',
+          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'manual_config' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}}],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+          properties: {}
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
     let(:job_with_link_properties_not_defined_in_release_properties) do
       job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'jobby',
@@ -1404,6 +1420,22 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).to eq(0)
+    end
+
+    it 'should be able to resolve a manual configuration in a consumes link' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['jobs'] = [job_with_manual_consumes_link]
+
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      expect(exit_code).to eq(0)
+
+      link_vm = director.vm('property_job', '0')
+
+      template = YAML.load(link_vm.read_job_template('consumer', 'config.yml'))
+
+      expect(template['a']).to eq(2)
+      expect(template['b']).to eq(3)
+      expect(template['c']).to eq(4)
     end
   end
 

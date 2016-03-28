@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class LinkPath
-      attr_reader :deployment, :job, :template, :name, :path, :skip
+      attr_reader :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
       def initialize(deployment_plan, job_name, template_name)
         @deployment_plan = deployment_plan
@@ -13,6 +13,7 @@ module Bosh::Director
         @name = nil
         @path = nil
         @skip = false
+        @manual_spec = nil
       end
 
       def parse(link_info)
@@ -27,6 +28,9 @@ module Bosh::Director
 
         if link_info.has_key?("from")
           link_path = fulfill_explicit_link(link_info)
+        elsif link_info.has_key?("manual_config")
+          @manual_spec = link_info['manual_config']
+          return
         else
           link_path = fulfill_implicit_link(link_info)
         end
