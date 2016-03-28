@@ -1,0 +1,23 @@
+---
+platform: linux
+image: docker:///boshcpi/aws-cpi-release
+inputs:
+  - name: bosh-src
+  - name: bosh-aws-cpi-release # -++ used for deployment manifest referenced by manifest_path
+  - name: bosh-init              # --- bosh-init executable to do deploy
+  - name: bosh-dev-release          # -\
+  - name: stemcell               # -/
+
+outputs:
+  - name: setup-director-output
+
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/setup-director.sh
+params:
+  base_os:                    replace-me
+  aws_access_key_id:          replace-me
+  aws_secret_access_key:      replace-me
+  private_key_data:           replace-me
+  region_name:                replace-me
+  stack_name:                 replace-me
+  BOSH_INIT_LOG_LEVEL:        warn
