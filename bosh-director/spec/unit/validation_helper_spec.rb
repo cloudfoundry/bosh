@@ -82,6 +82,10 @@ describe Bosh::Director::ValidationHelper do
       context 'when the property is found' do
         it_returns_value({'test' => 'value'}, options, 'value')
       end
+
+      context 'when the hash is nil and the default is false and the class is boolean' do
+        it_returns_value(nil, options.merge({class: :boolean, default: false}), false)
+      end
     end
 
     context 'when optional option is false' do

@@ -35,7 +35,7 @@ module Bosh::Director
                 "'#{property}' value (#{result.inspect}) should be less than #{options[:max].inspect}"
         end
 
-      elsif options[:default]
+      elsif options.has_key?(:default)
         result = options[:default]
 
       elsif !options[:optional]

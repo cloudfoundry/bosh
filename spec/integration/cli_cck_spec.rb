@@ -4,12 +4,15 @@ describe 'cli: cloudcheck', type: :integration do
   with_reset_sandbox_before_each
 
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
-
-  before do
+  let(:manifest) do
     manifest = Bosh::Spec::Deployments.simple_manifest
     manifest['jobs'][0]['persistent_disk'] = 100
-    deploy_from_scratch(manifest_hash: manifest)
+    manifest['update']['serial'] = false
+    manifest
+  end
 
+  before do
+    deploy_from_scratch(manifest_hash: manifest)
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
 

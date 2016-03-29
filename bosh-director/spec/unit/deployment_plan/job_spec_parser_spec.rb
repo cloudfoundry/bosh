@@ -1041,8 +1041,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    describe 'update key'
-
     describe 'instances key' do
       it 'parses out desired instances' do
         job = parser.parse(job_spec)
