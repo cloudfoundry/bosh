@@ -8,10 +8,7 @@ groups:
       - blobstore-client-integration
       - integration-1.9-postgres
       - integration-2.1-mysql
-      - integration-2.1-postgres-1
-      - integration-2.1-postgres-2
-      - integration-2.1-postgres-3
-      - integration-2.1-postgres-4
+      - integration-2.1-postgres
       - load-tests
       - legacy-load-tests
       - fuzz-tests
@@ -31,10 +28,7 @@ groups:
       - start-job
       - unit-2.1
       - integration-2.1-mysql
-      - integration-2.1-postgres-1
-      - integration-2.1-postgres-2
-      - integration-2.1-postgres-3
-      - integration-2.1-postgres-4
+      - integration-2.1-postgres
       - publish-coverage
       - promote-candidate
 
@@ -53,10 +47,7 @@ groups:
       - unit-1.9
       - unit-2.1
       - integration-1.9-postgres
-      - integration-2.1-postgres-1
-      - integration-2.1-postgres-2
-      - integration-2.1-postgres-3
-      - integration-2.1-postgres-4
+      - integration-2.1-postgres
       - publish-coverage
       - promote-candidate
 
@@ -134,69 +125,48 @@ jobs:
           RUBY_VERSION: 2.1.7
           NUM_GROUPS: 8
 
-  - name: integration-2.1-postgres-1
+  - name: integration-2.1-postgres
     public: true
     serial: true
     plan:
       - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-3"]
-        params:
-          DB:           postgresql
-          RUBY_VERSION: 2.1.7
-          NUM_GROUPS: 8
-          GROUP:      1,5
-
-  - name: integration-2.1-postgres-2
-    public: true
-    serial: true
-    plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-3"]
-        params:
-          DB:           postgresql
-          RUBY_VERSION: 2.1.7
-          NUM_GROUPS: 8
-          GROUP:      2,6
-
-  - name: integration-2.1-postgres-3
-    public: true
-    serial: true
-    plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-3"]
-        params:
-          DB:           postgresql
-          RUBY_VERSION: 2.1.7
-          NUM_GROUPS: 8
-          GROUP:      3,7
-
-  - name: integration-2.1-postgres-4
-    public: true
-    serial: true
-    plan:
-      - { get: bosh-src, trigger: true, passed: [start-job] }
-
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-3"]
-        params:
-          DB:           postgresql
-          RUBY_VERSION: 2.1.7
-          NUM_GROUPS: 8
-          GROUP:      4,8
+      - aggregate:
+        - task: test-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-5"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+            GROUP:      1,5
+        - task: test-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-5"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+            GROUP:      2,6
+        - task: test-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-6"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+            GROUP:      3,7
+        - task: test-4
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-6"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.7
+            NUM_GROUPS: 8
+            GROUP:      4,8
 
   - name: load-tests
     public: true
@@ -270,10 +240,7 @@ jobs:
         passed:
         - integration-2.1-mysql
         - integration-1.9-postgres
-        - integration-2.1-postgres-1
-        - integration-2.1-postgres-2
-        - integration-2.1-postgres-3
-        - integration-2.1-postgres-4
+        - integration-2.1-postgres
         - unit-2.1
         - unit-1.9
         - blobstore-client-integration
@@ -291,10 +258,7 @@ jobs:
         passed:
         - integration-2.1-mysql
         - integration-1.9-postgres
-        - integration-2.1-postgres-1
-        - integration-2.1-postgres-2
-        - integration-2.1-postgres-3
-        - integration-2.1-postgres-4
+        - integration-2.1-postgres
         - unit-2.1
         - unit-1.9
         - blobstore-client-integration
