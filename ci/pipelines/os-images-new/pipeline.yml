@@ -22,10 +22,9 @@ jobs:
       - task: build
         file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
         privileged: true
-        config:
-          params:
-            OPERATING_SYSTEM_NAME:      ubuntu
-            OPERATING_SYSTEM_VERSION:   trusty
+        params:
+          OPERATING_SYSTEM_NAME:      ubuntu
+          OPERATING_SYSTEM_VERSION:   trusty
       - put: ubuntu-trusty-tarball
         params:
           file: os-image/ubuntu-trusty-*.tgz
@@ -46,10 +45,9 @@ jobs:
       - task: build
         file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
         privileged: true
-        config:
-          params:
-            OPERATING_SYSTEM_NAME:      centos
-            OPERATING_SYSTEM_VERSION:   7
+        params:
+          OPERATING_SYSTEM_NAME:      centos
+          OPERATING_SYSTEM_VERSION:   7
       - put: centos-7-tarball
         params:
           file: os-image/centos-7-*.tgz
