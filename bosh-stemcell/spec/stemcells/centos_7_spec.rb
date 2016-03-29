@@ -12,6 +12,7 @@ describe 'CentOS 7 stemcell', stemcell_image: true do
 
   context 'installed by image_vsphere_cdrom stage', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
@@ -47,6 +48,7 @@ HERE
 
   context 'installed by bosh_openstack_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
