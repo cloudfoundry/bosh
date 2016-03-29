@@ -812,12 +812,8 @@ module Bosh::Director
             before { authorize 'admin', 'admin' }
 
             it 'returns diff with resolved aliases' do
-              post(
-                '/fake-dep-name/diff',
-                "---\nname: fake-dep-name\nreleases: [{'name':'new','version':5}]",
-                { 'CONTENT_TYPE' => 'text/yaml' },
-              )
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["releases:",null],["- name: new","added"],["  version: \'5\'","added"],["- name: simple","removed"],["  version: \'5\'","removed"],["jobs: []","removed"],["name: fake-dep-name","added"]]}')
+              perform
+              expect(last_response.body).to eq('{"context":{"cloud_config_id":1,"runtime_config_id":1},"diff":[["jobs: []","removed"],["name: fake-dep-name","added"]]}')
             end
 
             it 'gives a nice error when request body is not a valid yml' do
