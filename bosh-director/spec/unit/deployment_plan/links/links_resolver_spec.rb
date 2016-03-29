@@ -183,7 +183,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when job consumes link from another deployment' do
-      let(:links) { {'db' => {"from" => 'other-deployment.db', 'name'=> 'db', "type" => "db"}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'name'=> 'db', "type" => "db"}} }
 
       context 'when another deployment has link source' do
         before do
@@ -232,7 +232,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when another deployment does not have link source' do
-        let(:links) { {'db' => {"from" => 'non-existent.db', 'name'=> 'db', 'type' => 'db'}} }
+        let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existent', 'name'=> 'db', 'type' => 'db'}} }
 
         it 'fails' do
           expect {
@@ -244,7 +244,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => {"from" => 'fake-deployment.db', 'name'=> 'db', 'type'=> 'other'}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'fake-deployment', 'name'=> 'db', 'type'=> 'other'}} }
 
       let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
       let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
@@ -304,24 +304,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when links source is not provided' do
-      let(:links) { {'db' => {"from" => 'non-existant.db', 'name'=> 'db', 'type' => 'db'}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existant', 'name'=> 'db', 'type' => 'db'}} }
 
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
    - \"Can't find deployment non-existant\"")
-      end
-    end
-
-    context 'when link format is invalid' do
-      let(:links) { {'db' => {"from" => 'one.two.three', 'name'=> 'db', 'type' => 'db'}} }
-
-      it 'fails' do
-        expect {
-          links_resolver.resolve(api_server_job)
-        }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'\"")
       end
     end
 
