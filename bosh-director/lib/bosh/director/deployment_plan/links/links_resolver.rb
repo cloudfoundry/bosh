@@ -29,6 +29,8 @@ module Bosh::Director
             if !consumed_link.optional
               raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in instance group '#{job.name}'"
             end
+          elsif !link_path.manual_spec.nil?
+            job.add_resolved_link(link_name, link_path.manual_spec)
           else
             link_network = template.consumes_link_info(job.name, link_name)['network']
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network, job.name, template.name)

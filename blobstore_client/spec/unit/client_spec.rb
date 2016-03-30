@@ -24,6 +24,15 @@ module Bosh::Blobstore
           })).to be_instance_of(S3BlobstoreClient)
         end
 
+        it 'returns s3cli client' do
+          allow(Kernel).to receive(:system).with("/path --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          expect(Client.create('s3cli', {
+              access_key_id: 'foo',
+              secret_access_key: 'bar',
+              s3cli_path: '/path'
+          })).to be_instance_of(S3cliBlobstoreClient)
+        end
+
         it 'should pick S3 provider when S3 is used without credentials' do
           expect(Client.create('s3', bucket_name: 'foo')).to be_instance_of(S3BlobstoreClient)
         end

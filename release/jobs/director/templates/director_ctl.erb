@@ -102,6 +102,9 @@ case $1 in
       fi
       sleep 0.1
     done
+  <%if p('blobstore.provider') == "s3" %>
+    rm -f $TMPDIR/s3_blobstore_config*
+  <%end%>
     rm -f $PIDFILE
     ;;
 

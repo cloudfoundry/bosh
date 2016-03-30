@@ -630,7 +630,7 @@ describe 'director.yml.erb.erb' do
         end
 
         it 'sets the blobstore fields appropriately' do
-          expect(parsed_yaml['blobstore']['options']).to eq({
+          expect(parsed_yaml['blobstore']['options']).to include({
             'bucket_name' => 'mybucket',
             'credentials_source' => 'env_or_profile',
             'access_key_id' => nil,
@@ -652,13 +652,19 @@ describe 'director.yml.erb.erb' do
           }
         end
 
+        it 'set provider as s3cli' do
+          expect(parsed_yaml['blobstore']['provider']).to eq("s3cli")
+        end
+
         it 'sets the blobstore fields appropriately' do
           expect(parsed_yaml['blobstore']['options']).to eq({
             'bucket_name' => 'mybucket',
             'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
-            'region' => 'region'
+            'region' => 'region',
+            's3cli_config_path' => '/var/vcap/data/tmp/director',
+            's3cli_path' => '/var/vcap/packages/s3cli/bin/s3cli'
           })
         end
 
@@ -752,7 +758,7 @@ describe 'director.yml.erb.erb' do
           end
 
           it 'sets the blobstore fields appropriately' do
-            expect(parsed_yaml['blobstore']['options']).to eq({
+            expect(parsed_yaml['blobstore']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',
@@ -767,7 +773,7 @@ describe 'director.yml.erb.erb' do
               'region' => 'region'
             })
 
-            expect(parsed_yaml['compiled_package_cache']['options']).to eq({
+            expect(parsed_yaml['compiled_package_cache']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',
@@ -786,7 +792,7 @@ describe 'director.yml.erb.erb' do
           it 'sets endpoint protocol appropriately when use_ssl is true' do
             deployment_manifest_fragment['properties']['blobstore']['use_ssl'] = true
 
-            expect(parsed_yaml['blobstore']['options']).to eq({
+            expect(parsed_yaml['blobstore']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',
