@@ -27,7 +27,7 @@ packages:
 - name: mysql
   version: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
   fingerprint: b7e73acc0bfe05f1c6cbfd97bf92d39b0d3155d5
-  sha1: 2d7616cb369e6c1805d60bf186024e3e269392df
+  sha1: 1f6d26944b9a05ceb2adab457882ce6397cb3ca2
   dependencies: []
 - name: nats
   version: 6a31c7bb0d5ffa2a9f43c7fd7193193438e20e92
