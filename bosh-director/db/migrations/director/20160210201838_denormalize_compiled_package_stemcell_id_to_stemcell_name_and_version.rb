@@ -42,9 +42,9 @@ Sequel.migration do
 
       alter_table(:compiled_packages) do
         drop_constraint(stemcell_foreign_key_name, :type => :foreign_key)
-        drop_index(nil, name: stemcell_index)
         add_index [:package_id, :stemcell_os, :stemcell_version, :build], unique: true, name: 'package_stemcell_build_idx'
         add_index [:package_id, :stemcell_os, :stemcell_version, :dependency_key_sha1], unique: true, name: 'package_stemcell_dependency_idx'
+        drop_index(nil, name: stemcell_index)
       end
     end
 
