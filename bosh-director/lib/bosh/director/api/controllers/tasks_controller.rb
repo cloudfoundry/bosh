@@ -17,7 +17,7 @@ module Bosh::Director
           task = @task_manager.find_task(params[:id])
           if type == 'debug' || type == 'cpi' || !type
             check_access_to_task(task, :admin)
-          elsif type == 'event' || type == 'result'
+          elsif type == 'event' || type == 'result' || type == 'none'
             check_access_to_task(task, :read)
           else
             raise UnauthorizedToAccessDeployment, "Unknown type #{type}"
@@ -112,6 +112,11 @@ module Bosh::Director
       # at /var/vcap/store/director/tasks/5/event
       get '/:id/output', authorization: :task_output, scope: :authorization do
         log_type = params[:type] || 'debug'
+
+        if log_type == "none"
+          halt(204)
+        end
+
         task = @task_manager.find_task(params[:id])
 
         if task.output.nil?
