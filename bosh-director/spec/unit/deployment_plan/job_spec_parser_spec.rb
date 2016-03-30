@@ -655,7 +655,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             parser.parse(job_spec)
           }.to raise_error(
             Bosh::Director::ValidationInvalidType,
-            %{Property '#{keyword}' (value "not-an-array") did not match the required type 'Array'},
+            %{Property '#{keyword}' value ("not-an-array") did not match the required type 'Array'},
           )
         end
       end
@@ -1041,8 +1041,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
-    describe 'update key'
-
     describe 'instances key' do
       it 'parses out desired instances' do
         job = parser.parse(job_spec)
@@ -1229,7 +1227,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect {
             parser.parse(job_spec)
           }.to raise_error(
-              Bosh::Director::ValidationInvalidType, "Property 'azs' (value 3) did not match the required type 'Array'"
+              Bosh::Director::ValidationInvalidType, "Property 'azs' value (3) did not match the required type 'Array'"
             )
         end
       end
