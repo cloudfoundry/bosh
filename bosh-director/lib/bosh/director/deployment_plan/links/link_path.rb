@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class LinkPath
-      attr_reader :deployment, :job, :template, :name, :path, :skip
+      attr_reader :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
       def initialize(deployment_plan, job_name, template_name)
         @deployment_plan = deployment_plan
@@ -13,6 +13,7 @@ module Bosh::Director
         @name = nil
         @path = nil
         @skip = false
+        @manual_spec = nil
       end
 
       def parse(link_info)
@@ -27,6 +28,9 @@ module Bosh::Director
 
         if link_info.has_key?("from")
           link_path = fulfill_explicit_link(link_info)
+        elsif link_info.has_key?("manual_config")
+          @manual_spec = link_info['manual_config']
+          return
         else
           link_path = fulfill_implicit_link(link_info)
         end
@@ -80,18 +84,11 @@ module Bosh::Director
       end
 
       def fulfill_explicit_link(link_info)
-        from_where = link_info['from']
+        from_name = link_info['from']
         link_network = link_info['network']
-        parts = from_where.split('.') # the string might be formatted like 'deployment.link_name'
-        from_name = parts.shift
+        deployment_name = link_info['deployment']
 
-        if parts.size >= 1  # given a deployment name
-          deployment_name = from_name
-          from_name = parts.shift
-          if parts.size >= 1
-            raise "From string #{from_where} is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'"
-          end
-
+        if !deployment_name.nil?
           if deployment_name == @deployment_plan.name
             link_path = get_link_path_from_deployment_plan(from_name, link_network)
           else
@@ -100,6 +97,7 @@ module Bosh::Director
         else  # given no deployment name
           link_path = get_link_path_from_deployment_plan(from_name, link_network)   # search the jobs for the current deployment for a provides
         end
+
         link_path[:name] = from_name
         return link_path
       end

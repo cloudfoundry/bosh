@@ -383,7 +383,7 @@ module Bosh::Director
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
           result['diff'] = []
-          result['error'] = "Unable to diff manifest: #{error}"
+          result['error'] = "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
         end
 
         json_encode(result)

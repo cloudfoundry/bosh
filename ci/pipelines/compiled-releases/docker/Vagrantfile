@@ -1,0 +1,16 @@
+VAGRANTFILE_API_VERSION = '2'
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # trusty (latest), virtualbox only
+  config.vm.box = 'ubuntu/trusty64'
+
+  config.vm.provider(:virtualbox) do |v|
+    v.name = 'compiled-releases'
+    v.customize ['modifyvm', :id, '--cpus', '4']
+    v.customize ['modifyvm', :id, '--memory', '4096']
+  end
+
+  config.vm.synced_folder('/Users/pivotal/workspace/bosh', '/opt/bosh')
+
+  config.vm.provision('docker')
+end

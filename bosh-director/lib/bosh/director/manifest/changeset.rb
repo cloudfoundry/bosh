@@ -1,10 +1,3 @@
-class ::Hash
-  def deep_merge(second)
-    merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
-    self.merge(second, &merger)
-  end
-end
-
 module Bosh::Director
   class Changeset
     KEY_NAME = 'name'
@@ -22,7 +15,7 @@ module Bosh::Director
       @after = after
 
       if @before && @after
-        @merged = @before.deep_merge(@after)
+        @merged = deep_merge(@before, @after)
       elsif @before
         @merged = @before
       else
@@ -79,33 +72,38 @@ module Bosh::Director
       end
 
       @merged.each_pair do |key, value|
-        if @before.nil? || @before[key].nil?
-          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
+        if @before[key] != @after[key]
+          if @before.nil? || @before[key].nil?
+            lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
 
-        elsif @after.nil? || @after[key].nil?
-          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
+          elsif @after.nil? || @after[key].nil?
+            lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
 
-        elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
-          lines.concat(compare_arrays(@before[key], @after[key], output_values_before[key], output_values_after[key], key, redact, indent))
+          elsif @before[key].is_a?(Array) && @after[key].is_a?(Array)
+            lines.concat(compare_arrays(@before[key], @after[key], output_values_before[key], output_values_after[key], key, redact, indent))
 
-        elsif @before[key].is_a?(Array) && @after[key].is_a?(Hash)
-          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
-          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
+          elsif @before[key].is_a?(Hash) && @after[key].is_a?(Hash)
+            changeset = Changeset.new(@before[key], @after[key], output_values_before[key], output_values_after[key])
+            diff_lines = changeset.diff(redact, indent+1)
+            unless diff_lines.empty?
+              lines << Line.new(indent, "#{key}:", nil)
+              lines.concat(diff_lines)
+            end
 
-        elsif value.is_a?(Hash)
-          changeset = Changeset.new(@before[key], @after[key], output_values_before[key], output_values_after[key])
-          diff_lines = changeset.diff(redact, indent+1)
-          unless diff_lines.empty?
-            lines << Line.new(indent, "#{key}:", nil)
-            lines.concat(diff_lines)
+          else
+            lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
+            lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
           end
-
-        elsif @before[key] != @after[key]
-          lines.concat(yaml_lines({key => output_values_before[key]}, indent, 'removed'))
-          lines.concat(yaml_lines({key => output_values_after[key]}, indent, 'added'))
         end
       end
       lines
+    end
+
+    private
+
+    def deep_merge(first, second)
+      merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
+      first.merge(second, &merger)
     end
 
     def yaml_lines(value, indent, state)

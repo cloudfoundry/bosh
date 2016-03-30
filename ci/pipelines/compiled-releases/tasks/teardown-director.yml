@@ -1,0 +1,13 @@
+---
+platform: linux
+
+image: docker:///bosh/compiled-release
+
+inputs:
+  - name: director-state
+  - name: bosh-src
+  - name: bosh-aws-cpi-release
+
+run:
+  path: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.sh
+

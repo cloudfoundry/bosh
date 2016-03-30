@@ -1,0 +1,88 @@
+---
+groups:
+  - name: aws-bats
+    jobs:
+      - bats-ubuntu
+
+jobs:
+  - name: bats-ubuntu
+    serial: true
+    plan:
+      - aggregate:
+        - {trigger: true,  get: bosh-aws-cpi-release}
+        - {trigger: false, get: stemcell, resource: aws-ubuntu-hvm-stemcell}
+        - {trigger: true,  get: bosh-src}
+        - {trigger: false, get: bats}
+        - {trigger: false, get: bosh-init}
+
+      - task: teardown-infrastructure
+        file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
+        params: *recreate-primary-params
+
+      - task: setup-infrastructure
+        file: bosh-src/ci/pipelines/aws-bats/tasks/setup-infrastructure.yml
+        params: &recreate-primary-params
+          aws_access_key_id:        {{aws_access_key__primary}}
+          aws_secret_access_key:    {{aws_secret_key__primary}}
+          region_name:              {{aws_region__primary}}
+          stack_name:               primary
+
+      - task: create-dev-release
+        file: bosh-src/ci/pipelines/aws-bats/tasks/create-dev-release.yml
+
+      - task: setup-director
+        file: bosh-src/ci/pipelines/aws-bats/tasks/setup-director.yml
+        params:
+          base_os:                    Ubuntu
+          aws_access_key_id:          {{aws_access_key__primary}}
+          aws_secret_access_key:      {{aws_secret_key__primary}}
+          region_name:                {{aws_region__primary}}
+          private_key_data:           {{bosh_private_key}}
+          stack_name:                 primary
+
+      - task: run-bats
+        file: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.yml
+        tags: ["bosh-integration"]
+        params:
+          base_os:                    Ubuntu
+          aws_access_key_id:          {{aws_access_key__primary}}
+          aws_secret_access_key:      {{aws_secret_key__primary}}
+          region_name:                {{aws_region__primary}}
+          BAT_VCAP_PASSWORD:          {{BAT_VCAP_PASSWORD}}
+          BAT_STEMCELL_NAME:          {{BAT_STEMCELL_NAME_hvm_ubuntu}}
+          stack_name:                 primary
+
+      - task: teardown-director
+        file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-director.yml
+
+
+resources:
+
+  - name: bosh-aws-cpi-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-incubator/bosh-aws-cpi-release
+
+  - name: bosh-init
+    type: s3
+    source:
+      regexp: bosh-init-([0-9.]+)-linux-amd64
+      bucket: {{s3_bosh_init_bucket}}
+      region_name: {{aws_region__primary}}
+
+  - name: bats
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+      branch: master
+
+  - name: aws-ubuntu-hvm-stemcell
+    type: bosh-io-stemcell
+    source:
+      name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: develop

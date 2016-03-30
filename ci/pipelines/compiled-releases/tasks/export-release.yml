@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image: docker:///bosh/compiled-release
+
+inputs:
+  - name: bosh-src
+  - name: stemcell
+  - name: release
+
+outputs:
+  - name: compiled-release
+
+run:
+  path: bosh-src/ci/pipelines/compiled-releases/tasks/export-release.sh
+
+params:
+  BOSH_TARGET_IP: required
+  BOSH_USERNAME: admin
+  BOSH_PASSWORD: admin

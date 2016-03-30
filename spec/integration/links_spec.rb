@@ -189,8 +189,8 @@ describe 'Links', type: :integration do
     context 'when link is provided' do
       let(:links) do
         {
-          'db' => {'from' => 'simple.db'},
-          'backup_db' => {'from' => 'simple.backup_db'}
+          'db' => {'from' => 'db'},
+          'backup_db' => {'from' => 'backup_db'}
         }
       end
 
@@ -502,8 +502,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
       let(:links) do
         {
-          'db' => {'from'=>'simple.db'},
-          'backup_db' => {'from' => 'simple.read_only_db'},
+          'db' => {'from'=>'db'},
+          'backup_db' => {'from' => 'read_only_db'},
         }
       end
 
@@ -563,8 +563,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
       let(:first_node_links) do
         {
-          'node1' => {'from' => 'simple.node1'},
-          'node2' => {'from' => 'simple.node2'}
+          'node1' => {'from' => 'node1'},
+          'node2' => {'from' => 'node2'}
         }
       end
 
@@ -580,8 +580,8 @@ Error 100: Unable to process links for deployment. Errors are:
       end
       let(:second_node_links) do
         {
-          'node1' => {'from' => 'simple.node1'},
-          'node2' => {'from' => 'simple.node2'}
+          'node1' => {'from' => 'node1'},
+          'node2' => {'from' => 'node2'}
         }
       end
 
@@ -686,7 +686,7 @@ Error 100: Unable to process links for deployment. Errors are:
       let(:links) do
         {
             'db' => {'from'=>'link_alias'},
-            'backup_db' => {'from' => 'simple.link_alias'},
+            'backup_db' => {'from' => 'link_alias'},
         }
       end
 
@@ -720,7 +720,7 @@ Error 100: Unable to process links for deployment. Errors are:
       let(:links) do
         {
             'db' => {'from'=>'backup_db'},
-            'backup_db' => {'from' => 'simple.backup_db'},
+            'backup_db' => {'from' => 'backup_db'},
         }
       end
 
@@ -735,7 +735,7 @@ Error 100: Unable to process links for deployment. Errors are:
       let(:links) do
         {
             'db' => {'from'=>'link_alias'},
-            'backup_db' => {'from' => 'simple.link_alias'},
+            'backup_db' => {'from' => 'link_alias'},
         }
       end
       let(:manifest) do
@@ -808,7 +808,7 @@ Error 100: Unable to process links for deployment. Errors are:
 
       let(:first_node_links) do
         {
-          'node1' => {'from' => 'simple.node1'},
+          'node1' => {'from' => 'node1'},
           'node2' => {'from' => 'alias2'}
         }
       end
@@ -825,8 +825,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
       let(:second_node_links) do
         {
-          'node1' => {'from' => 'broken.broken'},
-          'node2' => {'from' =>'other.blah'}
+          'node1' => {'from' => 'broken', 'deployment' => 'broken'},
+          'node2' => {'from' =>'blah', 'deployment' => 'other'}
         }
       end
 
@@ -864,13 +864,14 @@ Error 100: Unable to process links for deployment. Errors are:
 
      let(:first_deployment_consumed_links) do
        {
-           'node1' => {'from' => 'first.node1'},
-           'node2' => {'from' => 'first.node2'}
+           'node1' => {'from' => 'node1', 'deployment' => 'first'},
+           'node2' => {'from' => 'node2', 'deployment' => 'first'}
        }
      end
 
      let(:first_deployment_provided_links) do
-       { 'node1' => {'shared' => true} }
+       { 'node1' => {'shared' => true},
+         'node2' => {'shared' => true}}
      end
 
      let(:second_deployment_job_spec) do
@@ -893,8 +894,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
      let(:second_deployment_consumed_links) do
        {
-           'node1' => {'from' => 'first.node1'},
-           'node2' => {'from' => 'second.node2'}
+           'node1' => {'from' => 'node1', 'deployment' => 'first'},
+           'node2' => {'from' => 'node2', 'deployment' => 'second'}
        }
      end
 
@@ -924,8 +925,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
          let(:second_deployment_consumed_links) do
            {
-               'node1' => {'from' => 'first.node1', 'network' => 'test'},
-               'node2' => {'from' => 'second.node2'}
+               'node1' => {'from' => 'node1', 'deployment'=>'first', 'network' => 'test'},
+               'node2' => {'from' => 'node2', 'deployment'=>'second'}
            }
          end
 
@@ -964,8 +965,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
          let(:second_deployment_consumed_links) do
            {
-               'node1' => {'from' => 'first.node1', 'network' => 'invalid-network'},
-               'node2' => {'from' => 'second.node2'}
+               'node1' => {'from' => 'node1', 'deployment'=>'first', 'network' => 'invalid-network'},
+               'node2' => {'from' => 'node2', 'deployment'=>'second'}
            }
          end
 
@@ -1023,8 +1024,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
         let(:links) do
           {
-              'db' => {'from' => 'simple.db', 'network' => 'b'},
-              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'b'}
+              'db' => {'from' => 'db', 'network' => 'b'},
+              'backup_db' => {'from' => 'backup_db', 'network' => 'b'}
           }
         end
 
@@ -1055,8 +1056,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
         it 'raises an error if network name specified is not one of the networks on the link' do
           manifest['jobs'].first['templates'].first['consumes'] = {
-              'db' => {'from' => 'simple.db', 'network' => 'invalid_network'},
-              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
+              'db' => {'from' => 'db', 'network' => 'invalid_network'},
+              'backup_db' => {'from' => 'backup_db', 'network' => 'a'}
           }
 
           expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'invalid_network'./)
@@ -1070,8 +1071,8 @@ Error 100: Unable to process links for deployment. Errors are:
           }
 
           manifest['jobs'].first['templates'].first['consumes'] = {
-              'db' => {'from' => 'simple.db', 'network' => 'global_network'},
-              'backup_db' => {'from' => 'simple.backup_db', 'network' => 'a'}
+              'db' => {'from' => 'db', 'network' => 'global_network'},
+              'backup_db' => {'from' => 'backup_db', 'network' => 'a'}
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
@@ -1114,8 +1115,8 @@ Error 100: Unable to process links for deployment. Errors are:
 
         let(:links) do
           {
-              'db' => {'from' => 'simple.db'},
-              'backup_db' => {'from' => 'simple.backup_db'}
+              'db' => {'from' => 'db'},
+              'backup_db' => {'from' => 'backup_db'}
           }
         end
 
@@ -1370,6 +1371,22 @@ Error 100: Unable to process links for deployment. Errors are:
       job_spec
     end
 
+    let (:job_with_manual_consumes_link) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'property_job',
+          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'manual_config' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}}],
+          instances: 1,
+          static_ips: ['192.168.1.10'],
+          properties: {}
+      )
+      job_spec['azs'] = ['z1']
+      job_spec['networks'] << {
+          'name' => 'dynamic-network',
+          'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
+
     let(:job_with_link_properties_not_defined_in_release_properties) do
       job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'jobby',
@@ -1404,6 +1421,22 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).to eq(0)
+    end
+
+    it 'should be able to resolve a manual configuration in a consumes link' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['jobs'] = [job_with_manual_consumes_link]
+
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      expect(exit_code).to eq(0)
+
+      link_vm = director.vm('property_job', '0')
+
+      template = YAML.load(link_vm.read_job_template('consumer', 'config.yml'))
+
+      expect(template['a']).to eq(2)
+      expect(template['b']).to eq(3)
+      expect(template['c']).to eq(4)
     end
   end
 

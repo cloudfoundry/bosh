@@ -3,7 +3,7 @@ external_pid_file = '/var/vcap/sys/run/postgres/postgres.pid'
 
 listen_addresses = '<%= p('postgres.listen_address') %>'
 port = <%= p('postgres.port') %>
-max_connections = 100
+max_connections = <%= p('postgres.max_connections') %>
 
 ssl = false
 
