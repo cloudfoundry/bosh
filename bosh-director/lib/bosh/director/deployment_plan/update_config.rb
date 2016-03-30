@@ -68,7 +68,7 @@ module Bosh::Director
           'max_in_flight' => @max_in_flight,
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
-          'serial' => @serial
+          'serial' => serial?
         }
       end
 
