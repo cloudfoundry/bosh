@@ -171,8 +171,6 @@ module Bosh::Director
       end
     end
 
-    private
-
     def orphan_mounted_persistent_disk(instance_model, disk)
       unmount_disk(instance_model, disk)
 
@@ -185,6 +183,8 @@ module Bosh::Director
       detach_disk(instance_model, disk)
       orphan_disk(disk)
     end
+
+    private
 
     def delete_orphan_snapshot(orphan_snapshot)
       begin

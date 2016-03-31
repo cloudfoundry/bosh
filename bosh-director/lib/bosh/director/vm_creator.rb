@@ -7,12 +7,13 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
-    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer)
+    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
       @cloud = cloud
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
       @job_renderer = job_renderer
+      @arp_flusher = arp_flusher
     end
 
     def create_for_instance_plans(instance_plans, ip_provider, event_log)
@@ -61,9 +62,17 @@ module Bosh::Director
 
       begin
         VmMetadataUpdater.build.update(instance_model, {})
-
         agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
         agent_client.wait_until_ready
+
+        if Config.flush_arp
+          ip_addresses = instance_plan.network_settings_hash.map do |index,network|
+            network['ip']
+          end.compact
+
+          @arp_flusher.delete_from_arp(instance_model.vm_cid, ip_addresses)
+        end
+        
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e

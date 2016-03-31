@@ -10,7 +10,8 @@ module Bosh::Director
       vm_deleter = VmDeleter.new(cloud, logger)
       disk_manager = DiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
-      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)
+      arp_flusher = ArpFlusher.new
+      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       dns_manager = DnsManagerProvider.create
       new(

@@ -256,7 +256,7 @@ module Bosh::Director
         let(:vm_cid) { nil }
 
         let(:instance_state) {'stopped'}
-        
+
         let(:original_disk) { nil }
 
         let(:disk_manager) { instance_double(DiskManager)}

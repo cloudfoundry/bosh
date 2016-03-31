@@ -31,6 +31,7 @@ module Bosh::Director
         :fix_stateful_nodes,
         :enable_snapshots,
         :max_vm_create_tries,
+        :flush_arp,
         :nats_uri,
         :default_ssh_options,
         :keep_unreachable_vms,
@@ -67,6 +68,7 @@ module Bosh::Director
 
       def configure(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
+        @flush_arp = config.fetch('flush_arp', false)
 
         @base_dir = config['dir']
         FileUtils.mkdir_p(@base_dir)

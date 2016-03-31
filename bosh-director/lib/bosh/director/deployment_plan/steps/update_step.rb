@@ -12,7 +12,8 @@ module Bosh::Director
           @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
           @disk_manager = DiskManager.new(@cloud, @logger)
           job_renderer = JobRenderer.create
-          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, @disk_manager, job_renderer)
+          arp_flusher = ArpFlusher.new
+          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter, @disk_manager, job_renderer, arp_flusher)
         end
 
         def perform
