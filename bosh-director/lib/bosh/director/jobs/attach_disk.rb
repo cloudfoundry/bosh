@@ -44,10 +44,6 @@ module Bosh::Director
           raise AttachDiskErrorUnknownInstance, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' was not found"
         end
 
-        if instance.persistent_disk.nil?
-          raise AttachDiskNoPersistentDisk, "Job '#{@job_name}' is not configured with a persistent disk"
-        end
-
         if instance.state != 'detached' && instance.state != 'stopped'
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end
