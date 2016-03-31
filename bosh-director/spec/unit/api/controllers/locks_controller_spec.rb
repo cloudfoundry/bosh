@@ -67,20 +67,21 @@ module Bosh::Director
           Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes)
         end
 
-        it 'should not list any locks' do
-          get '/'
-          expect(last_response.status).to eq(200)
-
-          body = Yajl::Parser.parse(last_response.body)
-          expect(body).to be_empty
-        end
-
         it 'should delete all locks that have expired more than a minute ago from the database' do
           expect(Models::Lock.count).to eq 4
 
           get '/'
 
           expect(Models::Lock.map(&:name)).to eq ['lock:stemcells:test-stemcell']
+        end
+
+        it 'should list all locks that have not been deleted' do
+          get '/'
+          expect(last_response.status).to eq(200)
+
+          body = Yajl::Parser.parse(last_response.body)
+          expect(body.first['resource']).to eq %w(test-stemcell)
+          expect(body.size).to eq 1
         end
       end
     end
