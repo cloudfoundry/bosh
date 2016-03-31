@@ -27,12 +27,12 @@ describe 'orphaned disks', type: :integration do
     result = scrub_time(result)
 
     expect(result).to include(<<DISKS)
-+----------------------------------+------------+-------------------+-------------------------------------------------+-----+---------------------------+
-| Disk CID                         | Size (MiB) | Deployment Name   | Instance Name                                   | AZ  | Orphaned At               |
-+----------------------------------+------------+-------------------+-------------------------------------------------+-----+---------------------------+
-| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | 123        | second-deployment | second-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | n/a | 0000-00-00 00:00:00 -0000 |
-| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | 123        | first-deployment  | first-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  | n/a | 0000-00-00 00:00:00 -0000 |
-+----------------------------------+------------+-------------------+-------------------------------------------------+-----+---------------------------+
++----------------------------------+------------+-------------------+-------------------------------------------------+-----+-------------------------+
+| Disk CID                         | Size (MiB) | Deployment Name   | Instance Name                                   | AZ  | Orphaned At             |
++----------------------------------+------------+-------------------+-------------------------------------------------+-----+-------------------------+
+| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | 123        | second-deployment | second-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | n/a | 0000-00-00 00:00:00 UTC |
+| xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | 123        | first-deployment  | first-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  | n/a | 0000-00-00 00:00:00 UTC |
++----------------------------------+------------+-------------------+-------------------------------------------------+-----+-------------------------+
 DISKS
   end
 

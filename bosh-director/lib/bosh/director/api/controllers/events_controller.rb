@@ -8,7 +8,7 @@ module Bosh::Director
       get '/' do
         content_type(:json)
 
-        events = Models::Event.order_by(:id.desc)
+        events = Models::Event.order_by(Sequel.desc(:id))
 
         if params['before_id']
           fetch_until = params['before_id'].to_i

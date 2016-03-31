@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       def find_all_stemcells
-        Models::Stemcell.order_by(:name.asc).map do |stemcell|
+        Models::Stemcell.order_by(Sequel.asc(:name)).map do |stemcell|
           {
             'name' => stemcell.name,
             'operating_system' => stemcell.operating_system,

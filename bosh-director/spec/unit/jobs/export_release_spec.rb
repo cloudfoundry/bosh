@@ -257,12 +257,12 @@ module Bosh::Director
               release_id: release.id,
               blobstore_id: 'ruby_package_blobstore_id',
               sha1: 'ruby_package_sha1',
-              dependency_set_json: [],
+              dependency_set_json: [].to_json,
           )
           package_ruby.add_compiled_package(
               sha1: 'ruby_compiled_package_sha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
-              dependency_key: [],
+              dependency_key: [].to_json,
               build: 23,
               stemcell_os: 'ubuntu',
               stemcell_version: '1'

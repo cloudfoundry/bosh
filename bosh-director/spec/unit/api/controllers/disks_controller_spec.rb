@@ -24,7 +24,7 @@ module Bosh::Director
         config
       end
 
-      let(:orphaned_at) { Time.now }
+      let(:orphaned_at) { Time.now.utc }
 
       before do
         App.new(config)

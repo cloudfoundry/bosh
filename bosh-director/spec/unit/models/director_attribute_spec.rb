@@ -14,7 +14,7 @@ module Bosh::Director::Models
       end
 
       context 'when uuid cannot be found' do
-        before { described_class.delete }
+        before { described_class.dataset.delete }
 
         context 'when creation of uuid fails with database constraint' do
           before { allow(described_class).to receive(:create).and_raise(Sequel::DatabaseError, 'error') }
@@ -73,7 +73,7 @@ module Bosh::Director::Models
       end
 
       context 'when uuid cannot be found' do
-        before { described_class.delete }
+        before { described_class.dataset.delete }
 
         it 'creates uuid with given value' do
           described_class.update_or_create_uuid('fake-uuid', logger)

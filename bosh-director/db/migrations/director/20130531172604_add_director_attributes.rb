@@ -1,8 +1,7 @@
 Sequel.migration do
   up do
     create_table(:director_attributes) do
-      primary_key :uuid
-      String :uuid, unique: true, null: false
+      String :uuid, unique: true, null: false, primary_key: true
     end
   end
 

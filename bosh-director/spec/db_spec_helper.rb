@@ -10,8 +10,6 @@ module DBSpecHelper
     attr_reader :db
 
     def init
-      Bosh::Director::Config.patch_sqlite
-
       @temp_dir = Bosh::Director::Config.generate_temp_dir
       @director_migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
 

@@ -25,7 +25,7 @@ module Bosh::Deployer
     end
 
     def load_deployment(name)
-      models_instance.insert_multiple(deployments['instances'])
+      models_instance.multi_insert(deployments['instances'])
 
       @state = models_instance.find(name: name)
       if state.nil?

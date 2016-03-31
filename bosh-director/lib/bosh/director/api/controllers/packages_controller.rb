@@ -16,7 +16,7 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.where(fingerprint: fingerprint_list, ~:sha1 => nil, ~:blobstore_id => nil).all
+        matching_packages = Models::Package.where(Sequel.~(:sha1 => nil), Sequel.~(:blobstore_id => nil), fingerprint: fingerprint_list).all
 
         json_encode(matching_packages.map(&:fingerprint).compact.uniq)
       end

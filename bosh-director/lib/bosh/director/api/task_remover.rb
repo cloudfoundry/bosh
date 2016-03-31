@@ -14,7 +14,7 @@ module Bosh::Director::Api
     private
     def removal_candidates_dataset(type)
       Bosh::Director::Models::Task.filter("state NOT IN ('processing', 'queued') and type='#{type}'").
-        order{id.desc}.limit(2, @max_tasks)
+        order{Sequel.desc(:id)}.limit(2, @max_tasks)
     end
   end
 end
