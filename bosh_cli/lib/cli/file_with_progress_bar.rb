@@ -32,6 +32,7 @@ module Bosh
         if result && result.size > 0
           progress_bar.inc(result.size)
         else
+          progress_bar.set(size)
           progress_bar.finish
         end
 
@@ -43,6 +44,7 @@ module Bosh
         if count
           progress_bar.inc(count)
         else
+          progress_bar.set(size)
           progress_bar.finish
         end
         count
