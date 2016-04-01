@@ -1,5 +1,3 @@
-
-# Copyright (c) 2009-2012 VMware, Inc.
 require "spec_helper"
 
 describe Bosh::Cli::ReleaseTarball do
@@ -237,6 +235,16 @@ foo: bar
 
         expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", tarball_path,  "--occurrence", "./jobs/", anything)
       end
+    end
+  end
+
+  describe 'unpack_license' do
+    let(:tarball_path) { spec_asset('test_release.tgz') }
+
+    it 'should not unpack license when the license does not exist' do
+      release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+      expect(Open3).not_to receive(:capture3)
+      release_tarball.unpack_license
     end
   end
 
