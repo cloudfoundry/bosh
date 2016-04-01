@@ -35,6 +35,7 @@ module Bosh::Cli
     end
 
     def unpack_license
+      return false if manifest_yaml['license'].nil?
       return @unpacked_license unless @unpacked_license.nil?
       exit_success = safe_fast_unpack('./license.tgz')
       @unpacked_license = !!exit_success
