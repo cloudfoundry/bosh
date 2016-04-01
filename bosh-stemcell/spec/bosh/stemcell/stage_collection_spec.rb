@@ -191,7 +191,6 @@ module Bosh::Stemcell
         let(:google_build_stemcell_image_stages) {
           [
             :system_network,
-            :system_google_network,
             :system_google_modules,
             :system_google_packages,
             :system_parameters,
