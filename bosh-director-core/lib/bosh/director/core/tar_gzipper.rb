@@ -11,6 +11,7 @@ module Bosh::Director::Core
     def compress(base_dir, sources, dest, options = {})
       sources = [*sources]
       sources.each do |source|
+        source = source.gsub(%r(^\./), '')
         if source.include?(File::SEPARATOR)
           raise "Sources must have a path depth of 1 and contain no '#{File::SEPARATOR}'"
         end
