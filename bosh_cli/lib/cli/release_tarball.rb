@@ -179,7 +179,7 @@ module Bosh::Cli
 
     def upload_packages?(package_matches = [])
       return true if package_matches.nil?
-      package_matches.size != manifest_yaml[@packages_folder].size
+      package_matches.uniq.size != manifest_yaml[@packages_folder].map { |p| p['version'] }.uniq.size
     end
 
     # Repacks tarball according to the structure of remote release

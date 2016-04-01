@@ -99,6 +99,20 @@ foo: bar
     end
   end
 
+  describe 'upload_packages?' do
+    context 'when the tarball has two packages with the same version fingerprint' do
+      context 'when the director supplies de-duped package version fingerprints' do
+        it 'returns false' do
+          tarball_path = spec_asset('test_release_two_packages_with_same_fingerprint.tgz')
+          release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+          release_tarball.unpack
+          director_de_duped_package_versions = ['16b4c8ef1574b3f98303307caad40227c208371f']
+          expect(release_tarball.upload_packages?(director_de_duped_package_versions)).to eq(false)
+        end
+      end
+    end
+  end
+
   describe 'upload a release' do
     it 'can untar manifest only if uploading the same release a 2nd time' do
       tarball_path = spec_asset('test_release.tgz')
