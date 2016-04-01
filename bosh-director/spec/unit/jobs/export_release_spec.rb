@@ -302,7 +302,7 @@ module Bosh::Director
           allow(blobstore_client).to receive(:get)
           allow(blobstore_client).to receive(:create)
           expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
-            expect(sources).to eq(['release.MF', 'jobs', 'compiled_packages'])
+            expect(sources).to eq(['./release.MF', './jobs', './compiled_packages'])
             File.write(output_path, 'Some glorious content')
           }
           job.perform
@@ -310,7 +310,6 @@ module Bosh::Director
 
         it 'should contain all compiled packages & jobs' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
               files = Dir.entries(download_dir)
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
