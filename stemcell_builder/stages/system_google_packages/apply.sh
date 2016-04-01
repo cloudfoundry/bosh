@@ -7,39 +7,22 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-# Install Google Daemon and Google Startup Scripts packages
-mkdir -p $chroot/tmp
+# Copy google daemon packages into chroot
+cp -R $assets_dir/usr $chroot/
+
 if [ -f $chroot/etc/debian_version ] # Ubuntu
 then
-  cp $assets_dir/google-compute-daemon_*.deb $chroot/tmp
-  cp $assets_dir/google-startup-scripts_*.deb $chroot/tmp
-
-  run_in_chroot $chroot "dpkg -i /tmp/google-compute-daemon_*.deb /tmp/google-startup-scripts_*.deb  || true"
-  pkg_mgr install
-
-  rm -f /tmp/google-compute-daemon_*.deb
-  rm -f /tmp/google-startup-scripts_*.deb
+  # Run google-accounts-manager and google-clock-sync-manager with upstart
+  cp $assets_dir/etc/init/google-accounts-manager-{task,service}.conf $chroot/etc/init/
+  cp $assets_dir/google-clock-sync-manager.conf $chroot/etc/init/
 elif [ -f $chroot/etc/redhat-release ] # Centos or RHEL
 then
-  cp $assets_dir/google-compute-daemon-*.rpm $chroot/tmp
-  cp $assets_dir/google-startup-scripts-*.rpm $chroot/tmp
-
-  run_in_chroot $chroot "yum -y install /tmp/google-compute-daemon-*.rpm /tmp/google-startup-scripts-*.rpm"
-
-  # Hack: enable systemd google services (rpm control script does not detect systemd)
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
-  run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-address-manager.service"
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-clock-sync-manager.service"
-
-  rm -f /tmp/google-compute-daemon-*.rpm
-  rm -f /tmp/google-startup-scripts-*.rpm
 else
   echo "Unknown OS, exiting"
   exit 2
 fi
-
-# Hack: avoid collissions recreating the host keys (bosh agent will do it for us)
-run_in_chroot $chroot "rm -fr /usr/share/google/regenerate-host-keys"
 
 # Hack: replace google metadata hostname with ip address (bosh agent might set a dns that it's unable to resolve the hostname)
 run_in_chroot $chroot "find /usr/share/google -type f -exec sed -i 's/metadata.google.internal/169.254.169.254/g' {} +"
