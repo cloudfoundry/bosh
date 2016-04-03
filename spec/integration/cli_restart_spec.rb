@@ -13,5 +13,13 @@ describe 'restart job', type: :integration do
     expect(bosh_runner.run("restart foobar #{instance_uuid}")).to include("foobar/#{instance_uuid} restarted")
     expect(bosh_runner.run('restart foobar')).to match %r{foobar/\* restarted}
     expect(bosh_runner.run('restart')).to match %r{all jobs restarted}
+
+    output = bosh_runner.run('events')
+    expect(scrub_event_specific(output)).to match_output %(
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update  | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | restart | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | restart | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update  | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+)
   end
 end

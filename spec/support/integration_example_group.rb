@@ -177,6 +177,25 @@ module IntegrationExampleGroup
     bosh_output.gsub /[0-9a-f]{8}-[0-9a-f-]{27}/, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   end
 
+  def scrub_event_time(bosh_output)
+    bosh_output.gsub /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx'
+  end
+
+  def scrub_event_parent_ids(bosh_output)
+    bosh_output.gsub /[0-9]{1,} <- [0-9]{1,} [ ]{0,}/, "x <- x "
+  end
+
+  def scrub_event_ids(bosh_output)
+    bosh_output.gsub /[ ][0-9]{1,} [ ]{0,}/, " x      "
+  end
+
+  def scrub_event_specific(bosh_output)
+    bosh_output_after_ids = scrub_random_ids(bosh_output)
+    bosh_output_after_time = scrub_event_time(bosh_output_after_ids)
+    bosh_output_after_parent_ids = scrub_event_parent_ids(bosh_output_after_time)
+    scrub_event_ids(bosh_output_after_parent_ids)
+  end
+  
   def scrub_random_cids(bosh_output)
     bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   end

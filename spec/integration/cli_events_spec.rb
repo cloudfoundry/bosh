@@ -4,9 +4,12 @@ describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays deployment events' do
-    deploy_from_scratch(runtime_config_hash: {
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    deploy_from_scratch(manifest_hash: manifest_hash, runtime_config_hash: {
         'releases' => [{"name" => 'bosh-release', "version" => "0.1-dev"}]
     })
+
 
     director.vm('foobar', '0').fail_job
     deploy(failure_expected: true)
@@ -24,21 +27,29 @@ describe 'cli: events', type: :integration do
     expect(output).to include('Dep')
     expect(output).to include('Inst')
     expect(output).to include('Context')
-    expect(scrub_random_numbers(output)).to match_output %(
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple    | x      | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -         | -    | -   | -    | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -         | -    | -   | -    | -                                                                                        |
+    expect(scrub_event_specific(output)).to match_output %(
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple                                                                                | x      | -      | -                                                                                     | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
 )
-  end
-
-  def scrub_random_numbers(bosh_output)
-    bosh_output = scrub_random_ids(bosh_output).gsub /[A-Za-z]{3} [A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx'
-    bosh_output = bosh_output.gsub /[0-9]{1,} <- [0-9]{1,} [ ]{0,}/, "x <- x "
-    bosh_output.gsub /[ ][0-9]{1,} [ ]{0,}/, " x      "
   end
 end

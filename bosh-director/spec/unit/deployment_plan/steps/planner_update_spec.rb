@@ -142,7 +142,13 @@ module Bosh::Director::DeploymentPlan
 
           let(:cloud) { instance_double('Bosh::Cloud') }
 
-          before { allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false) }
+          let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+          before {
+            allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
+            allow(base_job).to receive(:task_id).and_return(task.id)
+            allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
+            allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
+          }
 
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }

@@ -58,6 +58,14 @@ describe 'stop command', type: :integration do
                          'foobar/1' => 'stopped',
                          'foobar/2' => 'running'
                      })
+
+        output = bosh_runner.run('events')
+        expect(scrub_event_specific(output)).to match_output %(
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | stop   | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | stop   | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+)
       end
     end
 
