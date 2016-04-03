@@ -5,8 +5,12 @@ describe 'cli: events', type: :integration do
 
   it 'displays deployment events' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['instances'] = 1
-    deploy_from_scratch(manifest_hash: manifest_hash, runtime_config_hash: {
+    manifest_hash['jobs'][0]['persistent_disk_pool'] = 'disk_a'
+    manifest_hash['jobs'][0]['instances'] = 1
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    disk_pool = Bosh::Spec::Deployments.disk_pool
+    cloud_config['disk_pools'] = [disk_pool]
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, runtime_config_hash: {
         'releases' => [{"name" => 'bosh-release', "version" => "0.1-dev"}]
     })
 
@@ -30,6 +34,8 @@ describe 'cli: events', type: :integration do
     expect(scrub_event_specific(output)).to match_output %(
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | disk           | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                      | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | disk           | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                      | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple                                                                                | x      | -      | -                                                                                     | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
@@ -38,6 +44,8 @@ describe 'cli: events', type: :integration do
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | disk           | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                      | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | disk           | -                                                                                     | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
 | x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |

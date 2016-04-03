@@ -7,7 +7,7 @@ module Bosh::Director
       @transactor = Transactor.new
     end
 
-    def update_persistent_disk(instance_plan, vm_recreator)
+      def update_persistent_disk(instance_plan, vm_recreator)
       @logger.info('Updating persistent disk')
       check_persistent_disk(instance_plan)
 
@@ -52,19 +52,25 @@ module Bosh::Director
 
     def orphan_disk(disk)
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
-        orphan_disk = Models::OrphanDisk.create(
-          disk_cid: disk.disk_cid,
-          size: disk.size,
-          availability_zone: disk.instance.availability_zone,
-          deployment_name: disk.instance.deployment.name,
-          instance_name: "#{disk.instance.job}/#{disk.instance.uuid}",
-          cloud_properties: disk.cloud_properties
-        )
+        begin
+          parent_id = add_event('delete', disk.instance.deployment.name, "#{disk.instance.job}/#{disk.instance.uuid}", disk.disk_cid)
+          orphan_disk = Models::OrphanDisk.create(
+              disk_cid:          disk.disk_cid,
+              size:              disk.size,
+              availability_zone: disk.instance.availability_zone,
+              deployment_name:   disk.instance.deployment.name,
+              instance_name:     "#{disk.instance.job}/#{disk.instance.uuid}",
+              cloud_properties:  disk.cloud_properties
+          )
 
-        orphan_snapshots(disk.snapshots, orphan_disk)
-        @logger.info("Orphaning disk: '#{disk.disk_cid}', #{disk.active ? "active" : "inactive"}")
-
-        disk.destroy
+          orphan_snapshots(disk.snapshots, orphan_disk)
+          @logger.info("Orphaning disk: '#{disk.disk_cid}', #{disk.active ? "active" : "inactive"}")
+          disk.destroy
+        rescue Exception => e
+          raise e
+        ensure
+          add_event('delete', orphan_disk.deployment_name, orphan_disk.instance_name, orphan_disk.disk_cid, parent_id, e)
+        end
       end
     end
 
@@ -172,6 +178,22 @@ module Bosh::Director
     end
 
     private
+
+    def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
+      event  = Config.current_job.event_manager.create_event(
+          {
+              parent_id:   parent_id,
+              user:        Config.current_job.username,
+              action:      action,
+              object_type: 'disk',
+              object_name: object_name,
+              deployment:  deployment_name,
+              instance:    instance_name,
+              task:        Config.current_job.task_id,
+              error:       error
+          })
+      event.id
+    end
 
     def orphan_mounted_persistent_disk(instance_model, disk)
       unmount_disk(instance_model, disk)
@@ -282,7 +304,7 @@ module Bosh::Director
     def create_disk(instance_plan)
       job = instance_plan.desired_instance.job
       instance_model = instance_plan.instance.model
-
+      parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")
       disk_size = job.persistent_disk_type.disk_size
       cloud_properties = job.persistent_disk_type.cloud_properties
       disk_cid = @cloud.create_disk(disk_size, cloud_properties, instance_model.vm_cid)
@@ -294,6 +316,10 @@ module Bosh::Director
         size: disk_size,
         cloud_properties: cloud_properties,
       )
+    rescue Exception => e
+      raise e
+    ensure
+      add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
     end
   end
 end
