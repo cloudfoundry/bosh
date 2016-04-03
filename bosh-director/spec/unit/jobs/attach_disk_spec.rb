@@ -7,6 +7,8 @@ module Bosh::Director
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
@@ -33,6 +35,7 @@ module Bosh::Director
 
       before {
         allow(Config).to receive(:cloud)
+        allow(Config).to receive(:current_job).and_return(update_job)
       }
 
       context 'when the instance is stopped hard' do

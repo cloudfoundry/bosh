@@ -76,8 +76,11 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
   end
 
   describe 'delete disk solution' do
+    let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
     before do
       @disk.add_snapshot(Bosh::Director::Models::Snapshot.make)
+      allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
     end
 
     it 'fails if disk is mounted' do
