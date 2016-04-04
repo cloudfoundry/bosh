@@ -11,9 +11,8 @@ module Bosh::Director
         events = Models::Event.order_by(Sequel.desc(:id))
 
         if params['before_id']
-          fetch_until = params['before_id'].to_i
-          start_from = fetch_until > EVENT_LIMIT ? (fetch_until - (EVENT_LIMIT-1)) : 1
-          events = events.where(:id => start_from..fetch_until)
+          before_id = params['before_id'].to_i
+          events = events.filter("id < ?", before_id).limit(EVENT_LIMIT)
         end
 
         events = events.map do |event|
