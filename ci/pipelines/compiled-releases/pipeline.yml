@@ -58,7 +58,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-bosh-[\d\.]+-on-ubuntu-trusty-stemcell-[\d\.]+-(\d+).tgz"
+      regexp: "release-bosh-[\\d\\.]+-on-ubuntu-trusty-stemcell-[\\d\\.]+-(\\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty
     type: s3
@@ -66,7 +66,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-uaa-[\d\.]+-on-ubuntu-trusty-stemcell-[\d\.]+-(\d+).tgz"
+      regexp: "release-uaa-[\\d\\.]+-on-ubuntu-trusty-stemcell-[\\d\\.]+-(\\d+).tgz"
 
   # ubuntu-trusty-3146
 
@@ -76,7 +76,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-bosh-[\d\.]+-on-ubuntu-trusty-stemcell-3146\.[\d\.]+-(\d+).tgz"
+      regexp: "release-bosh-[\\d\\.]+-on-ubuntu-trusty-stemcell-3146\\.[\\d\\.]+-(\\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty-3146
     type: s3
@@ -84,7 +84,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      regexp: "release-uaa-[\d\.]+-on-ubuntu-trusty-stemcell-3146\.[\d\.]+-(\d+).tgz"
+      regexp: "release-uaa-[\\d\\.]+-on-ubuntu-trusty-stemcell-3146\\.[\\d\\.]+-(\\d+).tgz"
 
 
 jobs:
@@ -99,8 +99,6 @@ jobs:
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
           stemcell: ubuntu-trusty-stemcell
-        outputs:
-        - name: director-state
         params:
           BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
           BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
@@ -121,9 +119,6 @@ jobs:
         ensure:
           task: teardown-director
           file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
-          inputs:
-          - name: director-state
-
 
 
   - name: compile-bosh-release-latest-ubuntu-trusty-3146
@@ -137,8 +132,6 @@ jobs:
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
           stemcell: ubuntu-trusty-3146-stemcell
-        outputs:
-        - name: director-state
         params:
           BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
           BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
@@ -159,9 +152,6 @@ jobs:
         ensure:
           task: teardown-director
           file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
-          inputs:
-          - name: director-state
-
 
   - name: compile-uaa-release-latest-ubuntu-trusty-latest
     plan:
@@ -174,8 +164,6 @@ jobs:
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
           stemcell: ubuntu-trusty-stemcell
-        outputs:
-        - name: director-state
         params:
           BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
           BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
@@ -196,9 +184,6 @@ jobs:
         ensure:
           task: teardown-director
           file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
-          inputs:
-          - name: director-state
-
 
 
   - name: compile-uaa-release-latest-ubuntu-trusty-3146
@@ -212,8 +197,6 @@ jobs:
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
           stemcell: ubuntu-trusty-3146-stemcell
-        outputs:
-        - name: director-state
         params:
           BOSH_INIT_ACCESS_KEY: {{bosh_init_access_key}}
           BOSH_INIT_SECRET_KEY: {{bosh_init_secret_key}}
@@ -234,5 +217,3 @@ jobs:
         ensure:
           task: teardown-director
           file: bosh-src/ci/pipelines/compiled-releases/tasks/teardown-director.yml
-          inputs:
-          - name: director-state

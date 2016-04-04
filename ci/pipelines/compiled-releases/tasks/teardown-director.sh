@@ -2,7 +2,7 @@
 
 set -ex
 
-cp -r director-state/* .
-# cp -r director-state/.bosh-init/ $HOME/  
+mv director-state/* .
+mv director-state/.bosh_init $HOME/
 
 bosh-init delete bosh-init.yml
