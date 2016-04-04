@@ -58,7 +58,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      versioned_file: bosh-on-ubuntu-trusty.version
+      regexp: "release-bosh-[\d\.]+-on-ubuntu-trusty-stemcell-[\d\.]+-(\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty
     type: s3
@@ -66,7 +66,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      versioned_file: uaa-on-ubuntu-trusty.version
+      regexp: "release-uaa-[\d\.]+-on-ubuntu-trusty-stemcell-[\d\.]+-(\d+).tgz"
 
   # ubuntu-trusty-3146
 
@@ -76,7 +76,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      versioned_file: bosh-on-ubuntu-trusty-3146.version
+      regexp: "release-bosh-[\d\.]+-on-ubuntu-trusty-stemcell-3146\.[\d\.]+-(\d+).tgz"
 
   - name: uaa-on-ubuntu-trusty-3146
     type: s3
@@ -84,7 +84,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-      versioned_file: uaa-on-ubuntu-trusty-3146.version
+      regexp: "release-uaa-[\d\.]+-on-ubuntu-trusty-stemcell-3146\.[\d\.]+-(\d+).tgz"
 
 
 jobs:
