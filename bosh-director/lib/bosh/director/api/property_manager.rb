@@ -12,7 +12,8 @@ module Bosh::Director
         property.save
 
       rescue Sequel::ValidationFailed => e
-        if e.errors[[:name, :deployment_id]].include?(:unique)
+
+        if e.errors[[:name, :deployment_id]] && e.errors[[:name, :deployment_id]].include?(:unique)
           raise PropertyAlreadyExists,
                 "Property '#{property_name}' already exists " +
                 "for deployment '#{deployment.name}'"

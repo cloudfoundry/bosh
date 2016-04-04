@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  = %w(bosh-registry bosh-registry-migrate)
 
-  spec.add_dependency 'sequel',    '~>3.43.0'
+  spec.add_dependency 'sequel',    '~>4.32.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'thin',      '~>1.5.0'
   spec.add_dependency 'yajl-ruby', '~>1.2.0'

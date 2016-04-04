@@ -17,7 +17,7 @@ module Bosh::Director
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }
 
-      let(:existing_instance) { Models::Instance.make(vm_cid: 'fake-vm-cid', deployment: deployment_model, uuid: 'uuid-1', job: 'fake-job-name', index: 5) }
+      let(:existing_instance) { Models::Instance.make(vm_cid: 'fake-vm-cid', deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5) }
 
       let(:instance_plan) do
         DeploymentPlan::InstancePlan.new(
@@ -91,9 +91,9 @@ module Bosh::Director
         it 'should delete the instances with the config max threads option' do
           allow(Config).to receive(:max_threads).and_return(5)
           pool = double('pool')
-          allow(ThreadPool).to receive(:new).with(max_threads: 5).and_return(pool)
-          allow(pool).to receive(:wrap).and_yield(pool)
-          allow(pool).to receive(:process).and_yield
+          expect(ThreadPool).to receive(:new).with(max_threads: 5).and_return(pool)
+          expect(pool).to receive(:wrap).and_yield(pool)
+          expect(pool).to receive(:process).exactly(5).times.and_yield
 
           5.times do |index|
             expect(deleter).to receive(:delete_instance_plan).with(
@@ -107,9 +107,9 @@ module Bosh::Director
 
         it 'should delete the instances with the respected max threads option' do
           pool = double('pool')
-          allow(ThreadPool).to receive(:new).with(max_threads: 2).and_return(pool)
-          allow(pool).to receive(:wrap).and_yield(pool)
-          allow(pool).to receive(:process).and_yield
+          expect(ThreadPool).to receive(:new).with(max_threads: 2).and_return(pool)
+          expect(pool).to receive(:wrap).and_yield(pool)
+          expect(pool).to receive(:process).exactly(5).times.and_yield
 
           5.times do |index|
             expect(deleter).to receive(:delete_instance_plan).with(
@@ -125,7 +125,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
           expect(ip_provider).to receive(:release).with(reservation)
 
-          expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (uuid-1)')
+          expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
 
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
           allow(RenderedJobTemplatesCleaner).to receive(:new).with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
@@ -151,7 +151,7 @@ module Bosh::Director
               expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
               expect(ip_provider).to receive(:release).with(reservation)
 
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (uuid-1)')
+              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
 
               expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
@@ -174,7 +174,7 @@ module Bosh::Director
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (uuid-1)')
+              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
 
               expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
@@ -195,7 +195,7 @@ module Bosh::Director
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (uuid-1)')
+              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
 
               expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
@@ -216,7 +216,7 @@ module Bosh::Director
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(ip_provider).to receive(:release).with(reservation)
 
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (uuid-1)')
+              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
               expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
               expect {

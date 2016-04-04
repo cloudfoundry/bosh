@@ -179,13 +179,12 @@ module Bosh::Director
       end
 
       def configure_db(db_config)
-        patch_sqlite if db_config['adapter'] == 'sqlite'
-
         connection_config = db_config.dup
         connection_options = connection_config.delete('connection_options') {{}}
         connection_config.delete_if { |_, v| v.to_s.empty? }
         connection_config = connection_config.merge(connection_options)
 
+        Sequel.default_timezone = :utc
         db = Sequel.connect(connection_config)
 
         Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Exception]) do
@@ -288,38 +287,6 @@ module Bosh::Director
         temp_dir
       end
 
-      def patch_sqlite
-        return if @patched_sqlite
-        @patched_sqlite = true
-
-        require 'sequel'
-        require 'sequel/adapters/sqlite'
-
-        Sequel::SQLite::Database.class_eval do
-          def connect(server)
-            opts = server_opts(server)
-            opts[:database] = ':memory:' if blank_object?(opts[:database])
-            db = ::SQLite3::Database.new(opts[:database])
-            db.busy_handler do |retries|
-              Bosh::Director::Config.logger.debug "SQLITE BUSY, retry ##{retries}"
-              sleep(0.1)
-              retries < 20
-            end
-
-            connection_pragmas.each { |s| log_yield(s) { db.execute_batch(s) } }
-
-            class << db
-              attr_reader :prepared_statements
-            end
-            db.instance_variable_set(:@prepared_statements, {})
-
-            db
-          end
-        end
-      end
-
-      # Migrates director UUID to database
-      # Currently used by integration tests to set director UUID
       def override_uuid
         new_uuid = nil
         state_file = File.join(base_dir, 'state.json')

@@ -1,9 +1,9 @@
 ---
 packages:
 - name: director
-  version: 381c9c85767f5859ace47c792fba8054d38cc743
-  fingerprint: 381c9c85767f5859ace47c792fba8054d38cc743
-  sha1: ab4d7104bfdfae407b6dd4e354e87e44f417024e
+  version: d0b4ad15e5402b36952364956cbd66b42c08c1de
+  fingerprint: d0b4ad15e5402b36952364956cbd66b42c08c1de
+  sha1: 863e5c5a7d351effe736f5fae9cd903d15073e0b
   dependencies:
   - libpq
   - mysql
@@ -14,9 +14,9 @@ packages:
   sha1: 2acf8da0250db31e762a23756fd0e12cfa947eb9
   dependencies: []
 - name: health_monitor
-  version: 35479754b96728260a23e96c5df054a20e01aa2d
-  fingerprint: 35479754b96728260a23e96c5df054a20e01aa2d
-  sha1: ed81d75cf6c875a07d88976d1b22d0ec0ca65240
+  version: 48ef20eb6fc4ac8f46097644434e311388866ddf
+  fingerprint: 48ef20eb6fc4ac8f46097644434e311388866ddf
+  sha1: 682269a541ea379416913c44d72e9d87cb5ca9e0
   dependencies:
   - ruby
 - name: libpq
@@ -61,9 +61,9 @@ packages:
   sha1: e3ef83d1342827a667c9adfbb510e560028f109b
   dependencies: []
 - name: registry
-  version: 192eb37ff5c92f322086cf2d3b6b45519f66bc88
-  fingerprint: 192eb37ff5c92f322086cf2d3b6b45519f66bc88
-  sha1: 9ea9f56e1c60e7433e4fe58bb5e4a64df1ed7ed6
+  version: 293646764411fdd58e14d28b2306c575231c5755
+  fingerprint: 293646764411fdd58e14d28b2306c575231c5755
+  sha1: b72157ed3133cf05565ba2b89d76b38438cbfb32
   dependencies:
   - libpq
   - mysql
@@ -110,7 +110,7 @@ jobs:
   version: cb87e2ee9c510212a3c28b106206f3b444980236
   fingerprint: cb87e2ee9c510212a3c28b106206f3b444980236
   sha1: 3401a86554db5e4c3ecc679ed7ef6b5171d30964
-commit_hash: 6ee6c6dd
+commit_hash: 8f47e6a7
 uncommitted_changes: true
 name: bosh
-version: '255.7'
+version: '255.8'

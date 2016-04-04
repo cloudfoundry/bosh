@@ -34,7 +34,7 @@ module Bosh::Director
     end
 
     def find_dns_records_by_pattern(record_pattern)
-      records = Models::Dns::Record.filter(:name.like(record_pattern))
+      records = Models::Dns::Record.grep(:name, record_pattern)
       records.filter(:domain_id => find_domain_id).all
     end
 
@@ -45,7 +45,7 @@ module Bosh::Director
       ips = []
       records.each do |record|
         ips << record.content
-        Models::Dns::Record.filter(:content.like(record.name)).each do |ptr|
+        Models::Dns::Record.grep(:content, record.name).each do |ptr|
           @logger.info("Deleting reverse DNS record: #{ptr.name} -> #{ptr.content}")
           ptr.destroy
         end

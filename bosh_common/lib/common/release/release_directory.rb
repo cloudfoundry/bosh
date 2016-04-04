@@ -10,7 +10,7 @@ module Bosh::Common::Release
       ordered_release_files += (dir_entries & ['LICENSE', 'NOTICE']).sort
       ordered_release_files << 'jobs'
       ordered_release_files += (dir_entries & ['compiled_packages', 'packages'])
-      ordered_release_files
+      ordered_release_files.map { |filename| "./#{filename}" }
     end
   end
 end

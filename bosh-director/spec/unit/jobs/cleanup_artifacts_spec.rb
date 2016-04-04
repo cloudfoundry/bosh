@@ -30,6 +30,12 @@ module Bosh::Director
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:release_1) { Models::Release.make(name: 'release-1') }
       let(:release_2) { Models::Release.make(name: 'release-2') }
+      let(:thread_pool) { instance_double(ThreadPool) }
+      before do
+        allow(ThreadPool).to receive(:new).and_return(thread_pool)
+        allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
+        allow(thread_pool).to receive(:process).and_yield
+      end
 
       before do
         fake_locks
@@ -125,7 +131,7 @@ module Bosh::Director
           allow(cloud).to receive(:delete_disk)
 
           delete_artifacts = Jobs::CleanupArtifacts.new({})
-          expect_any_instance_of(ThreadPool).not_to receive(:process)
+          expect(thread_pool).not_to receive(:process)
           result = delete_artifacts.perform
 
           expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')
@@ -149,7 +155,7 @@ module Bosh::Director
             allow(cloud).to receive(:delete_disk)
 
             delete_artifacts = Jobs::CleanupArtifacts.new({})
-            expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
+            expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = delete_artifacts.perform
 
             expected_result = 'Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s)'
@@ -173,7 +179,7 @@ module Bosh::Director
             allow(cloud).to receive(:delete_disk)
 
             delete_artifacts = Jobs::CleanupArtifacts.new({})
-            expect_any_instance_of(ThreadPool).to receive(:process).exactly(2).times.and_call_original
+            expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = delete_artifacts.perform
 
             expected_result = 'Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s)'
@@ -211,7 +217,7 @@ module Bosh::Director
             allow(cloud).to receive(:delete_disk)
 
             delete_artifacts = Jobs::CleanupArtifacts.new({})
-            expect_any_instance_of(ThreadPool).not_to receive(:process)
+            expect(thread_pool).not_to receive(:process)
             result = delete_artifacts.perform
 
             expect(result).to eq('Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s)')

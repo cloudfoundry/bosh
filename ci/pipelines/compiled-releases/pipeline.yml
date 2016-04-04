@@ -58,6 +58,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
+      versioned_file: bosh-on-ubuntu-trusty.version
 
   - name: uaa-on-ubuntu-trusty
     type: s3
@@ -65,6 +66,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
+      versioned_file: uaa-on-ubuntu-trusty.version
 
   # ubuntu-trusty-3146
 
@@ -74,6 +76,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
+      versioned_file: bosh-on-ubuntu-trusty-3146.version
 
   - name: uaa-on-ubuntu-trusty-3146
     type: s3
@@ -81,7 +84,7 @@ resources:
       bucket: "bosh-compiled-release-tarballs"
       access_key_id: {{aws_key_id}}
       secret_access_key: {{aws_secret_access_key}}
-
+      versioned_file: uaa-on-ubuntu-trusty-3146.version
 
 
 jobs:

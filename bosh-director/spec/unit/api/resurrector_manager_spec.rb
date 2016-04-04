@@ -76,14 +76,14 @@ module Bosh::Director
       describe 'set_pause_for_all' do
         context 'setting pause to true' do
           it 'configures all instances to pause resurrection functionality' do
-            expect(Models::Instance).to receive(:update).with(resurrection_paused: true)
+            expect(Models::Instance).to receive_message_chain(:dataset, :update).with(resurrection_paused: true)
             resurrection_manager.set_pause_for_all(true)
           end
         end
 
         context 'setting pause to false' do
           it 'configures all instances to (re)start resurrection functionality' do
-            expect(Models::Instance).to receive(:update).with(resurrection_paused: false)
+            expect(Models::Instance).to receive_message_chain(:dataset, :update).with(resurrection_paused: false)
             resurrection_manager.set_pause_for_all(false)
           end
         end

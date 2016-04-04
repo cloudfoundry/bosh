@@ -22,7 +22,7 @@ module Bosh::Director
     end
     let(:instance) { DeploymentPlan::Instance.create_from_job(job, 1, 'started', nil, {}, nil, logger) }
     let(:instance_model) do
-      instance = Models::Instance.make(vm_cid: 'vm234', uuid: 'uuid-1')
+      instance = Models::Instance.make(vm_cid: 'vm234', uuid: 'my-uuid-1')
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end
@@ -54,7 +54,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (uuid-1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (my-uuid-1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
 
@@ -93,7 +93,7 @@ module Bosh::Director
         end
 
         it 'logs when the disks are inactive' do
-          expect(logger).to receive(:warn).with("'job-name/1 (uuid-1)' has inactive disk inactive-disk")
+          expect(logger).to receive(:warn).with("'job-name/1 (my-uuid-1)' has inactive disk inactive-disk")
           disk_manager.update_persistent_disk(instance_plan, vm_recreator)
         end
 
@@ -317,7 +317,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               disk_manager.update_persistent_disk(instance_plan, vm_recreator)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (uuid-1)' has invalid disks: agent reports '' while director record shows 'disk123'"
+            }.to raise_error AgentDiskOutOfSync, "'job-name/1 (my-uuid-1)' has invalid disks: agent reports '' while director record shows 'disk123'"
           end
         end
       end
@@ -390,8 +390,8 @@ module Bosh::Director
 
     describe '#list_orphan_disk' do
       it 'returns an array of orphaned disks as hashes' do
-        orphaned_at = Time.now
-        other_orphaned_at = Time.now
+        orphaned_at = Time.now.utc
+        other_orphaned_at = Time.now.utc
         Models::OrphanDisk.make(
           disk_cid: 'random-disk-cid-1',
           instance_name: 'fake-name-1',
@@ -432,7 +432,7 @@ module Bosh::Director
     end
 
     describe 'Deleting orphans' do
-      let(:time) { Time.now }
+      let(:time) { Time.now.utc }
       let(:ten_seconds_ago) { time - 10 }
       let(:six_seconds_ago) { time - 6 }
       let(:five_seconds_ago) { time - 5 }

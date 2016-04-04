@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -ex
+
 cp -r director-state/* .
-mv director-state/.bosh-init $HOME/
+# cp -r director-state/.bosh-init/ $HOME/  
+
 bosh-init delete bosh-init.yml

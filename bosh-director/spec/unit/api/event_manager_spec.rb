@@ -106,7 +106,7 @@ describe Bosh::Director::Api::EventManager do
       it 'does not duplicate ids (no reuse of deleted ids)' do
         manager.remove_old_events(3)
         manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment', :object_name => 'dep'})
-        expect(Bosh::Director::Models::Event.order{id.asc}.last.id).to eq(14)
+        expect(Bosh::Director::Models::Event.order{Sequel.asc(:id)}.last.id).to eq(14)
       end
     end
 
@@ -123,7 +123,7 @@ describe Bosh::Director::Api::EventManager do
         }.to change {
           Bosh::Director::Models::Event.count
         }.from(13).to(9)
-        expect(Bosh::Director::Models::Event.order{id.desc}.last.id).to eq(5)
+        expect(Bosh::Director::Models::Event.order{Sequel.desc(:id)}.last.id).to eq(5)
       end
     end
 

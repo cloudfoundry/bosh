@@ -84,12 +84,12 @@ module Bosh::Deployer
         let(:fake_registry_instances) { double }
 
         it 'updates the databse with the previous deployments' do
-          fake_instances_table = instance_double('Sequel::Dataset', insert_multiple: nil)
+          fake_instances_table = instance_double('Sequel::Dataset', multi_insert: nil)
           allow(db).to receive(:[]).with(:registry_instances).and_return(fake_instances_table)
 
           subject.start
 
-          expect(fake_instances_table).to have_received(:insert_multiple)
+          expect(fake_instances_table).to have_received(:multi_insert)
                                           .with(fake_registry_instances)
         end
 

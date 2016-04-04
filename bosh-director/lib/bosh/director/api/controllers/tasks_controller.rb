@@ -63,7 +63,7 @@ module Bosh::Director
           @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
         end
 
-        tasks = dataset.order_by(:timestamp.desc).map
+        tasks = dataset.order_by(Sequel.desc(:timestamp)).map
 
         unless @permission_authorizer.is_granted?(:director, :read, token_scopes)
           permitted_deployments = @deployment_manager.all_by_name_asc.select { |deployment|
