@@ -184,8 +184,6 @@ module Bosh::Director
             "blobstore_id" => first_template.blobstore_id
           }
 
-          result['template_scoped_properties'] = first_template.template_scoped_properties[@name] unless first_template.template_scoped_properties[@name].nil?
-
           if first_template.logs
             result["logs"] = first_template.logs
           end
@@ -198,8 +196,6 @@ module Bosh::Director
               "sha1" => template.sha1,
               "blobstore_id" => template.blobstore_id
             }
-
-            template_entry['template_scoped_properties'] = template.template_scoped_properties[@name] unless template.template_scoped_properties[@name].nil?
 
             if template.logs
               template_entry["logs"] = template.logs
