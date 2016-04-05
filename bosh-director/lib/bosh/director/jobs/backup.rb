@@ -19,7 +19,7 @@ module Bosh::Director
 
       def perform
         Dir.mktmpdir do |tmp_output_dir|
-          event_log.begin_stage('Backing up director', 4)
+          begin_stage('Backing up director', 4)
           backup_database("#{tmp_output_dir}/director_db.sql")
           @tar_gzipper.compress(tmp_output_dir, 'director_db.sql', @backup_file)
           "Backup created at #{@backup_file}"

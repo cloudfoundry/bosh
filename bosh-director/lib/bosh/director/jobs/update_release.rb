@@ -153,8 +153,8 @@ module Bosh::Director
         process_packages(release_dir)
         process_jobs(release_dir)
 
-        event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
-        event_log.track("#{@name}/#{@version}") {}
+        event_log_stage = Config.event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
+        event_log_stage.advance_and_track("#{@name}/#{@version}") {}
       end
 
       # Normalizes release manifest, so all names, versions, and checksums are Strings.
@@ -341,12 +341,12 @@ module Bosh::Director
 
         package_refs = []
 
-        event_log.begin_stage("Creating new packages", package_metas.size)
+        event_log_stage = Config.event_log.begin_stage("Creating new packages", package_metas.size)
 
         package_metas.each do |package_meta|
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           package = nil
-          event_log.track(package_desc) do
+          event_log_stage.advance_and_track(package_desc) do
             logger.info("Creating new package '#{package_desc}'")
             package = create_package(package_meta, release_dir)
             register_package(package)
@@ -367,7 +367,7 @@ module Bosh::Director
       def create_compiled_packages(all_compiled_packages, release_dir)
         return false if all_compiled_packages.nil?
 
-        event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
+        event_log_stage = Config.event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
         had_effect = false
 
         all_compiled_packages.each do |compiled_package_spec|
@@ -382,7 +382,7 @@ module Bosh::Director
 
           if existing_compiled_packages.empty?
             package_desc = "#{package.name}/#{package.version} for #{stemcell_os}/#{stemcell_version}"
-            event_log.track(package_desc) do
+            event_log_stage.advance_and_track(package_desc) do
               other_compiled_packages = compiled_packages_matching(package, stemcell)
               if @fix
                 other_compiled_packages.each do |other_compiled_package|
@@ -567,10 +567,10 @@ module Bosh::Director
       def create_jobs(jobs, release_dir)
         return false if jobs.empty?
 
-        event_log.begin_stage("Creating new jobs", jobs.size)
+        event_log_stage = Config.event_log.begin_stage("Creating new jobs", jobs.size)
         jobs.each do |job_meta|
           job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
-          event_log.track(job_desc) do
+          event_log_stage.advance_and_track(job_desc) do
             logger.info("Creating new template '#{job_desc}'")
             template = create_job(job_meta, release_dir)
             register_template(template)

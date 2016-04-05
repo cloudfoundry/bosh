@@ -2,10 +2,9 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class UpdateStep
-        def initialize(base_job, event_log, deployment_plan, multi_job_updater, cloud)
+        def initialize(base_job, deployment_plan, multi_job_updater, cloud)
           @base_job = base_job
           @logger = base_job.logger
-          @event_log = event_log
           @cloud = cloud
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
@@ -36,7 +35,7 @@ module Bosh::Director
 
           @logger.info('Creating missing VMs')
           # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm? check?
-          @vm_creator.create_for_instance_plans(@deployment_plan.instance_plans_with_missing_vms, @deployment_plan.ip_provider, @event_log)
+          @vm_creator.create_for_instance_plans(@deployment_plan.instance_plans_with_missing_vms, @deployment_plan.ip_provider)
 
           @base_job.task_checkpoint
         end
@@ -56,7 +55,7 @@ module Bosh::Director
             @logger.info('No unneeded instances to delete')
             return
           end
-          event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
+          event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
           dns_manager = DnsManagerProvider.create
           instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
           unneeded_instance_plans = unneeded_instances.map do |instance|

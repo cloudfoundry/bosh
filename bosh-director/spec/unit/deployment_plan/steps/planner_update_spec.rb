@@ -2,7 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
-    let(:event_log) { Bosh::Director::Config.event_log }
 
     before do
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
@@ -55,7 +54,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, Bosh::Director::Config.event_log, deployment_plan, multi_job_updater, cloud) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }

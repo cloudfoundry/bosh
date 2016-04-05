@@ -17,7 +17,7 @@ module Bosh::Director
 
         blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         log_bundles_cleaner = LogBundlesCleaner.new(blobstore, 60 * 60 * 24 * 10, logger) # 10 days
-        @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
+        @logs_fetcher = LogsFetcher.new(@instance_manager, log_bundles_cleaner, logger)
       end
 
       def perform

@@ -3,14 +3,13 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe ReleaseDeleter do
-      subject(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger) }
+      subject(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger) }
 
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blob_deleter, logger) }
       let(:template_deleter) { TemplateDeleter.new(blob_deleter, logger) }
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blob_deleter, logger) }
       let(:blob_deleter) { BlobDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
-      let(:event_log) { EventLog::Log.new }
 
       describe '#delete' do
         let(:release) { Models::Release.make(name: 'release-1') }

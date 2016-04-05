@@ -136,7 +136,6 @@ module Bosh::Director
           compilation,
           compilation_instance_pool,
           @logger,
-          Config.event_log,
           nil
         )
         package_compile_step.perform
