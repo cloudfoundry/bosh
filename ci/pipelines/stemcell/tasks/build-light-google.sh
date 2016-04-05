@@ -22,7 +22,11 @@ mkdir working_dir
 pushd working_dir
   tar xvf ${stemcell_dir}/*.tgz
   mv image "${raw_stemcell_dir}/bosh-stemcell-${BUILD_NUMBER}-google-kvm-${OS_NAME}-${OS_VERSION}-go_agent-raw.tar.gz"
+
   > image
   echo "  source_url: https://storage.googleapis.com/${BUCKET_NAME}/bosh-stemcell-${BUILD_NUMBER}-google-kvm-${OS_NAME}-${OS_VERSION}-go_agent-raw.tar.gz" >> stemcell.MF
-  tar czvf "${light_stemcell_dir}/light-bosh-stemcell-${BUILD_NUMBER}-google-kvm-${OS_NAME}-${OS_VERSION}-go_agent.tgz" *
+
+  light_stemcell_path="${light_stemcell_dir}/light-bosh-stemcell-${BUILD_NUMBER}-google-kvm-${OS_NAME}-${OS_VERSION}-go_agent.tgz"
+  tar czvf "${light_stemcell_path}" *
+  echo -n $(sha1sum ${light_stemcell_path} | awk '{print $1}') > ${light_stemcell_path}.sha1
 popd
