@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image: docker:///bosh/os-image-stemcell-builder
+
+inputs:
+  - name: stemcell
+  - name: version
+
+outputs:
+  - name: light-stemcell
+  - name: raw-stemcell
+
+run:
+  path: bosh-src/ci/pipelines/stemcell/tasks/build-light-google.sh
+
+params:
+  OS_NAME:         replace-me
+  OS_VERSION:      replace-me
+  BUCKET_NAME:     replace-me
