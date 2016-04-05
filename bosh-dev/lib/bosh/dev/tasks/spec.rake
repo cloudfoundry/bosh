@@ -69,12 +69,12 @@ namespace :spec do
     end
 
     def run_in_parallel(test_path, options={})
-      spec_path = ENV['SPEC_PATH']
+      spec_path = ENV['SPEC_PATH'] || ''
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
       tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
       command = begin
-        if spec_path
+        if '' != spec_path
           "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
           "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
