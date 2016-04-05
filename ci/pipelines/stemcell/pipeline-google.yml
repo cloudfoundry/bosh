@@ -11,33 +11,27 @@ jobs:
       - aggregate:
           - get: version
             trigger: true
-            passed: [build-stemcell]
           - get: bosh-src
-            passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
           - get: os-image
             resource: ubuntu-trusty-os-image
-            passed: [build-stemcell]
 
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
-        config:
-          params:
-            IAAS:       google
-            HYPERVISOR: kvm
-            OS_NAME:    ubuntu
-            OS_VERSION: trusty
+        params:
+          IAAS:       google
+          HYPERVISOR: kvm
+          OS_NAME:    ubuntu
+          OS_VERSION: trusty
 
       - task: create-light-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build-light-google.yml
         privileged: true
-        config:
-          params:
-            OS_NAME:         ubuntu
-            OS_VERSION:      trusty
-            BUCKET_NAME:     {{google_stemcells_bucket_name}}
+        params:
+          OS_NAME:         ubuntu
+          OS_VERSION:      trusty
+          BUCKET_NAME:     {{google_stemcells_bucket_name}}
 
       - aggregate:
         - put: google-kvm-ubuntu-trusty
@@ -70,33 +64,27 @@ jobs:
       - aggregate:
           - get: version
             trigger: true
-            passed: [build-stemcell]
           - get: bosh-src
-            passed: [build-stemcell]
           - get: bosh-release
-            passed: [build-stemcell]
           - get: os-image
             resource: centos-7-os-image
-            passed: [build-stemcell]
 
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
         privileged: true
-        config:
-          params:
-            IAAS:       google
-            HYPERVISOR: kvm
-            OS_NAME:    centos
-            OS_VERSION: 7
+        params:
+          IAAS:       google
+          HYPERVISOR: kvm
+          OS_NAME:    centos
+          OS_VERSION: 7
 
       - task: create-light-stemcell
         file: bosh-src/ci/pipelines/stemcell/tasks/build-light-google.yml
         privileged: true
-        config:
-          params:
-            OS_NAME:         centos
-            OS_VERSION:      7
-            BUCKET_NAME:     {{google_stemcells_bucket_name}}
+        params:
+          OS_NAME:         centos
+          OS_VERSION:      7
+          BUCKET_NAME:     {{google_stemcells_bucket_name}}
 
       - aggregate:
         - put: google-kvm-centos-7
@@ -142,47 +130,99 @@ resources:
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
-  - name: bosh-ubuntu-stemcells
+  - name: bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+
+  # os-images
+
+  - name: ubuntu-trusty-os-image
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      versioned_file: bosh-ubuntu-trusty-os-image.tgz
+      access_key_id: {{os_image_aws_access_key}}
+      secret_access_key: {{os_image_aws_secret_key}}
+
+  - name: centos-7-os-image
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      versioned_file: bosh-centos-7-os-image.tgz
+      access_key_id: {{os_image_aws_access_key}}
+      secret_access_key: {{os_image_aws_secret_key}}
+
+  # stemcells
+  - name: google-kvm-ubuntu-trusty
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz
 
-  - name: bosh-ubuntu-raw-stemcells
+  - name: google-kvm-ubuntu-trusty-sha1
+    type: gcs-resource
+    source:
+      json_key: {{google_json_key_data}}
+      bucket:   {{google_stemcells_bucket_name}}
+      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
+
+  - name: google-kvm-ubuntu-trusty-raw
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
 
-  - name: bosh-ubuntu-light-stemcells
+  - name: light-google-kvm-ubuntu-trusty
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz
 
-  - name: bosh-centos-stemcells
+  - name: light-google-kvm-ubuntu-trusty-sha1
+    type: gcs-resource
+    source:
+      json_key: {{google_json_key_data}}
+      bucket:   {{google_stemcells_bucket_name}}
+      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
+
+  - name: google-kvm-centos-7
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz
 
-  - name: bosh-centos-raw-stemcells
+  - name: google-kvm-centos-7-sha1
+    type: gcs-resource
+    source:
+      json_key: {{google_json_key_data}}
+      bucket:   {{google_stemcells_bucket_name}}
+      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz.sha1
+
+  - name: google-kvm-centos-7-raw
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent-raw.tar.gz
 
-  - name: bosh-centos-light-stemcells
+  - name: light-google-kvm-centos-7
     type: gcs-resource
     source:
       json_key: {{google_json_key_data}}
       bucket:   {{google_stemcells_bucket_name}}
       regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz
+
+  - name: light-google-kvm-centos-7-sha1
+    type: gcs-resource
+    source:
+      json_key: {{google_json_key_data}}
+      bucket:   {{google_stemcells_bucket_name}}
+      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz.sha1
 
 resource_types:
   - name: gcs-resource

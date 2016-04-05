@@ -4,6 +4,7 @@ platform: linux
 image: docker:///bosh/os-image-stemcell-builder
 
 inputs:
+  - name: bosh-src
   - name: stemcell
   - name: version
 
