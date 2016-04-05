@@ -100,6 +100,7 @@ require 'bosh/director/deployment_deleter'
 require 'bosh/director/permission_authorizer'
 require 'bosh/director/transactor'
 require 'bosh/director/sequel'
+require 'bosh/director/arp_flusher'
 require 'common/thread_pool'
 
 require 'bosh/director/manifest/manifest'

@@ -27,7 +27,8 @@ module Bosh::Director
     end
 
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
+    let(:arp_flusher) { ArpFlusher.new }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:compilation_config) do
@@ -341,4 +342,3 @@ module Bosh::Director
     end
   end
 end
-

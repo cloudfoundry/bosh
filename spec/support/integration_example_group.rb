@@ -82,6 +82,10 @@ module IntegrationExampleGroup
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')} --skip-if-exists", options)
   end
 
+  def upload_stemcell_2(options={})
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')} --skip-if-exists", options)
+  end
+
   def delete_stemcell
     bosh_runner.run("delete stemcell ubuntu-stemcell 1")
   end

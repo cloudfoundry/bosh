@@ -106,6 +106,23 @@ module Bosh::Director
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
           it_acts_as_asynchronous_message :start
+          it_acts_as_asynchronous_message :delete_from_arp
+        end
+
+        describe 'delete_from_arp' do
+          it 'is only a warning when the remote agent does not implement update_settings' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
+
+            expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
+            expect { client.delete_from_arp() }.to_not raise_error
+          end
+
+          it 'still raises an exception for other RPC failures' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
+
+            expect(client).to_not receive(:warning)
+            expect { client.delete_from_arp() }.to raise_error
+          end
         end
 
         describe 'update_settings' do
