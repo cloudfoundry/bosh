@@ -165,23 +165,23 @@ module Bosh::Director
 
             if current_template_model.consumes != nil
               current_template_model.consumes.each do |consumes|
-                template.add_link_info(@job.name,'consumes', consumes["name"], consumes)
+                template.add_link_from_release(@job.name,'consumes', consumes["name"], consumes)
               end
             end
             if current_template_model.provides != nil
               current_template_model.provides.each do |provides|
-                template.add_link_info(@job.name, 'provides', provides["name"], provides)
+                template.add_link_from_release(@job.name, 'provides', provides["name"], provides)
               end
             end
 
             provides_links = safe_property(template_spec, 'provides', class: Hash, optional: true)
             provides_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, "provides", link_name, source)
+              template.add_link_from_manifest(@job.name, "provides", link_name, source)
             end
 
             consumes_links = safe_property(template_spec, 'consumes', class: Hash, optional: true)
             consumes_links.to_a.each do |link_name, source|
-              template.add_link_info(@job.name, 'consumes', link_name, source)
+              template.add_link_from_manifest(@job.name, 'consumes', link_name, source)
             end
 
             if template_spec.has_key?("properties")

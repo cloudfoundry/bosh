@@ -28,8 +28,10 @@ module Bosh::Director
 
         if link_info.has_key?("from")
           link_path = fulfill_explicit_link(link_info)
-        elsif link_info.has_key?("manual_config")
-          @manual_spec = link_info['manual_config']
+        elsif link_info.has_key?("instances") || link_info.has_key?('properties')
+          @manual_spec = {}
+          @manual_spec['instances'] = link_info['instances']
+          @manual_spec['properties'] = link_info['properties']
           return
         else
           link_path = fulfill_implicit_link(link_info)

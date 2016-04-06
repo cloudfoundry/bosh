@@ -287,7 +287,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
-              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_link_from_manifest)
               allow(template).to receive(:add_template_scoped_properties)
             end
 
@@ -321,7 +321,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               allow(template_rel_ver).to receive(:get_or_create_template)
                                             .with('fake-template-name')
                                             .and_return(template)
-              allow(template).to receive(:add_link_info)
+              allow(template).to receive(:add_link_from_manifest)
               allow(template).to receive(:add_template_scoped_properties)
             end
 

@@ -832,7 +832,6 @@ Error 100: Unable to process links for deployment. Errors are:
 
       it 'catches broken link before updating vms' do
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        puts output
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
         expect(output).to include("Cannot resolve ambiguous link 'node1' (job: node, instance group: first_node). All of these match:")
@@ -1374,7 +1373,7 @@ Error 100: Unable to process links for deployment. Errors are:
     let (:job_with_manual_consumes_link) do
       job_spec = Bosh::Spec::Deployments.simple_job(
           name: 'property_job',
-          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'manual_config' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}}],
+          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}

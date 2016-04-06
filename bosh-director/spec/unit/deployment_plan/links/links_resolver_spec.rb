@@ -39,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'templates' => [
             {'name' => 'mysql-template',
              'release' => 'fake-release',
-             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db', 'properties'=>['mysql']}},
+             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}},
              "properties" => {'mysql' => nil}
             }
           ],
@@ -262,7 +262,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let (:links) { {'backup_db' => {"from" => 'db'}} }
 
       let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { [{'name'=> "db", 'type'=> "db"}] }
+      let(:provided_links) { [{name: "db", type: "db", properties: ['mysql']}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
