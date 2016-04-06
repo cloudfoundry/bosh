@@ -7,7 +7,6 @@ module Bosh::Director
         filtered_instances.each do |instance|
           pool.process do
             agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
-            agent.wait_until_ready
             agent.delete_arp_entries(ips: ip_addresses)
           end
         end
