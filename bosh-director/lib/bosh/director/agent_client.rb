@@ -170,13 +170,7 @@ module Bosh::Director
       end
     end
 
-    def handle_method(method_name, args)
-      result = {}
-      result.extend(MonitorMixin)
-
-      cond = result.new_cond
-      timeout_time = Time.now.to_f + @timeout
-
+    def send_nats_request(method_name, args, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
       if @encryption_handler
@@ -186,8 +180,17 @@ module Bosh::Director
       end
 
       recipient = "#{@service_name}.#{@client_id}"
+      @nats_rpc.send_request(recipient, request, &callback)
+    end
 
-      request_id = @nats_rpc.send_request(recipient, request) do |response|
+    def handle_method(method_name, args)
+      result = {}
+      result.extend(MonitorMixin)
+
+      cond = result.new_cond
+      timeout_time = Time.now.to_f + @timeout
+
+      request_id = send_nats_request(method_name, args) do |response|
         if @encryption_handler
           begin
             response = @encryption_handler.decrypt(response["encrypted_data"])
@@ -284,9 +287,9 @@ module Bosh::Director
     end
 
     def fire_and_forget(message_name, *args)
-      handle_method(message_name, args)
+      send_nats_request(message_name, args)
     rescue => e
-      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name}")
+      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
     end
 
     def send_message(method_name, *args, &blk)
