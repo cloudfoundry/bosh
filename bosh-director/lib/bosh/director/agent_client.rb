@@ -101,13 +101,7 @@ module Bosh::Director
     end
 
     def delete_arp_entries(*args)
-      send_message(:delete_arp_entries, *args)
-    rescue RpcRemoteException => e
-      if e.message =~ /unknown message/
-        @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")
-      else
-        raise
-      end
+      fire_and_forget(:delete_arp_entries, *args)
     end
 
     def update_settings(certs)
@@ -287,6 +281,12 @@ module Bosh::Director
         end
         raise
       end
+    end
+
+    def fire_and_forget(message_name, *args)
+      handle_method(message_name, args)
+    rescue => e
+      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name}")
     end
 
     def send_message(method_name, *args, &blk)

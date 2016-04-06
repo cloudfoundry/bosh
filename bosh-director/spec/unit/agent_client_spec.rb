@@ -106,23 +106,6 @@ module Bosh::Director
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
           it_acts_as_asynchronous_message :start
-          it_acts_as_asynchronous_message :delete_arp_entries
-        end
-
-        describe 'delete_arp_entries' do
-          it 'is only a warning when the remote agent does not implement update_settings' do
-            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
-
-            expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
-            expect { client.delete_arp_entries() }.to_not raise_error
-          end
-
-          it 'still raises an exception for other RPC failures' do
-            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
-
-            expect(client).to_not receive(:warning)
-            expect { client.delete_arp_entries() }.to raise_error
-          end
         end
 
         describe 'update_settings' do
@@ -201,6 +184,36 @@ module Bosh::Director
           end
         end
 
+      end
+    end
+
+    context 'task is fired and forgotten' do
+      describe 'delete_arp_entries' do
+        subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
+        let(:task) do
+          {
+            'agent_task_id' => 'fake-agent_task_id',
+            'state' => 'running',
+            'value' => 'task value'
+          }
+        end
+
+        before do
+          allow(Config).to receive(:nats_rpc)
+          allow(Api::ResourceManager).to receive(:new)
+        end
+
+        it 'sends delete_arp_entries to the agent' do
+          expect(client).to receive(:handle_method).with(:delete_arp_entries, [ips: ['10.10.10.1', '10.10.10.2']])
+          client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2'])
+        end
+
+        it 'does not raise an exception for failures' do
+          allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'random failure!')
+
+          expect(Config.logger).to receive(:warn).with("Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>. Received while trying to run: delete_arp_entries")
+          expect { client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2']) }.to_not raise_error
+        end
       end
     end
 
