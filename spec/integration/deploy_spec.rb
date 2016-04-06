@@ -151,7 +151,7 @@ describe 'deploy', type: :integration do
 
     context 'when there is only 1 deployment' do
       context 'when flush_arp is set in BOSH director config' do
-        it 'calls the delete_from_arp action on the bosh-agents' do
+        it 'calls the delete_arp_entries action on the bosh-agents' do
           manifest = Bosh::Spec::Deployments.test_release_manifest
           manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(
             name: 'job_to_test_forceful_arp',
@@ -178,13 +178,13 @@ describe 'deploy', type: :integration do
           agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
           agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
 
-          expect(agent_log_0).to include("Running async action delete_from_arp")
-          expect(agent_log_1).to include("Running async action delete_from_arp")
-          expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
-          expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2"]')
+          expect(agent_log_0).to include("Running async action delete_arp_entries")
+          expect(agent_log_1).to include("Running async action delete_arp_entries")
+          expect(agent_log_0).to include('"method":"delete_arp_entries","arguments":[{"ips":["192.168.1.3"]')
+          expect(agent_log_1).to include('"method":"delete_arp_entries","arguments":[{"ips":["192.168.1.2"]')
         end
 
-        it 'calls delete_from_arp action with multiple ip addresses' do
+        it 'calls delete_arp_entries action with multiple ip addresses' do
           job_with_networks = Bosh::Spec::Deployments.simple_job(
               name: 'job_to_test_forceful_arp',
               instances: 2
@@ -226,13 +226,13 @@ describe 'deploy', type: :integration do
 
           agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
 
-          expect(agent_log_1).to include("Running async action delete_from_arp")
-          expect(agent_log_1).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.2","192.168.2.2"]')
+          expect(agent_log_1).to include("Running async action delete_arp_entries")
+          expect(agent_log_1).to include('"method":"delete_arp_entries","arguments":[{"ips":["192.168.1.2","192.168.2.2"]')
         end
       end
 
       context 'when max_in_flight is greater than 1' do
-        it 'calls the delete_from_arp action on the bosh-agents' do
+        it 'calls the delete_arp_entries action on the bosh-agents' do
           manifest = Bosh::Spec::Deployments.test_release_manifest
           manifest.merge!(
               {
@@ -265,14 +265,14 @@ describe 'deploy', type: :integration do
           agent_log_1 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_1}.log")
           agent_log_2 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_2}.log")
 
-          expect(agent_log_1).to include("Running async action delete_from_arp")
-          expect(agent_log_2).to include("Running async action delete_from_arp")
-          expect(agent_log_1).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
-          expect(agent_log_2).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
+          expect(agent_log_1).to include("Running async action delete_arp_entries")
+          expect(agent_log_2).to include("Running async action delete_arp_entries")
+          expect(agent_log_1).to include("\"method\":\"delete_arp_entries\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
+          expect(agent_log_2).to include("\"method\":\"delete_arp_entries\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["0"]}\"]")
 
-          expect(agent_log_0).to include("Running async action delete_from_arp")
-          expect(agent_log_0).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["1"]}\"]")
-          expect(agent_log_0).to include("\"method\":\"delete_from_arp\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["2"]}\"]")
+          expect(agent_log_0).to include("Running async action delete_arp_entries")
+          expect(agent_log_0).to include("\"method\":\"delete_arp_entries\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["1"]}\"]")
+          expect(agent_log_0).to include("\"method\":\"delete_arp_entries\",\"arguments\":[{\"ips\":[\"#{index_ip_hash["2"]}\"]")
 
         end
       end
@@ -280,7 +280,7 @@ describe 'deploy', type: :integration do
 
     context 'when there is more than 1 deployment' do
       context 'when flush_arp is set in the BOSH director config' do
-        it 'calls the delete_from_arp action on all bosh-agents' do
+        it 'calls the delete_arp_entries action on all bosh-agents' do
           manifest_deployment_1 = Bosh::Spec::Deployments.test_release_manifest
           manifest_deployment_1.merge!(
               {
@@ -307,8 +307,8 @@ describe 'deploy', type: :integration do
 
           agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
 
-          expect(agent_log_0).to include("Running async action delete_from_arp")
-          expect(agent_log_0).to include('"method":"delete_from_arp","arguments":[{"ips":["192.168.1.3"]')
+          expect(agent_log_0).to include("Running async action delete_arp_entries")
+          expect(agent_log_0).to include('"method":"delete_arp_entries","arguments":[{"ips":["192.168.1.3"]')
         end
       end
     end

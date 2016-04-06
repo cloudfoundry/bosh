@@ -55,11 +55,11 @@ module Bosh::Director
       end
     end
 
-    describe "#delete_from_arp" do
+    describe "#delete_arp_entries" do
       let(:vm_being_created_cid) { "fake-cid-99" }
       let(:ip_addresses) { ["10.0.0.1"] }
-      let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_from_arp: nil)}
-      let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_from_arp: nil)}
+      let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil)}
+      let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil)}
       let(:instance) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: "fake-job-1", vm_cid: "id") }
       let(:instance2) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 2, job: "fake-job-1", vm_cid: "id") }
       let(:arp_flusher) { ArpFlusher.new }
@@ -75,13 +75,13 @@ module Bosh::Director
         expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).
           with(instance.credentials, instance.agent_id).and_return(agent)
 
-        arp_flusher.delete_from_arp(vm_being_created_cid, ip_addresses)
+        arp_flusher.delete_arp_entries(vm_being_created_cid, ip_addresses)
       end
 
       it "tells the AgentClient to delete the IPs from the ARP cache" do
-        arp_flusher.delete_from_arp(vm_being_created_cid, ip_addresses)
+        arp_flusher.delete_arp_entries(vm_being_created_cid, ip_addresses)
 
-        expect(agent).to have_received(:delete_from_arp).with(ips: ip_addresses)
+        expect(agent).to have_received(:delete_arp_entries).with(ips: ip_addresses)
       end
     end
   end

@@ -70,9 +70,9 @@ module Bosh::Director
             network['ip']
           end.compact
 
-          @arp_flusher.delete_from_arp(instance_model.vm_cid, ip_addresses)
+          @arp_flusher.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
-        
+
         instance.update_trusted_certs
         instance.update_cloud_properties!
       rescue Exception => e

@@ -100,8 +100,8 @@ module Bosh::Director
       send_message(:unmount_disk, *args)
     end
 
-    def delete_from_arp(*args)
-      send_message(:delete_from_arp, *args)
+    def delete_arp_entries(*args)
+      send_message(:delete_arp_entries, *args)
     rescue RpcRemoteException => e
       if e.message =~ /unknown message/
         @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")
