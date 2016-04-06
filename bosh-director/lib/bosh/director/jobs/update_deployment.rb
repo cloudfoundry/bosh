@@ -46,8 +46,8 @@ module Bosh::Director
 
           deployment_plan = nil
 
-          event_log.begin_stage('Preparing deployment', 1)
-          event_log.track('Preparing deployment') do
+          event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+          event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config_model, runtime_config_model, @options)
             deployment_plan.bind_models
@@ -111,7 +111,6 @@ module Bosh::Director
       def update_step(deployment_plan)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
-          event_log,
           deployment_plan,
           multi_job_updater,
           Config.cloud

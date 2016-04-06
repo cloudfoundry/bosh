@@ -63,8 +63,6 @@ module SpecHelper
     end
 
     def init_database
-      Bosh::Director::Config.patch_sqlite
-
       @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
       @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
       Sequel.extension :migration
@@ -81,6 +79,7 @@ module SpecHelper
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
+      Sequel.default_timezone = :utc
       @db = Sequel.connect(db, db_opts)
       @db.loggers << (logger || @init_logger)
       Bosh::Director::Config.db = @db
@@ -107,17 +106,13 @@ module SpecHelper
       Sequel::Migrator.apply(@db, @director_migrations, nil)
     end
 
-    def reset_database
-      disconnect_database
-
-      if @db_dir && File.directory?(@db_dir)
-        FileUtils.rm_rf(@db_dir)
-      end
-
-      @db_dir = Dir.mktmpdir(nil, @temp_dir)
-      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
-
-      connect_database(@db_dir)
+    def reset(logger)
+      Bosh::Director::Config.clear
+      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.dns_db = @dns_db
+      Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.trusted_certs = ''
+      Bosh::Director::Config.max_threads = 1
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
@@ -135,14 +130,11 @@ module SpecHelper
       end
     end
 
-    def reset(logger)
-      reset_database
+    def reset_database(example)
+      Sequel.transaction([@db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
 
-      Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @db
-      Bosh::Director::Config.dns_db = @dns_db
-      Bosh::Director::Config.logger = logger
-      Bosh::Director::Config.trusted_certs = ''
+      @db.run('UPDATE sqlite_sequence SET seq = 0')
+      @dns_db.run('UPDATE sqlite_sequence SET seq = 0')
     end
   end
 end
@@ -152,11 +144,21 @@ SpecHelper.init
 BD = Bosh::Director
 
 RSpec.configure do |rspec|
+  rspec.around(:each) do |example|
+    SpecHelper.reset_database(example)
+  end
+
   rspec.before(:each) do
     SpecHelper.reset(logger)
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
+
+    threadpool = instance_double(Bosh::Director::ThreadPool)
+    allow(Bosh::Director::ThreadPool).to receive(:new).and_return(threadpool)
+    allow(threadpool).to receive(:wrap).and_yield(threadpool)
+    allow(threadpool).to receive(:process).and_yield
+    allow(threadpool).to receive(:wait)
   end
 end
 

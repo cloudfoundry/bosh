@@ -3,12 +3,10 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Clouds] cloud
-    # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Logger] logger
-    def initialize(deployment, job, cloud, event_log, logger)
+    def initialize(deployment, job, cloud, logger)
       @deployment = deployment
       @job = job
-      @event_log = event_log
       @logger = logger
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
       @disk_manager = DiskManager.new(cloud, logger)
@@ -17,7 +15,7 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider, @event_log)
+      @vm_creator.create_for_instance_plans(@job.instance_plans_with_missing_vms, @deployment.ip_provider)
     end
 
     # Creates/updates all errand job instances
@@ -38,7 +36,7 @@ module Bosh::Director
       end
 
       @logger.info('Deleting errand instances')
-      event_log_stage = @event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
+      event_log_stage = Config.event_log.begin_stage('Deleting errand instances', instance_plans.size, [@job.name])
       dns_manager = DnsManagerProvider.create
       instance_deleter = InstanceDeleter.new(@deployment.ip_provider, dns_manager, @disk_manager)
       instance_deleter.delete_instance_plans(instance_plans, event_log_stage)

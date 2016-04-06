@@ -4,7 +4,7 @@ module Bosh::Director
   describe Api::SnapshotManager do
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:username) { 'username-1' }
-    let(:time) { Time.now.to_s }
+    let(:time) { Time.now.utc.to_s }
 
     let(:deployment) { Models::Deployment.make(name: 'deployment') }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }

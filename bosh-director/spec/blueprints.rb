@@ -97,7 +97,7 @@ module Bosh::Director::Models
     state       { 'started' }
     vm_cid      { Sham.vm_cid }
     agent_id    { Sham.agent_id }
-    uuid        { Sham.uuid}
+    uuid        { Sham.uuid }
   end
 
   IpAddress.blueprint do

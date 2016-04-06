@@ -154,6 +154,13 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
           config = BD::DeploymentPlan::UpdateConfig.new(other_opts, default_config)
           expect(config).to_not be_serial
         end
+
+        context 'when the hash is nil' do
+          it 'returns false' do
+            config = BD::DeploymentPlan::UpdateConfig.new(nil, default_config)
+            expect(config.to_hash['serial']).to be(false)
+          end
+        end
       end
     end
 

@@ -126,14 +126,6 @@ describe Bosh::Director::Config do
       expect(described_class.configure_db(database_options)).to eq database_connection
     end
 
-    it 'patches sequel for the sqlite adapter' do
-      expect(described_class).to receive(:patch_sqlite)
-      described_class.configure_db(database_options)
-
-      expect(described_class).not_to receive(:patch_sqlite)
-      described_class.configure_db(database_options.merge('adapter' => 'postgres'))
-    end
-
     it 'merges connection options together with the rest of the database options' do
       expected_options = {
           'adapter' => 'sqlite',

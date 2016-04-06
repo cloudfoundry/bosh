@@ -15,18 +15,18 @@ module Bosh::Director
       @job_renderer = job_renderer
     end
 
-    def create_for_instance_plans(instance_plans, ip_provider, event_log)
+    def create_for_instance_plans(instance_plans, ip_provider)
       return @logger.info('No missing vms to create') if instance_plans.empty?
 
       total = instance_plans.size
-      event_log.begin_stage('Creating missing vms', total)
+      event_log_stage = Config.event_log.begin_stage('Creating missing vms', total)
       ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
         instance_plans.each do |instance_plan|
           instance = instance_plan.instance
 
           pool.process do
             with_thread_name("create_missing_vm(#{instance.model}/#{total})") do
-              event_log.track(instance.model.to_s) do
+              event_log_stage.advance_and_track(instance.model.to_s) do
                 @logger.info('Creating missing VM')
                 disks = [instance.model.persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks)

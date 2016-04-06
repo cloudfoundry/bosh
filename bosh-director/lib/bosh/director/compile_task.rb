@@ -133,7 +133,7 @@ module Bosh::Director
 
     # @param [CompileTask] task
     # @return [Models::CompiledPackage]
-    def find_compiled_package(logger, event_log)
+    def find_compiled_package(logger, event_log_stage)
       # if `package` has source associated with it (blobstore_id and sha1)
       #   then we need an exact match in find_compiled_package
 
@@ -153,7 +153,7 @@ module Bosh::Director
       if compiled_package
         logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}'")
       else
-        compiled_package = fetch_from_global_cache(logger, event_log)
+        compiled_package = fetch_from_global_cache(logger, event_log_stage)
       end
 
       logger.info("Package '#{package.desc}' needs to be compiled on '#{stemcell.desc}'") if compiled_package.nil?
@@ -184,9 +184,9 @@ module Bosh::Director
       compiled_package
     end
 
-    def fetch_from_global_cache(logger, event_log)
+    def fetch_from_global_cache(logger, event_log_stage)
       if Config.use_compiled_package_cache? && BlobUtil.exists_in_global_cache?(package, cache_key)
-        event_log.track("Downloading '#{package.desc}' from global cache") do
+        event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
           # has side effect of putting CompiledPackage model in db
           logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}' in global cache")
           return BlobUtil.fetch_from_global_cache(package, stemcell.model, cache_key, dependency_key)

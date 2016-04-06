@@ -9,8 +9,10 @@ groups:
       - integration-1.9-postgres
       - integration-2.1-mysql
       - integration-2.1-postgres
-      - load-tests
-      - legacy-load-tests
+      - load-tests-postgres
+      - load-tests-mysql
+      - legacy-load-tests-postgres
+      - legacy-load-tests-mysql
       - fuzz-tests
       - publish-coverage
       - promote-candidate
@@ -197,7 +199,7 @@ jobs:
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
 
-  - name: load-tests
+  - name: load-tests-postgres
     public: true
     serial: true
     plan:
@@ -209,6 +211,7 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        DB: postgresql
         RUBY_VERSION: 2.1.7
         LEGACY: false
       on_failure:
@@ -218,7 +221,7 @@ jobs:
           icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
           text: {{slack_failure_message}}
 
-  - name: legacy-load-tests
+  - name: legacy-load-tests-postgres
     public: true
     serial: true
     plan:
@@ -230,6 +233,51 @@ jobs:
       file: bosh-load-tests-workspace/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
+        DB: postgresql
+        RUBY_VERSION: 2.1.7
+        LEGACY: true
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
+
+  - name: load-tests-mysql
+    public: true
+    serial: true
+    plan:
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration"]
+      params:
+        DB: mysql
+        RUBY_VERSION: 2.1.7
+        LEGACY: false
+      on_failure:
+        put: slack-alert
+        params:
+          channel: {{slack_channel_name}}
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          text: {{slack_failure_message}}
+
+  - name: legacy-load-tests-mysql
+    public: true
+    serial: true
+    plan:
+    - { get: bosh-src, trigger: true, passed: [start-job] }
+    - { get: bosh-load-tests-workspace }
+
+    - task: test
+      privileged: true
+      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      tags: ["bosh-integration"]
+      params:
+        DB: mysql
         RUBY_VERSION: 2.1.7
         LEGACY: true
       on_failure:

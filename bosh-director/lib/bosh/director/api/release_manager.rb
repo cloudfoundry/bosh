@@ -4,7 +4,7 @@ module Bosh::Director
       include ApiHelper
 
       def get_all_releases
-        releases = Models::Release.order_by(:name.asc).map do |release|
+        releases = Models::Release.order_by(Sequel.asc(:name)).map do |release|
           release_versions = sorted_release_versions(release)
           {
             'name' => release.name,

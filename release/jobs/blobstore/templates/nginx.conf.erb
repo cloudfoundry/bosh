@@ -22,6 +22,7 @@ http {
   server_tokens off;
 
   sendfile    on;
+  sendfile_max_chunk 256m;
   tcp_nopush  on;
   tcp_nodelay on;
 

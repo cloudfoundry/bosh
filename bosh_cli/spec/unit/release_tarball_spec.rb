@@ -1,5 +1,3 @@
-
-# Copyright (c) 2009-2012 VMware, Inc.
 require "spec_helper"
 
 describe Bosh::Cli::ReleaseTarball do
@@ -96,6 +94,20 @@ foo: bar
       new_tarball = Bosh::Cli::ReleaseTarball.new(new_tar_path)
       expect(new_tarball).to be_valid
       expect(new_tarball.manifest).to match release_tarball.manifest
+    end
+  end
+
+  describe 'upload_packages?' do
+    context 'when the tarball has two packages with the same version fingerprint' do
+      context 'when the director supplies de-duped package version fingerprints' do
+        it 'returns false' do
+          tarball_path = spec_asset('test_release_two_packages_with_same_fingerprint.tgz')
+          release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+          release_tarball.unpack
+          director_de_duped_package_versions = ['16b4c8ef1574b3f98303307caad40227c208371f']
+          expect(release_tarball.upload_packages?(director_de_duped_package_versions)).to eq(false)
+        end
+      end
     end
   end
 
@@ -223,6 +235,16 @@ foo: bar
 
         expect(Kernel).to have_received(:system).with("tar", "-C", anything, "-xzf", tarball_path,  "--occurrence", "./jobs/", anything)
       end
+    end
+  end
+
+  describe 'unpack_license' do
+    let(:tarball_path) { spec_asset('test_release.tgz') }
+
+    it 'should not unpack license when the license does not exist' do
+      release_tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+      expect(Open3).not_to receive(:capture3)
+      release_tarball.unpack_license
     end
   end
 

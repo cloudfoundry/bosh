@@ -17,11 +17,11 @@ module Bosh::Director
       FileUtils.mkpath(path)
 
       compiled_packages = @compiled_packages_group.compiled_packages
-      event_log.begin_stage("copying packages", compiled_packages.count)
+      event_log_stage = event_log.begin_stage("copying packages", compiled_packages.count)
 
       compiled_packages.each do |compiled_package|
         desc = "#{compiled_package.package.name}/#{compiled_package.package.version}"
-        event_log.track(desc) do
+        event_log_stage.advance_and_track(desc) do
           blobstore_id = compiled_package.blobstore_id
           File.open(File.join(path, "#{compiled_package.package.name}.tgz"), 'w') do |f|
             @blobstore_client.get(blobstore_id, f, sha1: compiled_package.sha1)
@@ -32,10 +32,10 @@ module Bosh::Director
       path = File.join(@download_dir, 'jobs')
       FileUtils.mkpath(path)
 
-      event_log.begin_stage("copying jobs", @templates.count)
+      event_log_stage = event_log.begin_stage("copying jobs", @templates.count)
       @templates.each do |template|
         desc = "#{template.name}/#{template.version}"
-        event_log.track(desc) do
+        event_log_stage.advance_and_track(desc) do
           blobstore_id = template.blobstore_id
           File.open(File.join(path, "#{template.name}.tgz"), 'w') do |f|
             @blobstore_client.get(blobstore_id, f, sha1: template.sha1)

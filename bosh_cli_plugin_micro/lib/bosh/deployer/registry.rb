@@ -21,7 +21,7 @@ module Bosh::Deployer
       Sequel.connect(connection_settings) do |db|
         migrate(db)
         instances = state.deployments['registry_instances']
-        db[:registry_instances].insert_multiple(instances) if instances
+        db[:registry_instances].multi_insert(instances) if instances
       end
 
       unless has_bosh_registry?

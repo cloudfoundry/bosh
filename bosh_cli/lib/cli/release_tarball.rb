@@ -35,6 +35,7 @@ module Bosh::Cli
     end
 
     def unpack_license
+      return false if manifest_yaml['license'].nil?
       return @unpacked_license unless @unpacked_license.nil?
       exit_success = safe_fast_unpack('./license.tgz')
       @unpacked_license = !!exit_success
@@ -179,7 +180,7 @@ module Bosh::Cli
 
     def upload_packages?(package_matches = [])
       return true if package_matches.nil?
-      package_matches.size != manifest_yaml[@packages_folder].size
+      package_matches.uniq.size != manifest_yaml[@packages_folder].map { |p| p['version'] }.uniq.size
     end
 
     # Repacks tarball according to the structure of remote release

@@ -55,9 +55,9 @@ module Bosh::Director
       def remove_old_events (max_events = 10000)
         if Bosh::Director::Models::Event.count > max_events
           last_id = Bosh::Director::Models::Event.
-              order { id.desc }.limit(1, max_events).first.id
+              order { Sequel.desc(:id) }.limit(1, max_events).first.id
           last_parent_id = Bosh::Director::Models::Event.
-              order { id.desc }.limit(max_events).min(:parent_id)
+              order { Sequel.desc(:id) }.limit(max_events).min(:parent_id)
           start_id_to_remove = (last_parent_id.nil? || (last_parent_id > last_id)) ? last_id+1: last_parent_id
 
           Bosh::Director::Models::Event.filter("id < ?", start_id_to_remove).delete if start_id_to_remove != 0

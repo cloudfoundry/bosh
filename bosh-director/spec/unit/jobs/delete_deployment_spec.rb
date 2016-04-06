@@ -13,7 +13,7 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(job).to receive(:task_id).and_return(task.id)
-      allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
+      allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40+00:00'))
     end
 
     let(:cloud) { instance_double('Bosh::Cloud') }

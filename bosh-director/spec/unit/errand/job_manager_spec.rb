@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::JobManager do
-    subject { described_class.new(deployment, job, cloud, event_log, logger) }
+    subject { described_class.new(deployment, job, cloud, logger) }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
     let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', {
@@ -61,14 +61,14 @@ module Bosh::Director
 
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)
         allow(instance_deleter).to receive(:delete_instance_plans)
-        allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
+        allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage)
 
         allow(job).to receive(:vm_type).and_return(vm_type)
         allow(job).to receive(:stemcell).and_return(stemcell)
       end
 
       it 'creates an event log stage' do
-        expect(event_log).to receive(:begin_stage).with('Deleting errand instances', 2, ['job_name'])
+        expect(Config.event_log).to receive(:begin_stage).with('Deleting errand instances', 2, ['job_name'])
         subject.delete_instances
       end
 
@@ -84,7 +84,7 @@ module Bosh::Director
         let(:instance2_model) { nil }
 
         it 'does not create an event log stage' do
-          expect(event_log).not_to receive(:begin_stage)
+          expect(Config.event_log).not_to receive(:begin_stage)
 
           subject.delete_instances
         end

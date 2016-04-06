@@ -311,8 +311,8 @@ module Bosh::Director
 
       context 'when exclude filter is set and vms without cid exist' do
         before(:each) do
-          Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: 'fake-vm-cid')
-          Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: nil)
+          Models::Instance.make(deployment: @deployment, vm_cid: 'fake-vm-cid')
+          Models::Instance.make(deployment: @deployment, vm_cid: nil)
         end
 
         it 'excludes them' do

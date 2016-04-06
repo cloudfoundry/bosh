@@ -3,18 +3,15 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::Helpers::StemcellDeleter do
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
-    let(:event_log) { EventLog::Log.new }
     let(:blob_deleter) { Jobs::Helpers::BlobDeleter.new(blobstore, logger) }
     let(:cloud) { instance_double(Bosh::Cloud) }
     let(:package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger)}
-    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, package_deleter, logger, event_log) }
+    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(cloud, package_deleter, logger) }
     let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
     before do
       fake_locks
       allow(Config).to receive(:cloud).and_return(cloud)
-      allow(event_log).to receive(:begin_stage).and_call_original
-      allow(event_log).to receive(:track).and_call_original
     end
 
     context 'when stemcell deletion fails' do

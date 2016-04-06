@@ -4,7 +4,7 @@ require 'bosh/director/job_updater'
 
 module Bosh::Director
   describe DeploymentPlan::Steps::UpdateStep do
-    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud) }
+    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
     let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
@@ -50,7 +50,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:unneeded_instances).and_return([existing_instance])
 
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
-        expect(event_log).to receive(:begin_stage)
+        expect(Config.event_log).to receive(:begin_stage)
                                .with('Deleting unneeded instances', 1)
                                .and_return(event_log_stage)
 
@@ -60,12 +60,12 @@ module Bosh::Director
 
         expect(instance_deleter).to receive(:delete_instance_plans) do |instance_plans, event_log, _|
           expect(instance_plans.map(&:existing_instance)).to eq([existing_instance])
-          expect(event_log).to eq(event_log_stage)
         end
       end
 
       it 'runs deployment plan update stages in the correct order' do
-        allow(event_log).to receive(:track).and_yield
+        event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+        allow(event_log_stage).to receive(:advance_and_track).and_yield
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
 
         it_deletes_unneeded_instances.ordered

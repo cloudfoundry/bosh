@@ -6,6 +6,7 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
 echo '# prevent blacklisted modules from being loaded
+install usb-storage /bin/true
 install bluetooth /bin/true
 install tipc /bin/true
 install sctp /bin/true

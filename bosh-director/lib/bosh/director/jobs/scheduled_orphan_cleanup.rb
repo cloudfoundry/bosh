@@ -33,7 +33,7 @@ module Bosh::Director
 
         old_orphans = Models::OrphanDisk.where('created_at < ?', time)
         old_orphans_count = old_orphans.count
-        stage = event_log.begin_stage('Deleting orphan disks', old_orphans_count)
+        stage = Config.event_log.begin_stage('Deleting orphan disks', old_orphans_count)
         old_orphans.each do |old_orphan|
           stage.advance_and_track("#{old_orphan.disk_cid}") do
             @disk_manager.delete_orphan_disk(old_orphan)

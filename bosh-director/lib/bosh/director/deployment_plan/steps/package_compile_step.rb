@@ -9,8 +9,8 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
-          @event_log = event_log
+        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
+          @event_log_stage = nil
           @logger = logger
           @director_job = director_job
 
@@ -18,9 +18,6 @@ module Bosh::Director
           @counter_mutex = Mutex.new
 
           @compilation_instance_pool = compilation_instance_pool
-
-          @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
-
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
@@ -61,7 +58,7 @@ module Bosh::Director
 
           with_compile_lock(package.id, stemcell.id) do
             # Check if the package was compiled in a parallel deployment
-            compiled_package = task.find_compiled_package(@logger, @event_log)
+            compiled_package = task.find_compiled_package(@logger, @event_log_stage)
             if compiled_package.nil?
               build = Models::CompiledPackage.generate_build_number(package, stemcell.model.operating_system, stemcell.model.version)
               task_result = nil
@@ -124,9 +121,10 @@ module Bosh::Director
         private
 
         def prepare_tasks
-          @event_log.begin_stage('Preparing package compilation', 1)
+          @event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
+          @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
 
-          @event_log.track('Finding packages to compile') do
+          @event_log_stage.advance_and_track('Finding packages to compile') do
             @jobs_to_compile.each do |job|
               stemcell = job.stemcell
 
@@ -150,7 +148,7 @@ module Bosh::Director
         end
 
         def compile_packages
-          @event_log.begin_stage('Compiling packages', compilation_count)
+          @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
 
           begin
             ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
@@ -201,7 +199,7 @@ module Bosh::Director
             if director_job_cancelled?
               @logger.info("Cancelled compiling #{task_desc}")
             else
-              @event_log.track(package_desc) do
+              @event_log_stage.advance_and_track(package_desc) do
                 @logger.info("Compiling #{task_desc}")
                 compile_package(task)
                 @logger.info("Finished compiling #{task_desc}")

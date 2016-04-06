@@ -81,7 +81,7 @@ bosh -n deploy
 
 bosh export release $RELEASE_NAME/$RELEASE_VERSION $STEMCELL_OS/$STEMCELL_VERSION
 
-mv *.tgz compiled-release
+mv *.tgz compiled-release/$( echo *.tgz | sed "s/\.tgz$/-$( date -u +%Y%m%d%H%M%S ).tgz/" )
 sha1sum compiled-release/*.tgz
 
 #
