@@ -168,20 +168,15 @@ module Bosh
 
         def process_link_properties(scoped_properties, default_properties, link_property_list, errors)
           mapped_properties = {}
-          puts "======== MAPPED #{mapped_properties.inspect}"
             link_property_list.each do |link_property|
               property_path = link_property.split(".")
               result = find_property(property_path, scoped_properties)
-              puts "======== RESULT #{result.inspect}"
-
               if !result['found']
                 if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
                   if default_properties['properties'][link_property].has_key?('default')
                     mapped_properties = update_mapped_properties(mapped_properties, property_path, default_properties['properties'][link_property]['default'])
-                    puts "======== MAPPED1 #{mapped_properties.inspect}"
                   else
                     mapped_properties = update_mapped_properties(mapped_properties, property_path, nil)
-                    puts "======== MAPPED2 #{mapped_properties.inspect}"
                   end
                 else
                   e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
@@ -189,7 +184,6 @@ module Bosh
                 end
               else
                 mapped_properties = update_mapped_properties(mapped_properties, property_path, result['value'])
-                puts "======== MAPPED3 #{mapped_properties.inspect}"
               end
             end
           return mapped_properties
@@ -210,7 +204,6 @@ module Bosh
         def update_mapped_properties(mapped_properties, property_path, value)
           current_node = mapped_properties
           property_path.each_with_index do |key, index|
-            puts "======== Index #{index} - KEY #{key}"
             if index == property_path.size - 1
               current_node[key] = value
             else
