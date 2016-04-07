@@ -5,9 +5,13 @@ task :bat do
   bat_test = ENV.fetch('BAT_TEST', 'spec')
   unsupported_bats = ENV.fetch('SUPPORTED_BATS', '').split(',')
 
-  tags = ''
-  unsupported_bats.each{|t| tags += "--tag ~#{t} "}
-  Dir.chdir('bat') { exec('rspec', tags,   bat_test) }
+  tags = []
+  unsupported_bats.each do |t|
+    tags << '--tag'
+    tags << t
+  end
+
+  Dir.chdir('bat') { exec('rspec', *tags,   bat_test) }
 end
 
 namespace :bat do
