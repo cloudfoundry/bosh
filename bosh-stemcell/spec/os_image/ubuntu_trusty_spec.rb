@@ -295,6 +295,10 @@ EOF
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
         should contain /password.*pam_unix\.so.*remember=24/
       end
+
+      it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
+        should contain /password.*pam_unix\.so.*minlen=14/
+      end
     end
   end
 

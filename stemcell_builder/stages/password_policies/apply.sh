@@ -20,8 +20,6 @@ fi
 
 if [ -n "$password_file" ];then
   if [ -n "$(grep 'password.*pam_unix\.so' $password_file)" ];then
-    sed -i '/password.*pam_unix\.so/s/$/ remember=24/' $password_file
-  else
-    echo 'password sufficient pam_unix.so remember=24' >> $password_file
+    sed -i '/password.*pam_unix\.so/s/$/ remember=24 minlen=14/' $password_file
   fi
 fi
