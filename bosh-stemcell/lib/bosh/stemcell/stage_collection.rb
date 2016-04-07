@@ -264,7 +264,8 @@ module Bosh::Stemcell
         :bosh_ntpdate,
         :bosh_sudoers,
         :password_policies,
-      ]
+        :bosh_audit,
+      ].flatten
     end
 
     def raw_package_stages

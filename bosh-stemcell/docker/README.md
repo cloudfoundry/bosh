@@ -34,7 +34,6 @@ Rebuild the container with the `build` script...
 
     vagrant$ ./build
 
-
 ## Testing OS Image changes
 
 You can use `run` to start a container which has mounted your project to `/opt/bosh`...

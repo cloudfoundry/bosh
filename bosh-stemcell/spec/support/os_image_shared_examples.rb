@@ -329,4 +329,57 @@ shared_examples_for 'every OS image' do
       end
     end
   end
+
+  describe 'mounted file systems: /etc/fstab' do
+    it('should exist (V-38654)(V-38652)') do
+      expect(File).to exist('/etc/fstab')
+    end
+
+    it('should be almost empty (V-38654)(V-38652)') do
+      expect(File.read('/etc/fstab').chomp).to eq('# UNCONFIGURED FSTAB FOR BASE SYSTEM')
+    end
+  end
+
+  describe 'IP forwarding for IPv4 must not be enabled' do
+    it 'disables ip forwarding (V-38511)' do
+      expect(`grep net.ipv4.ip_forward #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.chomp).to eq('net.ipv4.ip_forward=0')
+    end
+  end
+
+  describe 'syncookies should be enabled' do
+    it 'enables syncookies  (V-38539)' do
+      expect(`grep net.ipv4.tcp_syncookies #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.chomp).to eq('net.ipv4.tcp_syncookies=1')
+    end
+  end
+
+  describe 'address space layout randomization (ASLR)  should be enabled' do
+    it 'enables address space layout randomization (ASLR)  (V-38596)' do
+      expect(`grep kernel.randomize_va_space #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.chomp).to eq('kernel.randomize_va_space=2')
+    end
+  end
+
+  describe 'loading and unloading of dynamic kernel modules must be audited' do
+    it 'audits insmod (V-38580)' do
+      expect(`egrep -e "(-w |-F path=)/sbin/insmod" #{backend.chroot_dir}/etc/audit/audit.rules`.chomp).to eq('-w /sbin/insmod -p x -k modules')
+    end
+    it 'audits rmmod (V-38580)' do
+      expect(`egrep -e "(-w |-F path=)/sbin/rmmod" #{backend.chroot_dir}/etc/audit/audit.rules`.chomp).to eq('-w /sbin/rmmod -p x -k modules')
+    end
+    it 'audits modprobe (V-38580)' do
+      expect(`egrep -e "(-w |-F path=)/sbin/modprobe" #{backend.chroot_dir}/etc/audit/audit.rules`.chomp).to eq('-w /sbin/modprobe -p x -k modules')
+    end
+    it 'audits init_module (V-38580)' do
+      expect(`grep -w "init_module" #{backend.chroot_dir}/etc/audit/audit.rules`.chomp).not_to be_empty
+    end
+    it 'audits delete_module (V-38580)' do
+      expect(`grep -w "delete_module" #{backend.chroot_dir}/etc/audit/audit.rules`.chomp).not_to be_empty
+    end
+  end
+
+  describe 'audit disk errors' do
+    it 'audit logs disk errors to syslog (V-38464)' do
+      expect(`grep disk_error_action #{backend.chroot_dir}/etc/audit/auditd.conf`.chomp).to eq('disk_error_action = SYSLOG')
+    end
+  end
+
 end
