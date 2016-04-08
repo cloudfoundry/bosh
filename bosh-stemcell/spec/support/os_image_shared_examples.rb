@@ -43,7 +43,38 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'installed by rsyslosyg_config' do
+
+  # The STIG says to have the log files owned and grouped by 'root'. However, this would mean that
+  # rsyslog would not be able to dropping privileges to another user. Because of this we've decided
+  # it should run as the limited scope user 'syslog' which still prevents 'vcap' from reading the
+  # logs (which is the original intention of the STIG).
+  context 'all rsyslog-generated log files must be owned by syslog. (stig: V-38519 V-38518 V-38623)' do
+    it "secures rsyslog.conf-referenced files correctly" do
+      rsyslog_log_file_list = [
+        # get all logfile directives
+        "grep --no-filename --recursive '/var/log/' #{backend.chroot_dir}/etc/rsyslog*",
+        # filter commented directives
+        "grep -v '^#'",
+        # remove leading characters
+        "sed 's%^[ \t]*%%' | awk '{ print $2 }' | tr -d '-'",
+        # unique tests
+        'sort | uniq',
+      ].join('|')
+
+      `#{rsyslog_log_file_list}`.split("\n").each do |logfile|
+        f = file(logfile)
+
+        expect(f).to be_owned_by('syslog') # stig: V-38518
+        expect(f).to be_grouped_into('syslog') # stig: V-38519
+        expect(f).to be_mode(600) # stig: V-38623
+
+        expect(f).to_not be_readable.by_user('vcap')
+        expect(f).to_not be_readable.by('vcap')
+      end
+    end
+  end
+
+  context 'installed by rsyslog_config' do
     before do
       system("sudo mount --bind /dev #{backend.chroot_dir}/dev")
     end
@@ -55,6 +86,9 @@ shared_examples_for 'every OS image' do
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
       it { should contain '\$ModLoad omrelp' }
+      it { should contain '\$FileGroup syslog' } # stig: V-38519
+      it { should contain '\$FileUser syslog' } # stig: V-38518
+      it { should contain '\$FileCreateMode 0600' } # stig: V-38623
     end
 
     describe user('syslog') do
