@@ -266,7 +266,7 @@ shared_examples_for 'every OS image' do
 
   describe file('/etc/login.defs') do
     it('should not allow users to cycle passwords quickly (stig: V-38477)') do
-      should contain /PASS_MIN_DAYS[[:space:]]1/
+      should contain /^PASS_MIN_DAYS[[:space:]]\+1/
     end
   end
 
