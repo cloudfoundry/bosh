@@ -55,6 +55,11 @@ module Bosh::Dev::VSphere
         'apply_spec' =>
           { 'properties' =>
               {
+                'director' => {
+                  'debug' => {
+                    'keep_unreachable_vms' => env.fetch('BAT_DEBUG_MODE', false)
+                  }
+                },
                 'ntp' => [env['BOSH_VSPHERE_NTP_SERVER']],
                 'vcenter' =>
                   { 'host' => env['BOSH_VSPHERE_VCENTER'],

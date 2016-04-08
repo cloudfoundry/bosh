@@ -4,10 +4,10 @@ require 'spec_helper'
 describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
   context 'when errand script exits with non-0 exit code' do
-    with_reset_sandbox_before_all
+    with_reset_sandbox_before_each
     with_tmp_dir_before_all
 
-    before(:all) do
+    before do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       jobs = manifest_hash['jobs']
 
@@ -29,7 +29,8 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
         expect(output).to include("[stdout]\nNone")
         expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(exit_code).to_not eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0 unknown/unknown))
+
+        expect_running_vms_with_names_and_count('fake-errand-name' => 1, 'foobar' => 1)
       end
     end
 
@@ -40,12 +41,12 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       )
       expect(exit_code).to eq(1)
 
-      expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+      expect_running_vms_with_names_and_count('foobar' => 1)
 
       expect(output).to include("[stdout]\nNone")
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
-      expect(output).to include('Errand `fake-errand-name\' completed with error (exit code 23)')
-      expect(output =~ /Logs saved in `(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+      expect(output).to include("Errand 'fake-errand-name' completed with error (exit code 23)")
+      expect(output =~ /Logs saved in '(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
       logs_file = Bosh::Spec::TarFileInspector.new($1)
       expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
       expect(logs_file.smallest_file_size).to be > 0
@@ -70,7 +71,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
 
-      director.wait_for_vm('fake-errand-name/0', 10)
+      director.wait_for_vm('fake-errand-name', '0', 10)
 
       cancel_output = bosh_runner.run("cancel task #{task_id}")
       expect(cancel_output).to match(/Task #{task_id} is getting canceled/)
@@ -106,7 +107,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       expect(output).to match(
         %r{Error 450001: (.*Running errand script:.*jobs/foobar/bin/run: no such file or directory)}
       )
-      expect(output).to include('Errand `foobar\' did not complete')
+      expect(output).to include("Errand 'foobar' did not complete")
       expect(exit_code).to eq(1)
     end
   end
@@ -120,33 +121,8 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       output, exit_code = bosh_runner.run('run errand unknown-errand-name',
                                           {failure_expected: true, return_exit_code: true})
 
-      expect(output).to include('Errand `unknown-errand-name\' doesn\'t exist')
-      expect(output).to include('Errand `unknown-errand-name\' did not complete')
-      expect(exit_code).to eq(1)
-    end
-  end
-
-  context 'when deploying sized resource pools with insufficient capacity for all errands' do
-    with_reset_sandbox_before_each
-
-    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
-    let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      total_instance_count = manifest_hash['jobs'].inject(0) { |sum, job| sum + job['instances'] }
-      cloud_config_hash['resource_pools'].first['size'] = total_instance_count - 1
-      cloud_config_hash
-    end
-
-    it 'returns 1 as exit code and mentions insufficient resources' do
-      output, exit_code = deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-        failure_expected: true,
-        return_exit_code: true
-      )
-
-      capacity = cloud_config_hash['resource_pools'].first['size']
-      expect(output).to include("Resource pool `a' is not big enough: #{capacity + 1} VMs needed, capacity is #{capacity}")
+      expect(output).to include("Errand 'unknown-errand-name' doesn't exist")
+      expect(output).to include("Errand 'unknown-errand-name' did not complete")
       expect(exit_code).to eq(1)
     end
   end

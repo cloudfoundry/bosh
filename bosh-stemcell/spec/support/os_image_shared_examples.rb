@@ -19,6 +19,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'The sudo command must require authentication (stig: V-58901)' do
+    describe command("egrep -sh 'NOPASSWD|!authenticate' /etc/sudoers /etc/sudoers.d/* | egrep -v '^#|%bosh_sudoers\s' --") do
+      its (:stdout) { should eq('') }
+    end
+  end
+
   context 'installed by bosh_users' do
     describe command("grep -q 'export PATH=/var/vcap/bosh/bin:$PATH\n' /root/.bashrc") do
       it { should return_exit_status(0) }
@@ -64,7 +70,7 @@ shared_examples_for 'every OS image' do
       it { should exist }
     end
 
-    describe command('rsyslogd -N 1') do
+    describe command('rsyslogd -N 1'), exclude_on_ppc64le: true do
       it { should return_stdout /version 8/ }
       it { should return_exit_status(0) }
     end
@@ -148,7 +154,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'tftp is not installed (stig: V-38701)' do
+  context 'tftp is not installed (stig: V-38701, V-38609, V-38606)' do
     it "shouldn't be installed" do
       expect(package('tftp')).to_not be_installed
       expect(package('tftpd')).to_not be_installed
@@ -182,6 +188,7 @@ shared_examples_for 'every OS image' do
     describe file('/etc/passwd') do
       it('should be owned by root user (stig: V-38450)') { should be_owned_by('root') }
       it('should be group-owned by root group (stig: V-38451)') { should be_grouped_into('root') }
+      it('should have mode 0644 (stig: V-38457)') { should be_mode('644') }
     end
 
     context 'should not contain password hash (stig: V-38499)' do
@@ -239,7 +246,19 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe service('xinetd') do
-    it('should be disabled (stig: V-38582)') { should_not be_enabled }
+  describe package('xinetd') do
+    it('should not be installed (stig: V-38582)') { should_not be_installed }
+  end
+
+  context 'The root account must be the only account having a UID of 0 (stig: V-38500)' do
+    describe command("awk -F: '($3 == 0) {print}' /etc/passwd") do
+      its (:stdout) { should eq("root:x:0:0:root:/root:/bin/bash\n") }
+    end
+  end
+
+  describe file('/etc/shadow') do
+    it('should be owned by root user (stig: V-38502)') { should be_owned_by('root') }
+    it('should be owned by root group (stig: V-38503)') { should be_grouped_into('root') }
+    it('should have mode 0 (stig: V-38504)') { should be_mode('0') }
   end
 end

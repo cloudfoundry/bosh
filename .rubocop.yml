@@ -66,4 +66,13 @@ IfUnlessModifier:
 TrailingComma:
   Enabled: false
 
+WordArray:
+  Enabled: false # '%w' isn't always more readable and is often less consistent
+
 inherit_from: .rubocop_todo.yml
+
+ClassLength:
+  Enabled: false
+
+UselessSetterCall:
+  Enabled: false

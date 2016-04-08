@@ -100,4 +100,63 @@ describe 'CentOS 7 OS image', os_image: true do
       its (:stdout) { should include('CentOS 7 Official Signing Key') }
     end
   end
+
+  context 'ensure sendmail is removed (stig: V-38671)' do
+    describe command('rpm -q sendmail') do
+      its (:stdout) { should include ('package sendmail is not installed')}
+    end
+  end
+
+  context 'ensure cron is installed and enabled (stig: V-38605)' do
+    describe package('cronie') do
+      it('should be installed') { should be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/crond.service') do
+      it { should be_file }
+      its(:content) { should match /^ExecStart=\/usr\/sbin\/crond/ }
+    end
+  end
+
+  context 'ensure xinetd is not installed nor enabled (stig: V-38582)' do
+    describe package('xinetd') do
+      it('should not be installed') { should_not be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/xinetd.service') do
+      it { should_not be_file }
+    end
+  end
+
+  context 'ensure ypbind is not installed nor enabled (stig: V-38604)' do
+    describe package('ypbind') do
+      it('should not be installed') { should_not be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/ypbind.service') do
+      it { should_not be_file }
+    end
+  end
+
+  context 'ensure ypserv is not installed (stig: V-38603)' do
+    describe package('ypserv') do
+      it('should not be installed') { should_not be_installed }
+    end
+  end
+
 end

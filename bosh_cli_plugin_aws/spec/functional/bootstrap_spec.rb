@@ -4,6 +4,7 @@ describe 'AWS Bootstrap commands' do
   let(:aws) { Bosh::Cli::Command::AWS.new }
   let(:mock_s3) { double(Bosh::AwsCliPlugin::S3) }
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', 'bosh_config.yml')) }
+  let(:arch) { Bosh::Stemcell::Arch.ppc64le? ? 'ppc64le-' : ''}
 
   before do
     aws.options[:non_interactive] = true
@@ -246,7 +247,7 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'bails telling the user this command is only useful for the initial deployment' do
-        expect { aws.bootstrap_bosh }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
+        expect { aws.bootstrap_bosh }.to raise_error(/Deployment '#{deployment_name}' already exists\./)
       end
     end
 
@@ -256,7 +257,7 @@ describe 'AWS Bootstrap commands' do
 
       before do
         allow_any_instance_of(Bosh::Cli::Resources::Package).to receive(:resolve_globs).and_return([])
-        expect(mock_s3).to receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu-trusty-go_agent.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
+        expect(mock_s3).to receive(:copy_remote_file).with('bosh-jenkins-artifacts',"bosh-stemcell/aws/light-bosh-stemcell-#{arch}latest-aws-xen-ubuntu-trusty-go_agent.tgz",'bosh_stemcell.tgz').and_return(stemcell_stub)
         expect(mock_s3).to receive(:copy_remote_file).with('bosh-jenkins-artifacts', /release\/bosh-(.+)\.tgz/,'bosh_release.tgz').and_return('bosh_release.tgz')
 
         aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
@@ -274,12 +275,16 @@ describe 'AWS Bootstrap commands' do
             with(:headers => {'Content-Type' => 'application/json'}).
             to_return(:status => 200, :body => deployments.to_json)
 
+        stub_request(:post, 'http://127.0.0.1:25555/deployments/vpc-bosh-dev102/diff').
+          with(:headers => {'Content-Type' => 'text/yaml'}).
+          to_return(:status => 200, :body => '{"diff":[]}')
+
         stub_request(:get, 'http://127.0.0.1:25555/releases').
-            with(:headers => {'Content-Type' => 'application/json'}).
-            to_return(
+          with(:headers => {'Content-Type' => 'application/json'}).
+          to_return(
             {:status => 200, :body => '[]' },
             {:status => 200, :body => '[{"name" : "bosh", "release_versions" : [{"version" : "1"}]}]'}
-        )
+          )
 
         stub_request(:get, %r{http://blob.cfblob.com/rest/objects}).
             to_return(:status => 200)

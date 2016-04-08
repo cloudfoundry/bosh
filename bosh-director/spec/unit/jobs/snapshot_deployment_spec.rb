@@ -18,9 +18,9 @@ module Bosh::Director
       allow(deployment_manager).to receive(:find_by_name).and_return(deployment)
     end
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :snapshot_deployment }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe '#perform' do
@@ -31,6 +31,19 @@ module Bosh::Director
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
           expect(Api::SnapshotManager).not_to receive(:take_snapshot).with(instance4, {})
+
+          expect(subject.perform).to eq "snapshots of deployment 'deployment' created"
+        end
+      end
+
+      context 'when vm is not attached' do
+        let!(:instance5) { Models::Instance.make(deployment: deployment, vm_cid: nil) }
+
+        it 'should snapshot all instance that have a vms attached' do
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
+          expect(Api::SnapshotManager).not_to receive(:take_snapshot).with(instance5, {})
 
           expect(subject.perform).to eq "snapshots of deployment 'deployment' created"
         end
@@ -75,7 +88,7 @@ module Bosh::Director
 
           expect(Bosh::Director::Config.logger).to receive(:error) do |message|
             expect(message).to include("#{instance1.job}/#{instance1.index}")
-            expect(message).to include(instance1.vm.cid)
+            expect(message).to include(instance1.vm_cid)
             expect(message).to include('a helpful message')
           end
 

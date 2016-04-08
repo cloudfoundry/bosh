@@ -59,6 +59,33 @@ describe Bosh::Cli::Manifest do
     ]
   end
 
+  describe 'resolve_stemcell_aliases' do
+    let(:manifest_data) do
+      {
+        'resource_pools' => [
+          {'stemcell' => {'name' => 'foo', 'version' => 'latest'}},
+          {'stemcell' => {'name' => 'foo', 'version' => 22}},
+          {'stemcell' => {'name' => 'bar', 'version' => 'latest'}},
+        ]
+      }
+    end
+
+    it 'resolves latest alias' do
+      stemcells = [
+        {'name' => 'foo', 'version' => '22.6.4'},
+        {'name' => 'foo', 'version' => '22'},
+        {'name' => 'bar', 'version' => '4.0.8'},
+        {'name' => 'bar', 'version' => '4.1'}
+      ]
+
+      expect(director).to receive(:list_stemcells).and_return(stemcells)
+      manifest.resolve_stemcell_aliases
+      expect(manifest.hash['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
+      expect(manifest.hash['resource_pools'][1]['stemcell']['version']).to eq(22)
+      expect(manifest.hash['resource_pools'][2]['stemcell']['version']).to eq('4.1')
+    end
+  end
+
   describe '#latest_release_versions' do
     context 'for director version < 1.5' do
       before do
@@ -160,7 +187,7 @@ describe Bosh::Cli::Manifest do
       it 'should resolve the version to the latest for that release' do
         manifest.resolve_release_aliases
         expect(manifest.hash['releases'].detect { |release| release['name'] == 'bat' }['version']).to eq('3.1-dev')
-        expect(manifest.hash['releases'].detect { |release| release['name'] == 'bosh' }['version']).to eq(2)
+        expect(manifest.hash['releases'].detect { |release| release['name'] == 'bosh' }['version']).to eq('2')
       end
 
       context 'when the release is not found on the director' do
@@ -174,17 +201,6 @@ describe Bosh::Cli::Manifest do
               "Release 'bosh' not found on director. Unable to resolve 'latest' alias in manifest.",
             )
         end
-      end
-    end
-
-    context 'when release version is a string' do
-      let(:manifest_data) do
-        { 'release' => { 'name' => 'foo', 'version' => '12321' } }
-      end
-
-      it 'casts final release versions to Integer' do
-        manifest.resolve_release_aliases
-        expect(manifest.hash['release']['version']).to eq(12321)
       end
     end
   end

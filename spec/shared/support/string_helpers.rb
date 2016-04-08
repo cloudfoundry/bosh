@@ -3,7 +3,8 @@ require 'spec_helper'
 module Support
   module StringHelpers
     def strip_heredoc(str)
-      indent = str.scan(/^[ \t]*(?=\S)/).min.size || 0
+      min = str.scan(/^[ \t]*(?=\S)/).min || ''
+      indent = min.size || 0
       str.gsub(/^[ \t]{#{indent}}/, '')
     end
   end

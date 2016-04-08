@@ -2,7 +2,8 @@
 name: registry
 
 templates:
-  registry_ctl:     bin/registry_ctl
+  cacert.pem.erb:   config/cacert.pem
+  registry_ctl.erb: bin/registry_ctl
   registry.yml.erb: config/registry.yml
 
 packages:
@@ -20,6 +21,13 @@ properties:
   registry.http.password:
     description: Password clients must use to access Registry via HTTP Basic Auth
 
+  env.http_proxy:
+    description: HTTP proxy that the registry should use
+  env.https_proxy:
+    description: HTTPS proxy that the registry should use
+  env.no_proxy:
+    description: List of comma-separated hosts that should skip connecting to the proxy in the registry
+
   # Registry Database
   registry.db.adapter:
     description: The type of database used
@@ -31,6 +39,7 @@ properties:
     description: Password used for the registry database
   registry.db.host:
     description: Address of the registry database
+    default: 127.0.0.1
   registry.db.port:
     description: Port of the registry database
     default: 5432

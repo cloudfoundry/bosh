@@ -33,6 +33,7 @@ module Bosh::Monitor
 
         metrics.each do |metric|
           tags = metric.tags.merge({deployment: event.deployment})
+          tags.delete_if { |key, value| value.to_s.strip == '' }
           @tsdb.send_metric(metric.name, metric.timestamp, metric.value, tags)
         end
 

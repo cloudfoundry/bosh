@@ -7,6 +7,7 @@ module Bosh::Dev::Aws
     def initialize(env, net_type)
       @net_type = net_type
       @receipts = Receipts.new(env)
+      @keep_unreachable_vms = env.fetch('BAT_DEBUG_MODE', false)
     end
 
     def access_key_id
@@ -35,7 +36,8 @@ module Bosh::Dev::Aws
         YAML.load_file(receipts.vpc_outfile_path),
         YAML.load_file(receipts.route53_outfile_path),
         hm_director_user: 'admin',
-        hm_director_password: 'admin'
+        hm_director_password: 'admin',
+        keep_unreachable_vms: @keep_unreachable_vms,
       )
       raise "Specified #{@net_type} network but environment requires #{@manifest.network_type}" unless @manifest.network_type == @net_type
       @manifest

@@ -16,7 +16,7 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.where(fingerprint: fingerprint_list, ~:sha1 => nil, ~:blobstore_id => nil).all
+        matching_packages = Models::Package.where(Sequel.~(:sha1 => nil), Sequel.~(:blobstore_id => nil), fingerprint: fingerprint_list).all
 
         json_encode(matching_packages.map(&:fingerprint).compact.uniq)
       end
@@ -34,9 +34,8 @@ module Bosh::Director
         end
 
         matching_packages = Models::Package.join(Models::CompiledPackage, :package_id=>:id)
-                                .select(:packages__name, :packages__fingerprint, :compiled_packages__dependency_key, :stemcells__operating_system, :stemcells__version)
-                                .join(Models::Stemcell, :id=>:stemcell_id)
-                                .where(fingerprint: fingerprint_list).all
+                              .select(:packages__name, :packages__fingerprint, :compiled_packages__dependency_key, :stemcell_os, :stemcell_version)
+                              .where(fingerprint: fingerprint_list).all
 
         matching_packages = filter_matching_packages(matching_packages, manifest)
 
@@ -45,45 +44,15 @@ module Bosh::Director
 
       # dependencies & stemcell should also match
       def filter_matching_packages(matching_packages, manifest)
+        compiled_release_manifest = CompiledRelease::Manifest.new(manifest)
         filtered_packages = []
-
         matching_packages.each do |package|
-          stemcell_match = "#{package[:operating_system]}/#{package[:version]}" == compiled_package_meta(package.name, manifest)['stemcell']
-          dependencies_match = package[:dependency_key] == dependency_key(package, manifest)
-
-          if stemcell_match && dependencies_match
+          if compiled_release_manifest.has_matching_package(package.name, package[:stemcell_os], package[:stemcell_version], package[:dependency_key])
             filtered_packages << package
           end
         end
-
         filtered_packages
       end
-
-      def dependency_key(package, manifest)
-        compiled_package_meta = compiled_package_meta(package.name, manifest)
-        dependencies = transitive_dependencies(compiled_package_meta, manifest)
-
-        key = dependencies.to_a.sort_by {|k| k["name"]}.map { |p| [p['name'], p['version']]}
-        Yajl::Encoder.encode(key)
-      end
-
-      def transitive_dependencies(compiled_package_meta, manifest)
-        dependencies = Set.new
-        return dependencies if compiled_package_meta['dependencies'].nil?
-
-        compiled_package_meta['dependencies'].each do |dependency_package_name|
-          dependency_compiled_package_meta = compiled_package_meta(dependency_package_name, manifest)
-          dependencies << dependency_compiled_package_meta
-          dependencies.merge(transitive_dependencies(dependency_compiled_package_meta, manifest))
-        end
-
-        dependencies
-      end
-
-      def compiled_package_meta(package_name, manifest)
-        manifest['compiled_packages'].select { |p| p['name'] == package_name}[0]
-      end
-
     end
   end
 end

@@ -1,54 +1,72 @@
 # Tests
 
-There are four types of tests in BOSH: unit, integration, CPI lifecycle, and acceptance. Each feature should always contain unit tests reflecting the change, and may need additional tests depending on what is changed.
+Features should always contain unit tests to verify functionality and may need additional tests depending on the feature scope.
 
-## Available Test Suites
+
+## Test Suites
+
+BOSH uses several different types of tests, depending on the scope and subject.
+
 
 ### Unit Tests
 
-Unit tests describe behavior of individual objects or methods. Each BOSH component has its own unit tests in a `spec/unit` folder.
+Unit tests describe the behavior of individual objects or methods. Each BOSH component has its own unit tests in a `spec/unit` folder.
 
-Running individual component unit tests:
-
-```
-cd bosh-director # or any other component
-bundle exec rspec
-```
-
-Running all unit tests:
+When working on a specific component, switch to that directory before running `rspec`:
 
 ```
-bundle exec rake spec:unit # from the root of the project
+# first change into the component's directory
+bosh$ cd bosh-director
+bosh/bosh-director$ bundle exec rspec
 ```
 
-The CLI is backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3.  All code needs to run on Ruby 2.x.x.
+To run unit tests for all components, use the `spec:unit` rake task from the project root:
+
+```
+bosh$ bundle exec rake spec:unit
+```
+
+The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3. All code needs to run on Ruby 2.x.x.
+
+You can also use `./quick-unit-tests.sh` to run all unit tests against a local [Concourse CI](https://concourse.ci/) instance.
+
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are in the `spec/integration` folder.
-
-Running the integration tests:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `spec/integration` directory. Run the integration tests with the `spec:integration` rake task:
 
 ```
-bundle exec rake spec:integration
+bosh$ bundle exec rake spec:integration
 ```
 
-### CPI Lifecycle Tests
+You can also use `./quick-integration-tests.sh` to run all integration tests against a local [Concourse CI](https://concourse.ci/) instance.
 
-CPI lifecycle tests describe CPI behavior and test integration with the infrastructure. Each test runs through every CPI method in a given configuration.
 
-Running CPI lifecycle tests:
+### Acceptance Tests (BATs)
+
+BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not easily tested at lower levels. BATs verify integration between all BOSH components and infrastructures. They run against a deployed Director and use the CLI to perform tasks. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployments, handling broken deployments). The assertions are made against CLI commands exit status, output and state of VMs after performing the command. Since BATs run on real infrastructures, they help verify that specific combinations of the Director and stemcell works.
+
+Some tests in BATs may not be applicable to a given IaaS and can be skipped using tags.
+BATs currently supports the following tags:
+  - `core`: basic BOSH functionality which all CPIs should implement
+  - `persistent_disk`: persistent disk lifecycle tests
+  - `vip_networking`: static public address handling
+  - `dynamic_networking`: IaaS provided address handling
+  - `manual_networking`: BOSH Director specified address handling
+  - `root_partition`: BOSH agent repartitioning of unused storage on root volume
+  - `multiple_manual_networks`: support for creating machines with multiple network interfaces
+  - `raw_ephemeral_storage`: BOSH agent exposes all attached instance storage to deployed jobs
+  - `changing_static_ip`: `configure_networks` CPI method support [deprecated]
+  - `network_reconfiguration`: `configure_networks` CPI method support [deprecated]
+
+Here is an example of running BATs on vSphere, skipping tests that are not applicable:
 
 ```
-cd bosh_vsphere_cpi # or any other CPI
-bundle exec rake spec:lifecycle
+bundle exec rspec spec --tag ~vip_networking --tag ~dynamic_networking --tag ~root_partition --tag ~raw_ephemeral_storage
 ```
-
-### BOSH Acceptance Tests (BATs)
-
-BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not testable at the lower levels. BATs test integration between all BOSH components and an infrastructure. They run against a deployed Director and use the CLI to perform requests. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployment, handling broken deployment). The assertions are made against CLI commands exit status, output and state of VM after performing the command. Since BATs run on a real infrastructure, they confirm that a combination of the Director and stemcell works.
 
 There are two ways to run BATs - [using rake tasks](running_bats_using_rake_tasks.md) and [manually](running_bats_manually.md).
+
 
 ## Determining which tests suites to run
 
@@ -56,7 +74,7 @@ Sometimes type of infrastructure does not make a difference for changes made. Fo
 
 ### Build stemcell
 
-The stemcell building process is described in more detail in bosh-stemcell [README](../bosh-stemcell/README.md). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be made some modifications:
+The stemcell building process is described in [bosh-stemcell's README](../bosh-stemcell/README.md). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be some modifications:
 
-* DO NOT set `CANDIDATE_BUILD_NUMBER` when building stemcell. This will allow you to build stemcell of version `0000` which is being undestood by rake tasks as local stemcell.
-* Generated stemcell of version `0000` should be put into `bosh/tmp` folder before running BATs.
+* DO NOT set `CANDIDATE_BUILD_NUMBER` when building stemcell. This will allow you to build stemcell of version `0000` which is understood by rake tasks as a local stemcell.
+* Generated stemcells of version `0000` should be put into the `bosh/tmp` directory before running BATs.

@@ -1,3 +1,4 @@
+require 'bosh/stemcell/arch'
 require 'spec_helper'
 
 describe 'Ubuntu 14.04 OS image', os_image: true do
@@ -77,9 +78,23 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
-      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse' }
-      it { should contain 'deb http://security.ubuntu.com/ubuntu trusty-security main universe multiverse' }
+      if Bosh::Stemcell::Arch.ppc64le?
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty multiverse' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates multiverse' }
+
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security main restricted' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security universe' }
+        it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security multiverse' }
+
+      else
+        it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
+        it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse' }
+        it { should contain 'deb http://security.ubuntu.com/ubuntu trusty-security main universe multiverse' }
+      end
     end
 
     describe package('upstart') do
@@ -94,6 +109,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by base_ubuntu_packages' do
+    # rsyslog-mmjsonparse is removed because of https://gist.github.com/allomov-altoros/cd579aa76f3049bee9c7
     %w(
       anacron
       apparmor-utils
@@ -146,7 +162,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).each do |pkg|
+    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
@@ -188,17 +204,31 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_grub' do
-    %w(
-      grub
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
+    if Bosh::Stemcell::Arch.ppc64le?
+      %w(
+        grub2
+      ).each do |pkg|
+        describe package(pkg) do
+          it { should be_installed }
+        end
       end
-    end
-
-    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
-      describe file("/boot/grub/#{grub_stage}") do
-        it { should be_file }
+      %w(grub grubenv grub.chrp).each do |grub_file|
+        describe file("/boot/grub/#{grub_file}") do
+          it { should be_file }
+        end
+      end
+    else
+      %w(
+        grub
+      ).each do |pkg|
+        describe package(pkg) do
+          it { should be_installed }
+        end
+      end
+      %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+        describe file("/boot/grub/#{grub_stage}") do
+          it { should be_file }
+        end
       end
     end
   end
@@ -257,6 +287,53 @@ EOF
   context 'official Ubuntu gpg key is installed (stig: V-38476)' do
     describe command('apt-key list') do
       its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
+    end
+  end
+
+  context 'limit password reuse' do
+    describe file('/etc/pam.d/common-password') do
+      it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
+        should contain /password.*pam_unix\.so.*remember=24/
+      end
+
+      it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
+        should contain /password.*pam_unix\.so.*minlen=14/
+      end
+    end
+  end
+
+  context 'ensure sendmail is removed (stig: V-38671)' do
+    describe command('dpkg -s sendmail') do
+      its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
+    end
+  end
+
+  describe service('xinetd') do
+    it('should be disabled (stig: V-38582)') { should_not be_enabled }
+  end
+
+  context 'ensure cron is installed and enabled (stig: V-38605)' do
+    describe package('cron') do
+      it('should be installed') { should be_installed }
+    end
+
+    describe service('cron') do
+      it('should be enabled') { should be_enabled }
+    end
+  end
+
+  context 'ensure ypbind is not running (stig: V-38604)' do
+    describe package('nis') do
+      it { should_not be_installed }
+    end
+    describe file('/var/run/ypbind.pid') do
+      it { should_not be_file }
+    end
+  end
+
+  context 'ensure ypserv is not installed (stig: V-38603)' do
+    describe package('nis') do
+      it { should_not be_installed }
     end
   end
 end

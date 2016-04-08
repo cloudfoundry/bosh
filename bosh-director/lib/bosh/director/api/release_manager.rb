@@ -3,22 +3,47 @@ module Bosh::Director
     class ReleaseManager
       include ApiHelper
 
-      # Finds release by name
-      # @param [String] name Release name
-      # @return [Models::Release]
-      # @raise [ReleaseNotFound]
+      def get_all_releases
+        releases = Models::Release.order_by(Sequel.asc(:name)).map do |release|
+          release_versions = sorted_release_versions(release)
+          {
+            'name' => release.name,
+            'release_versions' => release_versions
+          }
+        end
+
+        releases
+      end
+
+      def sorted_release_versions(release)
+        sorted_version_tuples = release.versions_dataset.all.map do |version|
+          {
+            provided: version,
+            parsed: Bosh::Common::Version::ReleaseVersion.parse(version.values[:version])
+          }
+        end.sort_by { |rv| rv[:parsed] }
+        release_versions = sorted_version_tuples.map do |version|
+          provided = version[:provided]
+          {
+            'version' => provided.version.to_s,
+            'commit_hash' => provided.commit_hash,
+            'uncommitted_changes' => provided.uncommitted_changes,
+            'currently_deployed' => !provided.deployments.empty?,
+            'job_names' => provided.templates.map(&:name),
+          }
+        end
+
+        release_versions
+      end
+
       def find_by_name(name)
         release = Models::Release[:name => name]
         if release.nil?
-          raise ReleaseNotFound, "Release `#{name}' doesn't exist"
+          raise ReleaseNotFound, "Release '#{name}' doesn't exist"
         end
         release
       end
 
-      # @param [Models::Release] release Release model
-      # @param [String] version Release version
-      # @return [Models::ReleaseVersion] Release version model
-      # @raise [ReleaseVersionInvalid, ReleaseVersionNotFound]
       def find_version(release, version)
         dataset = release.versions_dataset
 
@@ -39,7 +64,7 @@ module Bosh::Director
           end
           if release_version.nil?
             raise ReleaseVersionNotFound,
-                  "Release version `#{release.name}/#{version}' doesn't exist"
+                  "Release version '#{release.name}/#{version}' doesn't exist"
           end
         end
 

@@ -13,6 +13,7 @@ module IntegrationExampleGroup
       waiter,
       current_sandbox.agent_tmp_path,
       current_sandbox.nats_port,
+      current_sandbox.db,
       logger,
     )
   end
@@ -25,9 +26,13 @@ module IntegrationExampleGroup
   end
 
   def bosh_runner
-    @bosh_runner ||= Bosh::Spec::BoshRunner.new(
-      ClientSandbox.bosh_work_dir,
-      ClientSandbox.bosh_config,
+    @bosh_runner ||= make_a_bosh_runner
+  end
+
+  def make_a_bosh_runner(opts={})
+    Bosh::Spec::BoshRunner.new(
+      opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
+      opts.fetch(:config_path, ClientSandbox.bosh_config),
       current_sandbox.cpi.method(:agent_log_path),
       current_sandbox.nats_log_path,
       current_sandbox.saved_logs_path,
@@ -36,14 +41,7 @@ module IntegrationExampleGroup
   end
 
   def bosh_runner_in_work_dir(work_dir)
-    Bosh::Spec::BoshRunner.new(
-      work_dir,
-      ClientSandbox.bosh_config,
-      current_sandbox.cpi.method(:agent_log_path),
-      current_sandbox.nats_log_path,
-      current_sandbox.saved_logs_path,
-      logger
-    )
+    make_a_bosh_runner(work_dir: work_dir)
   end
 
   def waiter
@@ -61,34 +59,51 @@ module IntegrationExampleGroup
     bosh_runner.run("update cloud-config #{cloud_config_manifest.path}", options)
   end
 
+  def upload_runtime_config(options={})
+    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_manifest = yaml_file('simple', runtime_config_hash)
+    bosh_runner.run("update runtime-config #{runtime_config_manifest.path}", options)
+  end
+
   def create_and_upload_test_release(options={})
+    create_args = options.fetch(:force, false) ? '--force' : ''
+    bosh_runner.run_in_dir("create release #{create_args}", ClientSandbox.test_release_dir, options)
+    bosh_runner.run_in_dir('upload release', ClientSandbox.test_release_dir, options)
+  end
+
+  def update_release
     Dir.chdir(ClientSandbox.test_release_dir) do
-      bosh_runner.run_in_current_dir('create release', options)
-      bosh_runner.run_in_current_dir('upload release', options)
+      File.open(File.join('src', 'foo'), 'w') { |f| f.write(SecureRandom.uuid) }
     end
+    create_and_upload_test_release(force: true)
   end
 
   def upload_stemcell(options={})
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')} --skip-if-exists", options)
   end
 
+  def upload_stemcell_2(options={})
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')} --skip-if-exists", options)
+  end
+
   def delete_stemcell
     bosh_runner.run("delete stemcell ubuntu-stemcell 1")
   end
 
-  def set_deployment(options)
+  def set_deployment(options={})
     manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
 
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
-    @deployment_manifest = yaml_file('simple', manifest_hash)
-    bosh_runner.run("deployment #{@deployment_manifest.path}")
+    deployment_manifest = yaml_file('simple', manifest_hash)
+    bosh_runner.run("deployment #{deployment_manifest.path}", options)
   end
 
   def deploy(options)
     cmd = options.fetch(:no_track, false) ? '--no-track ' : ''
+    cmd += options.fetch(:no_color, false) ? '--no-color ' : ''
     cmd += 'deploy'
-    cmd += options.fetch(:redact_diff, false) ? ' --redact-diff' : ''
+    cmd += options.fetch(:no_redact, false) ? ' --no-redact' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''
 
     if options[:skip_drain]
@@ -102,13 +117,24 @@ module IntegrationExampleGroup
     bosh_runner.run(cmd, options)
   end
 
+  def stop_job(vm_name)
+    bosh_runner.run("stop #{vm_name}", {})
+  end
+
   def deploy_from_scratch(options={})
+    prepare_for_deploy(options)
+    deploy_simple_manifest(options)
+  end
+
+  def prepare_for_deploy(options={})
     target_and_login unless options.fetch(:no_login, false)
 
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
-    deploy_simple_manifest(options)
+    if options[:runtime_config_hash]
+      upload_runtime_config(options)
+    end
   end
 
   def deploy_simple_manifest(options={})
@@ -117,16 +143,26 @@ module IntegrationExampleGroup
 
     output, exit_code = deploy(options.merge({return_exit_code: true}))
 
-    expect(exit_code == 0).to_not eq(options.fetch(:failure_expected, false))
+    if exit_code != 0 && !options.fetch(:failure_expected, false)
+      raise "Deploy failed. Exited #{exit_code}: #{output}"
+    end
 
     return_exit_code ? [output, exit_code] : output
   end
 
+  def run_errand(errand_job_name, options={})
+    set_deployment(options)
+    output, exit_code = bosh_runner.run(
+      "run errand #{errand_job_name}",
+      options.merge({return_exit_code: true, failure_expected: true})
+    )
+    return output, exit_code == 0
+  end
+
   def yaml_file(name, object)
-    Tempfile.new(name).tap do |f|
-      f.write(Psych.dump(object))
-      f.close
-    end
+    FileUtils.mkdir_p(ClientSandbox.manifests_dir)
+    file_path = File.join(ClientSandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
+    File.open(file_path, 'w') { |f| f.write(Psych.dump(object)); f }
   end
 
   def spec_asset(name)
@@ -137,8 +173,22 @@ module IntegrationExampleGroup
     Regexp.compile(Regexp.escape(string))
   end
 
-  def scrub_blobstore_ids(bosh_output)
+  def scrub_random_ids(bosh_output)
     bosh_output.gsub /[0-9a-f]{8}-[0-9a-f-]{27}/, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  end
+
+  def scrub_random_cids(bosh_output)
+    bosh_output.gsub /[0-9a-f]{32}/, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  end
+
+  def cid_from(bosh_output)
+    bosh_output[/[0-9a-f]{32}/, 0]
+  end
+
+  def scrub_time(bosh_output)
+    bosh_output.
+      gsub(/[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [-+][0-9]{4}/, '0000-00-00 00:00:00 -0000').
+      gsub(/[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC/, '0000-00-00 00:00:00 UTC')
   end
 
   def extract_agent_messages(nats_messages, agent_id)
@@ -158,9 +208,25 @@ module IntegrationExampleGroup
     expect(bosh_runner.run(cmd)).to match_output(expected)
   end
 
-  def expect_running_vms(job_name_index_list)
+  def check_for_unknowns(vms)
+    uniq_vm_names = vms.map(&:job_name).uniq
+    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown'
+      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
+    end
+  end
+
+  def expect_running_vms_with_names_and_count(job_names_to_vm_counts)
     vms = director.vms
-    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
+    check_for_unknowns(vms)
+    names = vms.map(&:job_name)
+    total_expected_vms = job_names_to_vm_counts.values.inject(0) {|sum, count| sum + count}
+    expect(vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{vms.size}. Present were VMs with job name: #{names}"
+
+    job_names_to_vm_counts.each do |job_name, expected_count|
+      actual_count = names.select { |name| name == job_name }.size
+      expect(actual_count).to eq(expected_count), "Expected job #{job_name} to have #{expected_count} VMs, got #{actual_count}"
+    end
+
     expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 end
@@ -212,7 +278,6 @@ module IntegrationSandboxHelpers
 
   def reset_sandbox
     current_sandbox.reset
-    FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
   end
 
   def setup_test_release_dir(destination_dir = ClientSandbox.test_release_dir)
@@ -270,6 +335,36 @@ module IntegrationSandboxHelpers
 end
 
 module IntegrationSandboxBeforeHelpers
+
+  DATA_MIGRATION_FILE = '/bosh-director/db/migrations/director/20160324222211_add_data.rb'
+
+  def insert_data_migration_file_before_all
+    before (:all) do
+      path = Dir.pwd + DATA_MIGRATION_FILE
+
+      file = File.new(path, 'w')
+      file.write("Sequel.migration do
+  up do
+        run(\"")
+
+      (Dir[Dir.pwd + '/spec/assets/migration_data/*']).each do |data_file_path|
+        data_file = File.new(data_file_path, 'r')
+        file.write(data_file.read.gsub("\"", "\\\""))
+      end
+
+      file.write("\")
+  end
+end")
+      file.close
+    end
+  end
+
+  def delete_data_migration_file_after_all
+    after (:all) do
+      File.delete(Dir.pwd + DATA_MIGRATION_FILE)
+    end
+  end
+
   def with_reset_sandbox_before_each(options={})
     before do |example|
       prepare_sandbox

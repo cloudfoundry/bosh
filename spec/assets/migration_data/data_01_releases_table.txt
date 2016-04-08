@@ -1,0 +1,2 @@
+INSERT INTO releases (id, name) VALUES (2, 'bosh');
+INSERT INTO releases (id, name) VALUES (6, 'link_release');

@@ -2,83 +2,127 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::InstanceManager do
-    let(:instance) { double('Instance', id: 90210) }
+    let(:deployment) { Models:: Deployment.make(name: deployment_name) }
+    let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
-    let(:instance_lookup) { instance_double('Bosh::Director::Api::InstanceLookup') }
+    let(:instance_lookup) { Api::InstanceLookup.new }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
     let(:options) { { foo: 'bar' } }
+    let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
+    let(:job) { 'FAKE_JOB' }
 
     before do
-      allow(Api::InstanceLookup).to receive_messages(new: instance_lookup)
       allow(JobQueue).to receive(:new).and_return(job_queue)
     end
 
     describe '#fetch_logs' do
-      let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
-      let(:job) { 'FAKE_JOB' }
-      let(:index) { 'FAKE_INDEX' }
+      context 'when index is provided' do
+        let(:index) { '3' }
 
-      before do
-        allow(instance_lookup).to receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
+        it 'enqueues a background job' do
+          instance.update(index: index)
+
+          expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
+
+          expect(subject.fetch_logs(username, deployment, job, index, options)).to eq(task)
+        end
       end
 
-      it 'enqueues a resque job' do
-        expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
+      context 'when uuid is provided' do
+        let(:uuid) { 'fakeId123' }
 
-        expect(subject.fetch_logs(username, deployment_name, job, index, options)).to eq(task)
+        it 'enqueues a job' do
+          expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
+
+          expect(subject.fetch_logs(username, deployment, job, uuid, options)).to eq(task)
+        end
       end
     end
 
     describe '#ssh' do
-      let(:deployment) { double('Deployment', id: 8675309) }
-      let(:deployment_lookup) { instance_double('Bosh::Director::Api::DeploymentLookup') }
+      let(:deployment_lookup) { Api::DeploymentLookup.new }
       let(:options) do
         {
-          'deployment_name' => 'DEPLOYMENT_NAME',
+          'deployment_name' => deployment_name,
           'command' => 'COMMAND',
           'target' => 'TARGET'
         }
       end
 
-      before do
-        allow(Bosh::Director::Api::DeploymentLookup).to receive_messages(new: deployment_lookup)
-        allow(deployment_lookup).to receive_messages(by_name: deployment)
-      end
-
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 
-        expect(subject.ssh(username, options)).to eq(task)
+        expect(subject.ssh(username, deployment, options)).to eq(task)
       end
     end
 
     describe '#find_instance' do
-      it 'delegates to instance lookup' do
-        expect(instance_lookup).to receive(:by_id).with(instance.id).and_return(instance)
+      it 'finds instance by id' do
         expect(subject.find_instance(instance.id)).to eq instance
+      end
+    end
+
+    describe '#find_instances_by_deployment' do
+      it 'uses InstanceLookup#by_deployment' do
+        deployment = Models::Deployment.make(name: 'given_deployment')
+
+        expect_any_instance_of(Api::InstanceLookup).to receive(:by_deployment).with(deployment)
+
+        subject.find_instances_by_deployment(deployment)
       end
     end
 
     describe '#find_by_name' do
       let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
       let(:job) { 'FAKE_JOB' }
-      let(:index) { 'FAKE_INDEX' }
+      let(:index) { 3 }
+      let(:id) { '9A0A5D0E-868A-431C-A6EA-9E8EDF4DBF81' }
 
-      it 'delegates to instance lookup' do
-        expect(instance_lookup).to receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
-        expect(subject.find_by_name(deployment_name, job, index)).to eq instance
+      it 'finds instance by deployment name, job name and index or id' do
+        instance.update(index: index)
+        instance.update(uuid: id)
+
+        expect(subject.find_by_name(deployment, job, index)).to eq instance
+        expect(subject.find_by_name(deployment, job, id)).to eq instance
       end
     end
 
     describe '#filter_by' do
-      it 'delegates to instance lookup' do
-        expect(instance_lookup).to receive(:by_filter).with(id: 5).and_return(instance)
-        expect(subject.filter_by(id: 5)).to eq instance
+      it 'filters by given criteria' do
+        expect(subject.filter_by(deployment, uuid: instance.uuid)).to eq [instance]
       end
     end
 
+    describe '#fetch_instances_with_vm' do
+
+      before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+      it 'enqueues a DJ job' do
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
+
+        expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment.name).and_return(task)
+
+        expect(subject.fetch_instances_with_vm(username, deployment, 'FAKE_FORMAT')).to eq(task)
+      end
+    end
+
+    describe '#fetch_instances' do
+
+      before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+      it 'enqueues a DJ job' do
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
+
+        expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT', true], deployment.name).and_return(task)
+
+        expect(subject.fetch_instances(username, deployment, 'FAKE_FORMAT')).to eq(task)
+      end
+    end
   end
 end

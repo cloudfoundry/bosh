@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/models/instance'
 
 module Bosh::Director::Models
   describe PersistentDisk do

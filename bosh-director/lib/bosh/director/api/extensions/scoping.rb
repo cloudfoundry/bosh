@@ -4,16 +4,25 @@ module Bosh::Director
       module Scoping
         module Helpers
           def current_user
-            @user.username if @user
+            @user.username_or_client if @user
+          end
+
+          def token_scopes
+            @user.scopes if @user
           end
         end
 
         def self.registered(app)
-          app.set default_scope: :write
+          app.set default_scope: :admin
           app.helpers(Helpers)
         end
 
         def scope(allowed_scope)
+          if allowed_scope == :authorization
+            # handled by the :authorization option of the route
+            return
+          end
+
           condition do
             if allowed_scope == :default
               scope = settings.default_scope
@@ -23,25 +32,13 @@ module Bosh::Director
               scope = allowed_scope
             end
 
-            auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
-              request.env.has_key?(key)
-            end
-
-            if auth_provided
-              begin
-                @user = identity_provider.get_user(request.env)
-              rescue AuthenticationError
-              end
-            end
-
-            if requires_authentication? && (@user.nil? || !identity_provider.valid_access?(@user, scope))
-              response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
+            if requires_authentication?
               if @user.nil?
-                message = "Not authorized: '#{request.path}'\n"
-              else
-                message = "Not authorized: '#{request.path}' requires one of the scopes: #{identity_provider.required_scopes(scope).join(", ")}\n"
+                # this should already be happening in base_controller#authentication
+                throw(:halt, [401, "Not authorized: '#{request.path}'\n"])
               end
-              throw(:halt, [401, message])
+
+              @permission_authorizer.granted_or_raise(:director, scope, @user.scopes)
             end
           end
         end

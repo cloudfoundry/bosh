@@ -1,0 +1,535 @@
+---
+groups:
+  - name: all
+    jobs:
+      - build-stemcell
+      - publish-stemcells
+      - build-aws-xen-centos-7
+      - build-aws-xen-ubuntu-trusty
+      - build-openstack-kvm-centos-7
+      - build-openstack-kvm-ubuntu-trusty
+      - build-vsphere-esxi-centos-7
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vcloud-esxi-ubuntu-trusty
+  - name: aws
+    jobs:
+      - build-aws-xen-ubuntu-trusty
+      - build-aws-xen-centos-7
+  - name: openstack
+    jobs:
+      - build-openstack-kvm-ubuntu-trusty
+      - build-openstack-kvm-centos-7
+  - name: vsphere
+    jobs:
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vsphere-esxi-centos-7
+  - name: vcloud
+    jobs:
+      - build-vcloud-esxi-ubuntu-trusty
+  - name: ubuntu
+    jobs:
+      - build-aws-xen-ubuntu-trusty
+      - build-openstack-kvm-ubuntu-trusty
+      - build-vsphere-esxi-ubuntu-trusty
+      - build-vcloud-esxi-ubuntu-trusty
+  - name: centos
+    jobs:
+      - build-aws-xen-centos-7
+      - build-openstack-kvm-centos-7
+      - build-vsphere-esxi-centos-7
+
+jobs:
+  - name: build-stemcell
+    serial: true
+    plan:
+      - get: bosh-src
+      - get: ubuntu-trusty-os-image
+      - get: centos-7-os-image
+      - get: bosh-release
+      - get: version
+        params:
+          bump: major
+      - put: version
+        params:
+          file: version/number
+
+  - name: publish-stemcells
+    serial: true
+    plan:
+      - get: version
+        trigger: true
+        passed:
+          - build-stemcell
+          - build-aws-xen-ubuntu-trusty
+          - build-openstack-kvm-ubuntu-trusty
+          - build-vsphere-esxi-ubuntu-trusty
+          - build-vcloud-esxi-ubuntu-trusty
+          - build-aws-xen-centos-7
+          - build-openstack-kvm-centos-7
+          - build-vsphere-esxi-centos-7
+      - get: bosh-src
+        passed:
+          - build-stemcell
+          - build-aws-xen-ubuntu-trusty
+          - build-openstack-kvm-ubuntu-trusty
+          - build-vsphere-esxi-ubuntu-trusty
+          - build-vcloud-esxi-ubuntu-trusty
+          - build-aws-xen-centos-7
+          - build-openstack-kvm-centos-7
+          - build-vsphere-esxi-centos-7
+      - task: copy-artifacts
+        file: bosh-src/ci/pipelines/stemcell/tasks/publish.yml
+        params:
+          AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
+          AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
+          BUCKET_NAME: {{stemcell_bucket}}
+          CANDIDATE_PREFIX: bosh-stemcell-candidate/
+          PUBLISHED_PREFIX: bosh-stemcell/
+          COPY_KEYS: |
+            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
+            aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
+            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz.sha1
+            aws/bosh-stemcell-%s-aws-xen-centos-7-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent.tgz
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
+            openstack/bosh-stemcell-%s-openstack-kvm-centos-7-go_agent-raw.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
+            vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+            vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz.sha1
+            vsphere/bosh-stemcell-%s-vsphere-esxi-centos-7-go_agent.tgz
+            vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
+            vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+
+  - name: build-aws-xen-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: ubuntu-trusty-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:       aws
+          HYPERVISOR: xen
+          OS_NAME:    ubuntu
+          OS_VERSION: trusty
+      - aggregate:
+        - put: aws-xen-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: aws-xen-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
+
+  - name: build-aws-xen-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: centos-7-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        params:
+          IAAS:       aws
+          HYPERVISOR: xen
+          OS_NAME:    centos
+          OS_VERSION: 7
+      - aggregate:
+        - put: aws-xen-centos-7
+          params:
+            file: stemcell/*.tgz
+        - put: aws-xen-centos-7-sha1
+          params:
+            file: stemcell/*.tgz.sha1
+
+  #
+  # openstack
+  #
+
+  - name: build-openstack-kvm-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: ubuntu-trusty-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        config:
+          params:
+            IAAS:       openstack
+            HYPERVISOR: kvm
+            OS_NAME:    ubuntu
+            OS_VERSION: trusty
+      - aggregate:
+        - put: openstack-kvm-ubuntu-trusty-raw
+          params:
+            file: stemcell/*-raw.tgz
+        - put: openstack-kvm-ubuntu-trusty-raw-sha1
+          params:
+            file: stemcell/*-raw.tgz.sha1
+        - put: openstack-kvm-ubuntu-trusty
+          params:
+            file: stemcell/*-go_agent.tgz
+        - put: openstack-kvm-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*-go_agent.tgz.sha1
+
+  - name: build-openstack-kvm-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: centos-7-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        config:
+          params:
+            IAAS:       openstack
+            HYPERVISOR: kvm
+            OS_NAME:    centos
+            OS_VERSION: 7
+      - aggregate:
+        - put: openstack-kvm-centos-7-raw
+          params:
+            file: stemcell/*-raw.tgz
+        - put: openstack-kvm-centos-7-raw-sha1
+          params:
+            file: stemcell/*-raw.tgz.sha1
+        - put: openstack-kvm-centos-7
+          params:
+            file: stemcell/*-go_agent.tgz
+        - put: openstack-kvm-centos-7-sha1
+          params:
+            file: stemcell/*-go_agent.tgz.sha1
+
+  #
+  # vsphere
+  #
+
+  - name: build-vsphere-esxi-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: ubuntu-trusty-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        config:
+          params:
+            IAAS:       vsphere
+            HYPERVISOR: esxi
+            OS_NAME:    ubuntu
+            OS_VERSION: trusty
+      - aggregate:
+        - put: vsphere-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: vsphere-esxi-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
+
+  - name: build-vsphere-esxi-centos-7
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: centos-7-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        config:
+          params:
+            IAAS:       vsphere
+            HYPERVISOR: esxi
+            OS_NAME:    centos
+            OS_VERSION: 7
+      - aggregate:
+        - put: vsphere-esxi-centos-7
+          params:
+            file: stemcell/*.tgz
+        - put: vsphere-esxi-centos-7-sha1
+          params:
+            file: stemcell/*.tgz.sha1
+
+  #
+  # vcloud
+  #
+
+  - name: build-vcloud-esxi-ubuntu-trusty
+    plan:
+      - aggregate:
+          - get: version
+            trigger: true
+            passed: [build-stemcell]
+          - get: bosh-src
+            passed: [build-stemcell]
+          - get: bosh-release
+            passed: [build-stemcell]
+          - get: os-image
+            resource: ubuntu-trusty-os-image
+            passed: [build-stemcell]
+      - task: create-stemcell
+        file: bosh-src/ci/pipelines/stemcell/tasks/build.yml
+        privileged: true
+        config:
+          params:
+            IAAS:       vcloud
+            HYPERVISOR: esxi
+            OS_NAME:    ubuntu
+            OS_VERSION: trusty
+      - aggregate:
+        - put: vcloud-esxi-ubuntu-trusty
+          params:
+            file: stemcell/*.tgz
+        - put: vcloud-esxi-ubuntu-trusty-sha1
+          params:
+            file: stemcell/*.tgz.sha1
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: {{branch}}
+
+  - name: version
+    type: semver
+    source:
+      driver: s3
+      key: bosh-stemcell/version
+      bucket: {{stemcell_bucket}}
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+
+  #
+  # os-images
+  #
+
+  - name: ubuntu-trusty-os-image
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      regexp: ubuntu-trusty/ubuntu-trusty-(.+).tgz
+
+  - name: centos-7-os-image
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      regexp: centos-7/centos-7-(.+).tgz
+
+  #
+  # aws
+  #
+
+  - name: aws-xen-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: aws-xen-centos-7
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: aws-xen-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: aws-xen-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-aws-xen-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # openstack
+  #
+
+  - name: openstack-kvm-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-ubuntu-trusty-raw
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-raw
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent-raw.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-ubuntu-trusty-raw-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-ubuntu-trusty-go_agent-raw.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: openstack-kvm-centos-7-raw-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/openstack/bosh-stemcell-(.+)-openstack-kvm-centos-7-go_agent-raw.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # vsphere
+  #
+
+  - name: vsphere-esxi-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vsphere-esxi-centos-7
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vsphere-esxi-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vsphere-esxi-centos-7-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vsphere/bosh-stemcell-(.+)-vsphere-esxi-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  #
+  # vcloud
+  #
+
+  - name: vcloud-esxi-ubuntu-trusty
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
+
+  - name: vcloud-esxi-ubuntu-trusty-sha1
+    type: s3
+    source:
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/vcloud/bosh-stemcell-(.+)-vcloud-esxi-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}

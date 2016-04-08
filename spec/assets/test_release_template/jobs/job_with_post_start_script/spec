@@ -1,0 +1,17 @@
+---
+name: job_with_post_start_script
+templates:
+  post-start.erb: bin/post-start
+  job_ctl.erb: bin/job_ctl
+
+packages: []
+
+properties:
+  post_start_message:
+    description: A message echoed by the post-start script
+    default: this is post_start_message
+  job_pidfile:
+    description: Path to jobs pid file
+    default: /var/vcap/sys/run/job_with_post_start_script.pid
+  exit_code:
+    default: 0

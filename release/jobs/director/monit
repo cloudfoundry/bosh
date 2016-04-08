@@ -4,9 +4,9 @@ check process director
   stop program "/var/vcap/jobs/director/bin/director_ctl stop"
   group vcap
   <% if properties.micro %>
-  depends on postgres,redis,nats
+  depends on postgres,nats
   <% end %>
-<% (1..(properties.director.workers || 3)).each do |index| %>
+<% (1..(p('director.workers', 3))).each do |index| %>
 check process worker_<%= index %>
   with pidfile /var/vcap/sys/run/director/worker_<%= index %>.pid
   start program "/var/vcap/jobs/director/bin/worker_ctl start <%= index %>"

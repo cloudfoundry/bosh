@@ -19,7 +19,7 @@ module Bosh::Director
     it 'raises an error when trying to get non-existing resource' do
       expect {
         manager.get_resource('deadbeef')
-      }.to raise_error(ResourceNotFound, "Resource `deadbeef' not found in the blobstore")
+      }.to raise_error(ResourceNotFound, "Resource 'deadbeef' not found in the blobstore")
     end
 
     it 'raises an error when something went wrong with blobstore' do
@@ -28,7 +28,7 @@ module Bosh::Director
 
       expect {
         manager.get_resource('deadbeef')
-      }.to raise_error(ResourceError, "Blobstore error accessing resource `deadbeef': bad stuff")
+      }.to raise_error(ResourceError, "Blobstore error accessing resource 'deadbeef': bad stuff")
     end
 
     it 'saves resource to a local file' do

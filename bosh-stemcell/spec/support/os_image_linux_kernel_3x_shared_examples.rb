@@ -39,6 +39,14 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'must not send ICMPv4 redirects from any interface. (stig: V-38601)' do
         should contain /^net.ipv4.conf.all.send_redirects=0$/
       end
+
+      it 'must use reverse path filtering for IPv4 network traffic on all interfaces. (stig: V-38542)' do
+        should contain /^net.ipv4.conf.all.rp_filter=1$/
+      end
+
+      it 'must use reverse path filtering for IPv4 network traffic by default. (stig: V-38544)' do
+        should contain /^net.ipv4.conf.default.rp_filter=1$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
@@ -46,13 +54,13 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
     end
 
     context 'installed by system_ixgbevf' do
-      describe package('dkms') do
+      describe package('dkms'), exclude_on_ppc64le: true do
         it { should be_installed }
       end
 
-      describe 'the ixgbevf kernel module' do
+      describe 'the ixgbevf kernel module', exclude_on_ppc64le: true  do
         it 'is installed with the right version' do
-          expect(file("/var/lib/dkms/ixgbevf/2.16.1/#{kernel_version}/x86_64/module/ixgbevf.ko")).to be_a_file
+          expect(file("/var/lib/dkms/ixgbevf/3.1.1/#{kernel_version}/x86_64/module/ixgbevf.ko")).to be_a_file
         end
       end
     end

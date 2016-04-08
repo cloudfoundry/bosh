@@ -21,11 +21,11 @@ module Bosh::Cli
       @args = args
       @options = options.dup
 
-      banner = "Usage: bosh [<options>] <command> [<args>]"
+      banner = 'Usage: bosh [<options>] <command> [<args>]'
       @option_parser = OptionParser.new(banner)
 
       Config.colorize = nil
-      if ENV.has_key?("BOSH_COLOR") && ENV["BOSH_COLOR"] == "false"
+      if ENV.has_key?('BOSH_COLOR') && ENV['BOSH_COLOR'] == 'false'
         Config.colorize = false
       end
       Config.output ||= STDOUT
@@ -51,7 +51,7 @@ module Bosh::Cli
       end
 
       if command.nil?
-        err("Unknown command: #{@args.join(" ")}")
+        err("Unknown command: #{@args.join(' ')}")
       end
 
       command.runner = self
@@ -104,63 +104,67 @@ module Bosh::Cli
     def parse_global_options
       # -v is reserved for verbose but having 'bosh -v' is handy,
       # hence the little hack
-      if @args.size == 1 && (@args[0] == "-v" || @args[0] == "--version")
+      if @args.size == 1 && (@args[0] == '-v' || @args[0] == '--version')
         @args = %w(version)
         return
       end
 
       opts = @option_parser
-      config_desc = "Override configuration file. Also can be overridden " +
-                    "by BOSH_CONFIG environment variable. Defaults to " +
-                    "$HOME/.bosh_config. Override precedence is command-" +
-                    "line option, then environment variable, then home directory."
-      opts.on("-c", "--config FILE", config_desc) do |file|
+      config_desc = 'Override configuration file. Also can be overridden ' +
+        'by BOSH_CONFIG environment variable. Defaults to ' +
+        '$HOME/.bosh_config. Override precedence is command-' +
+        'line option, then environment variable, then home directory.'
+      opts.on('-c', '--config FILE', config_desc) do |file|
         @options[:config] = file
       end
 
-      opts.on("--parallel MAX", "Sets the max number of parallel downloads") do |max|
+      opts.on('--parallel MAX', 'Sets the max number of parallel downloads') do |max|
         Config.max_parallel_downloads = Integer(max)
       end
 
-      opts.on("--[no-]color", "Toggle colorized output") do |v|
+      opts.on('--[no-]color', 'Toggle colorized output') do |v|
         Config.colorize = v
       end
 
-      opts.on("-v", "--verbose", "Show additional output") do
+      opts.on('-v', '--verbose', 'Show additional output') do
         @options[:verbose] = true
       end
-      opts.on("-q", "--quiet", "Suppress all output") do
+      opts.on('-q', '--quiet', 'Suppress all output') do
         Config.output = nil
       end
-      opts.on("-n", "--non-interactive", "Don't ask for user input") do
+      opts.on('-n', '--non-interactive', "Don't ask for user input") do
         @options[:non_interactive] = true
       end
-      opts.on("-N", "--no-track", "Return Task ID and don't track") do
+      opts.on('-N', '--no-track', "Return Task ID and don't track") do
         @options[:no_track] = true
       end
-      opts.on("-P", "--poll INTERVAL", "Director task polling interval") do |interval|
+      opts.on('-P', '--poll INTERVAL', 'Director task polling interval') do |interval|
         @options[:poll_interval] = Integer(interval)
       end
-      opts.on("-t", "--target URL", "Override target") do |target|
+      opts.on('-t', '--target URL', 'Override target') do |target|
         @options[:target] = target
       end
-      opts.on("-u", "--user USER", "Override username") do |user|
+      opts.on('-u', '--user USER', 'Override username') do |user|
         @options[:username] = user
       end
-      opts.on("-p", "--password PASSWORD", "Override password") do |pass|
+      opts.on('-p', '--password PASSWORD', 'Override password') do |pass|
         @options[:password] = pass
       end
-      opts.on("-d", "--deployment FILE", "Override deployment") do |file|
+      opts.on('-d', '--deployment FILE', 'Override deployment') do |file|
         @options[:deployment] = file
       end
-      opts.on("-h", "--help", "here you go") do
+      opts.on('-h', '--help', 'here you go') do
         @args << 'help'
+      end
+      opts.on('--ca-cert FILE', 'Override CA certificate') do |file|
+        @options[:ca_cert] = file
       end
 
       @args = @option_parser.order!(@args)
     end
 
-    def plugins_glob; "bosh/cli/commands/*.rb"; end
+    def plugins_glob; 'bosh/cli/commands/*.rb'
+    ; end
 
     # Discover and load CLI plugins from all available gems
     # @return [void]
@@ -170,7 +174,7 @@ module Bosh::Cli
     end
 
     def load_local_plugins
-      Dir.glob(File.join("lib", plugins_glob)).each do |file|
+      Dir.glob(File.join('lib', plugins_glob)).each do |file|
         say("WARNING: loading local plugin: #{file}")
         require_plugin(file)
       end
@@ -189,7 +193,7 @@ module Bosh::Cli
         if Config.commands =~ original_commands
           say(("File #{plugin_path} has been loaded as plugin but it didn't " +
               "contain any commands.\nMake sure this plugin is updated to be " +
-              "compatible with BOSH CLI 1.0.").columnize(80).make_yellow)
+              'compatible with BOSH CLI 1.0.').columnize(80).make_yellow)
         end
       end
     end
@@ -199,9 +203,9 @@ module Bosh::Cli
         spec.matches_for_glob(plugins_glob)
       }.flatten.uniq
     rescue
-      err("Cannot load plugins, ".make_yellow +
-              "please run `gem update --system' to ".make_yellow +
-              "update your RubyGems".make_yellow)
+      err('Cannot load plugins, '.make_yellow +
+              "please run `gem update --system` to ".make_yellow +
+              'update your RubyGems'.make_yellow)
     end
 
     def require_plugin(file)
@@ -225,9 +229,9 @@ module Bosh::Cli
 
     def add_shortcuts
       {
-        "st" => "status",
-        "props" => "properties",
-        "cck" => "cloudcheck"
+        'st' => 'status',
+        'props' => 'properties',
+        'cck' => 'cloudcheck'
       }.each do |short, long|
         @parse_tree[short] = @parse_tree[long]
       end
@@ -262,7 +266,7 @@ module Bosh::Cli
 
       while (arg = @args.shift)
         candidate << arg
-        resolved = config.resolve_alias(:cli, candidate.join(" "))
+        resolved = config.resolve_alias(:cli, candidate.join(' '))
         if best_match && resolved.nil?
           @args.unshift(arg)
           break

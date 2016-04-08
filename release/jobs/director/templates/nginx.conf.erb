@@ -13,6 +13,9 @@ http {
   include      /var/vcap/jobs/director/config/mime.types;
   default_type text/html;
 
+  server_names_hash_max_size     512;
+  server_names_hash_bucket_size  64;
+
   log_format timed_combined '$remote_addr - $remote_user [$time_local] '
                             '"$request" $status $body_bytes_sent '
                             '"$http_referer" "$http_user_agent" '
@@ -43,10 +46,13 @@ http {
     ssl_protocols <%= p('director.nginx.ssl_protocols') %>;
     ssl_ciphers <%= p('director.nginx.ssl_ciphers') %>;
 
-    proxy_set_header    Host              $host;
-    proxy_set_header    X-Real-IP         $remote_addr;
-    proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto $scheme;
+    proxy_set_header    X-BOSH-UPLOAD-REQUEST-TIME $request_time;
+    proxy_set_header    X-Sendfile-Type            X-Accel-Redirect;
+    proxy_set_header    X-Accel-Mapping            /=/x_accel_files/;
+    proxy_set_header    Host                       $host;
+    proxy_set_header    X-Real-IP                  $remote_addr;
+    proxy_set_header    X-Forwarded-For            $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto          $scheme;
 
     proxy_read_timeout       <%= p('director.proxy_timeout') %>;
     proxy_max_temp_file_size 0;
@@ -57,9 +63,6 @@ http {
     }
 
     location / {
-      proxy_set_header X-Sendfile-Type X-Accel-Redirect;
-      proxy_set_header X-Accel-Mapping /=/x_accel_files/;
-
       proxy_pass http://director;
 
       if ($content_type = "application/x-compressed") {

@@ -170,10 +170,10 @@ If --name & --version are provided, they will be used for checking if release ex
 
       def upload_remote_release(release_location, upload_options = {})
         if upload_options[:rebase]
-          say("Using remote release `#{release_location}' (#{'will be rebased'.make_yellow})")
+          say("Using remote release '#{release_location}' (#{'will be rebased'.make_yellow})")
           report = 'Release rebased'
         else
-          say("Using remote release `#{release_location}'")
+          say("Using remote release '#{release_location}'")
           report = 'Release uploaded'
         end
 

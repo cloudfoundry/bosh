@@ -36,7 +36,8 @@ module Bosh::Stemcell
         :bosh_micro_go,
         :aws_cli,
         :logrotate_config,
-      ]
+        :dev_tools_config,
+      ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and [:bosh_ruby, :bosh_micro_go].include?(s) }
     end
 
     def build_stemcell_image_stages
@@ -107,7 +108,7 @@ module Bosh::Stemcell
       [
         :system_network,
         :system_open_vm_tools,
-        :disable_blank_passwords,
+        :password_policies,
         :system_vsphere_cdrom,
         :system_parameters,
         :bosh_clean,
@@ -239,7 +240,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
-      ].flatten
+      ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end
 
     def photonos_os_stages
@@ -262,7 +263,7 @@ module Bosh::Stemcell
         :bosh_monit,
         :bosh_ntpdate,
         :bosh_sudoers,
-        :disable_blank_passwords,
+        :password_policies,
       ]
     end
 

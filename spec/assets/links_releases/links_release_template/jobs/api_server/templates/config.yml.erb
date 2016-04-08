@@ -1,0 +1,16 @@
+---
+databases:
+  main:
+<% link('db').instances.each do |instance| %>
+  - id: <%= instance.id %>
+    name: <%= instance.name %>
+    index: <%= instance.index %>
+    address: <%= instance.address %>
+<% end %>
+  backup:
+<% link('backup_db').instances.each do |instance| %>
+  - name: <%= instance.name %>
+    az: <%= instance.az %>
+    index: <%= instance.index %>
+    address: <%= instance.address %>
+<% end %>

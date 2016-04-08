@@ -1,26 +1,34 @@
-module Bosh
-  module Director
-    module DeploymentPlan
-      class DeploymentRepo
+module Bosh::Director
+  module DeploymentPlan
+    class DeploymentRepo
 
-        def initialize(canonicalizer)
-          @canonicalizer = canonicalizer
+      def find_or_create_by_name(name, options={})
+        attributes = {name: name}
+        deployment = Bosh::Director::Models::Deployment.find(attributes)
+
+        return deployment if deployment
+
+        if options['scopes']
+          team_scopes = Bosh::Director::Models::Deployment.transform_admin_team_scope_to_teams(options['scopes'])
+          attributes.merge!(teams: team_scopes.join(','))
         end
 
-        def find_or_create_by_name(name)
-          deployment = Models::Deployment.find(name: name)
-          return deployment if deployment
+        create_for_attributes(attributes)
+      end
 
-          canonical_name = @canonicalizer.canonical(name)
-          Models::Deployment.db.transaction do
-            Models::Deployment.each do |other|
-              if @canonicalizer.canonical(other.name) == canonical_name
+      private
+
+      def create_for_attributes(attributes)
+        canonical_name = Canonicalizer.canonicalize(attributes[:name])
+        transactor = Transactor.new
+        transactor.retryable_transaction(Models::Deployment.db) do
+          Bosh::Director::Models::Deployment.each do |other|
+            if Canonicalizer.canonicalize(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,
-                  "Invalid deployment name `#{name}', canonical name already taken (`#{canonical_name}')"
-              end
+                "Invalid deployment name '#{attributes[:name]}', canonical name already taken ('#{canonical_name}')"
             end
-            Models::Deployment.create(name: name)
           end
+          Bosh::Director::Models::Deployment.create(attributes)
         end
       end
     end

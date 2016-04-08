@@ -113,7 +113,7 @@ describe Object do
     it "gives a nice error when the file cannot be found" do
       expect {
         load_yaml_file("non-existent.yml")
-      }.to raise_error(Bosh::Cli::CliError, "Cannot find file `non-existent.yml'")
+      }.to raise_error(Bosh::Cli::CliError, "Cannot find file 'non-existent.yml'")
     end
 
     it "gives a nice error when the parsed YAML is not a Hash" do

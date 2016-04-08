@@ -2,7 +2,6 @@ module Bosh::Dev::Sandbox
   class DirectorConfig
     attr_reader :director_ruby_port,
       :nats_port,
-      :redis_port,
       :sandbox_root,
       :blobstore_storage_dir,
       :external_cpi_enabled,
@@ -13,13 +12,14 @@ module Bosh::Dev::Sandbox
       :user_authentication,
       :uaa_url,
       :trusted_certs,
-      :users_in_manifest
-
+      :users_in_manifest,
+      :enable_post_deploy,
+      :generate_vm_passwords,
+      :remove_dev_tools
 
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
       @nats_port = port_provider.get_port(:nats)
-      @redis_port = port_provider.get_port(:redis)
 
       @sandbox_root = attrs.fetch(:sandbox_root)
 
@@ -39,6 +39,9 @@ module Bosh::Dev::Sandbox
 
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
+      @enable_post_deploy = attrs.fetch(:enable_post_deploy, false)
+      @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
+      @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
     end
 
     def render(template_path)

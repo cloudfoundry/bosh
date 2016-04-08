@@ -54,6 +54,15 @@ chown root:vcap /etc/cron.allow
 
 chmod 0640 /etc/at.allow
 chown root:vcap /etc/at.allow
+
+chmod -R 0700 /etc/sv/agent
+chown -R root:root /etc/sv/agent
+
+chmod -R 0700 /etc/sv/monit
+chown -R root:root /etc/sv/monit
+
+chmod 0600 /var/vcap/monit/alerts.monitrc
+chown root:root /var/vcap/monit/alerts.monitrc
 "
 
 # Since go agent is always specified with -C provide empty conf.

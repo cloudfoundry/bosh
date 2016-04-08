@@ -5,7 +5,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+      bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
       bosh_runner.run('logout')
     end
 
@@ -17,7 +17,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         runner.send_keys 'koala'
         expect(runner).to have_output 'One Time Code'
         runner.send_keys '' # UAA only uses this for SAML, but always prompts for it
-        expect(runner).to have_output "Logged in as `marissa'"
+        expect(runner).to have_output "Logged in as 'marissa'"
       end
 
       output = bosh_runner.run('status')
@@ -54,6 +54,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     it 'refreshes the token when running long command' do
       client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
       _, exit_code = deploy_from_scratch(no_login: true, env: client_env, return_exit_code: true)
+      expect(exit_code).to eq(0)
+    end
+
+    it 'can handle long-running http requests' do
+      client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
+
+      `dd if=/dev/urandom of=#{ClientSandbox.test_release_dir}/src/a/bigfile.txt bs=512 count=604800`
+      _, exit_code = create_and_upload_test_release(env: client_env, return_exit_code: true, force: true)
+
       expect(exit_code).to eq(0)
     end
 
@@ -103,7 +112,7 @@ CERT
         cert_path = File.join(tmpdir, 'invalid_cert.pem')
         File.write(cert_path, invalid_ca_cert)
 
-        output = bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{cert_path}", failure_expected: true)
+        output = bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: cert_path, failure_expected: true})
         expect(output).to include('Invalid SSL Cert')
       end
     end
@@ -112,7 +121,7 @@ CERT
       it 'can only access read resources' do
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true)
-        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin`)
+        expect(output).to include("one of the scopes: bosh.admin, bosh.deadbeef.admin")
 
         output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
         expect(output).to match /No deployments/
@@ -123,23 +132,23 @@ CERT
         deploy_from_scratch(no_login: true, env: client_env)
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-        vms = director.vms(env: client_env)
+        vms = director.vms('', env: client_env)
         expect(vms.size).to eq(3)
       end
 
       it 'can only access task default logs' do
         admin_client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         create_and_upload_test_release(env: admin_client_env)
 
+        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('task latest', env: read_client_env)
         expect(output).to match /release has been created/
 
         output = bosh_runner.run('task latest --debug', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
+        expect(output).to include('Require one of the scopes:')
 
         output = bosh_runner.run('task latest --cpi', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
+        expect(output).to include('Require one of the scopes:')
 
         output = bosh_runner.run('task latest --debug', env: admin_client_env)
         expect(output).to match /DEBUG/
@@ -157,11 +166,20 @@ CERT
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin, bosh.read, bosh.deadbeef.read`)
+        expect(output).to include('Require one of the scopes:')
+      end
+
+      it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
+        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        deploy_from_scratch(no_login: true, env: client_env)
+
+        client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
+        output = bosh_runner.run('delete deployment simple', env: client_env, failure_expected: true)
+        expect(output).to include('Require one of the scopes:')
       end
     end
 
-    describe 'health monitor' do
+    describe 'health monitor', hm: true do
       before { current_sandbox.health_monitor_process.start }
       after { current_sandbox.health_monitor_process.stop }
 
@@ -169,9 +187,9 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(no_login: true, env: client_env)
 
-        original_vm = director.vm('foobar/0', env: client_env)
+        original_vm = director.vm('foobar', '0', env: client_env)
         original_vm.kill_agent
-        resurrected_vm = director.wait_for_vm('foobar/0', 300, env: client_env)
+        resurrected_vm = director.wait_for_vm('foobar', '0', 300, env: client_env)
         expect(resurrected_vm.cid).to_not eq(original_vm.cid)
       end
     end
@@ -181,7 +199,7 @@ CERT
     with_reset_sandbox_before_each(user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+      bosh_runner.run("target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path})
       bosh_runner.run('logout')
     end
 
@@ -202,8 +220,7 @@ CERT
 
     it 'fails to target when correct certificate is passed in' do
       output = bosh_runner.run(
-        "target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}",
-        failure_expected: true
+        "target #{current_sandbox.director_url}", {ca_cert: current_sandbox.certificate_path, failure_expected: true}
       )
       expect(output).to include('Invalid SSL Cert')
     end

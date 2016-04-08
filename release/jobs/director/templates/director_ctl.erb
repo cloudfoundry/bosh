@@ -9,6 +9,16 @@ RUNAS=vcap
 
 PATH=/var/vcap/packages/ruby/bin:/var/vcap/packages/genisoimage:$PATH
 PATH=$PATH:/var/vcap/jobs/director/bin
+
+# Postgres
+PATH=/var/vcap/packages/postgres/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
+
+# MySQL
+PATH=/var/vcap/packages/mysql/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:$LD_LIBRARY_PATH
+
+export LD_LIBRARY_PATH
 export PATH
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
@@ -19,15 +29,15 @@ export TMPDIR=/var/vcap/data/tmp/director
 export C_INCLUDE_PATH=/var/vcap/packages/sqlite/include:/var/vcap/packages/libpq/include:$C_INCLUDE_PATH
 export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:/var/vcap/packages/mysqlclient/lib:$LIBRARY_PATH
 
-<% if_p('director.env.http_proxy') do |http_proxy| %>
+<% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY=<%= http_proxy %>
 export http_proxy=<%= http_proxy %>
 <% end %>
-<% if_p('director.env.https_proxy') do |https_proxy| %>
+<% if_p('env.https_proxy') do |https_proxy| %>
 export HTTPS_PROXY=<%= https_proxy %>
 export https_proxy=<%= https_proxy %>
 <% end %>
-<% if_p('director.env.no_proxy') do |no_proxy| %>
+<% if_p('env.no_proxy') do |no_proxy| %>
 export NO_PROXY=<%= no_proxy %>
 export no_proxy=<%= no_proxy %>
 <% end %>
@@ -83,7 +93,18 @@ case $1 in
     if [ ! -z $PID ] && pid_exists $PID; then
       kill $PID
     fi
-    while [ -e /proc/$PID ]; do sleep 0.1; done
+    TRIES=0
+    while [ -e /proc/$PID ]
+    do
+      TRIES=$(( $TRIES + 1 ))
+      if [ $TRIES -gt 100 ]; then
+        kill -9 $PID
+      fi
+      sleep 0.1
+    done
+  <%if p('blobstore.provider') == "s3" %>
+    rm -f $TMPDIR/s3_blobstore_config*
+  <%end%>
     rm -f $PIDFILE
     ;;
 

@@ -22,12 +22,12 @@ module Bosh::Director
         deployment.job_instances.each do |instance|
           snapshots = instance.persistent_disks.map { |disk| disk.snapshots }.flatten
           if snapshots.any?
-            logger.info("deleting snapshots of: #{instance.job}/#{instance.index} (#{instance.vm.cid})")
+            logger.info("deleting snapshots of: #{instance.job}/#{instance.index} (#{instance.vm_cid})")
             Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
           end
         end
 
-        "snapshots of deployment `#{deployment.name}' deleted"
+        "snapshots of deployment '#{deployment.name}' deleted"
       end
     end
   end

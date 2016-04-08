@@ -7,7 +7,7 @@ describe 'fetching logs', type: :integration do
   it 'can fetch job (default) and agent logs' do
     deploy_from_scratch
 
-    vm_0 = director.vm('foobar/0')
+    vm_0 = director.vm('foobar', '0')
     vm_0.write_job_log('toplevel.log', 'some top level log contents')
     vm_0.write_job_log('jobname/nested.log', 'some subdirector log contents')
     vm_0.write_job_log('logwithnoextension', 'some logfile with no extension contents')
@@ -24,7 +24,7 @@ describe 'fetching logs', type: :integration do
 
     expect(output).to include("Logs saved in")
 
-    tarball_path = %r{Logs saved in `(?'log_location'.*)'}.match(output)[:log_location]
+    tarball_path = %r{Logs saved in '(?'log_location'.*)'}.match(output)[:log_location]
 
     Bosh::Spec::TarFileInspector.new(tarball_path).file_names
   end

@@ -1,0 +1,5 @@
+check process job_3_with_broken_post_deploy_script
+  with pidfile /var/vcap/sys/run/job_3_with_broken_post_deploy_script.pid
+  start program "/var/vcap/jobs/job_3_with_broken_post_deploy_script/bin/job_3_ctl start"
+  stop program "/var/vcap/jobs/job_3_with_broken_post_deploy_script/bin/job_3_ctl stop"
+  group vcap

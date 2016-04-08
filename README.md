@@ -4,7 +4,7 @@
 	- [bosh.io/docs](https://bosh.io/docs) for installation & usage guide
 	- [docs/ directory](docs/) for developer docs
 
-* IRC: [`#bosh` on freenode](http://webchat.freenode.net/?channels=bosh)
+* Slack: #bosh on <https://slack.cloudfoundry.org>
 
 * Mailing lists:
     - [cf-bosh](https://lists.cloudfoundry.org/pipermail/cf-bosh) for asking BOSH usage and development questions
@@ -22,9 +22,18 @@
 * Related repos:
 	- [bosh-init](https://github.com/cloudfoundry/bosh-init)
 	- [bosh-agent](https://github.com/cloudfoundry/bosh-agent)
+	- [bosh-utils](https://github.com/cloudfoundry/bosh-utils)
+	- [bosh-lite](https://github.com/cloudfoundry/bosh-lite)
 	- [AWS CPI](https://github.com/cloudfoundry-incubator/bosh-aws-cpi-release)
+	- [Azure CPI](https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release)
 	- [OpenStack CPI](https://github.com/cloudfoundry-incubator/bosh-openstack-cpi-release)
 	- [vSphere CPI](https://github.com/cloudfoundry-incubator/bosh-vsphere-cpi-release)
 	- [vCloud CPI](https://github.com/cloudfoundry-incubator/bosh-vcloud-cpi-release)
+	- [Warden CPI](https://github.com/cppforlife/bosh-warden-cpi-release)
 
-Cloud Foundry BOSH is an open source tool chain for release engineering, deployment and lifecycle management of large scale distributed services.
+Cloud Foundry BOSH is an open source tool for release engineering, deployment, lifecycle management, and monitoring of distributed systems.
+
+## Contributions
+
+Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md)
+

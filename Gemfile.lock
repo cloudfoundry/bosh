@@ -1,23 +1,23 @@
 PATH
   remote: agent_client
   specs:
-    agent_client (1.3156.0)
-      httpclient (= 2.4.0)
+    agent_client (1.3215.0)
+      httpclient (= 2.7.1)
       yajl-ruby (~> 1.2.0)
 
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (1.3156.0)
+    blobstore_client (1.3215.0)
       aws-sdk-resources (= 2.2.0)
-      bosh_common (~> 1.3156.0)
-      httpclient (= 2.4.0)
+      bosh_common (~> 1.3215.0)
+      httpclient (= 2.7.1)
       multi_json (~> 1.1)
 
 PATH
   remote: bosh-core
   specs:
-    bosh-core (1.3156.0)
+    bosh-core (1.3215.0)
       gibberish (~> 1.4.0)
       yajl-ruby (~> 1.2.0)
 
@@ -34,63 +34,62 @@ PATH
       bundler
       logging
       peach
-      ruby_vcloud_sdk (= 0.7.1)
+      ruby_vcloud_sdk (= 0.7.4)
+
+PATH
+  remote: bosh-director-core
+  specs:
+    bosh-director-core (1.3215.0)
+      bosh-template (~> 1.3215.0)
+      bosh_common (~> 1.3215.0)
 
 PATH
   remote: bosh-director
   specs:
-    bosh-director (1.3156.0)
+    bosh-director (1.3215.0)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.3156.0)
-      bosh-core (~> 1.3156.0)
-      bosh-director-core (~> 1.3156.0)
-      bosh-registry (~> 1.3156.0)
-      bosh-template (~> 1.3156.0)
-      bosh_aws_cpi (= 2.1.0)
-      bosh_common (~> 1.3156.0)
-      bosh_cpi (~> 1.3156.0)
-      bosh_openstack_cpi (= 2.1.0)
-      bosh_vcloud_cpi (= 0.11.0)
-      bosh_vsphere_cpi (= 2.2.0)
+      blobstore_client (~> 1.3215.0)
+      bosh-core (~> 1.3215.0)
+      bosh-director-core (~> 1.3215.0)
+      bosh-registry (~> 1.3215.0)
+      bosh-template (~> 1.3215.0)
+      bosh_aws_cpi (= 2.1.1)
+      bosh_common (~> 1.3215.0)
+      bosh_cpi (~> 1.3215.0)
+      bosh_openstack_cpi (= 2.1.1)
+      bosh_vcloud_cpi (= 0.12.1)
+      bosh_vsphere_cpi (= 2.1.1)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
       fog (~> 1.34.0)
       fog-aws (~> 0.7.6)
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
       nats (= 0.5.0.beta.12)
       netaddr (~> 1.5.0)
       rack-test (~> 0.6.2)
       rake (~> 10.0)
-      redis (~> 3.0.2)
-      resque (~> 1.25.0)
-      resque-backtrace (~> 0.0.1)
       rufus-scheduler (~> 2.0.18)
       semi_semantic (~> 1.1.0)
-      sequel (~> 3.43.0)
+      sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
       sys-filesystem (~> 1.1.0)
+      talentbox-delayed_job_sequel (~> 4.1.0)
       thin (~> 1.5.0)
+      unix-crypt (~> 1.3.0)
       yajl-ruby (~> 1.2.0)
-
-PATH
-  remote: bosh-director-core
-  specs:
-    bosh-director-core (1.3156.0)
-      bosh-template (~> 1.3156.0)
-      bosh_common (~> 1.3156.0)
 
 PATH
   remote: bosh-monitor
   specs:
-    bosh-monitor (1.3156.0)
+    bosh-monitor (1.3215.0)
       aws-sdk (= 1.60.2)
       cf-uaa-lib (~> 3.2.1)
-      dogapi (~> 1.6.0)
+      dogapi (~> 1.21.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.0.0)
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       logging (~> 1.8.2)
       nats (= 0.5.0.beta.12)
       sinatra (~> 1.4.2)
@@ -100,11 +99,11 @@ PATH
 PATH
   remote: bosh-registry
   specs:
-    bosh-registry (1.3156.0)
+    bosh-registry (1.3215.0)
       aws-sdk
-      bosh_cpi (~> 1.3156.0)
+      bosh_cpi (~> 1.3215.0)
       fog
-      sequel (~> 3.43.0)
+      sequel (~> 4.32.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
       yajl-ruby (~> 1.2.0)
@@ -112,37 +111,68 @@ PATH
 PATH
   remote: bosh-release
   specs:
-    bosh-release (1.3156.0)
-      agent_client (~> 1.3156.0)
-      blobstore_client (~> 1.3156.0)
-      bosh-template (~> 1.3156.0)
-      bosh_common (~> 1.3156.0)
+    bosh-release (1.3215.0)
+      agent_client (~> 1.3215.0)
+      blobstore_client (~> 1.3215.0)
+      bosh-template (~> 1.3215.0)
+      bosh_common (~> 1.3215.0)
       trollop (~> 1.16)
       yajl-ruby (~> 1.2.0)
 
 PATH
   remote: bosh-stemcell
   specs:
-    bosh-stemcell (1.3156.0)
-      bosh-core (~> 1.3156.0)
-      bosh_aws_cpi (= 2.1.0)
+    bosh-stemcell (1.3215.0)
+      bosh-core (~> 1.3215.0)
+      bosh_aws_cpi (= 2.1.1)
 
 PATH
   remote: bosh-template
   specs:
-    bosh-template (1.3156.0)
+    bosh-template (1.3215.0)
       semi_semantic (~> 1.1.0)
+
+PATH
+  remote: bosh_cli_plugin_aws
+  specs:
+    bosh_cli_plugin_aws (1.3215.0)
+      bosh-core (~> 1.3215.0)
+      bosh-stemcell (~> 1.3215.0)
+      bosh_aws_cpi (= 2.1.1)
+      bosh_cli (~> 1.3215.0)
+      bosh_cli_plugin_micro (~> 1.3215.0)
+
+PATH
+  remote: bosh_cli_plugin_micro
+  specs:
+    bosh_cli_plugin_micro (1.3215.0)
+      agent_client (~> 1.3215.0)
+      blobstore_client (~> 1.3215.0)
+      bosh-core (~> 1.3215.0)
+      bosh-director-core (~> 1.3215.0)
+      bosh-registry (~> 1.3215.0)
+      bosh-stemcell (~> 1.3215.0)
+      bosh_aws_cpi (= 2.1.1)
+      bosh_cli (~> 1.3215.0)
+      bosh_common (~> 1.3215.0)
+      bosh_cpi (~> 1.3215.0)
+      bosh_openstack_cpi (= 2.1.1)
+      bosh_vcloud_cpi (= 0.12.1)
+      bosh_vsphere_cpi (= 2.1.1)
+      fog-google (= 0.1.0)
+      mono_logger (~> 1.1.0)
+      sqlite3 (~> 1.3.7)
 
 PATH
   remote: bosh_cli
   specs:
-    bosh_cli (1.3156.0)
-      blobstore_client (~> 1.3156.0)
-      bosh-template (~> 1.3156.0)
-      bosh_common (~> 1.3156.0)
+    bosh_cli (1.3215.0)
+      blobstore_client (~> 1.3215.0)
+      bosh-template (~> 1.3215.0)
+      bosh_common (~> 1.3215.0)
       cf-uaa-lib (~> 3.2.1)
       highline (~> 1.6.2)
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       json_pure (~> 1.7)
       minitar (~> 0.5.4)
       net-scp (~> 1.1.0)
@@ -154,55 +184,24 @@ PATH
       terminal-table (~> 1.4.3)
 
 PATH
-  remote: bosh_cli_plugin_aws
-  specs:
-    bosh_cli_plugin_aws (1.3156.0)
-      bosh-core (~> 1.3156.0)
-      bosh-stemcell (~> 1.3156.0)
-      bosh_aws_cpi (= 2.1.0)
-      bosh_cli (~> 1.3156.0)
-      bosh_cli_plugin_micro (~> 1.3156.0)
-
-PATH
-  remote: bosh_cli_plugin_micro
-  specs:
-    bosh_cli_plugin_micro (1.3156.0)
-      agent_client (~> 1.3156.0)
-      blobstore_client (~> 1.3156.0)
-      bosh-core (~> 1.3156.0)
-      bosh-director-core (~> 1.3156.0)
-      bosh-registry (~> 1.3156.0)
-      bosh-stemcell (~> 1.3156.0)
-      bosh_aws_cpi (= 2.1.0)
-      bosh_cli (~> 1.3156.0)
-      bosh_common (~> 1.3156.0)
-      bosh_cpi (~> 1.3156.0)
-      bosh_openstack_cpi (= 2.1.0)
-      bosh_vcloud_cpi (= 0.11.0)
-      bosh_vsphere_cpi (= 2.2.0)
-      fog-google (= 0.1.0)
-      mono_logger (~> 1.1.0)
-      sqlite3 (~> 1.3.7)
-
-PATH
   remote: bosh_common
   specs:
-    bosh_common (1.3156.0)
+    bosh_common (1.3215.0)
       logging (~> 1.8.2)
       semi_semantic (~> 1.1.0)
 
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.3156.0)
-      bosh_common (~> 1.3156.0)
+    bosh_cpi (1.3215.0)
+      bosh_common (~> 1.3215.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
 
 PATH
   remote: simple_blobstore_server
   specs:
-    simple_blobstore_server (1.3156.0)
+    simple_blobstore_server (1.3215.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
 
@@ -210,6 +209,12 @@ GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (2.3.2)
+    activesupport (4.2.5)
+      i18n (~> 0.7)
+      json (~> 1.7, >= 1.7.7)
+      minitest (~> 5.1)
+      thread_safe (~> 0.3, >= 0.3.4)
+      tzinfo (~> 1.1)
     addressable (2.3.7)
     ast (2.0.0)
     aws-sdk (1.60.2)
@@ -225,40 +230,40 @@ GEM
     bcrypt-ruby (3.0.1)
     blue-shell (0.3.0)
       rspec
-    bosh_aws_cpi (2.1.0)
+    bosh_aws_cpi (2.1.1)
       aws-sdk (= 1.60.2)
       bosh-registry
       bosh_common
       bosh_cpi
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       yajl-ruby (>= 0.8.2)
-    bosh_openstack_cpi (2.1.0)
+    bosh_openstack_cpi (2.1.1)
       bosh-registry
       bosh_common
       bosh_cpi
       fog (~> 1.34.0)
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       membrane (~> 1.1.0)
       yajl-ruby (>= 0.8.2)
-    bosh_vcloud_cpi (0.11.0)
+    bosh_vcloud_cpi (0.12.1)
       bosh_common
       bosh_cpi
       builder (~> 3.1.4)
-      httpclient (~> 2.4.0)
+      httpclient (= 2.7.1)
       membrane
       nokogiri (~> 1.6.6)
       rest-client (~> 1.6.7)
       yajl-ruby (>= 0.8.2)
-    bosh_vsphere_cpi (2.2.0)
+    bosh_vsphere_cpi (2.1.1)
       bosh_common
       bosh_cpi
       builder (~> 3.1.4)
-      httpclient (= 2.4.0)
+      httpclient (= 2.7.1)
       membrane (~> 1.1.0)
       mono_logger (~> 1.1.0)
       nokogiri (~> 1.6.6)
     builder (3.1.4)
-    cf-uaa-lib (3.2.1)
+    cf-uaa-lib (3.2.5)
       multi_json
     codeclimate-test-reporter (0.3.0)
       simplecov (>= 0.7.1, < 1.0.0)
@@ -266,15 +271,17 @@ GEM
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     daemons (1.2.3)
+    delayed_job (4.0.6)
+      activesupport (>= 3.0, < 5.0)
     diff-lcs (1.2.5)
     docile (1.1.5)
-    dogapi (1.6.0)
-      json (>= 1.5.1)
+    dogapi (1.21.0)
+      multi_json
     em-http-request (0.3.0)
       addressable (>= 2.0.0)
       escape_utils
       eventmachine (>= 0.12.9)
-    escape_utils (1.1.0)
+    escape_utils (1.2.0)
     eventmachine (1.0.3)
     excon (0.45.4)
     fakefs (0.6.7)
@@ -383,7 +390,8 @@ GEM
     formatador (0.2.5)
     gibberish (1.4.0)
     highline (1.6.21)
-    httpclient (2.4.0)
+    httpclient (2.7.1)
+    i18n (0.7.0)
     inflecto (0.0.2)
     ipaddress (0.8.0)
     jmespath (1.1.3)
@@ -399,9 +407,10 @@ GEM
     mime-types (2.6.2)
     mini_portile (0.6.2)
     minitar (0.5.4)
+    minitest (5.8.3)
     mono_logger (1.1.0)
     multi_json (1.11.2)
-    mysql2 (0.3.11)
+    mysql2 (0.4.3)
     nats (0.5.0.beta.12)
       daemons (>= 1.1.9)
       eventmachine (>= 1.0.3)
@@ -412,11 +421,11 @@ GEM
     net-ssh (2.9.2)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
-    netaddr (1.5.0)
+    netaddr (1.5.1)
     nokogiri (1.6.6.2)
       mini_portile (~> 0.6.0)
     parallel (0.9.2)
-    parallel_tests (1.0.3)
+    parallel_tests (2.4.1)
       parallel
     parser (2.1.9)
       ast (>= 1.1, < 3.0)
@@ -436,17 +445,6 @@ GEM
       rack (>= 1.0)
     rainbow (2.0.0)
     rake (10.3.2)
-    redis (3.0.3)
-    redis-namespace (1.3.1)
-      redis (~> 3.0.0)
-    resque (1.25.2)
-      mono_logger (~> 1.0)
-      multi_json (~> 1.0)
-      redis-namespace (~> 1.3)
-      sinatra (>= 0.9.2)
-      vegas (~> 0.1.2)
-    resque-backtrace (0.0.1)
-      resque (>= 1.0)
     rest-client (1.6.7)
       mime-types (>= 1.16)
     rspec (3.0.0)
@@ -473,18 +471,18 @@ GEM
       rainbow (>= 1.99.1, < 3.0)
       ruby-progressbar (~> 1.4)
     ruby-progressbar (1.5.1)
-    ruby_vcloud_sdk (0.7.1)
-      builder (~> 3.1.4)
-      httpclient (~> 2.4.0)
+    ruby_vcloud_sdk (0.7.4)
+      builder (>= 3.1)
+      httpclient (>= 2.4.0)
       netaddr
       nokogiri (>= 1.5.6)
-      rest-client (~> 1.6.7)
+      rest-client (>= 1.6.7)
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
     rugged (0.19.0)
     safe_yaml (1.0.4)
     semi_semantic (1.1.0)
-    sequel (3.43.0)
+    sequel (4.32.0)
     serverspec (0.15.4)
       highline
       net-ssh
@@ -508,10 +506,14 @@ GEM
       tilt (~> 1.3)
     slop (3.5.0)
     specinfra (1.15.0)
-    sqlite3 (1.3.10)
+    sqlite3 (1.3.11)
     sshkey (1.7.0)
-    sys-filesystem (1.1.4)
+    sys-filesystem (1.1.5)
       ffi
+    talentbox-delayed_job_sequel (4.1.0)
+      delayed_job (~> 4.0.0)
+      sequel (>= 3.38, < 5.0)
+      tzinfo
     terminal-table (1.4.5)
     thin (1.5.1)
       daemons (>= 1.0.9)
@@ -523,9 +525,8 @@ GEM
     trollop (1.16.2)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
+    unix-crypt (1.3.0)
     vcr (2.9.3)
-    vegas (0.1.11)
-      rack (>= 1.0.0)
     webmock (1.20.4)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
@@ -553,6 +554,7 @@ DEPENDENCIES
   bosh_cli_plugin_micro!
   bosh_common!
   bosh_cpi!
+  bundler (~> 1.11.0)
   codeclimate-test-reporter
   eventmachine (= 1.0.3)
   fakefs
@@ -563,12 +565,11 @@ DEPENDENCIES
   mysql2
   nats
   net-ssh
-  parallel_tests
+  parallel_tests (~> 2.0)
   pg
   pry
   rack-test
   rake (~> 10.0)
-  redis
   rest-client
   rspec (~> 3.0.0)
   rspec-instafail
@@ -582,9 +583,11 @@ DEPENDENCIES
   sinatra-contrib
   specinfra (= 1.15.0)
   sqlite3
+  talentbox-delayed_job_sequel (~> 4.1)
   timecop (~> 0.7.1)
+  unix-crypt
   vcr
   webmock
 
 BUNDLED WITH
-   1.10.6
+   1.11.2

@@ -38,16 +38,10 @@ module Bosh::Director
             layout: Logging.layouts.pattern(:pattern => '%m\n')
           ))
         end
-
-        @last_stage = Stage.new(self, 'unknown', [], 0)
       end
 
       def begin_stage(stage_name, total = nil, tags = [])
-        @last_stage = Stage.new(self, stage_name, tags, total)
-      end
-
-      def track(task_name = nil, &blk)
-        @last_stage.advance_and_track(task_name, &blk)
+        Stage.new(self, stage_name, tags, total)
       end
 
       def warn_deprecated(message)
@@ -109,6 +103,12 @@ module Bosh::Director
           :tags => @tags,
           :total => @total,
         }.merge(entry))
+      end
+    end
+
+    class NullStage
+      def advance_and_track(_, &blk)
+        blk.call
       end
     end
 

@@ -4,10 +4,11 @@ module Bosh
   module Director
     module Api
       class UAAIdentityProvider
-        def initialize(options, director_uuid_provider)
+        MAX_TOKEN_EXTENSION_TIME_IN_SECONDS = 3600
+
+        def initialize(options)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
-          @director_uuid = director_uuid_provider.uuid
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
@@ -24,47 +25,23 @@ module Bosh
           }
         end
 
-        def get_user(request_env)
+        def get_user(request_env, options)
           auth_header = request_env['HTTP_AUTHORIZATION']
-          token = @token_coder.decode(auth_header)
+
+          if options[:extended_token_timeout]
+            request_time_in_seconds = request_env.fetch('HTTP_X_BOSH_UPLOAD_REQUEST_TIME').to_i
+            request_time_in_seconds = MAX_TOKEN_EXTENSION_TIME_IN_SECONDS if request_time_in_seconds > MAX_TOKEN_EXTENSION_TIME_IN_SECONDS
+
+            Config.logger.debug("Using extended token timeout, request took #{request_time_in_seconds} seconds")
+
+            token = @token_coder.decode_at_reference_time(auth_header, Time.now.to_i - request_time_in_seconds)
+          else
+            token = @token_coder.decode(auth_header)
+          end
+
           UaaUser.new(token)
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
-        end
-
-        def valid_access?(user, requested_access)
-          if user.scopes
-            required_scopes = required_scopes(requested_access)
-            return has_admin_scope?(user.scopes) || contains_requested_scope?(required_scopes, user.scopes)
-          end
-
-          false
-        end
-
-        def required_scopes(requested_access)
-          permissions[requested_access]
-        end
-
-        private
-
-        def permissions
-          {
-            :read  => ['bosh.admin', "bosh.#{@director_uuid}.admin", 'bosh.read', "bosh.#{@director_uuid}.read"],
-            :write => ['bosh.admin', "bosh.#{@director_uuid}.admin"]
-          }
-        end
-
-        def has_admin_scope?(token_scopes)
-          !(intersect(permissions[:write], token_scopes).empty?)
-        end
-
-        def contains_requested_scope?(valid_scopes, token_scopes)
-          return false unless valid_scopes
-          !(intersect(valid_scopes, token_scopes).empty?)
-        end
-
-        def intersect(valid_scopes, token_scopes)
-          valid_scopes & token_scopes
         end
       end
 
@@ -75,8 +52,16 @@ module Bosh
           @token = token
         end
 
-        def username
+        def username_or_client
           @token['user_name'] || @token['client_id']
+        end
+
+        def client
+          @token['client_id']
+        end
+
+        def username
+          @token['user_name']
         end
 
         def scopes

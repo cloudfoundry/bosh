@@ -249,32 +249,22 @@ module Bosh::Director
                 fingerprint: 'fake-pkg4-fingerprint',
             )
 
-            stemcell1 = Models::Stemcell.make(
-                name: "ubuntu-trusty",
-                version: "3000",
-                operating_system: "ubuntu-trusty"
-            )
-
-            Models::Stemcell.make(
-                name: "centos-7",
-                version: "3001",
-                operating_system: "centos-7"
-            )
-
             Models::CompiledPackage.make(
                 package_id: package1.id,
-                blobstore_id: "cpkg1_blobstore_id",
-                sha1: "cpkg1_sha1",
-                stemcell_id: stemcell1.id,
-                dependency_key: "[[\"fake-pkg2\",\"fake-pkg2-version\"],[\"fake-pkg3\",\"fake-pkg3-version\"]]",
+                blobstore_id: 'cpkg1_blobstore_id',
+                sha1: 'cpkg1_sha1',
+                stemcell_os: 'ubuntu-trusty',
+                stemcell_version: '3000',
+                dependency_key: '[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
             )
 
             Models::CompiledPackage.make(
                 package_id: package4.id,
-                blobstore_id: "cpkg4_blobstore_id",
-                sha1: "cpkg4_sha4",
-                stemcell_id: stemcell1.id,
-                dependency_key: "[[\"fake-pkg1\",\"fake-pkg1-version\"],[\"fake-pkg2\",\"fake-pkg2-version\"],[\"fake-pkg3\",\"fake-pkg3-version\"]]",
+                blobstore_id: 'cpkg4_blobstore_id',
+                sha1: 'cpkg4_sha4',
+                stemcell_os: 'ubuntu-trusty',
+                stemcell_version: '3000',
+                dependency_key: '[["fake-pkg1","fake-pkg1-version",[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]]]',
             )
           end
 

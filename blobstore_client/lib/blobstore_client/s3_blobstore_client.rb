@@ -32,12 +32,13 @@ module Bosh
           use_ssl: @options.fetch(:use_ssl, true),
           host: @options[:host],
           port: @options[:port],
-          region: @options.fetch(:region, DEFAULT_REGION),
+          region: @options[:region] || DEFAULT_REGION,
           s3_force_path_style: @options.fetch(:s3_force_path_style, false),
           ssl_verify_peer:  @options.fetch(:ssl_verify_peer, true),
           credentials_source: @options.fetch(:credentials_source, 'static'),
           access_key_id: @options[:access_key_id],
-          secret_access_key: @options[:secret_access_key]
+          secret_access_key: @options[:secret_access_key],
+          signature_version: @options[:signature_version]
         })
 
         # using S3 without credentials is a special case:
@@ -143,9 +144,16 @@ module Bosh
          @options[:folder] ?  @options[:folder] + '/' + object_id : object_id
       end
 
-      def use_v4_signing?(region)
-        (region == 'eu-central-1' ||
-         region == 'cn-north-1')
+      def use_v4_signing?(options)
+        case options[:signature_version]
+          when '4'
+            true
+          when '2'
+            false
+          else
+            region = options[:region]
+            (region == 'eu-central-1' || region == 'cn-north-1')
+        end
       end
 
       def aws_credentials(credentials_source, access_key_id, secret_access_key)
@@ -185,7 +193,7 @@ module Bosh
           aws_options[:region] = BLANK_REGION
         end
 
-        aws_options[:signature_version] = 's3' unless use_v4_signing?(options[:region])
+        aws_options[:signature_version] = 's3' unless use_v4_signing?(options)
 
         creds = aws_credentials(options[:credentials_source], options[:access_key_id], options[:secret_access_key])
         aws_options.merge!(creds)

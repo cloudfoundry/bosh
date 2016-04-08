@@ -34,9 +34,17 @@ module Bosh::Cli
     # @return [void]
     def self.register_command(command)
       if @commands.has_key?(command.usage)
-        raise CliError, "Duplicate command `#{command.usage}'"
+        raise CliError, "Duplicate command '#{command.usage}'"
       end
       @commands[command.usage] = command
+    end
+
+    def self.use_color?
+      # colorization explicitly enabled, or output is tty
+      return false if Bosh::Cli::Config.colorize == false
+
+      # colorization explicitly enabled, or output is tty
+      Bosh::Cli::Config.colorize || Bosh::Cli::Config.output.tty?
     end
 
     def initialize(filename, work_dir = Dir.pwd)

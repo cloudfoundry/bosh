@@ -25,14 +25,13 @@ describe 'network configuration', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
     # Available dynamic ips - 192.168.1.15 - 192.168.1.19
-    # First two (192.168.1.15, 192.168.1.16) to compile packages foo and bar
     output = bosh_runner.run('vms')
+    expect(output).to match(/foobar.* 192\.168\.1\.15/)
+    expect(output).to match(/foobar.* 192\.168\.1\.16/)
     expect(output).to match(/foobar.* 192\.168\.1\.17/)
-    expect(output).to match(/foobar.* 192\.168\.1\.18/)
-    expect(output).to match(/foobar.* 192\.168\.1\.19/)
   end
 
-  it 'creates new VM if existing VM cannot be reconfigured to desired network settings' do
+  it 'recreates VM when specifying static IP on job' do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
     cloud_config_hash['resource_pools'].first['size'] = 1
@@ -42,15 +41,48 @@ describe 'network configuration', type: :integration do
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-    current_sandbox.cpi.commands.make_configure_networks_not_supported(
-      current_sandbox.cpi.vm_cids.first,
-    )
-
     manifest_hash['jobs'].first['networks'].first['static_ips'] = '192.168.1.100'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     output = bosh_runner.run('vms')
     expect(output).to match(/192\.168\.1\.100/)
+  end
+
+  context 'Network settings are changed' do
+    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
+
+    it 'recreates VM when DNS nameservers are changed' do
+      cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8']
+
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8'])
+      end
+
+      cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8', '127.0.0.5']
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['dns']).to match_array(['8.8.8.8', '127.0.0.5'])
+      end
+    end
+
+    it 'recreates VM when gateway is changed' do
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+      cloud_config_hash['networks'].first['subnets'].first['gateway'] = '192.168.1.254'
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      director.vms.each do |vm|
+        expect(vm.get_state['networks']['a']['gateway']).to eq '192.168.1.254'
+      end
+    end
   end
 
   it 'preserves existing network reservations on a second deployment' do
@@ -71,5 +103,62 @@ describe 'network configuration', type: :integration do
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
+  end
+
+  it 'does not recreate VM when re-deploying with legacy (non-cloud-config) unchanged dynamic and vip networking' do
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['networks'] = [{
+        'name' => 'a',
+        'type' => 'dynamic',
+        'cloud_properties' => {}
+      },
+      {
+        'name' => 'b',
+        'type' => 'vip',
+        'static_ips' => ['69.69.69.69'],
+      }
+    ]
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
+
+    legacy_manifest = manifest_hash.merge(cloud_config_hash)
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+
+    deploy_from_scratch(manifest_hash: legacy_manifest, legacy: true)
+    agent_id = director.vms.first.agent_id
+    deploy_simple_manifest(manifest_hash: legacy_manifest, legacy: true)
+    expect(director.vms.map(&:agent_id)).to eq([agent_id])
+  end
+
+  it 'does not recreate VM when re-deploying with cloud-config unchanged dynamic and vip networking' do
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['networks'] = [{
+        'name' => 'a',
+        'type' => 'dynamic',
+        'cloud_properties' => {}
+      },
+      {
+        'name' => 'b',
+        'type' => 'vip',
+        'static_ips' => ['69.69.69.69'],
+      }
+    ]
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+
+    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+    deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
+    agent_id = director.vms.first.agent_id
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+    expect(director.vms.map(&:agent_id)).to eq([agent_id])
   end
 end

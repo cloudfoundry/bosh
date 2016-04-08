@@ -1,0 +1,28 @@
+---
+name: http_proxy_with_requires
+
+description: This job runs an HTTP proxy and uses a link to find its backend.
+
+templates:
+  ctl.sh: bin/ctl
+  config.yml.erb: config/config.yml
+  props.json: config/props.json
+
+consumes:
+- name: proxied_http_endpoint
+  type: http_endpoint
+- name: logs_http_endpoint
+  type: http_endpoint2
+  optional: true
+
+properties:
+  http_proxy_with_requires.listen_port:
+    description: "Listen port"
+    default: 8080
+
+  http_proxy_with_requires.require_logs_in_template:
+    description: "Require logs in template"
+    default: false
+
+  someProp:
+     default:

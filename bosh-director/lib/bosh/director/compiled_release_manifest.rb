@@ -42,11 +42,11 @@ module Bosh::Director
 
     def get_dependencies(compiled_package)
       dependencies = []
-      parser = Yajl::Parser.new
-      hash = parser.parse(compiled_package.package.dependency_set_json)
-      hash.each do |name|
+
+      compiled_package.package.dependency_set.each do |name|
         dependencies << name
       end
+
       dependencies
     end
 

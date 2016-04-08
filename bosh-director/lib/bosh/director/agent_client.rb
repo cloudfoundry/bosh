@@ -19,12 +19,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_defaults(id, options = {})
-      vm = Bosh::Director::Models::Vm.find(:agent_id => id)
-      with_vm(vm, options)
-    end
-
-    def self.with_vm(vm, options = {})
+    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -32,10 +27,9 @@ module Bosh::Director
         }
       }
 
-      credentials = vm.credentials
-      defaults.merge!(credentials: credentials) if credentials
+      defaults.merge!(credentials: vm_credentials) if vm_credentials
 
-      self.new('agent', vm.agent_id, defaults.merge(options))
+      self.new('agent', agent_id, defaults.merge(options))
     end
 
     def initialize(service_name, client_id, options = {})
@@ -68,14 +62,6 @@ module Bosh::Director
 
     def list_disk(*args)
       send_message(:list_disk, *args)
-    end
-
-    def prepare_configure_networks(*args)
-      send_message(:prepare_configure_networks, *args)
-    end
-
-    def prepare_network_change(*args)
-      send_message(:prepare_network_change, *args)
     end
 
     def start(*args)
@@ -112,6 +98,10 @@ module Bosh::Director
 
     def unmount_disk(*args)
       send_message(:unmount_disk, *args)
+    end
+
+    def delete_arp_entries(*args)
+      fire_and_forget(:delete_arp_entries, *args)
     end
 
     def update_settings(certs)
@@ -158,10 +148,6 @@ module Bosh::Director
       task['value']
     end
 
-    def configure_networks(*args)
-      send_message(:configure_networks, *args)
-    end
-
     def wait_until_ready(deadline = 600)
       old_timeout = @timeout
       @timeout = 1.0
@@ -184,13 +170,7 @@ module Bosh::Director
       end
     end
 
-    def handle_method(method_name, args)
-      result = {}
-      result.extend(MonitorMixin)
-
-      cond = result.new_cond
-      timeout_time = Time.now.to_f + @timeout
-
+    def send_nats_request(method_name, args, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
 
       if @encryption_handler
@@ -200,8 +180,17 @@ module Bosh::Director
       end
 
       recipient = "#{@service_name}.#{@client_id}"
+      @nats_rpc.send_request(recipient, request, &callback)
+    end
 
-      request_id = @nats_rpc.send_request(recipient, request) do |response|
+    def handle_method(method_name, args)
+      result = {}
+      result.extend(MonitorMixin)
+
+      cond = result.new_cond
+      timeout_time = Time.now.to_f + @timeout
+
+      request_id = send_nats_request(method_name, args) do |response|
         if @encryption_handler
           begin
             response = @encryption_handler.decrypt(response["encrypted_data"])
@@ -224,7 +213,7 @@ module Bosh::Director
           unless timeout > 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
-              "Timed out sending `#{method_name}' to #{@client_id} " +
+              "Timed out sending '#{method_name}' to #{@client_id} " +
                 "after #{@timeout} seconds"
           end
           cond.wait(timeout)
@@ -295,6 +284,12 @@ module Bosh::Director
         end
         raise
       end
+    end
+
+    def fire_and_forget(message_name, *args)
+      send_nats_request(message_name, args)
+    rescue => e
+      @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
     end
 
     def send_message(method_name, *args, &blk)

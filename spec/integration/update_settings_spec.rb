@@ -9,7 +9,7 @@ describe 'update settings configuration', type: :integration do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     deploy_from_scratch(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config, manifest_hash: manifest_hash)
 
-    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm("foobar/0").agent_id)
+    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm('foobar', '0').agent_id)
     expect(nats_messages).to include('update_settings')
     expect(nats_messages).to include('apply')
     expect(nats_messages.index('update_settings')).to be < nats_messages.index('apply')
@@ -22,7 +22,7 @@ describe 'update settings configuration', type: :integration do
     director.start_recording_nats
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm("foobar/0").agent_id)
+    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm('foobar', '0').agent_id)
     expect(nats_messages).to_not include('update_settings')
     expect(nats_messages).to_not include('apply')
   end
@@ -38,8 +38,7 @@ describe 'update settings configuration', type: :integration do
     director.start_recording_nats
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm("foobar/0").agent_id).join(',')
+    nats_messages = extract_agent_messages(director.finish_recording_nats, director.vm('foobar', '0').agent_id).join(',')
     expect(nats_messages).to match /stop.*update_settings.*start/
-    expect(nats_messages).to_not match /apply/
   end
 end

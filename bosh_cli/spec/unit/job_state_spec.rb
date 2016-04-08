@@ -29,19 +29,19 @@ module Bosh::Cli
 
     describe '#change' do
       it 'blows up if there are manifest changes' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           true
         end
 
         expect {
           job_state.change(:start, 'fake job', 'fake index', force)
-        }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+        }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use '--force' to override.")
 
         expect(director).to_not have_received(:change_job_state)
       end
 
       it 'cancels the deploy if the user doesnt confirm' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           false
         end
         allow(command).to receive_messages(confirmed?: false)
@@ -54,7 +54,7 @@ module Bosh::Cli
       end
 
       it 'changes the job state when the user confirms (or its non-interactive) and there arent any manifest changes' do
-        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+        allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
           false
         end
         allow(command).to receive(:confirmed?) { true }
@@ -68,14 +68,14 @@ module Bosh::Cli
       context 'when run forcefully' do
         let(:force) { true }
         it 'does not blow up when changes are present' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+          allow(command).to receive(:inspect_deployment_changes).with(manifest, hash_including(show_empty_changeset: false)) do |manifest, _|
             true
           end
           allow(command).to receive_messages(confirmed?: true)
 
           job_state.change(:start,'fake job', 'fake index', force)
 
-          expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+          expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use '--force' to override.")
           expect(director).to have_received(:change_job_state).
               with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'started', force)
         end

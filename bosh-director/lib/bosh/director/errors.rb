@@ -78,6 +78,7 @@ module Bosh::Director
   ReleaseExistingJobFingerprintMismatch = err(30013)
   ReleaseVersionCommitHashMismatch = err(30014)
   ReleaseSha1DoesNotMatch = err(30015)
+  ReleasePackageDependencyKeyMismatch = err(30016)
 
   ValidationInvalidType = err(40000)
   ValidationMissingField = err(40001)
@@ -89,10 +90,13 @@ module Bosh::Director
   StemcellAlreadyExists = err(50002)
   StemcellNotFound = err(50003, NOT_FOUND)
   StemcellInUse = err(50004)
-  StemcellSha1DoesNotMatch = err(50005)
+  StemcellAliasAlreadyExists = err(50005)
+  StemcellBothNameAndOS = err(50006)
+  StemcellSha1DoesNotMatch = err(50007)
 
   PackageInvalidArchive = err(60000)
   PackageMissingSourceCode = err(60001)
+  CompiledPackageDeletionFailed = err(60002)
 
   # Models
   DeploymentNotFound = err(70000, NOT_FOUND)
@@ -122,6 +126,7 @@ module Bosh::Director
   JobPackageCollision = err(80011)
   JobInvalidPackageSpec = err(80012)
   JobInvalidLinkSpec = err(80013)
+  JobDuplicateLinkName = err(80014)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)
@@ -132,6 +137,11 @@ module Bosh::Director
   PropertyNotFound = err(110003, NOT_FOUND)
 
   CompilationConfigUnknownNetwork = err(120001)
+  CompilationConfigInvalidAvailabilityZone = err(120002)
+  CompilationConfigInvalidVmType = err(120003)
+  CompilationConfigCloudPropertiesNotAllowed = err(120004)
+  CompilationConfigInvalidVmExtension = err(120005)
+  CompilationConfigVmTypeRequired = err(120004)
 
   # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)
@@ -144,20 +154,31 @@ module Bosh::Director
   NetworkReservationAlreadyInUse = err(130008)
   NetworkReservationWrongType = err(130009)
   NetworkReservationError = err(130010)
-  NetworkReservationNotEnoughCapacity = err(130010)
+  NetworkReservationNotEnoughCapacity = err(130011)
+  NetworkReservationIpOutsideSubnet = err(130012)
+  NetworkReservationIpReserved = err(130013)
 
   # Manifest parsing: job section
   JobMissingRelease = err(140001)
   JobUnknownRelease = err(140002)
   JobUnknownResourcePool = err(140003)
-  JobInvalidInstanceIndex = err(140004)
-  JobInvalidInstanceState = err(140005)
-  JobInvalidJobState = err(140006)
-  JobMissingNetwork = err(140007)
-  JobInvalidTemplates = err(140008)
-  JobInvalidLifecycle = err(140009)
-  JobUnknownDiskPool = err(140010)
-  JobInvalidPersistentDisk = err(140011)
+  JobUnknownVmType = err(140004)
+  JobUnknownStemcell = err(140005)
+  JobInvalidInstanceIndex = err(140006)
+  JobInvalidInstanceState = err(140007)
+  JobInvalidJobState = err(140008)
+  JobMissingNetwork = err(140009)
+  JobInvalidTemplates = err(140010)
+  JobInvalidLifecycle = err(140011)
+  JobUnknownDiskType = err(140012)
+  JobInvalidPersistentDisk = err(140013)
+  JobMissingLink = err(140014)
+  UnusedProvidedLink = err(140015)
+  JobInvalidAvailabilityZone = err(140016)
+  JobMissingAvailabilityZones = err(140017)
+  JobUnknownAvailabilityZone = err(140018)
+  JobAmbiguousEnv = err(140019)
+  JobBothInstanceGroupAndJob = err(140020)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
@@ -165,6 +186,10 @@ module Bosh::Director
   JobNetworkInvalidDefault = err(150003)
   JobNetworkMultipleDefaults = err(150004)
   JobNetworkMissingDefault = err(150005)
+  JobNetworkMissingRequiredAvailabilityZone= err(150006)
+  JobStaticIpsFromInvalidAvailabilityZone= err(150007)
+  JobStaticIPNotSupportedOnDynamicNetwork= err(150008)
+  JobInvalidStaticIPs = err(150009)
 
   NetworkOverlappingSubnets = err(160001)
   NetworkInvalidRange = err(160002)
@@ -172,6 +197,10 @@ module Bosh::Director
   NetworkInvalidDns = err(160004)
   NetworkReservedIpOutOfRange = err(160005)
   NetworkStaticIpOutOfRange = err(160006)
+  NetworkSubnetUnknownAvailabilityZone = err(160007)
+  NetworkInvalidProperty = err(160008)
+  NetworkSubnetInvalidAvailabilityZone = err(160009)
+  NetworkInvalidIpRangeFormat = err(160010)
 
   ResourcePoolUnknownNetwork = err(170001)
   ResourcePoolNotEnoughCapacity = err(170002)
@@ -181,18 +210,24 @@ module Bosh::Director
   DeploymentAmbiguousReleaseSpec = err(190001)
   DeploymentDuplicateReleaseName = err(190002)
   DeploymentDuplicateResourcePoolName = err(190003)
-  DeploymentRenamedJobNameStillUsed = err(190004)
-  DeploymentCanonicalJobNameTaken = err(190005)
-  DeploymentCanonicalNetworkNameTaken = err(190006)
-  DeploymentNoNetworks = err(190007)
-  DeploymentCanonicalNameTaken = err(190008)
-  DeploymentInvalidNetworkType = err(190009)
-  DeploymentUnknownTemplate = err(190012)
-  DeploymentDuplicateDiskPoolName = err(190013)
+  DeploymentDuplicateVmTypeName = err(190004)
+  DeploymentDuplicateVmExtensionName = err(190005)
+  DeploymentCanonicalJobNameTaken = err(190006)
+  DeploymentCanonicalNetworkNameTaken = err(190007)
+  DeploymentNoNetworks = err(190008)
+  DeploymentCanonicalNameTaken = err(190009)
+  DeploymentInvalidNetworkType = err(190010)
+  DeploymentUnknownTemplate = err(190011)
+  DeploymentInvalidDiskSpecification = err(190012)
+  DeploymentDuplicateDiskTypeName = err(190013)
   DeploymentInvalidProperty = err(190014)
   DeploymentNoResourcePools = err(190015)
+  DeploymentInvalidLink = err(190016)
+  DeploymentDuplicateAvailabilityZoneName = err(190017)
+  DeploymentInvalidMigratedFromJob = err(190018)
+  DeploymentInvalidResourceSpecification = err(190019)
 
-  DiskPoolInvalidDiskSize = err(200001)
+  DiskTypeInvalidDiskSize = err(200001)
 
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)
@@ -218,7 +253,6 @@ module Bosh::Director
 
   DnsInvalidCanonicalName = err(420001)
 
-  PackageCompilationNetworkNotReserved = err(430001)
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
   PackageCompilationNotFound = err(430003)
 
@@ -232,4 +266,19 @@ module Bosh::Director
 
   # Run errand errors
   RunErrandError = err(510000)
+
+  # Disk errors
+  DeletingPersistentDiskError = err(520000)
+  AttachDiskErrorUnknownInstance = err(520001)
+  AttachDiskNoPersistentDisk =  err(520002)
+  AttachDiskInvalidInstanceState = err(520003)
+
+  # Addons
+  RuntimeAmbiguousReleaseSpec = err(530000)
+  RuntimeInvalidReleaseVersion = err(530001)
+  RuntimeReleaseNotListedInReleases = err(530002)
+  RuntimeInvalidDeploymentRelease = err(530003)
+
+  # Authorization errors
+  UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 end

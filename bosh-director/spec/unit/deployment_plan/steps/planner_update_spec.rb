@@ -2,16 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
-    let(:redis) { double('Redis').as_null_object }
-    before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
-    let(:event_log) { Bosh::Director::Config.event_log }
 
     before do
-      allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     end
 
-    context 'the director database contains a VM with a static ip but no job instance assigned (due to deploy failure)' do
+    context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       before do
         release = Bosh::Director::Models::Release.make(name: 'fake-release')
 
@@ -21,18 +17,19 @@ module Bosh::Director::DeploymentPlan
         template = Bosh::Director::Models::Template.make(name: 'fake-template')
         release_version.add_template(template)
 
-        deployment.add_vm(vm_model)
+        deployment.add_job_instance(instance_model)
+
       end
 
       let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-      let(:vm_model) { Bosh::Director::Models::Vm.make(deployment: deployment) }
-      let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version') }
+      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, vm_cid: 'vm-cid-1')}
+      let(:stemcell) { Bosh::Director::Models::Stemcell.make({ 'name' => 'fake-stemcell', 'version' => 'fake-stemcell-version'}) }
 
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         before do
-          allow(Bosh::Director::AgentClient).to receive(:with_defaults).and_return(agent_client)
+          allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
           allow(agent_client).to receive(:apply)
-          allow(agent_client).to receive(:drain).with('shutdown').and_return(0)
+          allow(agent_client).to receive(:drain).with('shutdown', {}).and_return(0)
           allow(agent_client).to receive(:stop)
           allow(agent_client).to receive(:wait_until_ready)
           allow(agent_client).to receive(:update_settings)
@@ -57,20 +54,21 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, deployment_plan, multi_job_updater, cloud) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
-          let(:resource_pools) { ResourcePools.new(event_log, rp_updaters) }
-          let(:rp_updaters) { deployment_plan.resource_pools.map { |resource_pool| Bosh::Director::ResourcePoolUpdater.new(resource_pool) } }
-          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger, event_log) }
+          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger) }
           let(:cloud_config) { nil }
+          let(:runtime_config) { nil }
 
           let(:deployment_plan) do
-            planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
-            planner_factory.planner(deployment_manifest, cloud_config, {})
+            planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
+            manifest = Bosh::Director::Manifest.new(deployment_manifest, nil, nil)
+            deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_config, {})
+            deployment_plan.bind_models
+            deployment_plan
           end
-          let(:deployment_parser) { DeploymentSpecParser.new(event_log, logger) }
           let(:deployment_manifest) do
             {
               'name' => 'fake-deployment',
@@ -150,12 +148,18 @@ module Bosh::Director::DeploymentPlan
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
           before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
+          before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instance) }
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
-            expect(cloud).to receive(:delete_vm).with(vm_model.cid).ordered
-            expect(cloud).to receive(:create_vm).with(anything, stemcell.cid, anything, { 'fake-network' => hash_including('ip' => '127.0.0.1') }, anything, anything).ordered
+            expect(cloud).to receive(:delete_vm).ordered
+            expect(cloud).to receive(:create_vm)
+                               .with(anything, stemcell.cid, anything, { 'fake-network' => hash_including('ip' => '127.0.0.1') }, anything, anything)
+                               .and_return('vm-cid-2')
+                               .ordered
 
             update_step.perform
+            expect(Bosh::Director::Models::Instance.find(vm_cid: 'vm-cid-1')).to be_nil
+            expect(Bosh::Director::Models::Instance.find(vm_cid: 'vm-cid-2')).not_to be_nil
           end
         end
       end

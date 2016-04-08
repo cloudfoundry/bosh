@@ -20,6 +20,7 @@ properties:
     description: Password for the PowerDNS database connection
   dns.db.host:
     description: Address for the PowerDNS database
+    default: 127.0.0.1
   dns.db.port:
     description: Port for the PowerDNS database connection
     default: 5432

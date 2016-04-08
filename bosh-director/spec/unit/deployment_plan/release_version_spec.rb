@@ -86,7 +86,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       release = make(nil, spec)
       expect(release.templates).to eq([])
-      release.use_template_named('foobar')
+      release.get_or_create_template('foobar')
       expect(release.templates.size).to eq(1)
       template = release.templates[0]
       expect(release.template('foobar')).to eq(template)
@@ -120,14 +120,14 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect(release.get_template_model_by_name('stager')).to eq(nil)
 
       expect(release.get_package_model_by_name('ruby18')).to eq(p1)
-      expect { release.get_package_model_by_name('ruby19') }.to raise_error /key not found/
-      expect { release.get_package_model_by_name('ruby20') }.to raise_error /key not found/
+      expect { release.get_package_model_by_name('ruby19') }.to raise_error /Package name 'ruby19' not found in release 'foo\/42'/
+      expect { release.get_package_model_by_name('ruby20') }.to raise_error /Package name 'ruby20' not found in release 'foo\/42'/
 
       release = make(deployment, {'name' => 'bar', 'version' => '55'})
       release.bind_model
       expect(release.get_template_model_by_name('dea')).to eq(nil)
       expect(release.get_template_model_by_name('stager')).to eq(t2)
-      expect { release.get_package_model_by_name('ruby18') }.to raise_error /key not found/
+      expect { release.get_package_model_by_name('ruby18') }.to raise_error /Package name 'ruby18' not found in release 'bar\/55'/
       expect(release.get_package_model_by_name('ruby19')).to eq(p2)
       expect(release.get_package_model_by_name('ruby20')).to eq(p3)
     end
@@ -153,7 +153,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       bar_42.add_package(p_node)
 
       release = make(deployment, {'name' => 'bar', 'version' => '42'})
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
 
       release.bind_model
       release.bind_templates
@@ -163,7 +163,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       # Making sure once bound template stays bound if we call
       # #use_template_named again
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
       expect(release.template('dea').model).to eq(t_dea)
     end
 
@@ -187,7 +187,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       bar_42.add_template(t_dea)
 
       release = make(make_deployment('mycloud'), {'name' => 'bar', 'version' => 42})
-      release.use_template_named('dea')
+      release.get_or_create_template('dea')
       template = release.template('dea')
 
       [:version, :blobstore, :sha1, :logs].each do |method|

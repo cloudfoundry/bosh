@@ -11,24 +11,10 @@ module Bosh::Director::Models
       validates_unique [:release_id, :version]
     end
 
-    # immediate dependency models
-    def dependencies(package)
-      package.dependency_set.map { |package_name| package_by_name(package_name) }.to_set
-    end
-
-    # all dependency models, including transitives
-    # assumes there are no cycles (checked during upload)
-    def transitive_dependencies(package)
-      dependency_set = Set.new
-      dependencies(package).each do |dependency|
-        dependency_set << dependency
-        dependency_set.merge(transitive_dependencies(dependency))
-      end
-      dependency_set
-    end
-
     def package_by_name(package_name)
-      packages_by_name.fetch(package_name)
+      packages_by_name.fetch(package_name) do
+        raise "Package name '#{package_name}' not found in release '#{release.name}/#{version}'"
+      end
     end
 
     private

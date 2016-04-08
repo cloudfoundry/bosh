@@ -14,25 +14,24 @@ module Bosh::Director
         @disk = Models::PersistentDisk[@disk_id]
 
         if @disk.nil?
-          handler_error("Disk `#{@disk_id}' is no longer in the database")
+          handler_error("Disk '#{@disk_id}' is no longer in the database")
         end
 
         if @disk.active
-          handler_error("Disk `#{@disk.disk_cid}' is no longer inactive")
+          handler_error("Disk '#{@disk.disk_cid}' is no longer inactive")
         end
 
         @instance = @disk.instance
         if @instance.nil?
-          handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
+          handler_error("Cannot find instance for disk '#{@disk.disk_cid}'")
         end
-
-        @vm = @instance.vm
       end
 
       def description
         job = @instance.job || "unknown job"
+        uuid = @instance.uuid || "unknown id"
         index = @instance.index || "unknown index"
-        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        disk_label = "'#{@disk.disk_cid}' (#{@disk.size.to_i}M) for instance '#{job}/#{uuid} (#{index})'"
         "Disk #{disk_label} is inactive"
       end
 
@@ -71,9 +70,9 @@ module Bosh::Director
           handler_error("Disk is currently in use")
         end
 
-        if @vm
+        if @instance.vm_cid
           begin
-            cloud.detach_disk(@vm.cid, @disk.disk_cid)
+            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
           rescue => e
             # We are going to delete this disk anyway
             # and we know it's not in use, so we can ignore
@@ -82,29 +81,13 @@ module Bosh::Director
           end
         end
 
-        # FIXME: Currently there is no good way to know if delete_disk
-        # failed because of cloud error or because disk doesn't exist
-        # in vsphere_disks.
-        begin
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound, RuntimeError => e # FIXME
-          @logger.warn(e)
-        end
-
-        @disk.destroy
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
       end
 
       def disk_mounted?
-        return false if @vm.nil?
-
-        begin
-          agent_timeout_guard(@vm) do |agent|
-            agent.list_disk.include?(@disk.disk_cid)
-          end
-        rescue RuntimeError
-          # old stemcells without 'list_disk' support. We need to play
-          # conservative and assume that the disk is mounted.
-          true
+        return false unless @instance.vm_cid
+        agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
+          agent.list_disk.include?(@disk.disk_cid)
         end
       end
     end

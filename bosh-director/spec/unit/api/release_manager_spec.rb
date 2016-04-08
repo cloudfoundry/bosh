@@ -32,6 +32,67 @@ module Bosh::Director
       end
     end
 
+    describe '#get_all_releases' do
+      it 'gets all releases' do
+        release_1 = Models::Release.make(name: 'release-a')
+        release_2 = Models::Release.make(name: 'release-b')
+        deployment_1 = Models::Deployment.make
+        template_1 = Models::Template.make(name: 'job-1', release: release_1)
+        template_2 = Models::Template.make(name: 'job-2', release: release_2)
+        version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
+        version_1.add_template(template_1)
+        version_1.add_deployment(deployment_1)
+        version_2 = Models::ReleaseVersion.make(version: 2, release: release_2)
+        version_2.add_template(template_2)
+
+        releases = subject.get_all_releases
+
+        expect(releases).to eq([{
+                'name' => 'release-a',
+                'release_versions' => [{
+                    'version' => '1',
+                    'commit_hash' => version_1.commit_hash,
+                    'uncommitted_changes' => version_1.uncommitted_changes,
+                    'currently_deployed' => true,
+                    'job_names' => ['job-1']
+                  }]
+              },
+              'name' => 'release-b',
+              'release_versions' => [{
+                  'version' => '2',
+                  'commit_hash' => version_2.commit_hash,
+                  'uncommitted_changes' => version_2.uncommitted_changes,
+                  'currently_deployed' => false,
+                  'job_names' => ['job-2'],
+                }]
+            ])
+      end
+
+      it 'orders releases in ascending order of release name' do
+        Models::Release.make(name: 'b')
+        Models::Release.make(name: '1c')
+        Models::Release.make(name: 'a')
+
+        releases = subject.get_all_releases
+
+        release_names = releases.map{ |release| release['name'] }
+        expect(release_names).to eq(['1c', 'a', 'b'])
+      end
+
+      it 'orders releases in ascending order of release version' do
+        release = Models::Release.make(name: 'a')
+        Models::ReleaseVersion.make(version: 3, release: release)
+        Models::ReleaseVersion.make(version: 10, release: release)
+        Models::ReleaseVersion.make(version: 1, release: release)
+
+        releases = subject.get_all_releases
+
+        release_versions = releases.first['release_versions']
+        release_version_numbers = release_versions.map{ |release_version| release_version['version'] }
+        expect(release_version_numbers).to eq(['1', '3', '10'])
+      end
+    end
+
     describe '#create_release_from_file_path' do
       let(:release_path) { '/path/to/release.tgz' }
 
@@ -70,7 +131,7 @@ module Bosh::Director
     describe '#delete_release' do
       let(:release) { double('Release', name: 'FAKE RELEASE') }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options]).and_return(task)
 

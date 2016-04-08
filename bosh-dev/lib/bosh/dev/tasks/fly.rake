@@ -11,8 +11,8 @@ namespace :fly do
   # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration do
-    env(DB: (ENV['DB'] || 'postgresql'))
-    execute('test-integration', '-p --tag=bosh-integration')
+    env(DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
+    execute('test-integration', '-p --tag=fly-integration')
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]

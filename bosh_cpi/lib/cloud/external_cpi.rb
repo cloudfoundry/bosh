@@ -48,12 +48,11 @@ module Bosh::Clouds
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def create_vm(*arguments) invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_vm?(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def configure_networks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_disk?(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -90,13 +89,14 @@ module Bosh::Clouds
       end
 
       save_cpi_log(parsed_response['log'])
+      save_cpi_log(stderr)
 
       parsed_response['result']
     end
 
     def checked_cpi_exec_path
       unless File.executable?(@cpi_path)
-        raise NonExecutable, "Failed to run cpi: `#{@cpi_path}' is not executable"
+        raise NonExecutable, "Failed to run cpi: '#{@cpi_path}' is not executable"
       end
       @cpi_path
     end

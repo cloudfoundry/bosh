@@ -1,0 +1,3 @@
+INSERT INTO ip_addresses (id, network_name, address, static, instance_id, created_at, task_id) VALUES (33, 'cf1', 167776778, true, 33, '2016-04-01 15:43:46.899354', '105');
+INSERT INTO ip_addresses (id, network_name, address, static, instance_id, created_at, task_id) VALUES (34, 'public-soda', 167776775, false, 34, '2016-04-01 18:34:47.27533', '109');
+INSERT INTO ip_addresses (id, network_name, address, static, instance_id, created_at, task_id) VALUES (35, 'public-soda', 167776776, false, 35, '2016-04-01 18:34:47.305779', '109');

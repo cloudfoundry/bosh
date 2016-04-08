@@ -1,20 +1,11 @@
 module Bosh::Director
   module Api
     class ProblemManager
-
-      def initialize(deployment_manager)
-        @deployment_manager = deployment_manager
+      def perform_scan(username, deployment)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name], deployment.name)
       end
 
-      def perform_scan(username, deployment_name)
-        deployment = @deployment_manager.find_by_name(deployment_name)
-
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name])
-      end
-
-      def get_problems(deployment_name)
-        deployment = @deployment_manager.find_by_name(deployment_name)
-
+      def get_problems(deployment)
         filters = {
           :deployment_id => deployment.id,
           :state => 'open'
@@ -23,15 +14,12 @@ module Bosh::Director
         Models::DeploymentProblem.filter(filters).order(:created_at).all
       end
 
-      def apply_resolutions(username, deployment_name, resolutions)
-        deployment = @deployment_manager.find_by_name(deployment_name)
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions])
+      def apply_resolutions(username, deployment, resolutions)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions], deployment.name)
       end
 
-      def scan_and_fix(username, deployment_name, jobs)
-        deployment = @deployment_manager.find_by_name(deployment_name)
-
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes])
+      def scan_and_fix(username, deployment, jobs)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes], deployment.name)
       end
     end
   end

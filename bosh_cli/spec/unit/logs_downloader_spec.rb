@@ -35,7 +35,7 @@ describe Bosh::Cli::LogsDownloader do
 
       it 'says downloading succeeded and includes final logs destination path' do
         expect(ui).to receive(:say).with("Downloading log bundle (fake-blobstore-id)...")
-        expect(ui).to receive(:say).with("Logs saved in `/fake-final-path'")
+        expect(ui).to receive(:say).with("Logs saved in '/fake-final-path'")
         perform
       end
 

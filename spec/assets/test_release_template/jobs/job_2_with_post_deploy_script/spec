@@ -1,0 +1,8 @@
+---
+name: job_2_with_post_deploy_script
+templates:
+  post-deploy.erb: bin/post-deploy
+  job_2_ctl: bin/job_2_ctl
+
+packages: []
+properties: {}

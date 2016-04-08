@@ -14,6 +14,14 @@ class ClientSandbox
       File.join(base_dir, 'test_release')
     end
 
+    def manifests_dir
+      File.join(base_dir, 'manifests')
+    end
+
+    def links_release_dir
+      File.join(base_dir, 'links_release')
+    end
+
     def bosh_work_dir
       File.join(base_dir, 'bosh_work_dir')
     end

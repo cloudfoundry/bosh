@@ -6,7 +6,12 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { described_class.new(config) }
-    let(:config) { Config.load_hash(test_config) }
+    let(:config) do
+      config = Config.load_hash(test_config)
+      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      config
+    end
     let(:temp_dir) { Dir.mktmpdir}
     let(:test_config) do
       config = Psych.load(spec_asset('test-director-config.yml'))
@@ -68,6 +73,15 @@ module Bosh::Director
       end
 
       context 'unauthenticated access' do
+        it 'returns 401' do
+          post '/', '', { 'CONTENT_TYPE' => 'application/json' }
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'team admin access' do
+        before { authorize 'dev-team-member', 'dev-team-member' }
+
         it 'returns 401' do
           post '/', '', { 'CONTENT_TYPE' => 'application/json' }
           expect(last_response.status).to eq(401)
@@ -168,32 +182,14 @@ module Bosh::Director
           expect(last_response.status).to eq(401)
         end
       end
-    end
 
-    describe 'scope' do
-      let(:identity_provider) { Support::TestIdentityProvider.new }
-      let(:config) do
-        config = Config.load_hash(test_config)
-        allow(config).to receive(:identity_provider).and_return(identity_provider)
-        config
-      end
+      context 'team admin access' do
+        before { authorize 'dev-team-member', 'dev-team-member' }
+        let(:stemcells) { [] }
 
-      it 'accepts read scope for routes allowing read access' do
-        authorize 'admin', 'admin'
-
-        get '/'
-        expect(identity_provider.scope).to eq(:read)
-
-        non_read_routes = [
-          [:post, '/', 'Content-Type', 'application/json'],
-          [:post, '/', 'Content-Type', 'application/multipart'],
-          [:delete, '/stemcell-name/stemcell-version', '', '']
-        ]
-
-        non_read_routes.each do |method, route, header, header_value|
-          header header, header_value
-          method(method).call(route, '{}')
-          expect(identity_provider.scope).to eq(:write)
+        it 'returns stemcells if any' do
+          perform
+          expect(last_response.status).to eq(200)
         end
       end
     end

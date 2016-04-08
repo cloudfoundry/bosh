@@ -61,8 +61,8 @@ describe Bosh::Registry::InstanceManager do
       expect {
         manager.read_settings("foo", "10.0.3.1")
       }.to raise_error(Bosh::Registry::InstanceError,
-                       "Instance IP mismatch, expected IP is `10.0.3.1', " \
-                       "actual IP(s): `10.0.0.1, 10.0.1.1'")
+                       "Instance IP mismatch, expected IP is '10.0.3.1', " \
+                       "actual IP(s): '10.0.0.1, 10.0.1.1'")
     end
 
   end

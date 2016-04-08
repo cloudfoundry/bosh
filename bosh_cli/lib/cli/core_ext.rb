@@ -5,7 +5,7 @@ module BoshExtensions
   def say(message, sep = "\n")
     return unless Bosh::Cli::Config.output && message
     message = message.dup.to_s
-    sep = "" if message[-1..-1] == sep
+    sep = "" if message[-1] == sep
     Bosh::Cli::Config.output.print("#{$indent}#{message}#{sep}")
   end
 
@@ -74,25 +74,25 @@ module BoshExtensions
 
     yaml = Psych::load(yaml_str)
     if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
+      err("Incorrect YAML structure in '#{path}': expected #{expected_type} at the root".make_red)
     end
 
     yaml
   end
 
   def read_yaml_file(path)
-    err("Cannot find file `#{path}'".make_red) unless File.exist?(path)
+    err("Cannot find file '#{path}'".make_red) unless File.exist?(path)
 
     begin
       yaml_str = ERB.new(File.read(path)).result
     rescue SystemCallError => e
-      err("Cannot load YAML file at `#{path}': #{e}".make_red)
+      err("Cannot load YAML file at '#{path}': #{e}".make_red)
     end
 
     begin
       Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
     rescue Exception => e # on ruby 1.9.3 Psych::SyntaxError isn't a StandardError
-      err("Incorrect YAML structure in `#{path}': #{e}".make_red)
+      err("Incorrect YAML structure in '#{path}': #{e}".make_red)
     end
     yaml_str
   end
@@ -140,11 +140,7 @@ module BoshStringExtensions
     # output disabled
     return self if !Bosh::Cli::Config.output
 
-    # colorization explicitly disabled
-    return self if Bosh::Cli::Config.colorize == false
-
-    # colorization explicitly enabled, or output is tty
-    if Bosh::Cli::Config.colorize || Bosh::Cli::Config.output.tty?
+    if Bosh::Cli::Config.use_color?
       "#{COLOR_CODES[color_code]}#{self}\e[0m"
     else
       self

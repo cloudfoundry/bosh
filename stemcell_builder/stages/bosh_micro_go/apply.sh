@@ -7,6 +7,8 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
+[ "$bosh_micro_enabled" == "yes" ] || exit 0
+
 mkdir -p $chroot/$bosh_dir/src/micro_bosh/bosh-release
 if [ -z "${agent_gem_src_url:-}" ]; then
   cp -rvH $assets_dir/gems $chroot/$bosh_dir/src/micro_bosh/bosh-release/gems

@@ -6,11 +6,6 @@ mbus: nats://localhost:<%= nats_port %>
 logging:
   level: DEBUG
 
-redis:
-  host: 127.0.0.1
-  port: <%= redis_port %>
-  password:
-
 dir: <%= sandbox_root %>/boshdir
 
 scheduled_jobs:
@@ -61,6 +56,8 @@ scan_and_fix:
 snapshots:
   enabled: true
 
+flush_arp: true
+
 cloud:
   <% if external_cpi_enabled %>
   provider:
@@ -102,3 +99,11 @@ user_management:
     - {name: hm, password: pass}
     <% end %>
   <% end %>
+
+enable_post_deploy: <%= enable_post_deploy %>
+
+generate_vm_passwords: <%= generate_vm_passwords %>
+
+remove_dev_tools: <%= remove_dev_tools %>
+
+record_events: true

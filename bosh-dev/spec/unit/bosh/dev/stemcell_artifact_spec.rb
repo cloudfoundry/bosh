@@ -28,6 +28,8 @@ module Bosh::Dev
         and_return(archive_destination_filename)
     end
 
+    before { allow(Dir).to receive(:pwd).and_return('fake-dir') }
+
     describe '#name' do
       it 'returns the filename for the release' do
         expect(stemcell_artifact.name).to eq(archive_destination_filename_string)
@@ -50,7 +52,7 @@ module Bosh::Dev
 
       it 'copies the release from the pipeline to the artifacts bucket' do
         expect(Open3).to receive(:capture3).
-          with("s3cmd --verbose cp #{source} #{destination}").
+          with("s3cmd --verbose cp #{source} #{destination}", chdir: 'fake-dir').
           and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         stemcell_artifact.promote
@@ -69,7 +71,7 @@ module Bosh::Dev
 
         it 'returns true if the release file exists in the s3 bucket' do
           expect(Open3).to receive(:capture3).
-            with("s3cmd info #{destination}").
+            with("s3cmd info #{destination}", chdir: 'fake-dir').
             and_return([nil, nil, instance_double('Process::Status', success?: true)])
 
           expect(stemcell_artifact.promoted?).to be(true)
@@ -77,7 +79,7 @@ module Bosh::Dev
 
         it 'returns false if the release file does not exists in the s3 bucket' do
           expect(Open3).to receive(:capture3).
-            with("s3cmd info #{destination}").
+            with("s3cmd info #{destination}", chdir: 'fake-dir').
             and_return([nil, 'fake-error', instance_double('Process::Status', success?: false)])
 
           expect(stemcell_artifact.promoted?).to be(false)

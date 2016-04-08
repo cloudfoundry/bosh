@@ -6,9 +6,22 @@ case $1 in
 
   start)
     echo "test_property=<%= p('test_property') %>"
+    echo "az=<%= spec.az %>"
+    echo "job_name=<%= spec.job.name %>"
+    echo "index=<%= spec.index %>"
+    echo "bootstrap=<%= spec.bootstrap %>"
+    echo "raw_properties=<%= raw_properties %>"
+    echo "spec=<%= spec %>"
 
     <% if_p('network_name') do |net_name| %>
       echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+    <% end %>
+    echo "spec.address=<%= spec.address %>"
+
+    <% if_p('networks') do |networks| %>
+      <% networks.each do |net_name| %>
+        echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+      <% end %>
     <% end %>
 
     echo $$ > $PIDFILE

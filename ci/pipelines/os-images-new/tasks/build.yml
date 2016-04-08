@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image: docker:///bosh/os-image-stemcell-builder
+
+inputs:
+- name: bosh-src
+- name: version
+
+outputs:
+- name: os-image
+
+run:
+  path: bosh-src/ci/pipelines/os-images-new/tasks/build.sh
+
+params:
+  OPERATING_SYSTEM_NAME:      replace-me
+  OPERATING_SYSTEM_VERSION:   replace-me

@@ -6,11 +6,11 @@ describe Bhm::Plugins::Base do
     plugin = Bhm::Plugins::Base.new
     expect {
       plugin.run
-    }.to raise_error(Bhm::FatalError, "`run' method is not implemented in `Bosh::Monitor::Plugins::Base'")
+    }.to raise_error(Bhm::FatalError, "'run' method is not implemented in 'Bosh::Monitor::Plugins::Base'")
 
     expect {
       plugin.process("foo")
-    }.to raise_error(Bhm::FatalError, "`process' method is not implemented in `Bosh::Monitor::Plugins::Base'")
+    }.to raise_error(Bhm::FatalError, "'process' method is not implemented in 'Bosh::Monitor::Plugins::Base'")
 
     expect(plugin.validate_options).to be(true)
     expect(plugin.options).to eq({})

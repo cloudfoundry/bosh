@@ -3,23 +3,29 @@ module Bosh::Spec
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
   class Director
-    def initialize(runner, waiter, agents_base_dir, director_nats_port, logger)
+    def initialize(runner, waiter, agents_base_dir, director_nats_port, db, logger)
       @runner = runner
       @waiter = waiter
       @agents_base_dir = agents_base_dir
       @director_nats_port = director_nats_port
+      @db = db
       @logger = logger
       @nats_recording = []
     end
 
-    def vms(options={})
-      vms_details(options).map do |vm_data|
-        Vm.new(
+    def vms(deployment_name = '', options={})
+      vms_details(deployment_name, options).map do |vm_data|
+        Bosh::Spec::Vm.new(
           @waiter,
-          vm_data[:job_index],
           vm_data[:state],
           vm_data[:cid],
           vm_data[:agent_id],
+          vm_data[:resurrection],
+          vm_data[:ips],
+          vm_data[:az],
+          vm_data[:id],
+          vm_data[:job_name],
+          vm_data[:index],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
           @director_nats_port,
           @logger,
@@ -27,18 +33,40 @@ module Bosh::Spec
       end
     end
 
+    def instances(deployment_name = '', options={})
+      instances_output = @runner.run("instances #{deployment_name} --details", options)
+      instances = parse_table_with_ips(instances_output, :instance)
+
+      instances.map do |instance_data|
+        Bosh::Spec::Instance.new(
+          instance_data[:id],
+          instance_data[:job_name],
+          instance_data[:index],
+          !instance_data[:bootstrap].empty?,
+          instance_data[:az],
+          instance_data[:disk_cid],
+          instance_data[:vm_cid]
+        )
+      end
+    end
+
     # vm always returns a vm
-    def vm(job_name_index, options={})
-      vm = vms(options).detect { |vm| vm.job_name_index == job_name_index }
-      vm || raise("Failed to find vm #{job_name_index}")
+    def vm(job_name, index_or_id, options={})
+      deployment_name = options.fetch(:deployment, '')
+      find_vm(vms(deployment_name, options), job_name, index_or_id)
+    end
+
+    def find_vm(vms, job_name, index_or_id)
+      vm = vms.detect { |vm| vm.job_name == job_name && (vm.index == index_or_id || vm.instance_uuid == index_or_id)}
+      vm || raise("Failed to find vm #{job_name}/#{index_or_id}")
     end
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds
     # (Do not add default timeout value to be more explicit in tests)
-    def wait_for_vm(job_name_index, timeout_seconds, options = {})
+    def wait_for_vm(job_name, index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms(options).detect { |vm| vm.job_name_index == job_name_index }
+        vm = vms('', options).detect { |vm| vm.job_name == job_name && vm.index == index && vm.ips != '' }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
@@ -53,11 +81,7 @@ module Bosh::Spec
     end
 
     def vms_vitals
-      parse_table(@runner.run('vms --vitals'))
-    end
-
-    def vms_details(options = {})
-      parse_table(@runner.run('vms --details', options))
+      parse_table_with_ips(@runner.run('vms --vitals'))
     end
 
     def instances_vitals(options = {})
@@ -97,7 +121,49 @@ module Bosh::Spec
       @nats_recording
     end
 
+    def task(id)
+      output = @runner.run("task #{id}")
+      failed = /Task (\d+) error/.match(output)
+      return output, !failed
+    end
+
+    def kill_vm_and_wait_for_resurrection(vm)
+      vm.kill_agent
+      resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300)
+
+      wait_for_resurrection_to_finish
+
+      if vm.cid == resurrected_vm.cid
+        raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
+      end
+
+      resurrected_vm
+    end
+
+    def wait_for_resurrection_to_finish
+      attempts = 0
+
+      while attempts < 20
+        attempts += 1
+        resurrection_task = @db[:tasks].filter(
+          username: 'hm',
+          description: 'scan and fix',
+          state: 'processing'
+        )
+        return unless resurrection_task.any?
+
+        @logger.debug("Waiting for resurrection to finish, found resurrection tasks: #{resurrection_task.all}")
+        sleep(0.5)
+      end
+
+      @logger.debug('Failed to wait for resurrection to complete')
+    end
+
     private
+
+    def vms_details(deployment_name, options = {})
+      parse_table_with_ips(@runner.run("vms #{deployment_name} --details", options))
+    end
 
     def parse_table(output)
       rows = []
@@ -115,7 +181,6 @@ module Bosh::Spec
       header_row = rows.shift
       return [] unless header_row
 
-      values_row = rows.shift
       headers = {}
 
       header_row.each_with_index do |row_line|
@@ -128,7 +193,48 @@ module Bosh::Spec
 
       headers = headers.values.map { |header| header.strip.sub(' %','').gsub(/[\%\(\),]/, '').downcase.tr('/ ', '_').to_sym }
 
-      values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      rows.map do |row|
+        # rows is an array of arrays, convert to array of hashes, where keys are downcased titles
+        row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
+      end.flatten
+    end
+
+    def parse_table_with_ips(output, table_type=:vm)
+      vms = parse_table(output)
+
+      job_name_match_index = 1
+      index_match_index = 2
+      instance_id_match_index = 3
+      bootstrap_match_index = 4
+
+      vms.each do |vm|
+        match_data = /(.*)\/(\d+)\s\(([0-9a-f]{8}-[0-9a-f-]{27})\)(\*?)/.match(vm[table_type])
+        if row_is_ip_address_for_previous_row(match_data)
+          vm[:is_ip_address_for_previous_row] = true
+        else
+          vm[:job_name] = match_data[job_name_match_index]
+          vm[:id] = match_data[instance_id_match_index]
+          vm[:bootstrap] = match_data[bootstrap_match_index]
+          vm[:index] = match_data[index_match_index]
+        end
+      end
+
+      # collapse rows for single VM with multiple IPs
+      result = []
+      vms.each_with_index do |vm, i|
+        if vm[:is_ip_address_for_previous_row]
+          vms[i-1][:ips] = Array(vms[i-1][:ips])
+          vms[i-1][:ips] << vm[:ips]
+        else
+          result << vm
+        end
+      end
+
+      result
+    end
+
+    def row_is_ip_address_for_previous_row(match_data)
+      match_data.nil? || match_data.size != 5
     end
   end
 end

@@ -10,18 +10,22 @@ module Bosh::Director
         Bosh::Director::JobRunner.new(self, task_id).run(*args)
       end
 
+      def self.schedule_message
+        "scheduled #{name.split('::').last}"
+      end
+
       attr_accessor :task_id
 
       def logger
         @logger ||= Config.logger
       end
 
-      def event_log
-        @event_log ||= Config.event_log
-      end
-
       def result_file
         @result_file ||= Config.result
+      end
+
+      def dns_manager
+        @dns_manager ||= DnsManagerProvider.create
       end
 
       # @return [Boolean] Has task been cancelled?
@@ -38,12 +42,12 @@ module Bosh::Director
       end
 
       def begin_stage(stage_name, n_steps)
-        event_log.begin_stage(stage_name, n_steps)
+        @event_log_stage = Config.event_log.begin_stage(stage_name, n_steps)
         logger.info(stage_name)
       end
 
       def track_and_log(task, log = true)
-        event_log.track(task) do |ticker|
+        @event_log_stage.advance_and_track(task) do |ticker|
           logger.info(task) if log
           yield ticker if block_given?
         end
@@ -58,6 +62,10 @@ module Bosh::Director
 
       def task_manager
         @task_manager ||= Api::TaskManager.new
+      end
+
+      def event_manager
+        @event_manager ||= Api::EventManager.new(Config.record_events)
       end
     end
   end

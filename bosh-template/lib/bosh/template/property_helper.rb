@@ -1,3 +1,5 @@
+require 'bosh/template/invalid_property_type'
+
 module Bosh
   module Template
     module PropertyHelper
@@ -12,6 +14,10 @@ module Bosh
         dst_ref = dst
 
         keys.each do |key|
+          unless src_ref.is_a?(Hash)
+            raise Bosh::Template::InvalidPropertyType,
+              "Property '#{name}' expects a hash, but received '#{src_ref.class}'"
+          end
           src_ref = src_ref[key]
           break if src_ref.nil? # no property with this name is src
         end
@@ -28,6 +34,7 @@ module Bosh
       # @param [Hash] collection Property collection
       # @param [String] name Dot-separated property name
       def lookup_property(collection, name)
+        return nil if collection.nil?
         keys = name.split(".")
         ref = collection
 

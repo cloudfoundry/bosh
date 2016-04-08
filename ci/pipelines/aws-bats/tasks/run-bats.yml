@@ -1,0 +1,18 @@
+---
+platform: linux
+image: docker:///boshcpi/aws-cpi-release
+inputs:
+- name: bosh-src
+- name: stemcell
+- name: bats
+- name: setup-director-output
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/run-bats.sh
+params:
+  base_os:                      replace-me
+  aws_access_key_id:            replace-me
+  aws_secret_access_key:        replace-me
+  region_name:                  replace-me
+  BAT_VCAP_PASSWORD:            replace-me
+  BAT_STEMCELL_NAME:            replace-me
+  stack_name:                   replace-me

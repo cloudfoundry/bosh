@@ -1,171 +1,236 @@
----
-http:
-  port: <%= p("hm.http.port") %>
+<%=
 
-mbus:
-  endpoint: nats://<%= p("nats.address") %>:<%= p("nats.port") %>
-  user: <%= p("nats.user") %>
-  password: <%= p("nats.password") %>
-
-director: &director
-  endpoint: https://<%= p("director.address") %>:<%= p("director.port") %>
-  user: <%= p("hm.director_account.user") %>
-  password: <%= p("hm.director_account.password") %>
+director = {
+  'endpoint' => "https://#{p('director.address')}:#{p('director.port')}",
+  'user' => p('hm.director_account.user'),
+  'password' => p('hm.director_account.password'),
   # default to empty string so it works in micro bosh
-  client_id: <%= p("hm.director_account.client_id", '') %>
-  client_secret: <%= p("hm.director_account.client_secret", '') %>
-  ca_cert: /var/vcap/store/health_monitor/uaa.pem
+  'client_id' => p('hm.director_account.client_id', ''),
+  'client_secret' => p('hm.director_account.client_secret', ''),
+  'ca_cert' => '/var/vcap/store/health_monitor/uaa.pem',
+}
 
-intervals:
-  prune_events: <%= p("hm.intervals.prune_events") %>
-  poll_director: <%= p("hm.intervals.poll_director") %>
-  poll_grace_period: <%= p("hm.intervals.poll_grace_period") %>
-  log_stats: <%= p("hm.intervals.log_stats") %>
-  analyze_agents: <%= p("hm.intervals.analyze_agents") %>
-  agent_timeout: <%= p("hm.intervals.agent_timeout") %>
-  rogue_agent_alert: <%= p("hm.intervals.rogue_agent_alert") %>
+params = {
+  'http' => {
+    'port' => p('hm.http.port'),
+  },
+  'mbus' => {
+    'endpoint' => "nats://#{p('nats.address')}:#{p('nats.port')}",
+    'user' => p('nats.user'),
+    'password' => p('nats.password'),
+  },
+  'director' => director,
+  'intervals' => {
+    'prune_events' => p('hm.intervals.prune_events'),
+    'poll_director' => p('hm.intervals.poll_director'),
+    'poll_grace_period' => p('hm.intervals.poll_grace_period'),
+    'log_stats' => p('hm.intervals.log_stats'),
+    'analyze_agents' => p('hm.intervals.analyze_agents'),
+    'agent_timeout' => p('hm.intervals.agent_timeout'),
+    'rogue_agent_alert' => p('hm.intervals.rogue_agent_alert'),
+  },
+  'logfile' => '/var/vcap/sys/log/health_monitor/health_monitor.log',
+  'loglevel' => p('hm.loglevel'),
+  'em_threadpool_size' => p('hm.em_threadpool_size'),
+  'plugins' => [
+    {
+      'name' => 'logger',
+      'events' => [
+        'alert',
+      ],
+    },
+  ]
+}
 
-logfile: /var/vcap/sys/log/health_monitor/health_monitor.log
-loglevel: <%= p("hm.loglevel") %>
+if p('event_nats_enabled')
+  params['plugins'] << {
+    'name' => 'nats',
+    'events' => [
+      'alert',
+      'heartbeat',
+    ],
+    'options' => {
+      'endpoint' => "nats://#{p('event_nats.address')}:#{p('event_nats.port')}",
+      'user' => p('event_nats.user'),
+      'password' => p('event_nats.password'),
+    },
+  }
+end
 
-plugins:
+if p('hm.email_notifications')
+  smtp_plugin = {
+    'name' => 'email',
+    'events' => [
+      'alert',
+    ],
+    'options' => {
+      'recipients' => p('hm.email_recipients').to_a,
+      'smtp' => {
+        'from' => p('hm.smtp.from'),
+        'host' => p('hm.smtp.host'),
+        'port' => p('hm.smtp.port'),
+        'domain' => p('hm.smtp.domain'),
+      },
+    },
+  }
 
-  - name: logger
-    events:
-      - alert
+  if_p('hm.smtp.tls') do |tls|
+    smtp_plugin['options']['smtp']['tls'] = tls
+  end
 
-  <% if p("event_nats_enabled") %>
-  - name: nats
-    events:
-      - alert
-      - heartbeat
-    options:
-      endpoint: nats://<%= p("event_nats.address") %>:<%= p("event_nats.port") %>
-      user: <%= p("event_nats.user") %>
-      password: <%= p("event_nats.password") %>
-  <% end %>
+  if_p('hm.smtp.auth', 'hm.smtp.user', 'hm.smtp.password') do |auth, user, password|
+    smtp_plugin['options']['smtp']['auth'] = auth
+    smtp_plugin['options']['smtp']['user'] = user
+    smtp_plugin['options']['smtp']['password'] = password
+  end
 
-  <% if p("hm.email_notifications") %>
-  - name: email
-    events:
-      - alert
-    options:
-      recipients:
-        <% for recipient in p("hm.email_recipients").to_a %>
-        - <%= recipient %>
-        <% end %>
-      smtp:
-        from: <%= p("hm.smtp.from") %>
-        host: <%= p("hm.smtp.host") %>
-        port: <%= p("hm.smtp.port") %>
-        domain: <%= p("hm.smtp.domain") %>
-        <% if_p("hm.smtp.tls") do |smtp_tls| %>
-        tls: <%= smtp_tls %>
-        <% end %>
-        <% if_p("hm.smtp.auth",
-                "hm.smtp.user",
-                "hm.smtp.password") do |smtp_auth, smtp_user, smtp_password| %>
-        auth: <%= smtp_auth %>
-        user: <%= smtp_user %>
-        password: <%= smtp_password %>
-        <% end %>
-      <% if_p("hm.email_interval") do |email_interval| %>
-      interval: <%= email_interval %>
-      <% end %>
-  <% end %>
+  if_p('hm.email_interval') do |email_interval|
+    smtp_plugin['options']['interval'] = email_interval
+  end
 
-  <% if p("hm.tsdb_enabled") %>
-  - name: tsdb
-    events:
-      - alert
-      - heartbeat
-    options:
-      host: <%= p("hm.tsdb.address") %>
-      port: <%= p("hm.tsdb.port") %>
-  <% end %>
+  params['plugins'] << smtp_plugin
+end
 
-  <% if p("hm.cloud_watch_enabled") %>
-  - name: cloud_watch
-    events:
-      - heartbeat
-    options:
-      access_key_id: <%= p("aws.access_key_id") %>
-      secret_access_key: <%= p("aws.secret_access_key") %>
-  <% end %>
+if p('hm.tsdb_enabled')
+  params['plugins'] << {
+    'name' => 'tsdb',
+    'events' => [
+      'alert',
+      'heartbeat',
+    ],
+    'options' => {
+      'host' => p('hm.tsdb.address'),
+      'port' => p('hm.tsdb.port'),
+    },
+  }
+end
 
-  <% if p("hm.resurrector_enabled") %>
-  - name: resurrector
-    events:
-      - alert
-    options:
-      director: *director
-      minimum_down_jobs: <%= p("hm.resurrector.minimum_down_jobs") %>
-      percent_threshold: <%= p("hm.resurrector.percent_threshold") %>
-      time_threshold: <%= p("hm.resurrector.time_threshold") %>
-  <% end %>
+if p('hm.cloud_watch_enabled')
+  params['plugins'] << {
+    'name' => 'cloud_watch',
+    'events' => [
+      'heartbeat',
+    ],
+    'options' => {
+      'access_key_id' => p('aws.access_key_id'),
+      'secret_access_key' => p('aws.secret_access_key'),
+    },
+  }
+end
 
-  <% if p("hm.pagerduty_enabled") %>
-  - name: pagerduty
-    events:
-      - alert
-    options:
-      service_key: <%= p("hm.pagerduty.service_key") %>
-      <% if_p("hm.pagerduty.http_proxy") do |pd_http_proxy| %>
-      http_proxy: <%= pd_http_proxy %>
-      <% end %>
-  <% end %>
+if p('hm.resurrector_enabled')
+  params['plugins'] << {
+    'name' => 'resurrector',
+    'events' => [
+      'alert'
+    ],
+    'options' => {
+      'director' => director,
+      'minimum_down_jobs' => p('hm.resurrector.minimum_down_jobs'),
+      'percent_threshold' => p('hm.resurrector.percent_threshold'),
+      'time_threshold' => p('hm.resurrector.time_threshold'),
+    },
+  }
+end
 
-  <% if p("hm.datadog_enabled") %>
-  - name: data_dog
-    events:
-      - alert
-      - heartbeat
-    options:
-      api_key: <%= p('hm.datadog.api_key') %>
-      application_key: <%= p('hm.datadog.application_key') %>
-      <% if_p("hm.datadog.pagerduty_service_name") do |pagerduty_service_name| %>
-      pagerduty_service_name: <%= pagerduty_service_name %>
-      <% end %>
+if p('hm.pagerduty_enabled')
+  pagerduty_plugin = {
+    'name' => 'pagerduty',
+    'events' => [
+      'alert',
+    ],
+    'options' => {
+      'service_key' => p('hm.pagerduty.service_key'),
+    },
+  }
 
-  <% end %>
+  if_p('hm.pagerduty.http_proxy') do |http_proxy|
+    pagerduty_plugin['options']['http_proxy'] = http_proxy
+  end
 
-  <% if p("hm.graphite_enabled") %>
-  - name: graphite
-    events:
-      - heartbeat
-    options:
-      host: <%= p("hm.graphite.address") %>
-      port: <%= p("hm.graphite.port") %>
-      <% if_p("hm.graphite.prefix") do |prefix| %>
-      prefix: <%= prefix %>
-      <% end %>
-  <% end %>
+  params['plugins'] << pagerduty_plugin
+end
 
-   <% if p("hm.syslog_event_forwarder_enabled", false) %>
-  - name: syslog_event_forwarder
-    events:
-      - alert
-  <% end %>
+if p('hm.datadog_enabled')
+  datadog_plugin = {
+    'name' => 'data_dog',
+    'events' => [
+      'alert',
+      'heartbeat',
+    ],
+    'options' => {
+      'api_key' => p('hm.datadog.api_key'),
+      'application_key' => p('hm.datadog.application_key'),
+    }
+  }
 
-  <% if p("hm.consul_event_forwarder_enabled") %>
-  - name: consul_event_forwarder
-    events:
-      - alert
-      - heartbeat
-    options:
-      host: <%= p("hm.consul_event_forwarder.host") %>
-      port: <%= p("hm.consul_event_forwarder.port") %>
-      protocol: <%= p("hm.consul_event_forwarder.protocol") %>
-      ttl_note: <%= p("hm.consul_event_forwarder.ttl_note") %>
-      events: <%= p("hm.consul_event_forwarder.events") %>
-      heartbeats_as_alerts: <%= p("hm.consul_event_forwarder.heartbeats_as_alerts") %>
-      <% if_p("hm.consul_event_forwarder.namespace") do |namespace| %>
-      namespace: <%= namespace %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.params") do |params| %>
-      params: <%= params %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.ttl") do |ttl| %>
-      ttl: <%= ttl %>
-      <%end%>
-  <% end %>
+  if_p('hm.datadog.pagerduty_service_name') do |pagerduty_service_name|
+    datadog_plugin['options']['pagerduty_service_name'] = pagerduty_service_name
+  end
+
+  params['plugins'] << datadog_plugin
+end
+
+if p('hm.graphite_enabled')
+  graphite_plugin = {
+    'name' => 'graphite',
+    'events' => [
+      'heartbeat',
+    ],
+    'options' => {
+      'host' => p('hm.graphite.address'),
+      'port' => p('hm.graphite.port'),
+    },
+  }
+
+  if_p('hm.graphite.prefix') do |prefix|
+    graphite_plugin['options']['prefix'] = prefix
+  end
+
+  params['plugins'] << graphite_plugin
+end
+
+if p('hm.syslog_event_forwarder_enabled', false)
+  params['plugins'] << {
+    'name' => 'syslog_event_forwarder',
+    'events' => [
+      'alert',
+    ],
+  }
+end
+
+if p('hm.consul_event_forwarder_enabled')
+  consul_event_forwarder_plugin = {
+    'name' => 'consul_event_forwarder',
+    'events' => [
+      'alert',
+      'heartbeat',
+    ],
+    'options' => {
+      'host' => p('hm.consul_event_forwarder.host'),
+      'port' => p('hm.consul_event_forwarder.port'),
+      'protocol' => p('hm.consul_event_forwarder.protocol'),
+      'ttl_note' => p('hm.consul_event_forwarder.ttl_note'),
+      'events' => p('hm.consul_event_forwarder.events'),
+      'heartbeats_as_alerts' => p('hm.consul_event_forwarder.heartbeats_as_alerts'),
+    },
+  }
+
+  if_p('hm.consul_event_forwarder.namespace') do |namespace|
+    consul_event_forwarder_plugin['options']['namespace'] = namespace
+  end
+
+  if_p('hm.consul_event_forwarder.params') do |params|
+    consul_event_forwarder_plugin['options']['params'] = params
+  end
+
+  if_p('hm.consul_event_forwarder.ttl') do |ttl|
+    consul_event_forwarder_plugin['options']['ttl'] = ttl
+  end
+
+  params['plugins'] << consul_event_forwarder_plugin
+end
+
+JSON.dump(params)
+
+%>

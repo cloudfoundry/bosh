@@ -3,75 +3,112 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::JobRenderer] job_renderer
-    def initialize(deployment_plan, job, job_renderer)
+    def initialize(deployment_plan, job, links_resolver, disk_manager)
       @deployment_plan = deployment_plan
       @job = job
-      @job_renderer = job_renderer
+      @links_resolver = links_resolver
 
       @logger = Config.logger
       @event_log = Config.event_log
+      @disk_manager = disk_manager
     end
 
     def update
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
-      instances = []
-      @job.instances.each do |instance|
-        instances << instance if instance.changed?
+      instance_plans = @job.needed_instance_plans.select do | instance_plan |
+        if instance_plan.changed?
+          true
+        else
+          # no changes necessary for the agent, but some metadata may have
+          # changed (i.e. vm_type.name), so push state to the db regardless
+          instance_plan.persist_current_spec
+          false
+        end
       end
 
-      if instances.empty?
-        @logger.info("No instances to update for `#{@job.name}'")
+      if instance_plans.empty?
+        @logger.info("No instances to update for '#{@job.name}'")
         return
+      else
+        @job.did_change = true
       end
 
-      @logger.info("Found #{instances.size} instances to update")
-      event_log_stage = @event_log.begin_stage("Updating job", instances.size, [ @job.name ])
-
-      ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-        num_canaries = [ @job.update.canaries, instances.size ].min
-        @logger.info("Starting canary update num_canaries=#{num_canaries}")
-        update_canaries(pool, instances, num_canaries, event_log_stage)
-
-        @logger.info('Waiting for canaries to update')
-        pool.wait
-
-        @logger.info("Finished canary update")
-
-        @logger.info("Continuing the rest of the update")
-        update_instances(pool, instances, event_log_stage)
+      instance_plans.each do |instance_plan|
+        changes = instance_plan.changes
+        @logger.debug("Need to update instance '#{instance_plan.instance}', changes: #{changes.to_a.join(', ').inspect}")
       end
 
-      @logger.info("Finished the rest of the update")
+      @logger.info("Found #{instance_plans.size} instances to update")
+      event_log_stage = @event_log.begin_stage('Updating job', instance_plans.size, [ @job.name ])
+
+      ordered_azs = []
+      instance_plans.each do | instance_plan |
+        unless ordered_azs.include?(instance_plan.instance.availability_zone)
+          ordered_azs.push(instance_plan.instance.availability_zone)
+        end
+      end
+
+      instance_plans_by_az = instance_plans.group_by{ |instance_plan| instance_plan.instance.availability_zone }
+      canaries_done = false
+
+      ordered_azs.each do | az |
+        az_instance_plans = instance_plans_by_az[az]
+        @logger.info("Starting to update az '#{az}'")
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
+          unless canaries_done
+            num_canaries = [@job.update.canaries, az_instance_plans.size].min
+            @logger.info("Starting canary update num_canaries=#{num_canaries}")
+            update_canaries(pool, az_instance_plans, num_canaries, event_log_stage)
+
+            @logger.info('Waiting for canaries to update')
+            pool.wait
+
+            @logger.info('Finished canary update')
+
+            canaries_done = true
+          end
+
+          @logger.info('Continuing the rest of the update')
+          update_instances(pool, az_instance_plans, event_log_stage)
+          @logger.info('Finished the rest of the update')
+        end
+        @logger.info("Finished updating az '#{az}'")
+      end
     end
 
     private
 
     def delete_unneeded_instances
+      unneeded_instance_plans = @job.obsolete_instance_plans
       unneeded_instances = @job.unneeded_instances
-      return if unneeded_instances.empty?
+      if unneeded_instances.empty?
+        return
+      else
+        @job.did_change = true
+      end
 
-      event_log_stage = @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
-      deleter = InstanceDeleter.new(@deployment_plan)
-      deleter.delete_instances(unneeded_instances, event_log_stage, max_threads: @job.update.max_in_flight)
+      event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size, [@job.name])
+      dns_manager = DnsManagerProvider.create
+      deleter = InstanceDeleter.new(@deployment_plan.ip_provider, dns_manager, @disk_manager)
+      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @job.update.max_in_flight)
 
-      @logger.info("Deleted no longer needed instances")
+      @logger.info('Deleted no longer needed instances')
     end
 
-    def update_canaries(pool, instances, num_canaries, event_log_stage)
+    def update_canaries(pool, instance_plans, num_canaries, event_log_stage)
       num_canaries.times do
-        instance = instances.shift
-        pool.process { update_canary_instance(instance, event_log_stage) }
+        instance_plan = instance_plans.shift
+        pool.process { update_canary_instance(instance_plan, event_log_stage) }
       end
     end
 
-    def update_canary_instance(instance, event_log_stage)
-      desc = "#{@job.name}/#{instance.index}"
-      event_log_stage.advance_and_track("#{desc} (canary)") do |ticker|
-        with_thread_name("canary_update(#{desc})") do
+    def update_canary_instance(instance_plan, event_log_stage)
+      event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
+        with_thread_name("canary_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new(instance, ticker, @job_renderer).update(:canary => true)
+            InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan, :canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -80,18 +117,17 @@ module Bosh::Director
       end
     end
 
-    def update_instances(pool, instances, event_log_stage)
-      instances.each do |instance|
-        pool.process { update_instance(instance, event_log_stage) }
+    def update_instances(pool, instance_plans, event_log_stage)
+      instance_plans.each do |instance_plan|
+        pool.process { update_instance(instance_plan, event_log_stage) }
       end
     end
 
-    def update_instance(instance, event_log_stage)
-      desc = "#{@job.name}/#{instance.index}"
-      event_log_stage.advance_and_track(desc) do |ticker|
-        with_thread_name("instance_update(#{desc})") do
+    def update_instance(instance_plan, event_log_stage)
+      event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
+        with_thread_name("instance_update(#{instance_plan.instance.model})") do
           begin
-            InstanceUpdater.new(instance, ticker, @job_renderer).update
+            InstanceUpdater.new_instance_updater(@deployment_plan.ip_provider).update(instance_plan)
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

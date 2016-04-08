@@ -163,7 +163,7 @@ module Bosh::Deployer
       renderer.enter_stage('Delete micro BOSH', 7)
       agent_stop
       if state.disk_cid
-        step "Deleting persistent disk `#{state.disk_cid}'" do
+        step "Deleting persistent disk '#{state.disk_cid}'" do
           delete_disk(state.disk_cid, state.vm_cid)
           state.disk_cid = nil
           save_state
@@ -240,7 +240,7 @@ module Bosh::Deployer
       resources = config.resources['cloud_properties']
       networks = config.networks
       env = config.env
-      cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
+      cloud.create_vm(state.uuid, stemcell_cid, resources, networks, [], env)
     end
 
     def update_vm_metadata(vm, metadata)

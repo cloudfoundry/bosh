@@ -35,11 +35,11 @@ module Bosh::Director
 
         release = @manager.find_by_name(@name)
         @model = @manager.find_version(release, @version)
-        @logger.debug("Found release `#{@name}/#{@version}'")
+        @logger.debug("Found release '#{@name}/#{@version}'")
 
         unless @deployment_model.release_versions.include?(@model)
-          @logger.debug("Binding release `#{@name}/#{@version}' " +
-                        "to deployment `#{@deployment_model.name}'")
+          @logger.debug("Binding release '#{@name}/#{@version}' " +
+                        "to deployment '#{@deployment_model.name}'")
           @deployment_model.add_release_version(@model)
         end
       end
@@ -58,9 +58,9 @@ module Bosh::Director
         # have been parsed, so we can assume @templates contains
         # the list of templates that need to be bound
         @templates.each_value do |template|
-          @logger.debug("Binding template `#{template.name}'")
+          @logger.debug("Binding template '#{template.name}'")
           template.bind_models
-          @logger.debug("Bound template `#{template.name}'")
+          @logger.debug("Bound template '#{template.name}'")
         end
       end
 
@@ -93,9 +93,9 @@ module Bosh::Director
 
       # Adds template to a list of templates used by this release for the
       # current deployment
-      # @param [String] template_name Template name
-      def use_template_named(template_name)
-        @templates[template_name] ||= Template.new(self, template_name)
+      # @param [String] options Template name
+      def get_or_create_template(name)
+        @templates[name] ||= Template.new(self, name)
       end
 
       # @param [String] name Template name

@@ -32,7 +32,10 @@ module Bosh::Stemcell::Aws
           'virtualization_type' => @virtualization_type
         )
 
-        seed_ami_id = cloud.create_stemcell("#{tmp_dir}/image", cloud_properties)
+        seed_ami_id = nil
+        Bosh::Retryable.new(tries: 3, sleep: 20, on: [Bosh::Clouds::CloudError]).retryer do
+          seed_ami_id = cloud.create_stemcell("#{tmp_dir}/image", cloud_properties)
+        end
         seed_ami = cloud.ec2.images[seed_ami_id]
         seed_ami.public = true
         region_ami_mapping = copy_to_regions(logger, seed_ami_id, seed_ami.name, seed_ami.tags)

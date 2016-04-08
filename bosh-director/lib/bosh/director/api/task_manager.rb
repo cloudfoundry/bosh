@@ -25,7 +25,8 @@ module Bosh::Director
           "description" => task.description,
           "timestamp" => task.timestamp.to_i,
           "result" => task.result,
-          "user" => task.username || "admin"
+          "user" => task.username || "admin",
+          "deployment" => task.deployment_name
         }
       end
 
@@ -33,13 +34,6 @@ module Bosh::Director
         # Backward compatibility
         return task.output unless File.directory?(task.output)
 
-        # Backward compatbility from renaming `soap` log to `cpi` log.
-        # Old tasks might have been written to the file `soap` and we should
-        # still return them if log_type = cpi. Same goes for new task logs
-        # written to `cpi` but an old CLI has requested log_type = soap.
-        if %w(soap cpi).include?(log_type)
-          log_type = File.file?(File.join(task.output, "soap")) ? "soap" : "cpi"
-        end
         file = File.join(task.output, log_type)
         file_gz = [file, 'gz'].join('.')
 

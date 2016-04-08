@@ -5,13 +5,9 @@ module Bosh::Director
     ##
     # Represents a logical deployment network.
     class Network
-      include DnsHelper
       include ValidationHelper
 
       VALID_DEFAULTS = %w(dns gateway).sort
-
-      # @return [DeploymentPlan] associated deployment
-      attr_accessor :deployment
 
       # @return [String] network name
       attr_accessor :name
@@ -24,39 +20,10 @@ module Bosh::Director
       #
       # @param [DeploymentPlan] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(deployment, network_spec)
-        @deployment = deployment
-        @name = safe_property(network_spec, "name", :class => String)
-        @canonical_name = canonical(@name)
-      end
-
-      ##
-      # Reserves a network resource, raises an error if reservation failed
-      # @param [NetworkReservation] reservation Network reservation
-      # @param [String] origin Whoever is reserving
-      def reserve!(reservation, origin)
-        reserve(reservation)
-        unless reservation.reserved?
-          reservation.handle_error(origin)
-        end
-      end
-
-      ##
-      # Reserves a network resource.
-      #
-      # Will update the passed in reservation if it can be fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [Boolean] true if the reservation was fulfilled
-      def reserve(reservation)
-        raise NotImplementedError, "#reserve not implemented for #{self.class}"
-      end
-
-      ##
-      # Releases a previous reservation that had been fulfilled.
-      # @param [NetworkReservation] reservation
-      # @return [void]
-      def release(reservation)
-        raise NotImplementedError, "#release not implemented for #{self.class}"
+      def initialize(name, logger)
+        @name = name
+        @canonical_name = Canonicalizer.canonicalize(@name)
+        @logger = logger
       end
 
       ##
@@ -65,9 +32,53 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
-      def network_settings(reservation, default_properties = VALID_DEFAULTS)
+      def network_settings(reservation, default_properties = VALID_DEFAULTS, availability_zone = nil)
         raise NotImplementedError,
               "#network_settings not implemented for #{self.class}"
+      end
+
+      def has_azs?(az_names)
+        raise NotImplementedError
+      end
+
+      def find_az_names_for_ip(ip)
+        raise NotImplementedError
+      end
+
+      def validate_reference_from_job!(job_network_spec, job_name)
+      end
+
+      def supports_azs?
+        false
+      end
+
+      def manual?
+        false
+      end
+    end
+
+    class NetworkWithSubnets < Network
+      def has_azs?(az_names)
+        az_names = [az_names].flatten
+
+        if az_names.compact.empty? && availability_zones.empty?
+          return true
+        end
+
+        unreferenced_zones = az_names - availability_zones
+        if unreferenced_zones.empty?
+          return true
+        end
+
+        false
+      end
+
+      def supports_azs?
+        true
+      end
+
+      def availability_zones
+        @subnets.map(&:availability_zone_names).flatten.uniq
       end
     end
   end

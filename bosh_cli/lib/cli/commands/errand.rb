@@ -44,7 +44,7 @@ module Bosh::Cli::Command
       status, task_id, errand_result = errands_client.run_errand(deployment_name, errand_name, options[:keep_alive] || FALSE)
 
       unless errand_result
-        task_report(status, task_id, nil, "Errand `#{errand_name}' did not complete")
+        task_report(status, task_id, nil, "Errand '#{errand_name}' did not complete")
         return
       end
 
@@ -69,7 +69,7 @@ module Bosh::Cli::Command
         end
       end
 
-      title_prefix = "Errand `#{errand_name}'"
+      title_prefix = "Errand '#{errand_name}'"
       exit_code_suffix = "(exit code #{errand_result.exit_code})"
 
       if errand_result.exit_code == 0

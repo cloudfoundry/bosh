@@ -1,0 +1,5 @@
+check process job_that_modifies_properties
+  with pidfile /var/vcap/sys/run/job_that_modifies_properties.pid
+  start program "/var/vcap/jobs/job_that_modifies_properties/bin/job_that_modifies_properties_ctl start"
+  stop program "/var/vcap/jobs/job_that_modifies_properties/bin/job_that_modifies_properties_ctl stop"
+  group vcap

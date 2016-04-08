@@ -16,10 +16,6 @@ properties:
     password: nats
     address: 127.0.0.1
     port: 4222
-  redis:
-    address: 127.0.0.1
-    port: 25255
-    password: redis
   postgres:
     user: postgres
     password: postgres

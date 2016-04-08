@@ -45,6 +45,9 @@ module Bosh::Dev::Openstack
           },
           'properties' => {
             'director' => {
+              'debug' => {
+                'keep_unreachable_vms' => env.fetch('BAT_DEBUG_MODE', false)
+              },
               'max_vm_create_tries' => 15
             },
           },

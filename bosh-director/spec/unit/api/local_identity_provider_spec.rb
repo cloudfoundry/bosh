@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::LocalIdentityProvider do
-    subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}, 'fake-uuid') }
+    subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}) }
     let(:users) { [{'name' => 'admin', 'password' => 'admin'}] }
     let(:credentials) do
       {
@@ -25,13 +25,8 @@ module Bosh::Director
       let(:request_env) { { 'HTTP_AUTHORIZATION' => credentials[:admin] } }
 
       it 'returns the username of the authenticated user' do
-        local_user = identity_provider.get_user(request_env)
+        local_user = identity_provider.get_user(request_env, {})
         expect(local_user.username).to eq('admin')
-      end
-
-      it 'validates user access' do
-        local_user = identity_provider.get_user(request_env)
-        expect(identity_provider.valid_access?(local_user, {})).to be(true)
       end
     end
 
@@ -40,7 +35,7 @@ module Bosh::Director
 
       it 'raises' do
         expect {
-          identity_provider.get_user(request_env)
+          identity_provider.get_user(request_env, {})
         }.to raise_error(AuthenticationError)
       end
     end
@@ -48,7 +43,14 @@ module Bosh::Director
     describe 'a request (controller integration)' do
       include Rack::Test::Methods
 
-      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
+      let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+      let(:config) do
+        config = Config.load_hash(test_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
+      let(:app) { Support::TestController.new(config) }
 
       context 'given valid HTTP basic authentication credentials' do
         it 'is successful' do

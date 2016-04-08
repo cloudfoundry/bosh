@@ -12,21 +12,19 @@ module Bosh::Director
         @disk = Models::PersistentDisk[@disk_id]
 
         if @disk.nil?
-          handler_error("Disk `#{@disk_id}' is no longer in the database")
+          handler_error("Disk '#{@disk_id}' is no longer in the database")
         end
 
         @instance = @disk.instance
         if @instance.nil?
-          handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
+          handler_error("Cannot find instance for disk '#{@disk.disk_cid}'")
         end
-
-        @vm = @instance.vm
       end
 
       def description
         job = @instance.job || "unknown job"
-        index = @instance.index || "unknown index"
-        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        uuid = @instance.uuid || "unknown id"
+        disk_label = "'#{@disk.disk_cid}' (#{job}/#{uuid}, #{@disk.size.to_i}M)"
         "Disk #{disk_label} is missing"
       end
 
@@ -41,13 +39,11 @@ module Bosh::Director
       end
 
       def delete_disk_reference
-        @disk.db.transaction do
-          @disk.update(active: false)
-        end
+        @disk.update(active: false)
 
         # If VM is present we try to unmount and detach disk from VM
-        if @vm && @vm.cid && cloud.has_vm?(@vm.cid)
-          agent_client = agent_client(@vm)
+        if @instance.vm_cid && cloud.has_vm?(@instance.vm_cid)
+          agent_client = agent_client(@instance.credentials, @instance.agent_id)
           disk_list = []
 
           begin
@@ -69,22 +65,13 @@ module Bosh::Director
 
           begin
             @logger.debug('Sending cpi request: detach_disk')
-            cloud.detach_disk(@vm.cid, @disk.disk_cid) if @vm.cid
-          rescue Bosh::Clouds::DiskNotAttached
+            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid) if @instance.vm_cid
+          rescue Bosh::Clouds::DiskNotAttached, Bosh::Clouds::DiskNotFound
           end
         end
 
-        @logger.debug('Deleting disk snapshots')
-        Api::SnapshotManager.delete_snapshots(@disk.snapshots)
+        DiskManager.new(cloud, @logger).orphan_disk(@disk)
 
-        begin
-          @logger.debug('Sending cpi request: delete_disk')
-          cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Clouds::DiskNotFound
-        end
-
-        @logger.debug('Removing disk reference from database')
-        @disk.destroy
       end
     end
   end

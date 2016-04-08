@@ -76,7 +76,7 @@ describe Bosh::Director::DownloadHelper do
 
           expect {
             download_remote_file('resource', redirect_url, local_file)
-          }.to raise_error(Bosh::Director::ResourceError, "No location header for redirect found at `#{redirect_url}'.")
+          }.to raise_error(Bosh::Director::ResourceError, "No location header for redirect found at '#{redirect_url}'.")
         end
       end
 
@@ -86,7 +86,7 @@ describe Bosh::Director::DownloadHelper do
 
         expect {
           download_remote_file('resource', redirect_url, local_file)
-        }.to raise_error(Bosh::Director::ResourceError, "Too many redirects at `#{remote_file}'.")
+        }.to raise_error(Bosh::Director::ResourceError, "Too many redirects at '#{remote_file}'.")
       end
     end
 
@@ -96,7 +96,7 @@ describe Bosh::Director::DownloadHelper do
 
       expect {
         download_remote_file('resource', remote_file, local_file)
-      }.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at `#{remote_file}'.")
+      }.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at '#{remote_file}'.")
     end
 
     it 'should return a ResourceError exception if remote server returns an error code' do

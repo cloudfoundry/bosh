@@ -150,7 +150,7 @@ module Bosh::Cli::Versions
           versions_index.add_version('fake-key', build_without_version)
         }.to raise_error(
           Bosh::Cli::InvalidIndex,
-          "Cannot save index entry without a version: `#{build_without_version}'"
+          "Cannot save index entry without a version: '#{build_without_version}'"
         )
       end
 
@@ -163,7 +163,7 @@ module Bosh::Cli::Versions
         expect {
           versions_index.add_version('fake-key-2', item1)
         }.to raise_error(
-          "Trying to add duplicate version `#{version}' into index `#{File.join(tmp_dir, 'index.yml')}'"
+          "Trying to add duplicate version '#{version}' into index '#{File.join(tmp_dir, 'index.yml')}'"
         )
       end
 
@@ -175,7 +175,7 @@ module Bosh::Cli::Versions
         expect {
           versions_index.add_version('fake-key', item2)
         }.to raise_error(
-          "Trying to add duplicate entry `fake-key' into index `#{File.join(tmp_dir, 'index.yml')}'"
+          "Trying to add duplicate entry 'fake-key' into index '#{File.join(tmp_dir, 'index.yml')}'"
         )
         expect(versions_index['fake-key']).to eq(item1)
       end
@@ -242,7 +242,7 @@ module Bosh::Cli::Versions
           expect{
             versions_index.update_version('fake-key-4', { 'version' => 4 })
           }.to raise_error(
-            "Cannot update non-existent entry with key `fake-key-4'"
+            "Cannot update non-existent entry with key 'fake-key-4'"
           )
         end
 
@@ -253,7 +253,7 @@ module Bosh::Cli::Versions
           expect{
             versions_index.update_version('fake-key-2', new_build)
           }.to raise_error(
-            "Cannot update entry `#{old_build}' with a different version: `#{new_build}'"
+            "Cannot update entry '#{old_build}' with a different version: '#{new_build}'"
           )
         end
       end
@@ -310,7 +310,7 @@ module Bosh::Cli::Versions
         expect{
           versions_index.update_version('fake-key-with-blobstore-id', versions_index['fake-key-with-blobstore-id'])
         }.to raise_error(
-            %q{Cannot update entry `{"blobstore_id"=>"fake-blobstore-id", "version"=>4}' with a blobstore id}
+            %q{Cannot update entry '{"blobstore_id"=>"fake-blobstore-id", "version"=>4}' with a blobstore id}
           )
       end
     end

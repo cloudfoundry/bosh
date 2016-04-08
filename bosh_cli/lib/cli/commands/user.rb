@@ -25,7 +25,7 @@ module Bosh::Cli::Command
       end
 
       if director.create_user(username, password)
-        say("User `#{username}' has been created".make_green)
+        say("User '#{username}' has been created".make_green)
       else
         err("Error creating user")
       end
@@ -45,9 +45,9 @@ module Bosh::Cli::Command
         err("Please provide a username to delete")
       end
 
-      if confirmed?("Are you sure you would like to delete the user `#{username}'?")
+      if confirmed?("Are you sure you would like to delete the user '#{username}'?")
         if director.delete_user(username)
-          say("User `#{username}' has been deleted".make_green)
+          say("User '#{username}' has been deleted".make_green)
         else
           err("Unable to delete user")
         end

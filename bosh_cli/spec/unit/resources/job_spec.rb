@@ -38,7 +38,7 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
       end
 
       let(:jobs) { Bosh::Cli::Resources::Job.discover(release_source.path, made_packages) }
-  
+
       it 'returns an Array of Job instances' do
         expect(jobs).to be_a(Array)
         expect(jobs[0]).to be_a(Bosh::Cli::Resources::Job)
@@ -54,7 +54,7 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
       end
 
       let(:jobs) { Bosh::Cli::Resources::Job.discover(release_source.path, made_packages) }
-  
+
       it 'returns an Array of Job instances' do
         expect(jobs).to be_a(Array)
         expect(jobs[0]).to be_a(Bosh::Cli::Resources::Job)
@@ -103,7 +103,7 @@ SPEC
       end
 
       it 'raises' do
-        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Incorrect YAML structure in `#{release_source.path}/jobs/foo-job/spec': (<unknown>): found a tab character that violate intendation while scanning a plain scalar at line 13 column 12")
+        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Incorrect YAML structure in '#{release_source.path}/jobs/foo-job/spec': (<unknown>): found a tab character that violate intendation while scanning a plain scalar at line 13 column 12")
       end
     end
 
@@ -113,7 +113,7 @@ SPEC
       end
 
       it 'raises' do
-        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Cannot find file `#{release_source.path}/jobs/foo-job/spec'")
+        expect { job.spec }.to raise_error(Bosh::Cli::InvalidJob, "Job spec is missing or invalid: Cannot find file '#{release_source.path}/jobs/foo-job/spec'")
       end
     end
   end
@@ -154,10 +154,14 @@ SPEC
         }
       end
 
-      it 'raises' do
-        expect { job.validate! }.to raise_error(Bosh::Cli::InvalidJob,
-          "Incorrect templates section in '#{name}' job spec (Hash expected, NilClass given)")
+      before do
+        release_source.remove_dir("#{base}/templates")
       end
+
+      it 'does not raise' do
+        expect { job.validate! }.to_not raise_error
+      end
+
     end
 
     context 'when templates on the filesystem are not found in the spec' do

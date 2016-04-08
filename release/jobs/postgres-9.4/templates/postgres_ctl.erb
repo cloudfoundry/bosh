@@ -1,0 +1,125 @@
+#!/bin/bash -e
+
+PACKAGE_DIR=/var/vcap/packages/postgres-9.4
+PACKAGE_DIR_OLD=/var/vcap/packages/postgres
+
+STORE_DIR=/var/vcap/store
+
+# historically we have used `postgres`
+DATA_DIR_OLD=$STORE_DIR/postgres
+
+# then we switched to including version so it is easier to detect version changes
+DATA_DIR=$STORE_DIR/postgres-9.4
+
+# and we'll keep the previous version's data intact to easy recovery, if necessary
+DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
+
+JOB_DIR=/var/vcap/jobs/postgres-9.4
+RUN_DIR=/var/vcap/sys/run/postgres-9.4
+PIDFILE=$RUN_DIR/postgres.pid
+
+HOST=<%= p("postgres.listen_address") %>
+PORT=<%= p("postgres.port") %>
+USER='<%= p("postgres.user") %>'
+PASSWORD='<%= p("postgres.password") %>'
+DBNAMES=(<%= p("postgres.additional_databases").join(" ") %>)
+DBNAMES+=('<%= p("postgres.database") %>')
+
+export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
+
+SCRIPT=$(basename $0)
+mkdir -p /var/vcap/sys/log/monit
+
+exec 1>> /var/vcap/sys/log/monit/$SCRIPT.log
+exec 2>> /var/vcap/sys/log/monit/$SCRIPT.err.log
+
+case "$1" in
+  start)
+    mkdir -p $RUN_DIR
+    chown -R vcap:vcap $RUN_DIR
+
+    if [ -d $DATA_DIR -a -f $STORE_DIR/FLAG_POSTGRES_UPGRADE ]; then
+      echo "FAIL: DB upgrade stopped in the middle, manual intervention required, quitting..."
+      exit 1
+    fi
+
+    sysctl -w "kernel.shmmax=67108864"
+
+    # We cannot kill the following conditional
+    # because initdb is very picky about looking at an empty dir
+    if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then
+      mkdir -p $DATA_DIR
+      chown vcap:vcap $DATA_DIR
+
+      # initdb creates data directories
+      su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+
+      if [ $? != 0 ]; then
+        echo "ERROR: Unable to Initialize Postgres DB"
+        exit 1
+      fi
+
+
+      echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
+
+      mkdir -p $DATA_DIR/pg_log
+      chown vcap:vcap $DATA_DIR/pg_log
+    fi
+
+    $JOB_DIR/bin/postgres_db_backup.sh
+
+    cp $JOB_DIR/config/postgresql.conf $DATA_DIR
+    chown vcap:vcap $DATA_DIR/postgresql.conf
+
+    echo "Starting PostgreSQL:"
+    su - vcap -c "$PACKAGE_DIR/bin/pg_ctl -o \"-h $HOST -p $PORT\" -w start -D $DATA_DIR -l \"$DATA_DIR/pg_log/startup.log\""
+
+    if [ $? == 0 ]; then
+      echo "PostgreSQL started successfully"
+      head -n 1 $DATA_DIR/postmaster.pid > $PIDFILE
+
+      set +e
+
+      for DBNAME in "${DBNAMES[@]}"
+      do
+
+        echo "Trying to create database $DBNAME..."
+        su - vcap -c "$PACKAGE_DIR/bin/createdb $DBNAME -p $PORT"
+
+        echo "Trying to create user..."
+        $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "create role \"$USER\" NOSUPERUSER LOGIN INHERIT CREATEDB"
+
+        echo "Trying to alter user (to change password)..."
+        $PACKAGE_DIR/bin/psql -d $DBNAME -p $PORT -U vcap -c "alter role \"$USER\" with password '$PASSWORD'"
+
+      done
+
+      set -e
+
+      exit 0
+    else
+      echo "The PostgreSQL server start seems to have some problems, please see logs for details."
+      exit 1
+    fi
+    ;;
+
+  stop)
+    echo "Stopping PostgreSQL:"
+    PID=$(head -1 $PIDFILE)
+
+    # Stop both old & new versions, checking for existence of PID first
+    su - vcap -c "[ -f $DATA_DIR/postmaster.pid ] && $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR
+      [ -f $DATA_DIR_OLD/postmaster.pid ] && $PACKAGE_DIR_OLD/bin/pg_ctl stop -m fast -w -D $DATA_DIR_OLD"
+
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+:    ;;
+
+  status)
+    su - vcap -c "$PACKAGE_DIR/bin/pg_ctl status -D $DATA_DIR"
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 1
+    ;;
+esac

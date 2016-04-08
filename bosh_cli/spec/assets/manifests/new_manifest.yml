@@ -1,9 +1,15 @@
 ---
 name: test
+releases:
+- name: simple
+  version: latest
 networks:
 - name: default
 resource_pools:
 - name: rp
+  stemcell:
+    name: ubuntu
+    version: latest
 jobs:
 - name: job1
   template: xyz

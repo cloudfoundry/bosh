@@ -5,14 +5,52 @@ module Bosh::Director
     include LockHelper
     include IpUtil
 
-    def initialize(deployment_plan, stemcell_manager, cloud, blobstore, logger, event_log)
+    def initialize(deployment_plan, stemcell_manager, dns_manager, cloud, logger)
       @deployment_plan = deployment_plan
       @cloud = cloud
       @logger = logger
-      @event_log = event_log
       @stemcell_manager = stemcell_manager
-      @blobstore = blobstore
+      @dns_manager = dns_manager
     end
+
+    def bind_models(skip_links_binding = false)
+      @logger.info('Binding models')
+      bind_releases
+
+      migrate_legacy_dns_records
+      network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
+      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
+      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances)
+      index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate})
+      instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
+      desired_jobs = @deployment_plan.jobs
+
+      job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
+
+      desired_jobs.each do |desired_job|
+        desired_instances = desired_job.desired_instances
+        existing_instances = job_migrator.find_existing_instances(desired_job)
+        instance_plans = instance_planner.plan_job_instances(desired_job, desired_instances, existing_instances)
+        desired_job.add_instance_plans(instance_plans)
+      end
+
+      instance_plans_for_obsolete_jobs = instance_planner.plan_obsolete_jobs(desired_jobs, @deployment_plan.existing_instances)
+      instance_plans_for_obsolete_jobs.map(&:existing_instance).each { |existing_instance| @deployment_plan.mark_instance_for_deletion(existing_instance) }
+
+      bind_stemcells
+      bind_templates
+      bind_properties
+      bind_instance_networks
+      bind_dns
+
+      if (!skip_links_binding)
+        bind_links
+      end
+
+    end
+
+    private
 
     # Binds release DB record(s) to a plan
     # @return [void]
@@ -25,255 +63,40 @@ module Bosh::Director
       end
     end
 
-    # Binds information about existing deployment to a plan
-    # @return [void]
-    def bind_existing_deployment
+    def current_states_by_instance(existing_instances)
       lock = Mutex.new
+      current_states_by_existing_instance = {}
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        @deployment_plan.vms.each do |vm_model|
-          pool.process do
-            with_thread_name("bind_existing_deployment(#{vm_model.agent_id})") do
-              bind_existing_vm(vm_model, lock)
+        existing_instances.each do |existing_instance|
+          if existing_instance.vm_cid
+            pool.process do
+              with_thread_name("binding agent state for (#{existing_instance}") do
+                # getting current state to obtain IP of dynamic networks
+                state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                lock.synchronize do
+                  current_states_by_existing_instance.merge!(existing_instance => state)
+                end
+              end
             end
           end
         end
       end
-    end
-
-    # Queries agent for VM state and updates deployment plan accordingly
-    # @param [Models::Vm] vm_model VM database model
-    # @param [Mutex] lock Lock to hold on to while updating deployment plan
-    def bind_existing_vm(vm_model, lock)
-      state = get_state(vm_model)
-      lock.synchronize do
-        @logger.debug('Processing VM network reservations')
-        reservations = get_network_reservations(state)
-
-        instance = vm_model.instance
-        if instance
-          bind_instance(instance, state, reservations)
-        else
-          resource_pool_name = state['resource_pool']['name']
-          resource_pool = @deployment_plan.resource_pool(resource_pool_name)
-          if resource_pool
-            @logger.debug("Binding VM to resource pool '#{resource_pool_name}'")
-            bind_idle_vm(vm_model, resource_pool, state, reservations)
-          else
-            @logger.debug("Resource pool '#{resource_pool_name}' does not exist, marking VM for deletion")
-            @deployment_plan.delete_vm(vm_model)
-          end
-        end
-        @logger.debug('Finished processing VM network reservations')
-      end
-    end
-
-    # Binds idle VM to a resource pool with a proper network reservation
-    # @param [Models::Vm] vm_model VM DB model
-    # @param [DeploymentPlan::ResourcePool] resource_pool Resource pool
-    # @param [Hash] state VM state according to its agent
-    # @param [Hash] reservations Network reservations
-    def bind_idle_vm(vm_model, resource_pool, state, reservations)
-      if reservations.any? { |network_name, reservation| reservation.static? }
-        @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
-        reservations.each do |network_name, reservation|
-          @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
-          @deployment_plan.network(network_name).release(reservation)
-        end
-
-        @logger.debug("Deleting VM `#{vm_model.cid}' with static network reservation")
-        @deployment_plan.delete_vm(vm_model)
-        return
-      end
-
-      @logger.debug("Adding VM `#{vm_model.cid}' to resource pool `#{resource_pool.name}'")
-      idle_vm = resource_pool.add_idle_vm
-      idle_vm.model = vm_model
-      idle_vm.current_state = state
-
-      network_name = resource_pool.network.name
-      reservation = reservations[network_name]
-      if reservation
-        @logger.debug("Using existing `#{reservation.type}' " +
-          "network reservation of `#{reservation.ip}' for VM `#{vm_model.cid}'")
-        idle_vm.use_reservation(reservation)
-      else
-        @logger.debug("No network reservation for VM `#{vm_model.cid}'")
-      end
-    end
-
-    # @param [Models::Instance] instance_model Instance model
-    # @param [Hash] state Instance state according to agent
-    # @param [Hash] reservations Instance network reservations
-    def bind_instance(instance_model, state, reservations)
-      @logger.debug('Binding instance VM')
-
-      # Update instance, if we are renaming a job.
-      if @deployment_plan.rename_in_progress?
-        old_name = @deployment_plan.job_rename['old_name']
-        new_name = @deployment_plan.job_rename['new_name']
-
-        if instance_model.job == old_name
-          @logger.info("Renaming `#{old_name}' to `#{new_name}'")
-          instance_model.update(:job => new_name)
-        end
-      end
-
-      instance_name = "#{instance_model.job}/#{instance_model.index}"
-
-      job = @deployment_plan.job(instance_model.job)
-      unless job
-        @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model)
-        return
-      end
-
-      instance = job.instance(instance_model.index)
-      unless instance
-        @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model)
-        return
-      end
-
-      @logger.debug("Found existing job instance `#{instance_name}'")
-      instance.bind_existing_instance(instance_model, state, reservations)
-    end
-
-    def get_network_reservations(state)
-      reservations = {}
-      state['networks'].each do |name, network_config|
-        network = @deployment_plan.network(name)
-        if network
-          reservation = NetworkReservation.new(:ip => network_config['ip'])
-          network.reserve(reservation)
-          reservations[name] = reservation if reservation.reserved?
-        end
-      end
-      reservations
-    end
-
-    def get_state(vm_model)
-      @logger.debug("Requesting current VM state for: #{vm_model.agent_id}")
-      agent = AgentClient.with_defaults(vm_model.agent_id)
-      state = agent.get_state
-
-      @logger.debug("Received VM state: #{state.pretty_inspect}")
-      verify_state(vm_model, state)
-      @logger.debug('Verified VM state')
-
-      migrate_legacy_state(vm_model, state)
-      state.delete('release')
-      if state.include?('job')
-        state['job'].delete('release')
-      end
-      state
-    end
-
-    def verify_state(vm_model, state)
-      instance = vm_model.instance
-
-      if instance && instance.deployment_id != vm_model.deployment_id
-        # Both VM and instance should reference same deployment
-        raise VmInstanceOutOfSync,
-              "VM `#{vm_model.cid}' and instance " +
-              "`#{instance.job}/#{instance.index}' " +
-              "don't belong to the same deployment"
-      end
-
-      unless state.kind_of?(Hash)
-        @logger.error("Invalid state for `#{vm_model.cid}': #{state.pretty_inspect}")
-        raise AgentInvalidStateFormat,
-              "VM `#{vm_model.cid}' returns invalid state: " +
-              "expected Hash, got #{state.class}"
-      end
-
-      actual_deployment_name = state['deployment']
-      expected_deployment_name = @deployment_plan.name
-
-      if actual_deployment_name != expected_deployment_name
-        raise AgentWrongDeployment,
-              "VM `#{vm_model.cid}' is out of sync: " +
-                'expected to be a part of deployment ' +
-              "`#{expected_deployment_name}' " +
-                'but is actually a part of deployment ' +
-              "`#{actual_deployment_name}'"
-      end
-
-      actual_job = state['job'].is_a?(Hash) ? state['job']['name'] : nil
-      actual_index = state['index']
-
-      if instance.nil? && !actual_job.nil?
-        raise AgentUnexpectedJob,
-              "VM `#{vm_model.cid}' is out of sync: " +
-              "it reports itself as `#{actual_job}/#{actual_index}' but " +
-                'there is no instance reference in DB'
-      end
-
-      if instance &&
-        (instance.job != actual_job || instance.index != actual_index)
-        # Check if we are resuming a previously unfinished rename
-        if actual_job == @deployment_plan.job_rename['old_name'] &&
-           instance.job == @deployment_plan.job_rename['new_name'] &&
-           instance.index == actual_index
-
-          # Rename already happened in the DB but then something happened
-          # and agent has never been updated.
-          unless @deployment_plan.job_rename['force']
-            raise AgentRenameInProgress,
-                  "Found a job `#{actual_job}' that seems to be " +
-                  "in the middle of a rename to `#{instance.job}'. " +
-                  "Run 'rename' again with '--force' to proceed."
-          end
-        else
-          raise AgentJobMismatch,
-                "VM `#{vm_model.cid}' is out of sync: " +
-                "it reports itself as `#{actual_job}/#{actual_index}' but " +
-                "according to DB it is `#{instance.job}/#{instance.index}'"
-        end
-      end
-    end
-
-    def migrate_legacy_state(vm_model, state)
-      # Persisting apply spec for VMs that were introduced before we started
-      # persisting it on apply itself (this is for cloudcheck purposes only)
-      if vm_model.apply_spec.nil?
-        # The assumption is that apply_spec <=> VM state
-        vm_model.update(:apply_spec => state)
-      end
-
-      instance = vm_model.instance
-      if instance
-        disk_size = state['persistent_disk'].to_i
-        persistent_disk = instance.persistent_disk
-
-        # This is to support legacy deployments where we did not have
-        # the disk_size specified.
-        if disk_size != 0 && persistent_disk && persistent_disk.size == 0
-          persistent_disk.update(:size => disk_size)
-        end
-      end
-    end
-
-    # Takes a look at the current state of all resource pools in the deployment
-    # and schedules adding any new VMs if needed. VMs are NOT created at this
-    # stage, only data structures are being allocated. {ResourcePoolUpdater}
-    # will later perform actual changes based on this data.
-    # @return [void]
-    def bind_resource_pools
-      @deployment_plan.resource_pools.each do |resource_pool|
-        resource_pool.process_idle_vms
-      end
-    end
-
-    # Looks at every job instance in the deployment plan and binds it to the
-    # instance database model (idle VM is also created in the appropriate
-    # resource pool if necessary)
-    # @return [void]
-    def bind_unallocated_vms
-      @deployment_plan.jobs_starting_on_deploy.each(&:bind_unallocated_vms)
+      current_states_by_existing_instance
     end
 
     def bind_instance_networks
-      @deployment_plan.jobs_starting_on_deploy.each(&:bind_instance_networks)
+      # CHANGEME: something about instance plan's new network plans
+      @deployment_plan.jobs_starting_on_deploy.each do |job|
+        job.bind_instance_networks(@deployment_plan.ip_provider)
+      end
+    end
+
+    def bind_links
+      links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+
+      @deployment_plan.jobs.each do |job|
+        links_resolver.resolve(job)
+      end
     end
 
     # Binds template models for each release spec in the deployment plan
@@ -296,25 +119,37 @@ module Bosh::Director
       end
     end
 
-    # Binds stemcell model for each stemcell spec in each resource pool in
+    # Binds stemcell model for each stemcell spec in
     # the deployment plan
     # @return [void]
     def bind_stemcells
-      @deployment_plan.resource_pools.each do |resource_pool|
-        stemcell = resource_pool.stemcell
+      if @deployment_plan.resource_pools && @deployment_plan.resource_pools.any?
+        @deployment_plan.resource_pools.each do |resource_pool|
+          stemcell = resource_pool.stemcell
 
-        if stemcell.nil?
-          raise DirectorError,
-                "Stemcell not bound for resource pool `#{resource_pool.name}'"
+          if stemcell.nil?
+            raise DirectorError,
+              "Stemcell not bound for resource pool '#{resource_pool.name}'"
+          end
+
+          stemcell.bind_model(@deployment_plan.model)
         end
+        return
+      end
 
-        stemcell.bind_model
+      @deployment_plan.stemcells.each do |_, stemcell|
+        stemcell.bind_model(@deployment_plan.model)
       end
     end
 
     def bind_dns
-      binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
-      binder.bind_deployment
+      @dns_manager.configure_nameserver
+    end
+
+    def migrate_legacy_dns_records
+      @deployment_plan.instance_models.each do |instance_model|
+        @dns_manager.migrate_legacy_records(instance_model)
+      end
     end
   end
 end

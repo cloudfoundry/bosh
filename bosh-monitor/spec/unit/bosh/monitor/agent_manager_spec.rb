@@ -123,6 +123,28 @@ describe Bhm::AgentManager do
       expect(manager.analyze_agent("007")).to be(true)
     end
 
+    it 'alerts on a timed out agent' do
+      manager.add_agent('mycloud', {'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'id' => 'some-sort-of-uuid'})
+
+      ts = Time.now
+      allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
+
+      expect(event_processor).to receive(:process).with(
+        :alert,
+        {
+          severity: 2,
+          source: 'mycloud: mutator(some-sort-of-uuid) [id=007, index=0, cid=]',
+          title: '007 has timed out',
+          created_at: anything,
+          deployment: 'mycloud',
+          job: 'mutator',
+          instance_id: 'some-sort-of-uuid'
+        }
+      )
+
+      manager.analyze_agents
+    end
+
     it "can analyze all agents" do
       expect(manager.analyze_agents).to eq(0)
 
@@ -155,12 +177,6 @@ describe Bhm::AgentManager do
       expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
       expect(manager.analyze_agents).to eq(5)
       expect(manager.agents_count).to eq(4)
-
-      # Now previously removed "256" gets reported as a good citizen
-      # 5 agents total, 3 timed out, 1 rogue
-      manager.add_agent("mycloud", {"agent_id" => "256", "index" => "0", "job" => "redis_node"})
-      expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
-      expect(manager.analyze_agents).to eq(5)
     end
   end
 
@@ -196,7 +212,7 @@ describe Bhm::AgentManager do
     it "raises an error" do
       expect {
         manager.setup_events
-      }.to raise_error(Bhm::PluginError, "Cannot find `joes_plugin_thing' plugin")
+      }.to raise_error(Bhm::PluginError, "Cannot find 'joes_plugin_thing' plugin")
     end
   end
 end

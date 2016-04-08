@@ -7,23 +7,29 @@ module Bosh::Director
       def self.job_type
         :snow
       end
+      define_method :perform do
+        'foo'
+      end
+      @queue = :sample
     end
 
     let(:config) { Config.load_file(asset('test-director-config.yml')) }
     let(:job_class) { FakeJob }
+    let(:db_job) {Jobs::DBJob.new(job_class, task.id,  ['foo', 'bar'])}
+    let(:task) {double(id: '123')}
 
     describe '#enqueue' do
-      it 'enqueues a resque job' do
+      it 'enqueues a job' do
         task_helper = instance_double('Bosh::Director::Api::TaskHelper')
         expect(Bosh::Director::Api::TaskHelper).to receive(:new).and_return(task_helper)
-        task = double(id: '123')
 
-        expect(task_helper).to receive(:create_task).with('whoami', :snow, 'busy doing something').and_return(task)
-        expect(Resque).to receive(:enqueue).with(job_class, '123', 'foo', 'bar')
-
-        retval = subject.enqueue('whoami', job_class, 'busy doing something', ['foo', 'bar'])
-
+        expect(task_helper).to receive(:create_task).with('whoami', :snow, 'busy doing something', 'some_deployment').and_return(task)
+        expect(Jobs::DBJob).to receive(:new).with(job_class, task.id, ['foo', 'bar']).and_return(db_job)
+        expect(Delayed::Job.count).to eq(0)
+        retval = subject.enqueue('whoami', job_class, 'busy doing something', ['foo', 'bar'], 'some_deployment')
         expect(retval).to be(task)
+        expect(Delayed::Job.count).to eq(1)
+        expect(Delayed::Job.first[:queue]).to eq('sample')
       end
     end
   end

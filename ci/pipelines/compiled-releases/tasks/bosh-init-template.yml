@@ -1,0 +1,155 @@
+---
+name: bosh-init-compiled-release
+
+releases:
+- name: bosh
+  url: file://./bosh-release/release.tgz
+- name: bosh-aws-cpi
+  url: file://./bosh-aws-cpi-release/release.tgz
+
+resource_pools:
+- name: default
+  network: private
+  stemcell:
+    url: file://./stemcell/stemcell.tgz
+  cloud_properties:
+    instance_type: c4.large
+    availability_zone: "us-east-1a"
+    phemeral_disk:
+      size: 32_768
+      type: "gp2"
+
+disk_pools:
+- name: my-persistent-disk
+  disk_size: 25_000
+  cloud_properties: {"type":"gp2"}
+
+networks:
+- name: private
+  type: manual
+  subnets:
+    - range: 10.0.2.0/24
+      gateway: 10.0.2.1
+      dns: [8.8.8.8]
+      cloud_properties: {"subnet":"subnet-20d8bf56"}
+
+jobs:
+- name: bosh-release-compiler
+  templates:
+  - {name: nats, release: bosh}
+  - {name: redis, release: bosh}
+  - {name: postgres-9.4, release: bosh}
+  - {name: blobstore, release: bosh}
+  - {name: director, release: bosh}
+  - {name: registry, release: bosh}
+  - {name: aws_cpi, release: bosh-aws-cpi}
+
+  instances: 1
+  resource_pool: default
+  persistent_disk_pool: my-persistent-disk
+
+  networks:
+  - name: private
+    static_ips:
+      - {{bosh_target_ip}}
+    default: [gateway, dns]
+
+  properties:
+    nats:
+      address: {{bosh_target_ip}}
+      user: nats
+      password: nats-password
+
+    redis:
+      listen_addresss: 127.0.0.1
+      address: 127.0.0.1
+      password: redis-password
+
+    postgres: &db
+      host: 127.0.0.1
+      user: postgres
+      password: postgres-password
+      database: bosh
+      adapter: postgres
+
+    # Tells the Director/agents how to contact registry
+    registry:
+      address: {{bosh_target_ip}}
+      host: {{bosh_target_ip}}
+      db: *db
+      http:
+        user: admin
+        password: admin
+        port: 25777
+      username: admin
+      password: admin
+      port: 25777
+
+    # Tells the Director/agents how to contact blobstore
+    blobstore:
+      address: {{bosh_target_ip}}
+      port: 25250
+      provider: dav
+      director: {user: director, password: director-password}
+      agent: {user: agent, password: agent-password}
+
+    director:
+      address: 127.0.0.1
+      name: bosh-init-compiled-release
+      db: *db
+      # Use external CPI
+      cpi_job: aws_cpi
+      user_management:
+        provider: local
+        local:
+          users:
+          - name: "{{bosh_username}}"
+            password: "{{bosh_password}}"
+
+    dns:
+      address: {{bosh_target_ip}}
+      db: *db
+      recursor: 208.67.220.220
+
+    aws: &aws
+      access_key_id: "{{access_key_id}}"
+      secret_access_key: "{{secret_key_id}}"
+      default_key_name: "compiled-release"
+      default_security_groups: ["bosh"]
+      region: "us-east-1"
+
+    # Tells agents how to contact nats
+    agent: {mbus: "nats://nats:nats-password@{{bosh_target_ip}}:4222"}
+
+    ntp: &ntp
+    - 0.north-america.pool.ntp.org
+    - 1.north-america.pool.ntp.org
+    - 2.north-america.pool.ntp.org
+    - 3.north-america.pool.ntp.org
+
+cloud_provider:
+  template:
+    name: aws_cpi
+    release: bosh-aws-cpi
+
+  # Tells bosh-micro how to SSH into deployed VM
+  ssh_tunnel:
+    host: {{bosh_target_ip}}
+    port: 22
+    user: vcap
+    private_key: ssh_tunnel_key
+
+  # Tells bosh-micro how to contact remote agent
+  mbus: https://mbus-user:mbus-password@{{bosh_target_ip}}:6868
+
+  properties:
+    aws: *aws
+
+    # Tells CPI how agent should listen for requests
+    agent: {mbus: "https://mbus-user:mbus-password@0.0.0.0:6868"}
+
+    blobstore:
+      provider: local
+      path: /var/vcap/micro_bosh/data/cache
+
+    ntp: *ntp

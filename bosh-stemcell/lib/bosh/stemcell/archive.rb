@@ -59,7 +59,7 @@ module Bosh::Stemcell
     end
 
     def validate_stemcell
-      raise "Cannot find file `#{path}'" unless File.exists?(path)
+      raise "Cannot find file '#{path}'" unless File.exists?(path)
     end
   end
 end

@@ -202,6 +202,20 @@ describe Bosh::Cli::Client::Director do
       end
     end
 
+    describe '#list_events' do
+      it 'can list events before a given id' do
+        expect(@director).to receive(:get).with('/events?before_id=4', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({before_id: 4})
+      end
+
+      it 'can list all events' do
+        expect(@director).to receive(:get).with('/events', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events
+      end
+    end
+
     it 'creates user' do
       expect(@director).to receive(:post).
         with('/users', 'application/json',
@@ -266,6 +280,32 @@ describe Bosh::Cli::Client::Director do
       @director.list_stemcells
     end
 
+    it 'retrieves latest cloud config' do
+      expect(@director).to receive(:get).with('/cloud_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_cloud_config
+    end
+
+    it 'updates cloud config' do
+      expect(@director).to receive(:post).
+          with('/cloud_configs', 'text/yaml', 'cloud config manifest').
+          and_return(true)
+      @director.update_cloud_config('cloud config manifest')
+    end
+
+    it 'retrieves latest runtime config' do
+      expect(@director).to receive(:get).with('/runtime_configs?limit=1', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.get_runtime_config
+    end
+
+    it 'updates runtime config' do
+      expect(@director).to receive(:post).
+          with('/runtime_configs', 'text/yaml', 'runtime config manifest').
+          and_return(true)
+      @director.update_runtime_config('runtime config manifest')
+    end
+
     it 'lists releases' do
       expect(@director).to receive(:get).with('/releases', 'application/json').
         and_return([200, JSON.generate([]), {}])
@@ -296,6 +336,12 @@ describe Bosh::Cli::Client::Director do
              'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
+
+      expect(@director).to receive(:get).
+          with('/tasks?state=processing,cancelling,queued&verbose=1&deployment=deployment-name',
+               'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_running_tasks(1, 'deployment-name')
     end
 
     it 'lists recent tasks' do
@@ -313,6 +359,11 @@ describe Bosh::Cli::Client::Director do
         with('/tasks?limit=50&verbose=2', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(50, 2)
+
+      expect(@director).to receive(:get).
+          with('/tasks?limit=50&verbose=2&deployment=deployment-name', 'application/json').
+          and_return([200, JSON.generate([]), {}])
+      @director.list_recent_tasks(50, 2, 'deployment-name')
     end
 
     it 'uploads local release' do
@@ -407,6 +458,13 @@ describe Bosh::Cli::Client::Director do
              { :content_type => 'text/yaml', :payload => 'manifest' }).
         and_return(true)
       @director.change_job_state('foo', 'manifest', 'dea', nil, 'stopped')
+    end
+
+    it 'attaches a disk to an instance' do
+      expect(@director).to receive(:request_and_track).
+        with(:put, '/disks/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35').
+        and_return(true)
+      @director.attach_disk('foo', 'dea', '17f01a35', 'vol-af4a3e40')
     end
 
     it 'changes job instance state' do
@@ -517,13 +575,67 @@ describe Bosh::Cli::Client::Director do
       @director.delete_snapshot('foo', 'snap0a')
     end
 
+    describe '#diff_deployment' do
+
+      let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
+
+      let(:manifest) do
+        <<-MANIFEST
+---
+name: test
+releases:
+- name: simple
+  version: 2
+resource_pools:
+- name: rp
+  stemcell:
+    name: ubuntu
+    version: 1
+networks:
+- name: default
+jobs:
+- name: job1
+  template: xyz
+  networks:
+  - name: default
+- name: old_job
+  template: xyz
+  networks:
+  - name: default
+        MANIFEST
+      end
+
+      context 'redacting' do
+        it 'does not pass redact=false parameter' do
+          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff').
+            with(headers: request_headers).
+            to_return(status: 200, body: '{}')
+          expect(@director).to receive(:post).with('/deployments/foo/diff', 'text/yaml', manifest)
+                                 .and_return([200, '{}'])
+          @director.diff_deployment('foo', manifest)
+        end
+      end
+
+      context 'not redacting' do
+        it 'passes redact=false parameter' do
+          stub_request(:post, 'https://127.0.0.1:8080/deployments/foo/diff?redact=false').
+            with(headers: request_headers).
+            to_return(status: 200, body: '{}')
+          expect(@director).to receive(:post).with('/deployments/foo/diff?redact=false', 'text/yaml', manifest)
+                                 .and_return([200, '{}'])
+          @director.diff_deployment('foo', manifest, false)
+        end
+      end
+    end
+
     it 'ssh setup' do
       payload = {
           'command'         => 'setup',
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => {
               'user'       => 'user',
@@ -537,7 +649,7 @@ describe Bosh::Cli::Client::Director do
                                                               :content_type => 'application/json'})
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.setup_ssh('foo', 'bar', 0, 'user', 'public_key', 'password')
+      @director.setup_ssh('foo', 'bar', 'fake-id', 'user', 'public_key', 'password')
     end
 
     it 'ssh cleanup' do
@@ -547,7 +659,8 @@ describe Bosh::Cli::Client::Director do
           'deployment_name' => 'foo',
           'target'          => {
               'job'     => 'bar',
-              'indexes' => [0]
+              'indexes' => ['fake-id'],
+              'ids' => ['fake-id']
           },
           'params'          => { 'user_regex' => 'bosh_' }
       }
@@ -559,7 +672,7 @@ describe Bosh::Cli::Client::Director do
                                                             )
                                .and_return([200, JSON.generate([]), {}])
 
-      @director.cleanup_ssh('foo', 'bar', 'bosh_', [0])
+      @director.cleanup_ssh('foo', 'bar', 'bosh_', ['fake-id'])
     end
 
     context 'when director returns 404' do
@@ -604,6 +717,30 @@ describe Bosh::Cli::Client::Director do
         with(:delete, '/releases/fake-release-name?version=1%2Bdev.1', {}).and_return(true)
       @director.delete_release('fake-release-name', version: '1+dev.1')
     end
+
+    it 'uploads the database dump file to restore database' do
+      expect(@director).to receive(:upload_without_track).
+                               with('/restore', '/path',
+                                    { :content_type => 'application/x-compressed' }).
+                               and_return(true)
+      @director.restore_db('/path')
+    end
+
+    describe 'check_director_restart' do
+      it 'wait until the director is restarted successfully' do
+        expect(@director).to receive(:get).
+                                with('/info', 'application/json').twice.
+                                and_return([100, '{}'], [200, '{}'])
+        expect(@director.check_director_restart(1, 10)).to eql(true)
+      end
+
+      it 'reports timeout if the director can not be restarted in time' do
+        expect(@director).to receive(:get).
+                                 with('/info', 'application/json').at_least(:once).
+                                 and_return([200, '{}'])
+        expect(@director.check_director_restart(1, 1)).to eql(false)
+      end
+    end
   end
 
   describe 'create_backup' do
@@ -620,6 +757,32 @@ describe Bosh::Cli::Client::Director do
       expect(@director).to receive(:get).with('/backups', nil, nil, {}, :file => true)
       .and_return([200, '/some/path', {}])
       expect(@director.fetch_backup).to eq('/some/path')
+    end
+  end
+
+  describe 'fetch_vm_state' do
+    let(:dummy_deployment_name) {"dummy_deployment"}
+    let(:dummy_vm_state) do
+      JSON.generate [{"agent_id" => "some-agent-id", "index" => "0", "job" => "dummy_deployment_job"}]
+    end
+
+    it 'fetches full vm state with a task by default' do
+      expect(@director).to receive(:request_and_track).
+          with(:get, "/deployments/#{dummy_deployment_name}/vms?format=full", {}).
+          and_return([:done, 14])
+
+      expect(@director).to receive(:get_task_result_log).with(14).
+          and_return(dummy_vm_state)
+
+      expect(@director.fetch_vm_state(dummy_deployment_name)).to eq(JSON.parse dummy_vm_state)
+    end
+
+    it 'fetches short form vm state without a task if full = false' do
+      expect(@director).to receive(:get).
+          with("/deployments/#{dummy_deployment_name}/vms", nil, nil, {}, {}).
+          and_return([200, "[#{dummy_vm_state}]", nil])
+
+      expect(@director.fetch_vm_state(dummy_deployment_name, {}, false)).to eq(JSON.parse dummy_vm_state)
     end
   end
 

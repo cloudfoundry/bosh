@@ -28,7 +28,57 @@ describe Bosh::Director::ValidationHelper do
           obj.safe_property({'test' => 1}, 'test', :class => Array)
         }.to raise_error(
           Bosh::Director::ValidationInvalidType,
-          "Property `test' (value 1) did not match the required type `Array'",
+          "Property 'test' value (1) did not match the required type 'Array'",
+        )
+      end
+    end
+
+    context 'when the field value is not present, and the default is supplied, and the default is the wrong type' do
+      it 'raises an error' do
+        expect {
+          obj.safe_property({}, 'test', class: Array, default: 1)
+        }.to raise_error(
+          Bosh::Director::ValidationInvalidType,
+          "Default value for property 'test' value (1) did not match the required type 'Array'",
+        )
+      end
+    end
+
+    context 'when the default is supplied, and the default is nil' do
+      it 'does not raise' do
+        expect { obj.safe_property({}, 'test', class: Array, default: nil) }.to_not raise_error
+      end
+    end
+
+    context 'when the field value is present, and the default is supplied, and the default is the wrong type' do
+      it 'raises an error' do
+        expect {
+          obj.safe_property({'test' => ['a']}, 'test', class: Array, default: 1)
+        }.to raise_error(
+          Bosh::Director::ValidationInvalidType,
+          "Default value for property 'test' value (1) did not match the required type 'Array'",
+        )
+      end
+    end
+
+    context 'when the field value is present, and the min is supplied, and the default is less than the min' do
+      it 'raises an error' do
+        expect {
+          obj.safe_property({'test' => 3}, 'test', class: Numeric, default: 1, min: 2)
+        }.to raise_error(
+          Bosh::Director::ValidationViolatedMin,
+          "Default value for property 'test' value (1) should be greater than 2",
+        )
+      end
+    end
+
+    context 'when the field value is present, and the max is supplied, and the default is greater than the max' do
+      it 'raises an error' do
+        expect {
+          obj.safe_property({'test' => 1}, 'test', class: Numeric, default: 3, max: 2)
+        }.to raise_error(
+          Bosh::Director::ValidationViolatedMax,
+          "Default value for property 'test' value (3) should be less than 2",
         )
       end
     end
@@ -48,7 +98,7 @@ describe Bosh::Director::ValidationHelper do
           obj.safe_property(hash, 'test', options)
         }.to raise_error(
           Bosh::Director::ValidationMissingField,
-          "Required property `test' was not specified in object (#{hash.inspect})",
+          "Required property 'test' was not specified in object (#{hash.inspect})",
         )
       end
     end
@@ -59,7 +109,7 @@ describe Bosh::Director::ValidationHelper do
           obj.safe_property(hash, 'test', options)
         }.to raise_error(
           Bosh::Director::ValidationInvalidType,
-          %Q{Object (#{hash.inspect}) did not match the required type `Hash'},
+          %Q{Object (#{hash.inspect}) did not match the required type 'Hash'},
         )
       end
     end
@@ -81,6 +131,10 @@ describe Bosh::Director::ValidationHelper do
 
       context 'when the property is found' do
         it_returns_value({'test' => 'value'}, options, 'value')
+      end
+
+      context 'when the hash is nil and the default is false and the class is boolean' do
+        it_returns_value(nil, options.merge({class: :boolean, default: false}), false)
       end
     end
 
@@ -143,7 +197,7 @@ describe Bosh::Director::ValidationHelper do
         expect(obj.safe_property({'test' => 3}, 'test', :min => 4)).to eql(3)
       }.to raise_error(
         Bosh::Director::ValidationViolatedMin,
-        "`test' value (3) should be greater than 4",
+        "'test' value (3) should be greater than 4",
       )
     end
 
@@ -152,7 +206,7 @@ describe Bosh::Director::ValidationHelper do
         expect(obj.safe_property({'test' => 3}, 'test', :max => 2)).to eql(3)
       }.to raise_error(
         Bosh::Director::ValidationViolatedMax,
-        "`test' value (3) should be less than 2",
+        "'test' value (3) should be less than 2",
       )
     end
   end

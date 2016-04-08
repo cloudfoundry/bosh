@@ -24,23 +24,8 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: :read do
-        releases = Models::Release.order_by(:name.asc).map do |release|
-          release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
-            {
-              'version' => rv.version.to_s,
-              'commit_hash' => rv.commit_hash,
-              'uncommitted_changes' => rv.uncommitted_changes,
-              'currently_deployed' => !rv.deployments.empty?,
-              'job_names' => rv.templates.map(&:name),
-            }
-          end
-
-          {
-            'name' => release.name,
-            'release_versions' => release_versions,
-          }
-        end
+      get '/', scope: :read_releases do
+        releases = @release_manager.get_all_releases
 
         json_encode(releases)
       end
@@ -60,7 +45,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:name', scope: :read do
+      get '/:name', scope: :read_releases do
         name = params[:name].to_s.strip
 
         if params['version']
@@ -122,6 +107,8 @@ module Bosh::Director
               'blobstore_id' => template.blobstore_id,
               'sha1' => template.sha1,
               'fingerprint' => template.fingerprint.to_s,
+              'consumes' => template.consumes,
+              'provides' => template.provides
           }
         end
 
@@ -131,9 +118,9 @@ module Bosh::Director
               'blobstore_id' => package.blobstore_id,
               'sha1' => package.sha1,
               'fingerprint' => package.fingerprint.to_s,
-              'compiled_packages' => package.compiled_packages.sort_by { |cp| [cp.stemcell.name, cp.stemcell.version] }.map do |compiled|
+              'compiled_packages' => package.compiled_packages.sort_by { |cp| [cp.stemcell_os, cp.stemcell_version] }.map do |compiled|
                 {
-                    'stemcell' => "#{compiled.stemcell.name}/#{compiled.stemcell.version}",
+                    'stemcell' => "#{compiled.stemcell_os}/#{compiled.stemcell_version}",
                     'sha1' => compiled.sha1,
                     'blobstore_id' => compiled.blobstore_id,
                 }

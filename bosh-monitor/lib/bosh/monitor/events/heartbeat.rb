@@ -2,15 +2,15 @@ module Bosh::Monitor
   module Events
     class Heartbeat < Base
 
-      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router routerv2 stager uaa vcap_redis))
+      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router routerv2 stager uaa))
 
-      SERVICE_JOBS_PREFIXES = %w(mysql mongodb redis rabbit postgresql vblob).join("|")
+      SERVICE_JOBS_PREFIXES = %w(mysql mongodb rabbit postgresql vblob).join("|")
       SERVICE_JOBS_GATEWAY_REGEX = /(#{SERVICE_JOBS_PREFIXES})_gateway$/i
       SERVICE_JOBS_NODE_REGEX = /(#{SERVICE_JOBS_PREFIXES})_node(.*)/i
 
       SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
 
-      attr_reader :agent_id, :deployment, :job, :index, :metrics
+      attr_reader :agent_id, :deployment, :job, :index, :metrics, :node_id
 
       def initialize(attributes = {})
         super
@@ -24,11 +24,13 @@ module Bosh::Monitor
         @agent_id = @attributes["agent_id"]
         @job = @attributes["job"]
         @index = @attributes["index"].to_s
+        @node_id = @attributes["node_id"]
         @job_state = @attributes["job_state"]
 
         @tags = {}
         @tags["job"] = @job if @job
         @tags["index"] = @index if @index
+        @tags["id"] = @node_id if @node_id
         @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
@@ -58,7 +60,13 @@ module Bosh::Monitor
       end
 
       def short_description
-        "Heartbeat from #{@job}/#{@index} (#{@agent_id}) @ #{@timestamp.utc}"
+        description = "Heartbeat from #{@job}/#{@node_id} (agent_id=#{@agent_id}"
+
+        if @index && !@index.empty?
+          description = description + " index=#{@index}"
+        end
+
+        description + ") @ #{@timestamp.utc}"
       end
 
       def to_s
@@ -74,6 +82,7 @@ module Bosh::Monitor
           :agent_id => @agent_id,
           :job => @job,
           :index => @index,
+          :node_id => @node_id,
           :job_state => @job_state,
           :vitals => @vitals
         }

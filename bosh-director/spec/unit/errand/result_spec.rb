@@ -49,7 +49,7 @@ module Bosh::Director
         it 'returns successful errand completion message as task short result (not result file)' do
           subject = described_class.new(0, '', '', '')
           expect(subject.short_description('fake-job-name')).to eq(
-            'Errand `fake-job-name\' completed successfully (exit code 0)')
+            "Errand 'fake-job-name' completed successfully (exit code 0)")
         end
       end
 
@@ -57,7 +57,7 @@ module Bosh::Director
         it 'returns error errand completion message as task short result (not result file)' do
           subject = described_class.new(123, '', '', '')
           expect(subject.short_description('fake-job-name')).to eq(
-            'Errand `fake-job-name\' completed with error (exit code 123)')
+            "Errand 'fake-job-name' completed with error (exit code 123)")
         end
       end
 
@@ -65,7 +65,7 @@ module Bosh::Director
         it 'returns error errand cancellation message as task short result (not result file)' do
           subject = described_class.new(143, '', '', '')
           expect(subject.short_description('fake-job-name')).to eq(
-            'Errand `fake-job-name\' was canceled (exit code 143)')
+            "Errand 'fake-job-name' was canceled (exit code 143)")
         end
       end
     end

@@ -16,7 +16,7 @@ module Bosh::Cli::Command
         deps = director.list_deployments
         err('No deployments') if deps.empty?
         deps.each do |dep|
-          say("Deployment `#{dep['name'].make_green}'")
+          say("Deployment '#{dep['name'].make_green}'")
           show_deployment(dep['name'], options)
         end
       else
@@ -34,15 +34,18 @@ module Bosh::Cli::Command
         return
       end
 
-      sorted = vms.sort do |a, b|
-        s = a['job_name'].to_s <=> b['job_name'].to_s
-        s = a['index'].to_i <=> b['index'].to_i if s == 0
-        s = a['resource_pool'].to_s <=> b['resource_pool'].to_s if s == 0
-        s
-      end
+      sorted = sort(vms)
+
+      has_az = vms.any? {|vm| vm.has_key? 'az' }
 
       vms_table = table do |t|
-        headings = ['Job/index', 'State', 'Resource Pool', 'IPs']
+        headings = ['VM', 'State']
+
+        if has_az
+          headings << 'AZ'
+        end
+        headings += ['VM Type', 'IPs']
+
         if options[:details]
           headings += ['CID', 'Agent ID', 'Resurrection']
         end
@@ -58,12 +61,26 @@ module Bosh::Cli::Command
         t.headings = headings
 
         sorted.each do |vm|
-          job = "#{vm['job_name'] || 'unknown'}/#{vm['index'] || 'unknown'}"
+          job_name = vm['job_name'] || 'unknown'
+          job_index = vm['index'] || 'unknown'
+          job = vm.has_key?('id') ? "#{job_name}/#{job_index} (#{vm['id']})" : "#{job_name}/#{job_index}"
           ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
+          az = vm['az'].nil? ? 'n/a' : vm['az']
 
-          row = [job, vm['job_state'], vm['resource_pool'], ips]
+          row = [job, vm['job_state']]
+          if has_az
+            row << az
+          end
+
+          if vm['resource_pool']
+            row << vm['resource_pool']
+          else
+            row << vm['vm_type']
+          end
+
+          row << ips
 
           if options[:details]
             row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active']
@@ -110,6 +127,16 @@ module Bosh::Cli::Command
       say(vms_table)
       nl
       say('VMs total: %d' % vms.size)
+    end
+
+    def sort(vms)
+      sorted = vms.sort do |a, b|
+        comparison = a['job_name'].to_s <=> b['job_name'].to_s
+        comparison = a['az'].to_s <=> b['az'].to_s if comparison == 0
+        comparison = a['index'].to_i <=> b['index'].to_i if comparison == 0
+        comparison
+      end
+      sorted
     end
 
   end

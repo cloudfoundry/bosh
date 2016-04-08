@@ -4,7 +4,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   it_behaves_like 'All Stemcells'
 
-  context 'installed by image_install_grub', exclude_on_warden: true do
+  context 'installed by image_install_grub', {exclude_on_warden: true, exclude_on_ppc64le: true} do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
       it { should contain 'default=0' }
@@ -36,6 +36,12 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
     end
   end
 
+  context 'installed by dev_tools_config' do
+    describe file('/var/vcap/bosh/etc/dev_tools_file_list') do
+      it { should contain('/usr/bin/gcc') }
+    end
+  end
+
   context 'installed by bosh_harden' do
     describe 'disallow unsafe setuid binaries' do
       subject { backend.run_command('find -L / -xdev -perm +6000 -a -type f')[:stdout].split }
@@ -55,6 +61,11 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
       it { should be_file }
       it { should contain 'auto lo' }
       it { should contain 'iface lo inet loopback' }
+    end
+
+    describe file('/etc/hostname') do
+      it { should be_file }
+      it { should contain 'localhost' }
     end
   end
 
@@ -240,6 +251,12 @@ describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do
       it { should be_file }
       it { should contain 'Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend' }
       it { should contain 'ubuntu-minimal' }
+    end
+  end
+
+  context 'installed by dev_tools_config stage' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/dev_tools_file_list.txt") do
+      it { should be_file }
     end
   end
 end

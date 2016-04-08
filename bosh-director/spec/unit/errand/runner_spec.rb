@@ -2,11 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Runner do
-    subject { described_class.new(job, result_file, instance_manager, event_log, logs_fetcher) }
+    subject { described_class.new(job, result_file, instance_manager, logs_fetcher) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name') }
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
-    let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
     context 'when there is at least 1 instance' do
@@ -21,20 +20,18 @@ module Bosh::Director
         Models::Instance.make(
           job: 'fake-job-name',
           index: 0,
-          vm: vm,
           deployment: deployment,
         )
       end
 
       let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
-      let(:vm) { Models::Vm.make(deployment: deployment) }
 
-      before { allow(AgentClient).to receive(:with_defaults).with(vm.agent_id).and_return(agent_client) }
+      before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance1_model.credentials, instance1_model.agent_id).and_return(agent_client) }
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do
-        before { allow(event_log).to receive(:begin_stage).and_return(event_log_stage) }
         let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+        before { allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage) }
 
         before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
 
@@ -90,7 +87,7 @@ module Bosh::Director
 
           it 'records errand running in the event log' do
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
-            expect(event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
+            expect(Config.event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/0').and_yield
             subject.run
           end
@@ -223,10 +220,10 @@ module Bosh::Director
         end
 
         context 'when job instance is not associated with any VM yet' do
-          before { instance1_model.update(vm: nil) }
+          before { instance1_model.update(vm_cid: nil) }
 
           it 'raises an error' do
-            expect { subject.run }.to raise_error(InstanceVmMissing, %r{fake-job-name/0.*doesn't reference a VM})
+            expect { subject.run }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance1_model.index} (#{instance1_model.uuid})' doesn't reference a VM")
           end
         end
       end
@@ -257,7 +254,7 @@ module Bosh::Director
         it 'raises an error' do
           expect { subject.run }.to raise_error(
             DirectorError,
-            /Must have at least one job instance to run an errand/,
+            /Must have at least one instance group instance to run an errand/,
           )
         end
       end

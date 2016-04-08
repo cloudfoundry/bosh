@@ -52,9 +52,10 @@ module Bosh::Dev
       }
 
       let(:stemcell) { Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', 'fake-build-number', 'fake-disk-format')}
+      let(:arch) { Bosh::Stemcell::Arch.ppc64le? ? 'ppc64le-' : ''}
 
       it 'downloads a stemcell and returns path' do
-        expected_remote_uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/bosh-stemcell/fake-infrastructure-name/light-bosh-stemcell-fake-build-number-fake-stemcell-name-fake-disk-format.tgz')
+        expected_remote_uri = URI("http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/bosh-stemcell/fake-infrastructure-name/light-bosh-stemcell-#{arch}fake-build-number-fake-stemcell-name-fake-disk-format.tgz")
         expected_local_path = "fake-output-dir/#{stemcell.name}"
 
         expect(download_adapter)

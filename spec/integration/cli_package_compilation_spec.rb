@@ -49,7 +49,7 @@ describe 'cli: package compilation', type: :integration do
     cloud_config_hash['resource_pools'][0]['size'] = 1
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'][0]['template'] = ['foobar', 'goobaz']
+    manifest_hash['jobs'][0]['templates'] = [{'name' => 'foobar'}, {'name' => 'goobaz'}]
     manifest_hash['jobs'][0]['instances'] = 1
 
     manifest_hash['releases'].first['name'] = 'compilation-test'
@@ -64,11 +64,9 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
     bosh_runner.run('deploy')
-    deploy_results = bosh_runner.run('task last --debug')
 
-    apply_spec_regex = %r{canary_update.foobar/0.*apply_spec_json.{5}(.+).{2}WHERE}
-    apply_spec_json = apply_spec_regex.match(deploy_results)[1]
-    apply_spec = JSON.parse(apply_spec_json.gsub('\"', '"'))
+    foobar_vm = director.vm('foobar', '0')
+    apply_spec= current_sandbox.cpi.current_apply_spec_for_vm(foobar_vm.cid)
     packages = apply_spec['packages']
     packages.each do |key, value|
       expect(value['name']).to eq(key)
@@ -80,7 +78,7 @@ describe 'cli: package compilation', type: :integration do
 
   it 'returns truncated output' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'
+    manifest_hash['jobs'][0]['templates'].first['name'] = 'fails_with_too_much_output'
     manifest_hash['jobs'][0]['instances'] = 1
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['compilation']['workers'] = 1
@@ -95,5 +93,36 @@ describe 'cli: package compilation', type: :integration do
     expect(deploy_output).to include('Truncated stderr: yyyyyyyyyy')
     expect(deploy_output).to_not include('aaaaaaaaa')
     expect(deploy_output).to_not include('nnnnnnnnn')
+  end
+
+  context 'when there is no available IPs for compilation' do
+    it 'fails deploy' do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+
+      subnet_without_dynamic_ips_available =  {
+        'range' => '192.168.1.0/30',
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1'],
+        'static' => ['192.168.1.2'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }
+
+      cloud_config_hash['networks'].first['subnets'] = [subnet_without_dynamic_ips_available]
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 1, static_ips: ['192.168.1.2'])]
+
+      deploy_output = deploy_from_scratch(
+        cloud_config_hash: cloud_config_hash,
+        manifest_hash: manifest_hash,
+        failure_expected: true
+      )
+
+      expect(deploy_output).to match(
+        /Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/
+      )
+
+      expect(director.vms.size).to eq(0)
+    end
   end
 end

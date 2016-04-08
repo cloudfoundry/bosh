@@ -114,8 +114,8 @@ module Bosh::Director
         unless dep_task.compiled?
           raise DirectorError,
                 "Cannot generate package dependency spec " +
-                "for `#{@package.name}', " +
-                "`#{dep_task.package.name}' hasn't been compiled yet"
+                "for '#{@package.name}', " +
+                "'#{dep_task.package.name}' hasn't been compiled yet"
         end
 
         compiled_package = dep_task.compiled_package
@@ -133,36 +133,65 @@ module Bosh::Director
 
     # @param [CompileTask] task
     # @return [Models::CompiledPackage]
-    def find_compiled_package(logger, event_log)
-      # Check if this package is already compiled
-      compiled_package = Models::CompiledPackage[
-        :package_id => package.id,
-        :stemcell_id => stemcell.id,
-        :dependency_key => dependency_key
-      ]
-      if compiled_package
-        logger.info("Found compiled version of package `#{package.desc}' " +
-                       "for stemcell `#{stemcell.desc}'")
-      else
-        if Config.use_compiled_package_cache?
-          if BlobUtil.exists_in_global_cache?(package, cache_key)
-            event_log.track("Downloading '#{package.desc}' from global cache") do
-              # has side effect of putting CompiledPackage model in db
-              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
-            end
-          end
-        end
+    def find_compiled_package(logger, event_log_stage)
+      # if `package` has source associated with it (blobstore_id and sha1)
+      #   then we need an exact match in find_compiled_package
 
-        if compiled_package
-          logger.info("Package `Found compiled version of package `#{package.desc}'" +
-                         "for stemcell `#{stemcell.desc}' in global cache")
-        else
-          logger.info("Package `#{package.desc}' " +
-                         "needs to be compiled on `#{stemcell.desc}'")
-        end
+      package_already_compiled = !@package.blobstore_id.nil?
+
+      if package_already_compiled
+        compiled_package = Models::CompiledPackage[
+          :package_id => package.id,
+          :stemcell_os => stemcell.os,
+          :stemcell_version => stemcell.version,
+          :dependency_key => dependency_key
+        ]
+      else
+        compiled_package = find_best_compiled_package_by_version
       end
 
+      if compiled_package
+        logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}'")
+      else
+        compiled_package = fetch_from_global_cache(logger, event_log_stage)
+      end
+
+      logger.info("Package '#{package.desc}' needs to be compiled on '#{stemcell.desc}'") if compiled_package.nil?
+
       compiled_package
+    end
+
+    private
+
+    def find_best_compiled_package_by_version
+      compiled_package_list = Models::CompiledPackage.where(
+        :package_id => package.id,
+        :stemcell_os => stemcell.os,
+        :dependency_key => dependency_key
+      ).all
+
+      compiled_package = compiled_package_list.select do |compiled_package_model|
+        compiled_package_model.stemcell_version == stemcell.version
+      end.first
+
+      unless compiled_package
+        compiled_package = compiled_package_list.select do |compiled_package_model|
+          Bosh::Common::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
+        end.sort_by do |compiled_package_model|
+          SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
+        end.last
+      end
+      compiled_package
+    end
+
+    def fetch_from_global_cache(logger, event_log_stage)
+      if Config.use_compiled_package_cache? && BlobUtil.exists_in_global_cache?(package, cache_key)
+        event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
+          # has side effect of putting CompiledPackage model in db
+          logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}' in global cache")
+          return BlobUtil.fetch_from_global_cache(package, stemcell.model, cache_key, dependency_key)
+        end
+      end
     end
   end
 end

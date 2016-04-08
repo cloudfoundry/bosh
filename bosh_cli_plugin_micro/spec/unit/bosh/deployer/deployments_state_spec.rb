@@ -71,7 +71,7 @@ module Bosh::Deployer
       let(:models_instance) do
         double(
           'Bosh::Deployer::Models::Instance',
-          insert_multiple: nil,
+          multi_insert: nil,
           find: nil,
           new: instance_state,
         )
@@ -92,7 +92,7 @@ module Bosh::Deployer
 
       it 'inserts deployments instances into instance table' do
         subject.load_deployment('micro-bar')
-        expect(models_instance).to have_received(:insert_multiple).with(deployments['instances'])
+        expect(models_instance).to have_received(:multi_insert).with(deployments['instances'])
       end
 
       it 'looks up the instance with the given name' do

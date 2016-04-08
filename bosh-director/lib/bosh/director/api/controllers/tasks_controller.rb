@@ -3,7 +3,29 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class TasksController < BaseController
-      get '/', scope: :read do
+
+      def initialize(config)
+        super(config)
+        @deployment_manager = Api::DeploymentManager.new
+      end
+
+      def self.authorization(perm)
+        return unless perm
+
+        condition do
+          type = params[:type]
+          task = @task_manager.find_task(params[:id])
+          if type == 'debug' || type == 'cpi' || !type
+            check_access_to_task(task, :admin)
+          elsif type == 'event' || type == 'result' || type == 'none'
+            check_access_to_task(task, :read)
+          else
+            raise UnauthorizedToAccessDeployment, "Unknown type #{type}"
+          end
+        end
+      end
+
+      get '/', scope: :list_tasks do
         dataset = Models::Task.dataset
 
         if limit = params['limit']
@@ -20,6 +42,7 @@ module Bosh::Director
         verbose = params['verbose'] || '1'
         if verbose == '1'
           dataset = dataset.filter(type: %w[
+            attach_disk
             create_snapshot
             delete_deployment
             delete_release
@@ -33,20 +56,48 @@ module Bosh::Director
           ])
         end
 
-        tasks = dataset.order_by(:timestamp.desc).map do |task|
+        deployment = params['deployment']
+        if deployment
+          dataset = dataset.filter(deployment_name: deployment)
+          deployment = @deployment_manager.find_by_name(deployment)
+          @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
+        end
+
+        tasks = dataset.order_by(Sequel.desc(:timestamp)).map
+
+        unless @permission_authorizer.is_granted?(:director, :read, token_scopes)
+          permitted_deployments = @deployment_manager.all_by_name_asc.select { |deployment|
+              @permission_authorizer.is_granted?(deployment, :read, token_scopes)
+            }.map { |deployment| deployment.name }
+
+          tasks = tasks.select do |task|
+            next false unless task.deployment_name
+            permitted_deployments.include?(task.deployment_name)
+          end
+        end
+
+        tasks = tasks.map do |task|
           if task_timeout?(task)
             task.state = :timeout
             task.save
           end
           @task_manager.task_to_hash(task)
         end
-
         content_type(:json)
         json_encode(tasks)
       end
 
-      get '/:id', scope: :read do
+      get '/:id', scope: :list_tasks do
         task = @task_manager.find_task(params[:id])
+        deployment_name = task.deployment_name
+        if deployment_name
+          check_access_to_deployment(deployment_name, :read)
+        elsif !@permission_authorizer.is_granted?(:director, :read, token_scopes)
+          raise UnauthorizedToAccessDeployment,
+            'One of the following scopes is required to access this task: ' +
+              @permission_authorizer.list_expected_scope(:director, :read, token_scopes).join(', ')
+        end
+
         if task_timeout?(task)
           task.state = :timeout
           task.save
@@ -59,8 +110,13 @@ module Bosh::Director
       # Sends back output of given task id and params[:type]
       # Example: `get /tasks/5/output?type=event` will send back the file
       # at /var/vcap/store/director/tasks/5/event
-      get '/:id/output', scope: Api::Extensions::Scoping::ParamsScope.new(:type, {event: :read, result: :read}) do
+      get '/:id/output', authorization: :task_output, scope: :authorization do
         log_type = params[:type] || 'debug'
+
+        if log_type == "none"
+          halt(204)
+        end
+
         task = @task_manager.find_task(params[:id])
 
         if task.output.nil?
@@ -77,6 +133,23 @@ module Bosh::Director
       end
 
       private
+
+      def check_access_to_task(task, scope)
+        if task.deployment_name
+          check_access_to_deployment(task.deployment_name, scope)
+        else
+          @permission_authorizer.granted_or_raise(:director, scope, token_scopes)
+        end
+      end
+
+      def check_access_to_deployment(deployment_name, scope)
+        begin
+          deployment = @deployment_manager.find_by_name(deployment_name)
+          @permission_authorizer.granted_or_raise(deployment, scope, token_scopes)
+        rescue DeploymentNotFound
+          @permission_authorizer.granted_or_raise(:director, :admin, token_scopes)
+        end
+      end
 
       def task_timeout?(task)
         # Some of the old task entries might not have the checkpoint_time

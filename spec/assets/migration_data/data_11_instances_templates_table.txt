@@ -1,0 +1,1 @@
+INSERT INTO instances_templates (id, instance_id, template_id) VALUES (27, 33, 63);

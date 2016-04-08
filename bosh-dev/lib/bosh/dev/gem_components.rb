@@ -5,42 +5,41 @@ require 'bosh/dev/gem_version'
 module Bosh::Dev
   class GemComponents
     include Enumerable
+    COMPONENTS = %w(
+      agent_client
+      blobstore_client
+      bosh-core
+      bosh-stemcell
+      bosh-template
+      bosh_cli
+      bosh_cli_plugin_aws
+      bosh_cli_plugin_micro
+      bosh_common
+      bosh_cpi
+      bosh-registry
+      bosh-director
+      bosh-director-core
+      bosh-monitor
+      bosh-release
+      simple_blobstore_server
+    )
 
     def initialize(build_number)
       @gem_version = GemVersion.new(build_number)
     end
 
     def build_release_gems
-      FileUtils.mkdir_p build_dir
-
-      stage_with_dependencies
+      clean
+      stage_components
 
       components.each do |component|
-        finalize_release_directory(component)
+        finalize(component)
       end
-
-      FileUtils.rm_rf "/tmp/all_the_gems/#{Process.pid}"
+      FileUtils.rm_rf build_dir
     end
 
     def each(&block)
-      %w(
-        agent_client
-        blobstore_client
-        bosh-core
-        bosh-stemcell
-        bosh-template
-        bosh_cli
-        bosh_cli_plugin_aws
-        bosh_cli_plugin_micro
-        bosh_common
-        bosh_cpi
-        bosh-registry
-        bosh-director
-        bosh-director-core
-        bosh-monitor
-        bosh-release
-        simple_blobstore_server
-      ).each(&block)
+      COMPONENTS.each(&block)
     end
 
     def components
@@ -49,22 +48,15 @@ module Bosh::Dev
 
     private
 
-    def has_db?(component_name)
-      %w(bosh-director bosh-registry).include?(component_name)
-    end
+    def clean
+      FileUtils.rm_rf tmp_dir
+      FileUtils.mkdir_p build_dir
 
-    def uses_bundler?(component_name)
-      %w(bosh-director bosh-monitor bosh-registry).include?(component_name)
-    end
-
-    def root
-      GemComponent::ROOT
-    end
-
-    def stage_with_dependencies
-      FileUtils.rm_rf 'pkg'
+      FileUtils.rm_rf stage_dir
       FileUtils.mkdir_p stage_dir
+    end
 
+    def stage_components
       components.each { |component| component.update_version }
       components.each { |component| component.build_gem(stage_dir) }
 
@@ -72,31 +64,62 @@ module Bosh::Dev
       Rake::FileUtilsExt.sh "cp #{root}/vendor/cache/*.gem #{build_dir}"
     end
 
+    def finalize(component)
+      destination = "#{root}/release/src/bosh/#{component.name}"
+      if uses_bundler?(component.name)
+        destination = File.join(destination, 'vendor/cache')
+      end
+
+      FileUtils.rm_rf destination
+      FileUtils.mkdir_p destination
+
+      component.dependencies.each do |dependency|
+        copy_component(dependency, destination)
+      end
+
+      if has_db?(component.name)
+        Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem #{destination}"
+        Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem #{destination}"
+      end
+    end
+
+    # enforces strict version.
+    def copy_component(dependency, destination)
+      FileUtils.cp "#{build_dir}/#{dependency.name}-#{dependency.version}.gem", "#{destination}"
+    rescue Errno::ENOENT => e
+      gemfile = e.message.sub(/^.+#{Regexp.escape(build_dir)}\//, '')
+      gemparts = gemfile.split('-')
+      version = gemparts.pop.sub(/\.gem$/, '')
+      gemname = gemparts.join('-')
+      puts
+      puts "ERROR! #{gemfile} was not found."
+      puts "Please run the following before rebuilding the release:"
+      puts "- `gem uninstall #{gemname} --version #{version}`"
+      exit 1
+    end
+
+    def root
+      GemComponent::ROOT
+    end
+
+    def tmp_dir
+      "/tmp/all_the_gems"
+    end
+
+    def build_dir
+      @build_dir ||= File.join(tmp_dir, Process.pid.to_s)
+    end
+
     def stage_dir
       "#{root}/pkg/gems/"
     end
 
-    def finalize_release_directory(component)
-      dirname = "#{root}/release/src/bosh/#{component.name}"
-      if uses_bundler?(component.name)
-        dirname = File.join(dirname, 'vendor/cache')
-      end
-
-      FileUtils.rm_rf dirname
-      FileUtils.mkdir_p dirname
-
-      component.dependencies.each do |dependency|
-        Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
-      end
-
-      if has_db?(component.name)
-        Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem #{dirname}"
-        Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem #{dirname}"
-      end
+    def has_db?(component_name)
+      %w(bosh-director bosh-registry).include?(component_name)
     end
 
-    def build_dir
-      @build_dir ||= "/tmp/all_the_gems/#{Process.pid}"
+    def uses_bundler?(component_name)
+      %w(bosh-director bosh-monitor bosh-registry).include?(component_name)
     end
   end
 end

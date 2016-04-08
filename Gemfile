@@ -25,6 +25,10 @@ gem 'rake', '~>10.0'
 # when modified needs to be updated there as well
 gem 'json', '=1.8.3'
 
+gem 'talentbox-delayed_job_sequel', '~> 4.1'
+
+gem 'bundler', '~>1.11.0'
+
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
@@ -48,7 +52,7 @@ group :development, :test do
   gem 'rspec-instafail'
 
   gem 'rubocop', require: false
-  gem 'parallel_tests'
+  gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
   gem 'webmock'
   gem 'fakefs'
@@ -72,11 +76,12 @@ group :development, :test do
 
   # for root level specs
   gem 'rest-client'
-  gem 'redis'
   gem 'nats'
   gem 'rugged'
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'
   gem 'blue-shell'
+
+  gem 'unix-crypt'
 end

@@ -4,18 +4,34 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::ExportRelease do
-    let(:snapshots) { [Models::Snapshot.make(snapshot_cid: 'snap0'), Models::Snapshot.make(snapshot_cid: 'snap1')] }
+    include Support::FakeLocks
+    before do
+      fake_locks
+      Bosh::Director::Config.current_job = job
+      allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      allow(job).to receive(:task_cancelled?) { false }
+      allow(Config).to receive(:cloud)
+      blobstore = double(:blobstore)
+      blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
+      app = instance_double(App, blobstores: blobstores)
+      allow(App).to receive(:instance).and_return(app)
+    end
 
-    subject(:job) { described_class.new('deployment_name', 'release_name', 'release_version', 'stemcell_os', 'stemcell_version') }
+    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1') }
 
     def create_stemcell
       Bosh::Director::Models::Stemcell.create(
-          name: 'my-stemcell-with-a-name',
-          version: 'stemcell_version',
-          operating_system: 'stemcell_os',
+          name: 'ubuntu-stemcell',
+          version: '1',
+          operating_system: 'ubuntu',
           cid: 'cloud-id-a',
       )
     end
+
+    let(:release_name) { deployment_manifest['releases'].first['name'] }
+    let(:manifest_release_version) { deployment_manifest['releases'].first['version'] }
+    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
 
     it 'raises an error when the targeted deployment is not found' do
       create_stemcell
@@ -25,41 +41,16 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
-      let(:deployment_manager) { instance_double(Api::DeploymentManager) }
-      let(:targeted_deployment) { Models::Deployment.create({name: "deployment_name", cloud_config: cloud_config_model}) }
-      let(:cloud_config_model) { Models::CloudConfig.create({}) }
 
-      before {
-        cloud_config_model.manifest = {
-            "compilation" => {
-                "workers" => 1,
-            },
-            "networks" => [{
-                 "name" => "dummy-network",
-             }]
-        }
-        cloud_config_model.save
+      let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
-        targeted_deployment_manifest = <<-EOF
----
-name: hello-go
-director_uuid: d82978d9-c717-43e0-8f45-cc197f514cab
-packages: {}
-releases:
- - name: release-name
-   version: 0+dev.3
-        EOF
-
-        allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
-        allow(DeploymentPlan::PlannerFactory).to receive(:validate_packages)
-        allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
-        allow(targeted_deployment).to receive(:manifest).and_return(targeted_deployment_manifest)
-
-        allow(job).to receive(:with_deployment_lock).and_yield
-        allow(job).to receive(:with_release_lock).and_yield
-        allow(job).to receive(:with_stemcell_lock).and_yield
-        allow(job).to receive(:deployment_manifest_has_release?).and_return(true)
-      }
+      let!(:deployment_model) do
+        Models::Deployment.make(
+          name: deployment_manifest['name'],
+          manifest: YAML.dump(deployment_manifest),
+          cloud_config: Models::CloudConfig.make(manifest: cloud_config)
+        )
+      end
 
       it 'raises an error when the requested release does not exist' do
         create_stemcell
@@ -68,48 +59,52 @@ releases:
         }.to raise_error(Bosh::Director::ReleaseNotFound)
       end
 
-      it 'raises an error when exporting a release version not matching the manifest release version' do
-        create_stemcell
-        release = Bosh::Director::Models::Release.create(name: 'release_name')
-        release.add_version(:version => 'release_version')
-        allow(job).to receive(:deployment_manifest_has_release?).and_call_original
-        expect {
-          job.perform
-        }.to raise_error(Bosh::Director::ReleaseNotMatchingManifest)
+      before do
+        allow(job).to receive(:with_deployment_lock).and_yield
+        allow(job).to receive(:with_release_lock).and_yield
+        allow(job).to receive(:with_stemcell_lock).and_yield
       end
 
-      context 'when the requested release exists but release version does not exist' do
-        before {
-          Bosh::Director::Models::Release.create(name: 'release_name')
-        }
-
-        it 'fails with the expected error' do
+      context 'when the requested release exists but version does not match' do
+        it 'raises an error' do
           create_stemcell
+          release = Bosh::Director::Models::Release.create(name: release_name)
+          release.add_version(:version => '0.2-dev')
           expect {
             job.perform
           }.to raise_error(Bosh::Director::ReleaseVersionNotFound)
         end
       end
 
+      context 'when the requested release exists but exporting version does not match' do
+        let(:manifest_release_version) { '0.5-dev' }
+        let(:exported_release_version) { '0.1-dev' }
+
+        it 'raises an error' do
+          create_stemcell
+          release = Bosh::Director::Models::Release.create(name: release_name)
+          release.add_version(:version => exported_release_version)
+          release.add_version(:version => manifest_release_version)
+          expect {
+            job.perform
+          }.to raise_error(Bosh::Director::ReleaseNotMatchingManifest)
+        end
+      end
+
       context 'when the requested release and version exist' do
-        before {
-          release = Bosh::Director::Models::Release.create(name: 'release_name')
-          release_version = release.add_version(:version => 'release_version')
+        before do
+          release = Bosh::Director::Models::Release.create(name: release_name)
+          release_version = release.add_version(:version => '0.1-dev')
+          release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
+          release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
           release_version.add_template(
-          :name => 'template_a',
-          :version => 'template_a_version',
-          :release_id => release.id,
-          :blobstore_id => 'template_a_blobstore_id',
-          :sha1 => 'template_a_sha1',
-          :package_names_json => '["release_a_package"]')
-          release_version.add_template(
-          :name => 'template_b',
-          :version => 'template_b_version',
-          :release_id => release.id,
-          :blobstore_id => 'template_b_blobstore_id',
-          :sha1 => 'template_b_sha1',
-          :package_names_json => '["release_b_package"]')
-        }
+            :name => deployment_manifest['jobs'].first['templates'].first['name'],
+            :version => 'template_a_version',
+            :release_id => release.id,
+            :blobstore_id => 'template_a_blobstore_id',
+            :sha1 => 'template_a_sha1',
+            :package_names_json => '["foo", "bar"]')
+        end
 
         it 'raises an error if the requested stemcell is not found' do
           expect {
@@ -119,44 +114,77 @@ releases:
 
         context 'and the requested stemcell is found' do
           let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-          let(:stemcell) { Bosh::Director::Models::Stemcell.find(name: 'my-stemcell-with-a-name') }
-          let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
 
-          before {
+          before do
             create_stemcell
-            allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
-            allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
-            allow(job).to receive(:create_planner).and_return(planner)
-            allow(Config).to receive(:cloud)
-            allow(Config).to receive(:event_log)
             allow(job).to receive(:create_tarball)
             allow(job).to receive(:result_file).and_return(Tempfile.new('result'))
-          }
+            allow(package_compile_step).to receive(:perform)
+          end
 
           it 'locks the deployment, release, and selected stemcell' do
-            allow(package_compile_step).to receive(:perform)
-
             lock_timeout = {:timeout=>900} # 15 minutes. 15 * 60
-            expect(job).to receive(:with_deployment_lock).with('deployment_name', lock_timeout).and_yield
-            expect(job).to receive(:with_release_lock).with('release_name', lock_timeout).and_yield
-            expect(job).to receive(:with_stemcell_lock).with('my-stemcell-with-a-name', 'stemcell_version', lock_timeout).and_yield
+            expect(job).to receive(:with_deployment_lock).with(deployment_manifest['name'], lock_timeout).and_yield
+            expect(job).to receive(:with_release_lock).with(release_name, lock_timeout).and_yield
+            expect(job).to receive(:with_stemcell_lock).with('ubuntu-stemcell', '1', lock_timeout).and_yield
 
             job.perform
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).with(planner, Config.cloud, Config.logger, Config.event_log, job)
-            expect(job).to receive(:validate_release_packages)
+            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
+              expect(job.first).to be_instance_of(DeploymentPlan::Job)
+              expect(job.first.release.name).to eq(release_name)
+              expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
+            end.and_return(package_compile_step)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform
           end
 
+          context 'when using vm_types, stemcells, and azs' do
+            let(:cloud_config) do
+              config = Bosh::Spec::Deployments.simple_cloud_config
+              config.delete('resource_pools')
+              config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
+              config['networks'].first['subnets'].first['az'] = 'z1'
+              config['vm_types'] =  [Bosh::Spec::Deployments.vm_type]
+              config['compilation']['az'] = 'z1'
+              config
+            end
+
+            let(:deployment_manifest) do
+              manifest = Bosh::Spec::Deployments.simple_manifest
+              stemcell = {
+                'alias' => 'ubuntu',
+                'os' => 'ubuntu',
+                'version' => '1',
+              }
+              manifest['stemcells'] = [stemcell]
+              job = manifest['jobs'].first
+              job.delete('resource_pool')
+              job['stemcell'] = stemcell['alias']
+              job['vm_type'] = Bosh::Spec::Deployments.vm_type['name']
+              job['azs'] = ['z1']
+              manifest
+            end
+
+            it 'succeeds' do
+              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
+                expect(job.first).to be_instance_of(DeploymentPlan::Job)
+                expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
+              end.and_return(package_compile_step)
+              expect(package_compile_step).to receive(:perform).with no_args
+
+              job.perform
+            end
+          end
+
           context 'and multiple stemcells match the requested stemcell' do
             before {
               Bosh::Director::Models::Stemcell.create(
-                  name: 'my-stemcell-with-b-name',
+                  name: 'z-name-stemcell',
                   version: 'stemcell_version',
                   operating_system: 'stemcell_os',
                   cid: 'cloud-id-b',
@@ -170,35 +198,57 @@ releases:
               }.to_not raise_error
             end
 
-            it 'chooses the first stemcell alhpabetically by name' do
+            context 'when dealing with links' do
+              let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory)}
+              let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
+              let(:deployment_job) { instance_double(DeploymentPlan::Job)}
+
+              before {
+                allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
+                allow(planner_factory).to receive(:create_from_model).and_return(planner)
+                allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
+                allow(planner).to receive(:release)
+                allow(planner).to receive(:add_job)
+                allow(planner).to receive(:compile_packages)
+                allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
+              }
+
+              it 'skips links binding' do
+                expect(planner).to receive(:bind_models).with(true)
+                job.perform
+              end
+            end
+
+            it 'chooses the first stemcell alphabetically by name' do
               job.perform
-              expect(log_string).to match /Will compile with stemcell: my-stemcell-with-a-name/
+              expect(log_string).to match /Will compile with stemcell: ubuntu-stemcell/
             end
           end
         end
       end
 
       context 'when creating a tarball' do
-
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
+        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
         let(:task_dir) { Dir.mktmpdir }
 
         before {
-          release = Bosh::Director::Models::Release.create(name: 'release_name')
-          release_version = release.add_version(
-              version: 'release_version',
-              commit_hash: 'release_version_commit_hash',
-              uncommitted_changes: 'false',
-          )
-          stemcell = Bosh::Director::Models::Stemcell.create(
-              name: 'my-stemcell-with-a-name',
-              version: 'stemcell_version',
-              operating_system: 'stemcell_os',
-              cid: 'cloud-id-a',
-          )
+          release = Bosh::Director::Models::Release.create(name: release_name)
+          release_version = release.add_version(:version => '0.1-dev')
+          release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
+          release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
+          release_version.add_template(
+            :name => deployment_manifest['jobs'].first['templates'].first['name'],
+            :version => 'foo_version',
+            :release_id => release.id,
+            fingerprint: 'foo_fingerprint',
+            :blobstore_id => 'foo_blobstore_id',
+            :sha1 => 'foo_sha1',
+            :package_names_json => '["foo", "bar"]')
+
+          stemcell = create_stemcell
 
           package_ruby = release_version.add_package(
               name: 'ruby',
@@ -207,14 +257,15 @@ releases:
               release_id: release.id,
               blobstore_id: 'ruby_package_blobstore_id',
               sha1: 'ruby_package_sha1',
-              dependency_set_json: [],
+              dependency_set_json: [].to_json,
           )
           package_ruby.add_compiled_package(
               sha1: 'ruby_compiled_package_sha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
-              stemcell_id: stemcell.id,
-              dependency_key: [],
+              dependency_key: [].to_json,
               build: 23,
+              stemcell_os: 'ubuntu',
+              stemcell_version: '1'
           )
 
           package_postgres = release_version.add_package(
@@ -229,36 +280,36 @@ releases:
           package_postgres.add_compiled_package(
               sha1: 'postgres_compiled_package_sha1',
               blobstore_id: 'postgres_package_blobstore_id',
-              stemcell_id: stemcell.id,
               dependency_key: '[["ruby","ruby_version"]]',
               build: 23,
-          )
-
-          release_version.add_template(
-              name: 'genisoimage',
-              version: 'genisoimage_version',
-              fingerprint: 'genisoimage_fingerprint',
-              sha1: 'genisoimage_template_sha1',
-              blobstore_id: 'genisoimage_blobstore_id',
-              release_id: release.id,
-              package_names_json: [],
+              stemcell_os: 'ubuntu',
+              stemcell_version: '1'
           )
 
           result_file = double('result file')
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
-          allow(Config).to receive(:cloud)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
+          allow(planner).to receive(:jobs) { ['fake-job'] }
+          allow(planner).to receive(:compilation) { 'fake-compilation-config' }
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
-          allow(job).to receive(:create_planner).and_return(planner)
           allow(job).to receive(:result_file).and_return(result_file)
           allow(result_file).to receive(:write)
         }
 
+        it 'should order the files in the tarball' do
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create)
+          expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
+            expect(sources).to eq(['./release.MF', './jobs', './compiled_packages'])
+            File.write(output_path, 'Some glorious content')
+          }
+          job.perform
+        end
+
         it 'should contain all compiled packages & jobs' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
               files = Dir.entries(download_dir)
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
@@ -266,7 +317,7 @@ releases:
               expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
-              expect(files).to include('genisoimage.tgz')
+              expect(files).to include('foobar.tgz')
 
               File.write(output_path, 'Some glorious content')
           }
@@ -274,7 +325,7 @@ releases:
           expect(blobstore_client).to receive(:create)
           expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby_compiled_package_sha1')
           expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres_compiled_package_sha1')
-          expect(blobstore_client).to receive(:get).with('genisoimage_blobstore_id', anything, sha1: 'genisoimage_template_sha1')
+          expect(blobstore_client).to receive(:get).with('foo_blobstore_id', anything, sha1: 'foo_sha1')
           job.perform
         end
 
@@ -292,24 +343,24 @@ compiled_packages:
   version: ruby_version
   fingerprint: ruby_fingerprint
   sha1: ruby_compiled_package_sha1
-  stemcell: stemcell_os/stemcell_version
+  stemcell: ubuntu/1
   dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
   sha1: postgres_compiled_package_sha1
-  stemcell: stemcell_os/stemcell_version
+  stemcell: ubuntu/1
   dependencies:
   - ruby
 jobs:
-- name: genisoimage
-  version: genisoimage_version
-  fingerprint: genisoimage_fingerprint
-  sha1: genisoimage_template_sha1
-commit_hash: release_version_commit_hash
+- name: foobar
+  version: foo_version
+  fingerprint: foo_fingerprint
+  sha1: foo_sha1
+commit_hash: unknown
 uncommitted_changes: false
-name: release_name
-version: release_version
+name: bosh-release
+version: 0.1-dev
 ))}
 
           allow(blobstore_client).to receive(:get)
@@ -328,7 +379,6 @@ version: release_version
           job.perform
         end
       end
-
     end
   end
 end

@@ -9,6 +9,7 @@ module Bosh::Director
       let(:type) { 'type' }
       let(:description) { 'description' }
       let(:config) { Psych.load_file(asset('test-director-config.yml')) }
+      let(:deployment_name) { 'deployment name' }
       let(:task_remover) { instance_double('Bosh::Director::Api::TaskRemover') }
 
       before do
@@ -20,27 +21,27 @@ module Bosh::Director
       end
 
       it 'should create the task debug output file' do
-        task = described_class.new.create_task('fake-user', type, description)
+        task = described_class.new.create_task('fake-user', type, description, deployment_name)
         expect(File.exists?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be(true)
       end
 
       it 'should create a new task model' do
         expect {
-          described_class.new.create_task('fake-user', type, description)
+          described_class.new.create_task('fake-user', type, description, deployment_name)
         }.to change {
           Models::Task.count
         }.from(0).to(1)
       end
 
-      it 'should clean up old tasks' do
+      it 'should clean up old tasks of the given type' do
         expect(Api::TaskRemover).to receive(:new).with(Config.max_tasks).and_return(task_remover)
-        expect(task_remover).to receive(:remove)
+        expect(task_remover).to receive(:remove).with(type)
 
-        described_class.new.create_task('fake-user', type, description)
+        described_class.new.create_task('fake-user', type, description, deployment_name)
       end
 
       it 'logs director version' do
-        task = described_class.new.create_task('fake-user', type, description)
+        task = described_class.new.create_task('fake-user', type, description, deployment_name)
         director_version_line, enqueuing_task_line = File.read(File.join(tmpdir, 'tasks', task.id.to_s, 'debug')).split(/\n/)
         expect(director_version_line).to match(/INFO .* Director Version: #{Bosh::Director::VERSION}/)
         expect(enqueuing_task_line).to match(/INFO .* Enqueuing task: #{task.id}/)

@@ -1,0 +1,8 @@
+---
+name: job_3_with_broken_post_deploy_script
+templates:
+  broken-post-deploy.erb: bin/post-deploy
+  job_3_ctl: bin/job_3_ctl
+
+packages: []
+properties: {}

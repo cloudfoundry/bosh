@@ -62,6 +62,16 @@ module Bosh::Director
         end
       end
 
+      def to_hash
+        {
+          'canaries' => @canaries,
+          'max_in_flight' => @max_in_flight,
+          'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
+          'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
+          'serial' => serial?
+        }
+      end
+
       def parse_watch_times(value)
         value = value.to_s
 

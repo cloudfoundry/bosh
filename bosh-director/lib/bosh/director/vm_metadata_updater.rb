@@ -10,17 +10,19 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update(vm, metadata)
+    def update(instance, metadata)
       if @cloud.respond_to?(:set_vm_metadata)
         metadata = metadata.merge(@director_metadata)
-        metadata[:deployment] = vm.deployment.name
+        metadata[:deployment] = instance.deployment.name
 
-        if vm.instance
-          metadata[:job] = vm.instance.job
-          metadata[:index] = vm.instance.index.to_s
-        end
+        metadata[:id] = instance.uuid
+        metadata[:job] = instance.job
+        metadata[:index] = instance.index.to_s
+        metadata[:name] = "#{instance.job}/#{instance.uuid}"
 
-        @cloud.set_vm_metadata(vm.cid, metadata)
+        metadata[:created_at] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        @cloud.set_vm_metadata(instance.vm_cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
       @logger.debug(e.inspect)

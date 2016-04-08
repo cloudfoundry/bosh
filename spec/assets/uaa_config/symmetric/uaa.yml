@@ -63,6 +63,20 @@ oauth:
       scope: openid
       authorities: uaa.none,bosh.admin
       secret: "secret"
+    production_team:
+      id: production_team
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid,bosh.teams.production_team.admin
+      authorities: bosh.teams.production_team.admin
+      secret: "secret"
+    dev_team:
+      id: dev_team
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid,bosh.teams.dev_team.admin
+      authorities: bosh.teams.dev_team.admin
+      secret: "secret"
 jwt:
   token:
     signing-key: "uaa-secret-key"

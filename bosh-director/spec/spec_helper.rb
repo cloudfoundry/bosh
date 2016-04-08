@@ -59,31 +59,16 @@ module SpecHelper
     end
 
     def configure_temp_dir
-      @temp_dir = Dir.mktmpdir
-      ENV["TMPDIR"] = @temp_dir
-      FileUtils.mkdir_p(@temp_dir)
-      at_exit do
-        begin
-          if $!
-            status = $!.is_a?(::SystemExit) ? $!.status : 1
-          else
-            status = 0
-          end
-          FileUtils.rm_rf(@temp_dir)
-        ensure
-          exit status
-        end
-      end
+      @temp_dir = Bosh::Director::Config.generate_temp_dir
     end
 
     def init_database
-      Bosh::Director::Config.patch_sqlite
-
       @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
       @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
       Sequel.extension :migration
 
       connect_database(@temp_dir)
+      Delayed::Worker.backend = :sequel
 
       run_migrations
     end
@@ -94,6 +79,7 @@ module SpecHelper
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
+      Sequel.default_timezone = :utc
       @db = Sequel.connect(db, db_opts)
       @db.loggers << (logger || @init_logger)
       Bosh::Director::Config.db = @db
@@ -120,20 +106,21 @@ module SpecHelper
       Sequel::Migrator.apply(@db, @director_migrations, nil)
     end
 
-    def reset_database
-      disconnect_database
-
-      if @db_dir && File.directory?(@db_dir)
-        FileUtils.rm_rf(@db_dir)
-      end
-
-      @db_dir = Dir.mktmpdir(nil, @temp_dir)
-      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
-
-      connect_database(@db_dir)
+    def reset(logger)
+      Bosh::Director::Config.clear
+      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.dns_db = @dns_db
+      Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.trusted_certs = ''
+      Bosh::Director::Config.max_threads = 1
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
+        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Delayed::Backend::Sequel.constants.each do |e|
+        c = Delayed::Backend::Sequel.const_get(e)
         c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
@@ -143,14 +130,11 @@ module SpecHelper
       end
     end
 
-    def reset(logger)
-      reset_database
+    def reset_database(example)
+      Sequel.transaction([@db, @dns_db], :rollback=>:always, :auto_savepoint=>true) { example.run }
 
-      Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @db
-      Bosh::Director::Config.dns_db = @dns_db
-      Bosh::Director::Config.logger = logger
-      Bosh::Director::Config.trusted_certs = ''
+      @db.run('UPDATE sqlite_sequence SET seq = 0')
+      @dns_db.run('UPDATE sqlite_sequence SET seq = 0')
     end
   end
 end
@@ -160,32 +144,21 @@ SpecHelper.init
 BD = Bosh::Director
 
 RSpec.configure do |rspec|
+  rspec.around(:each) do |example|
+    SpecHelper.reset_database(example)
+  end
+
   rspec.before(:each) do
-    unless $redis_63790_started
-      redis_config = Tempfile.new('redis_config')
-      File.write(redis_config.path, 'port 63790')
-      redis_pid = Process.spawn('redis-server', redis_config.path, out: '/dev/null')
-      $redis_63790_started = true
-
-      at_exit do
-        begin
-          if $!
-            status = $!.is_a?(::SystemExit) ? $!.status : 1
-          else
-            status = 0
-          end
-          redis_config.delete
-          Process.kill("KILL", redis_pid)
-        ensure
-          exit status
-        end
-      end
-    end
-
     SpecHelper.reset(logger)
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
+
+    threadpool = instance_double(Bosh::Director::ThreadPool)
+    allow(Bosh::Director::ThreadPool).to receive(:new).and_return(threadpool)
+    allow(threadpool).to receive(:wrap).and_yield(threadpool)
+    allow(threadpool).to receive(:process).and_yield
+    allow(threadpool).to receive(:wait)
   end
 end
 
@@ -262,8 +235,18 @@ module ManifestHelper
       { 'name' => 'network-name', 'subnets' => [] }.merge(overrides)
     end
 
+    def manual_network(overrides = {})
+      ManifestHelper::network({
+          'type' => 'manual',
+          'subnets' => [{
+              'range' => '10.0.0.1/24',
+              'gateway' => '10.0.0.1'
+            }]
+        }).merge(overrides)
+    end
+
     def disk_pool(name='dp-name')
-      {'name' => name, 'disk_size' => 10000}.merge(overrides)
+      {'name' => name, 'disk_size' => 10000}
     end
 
     def job(overrides = {})

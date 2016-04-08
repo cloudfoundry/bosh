@@ -1,0 +1,37 @@
+#!/bin/bash -e
+
+BASE_DIR=${BASE_DIR:-/var/vcap}
+
+PACKAGE_DIR=$BASE_DIR/packages/postgres-9.4
+PACKAGE_DIR_OLD=$BASE_DIR/packages/postgres
+
+STORE_DIR=$BASE_DIR/store
+
+# historically we have used `postgres`
+DATA_DIR_OLD=$STORE_DIR/postgres
+
+# then we switched to including version so it is easier to detect version changes
+DATA_DIR=$STORE_DIR/postgres-9.4
+
+# and we'll keep the previous version's data intact to easy recovery, if necessary
+DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
+
+RUN_DIR=$BASE_DIR/sys/run/postgres-9.4
+PIDFILE=$RUN_DIR/postgres.pid
+JOB_DIR=$BASE_DIR/jobs/postgres-9.4
+
+if [ -d $DATA_DIR_OLD -a -f $DATA_DIR_OLD/postgresql.conf ]; then
+
+  if [ -d $DATA_DIR_PREVIOUS ]; then
+    rm -rf $DATA_DIR_PREVIOUS
+  fi
+
+  tar -cjvf $STORE_DIR/postgres-$(date +%Y-%m-%d_%H:%M:%S).tgz $DATA_DIR_OLD
+
+  touch $STORE_DIR/FLAG_POSTGRES_UPGRADE
+
+  $JOB_DIR/bin/postgres_db_upgrade.sh
+
+  rm -f $STORE_DIR/FLAG_POSTGRES_UPGRADE
+  mv $DATA_DIR_OLD $DATA_DIR_PREVIOUS
+fi

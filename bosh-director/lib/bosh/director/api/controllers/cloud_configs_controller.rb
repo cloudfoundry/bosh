@@ -4,8 +4,15 @@ module Bosh::Director
   module Api::Controllers
     class CloudConfigsController < BaseController
       post '/', :consumes => :yaml do
-        properties = request.body.string
-        Bosh::Director::Api::CloudConfigManager.new.update(properties)
+        manifest_text = request.body.read
+        begin
+          validate_manifest_yml(manifest_text)
+          Bosh::Director::Api::CloudConfigManager.new.update(manifest_text)
+          create_event
+        rescue => e
+          create_event e
+          raise e
+        end
 
         status(201)
       end
@@ -13,7 +20,7 @@ module Bosh::Director
       get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
-          body("limit is required")
+          body('limit is required')
           return
         end
 
@@ -34,6 +41,16 @@ module Bosh::Director
             }
         end
         )
+      end
+
+      private
+      def create_event(error = nil)
+        @event_manager.create_event({
+            user:        current_user,
+            action:      "update",
+            object_type: "cloud-config",
+            error:       error
+        })
       end
     end
   end

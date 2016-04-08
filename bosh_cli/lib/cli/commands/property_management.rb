@@ -17,14 +17,14 @@ module Bosh::Cli::Command
       end
 
       if existing_property
-        say("Current `#{name.make_green}' value is " +
-            "`#{format_property(body["value"]).make_green}'")
+        say("Current '#{name.make_green}' value is " +
+            "'#{format_property(body["value"]).make_green}'")
       else
         say("This will be a new property")
       end
 
       prompt = "Are you sure you want to set property" +
-        " `#{name.make_green}' to `#{format_property(value).make_green}'?"
+        " '#{name.make_green}' to '#{format_property(value).make_green}'?"
 
       unless confirmed?(prompt)
         err("Canceled")
@@ -37,7 +37,7 @@ module Bosh::Cli::Command
       end
 
       if status == 204
-        say("Property `#{name.make_green}' set to `#{value.make_green}'")
+        say("Property '#{name.make_green}' set to '#{value.make_green}'")
       else
         err(director.parse_error_message(status, body))
       end
@@ -51,7 +51,7 @@ module Bosh::Cli::Command
       show_header
 
       prompt = "Are you sure you want to unset property " +
-        "`#{name.make_green}'?"
+        "'#{name.make_green}'?"
 
       unless confirmed?(prompt)
         err("Canceled")
@@ -60,7 +60,7 @@ module Bosh::Cli::Command
       status, body = director.delete_property(@deployment_name, name)
 
       if status == 204
-        say("Property `#{name.make_green}' has been unset")
+        say("Property '#{name.make_green}' has been unset")
       else
         err(director.parse_error_message(status, body))
       end
@@ -75,8 +75,8 @@ module Bosh::Cli::Command
 
       status, body = director.get_property(@deployment_name, name)
       if status == 200
-        say("Property `#{name.make_green}' value is " +
-            "`#{format_property(body["value"]).make_green}'")
+        say("Property '#{name.make_green}' value is " +
+            "'#{format_property(body["value"]).make_green}'")
       else
         err(director.parse_error_message(status, body))
       end

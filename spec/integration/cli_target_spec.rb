@@ -13,18 +13,13 @@ describe 'cli: target', type: :integration do
   end
 
   it 'sets correct target' do
-    expect(bosh_runner.run("target #{current_sandbox.director_url}")).to match_output "Target set to `Test Director'"
+    expect(bosh_runner.run("target #{current_sandbox.director_url}")).to match_output "Target set to 'Test Director'"
 
     message = current_sandbox.director_url
     expect(bosh_runner.run('target')).to match_output message
     Dir.chdir('/tmp') do
       expect(bosh_runner.run('target')).to match_output message
     end
-  end
-
-  it 'uses correct certificate' do
-    expect(bosh_runner.run("target --ca-cert #{current_sandbox.certificate_path} #{current_sandbox.director_url}"))
-      .to match_output "Target set to `Test Director'"
   end
 
   it 'does not let user use deployment with target anymore (needs uuid)', no_reset: true do
@@ -37,7 +32,7 @@ describe 'cli: target', type: :integration do
     bosh_runner.run('deployment test2')
 
     expect(bosh_runner.run("target https://0.0.0.0:#{current_sandbox.director_port}"))
-      .to match_output "Target set to `Test Director'"
+      .to match_output "Target set to 'Test Director'"
 
     expect { bosh_runner.run('deployment') }
       .to raise_error(RuntimeError, /Deployment not set/)

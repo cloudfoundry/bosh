@@ -3,19 +3,7 @@ require 'spec_helper'
 module Bosh::Director::Models
   describe CompiledPackage do
     let(:package) { Package.make }
-    let(:stemcell) { Stemcell.make }
-
-    describe 'self.create_dependency_key' do
-      let(:package1) { Package.new(name: 'package1', version: '123') }
-
-      let(:package2) { Package.new(name: 'package2', version: '456') }
-
-      it 'generates serialized JSON of the supplied package names and their fingerprint' do
-        expect(CompiledPackage.create_dependency_key([])).to eq('[]')
-        expect(CompiledPackage.create_dependency_key([package1])).to eq('[["package1","123"]]')
-        expect(CompiledPackage.create_dependency_key([package1, package2])).to eq('[["package1","123"],["package2","456"]]')
-      end
-    end
+    let(:stemcell) { Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
 
     describe 'self.create_cache_key' do
       let(:package1) { Package.new(name: 'package1', fingerprint: '<package1-fingerprint>') }
@@ -32,27 +20,42 @@ module Bosh::Director::Models
 
       it 'generates sha1 that uniquely identifies a package by its dependencies & stemcell' do
         expect(
-          CompiledPackage.create_cache_key(package1, [], stemcell)
+          CompiledPackage.create_cache_key(package1, [], stemcell.sha1)
         ).to eq("hexdigest for '<package1-fingerprint><stemcell-sha1>'")
 
         expect(
-          CompiledPackage.create_cache_key(package2, [package1, package3], stemcell)
+          CompiledPackage.create_cache_key(package2, [package1, package3], stemcell.sha1)
         ).to eq("hexdigest for '<package2-fingerprint><stemcell-sha1><package1-fingerprint><package3-fingerprint>'")
 
         expect(
-          CompiledPackage.create_cache_key(package3, [package1], stemcell)
+          CompiledPackage.create_cache_key(package3, [package1], stemcell.sha1)
         ).to eq("hexdigest for '<package3-fingerprint><stemcell-sha1><package1-fingerprint>'")
+      end
+    end
+
+    describe 'self.split_stemcell_os_and_version' do
+      it 'splits a properly formatted value' do
+        expect(CompiledPackage.split_stemcell_os_and_version("ubuntu_trusty/3146.1")).to eq({
+              os: 'ubuntu_trusty',
+              version: '3146.1',
+            })
+      end
+
+      it 'raises an error when given an invalid value' do
+        expect{
+          CompiledPackage.split_stemcell_os_and_version("somethingelse")
+        }.to raise_error
       end
     end
 
     describe '#generate_build_number' do
       it 'returns 1 if no compiled packages for package and stemcell' do
-        expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(1)
+        expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)
       end
 
       it 'returns 2 if only one compiled package exists for package and stemcell' do
-        CompiledPackage.make(package: package, stemcell: stemcell, build: 1)
-        expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(2)
+        CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
+        expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(2)
       end
 
       it 'will return 1 for new, unique combinations of packages and stemcells' do
@@ -60,7 +63,7 @@ module Bosh::Director::Models
           package = Package.make
           stemcell = Stemcell.make
 
-          expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(1)
+          expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)
         end
       end
     end
@@ -73,7 +76,8 @@ module Bosh::Director::Models
         it 'generates dependency key sha' do
           compiled_package = CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
+            stemcell_os: stemcell.operating_system,
+            stemcell_version: stemcell.version,
             dependency_key: dependency_key
           )
 
@@ -85,7 +89,8 @@ module Bosh::Director::Models
         it 'updates dependency key sha' do
           compiled_package = CompiledPackage.make(
             package: package,
-            stemcell: stemcell,
+            stemcell_os: stemcell.operating_system,
+            stemcell_version: stemcell.version,
             dependency_key: dependency_key
           )
 

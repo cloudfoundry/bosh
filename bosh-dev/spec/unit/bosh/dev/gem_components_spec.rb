@@ -53,6 +53,7 @@ module Bosh::Dev
       allow(GemVersion).to receive(:new).with('123').and_return(gem_version)
 
       allow(Rake::FileUtilsExt).to receive(:sh)
+      allow(FileUtils).to receive(:cp)
     end
 
     describe '#components' do
@@ -98,23 +99,36 @@ module Bosh::Dev
       context 'when components have dependencies' do
         context 'when the components use Bundler' do
           it 'copies vendored dependencies to vendor/cache of the component root directory' do
+            allow(subject).to receive(:gem_exists?).and_return(true)
             expected_components.each do |c|
-              allow(c).to receive(:dependencies).and_return([double(:fake_dependency, name: "fake-dep-name-for-#{c.name}")])
+              allow(c).to receive(:dependencies).and_return([double(:fake_dependency, name: "fake-dep-name-for-#{c.name}", version: '1.2.3')])
             end
 
-            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-for-bosh-director-\*\.gem .*/release/src/bosh/bosh-director/vendor/cache}).once
-            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-for-bosh-monitor-\*\.gem .*/release/src/bosh/bosh-monitor/vendor/cache}).once
+            expect(FileUtils).to receive(:cp).with(%r{/tmp/all_the_gems/\d+/fake-dep-name-for-bosh-director-#{Regexp.escape('1.2.3.gem')}}, %r{.*/release/src/bosh/bosh-director/vendor/cache}).once
+            expect(FileUtils).to receive(:cp).with(%r{/tmp/all_the_gems/\d+/fake-dep-name-for-bosh-monitor-#{Regexp.escape('1.2.3.gem')}}, %r{.*/release/src/bosh/bosh-monitor/vendor/cache}).once
 
             gem_components.build_release_gems
+          end
+
+          context 'when an unexpected gem version is used' do
+            it 'raises an error and exits' do
+              expected_components.each do |c|
+                allow(c).to receive(:dependencies).and_return([double(:fake_dependency, name: "fake-dep-name-for-#{c.name}", version: '1.2.3')])
+              end
+              allow(FileUtils).to receive(:cp).with(%r{/tmp/all_the_gems/\d+/fake-dep-name-for-bosh-director-#{Regexp.escape('1.2.3.gem')}}, %r{.*/release/src/bosh/bosh-director/vendor/cache}).and_raise(Errno::ENOENT)
+
+              expect { gem_components.build_release_gems }.to raise_error(SystemExit)
+            end
           end
         end
 
         context 'when the components do not use Bundler' do
           it 'copies vendored dependencies to the root directory of the component' do
-            fake_dependency = double(:fake_dependency, name: 'fake-dep-name')
+            allow(subject).to receive(:gem_exists?).and_return(true)
+            fake_dependency = double(:fake_dependency, name: 'fake-dep-name', version: '1.2.3')
             allow(expected_components[0]).to receive(:dependencies).and_return([fake_dependency])
 
-            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-\*\.gem .*/release/src/bosh/#{expected_components[0].name}$})
+            expect(FileUtils).to receive(:cp).with(%r{/tmp/all_the_gems/\d+/fake-dep-name-#{Regexp.escape('1.2.3.gem')}}, %r{.*/release/src/bosh/#{expected_components[0].name}$})
 
             gem_components.build_release_gems
           end

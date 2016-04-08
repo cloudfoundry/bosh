@@ -1,0 +1,15 @@
+---
+name: api_server_with_bad_link_types
+templates:
+  config.yml.erb: config.yml
+  somethingelse.yml.erb: somethingelse.yml
+
+packages:
+    - pkg_3_depends_on_2
+
+consumes:
+  - {name: db, type: bad_link}
+  - { name: backup_db, type: bad_link_2 }
+  - {name: some_link_name, type: bad_link_3}
+
+properties: {}

@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
-
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
-if [ ${bosh_micro_enabled:-no} == "yes" ]
-then
-  persist_dir bosh_micro_package_compiler_path
-  persist_file bosh_micro_manifest_yml_path
-  persist_file bosh_micro_release_tgz_path
-  persist_value stemcell_infrastructure
-  persist_value stemcell_operating_system
-fi
+
+bosh_micro_enabled="${bosh_micro_enabled:-no}"
+persist_value bosh_micro_enabled
+
+[ "$bosh_micro_enabled" == "yes" ] || exit 0
+
+persist_dir bosh_micro_package_compiler_path
+persist_file bosh_micro_manifest_yml_path
+persist_file bosh_micro_release_tgz_path
+persist_value stemcell_infrastructure
+persist_value stemcell_operating_system
 
 if [ -z "${agent_gem_src_url:-}" ]; then
   mkdir -p $assets_dir/gems

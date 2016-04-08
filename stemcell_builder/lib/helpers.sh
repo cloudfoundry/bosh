@@ -26,9 +26,19 @@ function run_in_chroot {
   disable $chroot/sbin/initctl
   disable $chroot/usr/sbin/invoke-rc.d
 
-  unshare -m $SHELL <<EOS
+  # TODO: remove the following `if` and set UNSHARE_ARGS to "-f -p -m"
+  # once the os-image builder runs in docker without vagrant vm
+  if unshare -h | grep -q -- "-p, --pid"; then
+    UNSHARE_ARGS="-f -p -m"
+  else
+    UNSHARE_ARGS="-m"
+  fi
+
+  # `unshare -f -p` to prevent `kill -HUP 1` from causing `init` to exit;
+  unshare $UNSHARE_ARGS $SHELL <<EOS
     mkdir -p $chroot/dev
     mount -n --bind /dev $chroot/dev
+    mount -n --bind /dev/shm $chroot/dev/shm
     mount -n --bind /dev/pts $chroot/dev/pts
 
     mkdir -p $chroot/proc
@@ -65,5 +75,13 @@ function add_on_exit {
     trap on_exit EXIT
   else
     on_exit_items=("$*" "${on_exit_items[@]}")
+  fi
+}
+
+function is_ppc64le() {
+  if [ `uname -m` == "ppc64le" ]; then
+    return 0
+  else
+    return 1
   fi
 }

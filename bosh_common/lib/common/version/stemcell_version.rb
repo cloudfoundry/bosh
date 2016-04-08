@@ -14,6 +14,17 @@ module Bosh::Common
         self.new(SemiSemantic::Version.parse(version))
       end
 
+      def self.match(str_a, str_b)
+        version_a, version_b = parse(str_a), parse(str_b)
+        version_a.matches(version_b)
+      end
+
+      def matches(other)
+        release_self = self.version.release
+        release_other = other.version.release
+        release_self.components[0] == release_other.components[0]
+      end
+
       private
 
       def default_post_release_segment

@@ -5,21 +5,21 @@ module Bosh::Director
       register_as :unresponsive_agent
       auto_resolution :ignore
 
-      def initialize(vm_id, data)
+      def initialize(instance_id, data)
         super
-        @vm = Models::Vm[vm_id]
+        @instance = Models::Instance.find(id: instance_id)
 
-        if @vm.nil?
-          handler_error("VM `#{vm_id}' is no longer in the database")
+        unless @instance.vm_cid
+          handler_error("VM '#{@instance.vm_cid}' is no longer in the database")
         end
 
-        if @vm.agent_id.nil?
-          handler_error("VM `#{vm_id}' doesn't have an agent id")
+        unless @instance.agent_id
+          handler_error("VM '#{@instance.agent_id}' doesn't have an agent id")
         end
       end
 
       def description
-        "#{instance_name(@vm)} (#{@vm.cid}) is not responding"
+        "#{@instance} (#{@instance.vm_cid}) is not responding"
       end
 
       resolution :ignore do
@@ -29,47 +29,32 @@ module Bosh::Director
 
       resolution :reboot_vm do
         plan { 'Reboot VM' }
-        action { validate; ensure_cid; reboot_vm(@vm) }
+        action { validate; reboot_vm(@instance) }
       end
 
       resolution :recreate_vm do
-        plan { 'Recreate VM' }
-        action { validate; ensure_cid; recreate_vm(@vm) }
+        plan { "Recreate VM for '#{@instance}'" }
+        action { validate; recreate_vm(@instance) }
       end
 
       resolution :delete_vm_reference do
         plan { 'Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)' }
-        action { validate; delete_vm_reference(@vm, skip_cid_check: true) }
+        action { validate; delete_vm_reference(@instance) }
       end
 
+      private
+
       def agent_alive?
-        agent_client(@vm).ping
+        agent_client(@instance.credentials, @instance.agent_id).ping
         true
       rescue Bosh::Director::RpcTimeout
         false
-      end
-
-      def ensure_cid
-        if @vm.cid.nil?
-          handler_error("VM `#{@vm.id}' doesn't have a cloud id, " +
-              'only resolution is to delete the VM reference.')
-        end
-      end
-
-      def ensure_no_cid
-        if @vm.cid
-          handler_error("VM `#{@vm.id}' has a cloud id, " +
-              'please use a different resolution.')
-        end
       end
 
       def validate
         if agent_alive?
           handler_error('Agent is responding now, skipping resolution')
         end
-      end
-
-      def delete_vm
       end
     end
   end

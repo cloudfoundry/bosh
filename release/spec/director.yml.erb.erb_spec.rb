@@ -28,18 +28,27 @@ describe 'director.yml.erb.erb' do
           'address' => '10.10.0.7',
           'port' => 4222
         },
-        'redis' => {
-          'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
-          'loglevel' => 'info',
-        },
         'director' => {
           'name' => 'vpc-bosh-idora',
           'backend_port' => 25556,
           'encryption' => false,
-          'max_tasks' => 500,
+          'max_tasks' => 100,
           'max_threads' => 32,
           'enable_snapshots' => true,
+          'enable_post_deploy' => false,
+          'generate_vm_passwords' => false,
+          'remove_dev_tools' => false,
+          'log_access_events_to_syslog' => false,
           'ignore_missing_gateway' => false,
+          'disks' => {
+            'max_orphaned_age_in_days' => 3,
+            'cleanup_schedule' => '0 0,30 * * * * UTC',
+          },
+          'events' => {
+            'record_events' => false,
+            'max_events' => 10000,
+            'cleanup_schedule' => '0 * * * * * UTC'
+          },
           'db' => {
             'adapter' => 'mysql2',
             'user' => 'ub45391e00',
@@ -93,6 +102,10 @@ describe 'director.yml.erb.erb' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
+    it 'should keep dynamic, COMPONENT-based logging paths' do
+      expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
+    end
+
     context 'when domain name specified without all other dns properties' do
       before do
         deployment_manifest_fragment['properties']['dns'] = {
@@ -136,6 +149,32 @@ describe 'director.yml.erb.erb' do
           'all_the_things' => true
         }
       })
+    end
+
+    context 'events configuration' do
+      context 'when enabled' do
+        before do
+          deployment_manifest_fragment['properties']['director']['events']['record_events'] = true
+        end
+
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(true)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to include('ScheduledEventsCleanup')
+        end
+      end
+
+      context 'when disabled' do
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(false)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
+        end
+      end
     end
   end
 
@@ -580,154 +619,52 @@ describe 'director.yml.erb.erb' do
     context 'and using an s3 blobstore' do
       context 'when credentials_source is not static' do
         before do
-          deployment_manifest_fragment['properties']['blobstore']['credentials_source'] = 'env_or_profile'
-          deployment_manifest_fragment['properties']['blobstore'].delete('access_key_id')
-          deployment_manifest_fragment['properties']['blobstore'].delete('secret_access_key')
-
-        end
-
-        it 'sets the blobstore fields appropriately' do
-          expect(parsed_yaml['blobstore']['options']).to eq({
+          deployment_manifest_fragment['properties']['blobstore'] = {
+            'provider' => 's3',
             'bucket_name' => 'mybucket',
             'credentials_source' => 'env_or_profile',
             'access_key_id' => nil,
             'secret_access_key' => nil,
+            's3_region' => 'region'
+          }
+        end
+
+        it 'sets the blobstore fields appropriately' do
+          expect(parsed_yaml['blobstore']['options']).to include({
+            'bucket_name' => 'mybucket',
+            'credentials_source' => 'env_or_profile',
+            'access_key_id' => nil,
+            'secret_access_key' => nil,
+            'region' => 'region'
           })
         end
       end
 
-      before do
-        deployment_manifest_fragment['properties']['blobstore'] = {
-          'provider' => 's3',
-          'bucket_name' => 'mybucket',
-          'credentials_source' => 'static',
-          'access_key_id' => 'key',
-          'secret_access_key' => 'secret',
-        }
-      end
-
-      it 'sets the blobstore fields appropriately' do
-        expect(parsed_yaml['blobstore']['options']).to eq({
-          'bucket_name' => 'mybucket',
-          'credentials_source' => 'static',
-          'access_key_id' => 'key',
-          'secret_access_key' => 'secret',
-        })
-      end
-
-      describe 'the agent blobstore' do
-        it 'has the same config as the toplevel blobstore' do
-          expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+      context 'when credentials_source is static' do
+        before do
+          deployment_manifest_fragment['properties']['blobstore'] = {
+            'provider' => 's3',
             'bucket_name' => 'mybucket',
             'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
-          })
+            's3_region' => 'region'
+          }
         end
 
-        context 'when credentials_source is not static' do
-          before do
-            deployment_manifest_fragment['properties']['agent'] = {
-              'blobstore' => {
-                'credentials_source' => 'env_or_profile',
-                'access_key_id' => nil,
-                'secret_access_key' => nil,
-              }
-            }
-          end
-
-          it 'falls back to blobstore credential' do
-            expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
-              'bucket_name' => 'mybucket',
-              'credentials_source' => 'env_or_profile',
-              'access_key_id' => 'key',
-              'secret_access_key' => 'secret',
-            })
-          end
-
-          context 'when blobstore does not have credentials' do
-            before do
-              deployment_manifest_fragment['properties']['blobstore'].delete('access_key_id')
-              deployment_manifest_fragment['properties']['blobstore'].delete('secret_access_key')
-            end
-
-            it 'access key and secret key to nil' do
-              expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
-                'bucket_name' => 'mybucket',
-                'credentials_source' => 'env_or_profile',
-                'access_key_id' => nil,
-                'secret_access_key' => nil,
-              })
-            end
-          end
-        end
-
-        context 'when there are override values for the agent' do
-          before do
-            deployment_manifest_fragment['properties']['agent'] = {
-              'blobstore' => {
-                'credentials_source' => 'static',
-                'access_key_id' => 'agent-key',
-                'secret_access_key' => 'agent-secret',
-              }
-            }
-          end
-
-          it 'uses the override values' do
-            expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
-              'bucket_name' => 'mybucket',
-              'credentials_source' => 'static',
-              'access_key_id' => 'agent-key',
-              'secret_access_key' => 'agent-secret',
-            })
-          end
-        end
-      end
-
-      context 'when the user specifies use_ssl, ssl_verify_peer, s3_multipart_threshold, port, s3_force_path_style and host' do
-        before do
-          deployment_manifest_fragment['properties']['blobstore'].merge!({
-            'use_ssl' => false,
-            'ssl_verify_peer' => false,
-            's3_multipart_threshold' => 123,
-            's3_port' => 5155,
-            'host' => 'myhost.hostland.edu',
-            's3_force_path_style' => true,
-          })
-          deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = deployment_manifest_fragment['properties']['blobstore']
+        it 'set provider as s3cli' do
+          expect(parsed_yaml['blobstore']['provider']).to eq("s3cli")
         end
 
         it 'sets the blobstore fields appropriately' do
-          [parsed_yaml['blobstore'], parsed_yaml['compiled_package_cache']].each do |blobstore|
-            expect(blobstore['options']).to eq({
-              'bucket_name' => 'mybucket',
-              'credentials_source' => 'static',
-              'access_key_id' => 'key',
-              'secret_access_key' => 'secret',
-              'use_ssl' => false,
-              'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
-              'port' => 5155,
-              'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
-            })
-          end
-        end
-
-        it 'sets endpoint protocol appropriately when use_ssl is true' do
-          deployment_manifest_fragment['properties']['blobstore']['use_ssl'] = true
-
           expect(parsed_yaml['blobstore']['options']).to eq({
             'bucket_name' => 'mybucket',
             'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
-            'use_ssl' => true,
-            'ssl_verify_peer' => false,
-            's3_multipart_threshold' => 123,
-            'port' => 5155,
-            'host' => 'myhost.hostland.edu',
-            's3_force_path_style' => true,
+            'region' => 'region',
+            's3cli_config_path' => '/var/vcap/data/tmp/director',
+            's3cli_path' => '/var/vcap/packages/s3cli/bin/s3cli'
           })
         end
 
@@ -738,13 +675,47 @@ describe 'director.yml.erb.erb' do
               'credentials_source' => 'static',
               'access_key_id' => 'key',
               'secret_access_key' => 'secret',
-              'use_ssl' => false,
-              'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
-              'port' => 5155,
-              'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
+              'region' => 'region'
             })
+          end
+
+          context 'when credentials_source is not static' do
+            before do
+              deployment_manifest_fragment['properties']['agent'] = {
+                'blobstore' => {
+                  'credentials_source' => 'env_or_profile',
+                  'access_key_id' => nil,
+                  'secret_access_key' => nil,
+                }
+              }
+            end
+
+            it 'falls back to blobstore credential' do
+              expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                'bucket_name' => 'mybucket',
+                'credentials_source' => 'env_or_profile',
+                'access_key_id' => 'key',
+                'secret_access_key' => 'secret',
+                'region' => 'region'
+              })
+            end
+
+            context 'when blobstore does not have credentials' do
+              before do
+                deployment_manifest_fragment['properties']['blobstore'].delete('access_key_id')
+                deployment_manifest_fragment['properties']['blobstore'].delete('secret_access_key')
+              end
+
+              it 'access key and secret key to nil' do
+                expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                  'bucket_name' => 'mybucket',
+                  'credentials_source' => 'env_or_profile',
+                  'access_key_id' => nil,
+                  'secret_access_key' => nil,
+                  'region' => 'region'
+                })
+              end
+            end
           end
 
           context 'when there are override values for the agent' do
@@ -754,11 +725,6 @@ describe 'director.yml.erb.erb' do
                   'credentials_source' => 'static',
                   'access_key_id' => 'agent-key',
                   'secret_access_key' => 'agent-secret',
-                  'host' => 'fakehost.example.com',
-                  'use_ssl' => true,
-                  'ssl_verify_peer' => true,
-                  's3_force_path_style' => false,
-                  's3_multipart_threshold' => 456,
                 }
               }
             end
@@ -769,13 +735,130 @@ describe 'director.yml.erb.erb' do
                 'credentials_source' => 'static',
                 'access_key_id' => 'agent-key',
                 'secret_access_key' => 'agent-secret',
-                'use_ssl' => true,
-                'ssl_verify_peer' => true,
-                's3_force_path_style' => false,
-                's3_multipart_threshold' => 456,
-                'port' => 5155,
-                'host' => 'fakehost.example.com',
+                'region' => 'region'
+
               })
+            end
+          end
+        end
+
+        context 'when the user specifies use_ssl, ssl_verify_peer, s3_multipart_threshold, port, s3_force_path_style and host' do
+          before do
+            deployment_manifest_fragment['properties']['blobstore'].merge!({
+              'use_ssl' => false,
+              'ssl_verify_peer' => false,
+              's3_multipart_threshold' => 123,
+              's3_signature_version' => 52,
+              's3_port' => 5155,
+              'host' => 'myhost.hostland.edu',
+              's3_force_path_style' => true,
+              's3_region' => 'region'
+            })
+            deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = deployment_manifest_fragment['properties']['blobstore']
+          end
+
+          it 'sets the blobstore fields appropriately' do
+            expect(parsed_yaml['blobstore']['options']).to include({
+              'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
+              'access_key_id' => 'key',
+              'secret_access_key' => 'secret',
+              'use_ssl' => false,
+              'ssl_verify_peer' => false,
+              's3_multipart_threshold' => 123,
+              's3_signature_version' => 52,
+              'port' => 5155,
+              'host' => 'myhost.hostland.edu',
+              's3_force_path_style' => true,
+              'region' => 'region'
+            })
+
+            expect(parsed_yaml['compiled_package_cache']['options']).to include({
+              'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
+              'access_key_id' => 'key',
+              'secret_access_key' => 'secret',
+              'use_ssl' => false,
+              'ssl_verify_peer' => false,
+              's3_multipart_threshold' => 123,
+              's3_signature_version' => 52,
+              'port' => 5155,
+              'host' => 'myhost.hostland.edu',
+              's3_force_path_style' => true,
+              'region' => 'region'
+            })
+          end
+
+          it 'sets endpoint protocol appropriately when use_ssl is true' do
+            deployment_manifest_fragment['properties']['blobstore']['use_ssl'] = true
+
+            expect(parsed_yaml['blobstore']['options']).to include({
+              'bucket_name' => 'mybucket',
+              'credentials_source' => 'static',
+              'access_key_id' => 'key',
+              'secret_access_key' => 'secret',
+              'use_ssl' => true,
+              'ssl_verify_peer' => false,
+              's3_multipart_threshold' => 123,
+              's3_signature_version' => 52,
+              'port' => 5155,
+              'host' => 'myhost.hostland.edu',
+              's3_force_path_style' => true,
+              'region' => 'region'
+            })
+          end
+
+          describe 'the agent blobstore' do
+            it 'has the same config as the toplevel blobstore' do
+              expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                'bucket_name' => 'mybucket',
+                'credentials_source' => 'static',
+                'access_key_id' => 'key',
+                'secret_access_key' => 'secret',
+                'use_ssl' => false,
+                'ssl_verify_peer' => false,
+                's3_multipart_threshold' => 123,
+                's3_signature_version' => 52,
+                'port' => 5155,
+                'host' => 'myhost.hostland.edu',
+                's3_force_path_style' => true,
+                'region' => 'region'
+              })
+            end
+
+            context 'when there are override values for the agent' do
+              before do
+                deployment_manifest_fragment['properties']['agent'] = {
+                  'blobstore' => {
+                    'credentials_source' => 'static',
+                    'access_key_id' => 'agent-key',
+                    'secret_access_key' => 'agent-secret',
+                    'host' => 'fakehost.example.com',
+                    'use_ssl' => true,
+                    'ssl_verify_peer' => true,
+                    's3_force_path_style' => false,
+                    's3_signature_version' => 51,
+                    's3_multipart_threshold' => 456,
+                  }
+                }
+              end
+
+              it 'uses the override values' do
+                expect(parsed_yaml['cloud']['properties']['agent']['blobstore']['options']).to eq({
+                  'bucket_name' => 'mybucket',
+                  'credentials_source' => 'static',
+                  'access_key_id' => 'agent-key',
+                  'secret_access_key' => 'agent-secret',
+                  'use_ssl' => true,
+                  'ssl_verify_peer' => true,
+                  's3_force_path_style' => false,
+                  's3_multipart_threshold' => 456,
+                  's3_signature_version' => 51,
+                  'port' => 5155,
+                  'host' => 'fakehost.example.com',
+                  'region' => 'region'
+                })
+              end
             end
           end
         end

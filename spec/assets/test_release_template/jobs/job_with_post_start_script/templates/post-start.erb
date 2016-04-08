@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -ex
+
+PIDFILE=<%= p('job_pidfile') %>
+
+echo message on stdout of job post-start script
+echo template interpolation works in this script: <%= p('post_start_message') %>
+
+echo message on stderr of job post-start script >&2
+
+exit <%= p('exit_code') %>
+

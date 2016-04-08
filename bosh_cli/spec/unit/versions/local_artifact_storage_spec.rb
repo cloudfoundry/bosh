@@ -53,7 +53,7 @@ module Bosh::Cli::Versions
         it 'raises an error' do
           expect {
             storage.put_file('fake-sha', src_files[0])
-          }.to raise_error("Trying to store non-existant file `#{src_files[0]}' with sha `fake-sha'")
+          }.to raise_error("Trying to store non-existant file '#{src_files[0]}' with sha 'fake-sha'")
         end
       end
     end
@@ -73,7 +73,7 @@ module Bosh::Cli::Versions
           expected_file_path = storage.file_path('fake-sha')
           expect {
             storage.get_file('fake-sha')
-          }.to raise_error("Trying to retrieve non-existant file `#{expected_file_path}' with sha `fake-sha'")
+          }.to raise_error("Trying to retrieve non-existant file '#{expected_file_path}' with sha 'fake-sha'")
         end
       end
     end

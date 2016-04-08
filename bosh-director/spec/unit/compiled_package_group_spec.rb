@@ -3,41 +3,24 @@ require 'bosh/director/compiled_package_group'
 
 module Bosh::Director
   describe CompiledPackageGroup do
-    let(:release_version) { Models::ReleaseVersion.make }
-    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1') }
+    let(:release_version) { Models::ReleaseVersion.make(release: release) }
+    let(:release) { Models::Release.make }
+    let(:stemcell) { Models::Stemcell.make(sha1: 'fake_stemcell_sha1', operating_system: 'chrome-os') }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell) }
 
     describe '#compiled_packages' do
-      let(:package1) { Models::Package.make }
-      let(:package2) { Models::Package.make }
-      let(:package3) { Models::Package.make }
+      let(:package1) { Models::Package.make(release: release, dependency_set_json: ['pkg-2'].to_json) }
+      let(:package2) { Models::Package.make(name: 'pkg-2', version: '2', release: release) }
 
-      before { release_version.add_package(package1) }
-
-      let(:transitive_dependencies1) { Set.new([package1, package2, package3]) }
-      let(:transitive_dependencies2) { Set.new([]) }
-
-      let(:dependency_key1) { 'fake_dependency_key_1' }
-      let(:dependency_key2) { 'fake_dependency_key_2' }
-
-      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell: stemcell, dependency_key: dependency_key1) }
+      let!(:compiled_package1) { Models::CompiledPackage.make(package: package1, stemcell_os: stemcell.operating_system, stemcell_version: stemcell.version, dependency_key: '[["pkg-2","2"]]') }
 
       before do
-        allow(release_version).to receive(:transitive_dependencies).with(package1).and_return(transitive_dependencies1)
-        allow(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies1).and_return(dependency_key1)
-
-        allow(release_version).to receive(:transitive_dependencies).with(package2).and_return(transitive_dependencies2)
-        allow(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies2).and_return(dependency_key2)
+        release_version.add_package(package1)
+        release_version.add_package(package2)
       end
 
       it 'returns list of packages for the given release version and stemcell' do
-        expect(package_group.compiled_packages).to eq([compiled_package1])
-      end
-
-      it 'does not return nil for packages in the release version that are not compiled' do
-        release_version.add_package(package2)
-
         expect(package_group.compiled_packages).to eq([compiled_package1])
       end
 
@@ -45,7 +28,7 @@ module Bosh::Director
         allow(Models::CompiledPackage).to receive(:[]).and_call_original
         package_group.compiled_packages
         package_group.compiled_packages
-        expect(Models::CompiledPackage).to have_received(:[]).once
+        expect(Models::CompiledPackage).to have_received(:[]).twice
       end
     end
 

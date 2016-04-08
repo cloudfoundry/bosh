@@ -29,9 +29,10 @@ describe Bhm::Events::Heartbeat do
     end
   end
 
-
   it "has short description" do
-    expect(heartbeat.short_description).to eq("Heartbeat from mysql_node/0 (deadbeef) @ 2011-11-02 01:08:19 UTC")
+    expect(heartbeat.short_description).to eq("Heartbeat from mysql_node/node_id_abc (agent_id=deadbeef index=0) @ 2011-11-02 01:08:19 UTC")
+
+    expect(make_heartbeat(:index => nil, :timestamp => 1320196099).short_description).to eq("Heartbeat from mysql_node/node_id_abc (agent_id=deadbeef) @ 2011-11-02 01:08:19 UTC")
   end
 
   it "has hash representation" do
@@ -41,6 +42,7 @@ describe Bhm::Events::Heartbeat do
       :timestamp => @ts,
       :deployment => "oleg-cloud",
       :agent_id => "deadbeef",
+      :node_id => "node_id_abc",
       :job => "mysql_node",
       :index => "0",
       :job_state => "running",
@@ -77,7 +79,7 @@ describe Bhm::Events::Heartbeat do
     hb = heartbeat
     metrics = hb.metrics.inject({}) do |h, m|
       expect(m).to be_kind_of(Bhm::Metric)
-      expect(m.tags).to eq({ "job" => "mysql_node", "index" => "0", "role" => "service" })
+      expect(m.tags).to eq({ "job" => "mysql_node", "index" => "0", "role" => "service", "id" => "node_id_abc" })
       h[m.name] = m.value; h
     end
 

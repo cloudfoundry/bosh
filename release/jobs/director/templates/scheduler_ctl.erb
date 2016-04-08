@@ -16,15 +16,15 @@ export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.1.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 
-<% if_p('director.env.http_proxy') do |http_proxy| %>
+<% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY=<%= http_proxy %>
 export http_proxy=<%= http_proxy %>
 <% end %>
-<% if_p('director.env.https_proxy') do |https_proxy| %>
+<% if_p('env.https_proxy') do |https_proxy| %>
 export HTTPS_PROXY=<%= https_proxy %>
 export https_proxy=<%= https_proxy %>
 <% end %>
-<% if_p('director.env.no_proxy') do |no_proxy| %>
+<% if_p('env.no_proxy') do |no_proxy| %>
 export NO_PROXY=<%= no_proxy %>
 export no_proxy=<%= no_proxy %>
 <% end %>
@@ -55,7 +55,15 @@ case $1 in
     if [ ! -z $PID ] && pid_exists $PID; then
       kill $PID
     fi
-    while [ -e /proc/$PID ]; do sleep 0.1; done
+    TRIES=0
+    while [ -e /proc/$PID ]
+    do
+      TRIES=$(( $TRIES + 1 ))
+      if [ $TRIES -gt 100 ]; then
+        kill -9 $PID
+      fi
+      sleep 0.1
+    done
     rm -f $PIDFILE
     ;;
 

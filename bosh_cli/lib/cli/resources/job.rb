@@ -59,7 +59,7 @@ module Bosh::Cli::Resources
         raise Bosh::Cli::InvalidJob, "'#{name}' is not a valid BOSH identifier"
       end
 
-      unless spec['templates'].is_a?(Hash)
+      unless  spec['templates'].nil? or spec['templates'].is_a?(Hash)
         raise Bosh::Cli::InvalidJob, "Incorrect templates section in '#{name}' job spec (Hash expected, #{spec['templates'].class} given)"
       end
 
@@ -138,7 +138,7 @@ module Bosh::Cli::Resources
     end
 
     def templates
-      spec['templates'].keys
+      spec['templates'] ? spec['templates'].keys : []
     end
 
     def templates_dir

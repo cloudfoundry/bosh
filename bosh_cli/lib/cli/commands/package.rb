@@ -9,13 +9,13 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       unless name.bosh_valid_id?
-        err("`#{name}' is not a vaild BOSH id")
+        err("'#{name}' is not a vaild BOSH id")
       end
 
       package_dir = File.join("packages", name)
 
       if File.exists?(package_dir)
-        err("Package `#{name}' already exists, please pick another name")
+        err("Package '#{name}' already exists, please pick another name")
       end
 
       say("create\t#{package_dir}")
@@ -35,7 +35,7 @@ module Bosh::Cli::Command
         "---\nname: #{name}\n\ndependencies:\n\nfiles:\n"
       end
 
-      say("\nGenerated skeleton for `#{name}' package in `#{package_dir}'")
+      say("\nGenerated skeleton for '#{name}' package in '#{package_dir}'")
     end
 
     private

@@ -9,9 +9,26 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
+      errors = []
+
       rendered_templates = @templates.map do |template|
         job_template_renderer = job_template_renderers[template.name]
-        job_template_renderer.render(spec)
+
+        begin
+          job_template_renderer.render(spec)
+        rescue Exception => e
+          errors.push e
+        end
+      end
+
+      if errors.length > 0
+        message = "Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:"
+
+        errors.each do |e|
+          message = "#{message}\n   - #{e.message.gsub(/\n/, "\n  ")}"
+        end
+
+        raise message
       end
 
       RenderedJobInstance.new(rendered_templates)

@@ -15,7 +15,7 @@ module Bosh::Director::ProblemScanner
 
         if similar_open_problems.size > 1
           raise Bosh::Director::CloudcheckTooManySimilarProblems,
-            "More than one problem of type `#{type}' " +
+            "More than one problem of type '#{type}' " +
               "exists for resource #{type} #{resource.id}"
         end
 
@@ -40,16 +40,14 @@ module Bosh::Director::ProblemScanner
       end
     end
 
-    def get_vm_instance_and_disk(vm)
-      instance = nil
+    def get_disk(instance)
       mounted_disk_cid = nil
 
       @problem_lock.synchronize do
-        instance = vm.instance
         mounted_disk_cid = instance.persistent_disk_cid if instance
       end
 
-      [instance, mounted_disk_cid]
+      mounted_disk_cid
     end
   end
 end

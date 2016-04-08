@@ -4,9 +4,11 @@ templates:
   director_ctl.erb: bin/director_ctl
   director.yml.erb.erb: config/director.yml.erb
   worker_ctl.erb: bin/worker_ctl
+  ps_utils.sh: bin/ps_utils.sh
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  restore-db: bin/restore-db
   task_logrotate.sh: bin/task_logrotate
   task_logrotate.cron: config/task_logrotate.cron
   director.pem.erb: config/ssl/director.pem
@@ -23,13 +25,14 @@ packages:
 - postgres
 - mysql
 - ruby
+- s3cli
 
 properties:
-  director.env.http_proxy:
+  env.http_proxy:
     description: HTTP proxy that the director, scheduler and workers should use
-  director.env.https_proxy:
+  env.https_proxy:
     description: HTTPS proxy that the director, scheduler and workers should use
-  director.env.no_proxy:
+  env.no_proxy:
     description: List of comma-separated hosts that should skip connecting to the proxy in the director, scheduler and workers
   director.name:
     description: Name of the director
@@ -42,6 +45,9 @@ properties:
   director.nginx.workers:
     description: Number of nginx workers for director
     default: 2
+  director.workers:
+    description: Number of director workers
+    default: 3
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -68,8 +74,8 @@ properties:
     description: Enable/Disable agent-director encryption (true|false)
     default: false
   director.max_tasks:
-    description: Max number of tasks to keep in disk
-    default: 500
+    description: Max number of tasks per each type to keep in disk
+    default: 100
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
@@ -90,6 +96,29 @@ properties:
   director.max_vm_create_tries:
     description: Max retries when creating VMs
     default: 5
+  director.debug.keep_unreachable_vms:
+    description: When a bosh deploy fails, the failed VM will be kept instead of destroyed
+    default: false
+  director.enable_post_deploy:
+    description: When true, all templates will run their post_deploy script once deployment is complete
+    default: false
+  director.generate_vm_passwords:
+    description: When true, a random unique password will be used for each vm if user has not specified a password
+    default: false
+  director.remove_dev_tools:
+    description: When true, remove dev tool packages from non-compilation VMs
+    default: false
+  director.log_access_events_to_syslog:
+    description: Access to api is logged to the syslog
+    default: false
+
+  #Orphaned disk and orphaned snapshot automated cleanup
+  director.disks.max_orphaned_age_in_days:
+    description: Days to keep orphaned disks and orhaned snapshots before cleanup
+    default: 5
+  director.disks.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
+    default: '0 0,30 * * * * UTC' #every 30min
 
   # Director User Management
   director.user_management.provider:
@@ -110,17 +139,6 @@ properties:
   director.default_ssh_options.gateway_user:
     description: 'Default user to use with bosh ssh command'
     default: vcap
-
-  redis.address:
-    description: Address of the redis server
-  redis.port:
-    description: Port that the redis server listens on
-    default: 25255
-  redis.password:
-    description: Password of the redis server
-  redis.loglevel:
-    description: Level of log messages for Redis connections (fatal, error, warn, info, debug)
-    default: info
 
   nats.user:
     description: Username to connect to nats with
@@ -146,6 +164,7 @@ properties:
     description: |
       Address of the director database, for example, in the case of AWS RDS:
       rds-instance-name.coqxxxxxxxxx.us-east-1.rds.amazonaws.com
+    default: 127.0.0.1
   director.db.port:
     description: Port of the director database (e.g, msyql2 adapter would generally use 3306)
     default: 5432
@@ -174,6 +193,7 @@ properties:
     description: DNS Database password
   dns.db.host:
     description: DNS Database host
+    default: 127.0.0.1
   dns.db.port:
     description: Port that the powerdns database listens on
     default: 5432
@@ -186,10 +206,23 @@ properties:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
+  # Events
+  director.events.record_events:
+    description: Enable recording of events to the database
+    default: false
+  director.events.max_events:
+    description: Max number of events to keep
+    default: 10000
+  director.events.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of events
+    default: '0 * * * * UTC'
+
   # Blobstore
   blobstore.provider:
     description: Provider of the blobstore used by director and agent (dav|simple|s3)
     default: 'dav'
+  blobstore.s3_region:
+    description: Region of the blobstore used by s3 blobstore plugin
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
   blobstore.credentials_source:
@@ -221,6 +254,8 @@ properties:
   blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  blobstore.s3_signature_version:
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -279,6 +314,8 @@ properties:
   compiled_package_cache.options.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  compiled_package_cache.options.s3_signature_version:
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
 
   ntp:
     description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
@@ -300,6 +337,8 @@ properties:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
     description: AWS secret_access_key for agent used by s3 blobstore plugin
+  agent.blobstore.s3_region:
+    description: AWS region for agent used by s3 blobstore plugin
   agent.blobstore.address:
     description: Address for agent to connect to blobstore server used by simple blobstore plugin
   agent.blobstore.port:
@@ -318,6 +357,8 @@ properties:
   agent.blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
     default: 16777216
+  agent.blobstore.s3_signature_version:
+    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:

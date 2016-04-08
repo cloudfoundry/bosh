@@ -1,7 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
     class DeploymentSpecParser
-      include DnsHelper
       include ValidationHelper
 
       def initialize(deployment, event_log, logger)
@@ -16,6 +15,7 @@ module Bosh::Director
         @deployment_manifest = deployment_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
+        parse_stemcells
         parse_properties
         parse_releases
         parse_update
@@ -26,8 +26,16 @@ module Bosh::Director
 
       private
 
-      def parse_name
-        safe_property(@deployment_manifest, 'name', :class => String)
+      def parse_stemcells
+        if @deployment_manifest.has_key?('stemcells')
+          safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
+            alias_val = safe_property(stemcell_hash, 'alias', :class=> String)
+            if @deployment.stemcells.has_key?(alias_val)
+              raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
+            end
+            @deployment.add_stemcell(Stemcell.parse(stemcell_hash))
+          end
+        end
       end
 
       def parse_properties
@@ -62,7 +70,17 @@ module Bosh::Director
       end
 
       def parse_jobs
+        if @deployment_manifest.has_key?('jobs') && @deployment_manifest.has_key?('instance_groups')
+          raise JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed"
+        end
+
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
+        instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
+
+        if !instance_groups.empty?
+          jobs = instance_groups
+        end
+
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))

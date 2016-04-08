@@ -42,12 +42,12 @@ describe 'export release', type: :integration do
 
       out =  bosh_runner.run("export release test_release/1 toronto-os/1", failure_expected: true)
       expect(out).to include(<<-EOF)
-Error 60001: Can't export release `test_release/1'. It references packages without source code that are not compiled against `ubuntu-stemcell/1':
- - pkg_1/16b4c8ef1574b3f98303307caad40227c208371f
- - pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154
- - pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c
- - pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4
- - pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4
+Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
+ - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
+ - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
+ - 'pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c'
+ - 'pkg_4_depends_on_3/9207b8a277403477e50cfae52009b31c840c49d4'
+ - 'pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4'
       EOF
     end
   end
@@ -132,17 +132,46 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
   end
 
   context 'with a cloud config manifest' do
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.multiple_release_manifest }
+
     before{
       target_and_login
-      upload_cloud_config
+      upload_cloud_config(:cloud_config_hash => cloud_config)
 
       bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload release #{spec_asset('test_release_2.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell_2.tgz')}")
-      set_deployment({manifest_hash: Bosh::Spec::Deployments.multiple_release_manifest})
+      set_deployment({manifest_hash: manifest_hash})
       deploy({})
     }
+
+    context 'when using vm_types and stemcells and networks with azs' do
+      let(:cloud_config) do
+        config = Bosh::Spec::Deployments.simple_cloud_config
+        config.delete('resource_pools')
+        config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
+        config['networks'].first['subnets'].first['az'] = 'z1'
+        config['vm_types'] =  [Bosh::Spec::Deployments.vm_type]
+        config['compilation']['az'] = 'z1'
+        config
+      end
+
+      let(:manifest_hash) do
+        manifest = Bosh::Spec::Deployments.multiple_release_manifest
+        manifest['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+        manifest
+      end
+
+      it 'compiles all packages of the release against the requested stemcell' do
+        out = bosh_runner.run("export release test_release/1 toronto-os/1")
+        expect(out).to match /Started compiling packages/
+        expect(out).to match /Started compiling packages > pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154. Done/
+        expect(out).to match /Started compiling packages > pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f. Done/
+        expect(out).to match /Task ([0-9]+) done/
+      end
+    end
 
     it 'compiles all packages of the release against the requested stemcell with cloud config' do
       out = bosh_runner.run("export release test_release/1 toronto-os/1")
@@ -181,26 +210,26 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
     it 'returns an error when the release does not exist' do
       expect {
         bosh_runner.run("export release app/1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30005: Release `app' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 30005: Release 'app' doesn't exist/)
     end
 
     it 'returns an error when the release version does not exist' do
       expect {
         bosh_runner.run("export release test_release/0.1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30006: Release version `test_release\/0.1' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 30006: Release version 'test_release\/0.1' doesn't exist/)
     end
 
     it 'returns an error when the stemcell os and version does not exist' do
       expect {
         bosh_runner.run("export release test_release/1 nonexistos/1")
-      }.to raise_error(RuntimeError, /Error 50003: Stemcell version `1' for OS `nonexistos' doesn't exist/)
+      }.to raise_error(RuntimeError, /Error 50003: Stemcell version '1' for OS 'nonexistos' doesn't exist/)
     end
 
     it 'raises an error when exporting a release version not matching the manifest release version' do
       bosh_runner.run("upload release #{spec_asset('valid_release.tgz')}")
       expect {
         bosh_runner.run("export release appcloud/0.1 toronto-os/1")
-      }.to raise_error(RuntimeError, /Error 30011: Release version `appcloud\/0.1' not found in deployment `minimal' manifest/)
+      }.to raise_error(RuntimeError, /Error 30011: Release version 'appcloud\/0.1' not found in deployment 'minimal' manifest/)
     end
 
     it 'puts a tarball in the blobstore' do
@@ -216,7 +245,7 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
       end
 
       out = bosh_runner.run("export release test_release/1 toronto-os/1")
-      task_id = out[/\d+/].to_i
+      task_id = out.match(/Director task (\d+)/)[1].to_i
 
       result_file = File.open(current_sandbox.sandbox_path("boshdir/tasks/#{task_id}/result"), "r")
       tarball_data = Yajl::Parser.parse(result_file.read)
@@ -290,25 +319,49 @@ Error 60001: Can't export release `test_release/1'. It references packages witho
       expect(debug_task_output).to include('- name: job_using_pkg_1_and_2')
       expect(debug_task_output).to include('- name: job_using_pkg_2')
     end
-
   end
-  context 'when there is an existing deployment with running VMs' do
-    before {
-      target_and_login
-      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-      upload_cloud_config(:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config)
-      bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
-      deploy({})
-    }
 
-    it 'allocates non-conflicting IPs for compilation VMs' do
-      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output =  bosh_runner.run("export release test_release/1 centos-7/3001")
-      expect(output).to include('Done compiling packages')
-      expect(output).to include('Done copying packages')
-      expect(output).to include('Done copying jobs')
-      expect(output).to include("Exported release `test_release/1` for `centos-7/3001`")
+  context 'when there is an existing deployment with running VMs' do
+    context 'with global networking' do
+      before do
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+        upload_cloud_config(:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config)
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        set_deployment({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
+        deploy({})
+      end
+
+      it 'allocates non-conflicting IPs for compilation VMs' do
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        output = bosh_runner.run("export release test_release/1 centos-7/3001")
+        expect(output).to include('Done compiling packages')
+        expect(output).to include('Done copying packages')
+        expect(output).to include('Done copying jobs')
+        expect(output).to include("Exported release 'test_release/1' for 'centos-7/3001'")
+      end
+    end
+
+    context 'before global networking' do
+      before do
+        target_and_login
+        bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+        bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        legacy_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
+          Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
+        )
+        set_deployment(manifest_hash: legacy_manifest)
+        deploy({})
+      end
+
+      it 'allocates non-conflicting IPs for compilation VMs' do
+        bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        output = bosh_runner.run("export release test_release/1 centos-7/3001")
+        expect(output).to include('Done compiling packages')
+        expect(output).to include('Done copying packages')
+        expect(output).to include('Done copying jobs')
+        expect(output).to include("Exported release 'test_release/1' for 'centos-7/3001'")
+      end
     end
   end
 end

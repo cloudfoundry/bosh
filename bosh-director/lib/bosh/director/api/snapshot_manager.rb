@@ -2,7 +2,7 @@ module Bosh::Director
   module Api
     class SnapshotManager
       def create_deployment_snapshot_task(username, deployment, options = {})
-        JobQueue.new.enqueue(username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options])
+        JobQueue.new.enqueue(username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment.name)
       end
 
       def create_snapshot_task(username, instance, options)
@@ -10,7 +10,7 @@ module Bosh::Director
       end
 
       def delete_deployment_snapshots_task(username, deployment)
-        JobQueue.new.enqueue(username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name])
+        JobQueue.new.enqueue(username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name], deployment.name)
       end
 
       def delete_snapshots_task(username, snapshot_cids)
@@ -26,11 +26,13 @@ module Bosh::Director
         snapshot
       end
 
-      def snapshots(deployment, job=nil, index=nil)
+      def snapshots(deployment, job=nil, index_or_id=nil)
         filter = { deployment: deployment }
         filter[:job] = job if job
-        filter[:index] = index if index
-
+        if index_or_id
+          filter_key = index_or_id.to_s =~ /^\d+$/ ? :index : :uuid
+          filter[filter_key] = index_or_id
+        end
         result = []
         instances = Models::Instance.filter(filter).all
 
@@ -40,6 +42,7 @@ module Bosh::Director
               result << {
                   'job' => instance.job,
                   'index' => instance.index,
+                  'uuid' => instance.uuid,
                   'snapshot_cid' => snapshot.snapshot_cid,
                   'created_at' => snapshot.created_at.to_s,
                   'clean' => snapshot.clean
@@ -51,9 +54,10 @@ module Bosh::Director
         result
       end
 
-      def self.delete_snapshots(snapshots)
+      def self.delete_snapshots(snapshots, options={})
+        keep_snapshots_in_the_cloud = options.fetch(:keep_snapshots_in_the_cloud, false)
         snapshots.each do |snapshot|
-          Config.cloud.delete_snapshot(snapshot.snapshot_cid)
+          Config.cloud.delete_snapshot(snapshot.snapshot_cid) unless keep_snapshots_in_the_cloud
           snapshot.delete
         end
       end
@@ -72,8 +76,7 @@ module Bosh::Director
             index: instance.index,
             director_name: Config.name,
             director_uuid: Config.uuid,
-            agent_id: instance.vm.agent_id,
-            instance_id: instance.vm_id
+            agent_id: instance.agent_id
         }
 
         instance.persistent_disks.each do |disk|

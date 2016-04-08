@@ -27,3 +27,6 @@ properties:
 
   network_name:
     description: Network name used for determining printed IP address
+
+  networks:
+    description: All networks

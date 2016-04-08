@@ -7,15 +7,7 @@ params = {
   'max_threads' => p('director.max_threads'),
   'logging' => {
     'level' => 'DEBUG',
-    'file' =>  "/var/vcap/sys/log/director/#{ENV['COMPONENT']}.debug.log"
-  },
-  'redis' => {
-    'host' => p('redis.address'),
-    'port' => p('redis.port'),
-    'password' => p('redis.password'),
-    'logging' => {
-      'level' => p('redis.loglevel')
-    }
+    'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'dir' => '/var/vcap/store/director',
@@ -31,12 +23,12 @@ params = {
   'snapshots' => {
     'enabled'=> p('director.enable_snapshots')
   },
-  'max_vm_create_tries' => p('director.max_vm_create_tries')
+  'max_vm_create_tries' => p('director.max_vm_create_tries'),
+  'enable_post_deploy' => p('director.enable_post_deploy'),
+  'generate_vm_passwords' => p('director.generate_vm_passwords'),
+  'remove_dev_tools' => p('director.remove_dev_tools'),
+  'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
 }
-
-if_p('resque.loglevel') do |resque_loglevel|
-  params['resque'] = {'logging' => {'level' => resque_loglevel}}
-end
 
 params['scheduled_jobs'] = []
 
@@ -59,6 +51,25 @@ if_p('director.backup_schedule') do |backup_schedule|
     'command' => 'ScheduledBackup',
     'schedule' =>  backup_schedule
   }
+end
+
+params['scheduled_jobs'] << {
+  'command' => 'ScheduledOrphanCleanup',
+  'schedule' => p('director.disks.cleanup_schedule'),
+  'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
+}
+
+params['record_events'] = p('director.events.record_events')
+if params['record_events']
+  params['scheduled_jobs'] << {
+    'command' => 'ScheduledEventsCleanup',
+    'schedule' => p('director.events.cleanup_schedule'),
+    'params' => [{'max_events' => p('director.events.max_events')}]
+  }
+end
+
+if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
+  params['keep_unreachable_vms'] = keep_unreachable_vms
 end
 
 params['scan_and_fix'] = {
@@ -92,7 +103,8 @@ if p('blobstore.provider') == 's3'
     'bucket_name' => p('blobstore.bucket_name'),
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'access_key_id' => p('blobstore.access_key_id', nil),
-    'secret_access_key' => p('blobstore.secret_access_key', nil)
+    'secret_access_key' => p('blobstore.secret_access_key', nil),
+    'region' => p('blobstore.s3_region', nil)
   }
 
   if_p('blobstore.use_ssl') do |use_ssl|
@@ -118,6 +130,10 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold|
      blobstore_options['s3_multipart_threshold'] = s3_multipart_threshold
   end
+
+  if_p('blobstore.s3_signature_version') do |s3_signature_version|
+     blobstore_options['s3_signature_version'] = s3_signature_version
+  end
 else
   blobstore_options = {
     'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",
@@ -130,6 +146,12 @@ params['blobstore'] = {
   'provider' => p('blobstore.provider'),
   'options' => blobstore_options
 }
+
+if p('blobstore.provider') == "s3"
+   params['blobstore']['provider'] = "s3cli"
+   params['blobstore']['options']['s3cli_config_path'] = "/var/vcap/data/tmp/director"
+   params['blobstore']['options']['s3cli_path'] = "/var/vcap/packages/s3cli/bin/s3cli"
+end
 
 user_management = {
     'provider' => p('director.user_management.provider')
@@ -160,12 +182,15 @@ params['trusted_certs'] = p('director.trusted_certs')
 
 if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
   params['compiled_package_cache'] = {
-    'provider' => 's3',
+    'provider' => 's3cli',
     'options' => {
       'bucket_name' => bucket_name,
       'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
       'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
-      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil)
+      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
+      'region' => p('blobstore.s3_region', nil),
+      's3cli_config_path' => "/var/vcap/data/tmp/director",
+      's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli",
     }
   }
 
@@ -193,6 +218,10 @@ if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
 
   if_p('compiled_package_cache.options.s3_multipart_threshold') do |s3_multipart_threshold|
      options['s3_multipart_threshold'] = s3_multipart_threshold
+  end
+
+  if_p('compiled_package_cache.options.s3_signature_version') do |s3_signature_version|
+     options['s3_signature_version'] = s3_signature_version
   end
 end
 
@@ -472,48 +501,53 @@ params['cloud']['properties']['agent'] = {
  'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p(['agent.nats.address', 'nats.address'])}:#{p('nats.port')}"
 }
 
-options =  params['cloud']['properties']['agent']['blobstore']['options']
+agent_blobstore_options =  params['cloud']['properties']['agent']['blobstore']['options']
 if p('blobstore.provider') == "s3"
-  options['bucket_name'] = p('blobstore.bucket_name')
-  options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
-  options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
-  options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
+  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
+  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
+  agent_blobstore_options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
+  agent_blobstore_options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
+  agent_blobstore_options['region'] = p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil)
 
   port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil)
   unless port.nil?
-      options['port'] = port
+      agent_blobstore_options['port'] = port
   end
 
   host = p(['agent.blobstore.host', 'blobstore.host'], nil)
   unless host.nil?
-    options['host'] = host
+    agent_blobstore_options['host'] = host
   end
 
   use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil)
   unless use_ssl.nil?
-    options['use_ssl'] = use_ssl
+    agent_blobstore_options['use_ssl'] = use_ssl
   end
 
   ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil)
   unless ssl_verify_peer.nil?
-    options['ssl_verify_peer'] = ssl_verify_peer
+    agent_blobstore_options['ssl_verify_peer'] = ssl_verify_peer
   end
 
   s3_force_path_style = p(['agent.blobstore.s3_force_path_style', 'blobstore.s3_force_path_style'], nil)
   unless s3_force_path_style.nil?
-    options['s3_force_path_style'] = s3_force_path_style
+    agent_blobstore_options['s3_force_path_style'] = s3_force_path_style
   end
 
   s3_multipart_threshold = p(['agent.blobstore.s3_multipart_threshold', 'blobstore.s3_multipart_threshold'], nil)
   unless s3_multipart_threshold.nil?
-    options['s3_multipart_threshold'] = s3_multipart_threshold
+    agent_blobstore_options['s3_multipart_threshold'] = s3_multipart_threshold
   end
 
-  else
-    options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
-    options['user'] = p('blobstore.agent.user')
-    options['password'] = p('blobstore.agent.password')
+  s3_signature_version = p(['agent.blobstore.s3_signature_version', 'blobstore.s3_signature_version'], nil)
+  unless s3_signature_version.nil?
+    agent_blobstore_options['s3_signature_version'] = s3_signature_version
   end
+else
+  agent_blobstore_options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
+  agent_blobstore_options['user'] = p('blobstore.agent.user')
+  agent_blobstore_options['password'] = p('blobstore.agent.password')
+end
 
 JSON.dump(params)
 %>

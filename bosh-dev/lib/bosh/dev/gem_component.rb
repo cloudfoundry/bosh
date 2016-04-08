@@ -27,9 +27,9 @@ module Bosh
         File.open(version_file_path, 'w') { |f| f.write(file_contents) }
       end
 
-      def build_gem(destination_dir)
+      def build_gem(destination)
         gemspec = "#{name}.gemspec"
-        Rake::FileUtilsExt.sh "cd #{name} && gem build #{gemspec} && mv #{dot_gem} #{destination_dir}"
+        Rake::FileUtilsExt.sh "cd #{name} && gem build #{gemspec} && mv #{dot_gem} #{destination}"
       end
 
       def dependencies

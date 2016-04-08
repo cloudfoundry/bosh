@@ -3,42 +3,54 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemHandlers::UnresponsiveAgent do
 
-    def make_handler(vm, cloud, agent, data = {})
-      handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
+    def make_handler(instance, cloud, _, data = {})
+      handler = ProblemHandlers::UnresponsiveAgent.new(instance.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_defaults).with(vm.agent_id, anything).and_return(agent)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id, anything).and_return(@agent)
+      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id).and_return(@agent)
       handler
     end
 
     before(:each) do
       @cloud = instance_double('Bosh::Cloud')
-      @agent = double('agent')
+      @agent = double(Bosh::Director::AgentClient)
       allow(Config).to receive(:cloud).and_return(@cloud)
 
-      @vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007')
-      @instance = Models::Instance.make(job: 'mysql_node', index: 0, vm_id: @vm.id)
+      deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
+
+      @instance = Models::Instance.make(
+        job: 'mysql_node',
+        index: 0,
+        uuid: 'uuid-1',
+        vm_cid: 'vm-cid',
+        deployment: deployment_model,
+        cloud_properties_hash: { 'foo' => 'bar' },
+        spec: {'networks' => networks},
+        agent_id: 'agent-007'
+      )
     end
 
+    let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
+
     let :handler do
-      make_handler(@vm, @cloud, @agent)
+      make_handler(@instance, @cloud, @agent)
     end
 
     it 'registers under unresponsive_agent type' do
-      handler = ProblemHandlers::Base.create_by_type(:unresponsive_agent, @vm.id, {})
+      handler = ProblemHandlers::Base.create_by_type(:unresponsive_agent, @instance.id, {})
       expect(handler).to be_kind_of(ProblemHandlers::UnresponsiveAgent)
     end
 
     it 'has well-formed description' do
-      expect(handler.description).to eq('mysql_node/0 (vm-cid) is not responding')
+      expect(handler.description).to eq('mysql_node/0 (uuid-1) (vm-cid) is not responding')
     end
 
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
-        @vm.update(cid: nil)
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
+        @instance.update(vm_cid: nil)
         expect {
           handler.apply_resolution(:reboot_vm)
-        }.to raise_error(ProblemHandlerError, /doesn't have a cloud id/)
+        }.to raise_error(ProblemHandlerError, /is no longer in the database/)
       end
 
       it 'skips reboot if agent is now alive' do
@@ -71,12 +83,11 @@ module Bosh::Director
 
     describe 'recreate_vm resolution' do
       it 'skips recreate if CID is not present' do
-        @vm.update(cid: nil)
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
+        @instance.update(vm_cid: nil)
 
         expect {
           handler.apply_resolution(:recreate_vm)
-        }.to raise_error(ProblemHandlerError, /doesn't have a cloud id/)
+        }.to raise_error(ProblemHandlerError, /is no longer in the database/)
       end
 
       it "doesn't recreate VM if agent is now alive" do
@@ -90,45 +101,70 @@ module Bosh::Director
       context 'when no errors' do
         let(:spec) do
           {
-            'resource_pool' => {
-              'stemcell' => {
-                'name' => 'stemcell-name',
-                'version' => '3.0.2'
-              },
+            'deployment' => 'simple',
+            'job' => {'name' => 'job'},
+            'index' => 0,
+            'vm_type' => {
+              'name' => 'fake-vm-type',
               'cloud_properties' => { 'foo' => 'bar' },
             },
-            'networks' => ['A', 'B', 'C']
+            'stemcell' => {
+              'name' => 'stemcell-name',
+              'version' => '3.0.2'
+            },
+            'networks' => networks,
+            'template_hashes' => {},
+            'configuration_hash' => {'configuration' => 'hash'},
+            'rendered_templates_archive' => {'some' => 'template'},
+            'env' => { 'key1' => 'value1' }
+          }
+        end
+        let(:agent_spec) do
+          {
+            'deployment' => 'simple',
+            'job' => {'name' => 'job'},
+            'index' => 0,
+            'networks' => networks,
+            'template_hashes' => {},
+            'configuration_hash' => {'configuration' => 'hash'},
+            'rendered_templates_archive' => {'some' => 'template'}
           }
         end
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
-          allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+          @instance.update(spec: spec)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222', anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
+          fake_app
+          allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
         end
-
 
         it 'recreates the VM' do
           allow(@agent).to receive(:ping).and_raise(RpcTimeout)
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).
-            with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], { 'key1' => 'value1' })
+                                  .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
-          expect(fake_new_agent).to receive(:apply).with(spec).ordered
+          expect(fake_new_agent).to receive(:apply).with({'deployment' => 'simple', 'job' => {'name' => 'job'}, 'index' => 0, 'networks' => networks}).ordered
+          expect(fake_new_agent).to receive(:get_state).and_return(agent_spec).ordered
+          expect(fake_new_agent).to receive(:apply).with(agent_spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
-          expect(Models::Vm.find(agent_id: 'agent-007')).not_to be_nil
+          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
+          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
 
           handler.apply_resolution(:recreate_vm)
 
-          expect(Models::Vm.find(agent_id: 'agent-007')).to be_nil
+          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
         end
       end
     end
@@ -136,7 +172,6 @@ module Bosh::Director
     describe 'delete_vm_reference resolution' do
 
       it 'skips deleting VM ref if agent is now alive' do
-        @vm.update(cid: nil)
         expect(@agent).to receive(:ping).and_return(:pong)
 
         expect {
@@ -145,10 +180,10 @@ module Bosh::Director
       end
 
       it 'deletes VM reference' do
-        @vm.update(cid: nil)
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        handler.apply_resolution(:delete_vm_reference)
-        expect(Models::Vm[@vm.id]).to be_nil
+        expect{
+          handler.apply_resolution(:delete_vm_reference)
+        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
       end
     end
   end

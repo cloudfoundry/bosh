@@ -1,0 +1,14 @@
+---
+name: api_server_with_optional_links_1
+templates:
+  config.yml.erb: config.yml
+
+packages:
+    - pkg_3_depends_on_2
+
+consumes:
+  - {name: db, type: db}
+  - { name: backup_db, type: db }
+  - {name: optional_link_name, type: optional_link_type, optional: true}
+
+properties: {}

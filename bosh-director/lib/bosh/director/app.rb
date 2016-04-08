@@ -9,7 +9,7 @@ module Bosh::Director
   class App
 
     class << self
-      # Some places (ie, resque jobs) need to reference the authoriative app instance
+      # Some places need to reference the authoritative app instance
       # from class methods.
       def instance
         @@instance

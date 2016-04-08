@@ -31,15 +31,15 @@ module Bosh::Monitor
       def process(alert)
         deployment = alert.attributes['deployment']
         job = alert.attributes['job']
-        index = alert.attributes['index']
+        id = alert.attributes['instance_id']
 
-        # only when the agent times out do we add deployment, job & index to the alert
+        # only when the agent times out do we add deployment, job & id to the alert
         # attributes, so this won't trigger a recreate for other types of alerts
-        if deployment && job && index
-          agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, index)
+        if deployment && job && id
+          agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
           @alert_tracker.record(agent_key, alert.created_at)
 
-          payload = {'jobs' => {job => [index]}}
+          payload = {'jobs' => {job => [id]}}
 
           unless director_info
             logger.error("(Resurrector) director is not responding with the status")
@@ -70,13 +70,13 @@ module Bosh::Monitor
             # queue instead, and only queue if it isn't already in the queue
             # what if we can't keep up with the failure rate?
             # - maybe not, maybe the meltdown detection takes care of the rate issue
-            logger.warn("(Resurrector) notifying director to recreate unresponsive VM: #{deployment} #{job}/#{index}")
+            logger.warn("(Resurrector) notifying director to recreate unresponsive VM: #{deployment} #{job}/#{id}")
 
             send_http_put_request(url.to_s, request)
           end
 
         else
-          logger.warn("(Resurrector) event did not have deployment, job and index: #{alert}")
+          logger.warn("(Resurrector) event did not have deployment, job and id: #{alert}")
         end
       end
 

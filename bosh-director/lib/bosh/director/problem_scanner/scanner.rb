@@ -20,11 +20,11 @@ module Bosh::Director
       def reset(vms=nil)
         if vms
           vms.each do |job, index|
-            instance = @instance_manager.find_by_name(@deployment.name, job, index)
+            instance = @instance_manager.find_by_name(@deployment, job, index)
 
             Models::DeploymentProblem.where(
               deployment: @deployment,
-              resource_id: instance.vm.id,
+              resource_id: instance.id,
               state: 'open'
             ).update(state: 'closed')
 
@@ -68,15 +68,16 @@ module Bosh::Director
       def initialize(event_log, logger)
         @event_log = event_log
         @logger = logger
+        @event_log_stage = nil
       end
 
       def begin_stage(stage_name, n_steps)
-        @event_log.begin_stage(stage_name, n_steps)
+        @event_log_stage = @event_log.begin_stage(stage_name, n_steps)
         @logger.info(stage_name)
       end
 
       def track_and_log(task, log = true)
-        @event_log.track(task) do |ticker|
+        @event_log_stage.advance_and_track(task) do |ticker|
           @logger.info(task) if log
           yield ticker if block_given?
         end

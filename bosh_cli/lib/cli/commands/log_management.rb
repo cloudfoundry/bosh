@@ -11,27 +11,27 @@ module Bosh::Cli::Command
     option '--dir destination_directory', String, 'download directory'
     option '--all', 'deprecated'
 
-    def fetch_logs(job, index)
+    def fetch_logs(job, index_or_id)
       auth_required
 
       manifest = prepare_deployment_manifest(show_state: true)
-      check_arguments(index)
+      check_arguments
 
       logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
 
-      resource_id = fetch_log_resource_id(manifest.name, index, job)
-      logs_path = logs_downloader.build_destination_path(job, index, options[:dir] || Dir.pwd)
+      resource_id = fetch_log_resource_id(manifest.name, index_or_id, job)
+      logs_path = logs_downloader.build_destination_path(job, index_or_id, options[:dir] || Dir.pwd)
       logs_downloader.download(resource_id, logs_path)
     end
 
-    def fetch_log_resource_id(deployment_name, index, job)
-      resource_id = director.fetch_logs(deployment_name, job, index, log_type, filters)
+    private
+
+    def fetch_log_resource_id(deployment_name, index_or_id, job)
+      resource_id = director.fetch_logs(deployment_name, job, index_or_id, log_type, filters)
       err('Error retrieving logs') if resource_id.nil?
 
       resource_id
     end
-
-    private
 
     def agent_logs_wanted?
       options[:agent]
@@ -41,10 +41,8 @@ module Bosh::Cli::Command
       options[:job]
     end
 
-    def check_arguments(index)
+    def check_arguments
       no_track_unsupported
-
-      err('Job index is expected to be a positive integer') if index !~ /^\d+$/
 
       if agent_logs_wanted? && options[:only]
         err('Custom filtering is not supported for agent logs')

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli::Command
   class Maintenance < Base
 
@@ -17,34 +15,18 @@ module Bosh::Cli::Command
 
       remove_all = !!options[:all]
 
-      releases_to_keep = remove_all ? 0 : RELEASES_TO_KEEP
-      stemcells_to_keep = remove_all ? 0 : STEMCELLS_TO_KEEP
+      num_releases_to_keep = remove_all ? 0 : RELEASES_TO_KEEP
+      num_stemcells_to_keep = remove_all ? 0 : STEMCELLS_TO_KEEP
 
-      release_wording = pluralize(releases_to_keep, 'latest version')
-      stemcell_wording = pluralize(stemcells_to_keep, 'latest version')
-
-      desc = <<-EOS.gsub(/^ */, "")
-        Cleanup command will attempt to delete old unused
-        release versions and stemcells from your currently
-        targeted director at #{target_name.make_green}.
-
-        Only #{release_wording.make_green} of each release
-        and #{stemcell_wording.make_green} of each stemcell will be kept.
-
-        Releases and stemcells that are in use will not be affected.
-      EOS
-
-      nl
-      say(desc)
-      nl
-
-      err('Cleanup canceled') unless confirmed?
-
-      nl
-      cleanup_stemcells(stemcells_to_keep)
-      nl
-      cleanup_releases(releases_to_keep)
-
+      begin
+        director.cleanup({'remove_all' => remove_all})
+      rescue Bosh::Cli::ResourceNotFound
+        # old directors won't have `cleanup` endpoint, therefore use legacy endpoints
+        nl
+        cleanup_stemcells(num_stemcells_to_keep)
+        nl
+        cleanup_releases(num_releases_to_keep)
+      end
       nl
       say('Cleanup complete'.make_green)
     end
@@ -86,16 +68,10 @@ module Bosh::Cli::Command
 
       director.list_releases.each do |release|
         name = release['name']
-        if release['release_versions']
-          # reverse compatibility with old director response format
-          versions = release['release_versions'].map { |release_version| release_version['version'] }
-          currently_deployed = release['release_versions'].
-            select { |release_version| release_version['currently_deployed'] }.
-            map{ |release_version| release_version['version'] }
-        else
-          versions = release['versions']
-          currently_deployed = release['in_use']
-        end
+        versions = release['release_versions'].map { |release_version| release_version['version'] }
+        currently_deployed = release['release_versions']
+                               .select { |release_version| release_version['currently_deployed'] }
+                               .map { |release_version| release_version['version'] }
 
         version_tuples = versions.map do |v|
           {

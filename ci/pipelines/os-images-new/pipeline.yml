@@ -1,0 +1,102 @@
+---
+jobs:
+  - name: start-job
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: false
+
+  - name: build-ubuntu-trusty
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - start-job
+      - get: version
+        resource: ubuntu-trusty-version
+        params:
+          bump: minor
+      - put: ubuntu-trusty-version
+        params:
+          file: version/number
+      - task: build
+        file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        privileged: true
+        params:
+          OPERATING_SYSTEM_NAME:      ubuntu
+          OPERATING_SYSTEM_VERSION:   trusty
+      - put: ubuntu-trusty-tarball
+        params:
+          file: os-image/ubuntu-trusty-*.tgz
+
+  - name: build-centos-7
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed:
+          - start-job
+      - get: version
+        resource: centos-7-version
+        params:
+          bump: minor
+      - put: centos-7-version
+        params:
+          file: version/number
+      - task: build
+        file: bosh-src/ci/pipelines/os-images-new/tasks/build.yml
+        privileged: true
+        params:
+          OPERATING_SYSTEM_NAME:      centos
+          OPERATING_SYSTEM_VERSION:   7
+      - put: centos-7-tarball
+        params:
+          file: os-image/centos-7-*.tgz
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: {{branch}}
+
+  #
+  # ubuntu-trusty
+  #
+
+  - name: ubuntu-trusty-version
+    type: semver
+    source:
+      driver: s3
+      key: ubuntu-trusty-version
+      bucket: {{osimage_bucket}}
+      access_key_id: {{osimage_aws_access_key}}
+      secret_access_key: {{osimage_aws_secret_key}}
+
+  - name: ubuntu-trusty-tarball
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      regexp: ubuntu-trusty/ubuntu-trusty-(.+).tgz
+      access_key_id: {{osimage_aws_access_key}}
+      secret_access_key: {{osimage_aws_secret_key}}
+
+  #
+  # centos-7
+  #
+
+  - name: centos-7-version
+    type: semver
+    source:
+      driver: s3
+      key: centos-7-version
+      bucket: {{osimage_bucket}}
+      access_key_id: {{osimage_aws_access_key}}
+      secret_access_key: {{osimage_aws_secret_key}}
+
+  - name: centos-7-tarball
+    type: s3
+    source:
+      bucket: {{osimage_bucket}}
+      regexp: centos-7/centos-7-(.+).tgz
+      access_key_id: {{osimage_aws_access_key}}
+      secret_access_key: {{osimage_aws_secret_key}}
