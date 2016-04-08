@@ -30,22 +30,22 @@ module Bosh::Director
 
         ssh_info = instances.map do |instance|
           begin
-          agent = @instance_manager.agent_client_for(instance)
+            agent = @instance_manager.agent_client_for(instance)
 
-          logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
-          result = agent.ssh(@command, @params)
-          if target.ids_provided?
-            result["id"] = instance.uuid
-          else
-            result["index"] = instance.index
-          end
+            logger.info("ssh #{@command} '#{instance.job}/#{instance.uuid}'")
+            result = agent.ssh(@command, @params)
+            if target.ids_provided?
+              result["id"] = instance.uuid
+            else
+              result["index"] = instance.index
+            end
 
-          if Config.default_ssh_options
-            result["gateway_host"] = Config.default_ssh_options["gateway_host"]
-            result["gateway_user"] = Config.default_ssh_options["gateway_user"]
-          end
+            if Config.default_ssh_options
+              result["gateway_host"] = Config.default_ssh_options["gateway_host"]
+              result["gateway_user"] = Config.default_ssh_options["gateway_user"]
+            end
 
-          result
+            result
           rescue Exception => e
             raise e
           ensure
@@ -61,6 +61,7 @@ module Bosh::Director
       end
 
       private
+
       def add_event(deployment_name, instance_name, error = nil)
         user =  @params['user_regex'] || @params['user']
         event_manager.create_event(

@@ -47,33 +47,26 @@ module Bosh::Director
       expect(parsed_result_file).to eq([{'index' => 1, 'gateway_host' => 'fake-host', 'gateway_user' => 'vcap'}])
     end
 
-    context 'when' do
-      it 'should store new event' do
-        expect {
-          job.perform
-        }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(1)
-        event = Bosh::Director::Models::Event.first
-        expect(event.user).to eq(task.username)
-        expect(event.action).to eq('fake-command ssh')
-        expect(event.object_type).to eq('instance')
-        expect(event.object_name).to eq('fake-job/fake-uuid-1')
-        expect(event.deployment).to eq('name-1')
-        expect(event.instance).to eq('fake-job/fake-uuid-1')
-        expect(event.task).to eq("#{task.id}")
-        expect(event.context). to eq({'user' => 'user-ssh'})
-        expect(event.timestamp).to eq(Time.now)
-      end
+    it 'should store new event' do
+      expect{ job.perform }.to change{ Models::Event.count }.from(0).to(1)
+      event = Models::Event.first
+      expect(event.user).to eq(task.username)
+      expect(event.action).to eq('fake-command ssh')
+      expect(event.object_type).to eq('instance')
+      expect(event.object_name).to eq('fake-job/fake-uuid-1')
+      expect(event.deployment).to eq('name-1')
+      expect(event.instance).to eq('fake-job/fake-uuid-1')
+      expect(event.task).to eq("#{task.id}")
+      expect(event.context).to eq({'user' => 'user-ssh'})
+      expect(event.timestamp).to eq(Time.now)
+    end
 
-      it 'should store event with error' do
-        allow(instance_manager).to receive(:agent_client_for).and_raise(InstanceVmMissing, 'error')
-        expect {
-          job.perform
-        }.to raise_error(InstanceVmMissing)
-        event = Bosh::Director::Models::Event.first
-        expect(event.error).to eq('error')
-      end
-end
+    it 'should store event with error' do
+      allow(instance_manager).to receive(:agent_client_for).and_raise(InstanceVmMissing, 'error')
+      expect { job.perform }.to raise_error(InstanceVmMissing)
+      event = Models::Event.first
+      expect(event.error).to eq('error')
+    end
 
     context 'when instance id was passed in' do
       let(:target) { {'job' => 'fake-job', 'ids' => ['fake-uuid-1']} }

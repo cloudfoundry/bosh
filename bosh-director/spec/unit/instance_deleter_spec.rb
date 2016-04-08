@@ -9,12 +9,12 @@ module Bosh::Director
     let(:delete_job) {Jobs::DeleteDeployment.new('test_deployment', {})}
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
-    before {
+    before do
       allow(Config).to receive(:cloud).and_return(cloud)
       allow(delete_job).to receive(:task_id).and_return(task.id)
       allow(Config).to receive(:current_job).and_return(delete_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
-    }
+    end
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
     let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
