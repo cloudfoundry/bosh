@@ -61,4 +61,3 @@ properties:
     address: 127.0.0.1
     domain_name: microbosh
     db: *bosh_db
-
