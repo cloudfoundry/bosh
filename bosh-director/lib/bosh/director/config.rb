@@ -148,7 +148,7 @@ module Bosh::Director
 
         @encryption = config['encryption']
         @fix_stateful_nodes = config.fetch('scan_and_fix', {})
-                                  .fetch('auto_fix_stateful_nodes', false)
+          .fetch('auto_fix_stateful_nodes', false)
         @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
 
         @trusted_certs = config['trusted_certs'] || ''
@@ -178,8 +178,8 @@ module Bosh::Director
       def get_revision
         Dir.chdir(File.expand_path('../../../../../..', __FILE__))
         revision_command = '(cat REVISION 2> /dev/null || ' +
-          'git show-ref --head --hash=8 2> /dev/null || ' +
-          'echo 00000000) | head -n1'
+            'git show-ref --head --hash=8 2> /dev/null || ' +
+            'echo 00000000) | head -n1'
         `#{revision_command}`.strip
       end
 
