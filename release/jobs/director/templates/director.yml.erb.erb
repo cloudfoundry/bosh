@@ -28,7 +28,6 @@ params = {
   'generate_vm_passwords' => p('director.generate_vm_passwords'),
   'remove_dev_tools' => p('director.remove_dev_tools'),
   'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
-  'enable_virtual_delete_vms' => p('director.enable_virtual_delete_vms'),
 }
 
 params['scheduled_jobs'] = []
@@ -71,6 +70,10 @@ end
 
 if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
   params['keep_unreachable_vms'] = keep_unreachable_vms
+end
+
+if_p('director.enable_virtual_delete_vms') do |enable_virtual_delete_vms|
+  params['enable_virtual_delete_vms'] = enable_virtual_delete_vms
 end
 
 params['scan_and_fix'] = {
