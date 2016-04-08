@@ -174,9 +174,19 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'blank password logins are disabled (stig: V-38497)' do
-    describe command('grep -R nullok /etc/pam.d') do
-      its (:stdout) { should eq('') }
+  describe 'PAM configuration' do
+    context 'blank password logins are disabled (stig: V-38497)' do
+      describe command('grep -R nullok /etc/pam.d') do
+        it { should return_exit_status(1) }
+        its (:stdout) { should eq('') }
+      end
+    end
+
+    context 'a stronger hashing algorithm should be used (stig: V-38574)' do
+      describe command('egrep -h -r "^password" /etc/pam.d | grep pam_unix.so | grep -v sha512') do
+        it { should return_exit_status(1) }
+        its (:stdout) { should eq('') }
+      end
     end
   end
 
