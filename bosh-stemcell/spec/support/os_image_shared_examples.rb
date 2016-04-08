@@ -254,6 +254,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe file('/etc/login.defs') do
+    it('should not allow users to cycle passwords quickly (stig: V-38477)') do
+      should contain /PASS_MIN_DAYS[[:space:]]1/
+    end
+  end
+
   # NOTE: These shared examples are executed in the OS image building spec,
   # suites and the Stemcell building spec suites. In the OS image suites
   # nothing will be excluded, which is the desired behavior... we want all OS
@@ -297,6 +303,13 @@ shared_examples_for 'every OS image' do
 
     context 'contains no system users with passwords (stig: V-38496)' do
       describe command("awk -F: '$1 !~ /^root$/ && $1 !~ /^vcap$/ && $2 !~ /^[!*]/ {print $1 \":\" $2}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
+
+    context 'contains no users with that can update their password frequently (stig: V-38477)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $2 !~ /^[!*]/ && $4 != \"1\" {print $1 \":\" $4}' /etc/shadow") do
         it { should return_exit_status(0) }
         its (:stdout) { should eq('') }
       end
