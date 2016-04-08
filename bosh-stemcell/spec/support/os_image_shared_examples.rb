@@ -268,6 +268,10 @@ shared_examples_for 'every OS image' do
     it('should not allow users to cycle passwords quickly (stig: V-38477)') do
       should contain /^PASS_MIN_DAYS[[:space:]]\+1/
     end
+
+    it('should use an approved hashing algorithm to save the password (stig: V-38576)') do
+      should contain /^ENCRYPT_METHOD[[:space:]]\+SHA512/
+    end
   end
 
   # NOTE: These shared examples are executed in the OS image building spec,
