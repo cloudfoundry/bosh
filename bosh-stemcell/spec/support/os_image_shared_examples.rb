@@ -352,6 +352,13 @@ shared_examples_for 'every OS image' do
         its (:stdout) { should eq('') }
       end
     end
+
+    context 'contains no users with that can update their password frequently (stig: V-38477)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $2 !~ /^[!*]/ && $4 != \"1\" {print $1 \":\" $4}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
   end
 
   describe 'IP forwarding for IPv4 must not be enabled (stig: V-38511)' do
