@@ -350,21 +350,21 @@ module Bosh::Director
 
     def identity_provider
       @identity_provider ||= begin
-                               # no fetching w defaults?
+        # no fetching w defaults?
         user_management = hash['user_management']
         user_management ||= {'provider' => 'local'}
         provider_name = user_management['provider']
 
         providers = {
-            'uaa' => Bosh::Director::Api::UAAIdentityProvider,
-            'local' => Bosh::Director::Api::LocalIdentityProvider,
+          'uaa' => Bosh::Director::Api::UAAIdentityProvider,
+          'local' => Bosh::Director::Api::LocalIdentityProvider,
         }
         provider_class = providers[provider_name]
 
         if provider_class.nil?
           raise ArgumentError,
-                "Unknown user management provider '#{provider_name}', " +
-                    "available providers are: #{providers.keys.join(", ")}"
+            "Unknown user management provider '#{provider_name}', " +
+              "available providers are: #{providers.keys.join(", ")}"
         end
 
         Config.logger.debug("Director configured with '#{provider_name}' user management provider")
