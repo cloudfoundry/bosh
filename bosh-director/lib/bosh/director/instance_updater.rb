@@ -7,7 +7,7 @@ module Bosh::Director
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      vm_deleter = VmDeleter.new(cloud, logger)
+      vm_deleter = VmDeleter.new(cloud, logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
       disk_manager = DiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
       arp_flusher = ArpFlusher.new
@@ -15,15 +15,15 @@ module Bosh::Director
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       dns_manager = DnsManagerProvider.create
       new(
-        cloud,
-        logger,
-        ip_provider,
-        App.instance.blobstores.blobstore,
-        vm_deleter,
-        vm_creator,
-        dns_manager,
-        disk_manager,
-        vm_recreator
+          cloud,
+          logger,
+          ip_provider,
+          App.instance.blobstores.blobstore,
+          vm_deleter,
+          vm_creator,
+          dns_manager,
+          disk_manager,
+          vm_recreator
       )
     end
 
@@ -93,11 +93,11 @@ module Bosh::Director
 
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
         state_applier = InstanceUpdater::StateApplier.new(
-          instance_plan,
-          agent(instance),
-          cleaner,
-          @logger,
-          canary: options[:canary]
+            instance_plan,
+            agent(instance),
+            cleaner,
+            @logger,
+            canary: options[:canary]
         )
         state_applier.apply(instance_plan.desired_instance.job.update)
       end
@@ -107,8 +107,8 @@ module Bosh::Director
 
     def release_obsolete_ips(instance_plan)
       instance_plan.network_plans
-        .select(&:obsolete?)
-        .each do |network_plan|
+          .select(&:obsolete?)
+          .each do |network_plan|
         reservation = network_plan.reservation
         @ip_provider.release(reservation)
       end

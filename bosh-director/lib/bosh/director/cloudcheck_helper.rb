@@ -46,7 +46,9 @@ module Bosh::Director
       validate_env(instance_model.vm_env)
 
       begin
-        vm_deleter.delete_for_instance(instance_model)
+
+        raw_vm_deleter = VmDeleter.new(cloud, @logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
+        raw_vm_deleter.delete_for_instance(instance_model)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
@@ -60,8 +62,8 @@ module Bosh::Director
       instance_plan_to_create = create_instance_plan(instance_model, existing_vm_env)
 
       vm_creator.create_for_instance_plan(
-        instance_plan_to_create,
-        Array(instance_model.persistent_disk_cid)
+          instance_plan_to_create,
+          Array(instance_model.persistent_disk_cid)
       )
 
       dns_manager = DnsManagerProvider.create
@@ -86,11 +88,11 @@ module Bosh::Director
         update_config = apply_spec['update'].nil? ? nil : DeploymentPlan::UpdateConfig.new(apply_spec['update'])
 
         InstanceUpdater::StateApplier.new(
-          instance_plan_to_create,
-          agent_client(instance_model.credentials, instance_model.agent_id),
-          cleaner,
-          @logger,
-          {}
+            instance_plan_to_create,
+            agent_client(instance_model.credentials, instance_model.agent_id),
+            cleaner,
+            @logger,
+            {}
         ).apply(update_config)
       end
     end
@@ -105,26 +107,26 @@ module Bosh::Director
       availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone, instance_model.cloud_properties_hash)
 
       instance_from_model = DeploymentPlan::Instance.new(
-        instance_model.job,
-        instance_model.index,
-        instance_model.state,
-        vm_type,
-        nil,
-        stemcell,
-        env,
-        false,
-        instance_model.deployment,
-        instance_model.spec,
-        availability_zone,
-        @logger
+          instance_model.job,
+          instance_model.index,
+          instance_model.state,
+          vm_type,
+          nil,
+          stemcell,
+          env,
+          false,
+          instance_model.deployment,
+          instance_model.spec,
+          availability_zone,
+          @logger
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
       DeploymentPlan::ResurrectionInstancePlan.new(
-        existing_instance: instance_model,
-        instance: instance_from_model,
-        desired_instance: DeploymentPlan::DesiredInstance.new,
-        recreate_deployment: true
+          existing_instance: instance_model,
+          instance: instance_from_model,
+          desired_instance: DeploymentPlan::DesiredInstance.new,
+          recreate_deployment: true
       )
     end
 
@@ -138,8 +140,8 @@ module Bosh::Director
 
     def agent_client(vm_credentials, agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
-        :timeout => timeout,
-        :retry_methods => { :get_state => retries }
+          :timeout => timeout,
+          :retry_methods => { :get_state => retries }
       }
       @clients ||= {}
       @clients[agent_id] ||= AgentClient.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options)
