@@ -58,14 +58,18 @@ module Bosh::Director
         track_and_log(stage_name, false) { yield }
       end
 
-      private
-
-      def task_manager
-        @task_manager ||= Api::TaskManager.new
+      def username
+        @user ||= task_manager.find_task(task_id).username
       end
 
       def event_manager
         @event_manager ||= Api::EventManager.new(Config.record_events)
+      end
+
+      private
+
+      def task_manager
+        @task_manager ||= Api::TaskManager.new
       end
     end
   end

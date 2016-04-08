@@ -25,12 +25,15 @@ module Bosh::Director
     let(:manifest) { ManifestHelper.default_legacy_manifest }
     let(:releases) { [] }
     let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
-
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     before do
       allow(base_job).to receive(:logger).and_return(logger)
       allow(base_job).to receive(:track_and_log).and_yield
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
+      allow(base_job).to receive(:task_id).and_return(task.id)
+      allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
+      allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       fake_app
     end
 

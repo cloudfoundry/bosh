@@ -50,6 +50,8 @@ module Bosh::Director
     end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
@@ -68,6 +70,8 @@ module Bosh::Director
       allow(plan).to receive(:network).with('default').and_return(network)
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
+
+      allow(Config).to receive(:current_job).and_return(update_job)
       @all_packages = []
     end
 

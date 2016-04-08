@@ -28,6 +28,14 @@ describe 'recreate job', type: :integration do
     vm_was_recreated = director.find_vm(vms_after_instance_recreate, 'foobar', '0')
     expect(vm_to_be_recreated.cid).not_to eq(vm_was_recreated.cid)
     expect((initial_vms-[vm_to_be_recreated]).map(&:cid)).to match_array((vms_after_instance_recreate-[vm_was_recreated]).map(&:cid))
+
+    output = bosh_runner.run('events')
+    expect(scrub_event_specific(output)).to match_output %(
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update   | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | recreate | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | recreate | instance     | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update   | deployment   | simple                                                                                | x      | -      | -                                                                                     | -       |
+)
   end
 
   it 'recreates vms for a given job / the whole deployment' do
