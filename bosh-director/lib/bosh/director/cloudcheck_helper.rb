@@ -46,7 +46,6 @@ module Bosh::Director
       validate_env(instance_model.vm_env)
 
       begin
-
         vm_deleter = VmDeleter.new(cloud, @logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
         vm_deleter.delete_for_instance(instance_model)
       rescue Bosh::Clouds::VMNotFound
