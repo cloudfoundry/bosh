@@ -8,7 +8,7 @@ task :bat do
   tags = []
   unsupported_bats.each do |t|
     tags << '--tag'
-    tags << t
+    tags << "~#{t}"
   end
 
   Dir.chdir('bat') { exec('rspec', *tags,   bat_test) }
