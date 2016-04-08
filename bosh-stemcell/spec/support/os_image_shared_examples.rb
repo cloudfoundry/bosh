@@ -294,5 +294,12 @@ shared_examples_for 'every OS image' do
     it('should be owned by root user (stig: V-38502)') { should be_owned_by('root') }
     it('should be owned by root group (stig: V-38503)') { should be_grouped_into('root') }
     it('should have mode 0 (stig: V-38504)') { should be_mode('0') }
+
+    context 'contains no system users with passwords (stig: V-38496)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $1 !~ /^vcap$/ && $2 !~ /^[!*]/ {print $1 \":\" $2}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
   end
 end
