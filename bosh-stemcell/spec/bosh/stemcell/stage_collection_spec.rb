@@ -47,6 +47,7 @@ module Bosh::Stemcell
               :vim_tiny,
               :cron_config,
               :escape_ctrl_alt_del,
+              :bosh_audit,
             ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
           )
         end
@@ -76,6 +77,7 @@ module Bosh::Stemcell
               :system_grub,
               :cron_config,
               :escape_ctrl_alt_del,
+              :bosh_audit,
             ]
           )
         end
