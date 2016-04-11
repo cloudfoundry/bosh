@@ -11,6 +11,24 @@ Sequel.migration do
       stemcell = self[:stemcells].filter(id: compiled_package[:stemcell_id]).first
       stemcell_os = stemcell[:operating_system].to_s.empty? ? stemcell[:name] : stemcell[:operating_system]
 
+      existing_compiled_package = self[:compiled_packages].where{
+        Sequel.expr(:package_id => compiled_package[:package_id]) &
+        Sequel.expr(:stemcell_os => stemcell_os) &
+        Sequel.expr(:stemcell_version => stemcell[:version]) &
+        (
+          Sequel.expr(:build => compiled_package[:build]) |
+          Sequel.expr(:dependency_key_sha1 => compiled_package[:dependency_key_sha1])
+        )
+      }.first
+
+      if existing_compiled_package
+        # avoid situations where we previously compiled for multiple stemcells of the same os
+        # e.g. bosh-aws-xen-ubuntu-trusty and bosh-aws-xen-hvm-ubuntu-trusty
+        self[:compiled_packages].filter(id: compiled_package[:id]).delete
+
+        next
+      end
+
       self[:compiled_packages].filter(id: compiled_package[:id]).update(
         stemcell_os: stemcell_os,
         stemcell_version: stemcell[:version]
@@ -36,16 +54,16 @@ Sequel.migration do
           drop_constraint(build_index)
         end
       end
+    end
 
-      stemcell_indexes = indexes(:compiled_packages).select { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :dependency_key_sha1]}
-      stemcell_index = stemcell_indexes.empty? ? 'package_stemcell_dependency_key_sha1_idx' : stemcell_indexes.first.first
+    stemcell_indexes = indexes(:compiled_packages).select { |_, value| value.fetch(:columns) == [:package_id, :stemcell_id, :dependency_key_sha1] }
+    stemcell_index = stemcell_indexes.empty? ? 'package_stemcell_dependency_key_sha1_idx' : stemcell_indexes.first.first
 
-      alter_table(:compiled_packages) do
-        drop_constraint(stemcell_foreign_key_name, :type => :foreign_key)
-        add_index [:package_id, :stemcell_os, :stemcell_version, :build], unique: true, name: 'package_stemcell_build_idx'
-        add_index [:package_id, :stemcell_os, :stemcell_version, :dependency_key_sha1], unique: true, name: 'package_stemcell_dependency_idx'
-        drop_index(nil, name: stemcell_index)
-      end
+    alter_table(:compiled_packages) do
+      drop_constraint(stemcell_foreign_key_name, :type => :foreign_key)
+      add_index [:package_id, :stemcell_os, :stemcell_version, :build], unique: true, name: 'package_stemcell_build_idx'
+      add_index [:package_id, :stemcell_os, :stemcell_version, :dependency_key_sha1], unique: true, name: 'package_stemcell_dependency_idx'
+      drop_index(nil, name: stemcell_index)
     end
 
     alter_table(:compiled_packages) do
