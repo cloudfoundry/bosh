@@ -43,6 +43,11 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe cron do
+    describe 'keeping the system clock up to date (stig: V-38620)' do
+      it { should have_entry '0,15,30,45 * * * * /var/vcap/bosh/bin/ntpdate' }
+    end
+  end
 
   # The STIG says to have the log files owned and grouped by 'root'. However, this would mean that
   # rsyslog would not be able to dropping privileges to another user. Because of this we've decided
