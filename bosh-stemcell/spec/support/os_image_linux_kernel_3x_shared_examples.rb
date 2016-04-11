@@ -47,6 +47,10 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
       it 'must use reverse path filtering for IPv4 network traffic by default. (stig: V-38544)' do
         should contain /^net.ipv4.conf.default.rp_filter=1$/
       end
+
+      it 'must limit the ability of processes to have simultaneous write and execute access to memory. (stig: V-38597)' do
+        should contain /^kernel.exec-shield=1$/
+      end
     end
 
     describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
