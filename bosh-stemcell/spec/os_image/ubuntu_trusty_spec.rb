@@ -162,7 +162,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       wget
       zip
-    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and pkg == 'rsyslog-mmjsonparse' }.each do |pkg|
+    ).reject{ |pkg| Bosh::Stemcell::Arch.ppc64le? and ( pkg == 'rsyslog-mmjsonparse' or pkg == 'rsyslog-gnutls' or pkg == 'rsyslog-relp') }.each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
