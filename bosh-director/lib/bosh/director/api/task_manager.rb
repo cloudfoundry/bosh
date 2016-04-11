@@ -24,6 +24,7 @@ module Bosh::Director
           "state" => task.state,
           "description" => task.description,
           "timestamp" => task.timestamp.to_i,
+          "started_at" => task.started_at ? task.started_at.to_i: nil,
           "result" => task.result,
           "user" => task.username || "admin",
           "deployment" => task.deployment_name

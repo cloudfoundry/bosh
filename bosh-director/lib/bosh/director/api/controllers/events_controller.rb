@@ -12,10 +12,10 @@ module Bosh::Director
 
         if params['before_id']
           before_id = params['before_id'].to_i
-          events = events.filter("id < ?", before_id).limit(EVENT_LIMIT)
+          events = events.filter("id < ?", before_id)
         end
 
-        events = events.map do |event|
+        events = events.limit(EVENT_LIMIT).map do |event|
           @event_manager.event_to_hash(event)
         end
         json_encode(events)

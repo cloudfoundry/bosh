@@ -78,6 +78,21 @@ module Bosh::Director
           ]
           expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
         end
+
+        it 'returns 200 events' do
+          basic_authorize 'admin', 'admin'
+          (1..250).each do |i|
+            Models::Event.make
+          end
+
+          get '/'
+          body = Yajl::Parser.parse(last_response.body)
+
+          expect(body.size).to eq(200)
+          response_ids = body.map { |e| e['id'].to_i }
+          expected_ids = *(53..252)
+          expect(response_ids).to eq(expected_ids.reverse)
+        end
       end
 
       context 'when before_id is specified' do
