@@ -1,7 +1,7 @@
 require 'cloud/errors'
 require 'httpclient'
 require 'base64'
-require 'yajl'
+require 'json'
 
 module Bosh::Cpi
   class RegistryClient
@@ -39,7 +39,7 @@ module Bosh::Cpi
         raise ArgumentError, "Invalid settings format, Hash expected, #{settings.class} given"
       end
 
-      payload = Yajl::Encoder.encode(settings)
+      payload = JSON.dump(settings)
       url = "#{@endpoint}/instances/#{instance_id}/settings"
 
       response = @client.put(url, {:body => payload, :header => @headers})
@@ -64,20 +64,20 @@ module Bosh::Cpi
         cloud_error("Cannot read settings for '#{instance_id}', got HTTP #{response.status}")
       end
 
-      body = Yajl::Parser.parse(response.body)
+      body = JSON.load(response.body)
 
       unless body.is_a?(Hash)
         cloud_error("Invalid registry response, Hash expected, got #{body.class}: #{body}")
       end
 
-      settings = Yajl::Parser.parse(body["settings"])
+      settings = JSON.load(body["settings"])
 
       unless settings.is_a?(Hash)
         cloud_error("Invalid settings format, Hash expected, got #{settings.class}: #{settings}")
       end
 
       settings
-    rescue Yajl::ParseError => e
+    rescue JSON::ParserError => e
       cloud_error("Cannot parse settings for '#{instance_id}': #{e.message}")
     end
 
