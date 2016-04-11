@@ -25,39 +25,14 @@ jobs:
           OS_NAME:    ubuntu
           OS_VERSION: trusty
 
-      - task: create-light-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build-light-google.yml
-        privileged: true
-        params:
-          OS_NAME:         ubuntu
-          OS_VERSION:      trusty
-          BUCKET_NAME:     {{google_stemcells_bucket_name}}
-
       - aggregate:
         - put: google-kvm-ubuntu-trusty
           params:
             file: stemcell/bosh-stemcell-*-google-kvm-ubuntu-trusty-go_agent.tgz
-            predefined_acl: "publicRead"
 
         - put: google-kvm-ubuntu-trusty-sha1
           params:
             file: stemcell/bosh-stemcell-*-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
-            predefined_acl: "publicRead"
-
-        - put: google-kvm-ubuntu-trusty-raw
-          params:
-            file: raw-stemcell/bosh-stemcell-*-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
-            predefined_acl: "publicRead"
-
-        - put: light-google-kvm-ubuntu-trusty
-          params:
-            file: light-stemcell/light-bosh-stemcell-*-google-kvm-ubuntu-trusty-go_agent.tgz
-            predefined_acl: "publicRead"
-
-        - put: light-google-kvm-ubuntu-trusty-sha1
-          params:
-            file: light-stemcell/light-bosh-stemcell-*-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
-            predefined_acl: "publicRead"
 
   - name: build-google-kvm-centos-7
     plan:
@@ -78,39 +53,14 @@ jobs:
           OS_NAME:    centos
           OS_VERSION: 7
 
-      - task: create-light-stemcell
-        file: bosh-src/ci/pipelines/stemcell/tasks/build-light-google.yml
-        privileged: true
-        params:
-          OS_NAME:         centos
-          OS_VERSION:      7
-          BUCKET_NAME:     {{google_stemcells_bucket_name}}
-
       - aggregate:
         - put: google-kvm-centos-7
           params:
             file: stemcell/bosh-stemcell-*-google-kvm-centos-7-go_agent.tgz
-            predefined_acl: "publicRead"
 
         - put: google-kvm-centos-7-sha1
           params:
             file: stemcell/bosh-stemcell-*-google-kvm-centos-7-go_agent.tgz.sha1
-            predefined_acl: "publicRead"
-
-        - put: google-kvm-centos-7-raw
-          params:
-            file: raw-stemcell/bosh-stemcell-*-google-kvm-centos-7-go_agent-raw.tar.gz
-            predefined_acl: "publicRead"
-
-        - put: light-google-kvm-centos-7
-          params:
-            file: light-stemcell/light-bosh-stemcell-*-google-kvm-centos-7-go_agent.tgz
-            predefined_acl: "publicRead"
-
-        - put: light-google-kvm-centos-7-sha1
-          params:
-            file: light-stemcell/light-bosh-stemcell-*-google-kvm-centos-7-go_agent.tgz.sha1
-            predefined_acl: "publicRead"
 
 resources:
   - name: bosh-src
@@ -155,77 +105,33 @@ resources:
 
   # stemcells
   - name: google-kvm-ubuntu-trusty
-    type: gcs-resource
+    type: s3
     source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
 
   - name: google-kvm-ubuntu-trusty-sha1
     type: gcs-resource
     source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
-
-  - name: google-kvm-ubuntu-trusty-raw
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
-
-  - name: light-google-kvm-ubuntu-trusty
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz
-
-  - name: light-google-kvm-ubuntu-trusty-sha1
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
 
   - name: google-kvm-centos-7
-    type: gcs-resource
+    type: s3
     source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
 
   - name: google-kvm-centos-7-sha1
-    type: gcs-resource
+    type: s3
     source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz.sha1
-
-  - name: google-kvm-centos-7-raw
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent-raw.tar.gz
-
-  - name: light-google-kvm-centos-7
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz
-
-  - name: light-google-kvm-centos-7-sha1
-    type: gcs-resource
-    source:
-      json_key: {{google_json_key_data}}
-      bucket:   {{google_stemcells_bucket_name}}
-      regexp:   light-bosh-stemcell-([0-9\.]+)-google-kvm-centos-7-go_agent.tgz.sha1
-
-resource_types:
-  - name: gcs-resource
-    type: docker-image
-    source:
-      repository: frodenas/gcs-resource
+      bucket: {{stemcell_bucket}}
+      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz.sha1
+      access_key_id: {{stemcell_aws_access_key}}
+      secret_access_key: {{stemcell_aws_secret_key}}
