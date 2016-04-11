@@ -87,6 +87,7 @@ module Bosh::Director
 
       @task.state = :processing
       @task.timestamp = Time.now
+      @task.started_at = Time.now
       @task.checkpoint_time = Time.now
       @task.save
 

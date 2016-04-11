@@ -119,16 +119,16 @@ module Bosh::Cli::Command
     def show_tasks_table(tasks)
       return if tasks.empty?
       tasks_table = table do |t|
-        t.headings = "#", "State", "Timestamp", "User", "Deployment", "Description", "Result"
+        t.headings = "#", "State", "Started", "Last Timestamp",  "User", "Deployment", "Description", "Result"
         tasks.map do |task|
-          t << [task["id"], task["state"], Time.at(task["timestamp"]).utc, task["user"], task["deployment"],
+          t << [task["id"], task["state"], task["started_at"] ? Time.at(task["started_at"]).utc : '-', Time.at(task["timestamp"]).utc, task["user"], task["deployment"],
                 task["description"].to_s, task["result"].to_s.truncate(80)]
         end
       end
 
-      say("\n")
+      nl
       say(tasks_table)
-      say("\n")
+      nl
     end
 
     # Returns the verbose level for the given no_filter flag
