@@ -1,7 +1,7 @@
+require 'logging'
 require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
@@ -151,6 +151,12 @@ namespace :spec do
       end
     end
 
+    desc "Run unit tests for the cpi component"
+    task :cpi do
+      trap('INT') { exit }
+      unit_exec('bosh_cpi')
+    end
+
     task(:agent) do
       # Do not use exec because this task is part of other tasks
       sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
@@ -171,16 +177,19 @@ namespace :spec do
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
     task :micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
     desc 'Run system (BATs) tests (uses existing microbosh)'
     task :existing_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
 
     desc 'Deploy microbosh for system (BATs) tests'
     task :deploy_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_bats_microbosh
     end
   end
