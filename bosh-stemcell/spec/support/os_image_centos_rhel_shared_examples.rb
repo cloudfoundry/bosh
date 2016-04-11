@@ -119,16 +119,16 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
         should contain /password.*pam_unix\.so.*minlen=14/
       end
 
-      it 'must restrict a user account after 5 failed login attempts (stig: V-38573)' do
-        should contain(/auth.*pam_faillock\.so.*authfail.*deny=5/).from(/auth.*pam_unix.so/).to(/auth.*pam_faillock.so.*authsucc/)
-        should contain(/auth.*pam_faillock\.so.*authsucc.*deny=5/).from(/auth.*pam_faillock\.so.*authfail/).to(/auth.*pam_deny\.so/)
+      it 'must restrict a user account after 5 failed login attempts (stig: V-38573 V-38501)' do
+        should contain(/auth.*pam_faillock\.so.*authfail.*deny=5.*fail_interval=900/).from(/auth.*pam_unix.so/).to(/auth.*pam_faillock.so.*authsucc/)
+        should contain(/auth.*pam_faillock\.so.*authsucc.*deny=5.*fail_interval=900/).from(/auth.*pam_faillock\.so.*authfail/).to(/auth.*pam_deny\.so/)
       end
     end
 
     describe file('/etc/pam.d/password-auth') do
-      it 'must restrict a user account after 5 failed login attempts (stig: V-38573)' do
-        should contain(/auth.*pam_faillock\.so.*authfail.*deny=5/).from(/auth.*pam_unix.so/).to(/auth.*pam_faillock.so.*authsucc/)
-        should contain(/auth.*pam_faillock\.so.*authsucc.*deny=5/).from(/auth.*pam_faillock\.so.*authfail/).to(/auth.*pam_deny\.so/)
+      it 'must restrict a user account after 5 failed login attempts (stig: V-38573 V-38501)' do
+        should contain(/auth.*pam_faillock\.so.*authfail.*deny=5.*fail_interval=900/).from(/auth.*pam_unix.so/).to(/auth.*pam_faillock.so.*authsucc/)
+        should contain(/auth.*pam_faillock\.so.*authsucc.*deny=5.*fail_interval=900/).from(/auth.*pam_faillock\.so.*authfail/).to(/auth.*pam_deny\.so/)
       end
     end
   end
