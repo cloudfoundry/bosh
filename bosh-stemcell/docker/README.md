@@ -19,7 +19,7 @@ To test if docker is installed and running...
 
 If docker daemon isn't running, try this:
 
-    host$ vagrant box destroy; vagrant box update; vagrant up
+    host$ vagrant destroy; vagrant box update; vagrant up
 
 ## Rebuilding the Container Image
 
@@ -33,7 +33,6 @@ Specifically...
 Rebuild the container with the `build` script...
 
     vagrant$ ./build
-
 
 ## Testing OS Image changes
 
