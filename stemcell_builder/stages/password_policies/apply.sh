@@ -23,3 +23,7 @@ if [ -n "$password_file" ];then
     sed -i '/password.*pam_unix\.so/s/$/ remember=24 minlen=14/' $password_file
   fi
 fi
+
+# /etc/login.defs are only effective for new users
+sed -i -r 's/^PASS_MIN_DAYS.+/PASS_MIN_DAYS 1/' $chroot/etc/login.defs
+run_in_chroot $chroot "chage --mindays 1 vcap"

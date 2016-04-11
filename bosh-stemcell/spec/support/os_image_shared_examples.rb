@@ -43,7 +43,38 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'installed by rsyslosyg_config' do
+
+  # The STIG says to have the log files owned and grouped by 'root'. However, this would mean that
+  # rsyslog would not be able to dropping privileges to another user. Because of this we've decided
+  # it should run as the limited scope user 'syslog' which still prevents 'vcap' from reading the
+  # logs (which is the original intention of the STIG).
+  context 'all rsyslog-generated log files must be owned by syslog. (stig: V-38519 V-38518 V-38623)' do
+    it "secures rsyslog.conf-referenced files correctly" do
+      rsyslog_log_file_list = [
+        # get all logfile directives
+        "grep --no-filename --recursive '/var/log/' #{backend.chroot_dir}/etc/rsyslog*",
+        # filter commented directives
+        "grep -v '^#'",
+        # remove leading characters
+        "sed 's%^[ \t]*%%' | awk '{ print $2 }' | tr -d '-'",
+        # unique tests
+        'sort | uniq',
+      ].join('|')
+
+      `#{rsyslog_log_file_list}`.split("\n").each do |logfile|
+        f = file(logfile)
+
+        expect(f).to be_owned_by('syslog') # stig: V-38518
+        expect(f).to be_grouped_into('syslog') # stig: V-38519
+        expect(f).to be_mode(600) # stig: V-38623
+
+        expect(f).to_not be_readable.by_user('vcap')
+        expect(f).to_not be_readable.by('vcap')
+      end
+    end
+  end
+
+  context 'installed by rsyslog_config' do
     before do
       system("sudo mount --bind /dev #{backend.chroot_dir}/dev")
     end
@@ -55,6 +86,9 @@ shared_examples_for 'every OS image' do
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
       it { should contain '\$ModLoad omrelp' }
+      it { should contain '\$FileGroup syslog' } # stig: V-38519
+      it { should contain '\$FileUser syslog' } # stig: V-38518
+      it { should contain '\$FileCreateMode 0600' } # stig: V-38623
     end
 
     describe user('syslog') do
@@ -140,9 +174,19 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'blank password logins are disabled (stig: V-38497)' do
-    describe command('grep -R nullok /etc/pam.d') do
-      its (:stdout) { should eq('') }
+  describe 'PAM configuration' do
+    context 'blank password logins are disabled (stig: V-38497)' do
+      describe command('grep -R nullok /etc/pam.d') do
+        it { should return_exit_status(1) }
+        its (:stdout) { should eq('') }
+      end
+    end
+
+    context 'a stronger hashing algorithm should be used (stig: V-38574)' do
+      describe command('egrep -h -r "^password" /etc/pam.d | grep pam_unix.so | grep -v sha512') do
+        it { should return_exit_status(1) }
+        its (:stdout) { should eq('') }
+      end
     end
   end
 
@@ -220,6 +264,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe file('/etc/login.defs') do
+    it('should not allow users to cycle passwords quickly (stig: V-38477)') do
+      should contain /PASS_MIN_DAYS[[:space:]]1/
+    end
+  end
+
   # NOTE: These shared examples are executed in the OS image building spec,
   # suites and the Stemcell building spec suites. In the OS image suites
   # nothing will be excluded, which is the desired behavior... we want all OS
@@ -260,5 +310,19 @@ shared_examples_for 'every OS image' do
     it('should be owned by root user (stig: V-38502)') { should be_owned_by('root') }
     it('should be owned by root group (stig: V-38503)') { should be_grouped_into('root') }
     it('should have mode 0 (stig: V-38504)') { should be_mode('0') }
+
+    context 'contains no system users with passwords (stig: V-38496)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $1 !~ /^vcap$/ && $2 !~ /^[!*]/ {print $1 \":\" $2}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
+
+    context 'contains no users with that can update their password frequently (stig: V-38477)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $2 !~ /^[!*]/ && $4 != \"1\" {print $1 \":\" $4}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
   end
 end
