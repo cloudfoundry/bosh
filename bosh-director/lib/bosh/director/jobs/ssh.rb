@@ -78,7 +78,6 @@ module Bosh::Director
             })
       end
 
-
       class Target
         attr_reader :job, :indexes, :ids
 

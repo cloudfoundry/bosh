@@ -42,6 +42,7 @@ module Bosh::Director
       end
 
       private
+
       def add_event(parent_id = nil, error = nil)
         event  = event_manager.create_event(
             {

@@ -136,7 +136,8 @@ module Bosh::Director
     end
 
     def get_action_and_context(instance_plan)
-      if instance_plan.changes.size == 1 && ((instance_plan.changes & Set.new([:state,:recreate,:restart])).size == 1)
+      changes = instance_plan.changes
+      if changes.size == 1 && [:state,:recreate,:restart].include?(changes.first)
         action = case instance_plan.instance.virtual_state
           when 'started'
             'start'
@@ -152,7 +153,7 @@ module Bosh::Director
         if instance_plan.new?
           return 'create', {}
         else
-          context = {changes: instance_plan.changes.to_a}
+          context = {changes: changes.to_a}
           context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
           return 'update', context
         end
