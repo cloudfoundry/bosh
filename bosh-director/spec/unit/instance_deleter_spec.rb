@@ -122,7 +122,7 @@ module Bosh::Director
           expect {
             deleter.delete_instance_plans([instance_plan], event_log_stage)
           }.to change {
-            Bosh::Director::Models::Event.count }.from(0).to(2)
+            Bosh::Director::Models::Event.count }.from(0).to(8)
 
           event_1 = Bosh::Director::Models::Event.first
           expect(event_1.user).to eq(task.username)
