@@ -199,7 +199,8 @@ module Bosh::Stemcell
         :delay_monit_start,
         :system_grub,
         :cron_config,
-        :escape_ctrl_alt_del
+        :escape_ctrl_alt_del,
+        :bosh_audit
       ].flatten
     end
 
@@ -240,6 +241,7 @@ module Bosh::Stemcell
         :vim_tiny,
         :cron_config,
         :escape_ctrl_alt_del,
+        :bosh_audit
       ].flatten.reject{ |s| Bosh::Stemcell::Arch.ppc64le? and s ==  :system_ixgbevf }
     end
 
@@ -264,7 +266,6 @@ module Bosh::Stemcell
         :bosh_ntpdate,
         :bosh_sudoers,
         :password_policies,
-        :bosh_audit,
       ].flatten
     end
 
