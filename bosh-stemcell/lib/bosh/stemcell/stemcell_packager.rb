@@ -48,7 +48,7 @@ module Bosh
       def manifest_cloud_properties(disk_format, infrastructure, stemcell_name)
         architecture = 'x86_64'
         if Bosh::Stemcell::Arch.ppc64le?
-          architecture = 'ppc64le'
+          architecture = 'ppc64'
         end
 
         {

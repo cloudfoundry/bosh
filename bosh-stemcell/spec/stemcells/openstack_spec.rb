@@ -8,7 +8,7 @@ describe 'OpenStack Stemcell', stemcell_image: true do
   end
 
   context 'installed by package_qcow2_image stage' do
-    describe 'converts to qcow2 0.10 compat' do
+    describe 'converts to qcow2 0.10(x86) or 1.1(ppc64le) compat' do
       # environment is cleaned up inside rspec context
       stemcell_image = ENV['STEMCELL_IMAGE']
 
@@ -17,7 +17,10 @@ describe 'OpenStack Stemcell', stemcell_image: true do
         `#{cmd}`
       end
 
-      it { should include('compat: 0.10') }
+      it {
+        compat = Bosh::Stemcell::Arch.ppc64le? ? '1.1' : '0.10'
+        should include("compat: #{compat}") 
+      }
     end
   end
 
