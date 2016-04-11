@@ -197,6 +197,7 @@ PATH
       bosh_common (~> 1.3215.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
+      yajl-ruby (~> 1.2.0)
 
 PATH
   remote: simple_blobstore_server
