@@ -55,7 +55,7 @@ describe Bosh::Cli::Command::Task do
           expect(command).to receive(:say) do |display_output|
             expect(display_output.to_s).to match_output '
 +---+-------+-------------------------+-------------------------+-------+------------+-------------------+--------------------+
-| # | State | Started                 | Last Timestamp          | User  | Deployment | Description       | Result             |
+| # | State | Started                 | Last Activity           | User  | Deployment | Description       | Result             |
 +---+-------+-------------------------+-------------------------+-------+------------+-------------------+--------------------+
 | 1 | done  | -                       | 2016-02-16 15:15:08 UTC | admin |            | create deployment | /deployments/dummy |
 | 2 | error | 2016-02-16 15:11:40 UTC | 2016-02-16 15:15:08 UTC | admin |            | create deployment | Action Failed      |
