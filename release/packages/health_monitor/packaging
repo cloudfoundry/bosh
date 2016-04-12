@@ -11,6 +11,10 @@ gem 'json', '1.8.3'
 gem 'bosh-monitor'
 EOF
 
+if [ "`uname -m`" == "ppc64le" ]; then
+    /var/vcap/packages/ruby/bin/bundle config build.nokogiri '--use-system-libraries'
+fi
+
 /var/vcap/packages/ruby/bin/bundle install \
   --local \
   --no-prune \
