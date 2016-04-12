@@ -44,7 +44,7 @@ shared_examples_for 'every OS image' do
   end
 
   describe cron do
-    describe 'keeping the system clock up to date (stig: V-38620)' do
+    describe 'keeping the system clock up to date (stig: V-38620 V-38621)' do
       it { should have_entry '0,15,30,45 * * * * /var/vcap/bosh/bin/ntpdate' }
     end
   end
