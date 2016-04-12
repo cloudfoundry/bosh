@@ -38,6 +38,7 @@ elif [ "$(get_os_type)" == "ubuntu" ]; then
   patch $chroot/etc/pam.d/common-password < $assets_dir/ubuntu/common-password.patch
 fi
 
+echo "session     required      pam_lastlog.so showfailed" >> $chroot/etc/pam.d/system-auth
 # /etc/login.defs are only effective for new users
 sed -i -r 's/^PASS_MIN_DAYS.+/PASS_MIN_DAYS 1/' $chroot/etc/login.defs
 run_in_chroot $chroot "chage --mindays 1 vcap"

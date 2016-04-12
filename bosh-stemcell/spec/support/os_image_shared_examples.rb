@@ -365,6 +365,12 @@ shared_examples_for 'every OS image' do
       its (:content) { should match /^disk_error_action = SYSLOG$/ }
     end
   end
+
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/system-auth') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+    end
+  end
 end
 
 
