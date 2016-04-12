@@ -243,6 +243,13 @@ HERE
       it { should_not be_installed }
     end
   end
+
+  describe 'mounted file systems: /etc/fstab should mount nfs with nodev (stig: V-38654) (stig: V-38652)' do
+    describe file('/etc/fstab') do
+      it { should be_file }
+      its (:content) { should eq("# UNCONFIGURED FSTAB FOR BASE SYSTEM\n") }
+    end
+  end
 end
 
 describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do

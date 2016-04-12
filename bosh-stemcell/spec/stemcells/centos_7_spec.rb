@@ -65,6 +65,13 @@ HERE
       it { should contain('/usr/bin/gcc') }
     end
   end
+
+  describe 'mounted file systems: /etc/fstab should mount nfs with nodev (stig: V-38654)(stig: V-38652)' do
+    describe file('/etc/fstab') do
+      it { should be_file }
+      its (:content) { should_not match /nfs/ }
+    end
+  end
 end
 
 describe 'CentOS 7 stemcell tarball', stemcell_tarball: true do

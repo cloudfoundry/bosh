@@ -43,6 +43,11 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe cron do
+    describe 'keeping the system clock up to date (stig: V-38620)' do
+      it { should have_entry '0,15,30,45 * * * * /var/vcap/bosh/bin/ntpdate' }
+    end
+  end
 
   # The STIG says to have the log files owned and grouped by 'root'. However, this would mean that
   # rsyslog would not be able to dropping privileges to another user. Because of this we've decided
@@ -222,6 +227,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'gconf2 is not installed (stig: V-43150)' do
+    describe package('gconf2') do
+      it { should_not be_installed }
+    end
+  end
+
   context 'rsh-server is not installed (stig: V-38598, V-38591, V-38594, V-38602)' do
     describe package('rsh-server') do
       it { should_not be_installed }
@@ -330,40 +341,28 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'mounted file systems: /etc/fstab' do
-    it('should exist (stig: V-38654)(stig: V-38652)') do
-      expect(File).to exist('/etc/fstab')
-    end
-
-    it('should be almost empty (stig: V-38654)(stig: V-38652)') do
-      expect(File.read('/etc/fstab').chomp).to eq('# UNCONFIGURED FSTAB FOR BASE SYSTEM')
+  describe 'IP forwarding for IPv4 must not be enabled (stig: V-38511)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv4\.ip_forward=0$/ }
     end
   end
 
-  describe 'IP forwarding for IPv4 must not be enabled' do
-    it 'disables ip forwarding (stig: V-38511)' do
-      expect(`grep net.ipv4.ip_forward #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.strip).to eq('net.ipv4.ip_forward=0')
+  describe 'address space layout randomization (ASLR)  should be enabled  (stig: V-38596)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^kernel\.randomize_va_space=2$/ }
     end
   end
 
-  describe 'address space layout randomization (ASLR)  should be enabled' do
-    it 'enables address space layout randomization (ASLR)  (stig: V-38596)' do
-      expect(`grep kernel.randomize_va_space #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.strip).to eq('kernel.randomize_va_space=2')
+  describe 'syncookies should be enabled (stig: V-38539)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv4\.tcp_syncookies=1$/ }
     end
   end
 
-  describe 'syncookies should be enabled' do
-    it 'enables syncookies  (stig: V-38539)' do
-      expect(`grep net.ipv4.tcp_syncookies #{backend.chroot_dir}/etc/sysctl.d/60-bosh-sysctl.conf`.strip).to eq('net.ipv4.tcp_syncookies=1')
-    end
-  end
-
-  describe 'audit disk errors' do
-    it 'audit logs disk errors to syslog (stig: V-38464)' do
-      expect(`grep disk_error_action #{backend.chroot_dir}/etc/audit/auditd.conf`.strip).to eq('disk_error_action = SYSLOG')
-    end
-    it 'audits logs when disk is full (stig: V-38468)' do
-      expect(`grep disk_full_action #{backend.chroot_dir}/etc/audit/auditd.conf`.strip).to eq('disk_full_action = SYSLOG')
+  describe 'audit disk errors logs disk errors to syslog (stig: V-38464) and logs when disk is full (stig: V-38468)' do
+    context file('/etc/audit/auditd.conf') do
+      its (:content) { should match /^disk_full_action = SYSLOG$/ }
+      its (:content) { should match /^disk_error_action = SYSLOG$/ }
     end
   end
 end

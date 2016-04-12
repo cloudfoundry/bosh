@@ -183,7 +183,7 @@ then
   if is_ppc64le; then
     run_in_chroot ${image_mount_point} "
     if [ -f /etc/default/grub ]; then
-      sed -i -e 's/^grub_cmdline_linux=\\\"\\\"/grub_cmdline_linux=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 \\\"/' /etc/default/grub
+      sed -i -e 's/^GRUB_CMDLINE_LINUX=\\\"\\\"/GRUB_CMDLINE_LINUX=\\\"quiet splash selinux=0 cgroup_enable=memory swapaccount=1 \\\"/' /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
     "
@@ -246,4 +246,9 @@ if [ -f ${image_mount_point}/boot/grub2/grub.cfg ];then
 fi
 
 run_in_chroot ${image_mount_point} "rm -f /boot/grub/menu.lst"
-run_in_chroot ${image_mount_point} "ln -s ./grub.conf /boot/grub/menu.lst"
+
+if is_ppc64le; then
+  run_in_chroot ${image_mount_point} "touch /boot/grub/menu.lst"
+else
+  run_in_chroot ${image_mount_point} "ln -s ./grub.conf /boot/grub/menu.lst"
+fi

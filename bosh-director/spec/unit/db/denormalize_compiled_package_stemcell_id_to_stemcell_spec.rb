@@ -15,14 +15,6 @@ module Bosh::Director
         version: '9999.1',
         cid: 'ami-12341234'
       }
-      db[:stemcells] << {
-        id: 2,
-        name: 'bosh-aws-xen-ubuntu-trusty-go_agent',
-        operating_system: stemcell_os,
-        version: '9999.1',
-        cid: 'ami-12341234'
-      }
-
       db[:releases] << {
         id: 1,
         name: 'test_release',
@@ -44,43 +36,13 @@ module Bosh::Director
         dependency_key: '{}',
         dependency_key_sha1: 'abcd1234',
       }
-      db[:compiled_packages] << {
-        id: 2,
-        build: 6,
-        package_id: 1,
-        stemcell_id: 2,
-        sha1: 'abcd1234',
-        blobstore_id: '1234abcd',
-        dependency_key: '{}',
-        dependency_key_sha1: 'abcd1234',
-      }
-      db[:compiled_packages] << {
-        id: 3,
-        build: 2,
-        package_id: 1,
-        stemcell_id: 1,
-        sha1: '1234',
-        blobstore_id: '1234abcd',
-        dependency_key: '{}',
-        dependency_key_sha1: '1234',
-      }
-      db[:compiled_packages] << {
-        id: 4,
-        build: 2,
-        package_id: 1,
-        stemcell_id: 2,
-        sha1: 'abcd',
-        blobstore_id: '1234abcd',
-        dependency_key: '{}',
-        dependency_key_sha1: 'abcd',
-      }
     end
     let(:stemcell_os) { 'ubuntu_trusty' }
 
     it 'runs drop_vm_env_json_from_instance migration and retains data' do
       DBSpecHelper.migrate(migration_file)
 
-      expect(db[:compiled_packages].count).to eq(2)
+      expect(db[:compiled_packages].count).to eq(1)
       expect(db[:compiled_packages].first).to_not have_key(:stemcell_id)
       expect(db[:compiled_packages].first[:stemcell_os]).to eq('ubuntu_trusty')
       expect(db[:compiled_packages].first[:stemcell_version]).to eq('9999.1')
@@ -92,7 +54,7 @@ module Bosh::Director
       it 'sets stemcell_os as stemcell name' do
         DBSpecHelper.migrate(migration_file)
 
-        expect(db[:compiled_packages].count).to eq(4)
+        expect(db[:compiled_packages].count).to eq(1)
         expect(db[:compiled_packages].first).to_not have_key(:stemcell_id)
         expect(db[:compiled_packages].first[:stemcell_os]).to eq('bosh-aws-xen-hvm-ubuntu-trusty-go_agent')
         expect(db[:compiled_packages].first[:stemcell_version]).to eq('9999.1')
