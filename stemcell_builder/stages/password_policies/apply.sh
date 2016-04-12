@@ -9,33 +9,19 @@ run_in_chroot $chroot "
   find /etc/pam.d -type f -print0 | xargs -0 sed -i -r 's%\bnullok[^ ]*%%g'
 "
 
-# We need to strip the trailing whitespace from the file because some of the
-# PAM configuration files in the base image have trailing whitespace which
-# causes the patch not to apply.
-#
-# The patch could just include the whitespace in the outgoing changes but
-# editors have a habit of removing trailing whitespace and so this would cause
-# the patch to become invalid whenever someone opened one of them.
-#
-# The some versions of the `patch` command have a `-I` flag to ignore whitespace
-# however the image that we're using to build these images has a version
-# that does not contain this.
-strip_trailing_whitespace_from() {
-  sed -i -e's/[[:space:]]*$//' "$1"
-}
+# OS Specifics
+password_file=''
 
-if [ "$(get_os_type)" == "centos" ]; then
-  strip_trailing_whitespace_from $chroot/etc/pam.d/password-auth
-  patch $chroot/etc/pam.d/password-auth < $assets_dir/centos/password-auth.patch
+if [ -f $chroot/etc/pam.d/system-auth ];then # for CentOS
+  password_file=$chroot/etc/pam.d/system-auth
+elif [ -f $chroot/etc/pam.d/common-password ];then  # for Ubuntu
+  password_file=$chroot/etc/pam.d/common-password
+fi
 
-  strip_trailing_whitespace_from $chroot/etc/pam.d/system-auth
-  patch $chroot/etc/pam.d/system-auth < $assets_dir/centos/system-auth.patch
-elif [ "$(get_os_type)" == "ubuntu" ]; then
-  strip_trailing_whitespace_from $chroot/etc/pam.d/common-auth
-  patch $chroot/etc/pam.d/common-auth < $assets_dir/ubuntu/common-auth.patch
-
-  strip_trailing_whitespace_from $chroot/etc/pam.d/common-password
-  patch $chroot/etc/pam.d/common-password < $assets_dir/ubuntu/common-password.patch
+if [ -n "$password_file" ];then
+  if [ -n "$(grep 'password.*pam_unix\.so' $password_file)" ];then
+    sed -i '/password.*pam_unix\.so/s/$/ remember=24 minlen=14/' $password_file
+  fi
 fi
 
 echo "session     required      pam_lastlog.so showfailed" >> $chroot/etc/pam.d/system-auth
