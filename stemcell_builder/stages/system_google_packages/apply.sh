@@ -10,18 +10,20 @@ source $base_dir/lib/prelude_apply.bash
 # Copy google daemon packages into chroot
 cp -R $assets_dir/usr $chroot/
 
-if [ -f $chroot/etc/debian_version ] # Ubuntu
+os_type="$(get_os_type)"
+if [ "${os_type}" == "ubuntu" ]
 then
   # Run google-accounts-manager and google-clock-sync-manager with upstart
   cp $assets_dir/etc/init/google-accounts-manager-{task,service}.conf $chroot/etc/init/
   cp $assets_dir/google-address-manager.conf $chroot/etc/init/
   cp $assets_dir/google-clock-sync-manager.conf $chroot/etc/init/
-elif [ -f $chroot/etc/redhat-release ] # Centos or RHEL
+  chmod -x $chroot/etc/init/google*
+elif [ "${os_type}" == "rhel" -o "${os_type}" == "centos" ]
 then
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-accounts-manager.service"
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-address-manager.service"
   run_in_chroot $chroot "/bin/systemctl enable /usr/lib/systemd/system/google-clock-sync-manager.service"
 else
-  echo "Unknown OS, exiting"
+  echo "Unknown OS '${os_type}', exiting"
   exit 2
 fi

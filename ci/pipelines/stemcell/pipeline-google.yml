@@ -66,10 +66,8 @@ resources:
   - name: bosh-src
     type: git
     source:
-      uri: https://github.com/ljfranklin/bosh.git
-      branch: google
-      # uri: https://github.com/cloudfoundry/bosh.git
-      # branch: master
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: master
 
   - name: version
     type: semver
@@ -86,7 +84,6 @@ resources:
       repository: cloudfoundry/bosh
 
   # os-images
-
   - name: ubuntu-trusty-os-image
     type: s3
     source:

@@ -5,7 +5,7 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
-# Download CLI source or release from github into assets directory
+# Download package source from github into assets directory
 cd $assets_dir
 
 wget -O compute-src.tar.gz https://github.com/GoogleCloudPlatform/compute-image-packages/archive/1.3.3.tar.gz

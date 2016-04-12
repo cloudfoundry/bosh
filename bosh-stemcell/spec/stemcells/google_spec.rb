@@ -16,33 +16,35 @@ describe 'Google Stemcell', stemcell_image: true do
   end
 
   context 'installed by system_google_packages' do
+    let(:mode) { '644' }
+    let(:owner) { 'root' }
+    let(:group) { 'root' }
     case ENV['OS_NAME']
       when 'ubuntu'
-        describe file('/etc/init/google-accounts-manager-service.conf') do
-          it { should be_file }
-          it { should be_executable }
-        end
-
-        describe file('/etc/init/google-accounts-manager-task.conf') do
-          it { should be_file }
-          it { should be_executable }
-        end
-
-        describe file('/etc/init/google-clock-sync-manager.conf') do
-          it { should be_file }
-          it { should be_executable }
+        [
+          '/etc/init/google-accounts-manager-service.conf',
+          '/etc/init/google-accounts-manager-task.conf',
+          '/etc/init/google-clock-sync-manager.conf'
+        ].each do |conf_file|
+          describe file(conf_file) do
+            it { should be_file }
+            it { should be_mode(mode) }
+            it { should be_owned_by(owner) }
+            it { should be_grouped_into(group) }
+          end
         end
       when 'centos', 'rhel'
-        describe file('/usr/lib/systemd/system/google-accounts-manager.service') do
-          it { should be_file }
-        end
-
-        describe file('/usr/lib/systemd/system/google-accounts-manager.service') do
-          it { should be_file }
-        end
-
-        describe file('/usr/lib/systemd/system/google-clock-sync-manager.service') do
-          it { should be_file }
+        [
+          '/usr/lib/systemd/system/google-accounts-manager.service',
+          '/usr/lib/systemd/system/google-accounts-manager.service',
+          '/usr/lib/systemd/system/google-clock-sync-manager.service'
+        ].each do |conf_file|
+          describe file(conf_file) do
+            it { should be_file }
+            it { should be_mode(mode) }
+            it { should be_owned_by(owner) }
+            it { should be_grouped_into(group) }
+          end
         end
     end
   end
