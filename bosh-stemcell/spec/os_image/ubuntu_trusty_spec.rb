@@ -302,6 +302,40 @@ EOF
     end
   end
 
+  context 'ensure auditd file permissions (stig: V-38663)' do
+    [[644, '/usr/share/lintian/overrides/auditd'],
+    [755, '/usr/bin/auvirt'],
+    [755, '/usr/bin/ausyscall'],
+    [755, '/usr/bin/aulastlog'],
+    [755, '/usr/bin/aulast'],
+    [750, '/var/log/audit'],
+    [755, '/sbin/aureport'],
+    [755, '/sbin/auditd'],
+    [755, '/sbin/autrace'],
+    [755, '/sbin/ausearch'],
+    [755, '/sbin/augenrules'],
+    [755, '/sbin/auditctl'],
+    [755, '/sbin/audispd'],
+    [750, '/etc/audisp'],
+    [750, '/etc/audisp/plugins.d'],
+    [640, '/etc/audisp/plugins.d/af_unix.conf'],
+    [640, '/etc/audisp/plugins.d/syslog.conf'],
+    [640, '/etc/audisp/audispd.conf'],
+    [755, '/etc/init.d/auditd'],
+    [655, '/etc/audit'],
+    [750, '/etc/audit/rules.d'],
+    [640, '/etc/audit/rules.d/audit.rules'],
+    [644, '/etc/audit/auditd.conf'],
+    [644, '/etc/default/auditd'],
+    [644, '/lib/systemd/system/auditd.service']].each do |tuple|
+      describe file(tuple[1]) do
+        it ('should be owned by root') { should be_owned_by('root')}
+        it ('should be owned by root group') { should be_grouped_into('root')}
+        it ("should have mode #{tuple[0]}") { should be_mode(tuple[0])}
+      end
+    end
+  end
+
   context 'ensure sendmail is removed (stig: V-38671)' do
     describe command('dpkg -s sendmail') do
       its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
