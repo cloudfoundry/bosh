@@ -173,4 +173,10 @@ describe 'CentOS 7 OS image', os_image: true do
       its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
     end
   end
+
+  context 'gpgcheck must be enabled (stig: 38483)' do
+    describe file('/etc/yum.conf') do
+      its(:content) { should match /^gpgcheck=1$/ }
+    end
+  end
 end
