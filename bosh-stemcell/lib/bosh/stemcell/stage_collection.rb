@@ -37,7 +37,7 @@ module Bosh::Stemcell
         :aws_cli,
         :logrotate_config,
         :dev_tools_config,
-      ].reject{ |s| Bosh::Stemcell::Arch.ppc64le? and [:bosh_ruby, :bosh_micro_go].include?(s) }
+      ]
     end
 
     def build_stemcell_image_stages
