@@ -7,6 +7,7 @@ module Bosh::Stemcell
       it 'returns the correct infrastrcture' do
         expect(Infrastructure.for('openstack')).to be_an(Infrastructure::OpenStack)
         expect(Infrastructure.for('aws')).to be_an(Infrastructure::Aws)
+        expect(Infrastructure.for('google')).to be_an(Infrastructure::Google)
         expect(Infrastructure.for('vsphere')).to be_a(Infrastructure::Vsphere)
         expect(Infrastructure.for('warden')).to be_a(Infrastructure::Warden)
         expect(Infrastructure.for('vcloud')).to be_a(Infrastructure::Vcloud)
@@ -97,6 +98,20 @@ module Bosh::Stemcell
     it { should_not eq Infrastructure.for('openstack') }
 
     it 'has aws specific additional cloud properties' do
+      expect(subject.additional_cloud_properties).to eq({'root_device_name' => '/dev/sda1'})
+    end
+  end
+
+  describe Infrastructure::Google do
+    its(:name)              { should eq('google') }
+    its(:hypervisor)        { should eq('kvm') }
+    its(:default_disk_size) { should eq(3072) }
+    its(:disk_formats)      { should eq(['rawdisk']) }
+
+    it { should eq Infrastructure.for('google') }
+    it { should_not eq Infrastructure.for('openstack') }
+
+    it 'has google specific additional cloud properties' do
       expect(subject.additional_cloud_properties).to eq({'root_device_name' => '/dev/sda1'})
     end
   end

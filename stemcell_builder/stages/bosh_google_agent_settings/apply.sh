@@ -7,7 +7,9 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
 {
   "Platform": {
     "Linux": {
-      "DevicePathResolutionType": "virtio"
+      "CreatePartitionIfNoEphemeralDisk": true,
+      "DevicePathResolutionType": "virtio",
+      "VirtioDevicePrefix": "google"
     }
   },
   "Infrastructure": {
@@ -16,11 +18,14 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
         {
           "Type": "HTTP",
           "URI": "http://169.254.169.254",
-          "UserDataPath": "/latest/user-data",
-          "InstanceIDPath": "/latest/meta-data/instance-id",
-          "SSHKeysPath": "/latest/meta-data/public-keys/0/openssh-key"
+          "UserDataPath": "/computeMetadata/v1/instance/attributes/user_data",
+          "Headers": {
+            "Metadata-Flavor": "Google"
+          }
         }
       ],
+
+      "UseServerName": true,
       "UseRegistry": true
     }
   }

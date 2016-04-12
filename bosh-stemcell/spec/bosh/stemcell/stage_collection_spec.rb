@@ -185,6 +185,51 @@ module Bosh::Stemcell
         end
       end
 
+      context 'when using Google' do
+        let(:infrastructure) { Infrastructure.for('google') }
+
+        let(:google_build_stemcell_image_stages) {
+          [
+            :system_network,
+            :system_google_modules,
+            :system_google_packages,
+            :system_parameters,
+            :bosh_clean,
+            :bosh_harden,
+            :bosh_google_agent_settings,
+            :bosh_clean_ssh,
+            :image_create,
+            :image_install_grub,
+            :bosh_package_list
+          ]
+        }
+
+        let(:google_package_stemcell_stages) {
+          [
+            :prepare_rawdisk_image_stemcell,
+          ]
+        }
+
+        context 'when the operating system is CentOS' do
+          let(:operating_system) { OperatingSystem.for('centos') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(google_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('rawdisk')).to eq(google_package_stemcell_stages)
+          end
+        end
+
+        context 'when the operating system is Ubuntu' do
+          let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+          it 'returns the correct stages' do
+            expect(stage_collection.build_stemcell_image_stages).to eq(google_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages('rawdisk')).to eq(google_package_stemcell_stages)
+          end
+
+        end
+      end
+
       context 'when using OpenStack' do
         let(:infrastructure) { Infrastructure.for('openstack') }
 

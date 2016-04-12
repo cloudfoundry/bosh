@@ -44,6 +44,8 @@ module Bosh::Stemcell
       stages = case infrastructure
       when Infrastructure::Aws then
         aws_stages
+      when Infrastructure::Google then
+        google_stages
       when Infrastructure::OpenStack then
         openstack_stages
       when Infrastructure::Vsphere then
@@ -65,6 +67,8 @@ module Bosh::Stemcell
       case disk_format
         when 'raw' then
           raw_package_stages
+        when 'rawdisk' then
+          rawdisk_package_stages
         when 'qcow2' then
           qcow2_package_stages
         when 'ovf' then
@@ -133,6 +137,21 @@ module Bosh::Stemcell
         :image_create,
         :image_install_grub,
         :image_aws_update_grub,
+      ]
+    end
+
+    def google_stages
+      [
+        :system_network,
+        :system_google_modules,
+        :system_google_packages,
+        :system_parameters,
+        :bosh_clean,
+        :bosh_harden,
+        :bosh_google_agent_settings,
+        :bosh_clean_ssh,
+        :image_create,
+        :image_install_grub,
       ]
     end
 
@@ -272,6 +291,12 @@ module Bosh::Stemcell
     def raw_package_stages
       [
         :prepare_raw_image_stemcell,
+      ]
+    end
+
+    def rawdisk_package_stages
+      [
+        :prepare_rawdisk_image_stemcell,
       ]
     end
 

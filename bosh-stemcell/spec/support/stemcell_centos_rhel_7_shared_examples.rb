@@ -75,6 +75,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
 
   context 'installed by the system_azure_network stage', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
@@ -98,6 +99,20 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
   end
 
   context 'installed by bosh_aws_agent_settings', {
+    exclude_on_google: true,
+    exclude_on_openstack: true,
+    exclude_on_vcloud: true,
+    exclude_on_vsphere: true,
+    exclude_on_warden: true,
+  } do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should contain('"Type": "HTTP"') }
+    end
+  end
+
+  context 'installed by bosh_google_agent_settings', {
+    exclude_on_aws: true,
     exclude_on_openstack: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
@@ -112,6 +127,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
 
   context 'installed by bosh_vsphere_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_openstack: true,
     exclude_on_warden: true,
@@ -125,6 +141,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
 
   context 'installed by bosh_azure_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,

@@ -6,6 +6,8 @@ module Bosh::Stemcell
           OpenStack.new
         when 'aws'
           Aws.new
+        when 'google'
+          Google.new
         when 'vsphere'
           Vsphere.new
         when 'warden'
@@ -94,6 +96,16 @@ module Bosh::Stemcell
           default_disk_size: 3072,
           disk_formats: ['raw']
         )
+      end
+
+      def additional_cloud_properties
+        {'root_device_name' => '/dev/sda1'}
+      end
+    end
+
+    class Google < Base
+      def initialize
+        super(name: 'google', hypervisor: 'kvm', default_disk_size: 3072, disk_formats: ['rawdisk'])
       end
 
       def additional_cloud_properties
