@@ -10,7 +10,6 @@ require 'bosh/director/api/http_constants'
 require 'bosh/director/api/api_helper'
 require 'bosh/director/api/task_helper'
 
-require 'bosh/director/api/backup_manager'
 require 'bosh/director/api/deployment_manager'
 require 'bosh/director/api/instance_manager'
 require 'bosh/director/api/problem_manager'
