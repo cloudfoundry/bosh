@@ -112,7 +112,6 @@ module Bosh::Stemcell
       [
         :system_network,
         :system_open_vm_tools,
-        :password_policies,
         :system_vsphere_cdrom,
         :system_parameters,
         :bosh_clean,
@@ -214,6 +213,7 @@ module Bosh::Stemcell
         :system_kernel_modules,
         :system_ixgbevf,
         bosh_steps,
+        :password_policies,
         :rsyslog_config,
         :delay_monit_start,
         :system_grub,
@@ -254,6 +254,7 @@ module Bosh::Stemcell
         :system_kernel_modules,
         :system_ixgbevf,
         bosh_steps,
+        :password_policies,
         :rsyslog_config,
         :delay_monit_start,
         :system_grub,
@@ -284,7 +285,6 @@ module Bosh::Stemcell
         :bosh_monit,
         :bosh_ntpdate,
         :bosh_sudoers,
-        :password_policies,
       ].flatten
     end
 
