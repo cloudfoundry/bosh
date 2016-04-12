@@ -49,12 +49,18 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe '/etc/securetty' do
+    it 'disallows virtual console access (stig: V-38492)' do
+      expect(`grep '^vc/[0-9]+' #{backend.chroot_dir}/etc/securetty`).to be_empty
+    end
+  end
+
   # The STIG says to have the log files owned and grouped by 'root'. However, this would mean that
   # rsyslog would not be able to dropping privileges to another user. Because of this we've decided
   # it should run as the limited scope user 'syslog' which still prevents 'vcap' from reading the
   # logs (which is the original intention of the STIG).
   context 'all rsyslog-generated log files must be owned by syslog. (stig: V-38519 V-38518 V-38623)' do
-    it "secures rsyslog.conf-referenced files correctly" do
+    it 'secures rsyslog.conf-referenced files correctly' do
       rsyslog_log_file_list = [
         # get all logfile directives
         "grep --no-filename --recursive '/var/log/' #{backend.chroot_dir}/etc/rsyslog*",
