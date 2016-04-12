@@ -1,0 +1,5 @@
+17c17,18
+< auth	[success=1 default=ignore]	pam_unix.so
+---
+> auth	required	pam_tally2.so deny=5 unlock_time=900
+> auth	[success=1 default=ignore]	pam_unix.so

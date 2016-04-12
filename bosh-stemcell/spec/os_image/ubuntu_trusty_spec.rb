@@ -290,7 +290,7 @@ EOF
     end
   end
 
-  context 'limit password reuse' do
+  context 'PAM configuration' do
     describe file('/etc/pam.d/common-password') do
       it 'must prohibit the reuse of passwords within twenty-four iterations (stig: V-38658)' do
         should contain /password.*pam_unix\.so.*remember=24/
@@ -298,6 +298,12 @@ EOF
 
       it 'must prohibit new passwords shorter than 14 characters (stig: V-38475)' do
         should contain /password.*pam_unix\.so.*minlen=14/
+      end
+    end
+
+    describe file('/etc/pam.d/common-auth') do
+      it 'must restrict a user account after 5 failed login attempts (stig: V-38573)' do
+        should contain(/auth.*pam_tally2\.so.*deny=5/)
       end
     end
   end
