@@ -42,7 +42,9 @@ module Bosh::Cli::Command
           manifest["version"] = final_release_ver
           manifest["name"] = final_release_name
 
-          tarball.replace_manifest(manifest)
+          updated_manifest = upload_package_and_job_blobs(manifest, tarball)
+
+          tarball.replace_manifest(updated_manifest)
 
           FileUtils.mkdir_p(final_release_dir)
           final_release_manifest_path = File.absolute_path(File.join(final_release_dir, "#{final_release_name}-#{final_release_ver}.yml"))
@@ -54,8 +56,6 @@ module Bosh::Cli::Command
 
           final_release_tarball_path = File.absolute_path(File.join(final_release_dir, "#{final_release_name}-#{final_release_ver}.tgz"))
           tarball.create_from_unpacked(final_release_tarball_path)
-
-          upload_package_and_job_blobs(manifest, tarball)
 
           nl
           say("Creating final release #{final_release_name}/#{final_release_ver} from dev release #{dev_release_name}/#{dev_release_ver}")
@@ -88,8 +88,14 @@ module Bosh::Cli::Command
         if manifest['license']
           # the licence is different from packages and jobs: it has to be rebuilt from the
           # raw LICENSE and/or NOTICE files in the dev release tarball
-          archive_builder.build(tarball.license_resource)
+          updated_artifact = archive_builder.build(tarball.license_resource)
+          manifest['license'] = {
+            'version' => updated_artifact.version,
+            'fingerprint' => updated_artifact.fingerprint,
+            'sha1' => updated_artifact.sha1,
+          }
         end
+        manifest
       end
 
       def extract_and_validate_tarball(tarball_path)
