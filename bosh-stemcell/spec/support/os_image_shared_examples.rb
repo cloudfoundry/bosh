@@ -224,6 +224,11 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'vsftpd is not installed (stig: V-38599)' do
+    it "shouldn't be installed" do
+      expect(package('vsftpd')).to_not be_installed
+    end
+  end
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
     it "shouldn't be installed" do
       expect(package('telnet-server')).to_not be_installed
