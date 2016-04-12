@@ -282,7 +282,7 @@ GEM
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (1.2.0)
-    eventmachine (1.0.3)
+    eventmachine (1.0.4)
     excon (0.45.4)
     fakefs (0.6.7)
     ffi (1.9.10)
@@ -556,7 +556,7 @@ DEPENDENCIES
   bosh_cpi!
   bundler (~> 1.11.0)
   codeclimate-test-reporter
-  eventmachine (= 1.0.3)
+  eventmachine (= 1.0.4)
   fakefs
   httpclient
   json (= 1.8.3)
