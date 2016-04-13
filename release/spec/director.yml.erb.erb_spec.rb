@@ -39,6 +39,7 @@ describe 'director.yml.erb.erb' do
           'generate_vm_passwords' => false,
           'remove_dev_tools' => false,
           'log_access_events_to_syslog' => false,
+          'flush_arp' => false,
           'ignore_missing_gateway' => false,
           'disks' => {
             'max_orphaned_age_in_days' => 3,
