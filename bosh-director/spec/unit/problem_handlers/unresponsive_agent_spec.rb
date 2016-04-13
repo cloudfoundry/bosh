@@ -28,7 +28,11 @@ module Bosh::Director
         spec: {'networks' => networks},
         agent_id: 'agent-007'
       )
+      allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
     end
+
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
+    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
 
     let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 

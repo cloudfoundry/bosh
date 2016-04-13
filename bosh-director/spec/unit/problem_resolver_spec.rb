@@ -2,12 +2,16 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemResolver do
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
+    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
+
     before(:each) do
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
       @cloud = instance_double('Bosh::Cloud')
       allow(Config).to receive(:cloud).and_return(@cloud)
+      allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
     end
 
     def make_resolver(deployment)

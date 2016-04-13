@@ -152,7 +152,7 @@ module Bosh::Director
         expect {
           action
         }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(2)
+          Bosh::Director::Models::Event.count }.from(0).to(4)
 
         event_1 = Bosh::Director::Models::Event.first
         expect(event_1.user).to eq('user')
