@@ -95,7 +95,7 @@ module Bosh::Director
     private
 
     def add_event(deployment_name, instance_name, action, object_name = nil, parent_id = nil, error = nil)
-      event  = Config.current_job.event_manager.create_event(
+      event = Config.current_job.event_manager.create_event(
           {
               parent_id:   parent_id,
               user:        Config.current_job.username,

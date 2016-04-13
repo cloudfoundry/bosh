@@ -7,7 +7,7 @@ module Bosh::Director
       @transactor = Transactor.new
     end
 
-      def update_persistent_disk(instance_plan, vm_recreator)
+    def update_persistent_disk(instance_plan, vm_recreator)
       @logger.info('Updating persistent disk')
       check_persistent_disk(instance_plan)
 

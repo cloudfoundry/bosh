@@ -30,6 +30,7 @@ module Bosh::Director
     end
 
     private
+
     def add_event(deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
       event  = Config.current_job.event_manager.create_event(
           {

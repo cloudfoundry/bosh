@@ -84,10 +84,8 @@ describe 'cli: events', type: :integration do
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
 =end
-
-
-
   end
+
   def get_details(table, keys)
     table.map do |hash|
       hash.select do |key, value|
