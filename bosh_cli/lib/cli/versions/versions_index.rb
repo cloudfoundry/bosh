@@ -67,8 +67,6 @@ module Bosh::Cli::Versions
         end
       end
 
-      create_directories
-
       @data['builds'][new_key] = new_build
 
       save
@@ -129,6 +127,7 @@ module Bosh::Cli::Versions
     end
 
     def save
+      create_directories
       VersionsIndex.write_index_yaml(@index_file, @data)
     end
 
