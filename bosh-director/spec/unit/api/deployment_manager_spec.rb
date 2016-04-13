@@ -85,24 +85,5 @@ module Bosh::Director
       end
     end
 
-    describe '#deployment_exists?' do
-      let(:deployment) { instance_double('Bosh::Director::Models::Deployment') }
-
-      before do
-        allow(Models::Deployment).to receive(:[]).and_return(deployment)
-      end
-
-      it 'returns true if deployment exists' do
-        expect(subject.deployment_exists?('cogito')).to be_truthy
-      end
-
-      context 'no deployment exists for name' do
-        let(:deployment) { nil }
-
-        it 'returns true if deployment exists' do
-          expect(subject.deployment_exists?('non-cogito')).to be_falsey
-        end
-      end
-    end
   end
 end

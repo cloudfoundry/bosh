@@ -59,11 +59,11 @@ module Bosh::Director
         deployment_name = params['deployment']
         if deployment_name
           dataset = dataset.filter(deployment_name: deployment_name)
-          if @deployment_manager.deployment_exists?(deployment_name)
+          begin
             deployment = @deployment_manager.find_by_name(deployment_name)
             @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
-          else 
-            @deployment_manager.find_by_name(deployment_name) if dataset.empty?
+          rescue DeploymentNotFound => e
+            raise e if dataset.empty?
           end
         end
 
