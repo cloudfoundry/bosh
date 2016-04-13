@@ -226,8 +226,9 @@ module Bosh::Director
               end
 
               it 'returns 404 if requested deployment is deleted' do
-                get "/?deployment=deleted"
-                expect(last_response.status).to eq(404)
+                get "/?deployment=removed"
+                expect(last_response.status).to eq(200)
+                expect(parsed_body.size).to eq(1)
               end
             end
           end

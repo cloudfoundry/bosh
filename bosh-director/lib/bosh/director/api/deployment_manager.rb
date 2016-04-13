@@ -11,6 +11,10 @@ module Bosh::Director
         @deployment_lookup.by_name(name)
       end
 
+      def deployment_exists?(name)
+        !!Models::Deployment[name: name]
+      end
+
       def all_by_name_asc
         Bosh::Director::Models::Deployment.order_by(Sequel.asc(:name)).all
       end

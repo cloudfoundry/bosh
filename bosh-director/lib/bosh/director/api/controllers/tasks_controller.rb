@@ -56,11 +56,15 @@ module Bosh::Director
           ])
         end
 
-        deployment = params['deployment']
-        if deployment
-          dataset = dataset.filter(deployment_name: deployment)
-          deployment = @deployment_manager.find_by_name(deployment)
-          @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
+        deployment_name = params['deployment']
+        if deployment_name
+          dataset = dataset.filter(deployment_name: deployment_name)
+          if @deployment_manager.deployment_exists?(deployment_name)
+            deployment = @deployment_manager.find_by_name(deployment_name)
+            @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
+          else 
+            @deployment_manager.find_by_name(deployment_name) if dataset.empty?
+          end
         end
 
         tasks = dataset.order_by(Sequel.desc(:timestamp)).map
