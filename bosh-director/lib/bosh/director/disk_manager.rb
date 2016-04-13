@@ -273,6 +273,9 @@ module Bosh::Director
     rescue Bosh::Clouds::NoDiskSpace => e
       if e.ok_to_retry
         @logger.warn('Retrying attach disk operation after persistent disk update failed')
+        if disk.nil?
+          disk = create_disk(instance_plan)
+        end
         # Re-creating the vm may cause it to be re-created in a place with more storage
         unmount_disk_for(instance_plan)
         vm_recreator.recreate_vm(instance_plan, disk.disk_cid)
@@ -283,7 +286,10 @@ module Bosh::Director
           raise
         end
       else
-        orphan_disk(disk)
+        unless disk.nil?
+          orphan_disk(disk)
+        end
+
         raise
       end
       return disk

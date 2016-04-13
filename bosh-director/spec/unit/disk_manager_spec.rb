@@ -50,6 +50,51 @@ module Bosh::Director
     end
 
     describe '#update_persistent_disk' do
+      context 'when disk creation fails' do
+        context 'with NoDiskSpaceError' do
+          let(:error) { Bosh::Clouds::NoDiskSpace.new(retryable) }
+
+          before do
+            allow(cloud).to receive(:create_disk).and_raise(error).twice
+          end
+
+          context 'is retryable' do
+            let(:retryable) { true }
+
+            it 'retries, then propagates the error' do
+              expect(logger).to receive(:warn).with('Retrying attach disk operation after persistent disk update failed')
+              expect {
+                disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+              }.to raise_error error
+            end
+          end
+
+          context 'is not retryable' do
+            let(:retryable) { false }
+
+            it 'does not try to orphan the non-existant disk' do
+              expect(disk_manager).to_not receive(:orphan_disk)
+              expect {
+                disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+              }.to raise_error error
+            end
+          end
+        end
+      end
+
+      context 'when disk creation succeeds, but there is a NoDiskSpaceError, and disk attachment is not retryable' do
+        let(:error) { Bosh::Clouds::NoDiskSpace.new(false) }
+
+        it 'orphans the disk' do
+          allow(cloud).to receive(:attach_disk).and_raise(error)
+
+          expect(disk_manager).to receive(:orphan_disk)
+          expect {
+            disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+          }.to raise_error error
+        end
+      end
+
       context 'when the agent reports a different disk cid from the model' do
         before do
           allow(agent_client).to receive(:list_disk).and_return(['random-disk-cid'])
