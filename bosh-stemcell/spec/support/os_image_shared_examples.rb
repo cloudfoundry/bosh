@@ -131,10 +131,6 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to be_mode('600')
     end
 
-    it 'shows a banner' do
-      expect(sshd_config).to contain(/^Banner/)
-    end
-
     it 'disallows root login (stig: V-38613)' do
       expect(sshd_config).to contain(/^PermitRootLogin no$/)
     end
@@ -160,8 +156,14 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^HostbasedAuthentication no$/)
     end
 
-    it 'sets Banner to /etc/issue (stig: V-38615)' do
-      expect(sshd_config).to contain(/^Banner \/etc\/issue$/)
+    it 'sets Banner to /etc/issue.net (stig: V-38615 V-38593)' do
+      expect(sshd_config).to contain(/^Banner \/etc\/issue.net$/)
+
+      banner = file('/etc/issue.net')
+
+      # multiline message
+      expect(banner).to contain('Unauthorized use is strictly prohibited. All access and activity')
+      expect(banner).to contain('is subject to logging and monitoring.')
     end
 
     it 'sets IgnoreRhosts to yes (stig: V-38611)' do
