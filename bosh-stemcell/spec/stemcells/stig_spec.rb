@@ -85,12 +85,14 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38617
       V-38619
       V-38620
+      V-38620
       V-38621
       V-38623
       V-38643
       V-38652
       V-38654
       V-38658
+      V-38663
       V-38671
       V-38674
       V-38682
@@ -98,8 +100,6 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38701
       V-43150
       V-51875
-      V-38620
-      V-38663
       V-58901
     }
 
