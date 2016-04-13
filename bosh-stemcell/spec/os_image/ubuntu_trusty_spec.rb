@@ -328,10 +328,11 @@ EOF
     [640, '/etc/audisp/plugins.d/syslog.conf'],
     [640, '/etc/audisp/audispd.conf'],
     [755, '/etc/init.d/auditd'],
-    [655, '/etc/audit'],
+    [750, '/etc/audit'],
     [750, '/etc/audit/rules.d'],
     [640, '/etc/audit/rules.d/audit.rules'],
-    [644, '/etc/audit/auditd.conf'],
+    [640, '/etc/audit/audit.rules'],
+    [640, '/etc/audit/auditd.conf'],
     [644, '/etc/default/auditd'],
     [644, '/lib/systemd/system/auditd.service']].each do |tuple|
       describe file(tuple[1]) do
@@ -378,7 +379,7 @@ EOF
   end
 
   describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
-    describe file('/etc/audit/audit.rules') do
+    describe file('/etc/audit/rules.d/audit.rules') do
       its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
