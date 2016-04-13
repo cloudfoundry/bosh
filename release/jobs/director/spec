@@ -111,6 +111,9 @@ properties:
   director.log_access_events_to_syslog:
     description: Access to api is logged to the syslog
     default: false
+  director.enable_virtual_delete_vms:
+    description: When true, bosh will not really delete vm from infrastructure when instance update, just destroy vm record in db
+    default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:
