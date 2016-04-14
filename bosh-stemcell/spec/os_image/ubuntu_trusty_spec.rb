@@ -319,7 +319,7 @@ EOF
     end
   end
 
-  context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664)' do
+  context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664) (stig: V-38665)' do
     [[644, '/usr/share/lintian/overrides/auditd'],
     [755, '/usr/bin/auvirt'],
     [755, '/usr/bin/ausyscall'],
