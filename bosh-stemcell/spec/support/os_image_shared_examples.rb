@@ -241,7 +241,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'gconf2 is not installed (stig: V-43150)' do
+  context 'gconf2 is not installed (stig: V-43150) (stig: V-38638) (stig: V-38629) (stig: V-38630)' do
     describe package('gconf2') do
       it { should_not be_installed }
     end
@@ -392,11 +392,4 @@ shared_examples_for 'every OS image' do
       expect(package('postfix')).to_not be_installed
     end
   end
-
-  context 'GConf2 is not installed (stig: V-38638) (stig: V-38629) (stig: V-38630)' do
-    it "shouldn't be installed" do
-      expect(package('GConf2')).to_not be_installed
-    end
-  end
-
 end
