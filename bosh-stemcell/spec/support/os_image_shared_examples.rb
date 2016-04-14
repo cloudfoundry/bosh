@@ -380,10 +380,19 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'audit disk errors logs disk errors to syslog (stig: V-38464) and logs when disk is full (stig: V-38468)' do
+  describe 'auditd configuration' do
     context file('/etc/audit/auditd.conf') do
-      its (:content) { should match /^disk_full_action = SYSLOG$/ }
-      its (:content) { should match /^disk_error_action = SYSLOG$/ }
+      describe 'logging disk errors to syslog (stig: V-38464)' do
+        its (:content) { should match /^disk_error_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being low on space to syslog (stig: V-54381)' do
+        its (:content) { should match /^admin_space_left_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being full to syslog (stig: V-38468)' do
+        its (:content) { should match /^disk_full_action = SYSLOG$/ }
+      end
     end
   end
 
