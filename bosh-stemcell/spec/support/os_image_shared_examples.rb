@@ -227,6 +227,7 @@ shared_examples_for 'every OS image' do
   context 'vsftpd is not installed (stig: V-38599)' do
     it "shouldn't be installed" do
       expect(package('vsftpd')).to_not be_installed
+      expect(package('ftpd')).to_not be_installed
     end
   end
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
@@ -386,11 +387,16 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
-    describe file('/etc/pam.d/system-auth') do
-      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+  context 'postfix is not installed (stig: V-38622) (stig: V-38446)' do
+    it "shouldn't be installed" do
+      expect(package('postfix')).to_not be_installed
     end
   end
+
+  context 'GConf2 is not installed (stig: V-38638) (stig: V-38629) (stig: V-38630)' do
+    it "shouldn't be installed" do
+      expect(package('GConf2')).to_not be_installed
+    end
+  end
+
 end
-
-

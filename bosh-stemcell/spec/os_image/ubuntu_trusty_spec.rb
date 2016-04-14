@@ -389,12 +389,24 @@ EOF
     end
   end
 
+  context 'ensure snmp is not installed (stig: V-38660)' do
+    describe package('snmp') do
+      it { should_not be_installed }
+    end
+  end
+
   describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
     describe file('/etc/audit/rules.d/audit.rules') do
       its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
       its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
+    end
+  end
+
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/common-password') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
     end
   end
 end

@@ -8,3 +8,5 @@
 < password    sufficient    pam_unix.so try_first_pass use_authtok  sha512 shadow
 ---
 > password    sufficient    pam_unix.so try_first_pass use_authtok  sha512 shadow remember=24 minlen=14
+17a18
+> session     required      pam_lastlog.so showfailed

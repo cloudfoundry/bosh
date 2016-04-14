@@ -22,7 +22,6 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38472
       V-38475
       V-38477
-      V-38483
       V-38484
       V-38490
       V-38491
@@ -105,19 +104,25 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-43150
       V-51875
       V-58901
+      V-38622
+      V-38638
+      V-38629
+      V-38630
+      V-38446
+      V-38660
+      V-38476
+      V-38483
     }
 
     expected_stig_test_cases = expected_base_stig_test_cases
     case ENV['OS_NAME']
       when 'ubuntu'
         expected_stig_test_cases = expected_base_stig_test_cases + [
-          'V-38668',
-          'V-38476'
+          'V-38668'
         ]
       when 'centos'
         expected_stig_test_cases = expected_base_stig_test_cases + [
           'V-38668',
-          'V-38476',
           'V-38586',
           'V-38501'
         ]

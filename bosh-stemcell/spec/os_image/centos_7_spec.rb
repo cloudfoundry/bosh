@@ -180,6 +180,12 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/system-auth') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+    end
+  end
+
   context 'gpgcheck must be enabled (stig: V-38483)' do
     describe file('/etc/yum.conf') do
       its(:content) { should match /^gpgcheck=1$/ }
@@ -195,4 +201,11 @@ describe 'CentOS 7 OS image', os_image: true do
       end
     end
   end
+
+  context 'ensure net-snmp is not installed (stig: V-38660)' do
+    describe package('net-snmp') do
+      it { should_not be_installed }
+    end
+  end
+
 end
