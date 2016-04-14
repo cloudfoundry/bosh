@@ -386,8 +386,9 @@ shared_examples_for 'every OS image' do
         its (:content) { should match /^disk_error_action = SYSLOG$/ }
       end
 
-      describe 'logging disks being low on space to syslog (stig: V-54381)' do
+      describe 'logging disks being low on space to syslog (stig: V-54381) (stig: V-38470)' do
         its (:content) { should match /^admin_space_left_action = SYSLOG$/ }
+        its (:content) { should match /^space_left_action = SYSLOG$/ }
       end
 
       describe 'logging disks being full to syslog (stig: V-38468)' do

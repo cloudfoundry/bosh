@@ -33,4 +33,5 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
     sed -i 's/disk_error_action = .*$/disk_error_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
     sed -i 's/disk_full_action = .*$/disk_full_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
     sed -i 's/admin_space_left_action = .*$/admin_space_left_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
+    sed -i 's/space_left_action = .*$/space_left_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
 fi
