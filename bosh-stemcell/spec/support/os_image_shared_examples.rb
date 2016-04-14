@@ -395,6 +395,10 @@ shared_examples_for 'every OS image' do
         its (:content) { should match /^disk_full_action = SYSLOG$/ }
       end
 
+      describe 'rotating the logs so the disk does not run out of space (stig: V-38634)' do
+        its (:content) { should match /^max_log_file_action = ROTATE$/ }
+      end
+
       describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
         its (:content) { should match /^num_logs = 5$/ }
       end
