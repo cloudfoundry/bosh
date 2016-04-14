@@ -1,5 +1,4 @@
 require 'spec_helper'
-#require '../../spec/shared/support/table_helpers'
 
 describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each

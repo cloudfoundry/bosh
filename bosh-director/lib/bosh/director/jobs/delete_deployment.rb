@@ -51,6 +51,7 @@ module Bosh::Director
                 action:      "delete",
                 object_type: "deployment",
                 object_name: @deployment_name,
+                deployment:  @deployment_name,
                 task:        task_id,
                 error:       error
             })
