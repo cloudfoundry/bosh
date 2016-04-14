@@ -395,6 +395,10 @@ shared_examples_for 'every OS image' do
         its (:content) { should match /^disk_full_action = SYSLOG$/ }
       end
 
+      describe 'keeping the log files under a certain size (stig: V-38633)' do
+        its (:content) { should match /^max_log_file = 6$/ }
+      end
+
       describe 'rotating the logs so the disk does not run out of space (stig: V-38634)' do
         its (:content) { should match /^max_log_file_action = ROTATE$/ }
       end
