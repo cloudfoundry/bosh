@@ -4,10 +4,7 @@ tar xzf postgres/postgresql-9.0.23.tar.gz
 cd postgresql-9.0.23
 
 if [ "`uname -m`" == "ppc64le" ]; then
- cd config
- curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD" > config.guess
- curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD" > config.sub
- cd ../
+  cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./config
 fi
 
 ./configure --prefix=$BOSH_INSTALL_TARGET
