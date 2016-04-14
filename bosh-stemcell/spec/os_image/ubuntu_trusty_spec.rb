@@ -76,6 +76,17 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
+  context 'The system must limit the ability of processes to have simultaneous write and execute access to memory. (stig: V-38597)' do
+    # Ubuntu relies on the system's hardware NX capabilities, or emulates NX if the hardware does not support it.
+    # Ubuntu has had this capability since v 11.04
+    # https://wiki.ubuntu.com/Security/Features#nx
+    it 'should run an os that emulates or uses things' do
+      major_version = os[:release].split('.')[0].to_i
+      expect(major_version).to be > 11
+    end
+  end
+
+
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
       if Bosh::Stemcell::Arch.ppc64le?

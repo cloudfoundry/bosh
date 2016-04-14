@@ -185,4 +185,14 @@ describe 'CentOS 7 OS image', os_image: true do
       its(:content) { should match /^gpgcheck=1$/ }
     end
   end
+
+  context 'installed by bosh_sysctl' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      it { should be_file }
+
+      it 'must limit the ability of processes to have simultaneous write and execute access to memory. (only centos) (stig: V-38597)' do
+        should contain /^kernel.exec-shield=1$/
+      end
+    end
+  end
 end
