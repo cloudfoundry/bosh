@@ -394,6 +394,10 @@ shared_examples_for 'every OS image' do
       describe 'logging disks being full to syslog (stig: V-38468)' do
         its (:content) { should match /^disk_full_action = SYSLOG$/ }
       end
+
+      describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
+        its (:content) { should match /^num_logs = 5$/ }
+      end
     end
   end
 
