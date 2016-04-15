@@ -230,6 +230,7 @@ shared_examples_for 'every OS image' do
       expect(package('ftpd')).to_not be_installed
     end
   end
+
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
     it "shouldn't be installed" do
       expect(package('telnet-server')).to_not be_installed
