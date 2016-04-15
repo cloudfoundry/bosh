@@ -123,9 +123,10 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'ensure auditd is installed and enabled (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+  # V-38498 and V-38495 are the package defaults and cannot be configured
+  context 'ensure auditd is installed and enabled (stig: V-38628) (stig: V-38631) (stig: V-38632) (stig: V-38498) (stig: V-38495)' do
     describe package('audit') do
-      it('should be installed') { should be_installed }
+      it { should be_installed }
     end
 
     describe file('/etc/systemd/system/default.target') do

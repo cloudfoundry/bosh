@@ -319,6 +319,13 @@ EOF
     end
   end
 
+  # V-38498 and V-38495 are the package defaults and cannot be configured
+  context 'ensure auditd is installed (stig: V-38498) (stig: V-38495)' do
+    describe package('auditd') do
+      it { should be_installed }
+    end
+  end
+
   context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664) (stig: V-38665)' do
     [[644, '/usr/share/lintian/overrides/auditd'],
     [755, '/usr/bin/auvirt'],
