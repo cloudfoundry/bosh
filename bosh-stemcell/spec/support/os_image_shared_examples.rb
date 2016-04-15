@@ -224,6 +224,12 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'vsftpd is not installed (stig: V-38599)' do
+    it "shouldn't be installed" do
+      expect(package('vsftpd')).to_not be_installed
+      expect(package('ftpd')).to_not be_installed
+    end
+  end
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
     it "shouldn't be installed" do
       expect(package('telnet-server')).to_not be_installed
@@ -235,7 +241,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'gconf2 is not installed (stig: V-43150)' do
+  context 'gconf2 is not installed (stig: V-43150) (stig: V-38638) (stig: V-38629) (stig: V-38630)' do
     describe package('gconf2') do
       it { should_not be_installed }
     end
@@ -347,6 +353,13 @@ shared_examples_for 'every OS image' do
         its (:stdout) { should eq('') }
       end
     end
+
+    context 'contains no users with that can update their password frequently (stig: V-38477)' do
+      describe command("awk -F: '$1 !~ /^root$/ && $2 !~ /^[!*]/ && $4 != \"1\" {print $1 \":\" $4}' /etc/shadow") do
+        it { should return_exit_status(0) }
+        its (:stdout) { should eq('') }
+      end
+    end
   end
 
   describe 'IP forwarding for IPv4 must not be enabled (stig: V-38511)' do
@@ -367,18 +380,38 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'audit disk errors logs disk errors to syslog (stig: V-38464) and logs when disk is full (stig: V-38468)' do
+  describe 'auditd configuration' do
     context file('/etc/audit/auditd.conf') do
-      its (:content) { should match /^disk_full_action = SYSLOG$/ }
-      its (:content) { should match /^disk_error_action = SYSLOG$/ }
+      describe 'logging disk errors to syslog (stig: V-38464)' do
+        its (:content) { should match /^disk_error_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being low on space to syslog (stig: V-54381) (stig: V-38470)' do
+        its (:content) { should match /^admin_space_left_action = SYSLOG$/ }
+        its (:content) { should match /^space_left_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being full to syslog (stig: V-38468)' do
+        its (:content) { should match /^disk_full_action = SYSLOG$/ }
+      end
+
+      describe 'keeping the log files under a certain size (stig: V-38633)' do
+        its (:content) { should match /^max_log_file = 6$/ }
+      end
+
+      describe 'rotating the logs so the disk does not run out of space (stig: V-38634)' do
+        its (:content) { should match /^max_log_file_action = ROTATE$/ }
+      end
+
+      describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
+        its (:content) { should match /^num_logs = 5$/ }
+      end
     end
   end
 
-  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
-    describe file('/etc/pam.d/system-auth') do
-      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+  context 'postfix is not installed (stig: V-38622) (stig: V-38446)' do
+    it "shouldn't be installed" do
+      expect(package('postfix')).to_not be_installed
     end
   end
 end
-
-

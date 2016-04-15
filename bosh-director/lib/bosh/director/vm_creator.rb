@@ -94,6 +94,22 @@ module Bosh::Director
 
     private
 
+    def add_event(deployment_name, instance_name, action, object_name = nil, parent_id = nil, error = nil)
+      event = Config.current_job.event_manager.create_event(
+          {
+              parent_id:   parent_id,
+              user:        Config.current_job.username,
+              action:      action,
+              object_type: 'vm',
+              object_name: object_name,
+              task:        Config.current_job.task_id,
+              deployment:  deployment_name,
+              instance:    instance_name,
+              error:       error
+          })
+      event.id
+    end
+
     def apply_initial_vm_state(instance_plan)
       instance_plan.instance.apply_initial_vm_state(instance_plan.spec)
 
@@ -105,9 +121,10 @@ module Bosh::Director
     end
 
     def create(instance_model, stemcell, cloud_properties, network_settings, disks, env)
+      parent_id = add_event(instance_model.deployment.name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
       env = Bosh::Common::DeepCopy.copy(env)
-      options = { :agent_id => agent_id }
+      options = {:agent_id => agent_id}
 
       if Config.encryption?
         credentials = generate_agent_credentials
@@ -137,8 +154,14 @@ module Bosh::Director
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")
-      @vm_deleter.delete_vm(vm_cid) if vm_cid
+      if vm_cid
+        parent_id = add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid)
+        @vm_deleter.delete_vm(vm_cid)
+        add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid, parent_id)
+      end
       raise e
+    ensure
+      add_event(instance_model.deployment.name, instance_model.name, 'create', vm_cid, parent_id, e)
     end
 
     def self.generate_agent_id

@@ -183,6 +183,111 @@ module Bosh::Cli::Command::Release
         end
       end
 
+      context 'when a package with a matching fingerprint has a different sha1' do
+        let(:fake_manifest) do
+          <<-MANIFEST
+          { 'name': 'my-release',
+            'version': '#{ORIG_DEV_VERSION}',
+            'packages': [
+              {
+                'name': 'testpackage',
+                'version': 'packagefingerprint',
+                'fingerprint': 'packagefingerprint',
+                'sha1': 'original_sha1'
+              },
+              {
+                'name': 'other_testpackage',
+                'version': 'other_packagefingerprint',
+                'fingerprint': 'other_packagefingerprint',
+                'sha1': 'same_sha_for_this_package'
+              }
+            ],
+            'jobs': [
+              {
+                'name': 'testjob',
+                'version': 'jobfingerprint',
+                'fingerprint': 'jobfingerprint',
+                'sha1': 'old_sha_for_job'
+              },
+              {
+                'name': 'other_testjob',
+                'version': 'other_jobfingerprint',
+                'fingerprint': 'other_jobfingerprint',
+                'sha1': 'same_sha'
+              }
+            ]
+          }
+          MANIFEST
+        end
+
+        let(:new_manifest) do
+          { 'name' => 'my-release',
+            'version' => '3',
+            'packages' => [
+              {
+                'name' => 'testpackage',
+                'version' => 'packagefingerprint',
+                'fingerprint' => 'packagefingerprint',
+                'sha1' => 'different_sha_for_same_package'
+              },
+              {
+                'name' => 'other_testpackage',
+                'version'=> 'other_packagefingerprint',
+                'fingerprint'=> 'other_packagefingerprint',
+                'sha1'=> 'same_sha_for_this_package'
+              }
+            ],
+            'jobs' => [
+              {
+                'name' => 'testjob',
+                'version' => 'jobfingerprint',
+                'fingerprint' => 'jobfingerprint',
+                'sha1' => 'different_sha_for_same_job'
+              },
+              {
+                'name' => 'other_testjob',
+                'version' => 'other_jobfingerprint',
+                'fingerprint' => 'other_jobfingerprint',
+                'sha1' => 'same_sha'
+              }
+            ]
+          }
+        end
+
+        let(:version_index) do
+          versions_index = Bosh::Cli::Versions::VersionsIndex.new('/tmp/nonexistant1234path')
+          expect(versions_index).to receive(:save).twice.and_return true
+          versions_index.add_version(
+            'packagefingerprint',
+            {
+              'name' => 'testpackage',
+              'version'=> 'packagefingerprint',
+              'fingerprint'=> 'packagefingerprint',
+              'sha1'=> 'different_sha_for_same_package'
+            }
+          )
+          versions_index.add_version(
+            'jobfingerprint',
+            {
+              'name' => 'testjob',
+              'version' => 'jobfingerprint',
+              'fingerprint' => 'jobfingerprint',
+              'sha1' => 'different_sha_for_same_job'
+            }
+          )
+          versions_index
+        end
+
+        it 'uses sha1 from preexisting package' do
+          allow(command).to receive(:final_builds_for_artifact).and_return(version_index)
+          expect(tarball).to receive(:package_tarball_path).twice
+          expect(tarball).to receive(:job_tarball_path).twice
+
+          expect(tarball).to receive(:replace_manifest).with(new_manifest)
+          command.finalize('mytarball.tgz')
+        end
+      end
+
       it 'can do a dry run' do
         command.options[:dry_run] = true
         command.finalize('ignored.tgz')

@@ -77,12 +77,12 @@ module Bosh::Cli::Command
       private
 
       def upload_package_and_job_blobs(manifest, tarball)
-        manifest['packages'].each do |package|
-          upload_to_blobstore(package, 'packages', tarball.package_tarball_path(package['name']))
+        manifest['packages'].map! do |package|
+          upload_to_blobstore(package.dup, 'packages', tarball.package_tarball_path(package['name']))
         end
 
-        manifest['jobs'].each do |job|
-          upload_to_blobstore(job, 'jobs', tarball.job_tarball_path(job['name']))
+        manifest['jobs'].map! do |job|
+          upload_to_blobstore(job.dup, 'jobs', tarball.job_tarball_path(job['name']))
         end
 
         if manifest['license']
@@ -114,11 +114,12 @@ module Bosh::Cli::Command
       def upload_to_blobstore(artifact, plural_type, artifact_path)
         err("Cannot find artifact complete information, please upgrade tarball to newer version") if !artifact['fingerprint']
 
-        final_builds_dir = File.join('.final_builds', plural_type, artifact['name']).to_s
-        FileUtils.mkdir_p(final_builds_dir)
-        final_builds_index = Bosh::Cli::Versions::VersionsIndex.new(final_builds_dir)
+        final_builds_index = final_builds_for_artifact(plural_type, artifact)
 
-        return artifact if final_builds_index[artifact['fingerprint']]
+        if final_builds_index[artifact['fingerprint']]
+          artifact['sha1'] = final_builds_index[artifact['fingerprint']]['sha1']
+          return artifact
+        end
 
         @progress_renderer.start(artifact['name'], "uploading...")
         blobstore_id = nil
@@ -132,6 +133,7 @@ module Bosh::Cli::Command
             'blobstore_id' => blobstore_id
           })
         @progress_renderer.finish(artifact['name'], "uploaded")
+        artifact
       end
 
       def archive_builder
@@ -141,6 +143,12 @@ module Bosh::Cli::Command
 
       def archive_repository_provider
         @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, cache_dir, release.blobstore)
+      end
+
+      def final_builds_for_artifact(plural_type, artifact)
+        final_builds_dir = File.join('.final_builds', plural_type, artifact['name']).to_s
+        FileUtils.mkdir_p(final_builds_dir)
+        Bosh::Cli::Versions::VersionsIndex.new(final_builds_dir)
       end
     end
   end
