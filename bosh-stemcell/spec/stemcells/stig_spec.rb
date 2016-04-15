@@ -105,6 +105,7 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38633
       V-38634
       V-38636
+      V-38637
       V-38638
       V-38643
       V-38652
