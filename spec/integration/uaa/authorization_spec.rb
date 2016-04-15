@@ -28,4 +28,17 @@ describe 'User authorization with UAA', type: :integration do
     output = bosh_runner.run('deployments', env: client_env)
     expect(output).to match /Deployments total: 1/
   end
+
+  it 'can deploy and delete a deployment as a team member' do
+    client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+    prepare_for_deploy(no_login: true, env: client_env)
+
+    client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    deploy_simple_manifest(no_login: true, env: client_env, manifest_hash: manifest_hash)
+
+    output = bosh_runner.run('delete deployment simple', env: client_env)
+    expect(output).to include("Deleted deployment 'simple'")
+  end
 end

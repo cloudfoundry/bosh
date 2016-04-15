@@ -381,7 +381,15 @@ shared_examples_for 'every OS image' do
   end
 
   describe 'auditd configuration' do
-    context file('/etc/audit/auditd.conf') do
+    describe file('/var/log/audit') do
+      it { should be_directory }
+
+      describe "Audit log directories must have mode 0755 or less permissive (750 by default) (stig: V-38493)" do
+        it { should be_mode 750 }
+      end
+    end
+
+    describe file('/etc/audit/auditd.conf') do
       describe 'logging disk errors to syslog (stig: V-38464)' do
         its (:content) { should match /^disk_error_action = SYSLOG$/ }
       end
@@ -405,6 +413,10 @@ shared_examples_for 'every OS image' do
 
       describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
         its (:content) { should match /^num_logs = 5$/ }
+      end
+
+      describe 'audit log files must be group owned by root (stig: V-38445)' do
+        its (:content) { should match /^log_group = root$/ }
       end
     end
   end

@@ -9,13 +9,14 @@ module Bosh::Director
       let(:type) { 'type' }
       let(:description) { 'description' }
       let(:config) { Psych.load_file(asset('test-director-config.yml')) }
-      let(:deployment_name) { 'deployment name' }
+      let(:deployment_name) { 'deployment-name' }
       let(:task_remover) { instance_double('Bosh::Director::Api::TaskRemover') }
 
       before do
         Config.configure(config)
         Config.base_dir = tmpdir
         Config.max_tasks = 2
+        Models::Deployment.make(name: deployment_name, teams: 'security,spies')
         allow(Api::TaskRemover).to receive(:new).and_return(task_remover)
         allow(task_remover).to receive(:remove)
       end
@@ -45,6 +46,18 @@ module Bosh::Director
         director_version_line, enqueuing_task_line = File.read(File.join(tmpdir, 'tasks', task.id.to_s, 'debug')).split(/\n/)
         expect(director_version_line).to match(/INFO .* Director Version: #{Bosh::Director::VERSION}/)
         expect(enqueuing_task_line).to match(/INFO .* Enqueuing task: #{task.id}/)
+      end
+
+      it 'persists deployment teams on the task so that they can be referenced even when the deployment database record has been deleted' do
+        expect {
+          described_class.new.create_task('fake-user', type, description, deployment_name)
+        }.to change {
+          Models::Task.where(teams: 'security,spies').count
+        }.from(0).to(1)
+      end
+
+      it 'does not reference teams when task is not deployment-specific' do
+        expect(described_class.new.create_task('fake-user', type, description, nil).teams).to be_nil
       end
     end
   end

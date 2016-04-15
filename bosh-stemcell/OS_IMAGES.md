@@ -11,6 +11,10 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - periodic bump to include STIGs
   - built from develop (4afb91d3862f87b1d1cd90b3b6cbbeed09c85dc8)
 
+* `0M3jbAU705ItzZKPdmh6kxRJR38fmvcf`
+  - bumped for libpcre3_1:8.31-2ubuntu2.1 vulnerability
+  - built from master (d2f73ee7636f2325bf6998670228682d194627c9)
+
 * `sLe0Rz_sFs0Uy2DcZ9Xf3KQG0QsuUXos`
   - periodic bump to include STIGs
   - built from develop (da0fda1f8bb8ee4c63e64a549bfe3727a6ac5b69)

@@ -123,6 +123,22 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'ensure auditd is installed and enabled (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe package('audit') do
+      it('should be installed') { should be_installed }
+    end
+
+    describe file('/etc/systemd/system/default.target') do
+      it { should be_file }
+      its(:content) { should match /^Requires=multi-user\.target/ }
+    end
+
+    describe file('/etc/systemd/system/multi-user.target.wants/auditd.service') do
+      it { should be_file }
+      its(:content) { should match /^ExecStart=\/sbin\/auditd/ }
+    end
+  end
+
   context 'ensure xinetd is not installed nor enabled (stig: V-38582)' do
     describe package('xinetd') do
       it('should not be installed') { should_not be_installed }
@@ -208,10 +224,9 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'ensure net-snmp is not installed (stig: V-38660)' do
+  context 'ensure net-snmp is not installed (stig: V-38660) (stig: V-38653)' do
     describe package('net-snmp') do
       it { should_not be_installed }
     end
   end
-
 end

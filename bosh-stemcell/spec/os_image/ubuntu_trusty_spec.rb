@@ -354,6 +354,12 @@ EOF
     end
   end
 
+  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      it { should be_enabled }
+    end
+  end
+
   context 'ensure sendmail is removed (stig: V-38671)' do
     describe command('dpkg -s sendmail') do
       its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
@@ -389,7 +395,7 @@ EOF
     end
   end
 
-  context 'ensure snmp is not installed (stig: V-38660)' do
+  context 'ensure snmp is not installed (stig: V-38660) (stig: V-38653)' do
     describe package('snmp') do
       it { should_not be_installed }
     end
