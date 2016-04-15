@@ -15,7 +15,6 @@ describe 'cli: events', type: :integration do
         'releases' => [{"name" => 'bosh-release', "version" => "0.1-dev"}]
     })
 
-
     director.vm('foobar', '0').fail_job
     deploy(failure_expected: true)
 
@@ -83,6 +82,76 @@ describe 'cli: events', type: :integration do
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
 | x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
 =end
+
+    output = bosh_runner.run('events --deployment simple')
+    expect(scrub_event_specific(output)).to match_output %(
++----------+------------------------------+------+--------+-------------+---------------------------------------------------------------------------------------+------+--------+---------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+| ID       | Time                         | User | Action | Object type | Object ID                                                                             | Task | Dep    | Inst                                                                                  | Context                                                                                  |
++----------+------------------------------+------+--------+-------------+---------------------------------------------------------------------------------------+------+--------+---------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple                                                                                | x      | simple | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple                                                                                | x      | simple | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple                                                                                | x      | simple | -                                                                                     | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | deployment  | simple                                                                                | x      | simple | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment  | simple                                                                                | x      | simple | -                                                                                     | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment  | simple                                                                                | x      | simple | -                                                                                     | -                                                                                        |
++----------+------------------------------+------+--------+-------------+---------------------------------------------------------------------------------------+------+--------+---------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+)
+
+    output = bosh_runner.run('events --task 6')
+    expect(scrub_event_specific(output)).to match_output %(
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+| ID       | Time                         | User | Action | Object type | Object ID                                   | Task | Dep    | Inst                                        | Context |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple                                      | x      | simple | -                                           | -       |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | deployment  | simple                                      | x      | simple | -                                           | -       |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+)
+
+    regexp = %r{
+      foobar\/([0-9a-f]{8}-[0-9a-f-]{27})\b
+    }x
+
+    output = bosh_runner.run('events')
+    instance_found = regexp.match(output)[0]
+    output = bosh_runner.run("events --instance #{instance_found}")
+    expect(scrub_event_specific(output)).to match_output %(
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+------------------------------------------------------------------------------------------+
+| ID       | Time                         | User | Action | Object type | Object ID                                   | Task | Dep    | Inst                                        | Context                                                                                  |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+------------------------------------------------------------------------------------------+
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update.... |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | start  | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+------------------------------------------------------------------------------------------+
+)
+
+    output = bosh_runner.run("events --deployment simple --task 6 --instance #{instance_found}")
+    expect(scrub_event_specific(output)).to match_output %(
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+| ID       | Time                         | User | Action | Object type | Object ID                                   | Task | Dep    | Inst                                        | Context |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -       |
+| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance    | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -       |
++----------+------------------------------+------+--------+-------------+---------------------------------------------+------+--------+---------------------------------------------+---------+
+)
   end
 
   def get_details(table, keys)
