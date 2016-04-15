@@ -27,6 +27,7 @@ module Bosh::Director
       let(:orphaned_at) { Time.now.utc }
 
       before do
+        Models::Deployment.make(name: 'foo')
         App.new(config)
       end
 
