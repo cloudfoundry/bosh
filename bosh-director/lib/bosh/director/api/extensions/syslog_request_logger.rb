@@ -7,8 +7,6 @@ end
 
 require 'socket'
 
-# auth.auth_type
-
 module Bosh::Director
   module Api
     module Extensions
