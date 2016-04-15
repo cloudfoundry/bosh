@@ -193,6 +193,14 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
+  context 'ensure audit package file have unmodified contents (stig: V-38637)' do
+    # ignore auditd.conf, and audit.rules since we modify these files in
+    # other stigs
+    describe command("rpm -V audit | grep -v 'auditd.conf' | grep -v 'audit.rules' | grep '^..5'") do
+      its (:stdout) { should be_empty }
+    end
+  end
+
   context 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
     describe file('/etc/audit/rules.d/audit.rules') do
       its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
