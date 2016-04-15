@@ -27,7 +27,6 @@ module Bosh::Director
       let(:orphaned_at) { Time.now.utc }
 
       before do
-        Models::Deployment.make(name: 'foo')
         App.new(config)
       end
 
@@ -84,6 +83,8 @@ module Bosh::Director
       end
 
       context 'put /disks/diskcid/attachments' do
+        let!(:deployment) { Models::Deployment.make(name: 'foo') }
+
         it 'requires auth' do
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'
           expect(last_response.status).to eq(401)
@@ -92,7 +93,7 @@ module Bosh::Director
         it 'queues an attach disk job' do
           basic_authorize('admin', 'admin')
           expect(Jobs::AttachDisk).to receive(:enqueue)
-                                        .with('admin', 'foo', 'dea', '17f01a35', 'vol-af4a3e40', kind_of(JobQueue))
+                                        .with('admin', deployment, 'dea', '17f01a35', 'vol-af4a3e40', kind_of(JobQueue))
                                         .and_call_original
 
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'

@@ -2,7 +2,7 @@ module Bosh::Director
   module Api
     class ProblemManager
       def perform_scan(username, deployment)
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name], deployment)
       end
 
       def get_problems(deployment)
@@ -15,11 +15,11 @@ module Bosh::Director
       end
 
       def apply_resolutions(username, deployment, resolutions)
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions], deployment)
       end
 
       def scan_and_fix(username, deployment, jobs)
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes], deployment)
       end
     end
   end
