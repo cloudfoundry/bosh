@@ -418,6 +418,10 @@ shared_examples_for 'every OS image' do
       describe 'audit log files must be group owned by root (stig: V-38445)' do
         its (:content) { should match /^log_group = root$/ }
       end
+
+      describe 'audit log files alerts administrator when storage capacity is less than 75mb (stig: V-38678)' do
+        its (:content) { should match /^space_left = 75$/ }
+      end
     end
   end
 
