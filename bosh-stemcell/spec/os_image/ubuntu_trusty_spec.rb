@@ -354,6 +354,12 @@ EOF
     end
   end
 
+  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      it { should be_enabled }
+    end
+  end
+
   context 'ensure sendmail is removed (stig: V-38671)' do
     describe command('dpkg -s sendmail') do
       its (:stdout) { should include ('dpkg-query: package \'sendmail\' is not installed and no information is available')}
