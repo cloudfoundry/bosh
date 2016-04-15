@@ -367,7 +367,7 @@ module IntegrationSandboxBeforeHelpers
   up do
         run(\"")
 
-      (Dir[Dir.pwd + '/spec/assets/migration_data/*']).each do |data_file_path|
+      (Dir[Dir.pwd + '/spec/assets/migration_data/*']).sort.each do |data_file_path|
         data_file = File.new(data_file_path, 'r')
         file.write(data_file.read.gsub("\"", "\\\""))
       end
