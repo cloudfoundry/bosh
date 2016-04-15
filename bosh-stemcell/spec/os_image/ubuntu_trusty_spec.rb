@@ -395,7 +395,7 @@ EOF
     end
   end
 
-  context 'ensure snmp is not installed (stig: V-38660)' do
+  context 'ensure snmp is not installed (stig: V-38660) (stig: V-38653)' do
     describe package('snmp') do
       it { should_not be_installed }
     end
