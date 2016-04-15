@@ -414,6 +414,10 @@ shared_examples_for 'every OS image' do
       describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
         its (:content) { should match /^num_logs = 5$/ }
       end
+
+      describe 'audit log files must be group owned by root (stig: V-38445)' do
+        its (:content) { should match /^log_group = root$/ }
+      end
     end
   end
 

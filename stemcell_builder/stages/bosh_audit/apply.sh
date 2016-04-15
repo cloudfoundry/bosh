@@ -37,4 +37,5 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
     sed -i 's/num_logs = .*$/num_logs = 5/g' $chroot/etc/audit/auditd.conf
     sed -i 's/max_log_file = .*$/max_log_file = 6/g' $chroot/etc/audit/auditd.conf
     sed -i 's/max_log_file_action = .*$/max_log_file_action = ROTATE/g' $chroot/etc/audit/auditd.conf
+    sed -i 's/log_group = .*$/log_group = root/g' $chroot/etc/audit/auditd.conf
 fi
