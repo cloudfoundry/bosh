@@ -201,15 +201,6 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
-    describe file('/etc/audit/rules.d/audit.rules') do
-      its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
-      its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
-      its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
-      its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
-    end
-  end
-
   context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
     describe file('/etc/pam.d/system-auth') do
       its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
