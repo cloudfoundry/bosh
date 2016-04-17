@@ -38,6 +38,9 @@ module Bosh::Director
 
         deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model, runtime_config_model)
         @deployment_name = deployment_manifest.to_hash['name']
+
+        previous_releases, previous_stemcells = get_stemcells_and_releases
+        context = {}
         parent_id = add_event
 
         with_deployment_lock(@deployment_name) do
@@ -53,6 +56,9 @@ module Bosh::Director
             deployment_plan.bind_models
           end
 
+          next_releases, next_stemcells  = get_stemcells_and_releases
+          context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
+
           render_job_templates(deployment_plan.jobs_starting_on_deploy)
           deployment_plan.compile_packages
 
@@ -64,7 +70,7 @@ module Bosh::Director
 
           @notifier.send_end_event
           logger.info('Finished updating deployment')
-          add_event(parent_id)
+          add_event(context, parent_id)
 
           "/deployments/#{deployment_plan.name}"
         end
@@ -74,7 +80,7 @@ module Bosh::Director
         rescue Exception => e2
           # log the second error
         ensure
-          add_event(parent_id, e)
+          add_event(context, parent_id, e)
           raise e
         end
       ensure
@@ -83,8 +89,8 @@ module Bosh::Director
 
       private
 
-      def add_event(parent_id = nil, error = nil)
-        action = deployment_new? ? "create" : "update"
+      def add_event(context = {}, parent_id = nil, error = nil)
+        action = @options.fetch('new', false) ? "create" : "update"
         event  = event_manager.create_event(
             {
                 parent_id:   parent_id,
@@ -94,7 +100,8 @@ module Bosh::Director
                 object_name: @deployment_name,
                 deployment:  @deployment_name,
                 task:        task_id,
-                error:       error
+                error:       error,
+                context:     context
             })
         event.id
       end
@@ -147,8 +154,43 @@ module Bosh::Director
         end
       end
 
-      def deployment_new?
-        @deployment_new ||= Models::Deployment.exclude(manifest: nil)[name: @deployment_name].nil?
+      def get_stemcells_and_releases
+        deployment = current_deployment
+        stemcells = []
+        releases = []
+        if deployment
+          releases = deployment.release_versions.map do |rv|
+            "#{rv.release.name}/#{rv.version}"
+          end
+          stemcells = deployment.stemcells.map do |sc|
+            "#{sc.name}/#{sc.version}"
+          end
+        end
+        return releases, stemcells
+      end
+
+      def current_deployment
+        Models::Deployment[name: @deployment_name]
+      end
+
+      def event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
+        new_releases = next_releases - previous_releases
+        old_releases = previous_releases - next_releases
+        new_stemcells = next_stemcells - previous_stemcells
+        old_stemcells = previous_stemcells - next_stemcells
+
+        new_objects = {}
+        new_objects['releases'] = new_releases unless new_releases.empty?
+        new_objects['stemcells'] = new_stemcells unless new_stemcells.empty?
+
+        old_objects = {}
+        old_objects['releases'] = old_releases unless old_releases.empty?
+        old_objects['stemcells'] = old_stemcells unless old_stemcells.empty?
+
+        context = {}
+        context['new'] = new_objects unless new_objects.empty?
+        context['old'] = old_objects unless old_objects.empty?
+        context
       end
     end
   end

@@ -139,6 +139,25 @@ module Bosh::Director
             end
           end
 
+          context 'sets `new` option' do
+            it 'to true' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false))
+                          .and_return(OpenStruct.new(:id => 1))
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            end
+
+            it 'to false' do
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => true))
+                          .and_return(OpenStruct.new(:id => 1))
+               Models::Deployment.first.delete
+              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            end
+          end
+
         end
 
         describe 'deleting deployment' do
