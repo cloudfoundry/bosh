@@ -1,5 +1,5 @@
 user vcap;
-worker_processes  2;
+worker_processes <%= p('blobstore.nginx.workers') %>;
 daemon off;
 
 error_log /var/vcap/sys/log/blobstore/error.log;
