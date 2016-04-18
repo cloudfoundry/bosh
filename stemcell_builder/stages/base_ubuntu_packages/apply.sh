@@ -32,32 +32,34 @@ if ! is_ppc64le; then
   pkg_mgr install "rsyslog rsyslog-relp rsyslog-gnutls"
   pkg_mgr install "rsyslog-mmjsonparse"
 else
-  # on ppc64le compile from source as the .deb packages are not available 
-  # from the repo above
-  wget http://download.rsyslog.com/liblogging/liblogging-1.0.5.tar.gz
-  wget http://www.rsyslog.com/download/files/download/rsyslog/rsyslog-8.15.0.tar.gz
-  wget http://download.rsyslog.com/librelp/librelp-1.2.9.tar.gz
-  
-  pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev" 
+  pkg_mgr install "libsystemd-journal-dev libestr-dev libjson0 libjson0-dev uuid-dev python-docutils libcurl4-openssl-dev"
 
-  tar xvfz liblogging-1.0.5.tar.gz 
-  cd liblogging-1.0.5
-  ./configure --disable-man-pages
-  make && sudo make install
-  cd ..
-  
-  tar xvfz librelp-1.2.9.tar.gz
-  cd librelp-1.2.9
-  ./configure
-  make && sudo make install
-  cd ..
+  run_in_chroot $chroot "
+    cd /tmp
 
-  tar xvfz rsyslog-8.15.0.tar.gz
-  cd rsyslog-8.15.0
-  ./configure --enable-mmjsonparse --enable-gnutls --enable-relp
-  make && make install
-  cd ..
+    # on ppc64le compile from source as the .deb packages are not available
+    # from the repo above
+    wget http://download.rsyslog.com/liblogging/liblogging-1.0.5.tar.gz
+    wget http://www.rsyslog.com/download/files/download/rsyslog/rsyslog-8.15.0.tar.gz
+    wget http://download.rsyslog.com/librelp/librelp-1.2.9.tar.gz
 
+    tar xvfz liblogging-1.0.5.tar.gz
+    cd liblogging-1.0.5
+    ./configure --disable-man-pages --prefix=/usr
+    make && sudo make install
+    cd ..
+
+    tar xvfz librelp-1.2.9.tar.gz
+    cd librelp-1.2.9
+    ./configure --prefix=/usr
+    make && sudo make install
+    cd ..
+
+    tar xvfz rsyslog-8.15.0.tar.gz
+    cd rsyslog-8.15.0
+    ./configure --enable-mmjsonparse --enable-gnutls --enable-relp --prefix=/usr
+    make && make install
+  "
 fi
 
 

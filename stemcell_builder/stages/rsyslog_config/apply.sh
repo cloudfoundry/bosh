@@ -58,6 +58,9 @@ then
     ln -sf /lib/init/upstart-job /etc/init.d/rsyslog
     update-rc.d rsyslog defaults
   "
+  if is_ppc64le; then
+    sed -i "s@/dev/xconsole@/dev/console@g" $chroot/etc/rsyslog.d/50-default.conf
+  fi
 elif [ -f $chroot/etc/redhat-release ] # Centos or RHEL
 then
   cp $assets_dir/centos_init_d $chroot/etc/init.d/rsyslog
