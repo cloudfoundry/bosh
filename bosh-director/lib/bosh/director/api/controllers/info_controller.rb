@@ -26,7 +26,10 @@ module Bosh::Director
             },
             'snapshots' => {
               'status' => Config.enable_snapshots
-            }
+            },
+            'virtual_delete' => {
+              'status' => Config.enable_virtual_delete_vms
+            },
           }
         }
         content_type(:json)
