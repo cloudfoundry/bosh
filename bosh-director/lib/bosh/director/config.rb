@@ -8,43 +8,43 @@ module Bosh::Director
   class Config
     class << self
       attr_accessor(
-        :base_dir,
-        :cloud_options,
-        :db,
-        :dns,
-        :dns_db,
-        # @todo @for-a-refactorer according to grep of "Config.dns_domain_name" I'm pretty sure this can be removed
-        :dns_domain_name,
-        :event_log,
-        :logger,
-        :max_tasks,
-        :max_threads,
-        :name,
-        :process_uuid,
-        :result,
-        :revision,
-        :task_checkpoint_interval,
-        :trusted_certs,
-        :uuid,
-        :current_job,
-        :encryption,
-        :fix_stateful_nodes,
-        :enable_snapshots,
-        :max_vm_create_tries,
-        :flush_arp,
-        :nats_uri,
-        :default_ssh_options,
-        :keep_unreachable_vms,
-        :enable_post_deploy,
-        :generate_vm_passwords,
-        :remove_dev_tools,
-        :enable_virtual_delete_vms,
+          :base_dir,
+          :cloud_options,
+          :db,
+          :dns,
+          :dns_db,
+          # @todo @for-a-refactorer according to grep of "Config.dns_domain_name" I'm pretty sure this can be removed
+          :dns_domain_name,
+          :event_log,
+          :logger,
+          :max_tasks,
+          :max_threads,
+          :name,
+          :process_uuid,
+          :result,
+          :revision,
+          :task_checkpoint_interval,
+          :trusted_certs,
+          :uuid,
+          :current_job,
+          :encryption,
+          :fix_stateful_nodes,
+          :enable_snapshots,
+          :max_vm_create_tries,
+          :flush_arp,
+          :nats_uri,
+          :default_ssh_options,
+          :keep_unreachable_vms,
+          :enable_post_deploy,
+          :generate_vm_passwords,
+          :remove_dev_tools,
+          :enable_virtual_delete_vms,
       )
 
       attr_reader(
-        :db_config,
-        :ignore_missing_gateway,
-        :record_events,
+          :db_config,
+          :ignore_missing_gateway,
+          :record_events,
       )
 
       def clear
@@ -81,15 +81,15 @@ module Bosh::Director
         if logging_config.has_key?('file')
           @log_file_path = logging_config.fetch('file')
           shared_appender = Logging.appenders.file(
-            'DirectorLogFile',
-            filename: @log_file_path,
-            layout: ThreadFormatter.layout
+              'DirectorLogFile',
+              filename: @log_file_path,
+              layout: ThreadFormatter.layout
           )
         else
           shared_appender = Logging.appenders.io(
-            'DirectorStdOut',
-            STDOUT,
-            layout: ThreadFormatter.layout
+              'DirectorStdOut',
+              STDOUT,
+              layout: ThreadFormatter.layout
           )
         end
 
