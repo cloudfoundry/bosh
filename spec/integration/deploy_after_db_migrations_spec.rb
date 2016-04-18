@@ -65,7 +65,7 @@ describe 'deploy after db migrations', type: :integration do
   end
 
   context 'auto deploy' do
-    it 'deploys a simple manifest and cloud config after running migrations on a pre-seeded database' do
+    xit 'deploys a simple manifest and cloud config after running migrations on a pre-seeded database' do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
     end
