@@ -224,6 +224,10 @@ module Bosh::Director
           errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'.")
         end
 
+        if source.has_key?('name') || source.has_key?('type')
+          errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'. Please provide these keys in the release only.")
+        end
+
         errors
       end
 

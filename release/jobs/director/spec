@@ -113,6 +113,8 @@ properties:
     default: false
   director.enable_virtual_delete_vms:
     description: When true, bosh will not really delete vm from infrastructure when instance update, just destroy vm record in db
+  director.flush_arp:
+    description: Clear up arp entries when machines are recreated
     default: false
 
   #Orphaned disk and orphaned snapshot automated cleanup

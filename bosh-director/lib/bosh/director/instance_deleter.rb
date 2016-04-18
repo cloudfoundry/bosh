@@ -15,9 +15,10 @@ module Bosh::Director
 
     def delete_instance_plan(instance_plan, event_log_stage)
       instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
-
+      deployment_name = instance_model.deployment.name
+      instance_name = instance_model.name
+      parent_id = add_event(deployment_name, instance_name)
       event_log_stage.advance_and_track(instance_model.to_s) do
-
         error_ignorer.with_force_check do
           stop(instance_plan)
         end
@@ -46,6 +47,10 @@ module Bosh::Director
 
         instance_model.destroy
       end
+    rescue Exception => e
+      raise e
+    ensure
+      add_event(deployment_name, instance_name, parent_id, e) if parent_id
     end
 
     def delete_instance_plans(instance_plans, event_log_stage, options = {})
@@ -58,6 +63,22 @@ module Bosh::Director
     end
 
     private
+
+    def add_event(deployment_name, instance_name, parent_id = nil, error = nil)
+      event  = Config.current_job.event_manager.create_event(
+          {
+              parent_id:   parent_id,
+              user:        Config.current_job.username,
+              action:      'delete',
+              object_type: 'instance',
+              object_name: instance_name,
+              task:        Config.current_job.task_id,
+              deployment:  deployment_name,
+              instance:    instance_name,
+              error:       error
+          })
+      event.id
+    end
 
     def stop(instance_plan)
       stopper = Stopper.new(instance_plan, 'stopped', Config, @logger)

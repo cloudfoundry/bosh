@@ -30,6 +30,10 @@ module Bosh::Director
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
 
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task_id) {42}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+
     before do
       instance.bind_existing_instance_model(instance_model)
       allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
@@ -42,9 +46,55 @@ module Bosh::Director
       allow(agent_client).to receive(:unmount_disk)
       allow(cloud).to receive(:detach_disk)
       allow(Config).to receive(:cloud).and_return(cloud)
+      allow(Config).to receive(:current_job).and_return(update_job)
     end
 
     describe '#update_persistent_disk' do
+      context 'when disk creation fails' do
+        context 'with NoDiskSpaceError' do
+          let(:error) { Bosh::Clouds::NoDiskSpace.new(retryable) }
+
+          before do
+            allow(cloud).to receive(:create_disk).and_raise(error).twice
+          end
+
+          context 'is retryable' do
+            let(:retryable) { true }
+
+            it 'retries, then propagates the error' do
+              expect(logger).to receive(:warn).with('Retrying attach disk operation after persistent disk update failed')
+              expect {
+                disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+              }.to raise_error error
+            end
+          end
+
+          context 'is not retryable' do
+            let(:retryable) { false }
+
+            it 'does not try to orphan the non-existant disk' do
+              expect(disk_manager).to_not receive(:orphan_disk)
+              expect {
+                disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+              }.to raise_error error
+            end
+          end
+        end
+      end
+
+      context 'when disk creation succeeds, but there is a NoDiskSpaceError, and disk attachment is not retryable' do
+        let(:error) { Bosh::Clouds::NoDiskSpace.new(false) }
+
+        it 'orphans the disk' do
+          allow(cloud).to receive(:attach_disk).and_raise(error)
+
+          expect(disk_manager).to receive(:orphan_disk)
+          expect {
+            disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+          }.to raise_error error
+        end
+      end
+
       context 'when the agent reports a different disk cid from the model' do
         before do
           allow(agent_client).to receive(:list_disk).and_return(['random-disk-cid'])
@@ -96,6 +146,43 @@ module Bosh::Director
           expect(logger).to receive(:warn).with("'job-name/1 (my-uuid-1)' has inactive disk inactive-disk")
           disk_manager.update_persistent_disk(instance_plan, vm_recreator)
         end
+
+        it 'stores events' do
+          expect {
+            disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+          }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(6)
+
+          event_1 = Bosh::Director::Models::Event.first
+          expect(event_1.user).to eq('user')
+          expect(event_1.action).to eq('create')
+          expect(event_1.object_type).to eq('disk')
+          expect(event_1.object_name).to eq(nil)
+          expect(event_1.task).to eq("#{task_id}")
+          expect(event_1.deployment).to eq(instance_model.deployment.name)
+          expect(event_1.instance).to eq(instance_model.name)
+
+          event_2 = Bosh::Director::Models::Event.order(:id)[2]
+          expect(event_2.parent_id).to eq(1)
+          expect(event_2.user).to eq('user')
+          expect(event_2.action).to eq('create')
+          expect(event_2.object_type).to eq('disk')
+          expect(event_2.object_name).to eq('new-disk-cid')
+          expect(event_2.task).to eq("#{task_id}")
+          expect(event_2.deployment).to eq(instance_model.deployment.name)
+          expect(event_2.instance).to eq(instance_model.name)
+        end
+
+        it 'stores events with error information' do
+          allow(cloud).to receive(:create_disk).and_raise(Exception, 'error')
+          expect {
+            disk_manager.update_persistent_disk(instance_plan, vm_recreator)
+          }.to raise_error Exception, 'error'
+
+          event_2 = Bosh::Director::Models::Event.order(:id)[2]
+          expect(event_2.error).to eq('error')
+        end
+
 
         context 'when the persistent disk is changed' do
           before { expect(instance_plan.persistent_disk_changed?).to be_truthy }
@@ -344,6 +431,32 @@ module Bosh::Director
         expect(cloud).to_not receive(:delete_disk)
 
         disk_manager.delete_persistent_disks(instance_model)
+      end
+
+      it "stores events" do
+        expect {
+          disk_manager.delete_persistent_disks(instance_model)
+        }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(2)
+
+        event_1 = Bosh::Director::Models::Event.first
+        expect(event_1.user).to eq('user')
+        expect(event_1.action).to eq('delete')
+        expect(event_1.object_type).to eq('disk')
+        expect(event_1.object_name).to eq('disk123')
+        expect(event_1.task).to eq("#{task_id}")
+        expect(event_1.deployment).to eq(instance_model.deployment.name)
+        expect(event_1.instance).to eq(instance_model.name)
+
+        event_2 = Bosh::Director::Models::Event.order(:id).last
+        expect(event_2.parent_id).to eq(1)
+        expect(event_2.user).to eq('user')
+        expect(event_2.action).to eq('delete')
+        expect(event_2.object_type).to eq('disk')
+        expect(event_2.object_name).to eq('disk123')
+        expect(event_2.task).to eq("#{task_id}")
+        expect(event_2.deployment).to eq(instance_model.deployment.name)
+        expect(event_2.instance).to eq(instance_model.name)
       end
     end
 

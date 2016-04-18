@@ -93,6 +93,10 @@ describe Bosh::Director::VmCreator do
 
   let(:instance_model) { Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment) }
 
+  let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
+  let(:task_id) {42}
+  let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+
   before do
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
@@ -101,6 +105,7 @@ describe Bosh::Director::VmCreator do
     allow(job).to receive(:instance_plans).and_return([instance_plan])
     allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
     allow(arp_flusher).to receive(:delete_arp_entries)
+    allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
   end
 
   it 'should create a vm' do
@@ -117,6 +122,46 @@ describe Bosh::Director::VmCreator do
     }.to change {
         Bosh::Director::Models::Instance.where(vm_cid: 'new-vm-cid').count}.from(0).to(1)
   end
+
+  it 'should record events' do
+    expect(cloud).to receive(:create_vm).with(
+        kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
+    ).and_return('new-vm-cid')
+    expect {
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+    }.to change {
+      Bosh::Director::Models::Event.count }.from(0).to(2)
+
+    event_1 = Bosh::Director::Models::Event.first
+    expect(event_1.user).to eq('user')
+    expect(event_1.action).to eq('create')
+    expect(event_1.object_type).to eq('vm')
+    expect(event_1.object_name).to eq(nil)
+    expect(event_1.task).to eq("#{task_id}")
+    expect(event_1.deployment).to eq(instance_model.deployment.name)
+    expect(event_1.instance).to eq(instance_model.name)
+
+    event_2 = Bosh::Director::Models::Event.order(:id)[2]
+    expect(event_2.parent_id).to eq(1)
+    expect(event_2.user).to eq('user')
+    expect(event_2.action).to eq('create')
+    expect(event_2.object_type).to eq('vm')
+    expect(event_2.object_name).to eq('new-vm-cid')
+    expect(event_2.task).to eq("#{task_id}")
+    expect(event_2.deployment).to eq(instance_model.deployment.name)
+    expect(event_2.instance).to eq(instance_model.name)
+  end
+
+  it 'should record events about error' do
+    expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+    expect {
+      subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
+    }.to raise_error Bosh::Clouds::VMCreationFailed
+
+    event_2 = Bosh::Director::Models::Event.order(:id)[2]
+    expect(event_2.error).to eq('Bosh::Clouds::VMCreationFailed')
+  end
+
 
   it 'flushes the ARP cache' do
     allow(cloud).to receive(:create_vm).with(

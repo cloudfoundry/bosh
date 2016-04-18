@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/registry/client'
 require 'json'
 
-describe Bosh::Registry::Client do
+describe Bosh::Cpi::RegistryClient do
+  subject { described_class.new(endpoint, user, password) }
 
   let(:endpoint) { 'http://localhost:25001' }
   let(:user) { 'user' }
@@ -12,8 +12,6 @@ describe Bosh::Registry::Client do
   let(:response) { double('response')}
   let(:settings) { {'settings' => {'foo' => 'bar'}} }
   let(:settings_json) { settings.to_json }
-
-  subject { described_class.new(endpoint, user, password) }
 
   before do
     allow(HTTPClient).to receive(:new).and_return(httpclient)

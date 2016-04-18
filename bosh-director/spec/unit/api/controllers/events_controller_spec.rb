@@ -78,6 +78,85 @@ module Bosh::Director
           ]
           expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
         end
+
+        it 'returns 200 events' do
+          basic_authorize 'admin', 'admin'
+          (1..250).each do |i|
+            Models::Event.make
+          end
+
+          get '/'
+          body = Yajl::Parser.parse(last_response.body)
+
+          expect(body.size).to eq(200)
+          response_ids = body.map { |e| e['id'].to_i }
+          expected_ids = *(53..252)
+          expect(response_ids).to eq(expected_ids.reverse)
+        end
+      end
+
+      context 'when deployment is specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+          Models::Event.make('deployment' => 'name')
+          Models::Event.make('deployment' => 'not the droid we are looking for')
+        end
+
+        it 'returns a filtered list of events' do
+          get '?deployment=name'
+          events = Yajl::Parser.parse(last_response.body)
+          expect(events.size).to eq(1)
+          expect(events[0]['deployment']).to eq('name')
+        end
+      end
+
+      context 'when task is specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+          Models::Event.make('task' => 4)
+          Models::Event.make('task' => 5)
+        end
+
+        it 'returns a filtered list of events' do
+          get '?task=4'
+          events = Yajl::Parser.parse(last_response.body)
+          expect(events.size).to eq(1)
+          expect(events[0]['task']).to eq('4')
+        end
+      end
+
+      context 'when instance is specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+          Models::Event.make('instance' => 'job/4')
+          Models::Event.make('instance' => 'job/5')
+        end
+
+        it 'returns a filtered list of events' do
+          get '?instance=job/4'
+          events = Yajl::Parser.parse(last_response.body)
+          expect(events.size).to eq(1)
+          expect(events[0]['instance']).to eq('job/4')
+        end
+      end
+
+      context 'when before_id, instance, deployment and task are specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+          Models::Event.make('instance' => 'job/4')
+          Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name')
+          Models::Event.make('task' => 5)
+          Models::Event.make('deployment' => 'not the droid we are looking for')
+        end
+
+        it 'returns the anded results' do
+          get '?instance=job/5&task=4&deployment=name&before_id=3'
+          events = Yajl::Parser.parse(last_response.body)
+          expect(events.size).to eq(1)
+          expect(events[0]['instance']).to eq('job/5')
+          expect(events[0]['task']).to eq('4')
+          expect(events[0]['deployment']).to eq('name')
+        end
       end
 
       context 'when before_id is specified' do
@@ -91,10 +170,10 @@ module Bosh::Director
           end
 
           get '?before_id=230'
-          body = Yajl::Parser.parse(last_response.body)
+          events = Yajl::Parser.parse(last_response.body)
 
-          expect(body.size).to eq(200)
-          response_ids = body.map { |e| e['id'].to_i }
+          expect(events.size).to eq(200)
+          response_ids = events.map { |e| e['id'].to_i }
           expected_ids = *(30..229)
           expect(response_ids).to eq(expected_ids.reverse)
         end

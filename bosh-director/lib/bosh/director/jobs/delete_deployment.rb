@@ -42,15 +42,16 @@ module Bosh::Director
       end
 
       private
+
       def add_event(parent_id = nil, error = nil)
-        @user  = @user ||= task_manager.find_task(task_id).username
         event  = event_manager.create_event(
             {
                 parent_id:   parent_id,
-                user:        @user,
+                user:        username,
                 action:      "delete",
                 object_type: "deployment",
                 object_name: @deployment_name,
+                deployment:  @deployment_name,
                 task:        task_id,
                 error:       error
             })

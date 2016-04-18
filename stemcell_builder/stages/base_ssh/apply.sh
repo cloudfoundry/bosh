@@ -33,7 +33,7 @@ sed "/^ *HostbasedAuthentication/d" -i $chroot/etc/ssh/sshd_config
 echo 'HostbasedAuthentication no' >> $chroot/etc/ssh/sshd_config
 
 sed "/^ *Banner/d" -i $chroot/etc/ssh/sshd_config
-echo 'Banner /etc/issue' >> $chroot/etc/ssh/sshd_config
+echo 'Banner /etc/issue.net' >> $chroot/etc/ssh/sshd_config
 
 sed "/^ *IgnoreRhosts/d" -i $chroot/etc/ssh/sshd_config
 echo 'IgnoreRhosts yes' >> $chroot/etc/ssh/sshd_config
@@ -77,3 +77,8 @@ else
   exit 1
 
 fi
+
+cat << EOF > $chroot/etc/issue.net
+Unauthorized use is strictly prohibited. All access and activity
+is subject to logging and monitoring.
+EOF

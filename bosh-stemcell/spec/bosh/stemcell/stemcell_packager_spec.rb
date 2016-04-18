@@ -94,7 +94,7 @@ describe Bosh::Stemcell::StemcellPackager do
 
       architecture = 'x86_64'
       if Bosh::Stemcell::Arch.ppc64le?
-        architecture = 'ppc64le'
+        architecture = 'ppc64'
       end
 
       expect(actual_manifest).to eq({

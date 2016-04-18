@@ -35,6 +35,11 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(@working_dir)
       FileUtils.mkdir_p(@install_dir)
 
+      # on El Capitan, the compilation of nginx fails on openssl compilation step
+      # we need to set LIBRARY_PATH so the linker can find the OpenSSL Dynamic Libraries
+      # that have been installed with `brew link openssl --force`
+      ENV['LIBRARY_PATH'] = '/usr/local/opt/openssl/lib' if (/darwin/ =~ RUBY_PLATFORM)
+
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(RELEASE_ROOT, 'blobs', 'nginx')
       @runner.run("cp -R #{nginx_blobs_path} #{File.join(@working_dir)}")

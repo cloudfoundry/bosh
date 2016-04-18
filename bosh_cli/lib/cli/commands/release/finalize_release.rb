@@ -42,7 +42,9 @@ module Bosh::Cli::Command
           manifest["version"] = final_release_ver
           manifest["name"] = final_release_name
 
-          tarball.replace_manifest(manifest)
+          updated_manifest = upload_package_and_job_blobs(manifest, tarball)
+
+          tarball.replace_manifest(updated_manifest)
 
           FileUtils.mkdir_p(final_release_dir)
           final_release_manifest_path = File.absolute_path(File.join(final_release_dir, "#{final_release_name}-#{final_release_ver}.yml"))
@@ -54,8 +56,6 @@ module Bosh::Cli::Command
 
           final_release_tarball_path = File.absolute_path(File.join(final_release_dir, "#{final_release_name}-#{final_release_ver}.tgz"))
           tarball.create_from_unpacked(final_release_tarball_path)
-
-          upload_package_and_job_blobs(manifest, tarball)
 
           nl
           say("Creating final release #{final_release_name}/#{final_release_ver} from dev release #{dev_release_name}/#{dev_release_ver}")
@@ -77,19 +77,25 @@ module Bosh::Cli::Command
       private
 
       def upload_package_and_job_blobs(manifest, tarball)
-        manifest['packages'].each do |package|
-          upload_to_blobstore(package, 'packages', tarball.package_tarball_path(package['name']))
+        manifest['packages'].map! do |package|
+          upload_to_blobstore(package.dup, 'packages', tarball.package_tarball_path(package['name']))
         end
 
-        manifest['jobs'].each do |job|
-          upload_to_blobstore(job, 'jobs', tarball.job_tarball_path(job['name']))
+        manifest['jobs'].map! do |job|
+          upload_to_blobstore(job.dup, 'jobs', tarball.job_tarball_path(job['name']))
         end
 
         if manifest['license']
           # the licence is different from packages and jobs: it has to be rebuilt from the
           # raw LICENSE and/or NOTICE files in the dev release tarball
-          archive_builder.build(tarball.license_resource)
+          updated_artifact = archive_builder.build(tarball.license_resource)
+          manifest['license'] = {
+            'version' => updated_artifact.version,
+            'fingerprint' => updated_artifact.fingerprint,
+            'sha1' => updated_artifact.sha1,
+          }
         end
+        manifest
       end
 
       def extract_and_validate_tarball(tarball_path)
@@ -108,11 +114,12 @@ module Bosh::Cli::Command
       def upload_to_blobstore(artifact, plural_type, artifact_path)
         err("Cannot find artifact complete information, please upgrade tarball to newer version") if !artifact['fingerprint']
 
-        final_builds_dir = File.join('.final_builds', plural_type, artifact['name']).to_s
-        FileUtils.mkdir_p(final_builds_dir)
-        final_builds_index = Bosh::Cli::Versions::VersionsIndex.new(final_builds_dir)
+        final_builds_index = final_builds_for_artifact(plural_type, artifact)
 
-        return artifact if final_builds_index[artifact['fingerprint']]
+        if final_builds_index[artifact['fingerprint']]
+          artifact['sha1'] = final_builds_index[artifact['fingerprint']]['sha1']
+          return artifact
+        end
 
         @progress_renderer.start(artifact['name'], "uploading...")
         blobstore_id = nil
@@ -126,6 +133,7 @@ module Bosh::Cli::Command
             'blobstore_id' => blobstore_id
           })
         @progress_renderer.finish(artifact['name'], "uploaded")
+        artifact
       end
 
       def archive_builder
@@ -135,6 +143,12 @@ module Bosh::Cli::Command
 
       def archive_repository_provider
         @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, cache_dir, release.blobstore)
+      end
+
+      def final_builds_for_artifact(plural_type, artifact)
+        final_builds_dir = File.join('.final_builds', plural_type, artifact['name']).to_s
+        FileUtils.mkdir_p(final_builds_dir)
+        Bosh::Cli::Versions::VersionsIndex.new(final_builds_dir)
       end
     end
   end

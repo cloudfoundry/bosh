@@ -12,6 +12,7 @@ describe 'CentOS 7 stemcell', stemcell_image: true do
 
   context 'installed by image_vsphere_cdrom stage', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
@@ -47,6 +48,7 @@ HERE
 
   context 'installed by bosh_openstack_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
@@ -63,6 +65,13 @@ HERE
   context 'installed by dev_tools_config' do
     describe file('/var/vcap/bosh/etc/dev_tools_file_list') do
       it { should contain('/usr/bin/gcc') }
+    end
+  end
+
+  describe 'mounted file systems: /etc/fstab should mount nfs with nodev (stig: V-38654)(stig: V-38652)' do
+    describe file('/etc/fstab') do
+      it { should be_file }
+      its (:content) { should_not match /nfs/ }
     end
   end
 end

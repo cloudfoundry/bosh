@@ -1,3 +1,5 @@
+require 'common/retryable'
+
 module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port

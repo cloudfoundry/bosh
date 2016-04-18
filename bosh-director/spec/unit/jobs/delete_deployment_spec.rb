@@ -41,6 +41,7 @@ module Bosh::Director
       expect(event_1.action).to eq('delete')
       expect(event_1.object_type).to eq('deployment')
       expect(event_1.object_name).to eq('test_deployment')
+      expect(event_1.deployment).to eq('test_deployment')
       expect(event_1.task).to eq("#{task.id}")
       expect(event_1.timestamp).to eq(Time.now)
 
@@ -50,6 +51,7 @@ module Bosh::Director
       expect(event_2.action).to eq('delete')
       expect(event_2.object_type).to eq('deployment')
       expect(event_2.object_name).to eq('test_deployment')
+      expect(event_2.deployment).to eq('test_deployment')
       expect(event_2.task).to eq("#{task.id}")
       expect(event_2.timestamp).to eq(Time.now)
     end

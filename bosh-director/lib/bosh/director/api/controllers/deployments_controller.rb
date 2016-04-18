@@ -83,7 +83,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -113,7 +113,7 @@ module Bosh::Director
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment.name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, latest_cloud_config, latest_runtime_config, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -340,11 +340,11 @@ module Bosh::Director
         if deployment
           deployment_name = deployment['name']
           if deployment_name
-            @deployments_repo.find_or_create_by_name(deployment_name, options)
+            deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
           end
         end
 
-        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_name, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_file_path, cloud_config, runtime_config, deployment_model, options)
 
         redirect "/tasks/#{task.id}"
       end
@@ -398,7 +398,7 @@ module Bosh::Director
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment.name}",
           [deployment.name, errand_name, keep_alive],
-          deployment.name
+          deployment
         )
 
         redirect "/tasks/#{task.id}"
