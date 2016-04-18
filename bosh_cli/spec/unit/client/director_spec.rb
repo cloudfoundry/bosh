@@ -214,6 +214,30 @@ describe Bosh::Cli::Client::Director do
                                .and_return([200, JSON.generate([]), {}])
         @director.list_events
       end
+
+      it 'can list events with a given deployment' do
+        expect(@director).to receive(:get).with('/events?deployment=name', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({deployment: 'name'})
+      end
+
+      it 'can list events with a given task' do
+        expect(@director).to receive(:get).with('/events?task=5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({task: '5'})
+      end
+
+      it 'can list events with a given instance id' do
+        expect(@director).to receive(:get).with('/events?instance=job/5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5'})
+      end
+
+      it 'can filter by multiple parameters' do
+        expect(@director).to receive(:get).with('/events?before_id=4&deployment=name&instance=job/5&task=6', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5', deployment: 'name', task: 6, before_id: 4})
+      end
     end
 
     it 'creates user' do

@@ -15,6 +15,18 @@ module Bosh::Director
           events = events.filter("id < ?", before_id)
         end
 
+        if params['task']
+          events = events.where(task: params['task'])
+        end
+
+        if params['deployment']
+          events = events.where(deployment: params['deployment'])
+        end
+
+        if params['instance']
+          events = events.where(instance: params['instance'])
+        end
+
         events = events.limit(EVENT_LIMIT).map do |event|
           @event_manager.event_to_hash(event)
         end

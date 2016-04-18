@@ -125,11 +125,15 @@ module Bosh
         end
 
         def list_events(options={})
-          if options[:before_id]
-            get_json("/events?before_id=#{options[:before_id]}")
-          else
-            get_json('/events')
+          query_string = "/events"
+          delimeter = "?"
+          [:before_id, :deployment, :instance, :task].each do |param|
+            if options[param]
+              query_string += "#{delimeter}#{ param.to_s}=#{options[param]}"
+              delimeter = "&"
+            end
           end
+          get_json(query_string)
         end
 
         def list_errands(deployment_name)

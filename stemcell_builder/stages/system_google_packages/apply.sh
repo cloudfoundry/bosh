@@ -27,3 +27,6 @@ else
   echo "Unknown OS '${os_type}', exiting"
   exit 2
 fi
+
+# Hack: replace google metadata hostname with ip address (bosh agent might set a dns that it's unable to resolve the hostname)
+run_in_chroot $chroot "find /usr/share/google -type f -exec sed -i 's/metadata.google.internal/169.254.169.254/g' {} +"

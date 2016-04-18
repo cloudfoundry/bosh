@@ -227,8 +227,10 @@ shared_examples_for 'every OS image' do
   context 'vsftpd is not installed (stig: V-38599)' do
     it "shouldn't be installed" do
       expect(package('vsftpd')).to_not be_installed
+      expect(package('ftpd')).to_not be_installed
     end
   end
+
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
     it "shouldn't be installed" do
       expect(package('telnet-server')).to_not be_installed
@@ -240,7 +242,7 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'gconf2 is not installed (stig: V-43150)' do
+  context 'gconf2 is not installed (stig: V-43150) (stig: V-38638) (stig: V-38629) (stig: V-38630)' do
     describe package('gconf2') do
       it { should_not be_installed }
     end
@@ -379,18 +381,63 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  describe 'audit disk errors logs disk errors to syslog (stig: V-38464) and logs when disk is full (stig: V-38468)' do
-    context file('/etc/audit/auditd.conf') do
-      its (:content) { should match /^disk_full_action = SYSLOG$/ }
-      its (:content) { should match /^disk_error_action = SYSLOG$/ }
+  describe 'auditd configuration' do
+    describe file('/var/log/audit') do
+      it { should be_directory }
+
+      describe "Audit log directories must have mode 0755 or less permissive (750 by default) (stig: V-38493)" do
+        it { should be_mode 750 }
+      end
+    end
+
+    describe file('/etc/audit/auditd.conf') do
+      describe 'logging disk errors to syslog (stig: V-38464)' do
+        its (:content) { should match /^disk_error_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being low on space to syslog (stig: V-54381) (stig: V-38470)' do
+        its (:content) { should match /^admin_space_left_action = SYSLOG$/ }
+        its (:content) { should match /^space_left_action = SYSLOG$/ }
+      end
+
+      describe 'logging disks being full to syslog (stig: V-38468)' do
+        its (:content) { should match /^disk_full_action = SYSLOG$/ }
+      end
+
+      describe 'keeping the log files under a certain size (stig: V-38633)' do
+        its (:content) { should match /^max_log_file = 6$/ }
+      end
+
+      describe 'rotating the logs so the disk does not run out of space (stig: V-38634)' do
+        its (:content) { should match /^max_log_file_action = ROTATE$/ }
+      end
+
+      describe 'keeping the logs around for a sensible retention period (stig: V-38636)' do
+        its (:content) { should match /^num_logs = 5$/ }
+      end
+
+      describe 'audit log files must be group owned by root (stig: V-38445)' do
+        its (:content) { should match /^log_group = root$/ }
+      end
+
+      describe 'audit log files alerts administrator when storage capacity is less than 75mb (stig: V-38678)' do
+        its (:content) { should match /^space_left = 75$/ }
+      end
     end
   end
 
-  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
-    describe file('/etc/pam.d/system-auth') do
-      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
+  describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
+    describe file('/etc/audit/rules.d/audit.rules') do
+      its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
+      its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
+      its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
+      its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
+    end
+  end
+
+  context 'postfix is not installed (stig: V-38622) (stig: V-38446)' do
+    it "shouldn't be installed" do
+      expect(package('postfix')).to_not be_installed
     end
   end
 end
-
-

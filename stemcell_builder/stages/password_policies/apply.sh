@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
@@ -30,15 +30,17 @@ if [ "$(get_os_type)" == "centos" ]; then
 
   strip_trailing_whitespace_from $chroot/etc/pam.d/system-auth
   patch $chroot/etc/pam.d/system-auth < $assets_dir/centos/system-auth.patch
+  cat $chroot/etc/pam.d/system-auth
 elif [ "$(get_os_type)" == "ubuntu" ]; then
   strip_trailing_whitespace_from $chroot/etc/pam.d/common-auth
   patch $chroot/etc/pam.d/common-auth < $assets_dir/ubuntu/common-auth.patch
 
   strip_trailing_whitespace_from $chroot/etc/pam.d/common-password
   patch $chroot/etc/pam.d/common-password < $assets_dir/ubuntu/common-password.patch
+  cat $chroot/etc/pam.d/common-password
 fi
 
-echo "session     required      pam_lastlog.so showfailed" >> $chroot/etc/pam.d/system-auth
+
 # /etc/login.defs are only effective for new users
 sed -i -r 's/^PASS_MIN_DAYS.+/PASS_MIN_DAYS 1/' $chroot/etc/login.defs
 run_in_chroot $chroot "chage --mindays 1 vcap"

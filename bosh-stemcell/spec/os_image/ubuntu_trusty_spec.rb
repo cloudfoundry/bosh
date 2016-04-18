@@ -76,6 +76,17 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
+  context 'The system must limit the ability of processes to have simultaneous write and execute access to memory. (stig: V-38597)' do
+    # Ubuntu relies on the system's hardware NX capabilities, or emulates NX if the hardware does not support it.
+    # Ubuntu has had this capability since v 11.04
+    # https://wiki.ubuntu.com/Security/Features#nx
+    it 'should run an os that emulates or uses things' do
+      major_version = os[:release].split('.')[0].to_i
+      expect(major_version).to be > 11
+    end
+  end
+
+
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
       if Bosh::Stemcell::Arch.ppc64le?
@@ -308,7 +319,14 @@ EOF
     end
   end
 
-  context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664)' do
+  # V-38498 and V-38495 are the package defaults and cannot be configured
+  context 'ensure auditd is installed (stig: V-38498) (stig: V-38495)' do
+    describe package('auditd') do
+      it { should be_installed }
+    end
+  end
+
+  context 'ensure auditd file permissions and ownership (stig: V-38663) (stig: V-38664) (stig: V-38665)' do
     [[644, '/usr/share/lintian/overrides/auditd'],
     [755, '/usr/bin/auvirt'],
     [755, '/usr/bin/ausyscall'],
@@ -340,6 +358,20 @@ EOF
         it ('should be owned by root group') { should be_grouped_into('root')}
         it ("should have mode #{tuple[0]}") { should be_mode(tuple[0])}
       end
+    end
+  end
+
+  context 'Auditd service should be running (stig: V-38628) (stig: V-38631) (stig: V-38632)' do
+    describe service('auditd') do
+      it { should be_enabled }
+    end
+  end
+
+  context 'ensure audit package file have unmodified contents (stig: V-38637)' do
+    # ignore auditd.conf, auditd, and audit.rules since we modify these files in
+    # other stigs
+    describe command("dpkg -V audit | grep -v 'auditd.conf' | grep -v 'default/auditd' | grep -v 'audit.rules' | grep '^..5'") do
+      its (:stdout) { should be_empty }
     end
   end
 
@@ -378,12 +410,15 @@ EOF
     end
   end
 
-  describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
-    describe file('/etc/audit/rules.d/audit.rules') do
-      its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
-      its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
-      its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
-      its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
+  context 'ensure snmp is not installed (stig: V-38660) (stig: V-38653)' do
+    describe package('snmp') do
+      it { should_not be_installed }
+    end
+  end
+
+  context 'display the number of unsuccessful logon/access attempts since the last successful logon/access (stig: V-51875)' do
+    describe file('/etc/pam.d/common-password') do
+      its(:content){ should match /session     required      pam_lastlog\.so showfailed/ }
     end
   end
 end

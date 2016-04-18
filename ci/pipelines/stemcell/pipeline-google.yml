@@ -1,6 +1,6 @@
 ---
 groups:
-  - name: bosh-google-stemcell
+  - name: google-stemcell
     jobs:
       - build-google-kvm-ubuntu-trusty
       - build-google-kvm-centos-7
@@ -67,16 +67,17 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: master
+      # TODO: change this back to master once GCE PR has been promoted
+      branch: develop
 
   - name: version
     type: semver
     source:
       driver: s3
       key: bosh-stemcell/version
-      bucket: {{stemcell_bucket}}
-      access_key_id: {{stemcell_aws_access_key}}
-      secret_access_key: {{stemcell_aws_secret_key}}
+      bucket: {{version_bucket}}
+      access_key_id: {{version_aws_access_key}}
+      secret_access_key: {{version_aws_secret_key}}
 
   - name: bosh-release
     type: bosh-io-release
@@ -84,10 +85,11 @@ resources:
       repository: cloudfoundry/bosh
 
   # os-images
+
   - name: ubuntu-trusty-os-image
     type: s3
     source:
-      bucket: {{osimage_bucket}}
+      bucket: {{os_image_bucket}}
       versioned_file: bosh-ubuntu-trusty-os-image.tgz
       access_key_id: {{os_image_aws_access_key}}
       secret_access_key: {{os_image_aws_secret_key}}
@@ -95,7 +97,7 @@ resources:
   - name: centos-7-os-image
     type: s3
     source:
-      bucket: {{osimage_bucket}}
+      bucket: {{os_image_bucket}}
       versioned_file: bosh-centos-7-os-image.tgz
       access_key_id: {{os_image_aws_access_key}}
       secret_access_key: {{os_image_aws_secret_key}}
@@ -105,15 +107,15 @@ resources:
     type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz
+      regexp: bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
   - name: google-kvm-ubuntu-trusty-sha1
-    type: gcs-resource
+    type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
+      regexp: bosh-stemcell-(.+)-google-kvm-ubuntu-trusty-go_agent.tgz.sha1
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
@@ -121,7 +123,7 @@ resources:
     type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz
+      regexp: bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}
 
@@ -129,6 +131,6 @@ resources:
     type: s3
     source:
       bucket: {{stemcell_bucket}}
-      regexp: bosh-stemcell-candidate/aws/bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz.sha1
+      regexp: bosh-stemcell-(.+)-google-kvm-centos-7-go_agent.tgz.sha1
       access_key_id: {{stemcell_aws_access_key}}
       secret_access_key: {{stemcell_aws_secret_key}}

@@ -5,6 +5,8 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
     expected_base_stig_test_cases = %W{
       V-38443
       V-38444
+      V-38445
+      V-38446
       V-38448
       V-38449
       V-38450
@@ -19,16 +21,21 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38466
       V-38468
       V-38469
+      V-38470
       V-38472
       V-38475
+      V-38476
       V-38477
       V-38483
       V-38484
       V-38490
       V-38491
       V-38492
+      V-38493
+      V-38495
       V-38496
       V-38497
+      V-38498
       V-38499
       V-38500
       V-38502
@@ -50,12 +57,12 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38544
       V-38546
       V-38548
+      V-38551
       V-38553
       V-38573
       V-38574
       V-38576
       V-38579
-      V-38599
       V-38580
       V-38581
       V-38582
@@ -69,6 +76,7 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38596
       V-38597
       V-38598
+      V-38599
       V-38600
       V-38601
       V-38602
@@ -90,20 +98,36 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
       V-38619
       V-38620
       V-38621
+      V-38622
       V-38623
+      V-38628
+      V-38629
+      V-38630
+      V-38631
+      V-38632
+      V-38633
+      V-38634
+      V-38636
+      V-38637
+      V-38638
       V-38643
       V-38652
+      V-38653
       V-38654
       V-38658
+      V-38660
       V-38663
       V-38664
+      V-38665
       V-38671
       V-38674
+      V-38678
       V-38682
       V-38691
       V-38701
       V-43150
       V-51875
+      V-54381
       V-58901
     }
 
@@ -111,13 +135,11 @@ describe 'Stig test case verification', { stemcell_image: true, stig_check: true
     case ENV['OS_NAME']
       when 'ubuntu'
         expected_stig_test_cases = expected_base_stig_test_cases + [
-          'V-38668',
-          'V-38476'
+          'V-38668'
         ]
       when 'centos'
         expected_stig_test_cases = expected_base_stig_test_cases + [
           'V-38668',
-          'V-38476',
           'V-38586',
           'V-38501'
         ]
