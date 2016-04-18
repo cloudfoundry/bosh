@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'common/release/release_directory'
 require 'common/version/release_version'
 require 'bosh/director/compiled_release_downloader'
 require 'bosh/director/compiled_release_manifest'
@@ -40,7 +41,7 @@ module Bosh::Director
         release_version_model = release_manager.find_version(release, @release_version)
 
         unless deployment_manifest_has_release?(targeted_deployment.manifest)
-          raise ReleaseNotMatchingManifest, "Release version `#{@release_name}/#{@release_version}' not found in deployment `#{@deployment_name}' manifest"
+          raise ReleaseNotMatchingManifest, "Release version '#{@release_name}/#{@release_version}' not found in deployment '#{@deployment_name}' manifest"
         end
 
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)
@@ -98,7 +99,8 @@ module Bosh::Director
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
         archiver = Core::TarGzipper.new
 
-        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'release.MF'], output_path)
+        release_directory = Bosh::Common::Release::ReleaseDirectory.new(download_dir)
+        archiver.compress(download_dir, release_directory.ordered_release_files, output_path)
         tarball_file = File.open(output_path, 'r')
 
         oid = blobstore_client.create(tarball_file)

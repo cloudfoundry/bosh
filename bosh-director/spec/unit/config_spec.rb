@@ -49,6 +49,26 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#flush_arp' do
+    context 'when hash has value set' do
+      it 'returns the configuration value' do
+        test_config['flush_arp'] = true
+        described_class.configure(test_config)
+        expect(described_class.flush_arp).to eq(true)
+      end
+    end
+
+    context 'when hash does not have value set' do
+      it 'returns default value of false' do
+        # our fixture does not have this set so this is a no-op
+        # i'm doing this because the test we copied did it
+        test_config.delete('flush_arp')
+        described_class.configure(test_config)
+        expect(described_class.flush_arp).to eq(false)
+      end
+    end
+  end
+
   describe '#keep_unreachable_vms' do
     context 'when hash has value set' do
       it 'returns the configuration value' do

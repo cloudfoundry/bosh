@@ -5,7 +5,7 @@ module Bosh
 
       def initialize(name)
         @name = name
-        super("Can't find property `#{name}'")
+        super("Can't find property '#{name}'")
       end
     end
   end

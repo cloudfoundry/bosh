@@ -1,6 +1,3 @@
-# -*- encoding: utf-8 -*-
-# Copyright (c) 2013 GoPivotal, Inc.
-
 module Bosh::Cli::Command
   class Locks < Base
 
@@ -11,7 +8,12 @@ module Bosh::Cli::Command
       show_current_state
 
       locks = director.list_locks
-      err('No locks') if locks.empty?
+      if locks.empty?
+        nl
+        say('No locks')
+        nl
+        return
+      end
 
       show_locks_table(locks)
       say("Locks total: %d" % locks.size)

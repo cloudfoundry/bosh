@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///bosh/main
+image: docker:///bosh/main-no-redis
 
 inputs:
 - name: bosh-src
@@ -13,4 +13,6 @@ params:
   RUBY_VERSION: replace-me
   DB:           replace-me
   LOG_LEVEL:    INFO
-  NUM_GROUPS:   16
+  NUM_GROUPS:   8
+  GROUP:        1,2,3,4,5,6,7,8
+  SPEC_PATH:    ~

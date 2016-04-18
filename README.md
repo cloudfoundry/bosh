@@ -35,5 +35,5 @@ Cloud Foundry BOSH is an open source tool for release engineering, deployment, l
 
 ## Contributions
 
-Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md) 
+Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md)
 

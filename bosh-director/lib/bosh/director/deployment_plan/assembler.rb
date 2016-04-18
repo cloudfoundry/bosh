@@ -129,7 +129,7 @@ module Bosh::Director
 
           if stemcell.nil?
             raise DirectorError,
-              "Stemcell not bound for resource pool `#{resource_pool.name}'"
+              "Stemcell not bound for resource pool '#{resource_pool.name}'"
           end
 
           stemcell.bind_model(@deployment_plan.model)

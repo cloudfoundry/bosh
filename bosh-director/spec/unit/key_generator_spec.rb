@@ -214,7 +214,7 @@ module Bosh::Director
           end
 
           before do
-            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release, dependency_set_json: ['pkg-4'])
+            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release, dependency_set_json: ['pkg-4'].to_json)
             package_3 = Models::Package.make(name: 'pkg-3', version: '1.7', release: release)
             package_4 = Models::Package.make(name: 'pkg-4', version: '3.7', release: release)
 

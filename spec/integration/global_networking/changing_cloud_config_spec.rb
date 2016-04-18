@@ -44,7 +44,7 @@ describe 'Changing cloud config', type: :integration do
     end
   end
 
-  describe 'changing the cloud config with health monitor running' do
+  describe 'changing the cloud config with health monitor running', hm: true do
     before { current_sandbox.health_monitor_process.start }
     after { current_sandbox.health_monitor_process.stop }
 

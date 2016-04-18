@@ -59,3 +59,15 @@ add_on_exit "umount ${image_mount_point}"
 
 # Copy root
 time rsync -aHA $chroot/ ${image_mount_point}
+
+if is_ppc64le; then
+  # Add Xen hypervisor console support
+  cat > ${image_mount_point}/etc/init/hvc0.conf <<HVC_CONF
+
+start on stopped rc RUNLEVEL=[2345]
+stop on runlevel [!2345]
+
+respawn
+exec /sbin/getty -8 38400 hvc0
+HVC_CONF
+fi

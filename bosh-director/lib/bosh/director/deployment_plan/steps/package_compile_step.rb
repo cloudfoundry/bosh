@@ -9,8 +9,8 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, event_log, director_job)
-          @event_log = event_log
+        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
+          @event_log_stage = nil
           @logger = logger
           @director_job = director_job
 
@@ -18,9 +18,6 @@ module Bosh::Director
           @counter_mutex = Mutex.new
 
           @compilation_instance_pool = compilation_instance_pool
-
-          @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
-
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
@@ -34,7 +31,7 @@ module Bosh::Director
 
           @compile_tasks.each_value do |task|
             if task.ready_to_compile?
-              @logger.info("Package `#{task.package.desc}' is ready to be compiled for stemcell `#{task.stemcell.desc}'")
+              @logger.info("Package '#{task.package.desc}' is ready to be compiled for stemcell '#{task.stemcell.desc}'")
               @ready_tasks << task
             end
           end
@@ -61,7 +58,7 @@ module Bosh::Director
 
           with_compile_lock(package.id, stemcell.id) do
             # Check if the package was compiled in a parallel deployment
-            compiled_package = task.find_compiled_package(@logger, @event_log)
+            compiled_package = task.find_compiled_package(@logger, @event_log_stage)
             if compiled_package.nil?
               build = Models::CompiledPackage.generate_build_number(package, stemcell.model.operating_system, stemcell.model.version)
               task_result = nil
@@ -124,9 +121,10 @@ module Bosh::Director
         private
 
         def prepare_tasks
-          @event_log.begin_stage('Preparing package compilation', 1)
+          @event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
+          @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
 
-          @event_log.track('Finding packages to compile') do
+          @event_log_stage.advance_and_track('Finding packages to compile') do
             @jobs_to_compile.each do |job|
               stemcell = job.stemcell
 
@@ -136,9 +134,9 @@ module Bosh::Director
                 # it's obscure which double is at fault
                 release_name = t.release.name
                 template_name = t.name
-                "`#{release_name}/#{template_name}'"
+                "'#{release_name}/#{template_name}'"
               end
-              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.desc}'")
+              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
 
               job.templates.each do |template|
                 template.package_models.each do |package|
@@ -150,7 +148,7 @@ module Bosh::Director
         end
 
         def compile_packages
-          @event_log.begin_stage('Compiling packages', compilation_count)
+          @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
 
           begin
             ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
@@ -182,10 +180,10 @@ module Bosh::Director
 
         def enqueue_unblocked_tasks(task)
           @tasks_mutex.synchronize do
-            @logger.info("Unblocking dependents of `#{task.package.desc}` for `#{task.stemcell.desc}`")
+            @logger.info("Unblocking dependents of '#{task.package.desc}' for '#{task.stemcell.desc}'")
             task.dependent_tasks.each do |dep_task|
               if dep_task.ready_to_compile?
-                @logger.info("Package `#{dep_task.package.desc}' now ready to be compiled for `#{dep_task.stemcell.desc}'")
+                @logger.info("Package '#{dep_task.package.desc}' now ready to be compiled for '#{dep_task.stemcell.desc}'")
                 @ready_tasks << dep_task
               end
             end
@@ -195,13 +193,13 @@ module Bosh::Director
         def process_task(task)
           package_desc = task.package.desc
           stemcell_desc = task.stemcell.desc
-          task_desc = "package `#{package_desc}' for stemcell `#{stemcell_desc}'"
+          task_desc = "package '#{package_desc}' for stemcell '#{stemcell_desc}'"
 
           with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
             if director_job_cancelled?
               @logger.info("Cancelled compiling #{task_desc}")
             else
-              @event_log.track(package_desc) do
+              @event_log_stage.advance_and_track(package_desc) do
                 @logger.info("Compiling #{task_desc}")
                 compile_package(task)
                 @logger.info("Finished compiling #{task_desc}")

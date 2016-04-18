@@ -16,13 +16,13 @@ module Bosh::Cli
       nl
 
       if stemcell.valid?
-        say("`#{tarball_path}' is a valid stemcell".make_green)
+        say("'#{tarball_path}' is a valid stemcell".make_green)
       else
         say('Validation errors:'.make_red)
         stemcell.errors.each do |error|
           say('- %s' % [error])
         end
-        err("`#{tarball_path}' is not a valid stemcell")
+        err("'#{tarball_path}' is not a valid stemcell")
       end
     end
 
@@ -72,10 +72,10 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
         if !options[:fix] && exists?(name, version)
           if options[:skip_if_exists]
-            say("Stemcell `#{name}/#{version}' already exists. Skipping upload.")
+            say("Stemcell '#{name}/#{version}' already exists. Skipping upload.")
             return
           else
-            err("Stemcell `#{name}/#{version}' already exists. Increment the version if it has changed.")
+            err("Stemcell '#{name}/#{version}' already exists. Increment the version if it has changed.")
           end
         end
 
@@ -86,7 +86,7 @@ If --name & --version are provided, they will be used for checking if stemcell e
         nl
       else
         nl
-        say("Using remote stemcell `#{stemcell_location}'")
+        say("Using remote stemcell '#{stemcell_location}'")
       end
 
       selected_options = {}
@@ -161,9 +161,9 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
       force = !!options[:force]
 
-      err("Stemcell `#{name}/#{version}' does not exist") unless exists?(name, version)
+      err("Stemcell '#{name}/#{version}' does not exist") unless exists?(name, version)
 
-      say("You are going to delete stemcell `#{name}/#{version}'".make_red)
+      say("You are going to delete stemcell '#{name}/#{version}'".make_red)
 
       unless confirmed?
         say('Canceled deleting stemcell'.make_green)
@@ -172,7 +172,7 @@ If --name & --version are provided, they will be used for checking if stemcell e
 
       status, task_id = director.delete_stemcell(name, version, :force => force)
 
-      task_report(status, task_id, "Deleted stemcell `#{name}/#{version}'")
+      task_report(status, task_id, "Deleted stemcell '#{name}/#{version}'")
     end
 
     private

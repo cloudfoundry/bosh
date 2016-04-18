@@ -15,7 +15,7 @@ module Bosh::Director::ProblemScanner
 
         if similar_open_problems.size > 1
           raise Bosh::Director::CloudcheckTooManySimilarProblems,
-            "More than one problem of type `#{type}' " +
+            "More than one problem of type '#{type}' " +
               "exists for resource #{type} #{resource.id}"
         end
 

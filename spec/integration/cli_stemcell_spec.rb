@@ -16,7 +16,7 @@ describe 'cli: stemcell', type: :integration do
 
   it 'points to an error when verifying an invalid stemcell', no_reset: true do
     stemcell_filename = spec_asset('stemcell_invalid_mf.tgz')
-    failure = regexp("`#{stemcell_filename}' is not a valid stemcell")
+    failure = regexp("'#{stemcell_filename}' is not a valid stemcell")
     expect(bosh_runner.run("verify stemcell #{stemcell_filename}", failure_expected: true)).to match(failure)
   end
 
@@ -49,7 +49,7 @@ describe 'cli: stemcell', type: :integration do
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).to be_exists(stemcell_path)
     out = bosh_runner.run('delete stemcell ubuntu-stemcell 1')
-    expect(out).to match /Deleted stemcell `ubuntu-stemcell\/1'/
+    expect(out).to match /Deleted stemcell 'ubuntu-stemcell\/1'/
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).not_to be_exists(stemcell_path)
   end
@@ -65,7 +65,7 @@ describe 'cli: stemcell', type: :integration do
     it 'refuses to delete it' do
       deploy_from_scratch
       results = bosh_runner.run('delete stemcell ubuntu-stemcell 1', failure_expected: true)
-      expect(results).to include("Stemcell `ubuntu-stemcell/1' is still in use by: simple")
+      expect(results).to include("Stemcell 'ubuntu-stemcell/1' is still in use by: simple")
     end
   end
 
@@ -79,7 +79,7 @@ describe 'cli: stemcell', type: :integration do
       context 'when using the --skip-if-exists flag' do
         it 'tells the user and does not exit as a failure' do
           output = bosh_runner.run("upload stemcell #{local_stemcell_path} --skip-if-exists")
-          expect(output).to include("Stemcell `ubuntu-stemcell/1' already exists. Skipping upload.")
+          expect(output).to include("Stemcell 'ubuntu-stemcell/1' already exists. Skipping upload.")
         end
       end
 
@@ -89,7 +89,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to include("Stemcell `ubuntu-stemcell/1' already exists")
+          expect(output).to include("Stemcell 'ubuntu-stemcell/1' already exists")
           expect(exit_code).to eq(1)
         end
       end

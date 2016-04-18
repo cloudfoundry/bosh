@@ -4,6 +4,7 @@ require_relative '../../spec/support/deployments'
 Sham.define do
   name             { |index| "name-#{index}" }
   username         { |index| "username-#{index}" }
+  object_name      { |index| "deployment-#{index}" }
   password         { |index| "password-#{index}" }
   version          { |index| "version-#{index}" }
   manifest         { |index| "manifest-#{index}" }
@@ -31,6 +32,7 @@ Sham.define do
                      octet = index % 255
                      "#{octet}.#{octet}.#{octet}.in-addr.arpa"
                    }
+  lock_name     { |index| "lock-resource-entity#{index}"}
 end
 
 module Bosh::Director::Models
@@ -38,7 +40,7 @@ module Bosh::Director::Models
   DirectorAttribute.blueprint do
     name { 'uuid' }
     value { Sham.director_uuid }
-    end
+  end
 
   Release.blueprint do
     name { Sham.name }
@@ -95,7 +97,7 @@ module Bosh::Director::Models
     state       { 'started' }
     vm_cid      { Sham.vm_cid }
     agent_id    { Sham.agent_id }
-    uuid        { Sham.uuid}
+    uuid        { Sham.uuid }
   end
 
   IpAddress.blueprint do
@@ -174,9 +176,23 @@ module Bosh::Director::Models
     value { "value" }
   end
 
+  Lock.blueprint do
+    name        { Sham.lock_name }
+    expired_at  { Time.now }
+    uid         { SecureRandom.uuid }
+  end
+
   LogBundle.blueprint do
     timestamp { Time.now }
     blobstore_id { Sham.blobstore_id }
+  end
+
+  Event.blueprint do
+    action      { 'create'}
+    object_type {'deployment' }
+    object_name { Sham.object_name }
+    user        { Sham.username }
+    timestamp   { Time.now }
   end
 
   module Dns

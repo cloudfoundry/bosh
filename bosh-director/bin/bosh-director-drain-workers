@@ -22,16 +22,22 @@ config = Bosh::Director::Config.load_file(config_file)
 
 Bosh::Director::App.new(config)
 
+Delayed::Worker.logger = config.worker_logger
 logger = Bosh::Director::Config.logger
+
+Delayed::Worker.backend = :sequel
 
 loop do
   logger.info('Checking for any workers that are still processing..')
 
-  worker = Resque::Worker.all.find(&:working?)
-  if worker.nil?
+  locked_jobs = Delayed::Job.exclude(:locked_by => nil)
+
+  if locked_jobs.count == 0
     active_worker = 0
     logger.info('All workers are idle')
     break
+  else
+    worker = locked_jobs.first[:locked_by]
   end
 
   break if report

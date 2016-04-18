@@ -19,7 +19,7 @@ module Bosh::Cli
       it 'will raise error if the db dump file does not exist' do
         expect {
           command.restore('non_existing_db_dump_file')
-        }.to raise_error(Bosh::Cli::CliError, /The file `non_existing_db_dump_file' does not exist./)
+        }.to raise_error(Bosh::Cli::CliError, /The file 'non_existing_db_dump_file' does not exist./)
       end
     end
 
@@ -66,7 +66,7 @@ module Bosh::Cli
 
         expect {
           command.restore(dump_file)
-        }.to raise_error(Bosh::Cli::CliError, /Failed to restore the database, the status is `500'/)
+        }.to raise_error(Bosh::Cli::CliError, /Failed to restore the database, the status is '500'/)
       end
     end
   end

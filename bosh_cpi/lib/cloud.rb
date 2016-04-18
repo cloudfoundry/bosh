@@ -214,7 +214,7 @@ module Bosh
 
     def not_implemented(method)
       raise Bosh::Clouds::NotImplemented,
-            "`#{method}' is not implemented by #{self.class}"
+            "'#{method}' is not implemented by #{self.class}"
     end
 
   end

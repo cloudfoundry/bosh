@@ -8,7 +8,7 @@ module Bosh::Director
     def initialize(job_class, task_id)
       unless job_class.kind_of?(Class) &&
         job_class <= Jobs::BaseJob
-        raise DirectorError, "Invalid director job class `#{job_class}'"
+        raise DirectorError, "Invalid director job class '#{job_class}'"
       end
 
       @task_id = task_id
@@ -60,12 +60,6 @@ module Bosh::Director
       Config.result = TaskResultFile.new(result_log)
       Config.logger = @task_logger
 
-      # use a separate logger with the same appender to avoid multiple file writers
-      redis_task_logger = Logging::Logger.new('DirectorJobRunnerRedis')
-      redis_task_logger.add_appenders(shared_appender)
-      redis_task_logger.level = Config.redis_logger_level
-      Config.redis_logger = redis_task_logger
-
       Config.db.logger = @task_logger
       Config.dns_db.logger = @task_logger if Config.dns_db
 
@@ -93,6 +87,7 @@ module Bosh::Director
 
       @task.state = :processing
       @task.timestamp = Time.now
+      @task.started_at = Time.now
       @task.checkpoint_time = Time.now
       @task.save
 
@@ -113,7 +108,7 @@ module Bosh::Director
 
     # Spawns a thread that periodically updates task checkpoint time.
     # There is no need to kill this thread as job execution lifetime is the
-    # same as Resque worker process lifetime.
+    # same as worker process lifetime.
     # @return [Thread] Checkpoint thread
     def run_checkpointing
       # task check pointer is scoped to separate class to avoid

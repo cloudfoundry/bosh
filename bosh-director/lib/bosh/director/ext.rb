@@ -1,9 +1,3 @@
-module Resque
-  def redis
-    Bosh::Director::Config.redis
-  end
-end
-
 class Object
   def to_openstruct
     self

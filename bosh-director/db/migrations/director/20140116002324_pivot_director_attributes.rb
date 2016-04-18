@@ -3,8 +3,7 @@ Sequel.migration do
     rename_table(:director_attributes, :old_director_attributes)
 
     create_table(:director_attributes) do
-      primary_key :name
-      String :name, unique: true, null: false
+      String :name, unique: true, null: false, primary_key: true
       String :value
     end
 

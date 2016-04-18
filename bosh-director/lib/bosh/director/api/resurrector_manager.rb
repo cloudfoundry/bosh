@@ -15,7 +15,7 @@ module Bosh::Director
       end
 
       def set_pause_for_all(desired_state)
-        Models::Instance.update(resurrection_paused: desired_state)
+        Models::Instance.dataset.update(resurrection_paused: desired_state)
       end
     end
   end

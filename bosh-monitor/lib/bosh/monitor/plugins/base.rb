@@ -16,11 +16,11 @@ module Bosh::Monitor
       end
 
       def run
-        raise FatalError, "`run' method is not implemented in `#{self.class}'"
+        raise FatalError, "'run' method is not implemented in '#{self.class}'"
       end
 
       def process(event)
-        raise FatalError, "`process' method is not implemented in `#{self.class}'"
+        raise FatalError, "'process' method is not implemented in '#{self.class}'"
       end
     end
   end

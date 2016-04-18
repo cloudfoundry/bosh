@@ -19,12 +19,12 @@ class Restore < Base
         return
       end
 
-      err("The file `#{path}' does not exist.".make_red) unless File.exists?(path)
-      err("The file `#{path}' is not readable.".make_red) unless File.readable?(path)
+      err("The file '#{path}' does not exist.".make_red) unless File.exists?(path)
+      err("The file '#{path}' is not readable.".make_red) unless File.readable?(path)
 
       nl
       status = director.restore_db(path)
-      err("Failed to restore the database, the status is `#{status}'") unless status == 202
+      err("Failed to restore the database, the status is '#{status}'") unless status == 202
       nl
       say('Starting restore of BOSH director.')
 

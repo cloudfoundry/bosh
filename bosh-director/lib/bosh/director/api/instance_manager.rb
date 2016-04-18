@@ -38,11 +38,11 @@ module Bosh::Director
       def agent_client_for(instance)
         unless instance.vm_cid
           raise InstanceVmMissing,
-                "`#{instance}' doesn't reference a VM"
+                "'#{instance}' doesn't reference a VM"
         end
 
         unless instance.agent_id
-          raise VmAgentIdMissing, "VM `#{instance.vm_cid}' doesn't have an agent id"
+          raise VmAgentIdMissing, "VM '#{instance.vm_cid}' doesn't have an agent id"
         end
 
         AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
@@ -61,15 +61,15 @@ module Bosh::Director
           instance = filter_by(deployment, uuid: index_or_id).first
         end
 
-        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment)
       end
 
       def fetch_instances(username, deployment, format)
-        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format, true], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format, true], deployment)
       end
 
       def fetch_instances_with_vm(username, deployment, format)
-        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format], deployment.name)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format], deployment)
       end
 
       def ssh(username, deployment, options)

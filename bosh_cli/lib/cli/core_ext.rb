@@ -74,25 +74,25 @@ module BoshExtensions
 
     yaml = Psych::load(yaml_str)
     if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
+      err("Incorrect YAML structure in '#{path}': expected #{expected_type} at the root".make_red)
     end
 
     yaml
   end
 
   def read_yaml_file(path)
-    err("Cannot find file `#{path}'".make_red) unless File.exist?(path)
+    err("Cannot find file '#{path}'".make_red) unless File.exist?(path)
 
     begin
       yaml_str = ERB.new(File.read(path)).result
     rescue SystemCallError => e
-      err("Cannot load YAML file at `#{path}': #{e}".make_red)
+      err("Cannot load YAML file at '#{path}': #{e}".make_red)
     end
 
     begin
       Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
     rescue Exception => e # on ruby 1.9.3 Psych::SyntaxError isn't a StandardError
-      err("Incorrect YAML structure in `#{path}': #{e}".make_red)
+      err("Incorrect YAML structure in '#{path}': #{e}".make_red)
     end
     yaml_str
   end

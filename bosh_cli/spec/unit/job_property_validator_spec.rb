@@ -69,8 +69,8 @@ describe Bosh::Cli::JobPropertyValidator do
         validator.validate
 
         expect(validator.template_errors.size).to eq(2)
-        expect(validator.template_errors.first.exception.to_s).to eq "Can't find property `[\"director.name\"]'"
-        expect(validator.template_errors.last.exception.to_s).to eq "Can't find property `[\"blobstore.provider\"]'"
+        expect(validator.template_errors.first.exception.to_s).to eq "Can't find property '[\"director.name\"]'"
+        expect(validator.template_errors.last.exception.to_s).to eq "Can't find property '[\"blobstore.provider\"]'"
       end
     end
 
@@ -81,7 +81,7 @@ describe Bosh::Cli::JobPropertyValidator do
         validator.validate
 
         expect(validator.template_errors.size).to eq(1)
-        expect(validator.template_errors.first.exception.to_s).to eq "Can't find property `[\"director.name\"]'"
+        expect(validator.template_errors.first.exception.to_s).to eq "Can't find property '[\"director.name\"]'"
       end
     end
   end

@@ -10,11 +10,11 @@ module Bosh::Director
         @instance = Models::Instance.find(id: instance_id)
 
         unless @instance.vm_cid
-          handler_error("VM `#{@instance.vm_cid}' is no longer in the database")
+          handler_error("VM '#{@instance.vm_cid}' is no longer in the database")
         end
 
         unless @instance.agent_id
-          handler_error("VM `#{@instance.agent_id}' doesn't have an agent id")
+          handler_error("VM '#{@instance.agent_id}' doesn't have an agent id")
         end
       end
 

@@ -28,10 +28,6 @@ describe 'director.yml.erb.erb' do
           'address' => '10.10.0.7',
           'port' => 4222
         },
-        'redis' => {
-          'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
-          'loglevel' => 'info',
-        },
         'director' => {
           'name' => 'vpc-bosh-idora',
           'backend_port' => 25556,
@@ -42,10 +38,17 @@ describe 'director.yml.erb.erb' do
           'enable_post_deploy' => false,
           'generate_vm_passwords' => false,
           'remove_dev_tools' => false,
+          'log_access_events_to_syslog' => false,
+          'flush_arp' => false,
           'ignore_missing_gateway' => false,
           'disks' => {
             'max_orphaned_age_in_days' => 3,
             'cleanup_schedule' => '0 0,30 * * * * UTC',
+          },
+          'events' => {
+            'record_events' => false,
+            'max_events' => 10000,
+            'cleanup_schedule' => '0 * * * * * UTC'
           },
           'db' => {
             'adapter' => 'mysql2',
@@ -147,6 +150,32 @@ describe 'director.yml.erb.erb' do
           'all_the_things' => true
         }
       })
+    end
+
+    context 'events configuration' do
+      context 'when enabled' do
+        before do
+          deployment_manifest_fragment['properties']['director']['events']['record_events'] = true
+        end
+
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(true)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to include('ScheduledEventsCleanup')
+        end
+      end
+
+      context 'when disabled' do
+        it 'renders correctly' do
+          expect(parsed_yaml['record_events']).to eq(false)
+        end
+
+        it 'is a scheduled task' do
+          expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
+        end
+      end
     end
   end
 
@@ -602,7 +631,7 @@ describe 'director.yml.erb.erb' do
         end
 
         it 'sets the blobstore fields appropriately' do
-          expect(parsed_yaml['blobstore']['options']).to eq({
+          expect(parsed_yaml['blobstore']['options']).to include({
             'bucket_name' => 'mybucket',
             'credentials_source' => 'env_or_profile',
             'access_key_id' => nil,
@@ -624,13 +653,19 @@ describe 'director.yml.erb.erb' do
           }
         end
 
+        it 'set provider as s3cli' do
+          expect(parsed_yaml['blobstore']['provider']).to eq("s3cli")
+        end
+
         it 'sets the blobstore fields appropriately' do
           expect(parsed_yaml['blobstore']['options']).to eq({
             'bucket_name' => 'mybucket',
             'credentials_source' => 'static',
             'access_key_id' => 'key',
             'secret_access_key' => 'secret',
-            'region' => 'region'
+            'region' => 'region',
+            's3cli_config_path' => '/var/vcap/data/tmp/director',
+            's3cli_path' => '/var/vcap/packages/s3cli/bin/s3cli'
           })
         end
 
@@ -724,7 +759,7 @@ describe 'director.yml.erb.erb' do
           end
 
           it 'sets the blobstore fields appropriately' do
-            expect(parsed_yaml['blobstore']['options']).to eq({
+            expect(parsed_yaml['blobstore']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',
@@ -739,7 +774,7 @@ describe 'director.yml.erb.erb' do
               'region' => 'region'
             })
 
-            expect(parsed_yaml['compiled_package_cache']['options']).to eq({
+            expect(parsed_yaml['compiled_package_cache']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',
@@ -758,7 +793,7 @@ describe 'director.yml.erb.erb' do
           it 'sets endpoint protocol appropriately when use_ssl is true' do
             deployment_manifest_fragment['properties']['blobstore']['use_ssl'] = true
 
-            expect(parsed_yaml['blobstore']['options']).to eq({
+            expect(parsed_yaml['blobstore']['options']).to include({
               'bucket_name' => 'mybucket',
               'credentials_source' => 'static',
               'access_key_id' => 'key',

@@ -89,7 +89,7 @@ module Bosh::Cli::Command
       rescue Bosh::Cli::AuthError
         status = {}
       rescue Bosh::Cli::DirectorError
-        err("Cannot talk to director at `#{director_url}', " +
+        err("Cannot talk to director at '#{director_url}', " +
             "please set correct target")
       end
 
@@ -101,7 +101,7 @@ module Bosh::Cli::Command
       old_ca_cert_path = config.ca_cert
       expanded_ca_cert_path = config.save_ca_cert_path(options[:ca_cert])
       if old_ca_cert_path != expanded_ca_cert_path
-        say("Updating certificate file path to `#{expanded_ca_cert_path.to_s.make_green}'")
+        say("Updating certificate file path to '#{expanded_ca_cert_path.to_s.make_green}'")
         nl
       end
 
@@ -114,7 +114,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to `#{target_name.make_green}'")
+      say("Target set to '#{target_name.make_green}'")
 
       if interactive? && !logged_in?
         redirect("login")
@@ -146,7 +146,7 @@ module Bosh::Cli::Command
     def set_alias(name, command)
       config.set_alias(:cli, name, command.to_s.strip)
       config.save
-      say("Alias `#{name.make_green}' created for command `#{command.make_green}'")
+      say("Alias '#{name.make_green}' created for command '#{command.make_green}'")
     end
 
     # bosh aliases

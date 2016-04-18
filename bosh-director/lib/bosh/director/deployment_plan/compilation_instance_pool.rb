@@ -88,7 +88,7 @@ module Bosh::Director
             instance_memo = InstanceMemo.new(@instance_provider, stemcell)
             @instance_reuser.add_in_use_instance(instance_memo, stemcell)
           else
-            @logger.info("Reusing compilation VM `#{instance_memo.instance.model.vm_cid}' for stemcell `#{stemcell.model.desc}'")
+            @logger.info("Reusing compilation VM '#{instance_memo.instance.model.vm_cid}' for stemcell '#{stemcell.model.desc}'")
           end
         end
         return instance_memo
@@ -139,9 +139,34 @@ module Bosh::Director
       end
 
       def create_instance(instance_plan)
+        instance_model = instance_plan.instance.model
+        parent_id = add_event(instance_model.deployment.name, instance_model.name)
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
         @vm_creator.create_for_instance_plan(instance_plan, [])
         instance_plan.instance
+      rescue Exception => e
+        raise e
+      ensure
+        add_event(instance_model.deployment.name, instance_model.name, parent_id, e )
+      end
+
+      private
+
+      def add_event(deployment_name, instance_name = nil, parent_id = nil, error = nil)
+        user  = Config.current_job.username
+        event  = Config.current_job.event_manager.create_event(
+            {
+                parent_id:   parent_id,
+                user:        user,
+                action:      'create',
+                object_type: 'instance',
+                object_name: instance_name,
+                task:        Config.current_job.task_id,
+                deployment:  deployment_name,
+                instance:    instance_name,
+                error:       error
+            })
+        event.id
       end
     end
 

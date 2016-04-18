@@ -3,11 +3,10 @@ module Bosh::Director::Jobs
     class StemcellDeleter
       include Bosh::Director::LockHelper
 
-      def initialize(cloud, compiled_package_deleter, logger, event_log)
+      def initialize(cloud, compiled_package_deleter, logger)
         @cloud = cloud
         @compiled_package_deleter = compiled_package_deleter
         @logger = logger
-        @event_log = event_log
       end
 
       def delete(stemcell, options = {})
@@ -17,7 +16,7 @@ module Bosh::Director::Jobs
           unless deployments.empty?
             names = deployments.map { |d| d.name }.join(', ')
             raise Bosh::Director::StemcellInUse,
-              "Stemcell `#{stemcell.name}/#{stemcell.version}' is still in use by: #{names}"
+              "Stemcell '#{stemcell.name}/#{stemcell.version}' is still in use by: #{names}"
           end
 
           begin
@@ -29,15 +28,6 @@ module Bosh::Director::Jobs
           end
 
           stemcell.destroy
-        end
-      end
-
-      private
-
-      def track_and_log(stage, task, log = true)
-        stage.advance_and_track(task) do |ticker|
-          @logger.info(task) if log
-          yield ticker if block_given?
         end
       end
     end

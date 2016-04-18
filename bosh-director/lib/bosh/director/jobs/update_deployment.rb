@@ -37,16 +37,17 @@ module Bosh::Director
         end
 
         deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model, runtime_config_model)
-        deployment_name = deployment_manifest.to_hash['name']
+        @deployment_name = deployment_manifest.to_hash['name']
+        parent_id = add_event
 
-        with_deployment_lock(deployment_name) do
-          @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
+        with_deployment_lock(@deployment_name) do
+          @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
 
           deployment_plan = nil
 
-          event_log.begin_stage('Preparing deployment', 1)
-          event_log.track('Preparing deployment') do
+          event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+          event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config_model, runtime_config_model, @options)
             deployment_plan.bind_models
@@ -63,6 +64,7 @@ module Bosh::Director
 
           @notifier.send_end_event
           logger.info('Finished updating deployment')
+          add_event(parent_id)
 
           "/deployments/#{deployment_plan.name}"
         end
@@ -72,6 +74,7 @@ module Bosh::Director
         rescue Exception => e2
           # log the second error
         ensure
+          add_event(parent_id, e)
           raise e
         end
       ensure
@@ -79,6 +82,22 @@ module Bosh::Director
       end
 
       private
+
+      def add_event(parent_id = nil, error = nil)
+        action = deployment_new? ? "create" : "update"
+        event  = event_manager.create_event(
+            {
+                parent_id:   parent_id,
+                user:        username,
+                action:      action,
+                object_type: "deployment",
+                object_name: @deployment_name,
+                deployment:  @deployment_name,
+                task:        task_id,
+                error:       error
+            })
+        event.id
+      end
 
       # Job tasks
 
@@ -92,7 +111,6 @@ module Bosh::Director
       def update_step(deployment_plan)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
-          event_log,
           deployment_plan,
           multi_job_updater,
           Config.cloud
@@ -127,6 +145,10 @@ module Bosh::Director
 
           raise message
         end
+      end
+
+      def deployment_new?
+        @deployment_new ||= Models::Deployment.exclude(manifest: nil)[name: @deployment_name].nil?
       end
     end
   end

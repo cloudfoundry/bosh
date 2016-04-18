@@ -38,7 +38,7 @@ module Bosh::Director
         begin
           director_job_class = Bosh::Director::Jobs.const_get(scheduled_job['command'].to_s)
         rescue NameError
-          raise "unknown job `Bosh::Director::Jobs::#{scheduled_job['command']}'"
+          raise "unknown job 'Bosh::Director::Jobs::#{scheduled_job['command']}'"
         end
 
         @scheduler.cron(scheduled_job['schedule']) do |_|
@@ -53,7 +53,7 @@ with params #{scheduled_job['params']}")
           end
 
           if should_enqueue
-            logger.info("enqueueing `#{scheduled_job['command']}'")
+            logger.info("enqueueing '#{scheduled_job['command']}'")
 
             schedule_message = "scheduled #{scheduled_job['command']}"
             if director_job_class.respond_to?(:schedule_message)
@@ -67,7 +67,7 @@ with params #{scheduled_job['params']}")
           end
         end
 
-        logger.info("added scheduled job `#{director_job_class}' with interval '#{scheduled_job['schedule']}'")
+        logger.info("added scheduled job '#{director_job_class}' with interval '#{scheduled_job['schedule']}'")
       end
     end
   end

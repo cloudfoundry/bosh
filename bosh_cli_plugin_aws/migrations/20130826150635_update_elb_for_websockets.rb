@@ -84,8 +84,8 @@ class UpdateElbForWebsockets < Bosh::AwsCliPlugin::Migration
     def self.find_server_certificate_from_listeners(elb, params)
       listener = elb.listeners.find {|l| l.port == params[:port] && l.protocol == params[:protocol] }
 
-      err("Could not find listener with params `#{params.inspect}' on ELB `#{elb.name}'") unless listener
-      err("Could not find server certificate for listener with params `#{params.inspect}' on ELB `#{elb.name}'") unless listener.server_certificate
+      err("Could not find listener with params '#{params.inspect}' on ELB '#{elb.name}'") unless listener
+      err("Could not find server certificate for listener with params '#{params.inspect}' on ELB '#{elb.name}'") unless listener.server_certificate
 
       listener.server_certificate
     end

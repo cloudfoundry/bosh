@@ -359,7 +359,7 @@ module Bosh::Director::DeploymentPlan
 
                 ip_provider.reserve(reservation)
 
-                expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.2.2/32')
+                expect(NetAddr::CIDR.create(reservation.ip).to_s).not_to eq('192.168.1.2/32')
               end
 
               it 'does not allocate a reserved IP as a dynamic IP' do
@@ -367,7 +367,7 @@ module Bosh::Director::DeploymentPlan
 
                 ip_provider.reserve(reservation)
 
-                expect(NetAddr::CIDR.create(reservation.ip).to_s).to eq('192.168.2.2/32')
+                expect(NetAddr::CIDR.create(reservation.ip).to_s).not_to eq('192.168.1.2/32')
               end
 
               it 'allocates dynamic IPs across multiple subnets for a single AZ' do
@@ -564,6 +564,56 @@ module Bosh::Director::DeploymentPlan
             it 'picks the network that has subnet that does not have reservation IP in reserved range' do
               ip_provider.reserve_existing_ips(existing_network_reservation)
               expect(existing_network_reservation).to be_reserved
+              expect(existing_network_reservation.network.name).to eq('my-another-network')
+            end
+          end
+
+          context 'when there are 2 networks with the same subnet but different reserved ranges' do
+            let(:manual_network_spec) do
+              {
+                'name' => 'my-manual-network',
+                'subnets' => [
+                  {
+                    'range' => '192.168.1.0/24',
+                    'gateway' => '192.168.1.1',
+                    'dns' => ['192.168.1.1', '192.168.1.2'],
+                    'reserved' => ['192.168.1.2-192.168.1.30'],
+                  }
+                ]
+              }
+            end
+
+            let(:another_manual_network) do
+              ManualNetwork.parse(
+                {
+                  'name' => 'my-another-network',
+                  'subnets' => [
+                    {
+                      'range' => '192.168.1.0/24',
+                      'gateway' => '192.168.1.1',
+                      'dns' => ['192.168.1.1', '192.168.1.2'],
+                      'reserved' => ['192.168.1.2-192.168.1.40'],
+                    }
+                  ]
+                },
+                [],
+                global_network_resolver,
+                logger
+              )
+            end
+
+            let(:networks) do
+              {
+                'my-manual-network' => manual_network,
+                'my-another-network' => another_manual_network,
+              }
+            end
+
+            let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance_model, another_manual_network, '192.168.1.41', 'manual') }
+
+            it 'should keep existing IP on existing network (it should not switch to a different network)' do
+              ip_provider.reserve_existing_ips(existing_network_reservation)
+
               expect(existing_network_reservation.network.name).to eq('my-another-network')
             end
           end

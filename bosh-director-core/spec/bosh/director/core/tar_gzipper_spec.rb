@@ -30,14 +30,14 @@ module Bosh::Director::Core
     context 'when copy first feature is enabled' do
       it 'copies the files to a temp directory before archiving' do
         allow(Dir).to receive(:mktmpdir).and_yield('/tempthing')
-        expect(FileUtils).to receive(:cp_r).with(%w(/foo/baz /foo/bar), '/tempthing/')
+        expect(FileUtils).to receive(:cp_r).with(%w(/foo/./baz /foo/bar), '/tempthing/')
         allow(Pathname).to receive(:new).and_return(instance_double('Pathname', exist?: true, absolute?: true))
 
         expect(Open3).to receive(:capture3)
-        .with(*%w(tar -C /tempthing -czf /tmp/backup.tgz baz bar))
+        .with(*%w(tar -C /tempthing -czf /tmp/backup.tgz ./baz bar))
         .and_return(success_retval)
 
-        subject.compress('/foo', %w(baz bar), '/tmp/backup.tgz', copy_first: true)
+        subject.compress('/foo', %w(./baz bar), '/tmp/backup.tgz', copy_first: true)
       end
     end
 

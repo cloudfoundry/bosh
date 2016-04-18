@@ -47,7 +47,7 @@ module Bosh::Director
     end
 
     it 'has description' do
-      expect(handler.description).to match(/VM with cloud ID `vm-cid' missing./)
+      expect(handler.description).to match(/VM with cloud ID 'vm-cid' missing./)
     end
 
     describe 'Resolutions:' do
@@ -56,10 +56,12 @@ module Bosh::Director
 
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
+        Bosh::Director::Config.current_job.task_id = 42
         allow(Config).to receive_messages(cloud: fake_cloud)
       end
 
       it 'recreates a VM' do
+        Bosh::Director::Models::Task.make(:id => 42, :username => 'user')
         prepare_deploy(manifest, manifest)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')

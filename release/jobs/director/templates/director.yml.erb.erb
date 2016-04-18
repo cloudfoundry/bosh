@@ -9,14 +9,6 @@ params = {
     'level' => 'DEBUG',
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
-  'redis' => {
-    'host' => p('redis.address'),
-    'port' => p('redis.port'),
-    'password' => p('redis.password'),
-    'logging' => {
-      'level' => p('redis.loglevel')
-    }
-  },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'dir' => '/var/vcap/store/director',
   'db' => {
@@ -35,11 +27,9 @@ params = {
   'enable_post_deploy' => p('director.enable_post_deploy'),
   'generate_vm_passwords' => p('director.generate_vm_passwords'),
   'remove_dev_tools' => p('director.remove_dev_tools'),
+  'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
+  'flush_arp' => p('director.flush_arp'),
 }
-
-if_p('resque.loglevel') do |resque_loglevel|
-  params['resque'] = {'logging' => {'level' => resque_loglevel}}
-end
 
 params['scheduled_jobs'] = []
 
@@ -70,8 +60,21 @@ params['scheduled_jobs'] << {
   'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
 }
 
+params['record_events'] = p('director.events.record_events')
+if params['record_events']
+  params['scheduled_jobs'] << {
+    'command' => 'ScheduledEventsCleanup',
+    'schedule' => p('director.events.cleanup_schedule'),
+    'params' => [{'max_events' => p('director.events.max_events')}]
+  }
+end
+
 if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
   params['keep_unreachable_vms'] = keep_unreachable_vms
+end
+
+if_p('director.enable_virtual_delete_vms') do |enable_virtual_delete_vms|
+  params['enable_virtual_delete_vms'] = enable_virtual_delete_vms
 end
 
 params['scan_and_fix'] = {
@@ -149,6 +152,12 @@ params['blobstore'] = {
   'options' => blobstore_options
 }
 
+if p('blobstore.provider') == "s3"
+   params['blobstore']['provider'] = "s3cli"
+   params['blobstore']['options']['s3cli_config_path'] = "/var/vcap/data/tmp/director"
+   params['blobstore']['options']['s3cli_path'] = "/var/vcap/packages/s3cli/bin/s3cli"
+end
+
 user_management = {
     'provider' => p('director.user_management.provider')
 }
@@ -178,13 +187,15 @@ params['trusted_certs'] = p('director.trusted_certs')
 
 if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
   params['compiled_package_cache'] = {
-    'provider' => 's3',
+    'provider' => 's3cli',
     'options' => {
       'bucket_name' => bucket_name,
       'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
       'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
       'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
-      'region' => p('blobstore.s3_region', nil)
+      'region' => p('blobstore.s3_region', nil),
+      's3cli_config_path' => "/var/vcap/data/tmp/director",
+      's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli",
     }
   }
 

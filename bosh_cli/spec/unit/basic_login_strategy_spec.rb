@@ -62,7 +62,7 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       login_strategy.login(target, 'user name', 'password')
 
-      expect(terminal).to have_received(:say_green).with("Logged in as `user name'")
+      expect(terminal).to have_received(:say_green).with("Logged in as 'user name'")
     end
 
     it "updates the config if all went well" do
@@ -94,9 +94,9 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       login_strategy.login(target, 'user name', 'wrong password')
 
-      expect(terminal).to have_received(:say_red).with("Cannot log in as `user name', please try again")
+      expect(terminal).to have_received(:say_red).with("Cannot log in as 'user name', please try again")
       expect(terminal).to_not have_received(:ask) # don't ask for username
-      expect(terminal).to have_received(:say_green).with("Logged in as `user name'")
+      expect(terminal).to have_received(:say_green).with("Logged in as 'user name'")
     end
   end
 
@@ -125,7 +125,7 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       login_strategy.login(target, 'user name', 'password')
 
-      expect(terminal).to have_received(:say_green).with("Logged in as `user name'")
+      expect(terminal).to have_received(:say_green).with("Logged in as 'user name'")
     end
 
     it "updates the config if all went well" do
@@ -155,7 +155,7 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       expect {
         login_strategy.login(target, 'user name', 'wrong password')
-      }.to raise_error(Bosh::Cli::CliError, "Cannot log in as `user name'")
+      }.to raise_error(Bosh::Cli::CliError, "Cannot log in as 'user name'")
     end
   end
 end

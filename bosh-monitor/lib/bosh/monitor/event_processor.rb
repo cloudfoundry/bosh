@@ -12,7 +12,7 @@ module Bosh::Monitor
 
     def add_plugin(plugin, event_kinds = [])
       if plugin.respond_to?(:validate_options) && !plugin.validate_options
-        raise FatalError, "Invalid plugin options for `#{plugin.class}'"
+        raise FatalError, "Invalid plugin options for '#{plugin.class}'"
       end
 
       @lock.synchronize do
@@ -33,7 +33,7 @@ module Bosh::Monitor
         @events[kind] ||= {}
 
         if @events[kind].has_key?(event.id)
-          @logger.debug("Ignoring duplicate #{event.kind} `#{event.id}'")
+          @logger.debug("Ignoring duplicate #{event.kind} '#{event.id}'")
           return true
         end
         # We don't really need to store event itself for the moment,
@@ -42,7 +42,7 @@ module Bosh::Monitor
       end
 
       if @plugins[kind].nil? || @plugins[kind].empty?
-        @logger.debug("No plugins are interested in `#{event.kind}' event")
+        @logger.debug("No plugins are interested in '#{event.kind}' event")
         return true
       end
 

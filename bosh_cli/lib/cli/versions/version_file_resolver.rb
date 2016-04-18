@@ -14,7 +14,7 @@ module Bosh::Cli::Versions
         if file_sha1 == sha1
           return file_path
         end
-        say("SHA1 `#{file_sha1}' of #{desc} does not match expected SHA1 `#{sha1}'".make_red)
+        say("SHA1 '#{file_sha1}' of #{desc} does not match expected SHA1 '#{sha1}'".make_red)
       end
 
       if blobstore_id.nil?

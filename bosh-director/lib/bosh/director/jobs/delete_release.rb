@@ -19,9 +19,9 @@ module Bosh::Director
         compiled_package_deleter = Helpers::CompiledPackageDeleter.new(blob_deleter, logger)
         package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
         template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
-        release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger)
+        release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger)
         release_version_deleter =
-          Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, event_log)
+          Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log)
         release_manager = Api::ReleaseManager.new
         @name_version_release_deleter = Helpers::NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, logger)
       end

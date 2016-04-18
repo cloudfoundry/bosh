@@ -71,6 +71,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   context 'installed by system-azure-network', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
@@ -86,6 +87,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   context 'installed by system_open_vm_tools', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
@@ -99,6 +101,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   context 'installed by system_softlayer_open_iscsi', {
       exclude_on_aws: true,
+      exclude_on_google: true,
       exclude_on_vsphere: true,
       exclude_on_vcloud: true,
       exclude_on_warden: true,
@@ -112,6 +115,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   context 'installed by system_softlayer_multipath_tools', {
       exclude_on_aws: true,
+      exclude_on_google: true,
       exclude_on_vsphere: true,
       exclude_on_vcloud: true,
       exclude_on_warden: true,
@@ -125,6 +129,7 @@ describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   context 'installed by image_vsphere_cdrom stage', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
     exclude_on_openstack: true,
@@ -160,6 +165,22 @@ HERE
   end
 
   context 'installed by bosh_aws_agent_settings', {
+    exclude_on_google: true,
+    exclude_on_openstack: true,
+    exclude_on_vcloud: true,
+    exclude_on_vsphere: true,
+    exclude_on_warden: true,
+    exclude_on_azure: true,
+    exclude_on_softlayer: true,
+  } do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should contain('"Type": "HTTP"') }
+    end
+  end
+
+  context 'installed by bosh_google_agent_settings', {
+    exclude_on_aws: true,
     exclude_on_openstack: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
@@ -175,6 +196,7 @@ HERE
 
   context 'installed by bosh_openstack_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
@@ -191,6 +213,7 @@ HERE
 
   context 'installed by bosh_vsphere_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_openstack: true,
     exclude_on_warden: true,
@@ -205,6 +228,7 @@ HERE
 
   context 'installed by bosh_azure_agent_settings', {
     exclude_on_aws: true,
+    exclude_on_google: true,
     exclude_on_vcloud: true,
     exclude_on_vsphere: true,
     exclude_on_warden: true,
@@ -224,6 +248,7 @@ HERE
 
   context 'installed by bosh_softlayer_agent_settings', {
       exclude_on_aws: true,
+      exclude_on_google: true,
       exclude_on_vcloud: true,
       exclude_on_vsphere: true,
       exclude_on_warden: true,
@@ -238,9 +263,10 @@ HERE
     end
   end
 
-  context 'default packages removed' do
-    describe package('postfix') do
-      it { should_not be_installed }
+  describe 'mounted file systems: /etc/fstab should mount nfs with nodev (stig: V-38654) (stig: V-38652)' do
+    describe file('/etc/fstab') do
+      it { should be_file }
+      its (:content) { should eq("# UNCONFIGURED FSTAB FOR BASE SYSTEM\n") }
     end
   end
 end
@@ -251,6 +277,12 @@ describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do
       it { should be_file }
       it { should contain 'Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend' }
       it { should contain 'ubuntu-minimal' }
+    end
+  end
+
+  context 'installed by dev_tools_config stage' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/dev_tools_file_list.txt") do
+      it { should be_file }
     end
   end
 end

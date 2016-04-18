@@ -18,7 +18,7 @@ module Bosh::Director
         instance = Models::Instance.find(deployment: deployment, job: job_name, index: job_index)
         if instance.nil?
           raise InstanceNotFound,
-                "`#{deployment.name}/#{job_name}/#{job_index}' doesn't exist"
+                "'#{deployment.name}/#{job_name}/#{job_index}' doesn't exist"
         end
         instance
       end
@@ -27,7 +27,7 @@ module Bosh::Director
         instance = Models::Instance.find(deployment: deployment, job: job_name, uuid: uuid)
         if instance.nil?
           raise InstanceNotFound,
-                "`#{deployment.name}/#{job_name}/#{uuid}' doesn't exist"
+                "'#{deployment.name}/#{job_name}/#{uuid}' doesn't exist"
         end
         instance
       end

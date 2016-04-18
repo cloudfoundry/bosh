@@ -20,8 +20,8 @@ module Bosh::Cli::Versions
       begin
         SemiSemantic::Version.parse(format_version_string) < VersionsIndex::CURRENT_INDEX_VERSION
       rescue ArgumentError, SemiSemantic::ParseError
-        raise InvalidIndex, "Invalid versions index version in `#{index_path}', " +
-          "`#{format_version_string}' given, SemiSemantic version expected"
+        raise InvalidIndex, "Invalid versions index version in '#{index_path}', " +
+          "'#{format_version_string}' given, SemiSemantic version expected"
       end
     end
 
@@ -29,7 +29,7 @@ module Bosh::Cli::Versions
       return false unless needs_migration?
 
       unless Dir.exist?(@releases_path)
-        raise "Releases path `#{@releases_path}' does not exist"
+        raise "Releases path '#{@releases_path}' does not exist"
       end
 
       @ui.header("Migrating #{@release_type_name} releases".make_green)

@@ -25,6 +25,8 @@ gem 'rake', '~>10.0'
 # when modified needs to be updated there as well
 gem 'json', '=1.8.3'
 
+gem 'talentbox-delayed_job_sequel', '~> 4.1'
+
 gem 'bundler', '~>1.11.0'
 
 group :production do
@@ -50,7 +52,7 @@ group :development, :test do
   gem 'rspec-instafail'
 
   gem 'rubocop', require: false
-  gem 'parallel_tests'
+  gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
   gem 'webmock'
   gem 'fakefs'
@@ -62,7 +64,7 @@ group :development, :test do
   gem 'pry'
 
   # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
-  gem 'eventmachine', '1.0.3'
+  gem 'eventmachine', '1.0.4'
 
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way
@@ -74,7 +76,6 @@ group :development, :test do
 
   # for root level specs
   gem 'rest-client'
-  gem 'redis'
   gem 'nats'
   gem 'rugged'
 

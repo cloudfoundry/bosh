@@ -29,7 +29,7 @@ module Bosh
                 subject.find_or_create_by_name('Existing')
               }.to raise_error(
                 DeploymentCanonicalNameTaken,
-                'Invalid deployment name `Existing\', canonical name already taken (`existing\')'
+                "Invalid deployment name 'Existing', canonical name already taken ('existing')"
               )
             end
           end

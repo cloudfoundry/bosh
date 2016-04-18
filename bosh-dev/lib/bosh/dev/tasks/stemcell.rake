@@ -1,3 +1,5 @@
+require 'json'
+
 namespace :stemcell do
   desc 'Create light stemcell from existing stemcell'
   task :build_light, [:stemcell_path, :virtualization_type] do |_, args|

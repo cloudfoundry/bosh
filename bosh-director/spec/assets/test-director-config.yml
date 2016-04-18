@@ -5,11 +5,6 @@ port: 8081
 logging:
   level: ERROR
 
-redis:
-  host: 127.0.0.1
-  port: 63790
-  password:
-
 dir: /tmp/boshdir
 db:
   adapter: sqlite
@@ -47,3 +42,4 @@ user_management:
   local:
     users:
     - {name: admin, password: admin}
+record_events: true

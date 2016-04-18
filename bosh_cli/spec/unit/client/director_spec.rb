@@ -202,6 +202,44 @@ describe Bosh::Cli::Client::Director do
       end
     end
 
+    describe '#list_events' do
+      it 'can list events before a given id' do
+        expect(@director).to receive(:get).with('/events?before_id=4', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({before_id: 4})
+      end
+
+      it 'can list all events' do
+        expect(@director).to receive(:get).with('/events', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events
+      end
+
+      it 'can list events with a given deployment' do
+        expect(@director).to receive(:get).with('/events?deployment=name', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({deployment: 'name'})
+      end
+
+      it 'can list events with a given task' do
+        expect(@director).to receive(:get).with('/events?task=5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({task: '5'})
+      end
+
+      it 'can list events with a given instance id' do
+        expect(@director).to receive(:get).with('/events?instance=job/5', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5'})
+      end
+
+      it 'can filter by multiple parameters' do
+        expect(@director).to receive(:get).with('/events?before_id=4&deployment=name&instance=job/5&task=6', 'application/json')
+                               .and_return([200, JSON.generate([]), {}])
+        @director.list_events({instance: 'job/5', deployment: 'name', task: 6, before_id: 4})
+      end
+    end
+
     it 'creates user' do
       expect(@director).to receive(:post).
         with('/users', 'application/json',
@@ -609,7 +647,7 @@ jobs:
             to_return(status: 200, body: '{}')
           expect(@director).to receive(:post).with('/deployments/foo/diff?redact=false', 'text/yaml', manifest)
                                  .and_return([200, '{}'])
-          @director.diff_deployment('foo', manifest, true)
+          @director.diff_deployment('foo', manifest, false)
         end
       end
     end

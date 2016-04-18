@@ -69,7 +69,7 @@ describe Bosh::Cli::Command::JobManagement do
 
       expect {
         command.public_send(method_name, 'dea', 0)
-      }.to raise_error(Bosh::Cli::CliError, "--hard and --soft options only make sense for `stop' operation")
+      }.to raise_error(Bosh::Cli::CliError, "--hard and --soft options only make sense for 'stop' operation")
     end
 
     context 'if the bosh CLI is running interactively' do
@@ -87,7 +87,7 @@ describe Bosh::Cli::Command::JobManagement do
             expect {
               command.public_send(method_name, 'dea', 0)
             }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment " +
-                "changes are present. Please use `--force' to override.")
+                "changes are present. Please use '--force' to override.")
           end
         end
       end
@@ -115,7 +115,7 @@ describe Bosh::Cli::Command::JobManagement do
     context 'if an index is supplied' do
       it 'tells the user what it is about to do' do
         expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
-        expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+        expect(command).to receive(:say).with("Performing '#{verb} dea/0#{operation_description_extra}'...")
         expect(command).to receive(:say).with %r{\ndea/0 #{past_verb}}
 
         command.public_send(method_name, 'dea', '0')
@@ -135,7 +135,7 @@ describe Bosh::Cli::Command::JobManagement do
     context 'if an index is not supplied' do
       it 'tells the user what it is about to do' do
         expect(command).to receive(:say).with("You are about to #{verb} dea/*#{operation_description_extra}")
-        expect(command).to receive(:say).with("Performing `#{verb} dea/*#{operation_description_extra}'...")
+        expect(command).to receive(:say).with("Performing '#{verb} dea/*#{operation_description_extra}'...")
         expect(command).to receive(:say).with %r{\ndea/\* #{past_verb}}
         command.public_send(method_name, 'dea')
       end
@@ -155,7 +155,7 @@ describe Bosh::Cli::Command::JobManagement do
     context 'if a job is not supplied' do
       it 'tells the user what it is about to do' do
         expect(command).to receive(:say).with("You are about to #{verb} all jobs#{operation_description_extra}")
-        expect(command).to receive(:say).with("Performing `#{verb} all jobs#{operation_description_extra}'...")
+        expect(command).to receive(:say).with("Performing '#{verb} all jobs#{operation_description_extra}'...")
         expect(command).to receive(:say).with %r{\nall jobs #{past_verb}}
         command.public_send(method_name)
       end

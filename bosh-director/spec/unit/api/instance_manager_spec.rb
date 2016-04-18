@@ -24,7 +24,7 @@ module Bosh::Director
           instance.update(index: index)
 
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, index, options)).to eq(task)
         end
@@ -33,9 +33,9 @@ module Bosh::Director
       context 'when uuid is provided' do
         let(:uuid) { 'fakeId123' }
 
-        it 'enqueues a resque job' do
+        it 'enqueues a job' do
           expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment_name).and_return(task)
+            username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment).and_return(task)
 
           expect(subject.fetch_logs(username, deployment, job, uuid, options)).to eq(task)
         end
@@ -52,7 +52,7 @@ module Bosh::Director
         }
       end
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 
@@ -101,11 +101,11 @@ module Bosh::Director
 
       before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment.name).and_return(task)
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment).and_return(task)
 
         expect(subject.fetch_instances_with_vm(username, deployment, 'FAKE_FORMAT')).to eq(task)
       end
@@ -115,11 +115,11 @@ module Bosh::Director
 
       before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
         expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT', true], deployment.name).and_return(task)
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT', true], deployment).and_return(task)
 
         expect(subject.fetch_instances(username, deployment, 'FAKE_FORMAT')).to eq(task)
       end

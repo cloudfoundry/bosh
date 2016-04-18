@@ -1,7 +1,7 @@
+require 'logging'
 require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
-require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
@@ -15,6 +15,12 @@ namespace :spec do
     task :agent => :install_dependencies do
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs
+    end
+
+    desc 'Run health monitor integration tests against a local sandbox'
+    task :health_monitor => :install_dependencies do
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+      run_integration_specs(tags: 'hm')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx)'
@@ -47,13 +53,14 @@ namespace :spec do
       end
     end
 
-    def run_integration_specs
+    def run_integration_specs(run_options={})
       Bosh::Dev::Sandbox::Workspace.clean
 
       num_processes   = ENV['NUM_GROUPS']
       num_processes ||= ENV['TRAVIS'] ? 4 : nil
 
       options = {}
+      options.merge!(run_options)
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
@@ -62,14 +69,15 @@ namespace :spec do
     end
 
     def run_in_parallel(test_path, options={})
-      spec_path = ENV['SPEC_PATH']
+      spec_path = ENV['SPEC_PATH'] || ''
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
+      tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
       command = begin
-        if spec_path
-          "https_proxy= http_proxy= bundle exec rspec #{spec_path}"
+        if '' != spec_path
+          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
-          "https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
+          "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
         end
       end
       puts command
@@ -143,6 +151,12 @@ namespace :spec do
       end
     end
 
+    desc "Run unit tests for the cpi component"
+    task :cpi do
+      trap('INT') { exit }
+      unit_exec('bosh_cpi')
+    end
+
     task(:agent) do
       # Do not use exec because this task is part of other tasks
       sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
@@ -163,16 +177,19 @@ namespace :spec do
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
     task :micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
     desc 'Run system (BATs) tests (uses existing microbosh)'
     task :existing_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
 
     desc 'Deploy microbosh for system (BATs) tests'
     task :deploy_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light, :disk_format] do |_, args|
+      require 'bosh/dev/bat_helper'
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_bats_microbosh
     end
   end

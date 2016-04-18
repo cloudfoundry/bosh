@@ -13,7 +13,7 @@ module Bosh::Cli::Command
       manifest_filename = find_deployment(filename)
 
       unless File.exists?(manifest_filename)
-        err("Missing manifest for `#{filename}'")
+        err("Missing manifest for '#{filename}'")
       end
 
       manifest = load_yaml_file(manifest_filename)
@@ -60,10 +60,10 @@ module Bosh::Cli::Command
         config.target_version = status['version']
         config.target_uuid = status['uuid']
         say("#{'WARNING!'.make_red} Your target has been " +
-            "changed to `#{target.make_red}'!")
+            "changed to '#{target.make_red}'!")
       end
 
-      say("Deployment set to `#{manifest_filename.make_green}'")
+      say("Deployment set to '#{manifest_filename.make_green}'")
       config.set_deployment(manifest_filename)
       config.save
     end
@@ -81,21 +81,21 @@ module Bosh::Cli::Command
     usage 'deploy'
     desc 'Deploy according to the currently selected deployment manifest'
     option '--recreate', 'Recreate all VMs in deployment'
-    option '--redact-diff', 'Redact manifest value changes in deployment'
-    option '--no-redact', 'do not redact'
+    option '--no-redact', 'Redact manifest value changes in deployment'
     option '--skip-drain [job1,job2]', String, 'Skip drain script for either specific or all jobs'
     def perform
       auth_required
+
       recreate = !!options[:recreate]
-      redact_diff = !!options[:redact_diff]
-      no_redact = !options[:no_redact].nil?
+      redact_diff = !!options[:no_redact].nil?
+
       manifest = build_manifest
 
       if manifest.hash['releases']
         manifest.hash['releases'].each do |release|
           if release['url'].blank?
             if release['version'] == 'create'
-              err("Expected URL when specifying release version `create'")
+              err("Expected URL when specifying release version 'create'")
             end
           else
             parsed_uri = URI.parse(release['url'])
@@ -110,11 +110,11 @@ module Bosh::Cli::Command
                 run_nested_command "upload", "release", parsed_uri.path, '--name', release['name'], '--version', release['version'].to_s
               end
             when 'http', 'https'
-              err('Path must be a local release directory when version is `create\'') if release['version'] == 'create'
-              err("Expected SHA1 when specifying remote URL for release `#{release["name"]}'") if release['sha1'].blank?
+              err("Path must be a local release directory when version is 'create'") if release['version'] == 'create'
+              err("Expected SHA1 when specifying remote URL for release '#{release["name"]}'") if release['sha1'].blank?
               run_nested_command "upload", "release", release['url'], "--sha1", release['sha1'], "--name", release['name'], "--version", release['version'].to_s
             else
-              err("Invalid URL format for release `#{release['name']}' with URL `#{release['url']}'. Supported schemes: file, http, https.")
+              err("Invalid URL format for release '#{release['name']}' with URL '#{release['url']}'. Supported schemes: file, http, https.")
             end
           end
         end
@@ -128,11 +128,11 @@ module Bosh::Cli::Command
             when 'file'
               run_nested_command "upload", "stemcell", parsed_uri.path, "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
             when 'http', 'https'
-              err("Expected SHA1 when specifying remote URL for stemcell `#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
+              err("Expected SHA1 when specifying remote URL for stemcell '#{resource_pool['stemcell']['name']}'") if resource_pool['stemcell']['sha1'].blank?
               run_nested_command "upload", "stemcell", resource_pool['stemcell']['url'], "--sha1", resource_pool['stemcell']['sha1'],
                 "--name", resource_pool['stemcell']['name'], "--version", resource_pool['stemcell']['version'].to_s, "--skip-if-exists"
             else
-              err("Invalid URL format for stemcell `#{resource_pool['stemcell']['name']}' with URL `#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
+              err("Invalid URL format for stemcell '#{resource_pool['stemcell']['name']}' with URL '#{resource_pool['stemcell']['url']}'. Supported schemes: file, http, https.")
             end
           end
         end
@@ -140,7 +140,7 @@ module Bosh::Cli::Command
 
       manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff, no_redact: no_redact})
+      context = DeploymentDiff.new(director, manifest).print({redact_diff: redact_diff})
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')
@@ -160,7 +160,7 @@ module Bosh::Cli::Command
 
       status, task_id = director.deploy(manifest.yaml, deploy_options)
 
-      task_report(status, task_id, "Deployed `#{manifest.name.make_green}' to `#{target_name.make_green}'")
+      task_report(status, task_id, "Deployed '#{manifest.name.make_green}' to '#{target_name.make_green}'")
     end
 
     # bosh delete deployment
@@ -173,7 +173,7 @@ module Bosh::Cli::Command
 
       force = !!options[:force]
 
-      say("\nYou are going to delete deployment `#{deployment_name}'.".make_red)
+      say("\nYou are going to delete deployment '#{deployment_name}'.".make_red)
       nl
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
 
@@ -184,9 +184,9 @@ module Bosh::Cli::Command
 
       begin
         status, result = director.delete_deployment(deployment_name, :force => force)
-        task_report(status, result, "Deleted deployment `#{deployment_name}'")
+        task_report(status, result, "Deleted deployment '#{deployment_name}'")
       rescue Bosh::Cli::ResourceNotFound
-        task_report(:done, nil, "Skipped delete of missing deployment `#{deployment_name}'")
+        task_report(:done, nil, "Skipped delete of missing deployment '#{deployment_name}'")
       end
     end
 
@@ -223,7 +223,7 @@ module Bosh::Cli::Command
       show_current_state(deployment_name)
 
       if save_as && File.exists?(save_as) &&
-         !confirmed?("Overwrite `#{save_as}'?")
+         !confirmed?("Overwrite '#{save_as}'?")
         err('Please choose another file to save the manifest to')
       end
 
@@ -233,7 +233,7 @@ module Bosh::Cli::Command
         File.open(save_as, 'w') do |f|
           f.write(deployment['manifest'])
         end
-        say("Deployment manifest saved to `#{save_as}'".make_green)
+        say("Deployment manifest saved to '#{save_as}'".make_green)
       else
         say(deployment['manifest'])
       end
@@ -244,7 +244,7 @@ module Bosh::Cli::Command
       config.target = target
       if config.deployment
         if interactive?
-          say("Current deployment is `#{config.deployment.make_green}'")
+          say("Current deployment is '#{config.deployment.make_green}'")
         else
           say(config.deployment)
         end
@@ -269,7 +269,7 @@ module Bosh::Cli::Command
     def path_is_reasonable!(path)
       #path is actually to a directory, not a file
       unless File.directory?(path)
-        err "Path must be a release directory when version is `create'"
+        err "Path must be a release directory when version is 'create'"
       end
     end
 

@@ -10,13 +10,13 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       unless name.bosh_valid_id?
-        err("`#{name}' is not a valid BOSH id")
+        err("'#{name}' is not a valid BOSH id")
       end
 
       job_dir = File.join("jobs", name)
 
       if File.exists?(job_dir)
-        err("Job `#{name}' already exists, please pick another name")
+        err("Job '#{name}' already exists, please pick another name")
       end
 
       say("create\t#{job_dir}")
@@ -38,7 +38,7 @@ module Bosh::Cli::Command
         f.write("---\nname: #{name}\ntemplates:\n\npackages:\n")
       end
 
-      say("\nGenerated skeleton for `#{name}' job in `#{job_dir}'")
+      say("\nGenerated skeleton for '#{name}' job in '#{job_dir}'")
     end
 
   end

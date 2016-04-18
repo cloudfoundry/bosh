@@ -124,7 +124,7 @@ module Bosh::Director
         end
       end
 
-      def add_link_info(job_name, kind, link_name, source)
+      def add_link_from_release(job_name, kind, link_name, source)
         @link_infos[job_name] ||= {}
         @link_infos[job_name][kind] ||= {}
         @link_infos[job_name][kind][link_name] ||= {}
@@ -136,6 +136,36 @@ module Bosh::Director
           @link_infos[job_name][kind][link_name]['skip_link'] = true
         else
           source.to_a.each do |key, value|
+            if key == "properties"
+              key = "link_properties_exported"
+            end
+            @link_infos[job_name][kind][link_name][key] = value
+          end
+        end
+      end
+
+      def add_link_from_manifest(job_name, kind, link_name, source)
+        @link_infos[job_name] ||= {}
+        @link_infos[job_name][kind] ||= {}
+        @link_infos[job_name][kind][link_name] ||= {}
+
+        if source.eql? 'nil'
+          # This is the case where the user set link source to nil explicitly in the deployment manifest
+          # We should skip the binding of this link, even if it exist. This is used only when the link
+          # is optional
+          @link_infos[job_name][kind][link_name]['skip_link'] = true
+        else
+          errors = []
+          if kind == "consumes"
+            errors = validate_consume_link(source, link_name, job_name)
+          end
+
+          if errors.size > 0
+            raise errors.join("\n")
+          end
+
+          source_hash = source.to_a
+          source_hash.each do |key, value|
             @link_infos[job_name][kind][link_name][key] = value
           end
         end
@@ -176,6 +206,30 @@ module Bosh::Director
       end
 
       private
+
+      def validate_consume_link(source, link_name, job_name)
+        blacklist = [ ['instances', 'from'], ['properties', 'from'] ]
+        errors = []
+        if source == nil
+          return errors
+        end
+
+        blacklist.each do |invalid_props|
+          if invalid_props.all? { |prop| source.has_key?(prop) }
+            errors.push("Cannot specify both '#{invalid_props[0]}' and '#{invalid_props[1]}' keys for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'.")
+          end
+        end
+
+        if source.has_key?('properties') && !source.has_key?('instances')
+          errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'.")
+        end
+
+        if source.has_key?('name') || source.has_key?('type')
+          errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'. Please provide these keys in the release only.")
+        end
+
+        errors
+      end
 
       # Returns model only if it's present, fails otherwise
       # @return [Models::Template]

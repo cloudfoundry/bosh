@@ -177,12 +177,6 @@ describe Bhm::AgentManager do
       expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
       expect(manager.analyze_agents).to eq(5)
       expect(manager.agents_count).to eq(4)
-
-      # Now previously removed "256" gets reported as a good citizen
-      # 5 agents total, 3 timed out, 1 rogue
-      manager.add_agent("mycloud", {"agent_id" => "256", "index" => "0", "job" => "redis_node"})
-      expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
-      expect(manager.analyze_agents).to eq(5)
     end
   end
 
@@ -218,7 +212,7 @@ describe Bhm::AgentManager do
     it "raises an error" do
       expect {
         manager.setup_events
-      }.to raise_error(Bhm::PluginError, "Cannot find `joes_plugin_thing' plugin")
+      }.to raise_error(Bhm::PluginError, "Cannot find 'joes_plugin_thing' plugin")
     end
   end
 end

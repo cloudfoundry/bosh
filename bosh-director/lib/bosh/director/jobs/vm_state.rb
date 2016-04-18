@@ -52,6 +52,7 @@ module Bosh::Director
           :job_name => instance.job,
           :index => instance.index,
           :job_state => job_state,
+          :state => instance.state,
           :resource_pool => vm_type_name,
           :vm_type => vm_type_name,
           :vitals => job_vitals,
@@ -87,8 +88,6 @@ module Bosh::Director
           rescue Bosh::Director::RpcTimeout
             job_state = 'unresponsive agent'
           end
-        else
-          job_state = 'missing vm'
         end
 
         return job_state, job_vitals, processes, ips

@@ -19,7 +19,7 @@ To test if docker is installed and running...
 
 If docker daemon isn't running, try this:
 
-    host$ vagrant box destroy; vagrant box update; vagrant up
+    host$ vagrant destroy; vagrant box update; vagrant up
 
 ## Rebuilding the Container Image
 
@@ -34,24 +34,9 @@ Rebuild the container with the `build` script...
 
     vagrant$ ./build
 
+## Building and Testing OS Images and Stemcells
 
-## Testing OS Image changes
-
-You can use `run` to start a container which has mounted your project to `/opt/bosh`...
-
-    vagrant$ ./run
-    container$ bundle install --local
-    container$ bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/os-image.tgz]
-
-
-## Testing Stemcell changes
-
-You can use `run` to start a container which has mounted your project to `/opt/bosh`...
-
-    vagrant$ ./run
-    container$ bundle install --local
-    container$ bundle exec rake stemcell:build[aws,xen,ubuntu,trusty,go,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
-
+See [bosh-stemcell README.md](../README.md).
 
 ## Docker Hub
 

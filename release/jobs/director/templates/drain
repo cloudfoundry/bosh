@@ -17,8 +17,8 @@ stop_workers()
   do
     if [ -f "$pid_file" ] ; then
       worker_pid=`cat ${pid_file}`
-      # Stop resque workers from accepting any new jobs
-      kill -s USR2 ${worker_pid}
+      # Stop DJ workers from accepting any new jobs
+      kill -s USR1 ${worker_pid}
     fi
   done
 }

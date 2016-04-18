@@ -7,7 +7,8 @@ module Bosh::Director
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
+    let(:arp_flusher) { ArpFlusher.new }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:release_version_model) { Models::ReleaseVersion.make }
@@ -49,13 +50,13 @@ module Bosh::Director
     end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
     let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
     before do
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
       allow(instance_deleter).to receive(:delete_instance_plan)
-
-      allow(Config).to receive_messages(redis: double('fake-redis'))
 
       allow(Config).to receive(:cloud).and_return(cloud)
 
@@ -69,6 +70,8 @@ module Bosh::Director
       allow(plan).to receive(:network).with('default').and_return(network)
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
+
+      allow(Config).to receive(:current_job).and_return(update_job)
       @all_packages = []
     end
 
@@ -196,7 +199,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          Config.event_log,
           nil
         )
 
@@ -209,8 +211,8 @@ module Bosh::Director
         # But they are already compiled!
         expect(compiler.compilations_performed).to eq(0)
 
-        expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
-        expect(log_string).to include("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.model.desc}'")
+        expect(log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
       end
     end
 
@@ -223,7 +225,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          Config.event_log,
           @director_job
         )
 
@@ -290,7 +291,6 @@ module Bosh::Director
             compilation_config,
             compilation_instance_pool,
             logger,
-            Config.event_log,
             @director_job
           )
 
@@ -317,7 +317,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(6)
 
-          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
         end
       end
 
@@ -328,7 +328,6 @@ module Bosh::Director
             compilation_config,
             compilation_instance_pool,
             logger,
-            Config.event_log,
             @director_job
           )
 
@@ -347,14 +346,14 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(0)
 
-          expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
+          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.model.desc}'")
         end
       end
     end
 
     context 'compiling packages with transitive dependencies' do
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
-      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([@j_deps_ruby], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([@j_deps_ruby], compilation_config, compilation_instance_pool, logger, @director_job) }
       let(:vm_cid) { 'vm-cid-0' }
 
       before do
@@ -431,17 +430,8 @@ module Bosh::Director
 
       it 'cancels the compilation' do
         director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
-        event_log = instance_double('Bosh::Director::EventLog::Log', begin_stage: nil)
-        allow(event_log).to receive(:track).with(anything).and_yield
-
-        config = class_double('Bosh::Director::Config').as_stubbed_const
-        allow(config).to receive_messages(
-          current_job: director_job,
-          cloud: double('cpi'),
-          event_log: event_log,
-          logger: logger,
-          use_compiled_package_cache?: false,
-        )
+        event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+        allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
         network = double('network', name: 'network_name')
         release_version_model = Models::ReleaseVersion.make
@@ -452,7 +442,7 @@ module Bosh::Director
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(job).to receive_messages(templates: [template])
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, event_log, director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, director_job)
 
         expect {
           compiler.perform
@@ -475,7 +465,7 @@ module Bosh::Director
       }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer) }
+      let(:vm_creator) { Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
       let(:disk_manager) { DiskManager.new(cloud, logger) }
 
       it 'reuses compilation VMs' do
@@ -516,7 +506,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          Config.event_log,
           @director_job
         )
 
@@ -555,7 +544,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          Config.event_log,
           @director_job
         )
         allow(compiler).to receive(:with_compile_lock).and_yield
@@ -601,7 +589,7 @@ module Bosh::Director
 
           expect(cloud).to receive(:delete_vm).once
 
-          compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new([job], compilation_config, compilation_instance_pool, logger, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield
           expect { compiler.perform }.to raise_error(exception)
         end
@@ -625,7 +613,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, nil)
+      compiler = DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, nil)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -639,7 +627,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, nil) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new([], compilation_config, compilation_instance_pool, logger, nil) }
       let(:cache_key) { 'cache key' }
 
       before do
@@ -715,7 +703,7 @@ module Bosh::Director
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job)
+          compiler = described_class.new([], compilation_config, compilation_instance_pool, logger, @director_job)
 
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(RpcTimeout)
 
@@ -738,7 +726,7 @@ module Bosh::Director
       end
 
       describe 'trusted certificate handling' do
-        let(:compiler) { described_class.new([], compilation_config, compilation_instance_pool, logger, Config.event_log, @director_job) }
+        let(:compiler) { described_class.new([], compilation_config, compilation_instance_pool, logger, @director_job) }
         let(:client) { instance_double('Bosh::Director::AgentClient') }
 
         before do

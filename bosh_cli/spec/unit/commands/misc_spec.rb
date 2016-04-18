@@ -242,7 +242,7 @@ EOS
           it 'prints update message' do
             command.add_option(:ca_cert, '/fake-ca-cert')
             allow(command).to receive(:say)
-            expect(command).to receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
+            expect(command).to receive(:say).with(/Updating certificate file path to '\/fake-ca-cert'/)
             command.set_target 'https://fake-target:1234'
           end
         end
@@ -252,7 +252,7 @@ EOS
             command.add_option(:ca_cert, '/fake-ca-cert')
             command.set_target 'https://fake-target:1234'
 
-            expect(command).to_not receive(:say).with(/Updating certificate file path to `\/fake-ca-cert'/)
+            expect(command).to_not receive(:say).with(/Updating certificate file path to '\/fake-ca-cert'/)
             command.set_target 'https://fake-target:1234'
           end
         end

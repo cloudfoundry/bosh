@@ -21,14 +21,14 @@ module Bosh::Cli::Command
 
     context 'when using an old director that does not have a diffing endpoint' do
       before do
-        allow(director).to receive(:diff_deployment).with('test', manifest.yaml, nil).and_raise(Bosh::Cli::ResourceNotFound)
+        allow(director).to receive(:diff_deployment).with('test', manifest.yaml, false).and_raise(Bosh::Cli::ResourceNotFound)
         allow(director).to receive(:get_deployment).with('test').and_return({'manifest' => File.read(old_manifest)})
         allow(director).to receive(:list_releases).and_return([{'name' => 'simple', 'versions' => ['1', '2']}])
         allow(director).to receive(:list_stemcells).and_return([{'name' => 'ubuntu', 'version' => '1'}])
       end
 
       it 'uses the deprecated CLI differ' do
-        expect(director).to receive(:diff_deployment).with('test', manifest.yaml, nil).and_raise(Bosh::Cli::ResourceNotFound)
+        expect(director).to receive(:diff_deployment).with('test', manifest.yaml, false).and_raise(Bosh::Cli::ResourceNotFound)
         expect(director).to receive(:get_deployment).with('test').and_return({'manifest' => File.read(old_manifest)})
         output = ''
         allow(Bosh::Cli::Config).to receive_message_chain(:output, :print) do |e|
@@ -116,7 +116,7 @@ No changes
       end
 
       before do
-        allow(director).to receive(:diff_deployment).with('test', manifest.yaml, nil).and_return(diff_json)
+        allow(director).to receive(:diff_deployment).with('test', manifest.yaml, false).and_return(diff_json)
       end
 
       context 'when colorizing is turned on' do
@@ -185,6 +185,27 @@ Detecting deployment changes
 -   - name: a
            DIFF
           )
+        end
+      end
+
+      context 'when diffing incompatible manifests' do
+        let(:diff_json) do
+          {
+            'context' => {'cloud_config_id' => 47},
+            'diff' => [],
+            'error' => 'Unable to diff manifest: something went wrong'
+          }
+        end
+
+        it 'displays the error returned by the controller' do
+          output = ''
+          allow(Bosh::Cli::Config).to receive_message_chain(:output, :print) do |e|
+            output += e
+          end
+
+          deployment_diff.print(options)
+
+          expect(output).to include('Unable to diff manifest:')
         end
       end
 

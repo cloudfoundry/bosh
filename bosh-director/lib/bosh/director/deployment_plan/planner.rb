@@ -121,7 +121,8 @@ module Bosh::Director
         vm_deleter = VmDeleter.new(cloud, @logger)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
-        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
+        arp_flusher = ArpFlusher.new
+        vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
         dns_manager = DnsManagerProvider.create
         instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
         compilation_instance_pool = CompilationInstancePool.new(
@@ -136,7 +137,6 @@ module Bosh::Director
           compilation,
           compilation_instance_pool,
           @logger,
-          Config.event_log,
           nil
         )
         package_compile_step.perform
@@ -179,7 +179,7 @@ module Bosh::Director
       def add_release(release)
         if @releases.has_key?(release.name)
           raise DeploymentDuplicateReleaseName,
-            "Duplicate release name `#{release.name}'"
+            "Duplicate release name '#{release.name}'"
         end
         @releases[release.name] = release
       end

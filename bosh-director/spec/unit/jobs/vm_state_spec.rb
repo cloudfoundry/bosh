@@ -30,9 +30,9 @@ module Bosh::Director
       allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
     end
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :vms }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     let(:instance) { Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: 'fake-vm-cid') }
@@ -236,7 +236,7 @@ module Bosh::Director
 
           expect(@result_file).to receive(:write) do |agent_status|
             status = JSON.parse(agent_status)
-            expect(status['job_state']).to eq('missing vm')
+            expect(status['job_state']).to eq(nil)
           end
 
           expect(AgentClient).to_not receive(:with_vm_credentials_and_agent_id)
@@ -311,8 +311,8 @@ module Bosh::Director
 
       context 'when exclude filter is set and vms without cid exist' do
         before(:each) do
-          Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: 'fake-vm-cid')
-          Models::Instance.make(deployment: @deployment, agent_id: 'fake-agent-id', vm_cid: nil)
+          Models::Instance.make(deployment: @deployment, vm_cid: 'fake-vm-cid')
+          Models::Instance.make(deployment: @deployment, vm_cid: nil)
         end
 
         it 'excludes them' do

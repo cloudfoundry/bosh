@@ -5,24 +5,32 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-packages="python python-pyasn1"
+packages="python python-pyasn1 python-setuptools"
 pkg_mgr install $packages
 
-wala_release=2.0.14
-wala_expected_sha1=373f5decdf9281c90be650f32dd1f283a5f6b045
+wala_release=2.1.3
+wala_expected_sha1=e2c7576218a50b4fc1270a1a2e7f2343875c05cf
 
-curl -L https://raw.githubusercontent.com/Azure/WALinuxAgent/WALinuxAgent-${wala_release}/waagent > /tmp/waagent
-sha1=$(cat /tmp/waagent | openssl dgst -sha1  | awk 'BEGIN {FS="="}; {gsub(/ /,"",$2); print $2}')
+curl -L https://github.com/Azure/WALinuxAgent/archive/v${wala_release}.tar.gz > /tmp/wala.tar.gz
+sha1=$(cat /tmp/wala.tar.gz | openssl dgst -sha1  | awk 'BEGIN {FS="="}; {gsub(/ /,"",$2); print $2}')
 if [ "${sha1}" != "${wala_expected_sha1}" ]; then
-  echo "SHA1 of downloaded WALinuxAgent-${wala_release} ${sha1} does not match expected SHA1 ${wala_expected_sha1}."
-  rm -f /tmp/waagent
+  echo "SHA1 of downloaded v${wala_release}.tar.gz ${sha1} does not match expected SHA1 ${wala_expected_sha1}."
+  rm -f /tmp/wala.tar.gz
   exit 1
 fi
 
-mv -f /tmp/waagent $chroot/usr/sbin/waagent
+mv -f /tmp/wala.tar.gz $chroot/tmp/wala.tar.gz
 
 run_in_chroot $chroot "
+  cd /tmp/
+  tar zxvf wala.tar.gz
+  cd WALinuxAgent-${wala_release}
+  sudo python setup.py install --skip-data-files
+  cp bin/waagent /usr/sbin/waagent
   chmod 0755 /usr/sbin/waagent
+  cd /tmp/
+  sudo rm -fr WALinuxAgent-${wala_release}
+  rm wala.tar.gz
 "
 
 cp -f $dir/assets/etc/waagent.conf $chroot/etc/waagent.conf

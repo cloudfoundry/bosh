@@ -204,7 +204,7 @@ module Bosh::Cli
       }.flatten.uniq
     rescue
       err('Cannot load plugins, '.make_yellow +
-              "please run `gem update --system' to ".make_yellow +
+              "please run `gem update --system` to ".make_yellow +
               'update your RubyGems'.make_yellow)
     end
 

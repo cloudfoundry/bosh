@@ -39,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'templates' => [
             {'name' => 'mysql-template',
              'release' => 'fake-release',
-             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db', 'properties'=>['mysql']}},
+             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}},
              "properties" => {'mysql' => nil}
             }
           ],
@@ -153,7 +153,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
-        let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
+        let(:links) { {'db' => {"from" => 'db'}} }
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
@@ -166,6 +166,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                       "instances" => [
                           {"name" => "mysql",
                            "index" => 0,
+                           "bootstrap" => true,
                            "id" => instance1.uuid,
                            "az" => nil,
                            "address" => "127.0.0.3",
@@ -173,6 +174,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
                           {"name" => "mysql",
                            "index" => 1,
+                           "bootstrap" => false,
                            "id" => instance2.uuid,
                            "az" => nil, "address" => "127.0.0.4",
                            }
@@ -183,7 +185,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when job consumes link from another deployment' do
-      let(:links) { {'db' => {"from" => 'other-deployment.db', 'name'=> 'db', "type" => "db"}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
 
       context 'when another deployment has link source' do
         before do
@@ -214,6 +216,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'index' => 0,
+                      "bootstrap" => true,
                       'id' => instance1.uuid,
                       'az' => nil,
                       'address' => '127.0.0.4'
@@ -221,6 +224,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                     {
                       'name' => 'mysql',
                       'index' => 1,
+                      "bootstrap" => false,
                       'id' => instance2.uuid,
                       'az' => nil,
                       'address' => '127.0.0.5'
@@ -232,7 +236,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when another deployment does not have link source' do
-        let(:links) { {'db' => {"from" => 'non-existent.db', 'name'=> 'db', 'type' => 'db'}} }
+        let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existent'}} }
 
         it 'fails' do
           expect {
@@ -244,7 +248,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => {"from" => 'fake-deployment.db', 'name'=> 'db', 'type'=> 'other'}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'fake-deployment'}} }
 
       let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
       let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
@@ -262,7 +266,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       let (:links) { {'backup_db' => {"from" => 'db'}} }
 
       let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { [{'name'=> "db", 'type'=> "db"}] }
+      let(:provided_links) { [{name: "db", type: "db", properties: ['mysql']}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_job)
@@ -277,6 +281,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'index' => 0,
+                    "bootstrap" => true,
                     'id' => instance1.uuid,
                     'az' => nil,
                     'address' => '127.0.0.3',
@@ -284,6 +289,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'index' => 1,
+                    "bootstrap" => false,
                     'id' => instance2.uuid,
                     'az' => nil,
                     'address' => '127.0.0.4',
@@ -295,7 +301,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when link source is does not specify deployment name' do
-      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
+      let(:links) { {'db' => {"from" => 'db'}} }
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_job)
@@ -304,24 +310,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when links source is not provided' do
-      let(:links) { {'db' => {"from" => 'non-existant.db', 'name'=> 'db', 'type' => 'db'}} }
+      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existant'}} }
 
       it 'fails' do
         expect {
           links_resolver.resolve(api_server_job)
         }.to raise_error("Unable to process links for deployment. Errors are:
    - \"Can't find deployment non-existant\"")
-      end
-    end
-
-    context 'when link format is invalid' do
-      let(:links) { {'db' => {"from" => 'one.two.three', 'name'=> 'db', 'type' => 'db'}} }
-
-      it 'fails' do
-        expect {
-          links_resolver.resolve(api_server_job)
-        }.to raise_error("Unable to process links for deployment. Errors are:
-   - \"From string one.two.three is poorly formatted. It should look like 'link_name' or 'deployment_name.link_name'\"")
       end
     end
 
@@ -339,7 +334,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     context 'when link specified in manifest is not required' do
 
-      let(:links) { {'db' => {"from" => 'db', 'name'=> 'db', 'type' => 'db'}} }
+      let(:links) { {'db' => {"from" => 'db'}} }
 
       let(:consumes_links) { [] }
       let(:provided_links) { [{'name'=>'db', 'type'=>'db'}] }
@@ -362,7 +357,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         planner
       end
 
-      let(:links) { {'db' => {'from'=>'db',  'name'=> 'db','type' => 'db'}} }
+      let(:links) { {'db' => {'from'=>'db'}} }
 
       let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
 
@@ -492,6 +487,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'index' => 0,
+                    "bootstrap" => true,
                     'id' => instance1.uuid,
                     'az' => 'az1',
                     'address' => '127.0.0.3',
@@ -499,6 +495,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   {
                     'name' => 'mysql',
                     'index' => 1,
+                    "bootstrap" => false,
                     'id' => instance2.uuid,
                     'az' => 'az1',
                     'address' => '127.0.0.4',

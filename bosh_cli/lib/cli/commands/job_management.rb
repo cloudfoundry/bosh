@@ -82,7 +82,7 @@ module Bosh::Cli
         end
 
         if !hard_and_soft_options_allowed?(operation) && (hard? || soft?)
-          err("--hard and --soft options only make sense for `stop' operation")
+          err("--hard and --soft options only make sense for 'stop' operation")
         end
 
         manifest

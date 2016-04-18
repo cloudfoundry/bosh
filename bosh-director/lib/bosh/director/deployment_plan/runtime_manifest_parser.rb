@@ -21,7 +21,7 @@ module Bosh::Director
         if runtime_manifest['release']
           if runtime_manifest['releases']
             raise RuntimeAmbiguousReleaseSpec,
-                  "Runtime manifest contains both `release' and `releases' " +
+                  "Runtime manifest contains both 'release' and 'releases' " +
                       'sections, please use one of the two.'
           end
           @release_specs << runtime_manifest['release']
@@ -34,16 +34,16 @@ module Bosh::Director
         @release_specs.each do |release_spec|
           if release_spec['version'] == 'latest'
             raise RuntimeInvalidReleaseVersion,
-                  "Runtime manifest contains the release `#{release_spec['name']}' with version as `latest'. " +
+                  "Runtime manifest contains the release '#{release_spec['name']}' with version as 'latest'. " +
                       "Please specify the actual version string."
           end
 
           if @deployment
             deployment_release = @deployment.release(release_spec["name"])
             if deployment_release
-              if deployment_release.version != release_spec["version"]
-                raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release `#{release_spec["name"]}' with version as `#{release_spec["version"]}'. " +
-                      "This conflicts with version `#{deployment_release.version}' specified in the deployment manifest."
+              if deployment_release.version != release_spec["version"].to_s
+                raise RuntimeInvalidDeploymentRelease, "Runtime manifest specifies release '#{release_spec["name"]}' with version as '#{release_spec["version"]}'. " +
+                      "This conflicts with version '#{deployment_release.version}' specified in the deployment manifest."
               else
                 next
               end
@@ -67,7 +67,7 @@ module Bosh::Director
           addon_jobs.each do |job|
             if !@release_specs.find { |release_spec| release_spec['name'] == job['release'] }
               raise RuntimeReleaseNotListedInReleases,
-                    "Runtime manifest specifies job `#{job['name']}' which is defined in `#{job['release']}', but `#{job['release']}' is not listed in the releases section."
+                    "Runtime manifest specifies job '#{job['name']}' which is defined in '#{job['release']}', but '#{job['release']}' is not listed in the releases section."
             end
 
             if @deployment
@@ -89,24 +89,24 @@ module Bosh::Director
                 templates_from_model.each do |template_from_model|
                   if template_from_model.consumes != nil
                     template_from_model.consumes.each do |consumes|
-                      template.add_link_info(j.name, 'consumes', consumes["name"], consumes)
+                      template.add_link_from_release(j.name, 'consumes', consumes["name"], consumes)
                     end
                   end
                   if template_from_model.provides != nil
                     template_from_model.provides.each do |provides|
-                      template.add_link_info(j.name, 'provides', provides["name"], provides)
+                      template.add_link_from_release(j.name, 'provides', provides["name"], provides)
                     end
                   end
                 end
 
                 provides_links = safe_property(job, 'provides', class: Hash, optional: true)
                 provides_links.to_a.each do |link_name, source|
-                  template.add_link_info(j.name, "provides", link_name, source)
+                  template.add_link_from_manifest(j.name, "provides", link_name, source)
                 end
 
                 consumes_links = safe_property(job, 'consumes', class: Hash, optional: true)
                 consumes_links.to_a.each do |link_name, source|
-                  template.add_link_info(j.name, 'consumes', link_name, source)
+                  template.add_link_from_manifest(j.name, 'consumes', link_name, source)
                 end
               end
 

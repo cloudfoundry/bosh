@@ -7,10 +7,11 @@ module Bosh::Director
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      vm_deleter = VmDeleter.new(cloud, logger)
+      vm_deleter = VmDeleter.new(cloud, logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
       disk_manager = DiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
-      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer)
+      arp_flusher = ArpFlusher.new
+      vm_creator = VmCreator.new(cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       dns_manager = DnsManagerProvider.create
       new(
@@ -41,6 +42,8 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
+      action, context = get_action_and_context(instance_plan)
+      parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
       InstanceUpdater::InstanceState.with_instance_update(instance.model) do
@@ -72,10 +75,17 @@ module Bosh::Director
 
         recreated = false
         if needs_recreate?(instance_plan)
-          @logger.debug('Failed to update in place. Recreating VM')
-          @disk_manager.unmount_disk_for(instance_plan)
-          @vm_recreator.recreate_vm(instance_plan, nil)
-          recreated = true
+          begin
+            recreate_parent_id = add_event(instance.deployment_model.name, 'recreate', instance.model.name, nil) if action == 'update'
+            @logger.debug('Failed to update in place. Recreating VM')
+            @disk_manager.unmount_disk_for(instance_plan)
+            @vm_recreator.recreate_vm(instance_plan, nil)
+            recreated = true
+          rescue Exception => e
+            raise e
+          ensure
+            add_event(instance.deployment_model.name, 'recreate', instance.model.name, nil, recreate_parent_id, e) if recreate_parent_id
+          end
         end
 
         release_obsolete_ips(instance_plan)
@@ -100,9 +110,55 @@ module Bosh::Director
         )
         state_applier.apply(instance_plan.desired_instance.job.update)
       end
+    rescue Exception => e
+      raise e
+    ensure
+      add_event(instance.deployment_model.name, action, instance.model.name, nil, parent_id, e) if parent_id
     end
 
     private
+
+    def add_event(deployment_name, action, instance_name = nil, context = nil, parent_id = nil, error = nil)
+      event  = Config.current_job.event_manager.create_event(
+          {
+              parent_id:   parent_id,
+              user:        Config.current_job.username,
+              action:      action,
+              object_type: 'instance',
+              object_name: instance_name,
+              task:        Config.current_job.task_id,
+              deployment:  deployment_name,
+              instance:    instance_name,
+              error:       error,
+              context:     context ? context: {}
+          })
+      event.id
+    end
+
+    def get_action_and_context(instance_plan)
+      changes = instance_plan.changes
+      if changes.size == 1 && [:state,:recreate,:restart].include?(changes.first)
+        action = case instance_plan.instance.virtual_state
+          when 'started'
+            'start'
+          when 'stopped'
+            'stop'
+          when 'detached'
+            'stop'
+          else
+            instance_plan.instance.virtual_state
+        end
+       return action , {}
+      else
+        if instance_plan.new?
+          return 'create', {}
+        else
+          context = {changes: changes.to_a}
+          context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
+          return 'update', context
+        end
+      end
+    end
 
     def release_obsolete_ips(instance_plan)
       instance_plan.network_plans

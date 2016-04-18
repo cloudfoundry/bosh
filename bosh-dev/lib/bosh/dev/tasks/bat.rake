@@ -3,7 +3,15 @@ require 'rspec/core/rake_task'
 
 task :bat do
   bat_test = ENV.fetch('BAT_TEST', 'spec')
-  Dir.chdir('bat') { exec('rspec', bat_test) }
+  unsupported_bats = ENV.fetch('SUPPORTED_BATS', '').split(',')
+
+  tags = []
+  unsupported_bats.each do |t|
+    tags << '--tag'
+    tags << "~#{t}"
+  end
+
+  Dir.chdir('bat') { exec('rspec', *tags,   bat_test) }
 end
 
 namespace :bat do

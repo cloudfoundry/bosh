@@ -4,7 +4,7 @@ module Bosh::Director
   describe Api::SnapshotManager do
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:username) { 'username-1' }
-    let(:time) { Time.now.to_s }
+    let(:time) { Time.now.utc.to_s }
 
     let(:deployment) { Models::Deployment.make(name: 'deployment') }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
@@ -40,7 +40,7 @@ module Bosh::Director
     describe '#create_deployment_snapshot_task' do
       it 'enqueues a SnapshotDeployment job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment.name
+          username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options], deployment
         ).and_return(task)
 
         expect(subject.create_deployment_snapshot_task(username, deployment, options)).to eq(task)
@@ -62,7 +62,7 @@ module Bosh::Director
     describe '#delete_deployment_snapshots_task' do
       it 'enqueues a DeleteDeploymentSnapshots job' do
         expect(job_queue).to receive(:enqueue).with(
-          username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name], deployment.name
+          username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name], deployment
         ).and_return(task)
 
         expect(subject.delete_deployment_snapshots_task(username, deployment)).to eq(task)

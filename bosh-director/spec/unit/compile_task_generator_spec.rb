@@ -189,12 +189,12 @@ module Bosh::Director
       describe 'logging' do
         it 'logs at each step of dependency resolution' do
           allow(logger).to receive(:info)
-          expect(logger).to receive(:info).with("Checking whether package `#{package_a.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'").ordered
-          expect(logger).to receive(:info).with("Processing package `#{package_a.desc}' dependencies").ordered
-          expect(logger).to receive(:info).with("Package `#{package_a.desc}' depends on package `#{package_b.desc}'").ordered
+          expect(logger).to receive(:info).with("Checking whether package '#{package_a.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'").ordered
+          expect(logger).to receive(:info).with("Processing package '#{package_a.desc}' dependencies").ordered
+          expect(logger).to receive(:info).with("Package '#{package_a.desc}' depends on package '#{package_b.desc}'").ordered
 
-          expect(logger).to receive(:info).with("Checking whether package `#{package_b.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'").ordered
-          expect(logger).to receive(:info).with("Processing package `#{package_b.desc}' dependencies").ordered
+          expect(logger).to receive(:info).with("Checking whether package '#{package_b.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'").ordered
+          expect(logger).to receive(:info).with("Processing package '#{package_b.desc}' dependencies").ordered
 
           generator.generate!(compile_tasks, job, template, package_a, stemcell)
         end

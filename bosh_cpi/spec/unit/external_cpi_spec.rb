@@ -91,7 +91,7 @@ describe Bosh::Clouds::ExternalCpi do
           call_cpi_method
         }.to raise_error(
           Bosh::Clouds::ExternalCpi::NonExecutable,
-          "Failed to run cpi: `/path/to/fake-cpi/bin/cpi' is not executable",
+          "Failed to run cpi: '/path/to/fake-cpi/bin/cpi' is not executable",
         )
       end
     end

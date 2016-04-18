@@ -3,13 +3,12 @@ module Bosh::Director
 
     attr_accessor :packages
 
-    def initialize(job_meta, release_model, release_dir, packages, logger)
+    def initialize(job_meta, release_model, release_dir, logger)
       @name = job_meta['name']
       @version = job_meta['version']
       @sha1 = job_meta['sha1']
       @fingerprint = job_meta['fingerprint']
 
-      @packages = packages
       @release_model = release_model
       @release_dir = release_dir
       @logger = logger
@@ -59,12 +58,12 @@ module Bosh::Director
     def unpack
       FileUtils.mkdir_p(job_dir)
 
-      desc = "job `#{@name}/#{@version}'"
+      desc = "job '#{@name}/#{@version}'"
       result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
       if result.failed?
         @logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
-            "tar returned #{result.exit_status}, " +
-            "output: #{result.output}")
+          "tar returned #{result.exit_status}, " +
+          "output: #{result.output}")
         raise JobInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
       end
     end
@@ -81,7 +80,7 @@ module Bosh::Director
       manifest_file = File.join(job_dir, 'job.MF')
       unless File.file?(manifest_file)
         raise JobMissingManifest,
-          "Missing job manifest for `#{@name}'"
+          "Missing job manifest for '#{@name}'"
       end
 
       Psych.load_file(manifest_file)
@@ -93,7 +92,7 @@ module Bosh::Director
           path = File.join(job_dir, 'templates', relative_path)
           unless File.file?(path)
             raise JobMissingTemplateFile,
-              "Missing template file `#{relative_path}' for job `#{@name}'"
+              "Missing template file '#{relative_path}' for job '#{@name}'"
           end
         end
       end
@@ -104,36 +103,22 @@ module Bosh::Director
       aux_monit_files = Dir.glob(File.join(job_dir, '*.monit'))
 
       unless File.exists?(main_monit_file) || aux_monit_files.size > 0
-        raise JobMissingMonit, "Job `#{@name}' is missing monit file"
+        raise JobMissingMonit, "Job '#{@name}' is missing monit file"
       end
     end
 
     def parse_package_names(job_manifest)
-      package_names = []
-      if job_manifest['packages']
-        unless job_manifest['packages'].is_a?(Array)
-          raise JobInvalidPackageSpec,
-            "Job `#{@name}' has invalid package spec format"
-        end
-
-        job_manifest['packages'].each do |package_name|
-          package = @packages[package_name]
-          if package.nil?
-            raise JobMissingPackage,
-              "Job `#{@name}' is referencing " +
-                "a missing package `#{package_name}'"
-          end
-          package_names << package.name
-        end
+      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
+        raise JobInvalidPackageSpec, "Job '#{@name}' has invalid package spec format"
       end
-      package_names
+      job_manifest['packages'] || []
     end
 
     def validate_logs(job_manifest)
       if job_manifest['logs']
         unless job_manifest['logs'].is_a?(Hash)
           raise JobInvalidLogSpec,
-            "Job `#{@name}' has invalid logs spec format"
+            "Job '#{@name}' has invalid logs spec format"
         end
       end
     end
@@ -142,7 +127,7 @@ module Bosh::Director
       if job_manifest['properties']
         unless job_manifest['properties'].is_a?(Hash)
           raise JobInvalidPropertySpec,
-            "Job `#{@name}' has invalid properties spec format"
+            "Job '#{@name}' has invalid properties spec format"
         end
       end
     end
@@ -155,7 +140,7 @@ module Bosh::Director
     def parse_links(links, kind)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-              "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
+          "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}

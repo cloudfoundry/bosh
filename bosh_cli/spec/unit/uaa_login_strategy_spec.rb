@@ -47,7 +47,7 @@ describe Bosh::Cli::UaaLoginStrategy do
         it "says you're logged in" do
           login_strategy.login(target)
 
-          expect(terminal).to have_received(:say_green).with("Logged in as `user'")
+          expect(terminal).to have_received(:say_green).with("Logged in as 'user'")
         end
       end
 

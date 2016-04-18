@@ -27,7 +27,8 @@ module Bosh::Director
     end
 
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer) }
+    let(:arp_flusher) { ArpFlusher.new }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }
     let(:disk_manager) {DiskManager.new(cloud, logger)}
     let(:compilation_config) do
@@ -80,7 +81,9 @@ module Bosh::Director
         }
       }
     end
-
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task_id) {42}
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
     before do
       allow(cloud).to receive(:create_vm)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
@@ -98,6 +101,7 @@ module Bosh::Director
       allow(ThreadPool).to receive_messages(new: thread_pool)
       allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
+      allow(Config).to receive(:current_job).and_return(update_job)
     end
     let(:availability_zone) { nil }
 
@@ -143,6 +147,33 @@ module Bosh::Director
         expect(compilation_instance.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 
+      it 'should record creation event' do
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1')
+        expect {
+          action
+        }.to change {
+          Bosh::Director::Models::Event.count }.from(0).to(4)
+
+        event_1 = Bosh::Director::Models::Event.first
+        expect(event_1.user).to eq('user')
+        expect(event_1.action).to eq('create')
+        expect(event_1.object_type).to eq('instance')
+        expect(event_1.object_name).to eq('compilation-deadbeef/instance-uuid-1')
+        expect(event_1.task).to eq("#{task_id}")
+        expect(event_1.deployment).to eq('mycloud')
+        expect(event_1.instance).to eq('compilation-deadbeef/instance-uuid-1')
+
+        event_2 = Bosh::Director::Models::Event.order(:id).last
+        expect(event_2.parent_id).to eq(1)
+        expect(event_2.user).to eq('user')
+        expect(event_2.action).to eq('create')
+        expect(event_2.object_type).to eq('instance')
+        expect(event_2.object_name).to eq('compilation-deadbeef/instance-uuid-1')
+        expect(event_2.task).to eq("#{task_id}")
+        expect(event_2.deployment).to eq('mycloud')
+        expect(event_2.instance).to eq('compilation-deadbeef/instance-uuid-1')
+      end
+
       context 'when instance creation fails' do
         context 'when keep_unreachable_vms is set' do
           before { Config.keep_unreachable_vms = true }
@@ -157,6 +188,14 @@ module Bosh::Director
           it 'deletes the instance' do
             expect { action_that_raises }.to raise_error(create_instance_error)
             expect(instance_deleter).to have_received(:delete_instance_plan)
+          end
+
+          it 'should record creation event with error' do
+            expect {
+              action_that_raises
+            }.to raise_error (RuntimeError)
+            event_2 = Bosh::Director::Models::Event.order(:id).last
+            expect(event_2.error).to eq("failed to create instance")
           end
         end
       end
@@ -341,4 +380,3 @@ module Bosh::Director
     end
   end
 end
-

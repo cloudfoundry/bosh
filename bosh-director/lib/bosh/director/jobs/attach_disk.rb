@@ -8,8 +8,8 @@ module Bosh::Director
         :attach_disk
       end
 
-      def self.enqueue(username, deployment_name, job_name, instance_id, disk_cid, job_queue)
-        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment_name, job_name, instance_id, disk_cid], deployment_name)
+      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, job_queue)
+        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid], deployment)
       end
 
       def initialize(deployment_name, job_name, instance_id, disk_cid)

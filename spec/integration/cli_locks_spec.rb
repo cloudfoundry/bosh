@@ -14,12 +14,4 @@ describe 'cli: locks', type: :integration do
       end
     end
   end
-
-  context 'when nothing is in progress' do
-    it 'returns no locks' do
-      target_and_login
-      expect { bosh_runner.run('locks') }
-        .to raise_error(RuntimeError, /No locks/)
-    end
-  end
 end

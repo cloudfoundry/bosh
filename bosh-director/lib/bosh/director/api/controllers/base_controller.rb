@@ -20,9 +20,13 @@ module Bosh::Director
           @task_manager = TaskManager.new
           @dns_manager = DnsManagerProvider.create
           @disk_manager = DiskManager.new(nil, @logger)
+          @event_manager = EventManager.new(config.record_events)
         end
 
-        register Bosh::Director::Api::Extensions::Scoping
+        register(Bosh::Director::Api::Extensions::SyslogRequestLogger)
+        log_request_to_syslog
+
+        register(Bosh::Director::Api::Extensions::Scoping)
 
         mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'

@@ -33,7 +33,7 @@ module Bosh::Director::Core::Templates
           expect(logger).to receive(:debug).with("#<NoMethodError: #{original_error}>")
           expect(logger).to receive(:debug) do |message|
             expect(message).to include(expected_message)
-            expect(message).to include("fake-job-template-name/source-name.erb:1:in `get_binding'")
+            expect(message).to include("fake-job-template-name/source-name.erb:1:in 'get_binding'")
           end
 
           expect {

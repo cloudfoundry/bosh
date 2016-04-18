@@ -2,55 +2,28 @@
 
 Tools for creating stemcells
 
-## Bringing up stemcell building VM
+## Choosing execution environment
 
-### Once-off manual steps:
+Stemcells can be built using either a local Docker container or a Vagrant VM on AWS.
 
-Note: Use US East (Northern Virginia) region when using AWS in following steps. AMI (Amazon Machine Image) to be used for the stemcell building VM is in the US East (Northern Virginia) region.
+To run a given command in Docker:
 
-0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
-0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
-0. Install the vagrant plugins we use:
+    # run this command from the root of the bosh project
+    docker run -it -v $PWD:/bosh -w /bosh -u ubuntu --privileged bosh/os-image-stemcell-builder
 
-        vagrant plugin install vagrant-aws
+    # from within docker container
+    bundle install --local
+    <STEMCELL_COMMAND>
 
-### Bring up the vagrant stemcell building VM
+To run a command in Vagrant:
 
-From a fresh copy of the bosh repo:
+    vagrant ssh -c '
+      cd /bosh
+      bundle install --local
+      <STEMCELL_COMMAND>
+    ' remote
 
-    git submodule update --init --recursive
-
-If you use AWS VPC environment, run:
-
-    export BOSH_VAGRANT_KEY_PATH=PATH-TO-YOUR-SSH-KEY
-    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
-    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
-    export BOSH_AWS_SECURITY_GROUP=YOUR-AWS-SECURITY-GROUP-ID
-    export BOSH_AWS_SUBNET_ID=YOUR-AWS-SUBNET-ID
-    cd bosh-stemcell
-    vagrant up remote --provider=aws
-
-(Note: BOSH\_AWS\_SECURITY\_GROUP should be security group id (e.g. "sg-b799b9dc"), instead of name "bosh-stemcell")
-
-## Updating source code on stemcell building VM
-
-With existing stemcell building VM run:
-
-    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
-    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
-    cd bosh-stemcell
-    vagrant provision remote
-
-## Configure your local ssh and scp to communicate with the stemcell building VM
-
-Once the stemcell-building machine is up, run:
-
-    vagrant ssh-config remote
-
-Then copy the resulting output into your `~/.ssh/config` file.
-
-Once this has been done, you can ssh into the stemcell building machine with `ssh remote`
-and you can copy files to and from it using `scp localfile remote:/path/to/destination`
+Jump to [Vagrant Setup](#vagrant-setup) for instructions on configuring the Vagrant box.
 
 ## Build an OS image
 
@@ -58,10 +31,7 @@ An OS image is a tarball that contains a snapshot of an entire OS filesystem tha
 
 If you have changes that will require new OS image you need to build one. A stemcell with a custom OS image can be built using the stemcell-building VM described above.
 
-    vagrant ssh -c '
-      cd /bosh
-      bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
-    ' remote
+    bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz]
 
 The arguments to `stemcell:build_os_image` are:
 
@@ -87,8 +57,7 @@ There are a few extra steps you need to do before building a RHEL OS image:
 
 5. On the stemcell building machine, run the stemcell building rake task:
 
-        $ cd /bosh
-        $ bundle exec rake stemcell:build_os_image[rhel,7,/tmp/rhel_7_base_image.tgz]
+        $ bundle exec rake stemcell:build_os_image[rhel,7,$PWD/tmp/rhel_7_base_image.tgz]
 
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
@@ -105,8 +74,7 @@ There are a few extra steps you need to do before building a PhotonOS image:
 
 4. On the stemcell building machine, run the stemcell building rake task:
 
-        $ cd /bosh
-        $ bundle exec rake stemcell:build_os_image[photonos,TP2,/tmp/photon_TP2_base_image.tgz]
+        $ bundle exec rake stemcell:build_os_image[photonos,TP2,$PWD/tmp/photon_TP2_base_image.tgz]
 
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
@@ -116,18 +84,12 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh.io/stemcells](https://bosh.io/stemcells). Note that the last two arguments to the rake command are the S3 bucket and key of the OS image to use (i.e. in the example below, the .tgz will be downloaded from [http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz](http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz)). More info at OS\_IMAGES.
 
-    vagrant ssh -c '
-      cd /bosh
-      CANDIDATE_BUILD_NUMBER=<current_build> bundle exec rake stemcell:build[vsphere,esxi,centos,7,go,bosh-os-images,bosh-centos-7-os-image.tgz]
-    ' remote
-
+    CANDIDATE_BUILD_NUMBER=<current_build> bundle exec rake \
+      stemcell:build[vsphere,esxi,centos,7,go,bosh-os-images,bosh-centos-7-os-image.tgz]
 
 ### Building the stemcell with local OS image
 
-    vagrant ssh -c '
-      cd /bosh
-      bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,/tmp/ubuntu_base_image.tgz]
-    ' remote
+    bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,$PWD/tmp/ubuntu_base_image.tgz]
 
 
 Public OS images can be obtained here:
@@ -137,14 +99,13 @@ Public OS images can be obtained here:
 
 ### Building light stemcell
 
+**Warning:** You must use Vagrant on AWS to build light stemcells.
+
 AWS stemcells can be shipped in light format which includes a reference to a public AMI. This speeds up the process of uploading the stemcell to AWS. To build a light stemcell:
 
-    vagrant ssh -c '
-      cd /bosh
-      export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
-      export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
-      bundle exec rake stemcell:build_light[/tmp/bosh-stemcell.tgz,hvm]
-    ' remote
+    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
+    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
+    bundle exec rake stemcell:build_light[$PWD/tmp/bosh-stemcell.tgz,hvm]
 
 To build for specific region specify `BOSH_AWS_REGION` environment variable.
 
@@ -167,5 +128,56 @@ If you find yourself debugging any of the above processes, here is what you need
    For example:
 
    ```
-   bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_config
+   bundle exec rake stemcell:build_os_image[ubuntu,trusty,$PWD/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_config
    ```
+
+## <a name="vagrant-setup"></a>Vagrant Setup
+
+**Warning:** You cannot building a stemcell using Vagrant on Virtualbox.
+
+### Bring up the vagrant stemcell building VM
+
+Note: Use US East (Northern Virginia) region when using AWS in following steps. AMI (Amazon Machine Image) to be used for the stemcell building VM is in the US East (Northern Virginia) region.
+
+0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
+0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
+0. Install the vagrant plugins we use:
+
+        vagrant plugin install vagrant-aws
+
+
+From a fresh copy of the bosh repo:
+
+    git submodule update --init --recursive
+
+If you use AWS VPC environment, run:
+
+    export BOSH_VAGRANT_KEY_PATH=PATH-TO-YOUR-SSH-KEY
+    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
+    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
+    export BOSH_AWS_SECURITY_GROUP=YOUR-AWS-SECURITY-GROUP-ID
+    export BOSH_AWS_SUBNET_ID=YOUR-AWS-SUBNET-ID
+    cd bosh-stemcell
+    vagrant up remote --provider=aws
+
+(Note: BOSH\_AWS\_SECURITY\_GROUP should be security group id (e.g. "sg-b799b9dc"), instead of name "bosh-stemcell")
+
+### Updating source code on stemcell building VM
+
+With existing stemcell building VM run:
+
+    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
+    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
+    cd bosh-stemcell
+    vagrant provision remote
+
+### Configure your local ssh and scp to communicate with the stemcell building VM
+
+Once the stemcell-building machine is up, run:
+
+    vagrant ssh-config remote
+
+Then copy the resulting output into your `~/.ssh/config` file.
+
+Once this has been done, you can ssh into the stemcell building machine with `ssh remote`
+and you can copy files to and from it using `scp localfile remote:/path/to/destination`

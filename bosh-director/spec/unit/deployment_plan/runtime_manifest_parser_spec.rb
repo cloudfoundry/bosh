@@ -17,7 +17,7 @@ module Bosh::Director
           expect {subject.parse(runtime_manifest)}.to raise_error(Bosh::Director::RuntimeAmbiguousReleaseSpec)
         end
 
-        it "raises RuntimeInvalidReleaseVersion if a release uses version `latest'" do
+        it "raises RuntimeInvalidReleaseVersion if a release uses version 'latest'" do
           runtime_manifest['releases'][0]['version'] = 'latest'
           expect {subject.parse(runtime_manifest)}.to raise_error(Bosh::Director::RuntimeInvalidReleaseVersion)
         end

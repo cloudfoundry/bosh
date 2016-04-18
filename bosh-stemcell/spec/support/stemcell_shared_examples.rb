@@ -63,6 +63,12 @@ shared_examples_for 'All Stemcells' do
   context 'all system command files must be owned by root (stig: V-38472)' do
     describe command('find -L /bin /usr/bin /usr/local/bin /sbin /usr/sbin /usr/local/sbin ! -user root') do
       its (:stdout) { should eq('') }
-      end
+    end
+  end
+
+  context 'There must be no .netrc files on the system (stig: V-38619)' do
+    describe command('sudo find /root /home /var/vcap -xdev -name .netrc') do
+      its (:stdout) { should eq('') }
+    end
   end
 end

@@ -10,7 +10,7 @@ module Bosh::Stemcell
       it 'errors if path does not exist' do
         expect {
           described_class.new('/not/found/stemcell.tgz')
-        }.to raise_error("Cannot find file `/not/found/stemcell.tgz'")
+        }.to raise_error("Cannot find file '/not/found/stemcell.tgz'")
       end
     end
 

@@ -29,7 +29,7 @@ module Bosh::Director
     end
 
     def short_description(job_name)
-      title_prefix = "Errand `#{job_name}'"
+      title_prefix = "Errand '#{job_name}'"
       exit_code_suffix = "(exit code #{@exit_code})"
 
       if @exit_code == 0

@@ -2,7 +2,6 @@ module Bosh::Dev::Sandbox
   class DirectorConfig
     attr_reader :director_ruby_port,
       :nats_port,
-      :redis_port,
       :sandbox_root,
       :blobstore_storage_dir,
       :external_cpi_enabled,
@@ -21,7 +20,6 @@ module Bosh::Dev::Sandbox
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
       @nats_port = port_provider.get_port(:nats)
-      @redis_port = port_provider.get_port(:redis)
 
       @sandbox_root = attrs.fetch(:sandbox_root)
 

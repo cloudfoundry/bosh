@@ -131,7 +131,7 @@ module Bosh::Director
     describe '#delete_release' do
       let(:release) { double('Release', name: 'FAKE RELEASE') }
 
-      it 'enqueues a resque job' do
+      it 'enqueues a DJ job' do
         expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options]).and_return(task)
 

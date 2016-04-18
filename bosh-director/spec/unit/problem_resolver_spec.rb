@@ -2,12 +2,16 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemResolver do
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
+    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
+
     before(:each) do
       @deployment = Models::Deployment.make(name: 'mycloud')
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
       @cloud = instance_double('Bosh::Cloud')
       allow(Config).to receive(:cloud).and_return(@cloud)
+      allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
     end
 
     def make_resolver(deployment)
@@ -91,12 +95,12 @@ module Bosh::Director
 
           expect(resolver).to receive(:track_and_log)
                                   .and_raise(Bosh::Director::ProblemHandlerError.new('Resolution failed'))
-          expect(logger).to receive(:error).with("Error resolving problem `1': Resolution failed")
+          expect(logger).to receive(:error).with("Error resolving problem '1': Resolution failed")
           expect(logger).to receive(:error).with(backtrace)
 
           count, error_message = resolver.apply_resolutions({ problem.id.to_s => 'ignore' })
 
-          expect(error_message).to eq("Error resolving problem `1': Resolution failed")
+          expect(error_message).to eq("Error resolving problem '1': Resolution failed")
           expect(count).to eq(1)
         end
       end
@@ -110,12 +114,12 @@ module Bosh::Director
 
           expect(ProblemHandlers::Base).to receive(:create_from_model)
                                                .and_raise(StandardError.new('Model creation failed'))
-          expect(logger).to receive(:error).with("Error resolving problem `1': Model creation failed")
+          expect(logger).to receive(:error).with("Error resolving problem '1': Model creation failed")
           expect(logger).to receive(:error).with(backtrace)
 
           count, error_message = resolver.apply_resolutions({ problem.id.to_s => 'ignore' })
 
-          expect(error_message).to eq("Error resolving problem `1': Model creation failed")
+          expect(error_message).to eq("Error resolving problem '1': Model creation failed")
           expect(count).to eq(0)
         end
       end

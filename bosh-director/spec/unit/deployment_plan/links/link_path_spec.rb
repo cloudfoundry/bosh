@@ -72,7 +72,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'given a deployment name and a link name' do
-    let(:path) { {"from" => 'deployment_name.link_name'} }
+    let(:path) { {"from" => 'link_name', "deployment" => "deployment_name"} }
     it 'gets full link path' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('deployment_name')
@@ -82,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     end
 
     context 'when the link is optional and path is provided' do
-      let(:path) { {"from" => 'deployment_name.link_name', "optional" => true} }
+      let(:path) { {"from" => 'link_name', "deployment" => "deployment_name", "optional" => true} }
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('deployment_name')
@@ -94,7 +94,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'given a previous deployment name and a link name' do
-    let(:path) {{'from' => 'previous_deployment.link_name'}}
+    let(:path) {{'from' => 'link_name', "deployment"=>"previous_deployment"}}
     it 'gets full link path' do
       link_path.parse(path)
       expect(link_path.deployment).to eq('previous_deployment')
@@ -104,7 +104,7 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     end
 
     context 'when the link is optional and path is provided' do
-      let(:path) {{'from' => 'previous_deployment.link_name', "optional" => true}}
+      let(:path) {{'from' => 'link_name', "deployment" => "previous_deployment", "optional" => true}}
       it 'also gets full link path' do
         link_path.parse(path)
         expect(link_path.deployment).to eq('previous_deployment')
@@ -138,10 +138,25 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
     end
   end
 
+  context 'when consumes block does not have from key, and a manual configuration for link' do
+
+    context 'the configuration is valid' do
+      let(:link_info) { {"name" => "link_name", "properties"=>"yay", "instances"=>"yay" }}
+      it 'should not parse the link and set the manual_config property' do
+        link_path.parse(link_info)
+        expect(link_path.deployment).to be_nil
+        expect(link_path.job).to be_nil
+        expect(link_path.template).to be_nil
+        expect(link_path.name).to be_nil
+        expect(link_path.manual_spec).to eq({"properties"=>"yay", "instances"=>"yay"})
+      end
+    end
+  end
+
   context 'when consumes block does not have from key, and an invalid link type' do
     let(:path) { {"name" => "link_name", "type" => "invalid_type"} }
     it 'should throw an error' do
-      expect{link_path.parse(path)}.to raise_error("Can't find link with type: 'invalid_type' in deployment 'deployment_name'")
+      expect{link_path.parse(path)}.to raise_error("Can't find link with type 'invalid_type' for job 'consumer_job' in deployment 'deployment_name'")
     end
 
     context 'when the link is optional' do
@@ -153,13 +168,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'given a deployment that does not provide the correct link' do
-    let(:path) { {"from" => 'deployment_name.unprovided_link_name'} }
+    let(:path) { {"from" => 'unprovided_link_name', "deployment" => "deployment_name"} }
     it 'should raise an exception' do
       expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
     end
 
     context "when link is optional and the 'from' is explicitly set" do
-      let(:path) { {"from" => 'deployment_name.unprovided_link_name', "optional" => true} }
+      let(:path) { {"from" => 'unprovided_link_name', "deployment" => "deployment_name", "optional" => true} }
       it 'should throw an error' do
         expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'.")
       end
@@ -167,13 +182,13 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'given a different deployment that does not provide the correct link' do
-    let(:path) { {"from" => 'previous_deployment.unprovided_link_name'} }
+    let(:path) { {"from" => 'unprovided_link_name', "deployment" => "previous_deployment"} }
     it 'should raise an exception' do
       expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
     end
 
     context "when link is optional and 'from' is explicitly set" do
-      let(:path) { {"from" => 'previous_deployment.unprovided_link_name', "optional" => true} }
+      let(:path) { {"from" => 'unprovided_link_name', "deployment" => "previous_deployment", "optional" => true} }
       it 'should not throw an error' do
         expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_job' on job 'consumer_job_template' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
       end
@@ -196,12 +211,12 @@ describe Bosh::Director::DeploymentPlan::LinkPath do
   end
 
   context 'given no matching deployment' do
-    let(:path) { {"from" => 'non_deployment.link_name'} }
+    let(:path) { {"from" => 'link_name', "deployment" => "non_deployment"} }
     it 'should raise an exception' do
       expect{link_path.parse(path)}.to raise_error("Can't find deployment non_deployment")
     end
     context 'when link is optional' do
-      let(:path) { {"from" => 'non_deployment.link_name', "optional" => true} }
+      let(:path) { {"from" => 'link_name', "deployment" => "non_deployment", "optional" => true} }
       it 'should still throw an error because the user intent has not been met' do
         expect{link_path.parse(path)}.to raise_error("Can't find deployment non_deployment")
       end

@@ -115,11 +115,11 @@ module Bosh
 
               if template.link_infos.has_key?(current_job.name) && template.link_infos[current_job.name].has_key?('provides')
                 template.link_infos[current_job.name]['provides'].each do |link_name, provided_link|
-                  if provided_link['properties']
+                  if provided_link['link_properties_exported']
                     ## Get default values for this job
                     default_properties = get_default_properties(deployment, template)
 
-                    provided_link['mapped_properties'] = process_link_properties(scoped_properties, default_properties, provided_link['properties'], errors)
+                    provided_link['mapped_properties'] = process_link_properties(scoped_properties, default_properties, provided_link['link_properties_exported'], errors)
                   end
                 end
               end
@@ -168,52 +168,50 @@ module Bosh
 
         def process_link_properties(scoped_properties, default_properties, link_property_list, errors)
           mapped_properties = {}
-
-          link_property_list.each do |link_property| #list of properties
-            previous_property_in_loop = {}
-            current_property_in_loop = scoped_properties
-            mapped_properties_in_loop = mapped_properties
-
-            use_defaults = false
-            property_path = link_property.split(".")
-            property_path.each do |key|
-              if !current_property_in_loop || !current_property_in_loop.has_key?(key)
-                use_defaults = true
-              else
-                current_property_in_loop = current_property_in_loop[key]
-              end
-
-              if !mapped_properties_in_loop.has_key?(key)
-                mapped_properties_in_loop[key] = {}
-              end
-              previous_property_in_loop = mapped_properties_in_loop
-              mapped_properties_in_loop = mapped_properties_in_loop[key]
-            end
-
-            if use_defaults
-              if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
-                if default_properties['properties'][link_property].has_key?('default')
-                  previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
+            link_property_list.each do |link_property|
+              property_path = link_property.split(".")
+              result = find_property(property_path, scoped_properties)
+              if !result['found']
+                if default_properties.has_key?('properties') && default_properties['properties'].has_key?(link_property)
+                  if default_properties['properties'][link_property].has_key?('default')
+                    mapped_properties = update_mapped_properties(mapped_properties, property_path, default_properties['properties'][link_property]['default'])
+                  else
+                    mapped_properties = update_mapped_properties(mapped_properties, property_path, nil)
+                  end
                 else
-                  e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} has no default value or value supplied by the deployment manifest")
+                  e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
                   errors.push(e)
                 end
               else
-                e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
-                errors.push(e)
+                mapped_properties = update_mapped_properties(mapped_properties, property_path, result['value'])
               end
-            else
-              previous_property_in_loop[property_path.last()] = current_property_in_loop
             end
+          return mapped_properties
+        end
 
-            # if use_defaults && !default_properties.has_key?("properties") && !default_properties['properties'][link_property].has_key?('default')
-            #   e = Exception.new("Property #{link_property} in template #{default_properties['template_name']} has no default value or value supplied by the deployment manifest")
-            #   errors.push(e)
-            # elsif use_defaults
-            #   previous_property_in_loop[property_path.last()] = default_properties['properties'][link_property]['default']
-            # else
-            #   previous_property_in_loop[property_path.last()] = current_property_in_loop
-            # end
+        def find_property(property_path, scoped_properties)
+          current_node = scoped_properties
+          property_path.each do |key|
+            if !current_node || !current_node.has_key?(key)
+              return {'found'=> false, 'value' => nil}
+            else
+              current_node = current_node[key]
+            end
+          end
+          return {'found'=> true,'value'=> current_node}
+        end
+
+        def update_mapped_properties(mapped_properties, property_path, value)
+          current_node = mapped_properties
+          property_path.each_with_index do |key, index|
+            if index == property_path.size - 1
+              current_node[key] = value
+            else
+              if !current_node.has_key?(key)
+                current_node[key] = {}
+              end
+              current_node = current_node[key]
+            end
           end
           return mapped_properties
         end

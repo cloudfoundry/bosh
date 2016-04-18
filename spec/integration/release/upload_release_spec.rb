@@ -118,7 +118,7 @@ describe 'upload release', type: :integration do
       expect(out).to match /Release repacked/
       expect(out).to match /Started creating new packages > bar.*Done/
       expect(out).to match /Started processing 17 existing packages > Processing 17 existing packages.*Done/
-      expect(out).to match /Started processing 20 existing jobs > Processing 20 existing jobs.*Done/
+      expect(out).to match /Started processing 21 existing jobs > Processing 21 existing jobs.*Done/
       expect(out).to match /Release uploaded/
 
       out = bosh_runner.run('releases')
@@ -251,7 +251,7 @@ describe 'upload release', type: :integration do
     it 'rejects the release when the sha1 does not match' do
       expect {
         bosh_runner.run("upload release #{release_url} --sha1 abcd1234")
-      }.to raise_error(RuntimeError, /Error 30015: Release SHA1 `#{sha1}' does not match the expected SHA1 `abcd1234'/)
+      }.to raise_error(RuntimeError, /Error 30015: Release SHA1 '#{sha1}' does not match the expected SHA1 'abcd1234'/)
     end
   end
 
@@ -312,7 +312,7 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release-1-corrupted_with_different_commit.tgz')}")
       expect {
         bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      }.to raise_error(RuntimeError, /Error 30014: release `test_release\/1' has already been uploaded with commit_hash as `50e58513' and uncommitted_changes as `true'/)
+      }.to raise_error(RuntimeError, /Error 30014: release 'test_release\/1' has already been uploaded with commit_hash as '50e58513' and uncommitted_changes as 'true'/)
     end
   end
 
@@ -338,7 +338,7 @@ describe 'upload release', type: :integration do
 
       expect {
         bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-pkg2-updated.tgz')}")
-      }.to raise_error(RuntimeError, /Error 30012: package `pkg_2' had different fingerprint in previously uploaded release `test_release\/1'/)
+      }.to raise_error(RuntimeError, /Error 30012: package 'pkg_2' had different fingerprint in previously uploaded release 'test_release\/1'/)
     end
 
     it 'raises an error if the uploaded release version already exists but there are jobs with different fingerprints' do
@@ -346,7 +346,7 @@ describe 'upload release', type: :integration do
 
       expect {
         bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-job1-updated.tgz')}")
-      }.to raise_error(RuntimeError, /Error 30013: job `job_using_pkg_1' had different fingerprint in previously uploaded release `test_release\/1'/)
+      }.to raise_error(RuntimeError, /Error 30013: job 'job_using_pkg_1' had different fingerprint in previously uploaded release 'test_release\/1'/)
     end
 
     it "allows sharing of packages across releases when the original packages does not have source" do
@@ -550,6 +550,25 @@ describe 'upload release', type: :integration do
       bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       output = bosh_runner.run("upload release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
       expect(output).to include("Release uploaded")
+    end
+  end
+
+  describe 'uploading two compiled releases that both have an identical compiled package' do
+    before do
+      target_and_login
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    end
+
+    it 'should find the common compiled package uploaded in the first release when uploading the second release' do
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to include('Release uploaded')
+
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-different-name-51-on-toronto-os-stemcell-1.tgz')}")
+      expect(output).to include('Release uploaded')
+
+      output = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-2.tgz')}")
+      expect(output).to include('Release uploaded')
+      expect(output).to include('hello-go (b3df8c27c4525622aacc0d7013af30a9f2195393) SKIP')
     end
   end
 

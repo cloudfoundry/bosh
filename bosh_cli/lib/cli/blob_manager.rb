@@ -36,7 +36,7 @@ module Bosh::Cli
 
       @src_dir = File.join(@release.dir, "src")
       unless File.directory?(@src_dir)
-        err("`src' directory is missing")
+        err("'src' directory is missing")
       end
 
       @storage_dir = File.join(@release.dir, ".blobs")
@@ -96,7 +96,7 @@ module Bosh::Cli
       end
 
       nl
-      say("When ready please run `#{"bosh upload blobs".make_green}'")
+      say("When ready please run '#{"bosh upload blobs".make_green}'")
     end
 
     # Registers a file as BOSH blob
@@ -105,11 +105,11 @@ module Bosh::Cli
     # @return [void]
     def add_blob(local_path, blob_path)
       unless File.exists?(local_path)
-        err("File `#{local_path}' not found")
+        err("File '#{local_path}' not found")
       end
 
       if File.directory?(local_path)
-        err("`#{local_path}' is a directory")
+        err("'#{local_path}' is a directory")
       end
 
       if blob_path[0..0] == "/"
@@ -117,19 +117,19 @@ module Bosh::Cli
       end
 
       if blob_path[0..5] == "blobs/"
-        err("Blob path should not start with `blobs/'")
+        err("Blob path should not start with 'blobs/'")
       end
 
       blob_dst = File.join(@blobs_dir, blob_path)
 
       if File.directory?(blob_dst)
-        err("`#{blob_dst}' is a directory, please pick a different path")
+        err("'#{blob_dst}' is a directory, please pick a different path")
       end
 
       update = false
       if File.exists?(blob_dst)
         if file_checksum(blob_dst) == file_checksum(local_path)
-          err("Already tracking the same version of `#{blob_path}'")
+          err("Already tracking the same version of '#{blob_path}'")
         end
         update = true
         FileUtils.rm(blob_dst)
@@ -145,7 +145,7 @@ module Bosh::Cli
       end
 
       say("When you are done testing the new blob, please run\n" +
-          "`#{"bosh upload blobs".make_green}' and commit changes.")
+          "'#{"bosh upload blobs".make_green}' and commit changes.")
     end
 
     # Synchronizes the contents of blobs directory with blobs index.
@@ -173,7 +173,7 @@ module Bosh::Cli
         path = strip_blobs_dir(file)
 
         if File.exists?(File.join(@src_dir, path))
-          err("File `#{path}' is in both `blobs' and `src' directory.\n" +
+          err("File '#{path}' is in both 'blobs' and 'src' directory.\n" +
               "Please fix release repo before proceeding")
         end
 
@@ -213,7 +213,7 @@ module Bosh::Cli
       missing_blobs = []
       @index.each_pair do |path, entry|
         if File.exists?(File.join(@src_dir, path))
-          err("File `#{path}' is in both blob index and src directory.\n" +
+          err("File '#{path}' is in both blob index and src directory.\n" +
               "Please fix release repo before proceeding")
         end
 
@@ -256,11 +256,11 @@ module Bosh::Cli
       blob_path = File.join(@blobs_dir, path)
 
       unless File.exists?(blob_path)
-        err("Cannot upload blob, local file `#{blob_path}' doesn't exist")
+        err("Cannot upload blob, local file '#{blob_path}' doesn't exist")
       end
 
       if File.symlink?(blob_path)
-        err("`#{blob_path}' is a symlink")
+        err("'#{blob_path}' is a symlink")
       end
 
       checksum = file_checksum(blob_path)
@@ -288,7 +288,7 @@ module Bosh::Cli
       end
 
       unless @index.has_key?(path)
-        err("Unknown blob path `#{path}'")
+        err("Unknown blob path '#{path}'")
       end
 
       blob = @index[path]
@@ -355,7 +355,7 @@ module Bosh::Cli
       if blob_path[0..blobs_dir.size] == blobs_dir + "/"
         blob_path[blobs_dir.size+1..-1]
       else
-        err("File `#{blob_path}' is not under `blobs' directory")
+        err("File '#{blob_path}' is not under 'blobs' directory")
       end
     end
 

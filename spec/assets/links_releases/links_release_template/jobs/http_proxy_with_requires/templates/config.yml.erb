@@ -9,3 +9,6 @@ links:
     name_space:
       prop_a:
         <%= link("proxied_http_endpoint").p("name_space.prop_a") %>
+    <% link('proxied_http_endpoint').if_p('name_space.fibonacci') do |fibonacci| %>
+    fibonacci: <%= fibonacci %>
+    <% end %>

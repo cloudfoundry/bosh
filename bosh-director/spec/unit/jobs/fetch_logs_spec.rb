@@ -6,9 +6,9 @@ module Bosh::Director
     subject(:fetch_logs) { Jobs::FetchLogs.new(instance.id, blobstore: blobstore, 'filters' => 'filter1,filter2') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :fetch_logs }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe '#perform' do
@@ -91,7 +91,7 @@ module Bosh::Director
         it 'raises an exception because there is no agent to contact' do
           expect {
             fetch_logs.perform
-          }.to raise_error(InstanceVmMissing, "`fake-job-name/42 (#{instance.uuid})' doesn't reference a VM")
+          }.to raise_error(InstanceVmMissing, "'fake-job-name/42 (#{instance.uuid})' doesn't reference a VM")
         end
       end
     end

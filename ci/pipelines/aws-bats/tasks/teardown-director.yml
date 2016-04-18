@@ -1,0 +1,11 @@
+---
+platform: linux
+image: docker:///boshcpi/aws-cpi-release
+inputs:
+- name: bosh-src
+- name: setup-director-output
+- name: bosh-init
+run:
+  path: bosh-src/ci/pipelines/aws-bats/tasks/teardown-director.sh
+params:
+  BOSH_INIT_LOG_LEVEL:        warn

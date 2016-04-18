@@ -22,7 +22,7 @@ describe 'cli: deployment process', type: :integration do
     bosh_runner.run("upload stemcell #{stemcell_filename}")
     bosh_runner.run("upload release #{release_filename}")
 
-    expect(bosh_runner.run('deploy')).to match /Deployed `simple' to `Test Director'/
+    expect(bosh_runner.run('deploy')).to match /Deployed 'simple' to 'Test Director'/
     expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
   end
 
@@ -43,13 +43,13 @@ describe 'cli: deployment process', type: :integration do
         bosh_runner.run("upload stemcell #{stemcell_filename}")
         bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
+        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal' to 'Test Director'/
 
         minimal_manifest['name'] = 'minimal2'
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
         bosh_runner.run("deployment #{deployment_manifest.path}")
 
-        expect(bosh_runner.run('deploy')).to match /Deployed `minimal2' to `Test Director'/
+        expect(bosh_runner.run('deploy')).to match /Deployed 'minimal2' to 'Test Director'/
         expect_table('deployments', %(
           Acting as user 'test' on 'Test Director'
 
@@ -97,7 +97,10 @@ describe 'cli: deployment process', type: :integration do
               'array_property' => ['valuee1', 'value2', 'value3'],
               'hash_array_property' => [{'a' => 'b'}, {'b' => 'd'}, {'e' => 'f'}],
               'name_range_hash_array_property' => [{'name' => 'new_name'}, {'range' => 'new_range'}],
-              'new_property' => 'add_me'}
+              'new_property' => 'add_me',
+              'multi-line' => "---this property---
+spans multiple
+lines"}
 
           new_manifest['jobs'] = [new_job_spec]
           new_manifest['releases'].first['version'] = 'latest'
@@ -123,6 +126,8 @@ describe 'cli: deployment process', type: :integration do
           deploy_from_scratch(manifest_hash: old_manifest)
           upload_cloud_config(cloud_config_hash: new_cloud_config)
           output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
+
+          puts output
 
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
@@ -196,7 +201,7 @@ describe 'cli: deployment process', type: :integration do
           upload_cloud_config(cloud_config_hash: new_cloud_config)
 
           runner.send_keys 'yes'
-          expect(runner).to have_output "Deployed `simple'"
+          expect(runner).to have_output "Deployed 'simple'"
         end
 
         output = deploy_simple_manifest
@@ -224,7 +229,7 @@ DIFF
       bosh_runner.run("upload release #{release_filename}")
 
       out = bosh_runner.run('deploy')
-      expect(out).to match /Deployed `minimal' to `Test Director'/
+      expect(out).to match /Deployed 'minimal' to 'Test Director'/
 
       deployments_output = bosh_runner.run('deployments')
       expect(deployments_output).to include(<<-OUT)
@@ -252,12 +257,12 @@ OUT
       bosh_runner.run("upload release #{release_filename}")
 
       bosh_runner.run('deploy')
-      expect(bosh_runner.run('delete deployment minimal')).to match(/Deleted deployment `minimal'/)
+      expect(bosh_runner.run('delete deployment minimal')).to match(/Deleted deployment 'minimal'/)
     end
 
     it 'skips deleting of a non-existent deployment' do
       target_and_login
-      expect(bosh_runner.run('delete deployment non-existent-deployment')).to match(/Skipped delete of missing deployment `non-existent-deployment'/)
+      expect(bosh_runner.run('delete deployment non-existent-deployment')).to match(/Skipped delete of missing deployment 'non-existent-deployment'/)
     end
   end
 end

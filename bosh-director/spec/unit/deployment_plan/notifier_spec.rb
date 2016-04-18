@@ -23,7 +23,7 @@ module Bosh::Director
           let(:payload) do
             {
               'id' => SecureRandom.uuid,
-              'severity' => 4, # corresponds to the `warning` severity level
+              'severity' => 4, # corresponds to the warning severity level
               'source' => 'director',
               'title' => 'director - begin update deployment',
               'summary' => "Begin update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
@@ -44,7 +44,7 @@ module Bosh::Director
           let(:payload) do
             {
               'id'         => SecureRandom.uuid,
-              'severity'   => 4, # corresponds to the `warning` severity level
+              'severity'   => 4, # corresponds to the warning severity level
               'source' => 'director',
               'title'      => 'director - finish update deployment',
               'summary'    => "Finish update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
@@ -65,7 +65,7 @@ module Bosh::Director
           let(:payload) do
             {
               'id'         => SecureRandom.uuid,
-              'severity'   => 3, # corresponds to the `error` severity level
+              'severity'   => 3, # corresponds to the error severity level
               'source' => 'director',
               'title'      => 'director - error during update deployment',
               'summary'    => "Error during update deployment for '#{planner.canonical_name}' against Director '#{uuid}': #<Exception: This is an exception>",

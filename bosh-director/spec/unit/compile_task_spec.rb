@@ -140,7 +140,7 @@ module Bosh::Director
 
         expect {
           foo_task.dependency_spec
-        }.to raise_error(DirectorError, /`bar' hasn't been compiled yet/i)
+        }.to raise_error(DirectorError, /'bar' hasn't been compiled yet/i)
 
         bar_task.use_compiled_package(cp)
 
@@ -217,7 +217,7 @@ module Bosh::Director
               end
 
               it 'returns the compiled package from the compiled package cache' do
-                allow(event_log).to receive(:track).with(anything).and_yield
+                allow(event_log).to receive(:advance_and_track).with(anything).and_yield
 
                 compiled_package = double('compiled package', package: package, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: dependency_key)
 

@@ -96,7 +96,7 @@ module Bosh::Clouds
 
     def checked_cpi_exec_path
       unless File.executable?(@cpi_path)
-        raise NonExecutable, "Failed to run cpi: `#{@cpi_path}' is not executable"
+        raise NonExecutable, "Failed to run cpi: '#{@cpi_path}' is not executable"
       end
       @cpi_path
     end

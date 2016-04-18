@@ -53,7 +53,7 @@ module Bosh::Director
       def find_by_name(name)
         user = Models::User[:username => name]
         if user.nil?
-          raise UserNotFound, "User `#{name}' doesn't exist"
+          raise UserNotFound, "User '#{name}' doesn't exist"
         end
         user
       end

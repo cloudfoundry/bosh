@@ -46,12 +46,13 @@ module Bosh::Director
       validate_env(instance_model.vm_env)
 
       begin
+        vm_deleter = VmDeleter.new(cloud, @logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
         vm_deleter.delete_for_instance(instance_model)
       rescue Bosh::Clouds::VMNotFound
         # One situation where this handler is actually useful is when
         # VM has already been deleted but something failed after that
         # and it is still referenced in DB. In that case it makes sense
-        # to ignore "VM not found" errors in `delete_vm' and let the method
+        # to ignore "VM not found" errors in `delete_vm` and let the method
         # proceed creating a new VM. Other errors are not forgiven.
 
         @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
@@ -148,7 +149,7 @@ module Bosh::Director
     def agent_timeout_guard(vm_cid, vm_credentials, agent_id, &block)
       yield agent_client(vm_credentials, agent_id)
     rescue Bosh::Director::RpcTimeout
-      handler_error("VM `#{vm_cid}' is not responding")
+      handler_error("VM '#{vm_cid}' is not responding")
     end
 
     def vm_deleter
@@ -157,8 +158,9 @@ module Bosh::Director
 
     def vm_creator
       disk_manager = DiskManager.new(cloud, @logger)
+      arp_flusher = ArpFlusher.new
       job_renderer = JobRenderer.create
-      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer)
+      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
     end
 
     def validate_spec(spec)

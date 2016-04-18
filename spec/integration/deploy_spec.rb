@@ -336,7 +336,7 @@ describe 'deploy', type: :integration do
         expect(agent_log.scan("/jobs/job_2_with_post_deploy_script/bin/post-deploy' script has successfully executed").size).to eq(1)
       end
 
-      it 'runs the post-deploy script when a vms is resurrected' do
+      it 'runs the post-deploy script when a vms is resurrected', hm: true do
         current_sandbox.with_health_monitor_running do
           deploy({})
 
@@ -622,7 +622,7 @@ describe 'deploy', type: :integration do
 Error 100: Unable to render instance groups for deployment. Errors are:
    - Unable to render jobs for instance group 'job_with_templates_having_properties'. Errors are:
      - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
         EOF
       end
     end
@@ -779,7 +779,7 @@ Error 100: Unable to render instance groups for deployment. Errors are:
 Error 100: Unable to render instance groups for deployment. Errors are:
    - Unable to render jobs for instance group 'worker_2'. Errors are:
      - Unable to render templates for job 'job_2_with_many_properties'. Errors are:
-       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property `["gargamel.color"]')
+       - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
         EOF
       end
     end
@@ -866,7 +866,7 @@ Started		#{date_regex}
 Finished	#{date_regex}
 Duration	#{duration_regex}
 
-Deployed `simple' to `Test Director'
+Deployed 'simple' to 'Test Director'
     OUT
   end
 
@@ -1064,7 +1064,7 @@ Deployed `simple' to `Test Director'
 
     it 'deploys successfully' do
       output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
-      expect(output).to include("Deployed `minimal' to")
+      expect(output).to include("Deployed 'minimal' to")
       expect(exit_code).to eq(0)
     end
   end
@@ -1241,6 +1241,56 @@ Deployed `simple' to `Test Director'
           expect(first_root_password).to_not eq(second_root_password)
         end
       end
+    end
+  end
+
+  context 'when a release job modifies a global property in the ERB script' do
+    include Bosh::Spec::CreateReleaseOutputParsers
+    before do
+      release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
+        FileUtils.rm_rf('dev_releases')
+        output = bosh_runner.run_in_current_dir('create release --with-tarball')
+        parse_release_tarball_path(output)
+      end
+
+      minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.test_release_manifest)
+
+      minimal_manifest["properties"] = {"some_namespace" => {"test_property" => "initial value"}}
+      minimal_manifest["instance_groups"] = [{"name" => "test_group",
+        "instances" => 1,
+        "jobs" => [
+          {"name" => "job_that_modifies_properties", "release" => "bosh-release"}
+        ],
+        'networks' => [{'name' => 'a'}],
+        'resource_pool' => 'a'
+      }]
+
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+      deployment_manifest = yaml_file('minimal', minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+
+      target_and_login
+      bosh_runner.run("upload release #{release_filename}")
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+    end
+
+    it 'does not modify the property for other release jobs' do
+      output, exit_code = bosh_runner.run('deploy', return_exit_code: true)
+      expect(output).to include("Deployed 'simple' to")
+      expect(exit_code).to eq(0)
+
+      target_vm = director.vm('test_group', '0')
+
+      ctl_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/job_that_modifies_properties_ctl')
+
+      expect(ctl_script).to include('test_property initially was initial value')
+
+      other_script = target_vm.read_job_template('job_that_modifies_properties', 'bin/another_script')
+
+      expect(other_script).to include('test_property initially was initial value')
     end
   end
 end

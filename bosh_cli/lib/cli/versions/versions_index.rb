@@ -54,20 +54,18 @@ module Bosh::Cli::Versions
       version = new_build['version']
 
       if version.blank?
-        raise Bosh::Cli::InvalidIndex, "Cannot save index entry without a version: `#{new_build}'"
+        raise Bosh::Cli::InvalidIndex, "Cannot save index entry without a version: '#{new_build}'"
       end
 
       if @data['builds'][new_key]
-        raise "Trying to add duplicate entry `#{new_key}' into index `#{@index_file}'"
+        raise "Trying to add duplicate entry '#{new_key}' into index '#{@index_file}'"
       end
 
       each do |key, build|
         if key != new_key && build['version'] == version
-          raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
+          raise "Trying to add duplicate version '#{version}' into index '#{@index_file}'"
         end
       end
-
-      create_directories
 
       @data['builds'][new_key] = new_build
 
@@ -79,15 +77,15 @@ module Bosh::Cli::Versions
     def update_version(key, new_build)
       old_build = @data['builds'][key]
       unless old_build
-        raise "Cannot update non-existent entry with key `#{key}'"
+        raise "Cannot update non-existent entry with key '#{key}'"
       end
 
       if old_build['blobstore_id']
-        raise "Cannot update entry `#{old_build}' with a blobstore id"
+        raise "Cannot update entry '#{old_build}' with a blobstore id"
       end
 
       if new_build['version'] != old_build['version']
-        raise "Cannot update entry `#{old_build}' with a different version: `#{new_build}'"
+        raise "Cannot update entry '#{old_build}' with a different version: '#{new_build}'"
       end
 
       @data['builds'][key] = new_build
@@ -98,7 +96,7 @@ module Bosh::Cli::Versions
     def remove_version(key)
       build = @data['builds'][key]
       unless build
-        raise "Cannot remove non-existent entry with key `#{key}'"
+        raise "Cannot remove non-existent entry with key '#{key}'"
       end
 
       @data['builds'].delete(key)
@@ -124,11 +122,12 @@ module Bosh::Cli::Versions
       format_version_string = @data['format-version']
       SemiSemantic::Version.parse(format_version_string)
     rescue ArgumentError, SemiSemantic::ParseError
-      raise InvalidIndex, "Invalid versions index version in `#{@index_file}', " +
-        "`#{format_version_string}' given, SemiSemantic version expected"
+      raise InvalidIndex, "Invalid versions index version in '#{@index_file}', " +
+        "'#{format_version_string}' given, SemiSemantic version expected"
     end
 
     def save
+      create_directories
       VersionsIndex.write_index_yaml(@index_file, @data)
     end
 

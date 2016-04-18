@@ -7,9 +7,9 @@ module Bosh::Director
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
-    describe 'Resque job class expectations' do
+    describe 'DJ job class expectations' do
       let(:job_type) { :update_release }
-      it_behaves_like 'a Resque job'
+      it_behaves_like 'a DJ job'
     end
 
     describe 'Compiled release upload' do
@@ -366,21 +366,7 @@ module Bosh::Director
 
           expect {
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package `fake-name-2' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
-        end
-      end
-
-      describe 'event_log' do
-        it 'prints that release was created' do
-          allow(Config.event_log).to receive(:begin_stage).and_call_original
-          expect(Config.event_log).to receive(:begin_stage).with('Release has been created', 1)
-          job.perform
-        end
-
-        it 'prints name and version' do
-          allow(Config.event_log).to receive(:track).and_call_original
-          expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
-          job.perform
+          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package 'fake-name-2' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
         end
       end
 
@@ -428,7 +414,7 @@ module Bosh::Director
 
           expect {
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job `fake-job-1' had different fingerprint in previously uploaded release `appcloud\/42\+dev.6'/)
+          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job 'fake-job-1' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
         end
 
         it "creates jobs that don't already exist" do

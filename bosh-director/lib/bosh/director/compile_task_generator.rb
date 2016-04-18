@@ -2,9 +2,9 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompileTaskGenerator
-    def initialize(logger, event_log)
+    def initialize(logger, event_log_stage)
       @logger = logger
-      @event_log = event_log
+      @event_log_stage = event_log_stage
     end
 
     # The compile_tasks hash passed in by the caller will be populated with CompileTasks objects
@@ -13,7 +13,7 @@ module Bosh::Director
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla Depth-First Search (DFS).
 
-      @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'")
+      @logger.info("Checking whether package '#{package.desc}' needs to be compiled for stemcell '#{stemcell.model.desc}'")
       task_key = [package.id, stemcell.id]
       task = compile_tasks[task_key]
 
@@ -30,15 +30,15 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
-      compiled_package = task.find_compiled_package(@logger, @event_log)
+      compiled_package = task.find_compiled_package(@logger, @event_log_stage)
       if compiled_package
         task.use_compiled_package(compiled_package)
       end
 
-      @logger.info("Processing package `#{package.desc}' dependencies")
+      @logger.info("Processing package '#{package.desc}' dependencies")
       dependencies = package_dependency_manager.dependencies(package)
       dependencies.each do |dependency|
-        @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
+        @logger.info("Package '#{package.desc}' depends on package '#{dependency.desc}'")
         dependency_task = generate!(compile_tasks, job, template, dependency, stemcell)
         task.add_dependency(dependency_task)
       end

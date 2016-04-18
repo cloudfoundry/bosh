@@ -25,12 +25,12 @@ module Bosh::Director
       end
 
       def perform
-        event_log.begin_stage('Deleting orphaned disks', @orphan_disk_cids.count)
+        event_log_stage = Config.event_log.begin_stage('Deleting orphaned disks', @orphan_disk_cids.count)
 
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           @orphan_disk_cids.each do |orphan_disk_cid|
             pool.process do
-              event_log.track("Deleting orphaned disk #{orphan_disk_cid}") do
+              event_log_stage.advance_and_track("Deleting orphaned disk #{orphan_disk_cid}") do
                 @disk_manager.delete_orphan_disk_by_disk_cid(orphan_disk_cid)
               end
             end

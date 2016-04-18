@@ -41,9 +41,4 @@ bundle install --local
 
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
-# For running all integration specs
 bundle exec rake --trace go spec:integration
-
-## For running individual specs
-#bundle exec rake spec:integration:install_dependencies
-#bundle exec rspec spec/integration/FILENAME:LINE_NUMBER

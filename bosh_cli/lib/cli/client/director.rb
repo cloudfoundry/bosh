@@ -124,6 +124,18 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_events(options={})
+          query_string = "/events"
+          delimeter = "?"
+          [:before_id, :deployment, :instance, :task].each do |param|
+            if options[param]
+              query_string += "#{delimeter}#{ param.to_s}=#{options[param]}"
+              delimeter = "&"
+            end
+          end
+          get_json(query_string)
+        end
+
         def list_errands(deployment_name)
           get_json("/deployments/#{deployment_name}/errands")
         end
@@ -275,15 +287,14 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
-        def diff_deployment(name, manifest_yaml, no_redact = false)
-          redact_param = no_redact ? '?redact=false' : ''
+        def diff_deployment(name, manifest_yaml, redact_diff = true)
+          redact_param = redact_diff ? '' : '?redact=false'
           uri = "/deployments/#{name}/diff#{redact_param}"
           status, body = post(uri, 'text/yaml', manifest_yaml)
-
           if status == 200
             JSON.parse(body)
           else
-            err(parse_error_message(status, body, uri))
+            err(parse_error_message(status, body))
           end
         end
 
@@ -411,7 +422,7 @@ module Bosh
             tmp_file
           else
             raise DirectorError,
-                  "Cannot download resource `#{id}': HTTP status #{status}"
+                  "Cannot download resource '#{id}': HTTP status #{status}"
           end
         end
 

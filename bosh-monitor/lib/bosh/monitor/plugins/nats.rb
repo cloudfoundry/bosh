@@ -24,7 +24,7 @@ module Bosh::Monitor
         }
 
         @nats = NATS.connect(nats_client_options) do
-          logger.info("Ready to publish alerts to NATS at `#{options["endpoint"]}'")
+          logger.info("Ready to publish alerts to NATS at '#{options["endpoint"]}'")
         end
       end
 

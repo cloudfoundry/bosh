@@ -59,10 +59,6 @@ nginx/pcre-8.37.tar.gz:
   object_id: 7c107c29-c63b-4e95-8a13-698a835ae8b5
   sha: 4a24a20c61347d8da4edc86d5475aaf70ac146bb
   size: 2041593
-redis/redis-3.0.2.tar.gz:
-  object_id: 033ba3ad-dea6-4a18-910f-e7d0f244d8ef
-  sha: a38755fe9a669896f7c5d8cd3ebbf76d59712002
-  size: 1360182
 ruby/bundler-1.10.6.gem:
   object_id: a7313017-fac0-4306-8610-4a050339d792
   sha: 55a37fccd1c0cb5542d468e35d3be46dd0667f73
@@ -95,3 +91,7 @@ postgres/postgresql-9.4.6.tar.gz:
   object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
   sha: bd031beebd86bf149c497525dccf57eebe5a6add
   size: 23249307
+s3cli/s3cli-0.0.28-linux-amd64:
+  object_id: fcec1341-c5ec-41a0-a6fc-c7115e3cc812
+  sha: 6dde380bf7d9e29e5c9ad47ba8860561e031c864
+  size: 11465472

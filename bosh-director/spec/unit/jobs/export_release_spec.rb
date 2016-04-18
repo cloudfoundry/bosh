@@ -257,12 +257,12 @@ module Bosh::Director
               release_id: release.id,
               blobstore_id: 'ruby_package_blobstore_id',
               sha1: 'ruby_package_sha1',
-              dependency_set_json: [],
+              dependency_set_json: [].to_json,
           )
           package_ruby.add_compiled_package(
               sha1: 'ruby_compiled_package_sha1',
               blobstore_id: 'ruby_compiled_package_blobstore_id',
-              dependency_key: [],
+              dependency_key: [].to_json,
               build: 23,
               stemcell_os: 'ubuntu',
               stemcell_version: '1'
@@ -298,9 +298,18 @@ module Bosh::Director
           allow(result_file).to receive(:write)
         }
 
+        it 'should order the files in the tarball' do
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create)
+          expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
+            expect(sources).to eq(['./release.MF', './jobs', './compiled_packages'])
+            File.write(output_path, 'Some glorious content')
+          }
+          job.perform
+        end
+
         it 'should contain all compiled packages & jobs' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
               files = Dir.entries(download_dir)
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 

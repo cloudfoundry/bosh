@@ -4,5 +4,6 @@ dependencies:
 - libpq
 - mysql
 - ruby
+- s3cli
 files:
 - bosh/bosh-director/vendor/cache/*

@@ -5,12 +5,11 @@ module Bosh::Director
   describe ReleaseJob do
 
     describe 'update' do
-      subject(:release_job) { described_class.new(job_meta, release_model, release_dir, packages, double(:logger).as_null_object) }
+      subject(:release_job) { described_class.new(job_meta, release_model, release_dir, double(:logger).as_null_object) }
       let(:release_dir) { Dir.mktmpdir }
       after { FileUtils.rm_rf(release_dir) }
       let(:release_model) { Models::Release.make }
       let(:job_meta) { {'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef'} }
-      let(:packages) { [] }
 
       before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
       let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
@@ -147,17 +146,6 @@ module Bosh::Director
         File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_packages) }
 
         expect { release_job.update(template) }.to raise_error(JobInvalidPackageSpec)
-      end
-
-      it 'throws error if package is not in the array' do
-        job_with_missing_packages =
-            create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
-                       manifest: { 'name' => 'foo', 'templates' => {}, 'packages' =>  ['some_missing_package']  })
-        File.open(job_tarball_path, 'w') { |f| f.write(job_with_missing_packages) }
-
-        release_job.packages = { 'some_other_package_name' => {name: 'some other package name'}}
-
-        expect { release_job.update(template) }.to raise_error(JobMissingPackage)
       end
 
       context 'when job spec file includes provides' do

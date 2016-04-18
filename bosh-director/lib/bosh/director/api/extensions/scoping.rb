@@ -4,8 +4,8 @@ module Bosh::Director
       module Scoping
         module Helpers
           def current_user
-            @user.username if @user
-            end
+            @user.username_or_client if @user
+          end
 
           def token_scopes
             @user.scopes if @user

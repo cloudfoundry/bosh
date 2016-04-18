@@ -22,6 +22,7 @@ module Bosh::Director
             {
               'name' => @source.name,
               'index' => instance.index,
+              'bootstrap' => instance.bootstrap?,
               'id' => instance.uuid,
               'az' => availability_zone,
               'address' => instance_plan.network_address(@network_name),
