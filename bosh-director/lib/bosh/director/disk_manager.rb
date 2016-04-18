@@ -7,7 +7,7 @@ module Bosh::Director
       @transactor = Transactor.new
     end
 
-    def update_persistent_disk(instance_plan, vm_recreator)
+    def update_persistent_disk(instance_plan)
       @logger.info('Updating persistent disk')
       check_persistent_disk(instance_plan)
 
@@ -18,7 +18,7 @@ module Bosh::Director
 
       disk = nil
       if instance_plan.needs_disk?
-        disk = create_and_attach_disk(instance_plan, vm_recreator)
+        disk = create_and_attach_disk(instance_plan)
         mount_and_migrate_disk(instance, disk, old_disk)
       end
 
@@ -265,34 +265,11 @@ module Bosh::Director
       AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
     end
 
-    def create_and_attach_disk(instance_plan, vm_recreator)
+    def create_and_attach_disk(instance_plan)
       instance = instance_plan.instance
       disk = create_disk(instance_plan)
       @cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
-      return disk
-    rescue Bosh::Clouds::NoDiskSpace => e
-      if e.ok_to_retry
-        @logger.warn('Retrying attach disk operation after persistent disk update failed')
-        if disk.nil?
-          disk = create_disk(instance_plan)
-        end
-        # Re-creating the vm may cause it to be re-created in a place with more storage
-        unmount_disk_for(instance_plan)
-        vm_recreator.recreate_vm(instance_plan, disk.disk_cid)
-        begin
-          @cloud.attach_disk(instance.model.vm_cid, disk.disk_cid)
-        rescue
-          orphan_disk(disk)
-          raise
-        end
-      else
-        unless disk.nil?
-          orphan_disk(disk)
-        end
-
-        raise
-      end
-      return disk
+      disk
     end
 
     def mount_and_migrate_disk(instance, new_disk, old_disk)
