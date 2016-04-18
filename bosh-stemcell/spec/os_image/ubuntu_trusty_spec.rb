@@ -312,6 +312,12 @@ EOF
       end
     end
 
+    describe file('/etc/pam.d/common-account') do
+      it 'must reset the tally of a user after successful login, esp. `sudo` (stig: V-38573)' do
+        should contain(/account.*required.*pam_tally2\.so/)
+      end
+    end
+
     describe file('/etc/pam.d/common-auth') do
       it 'must restrict a user account after 5 failed login attempts (stig: V-38573)' do
         should contain(/auth.*pam_tally2\.so.*deny=5/)
