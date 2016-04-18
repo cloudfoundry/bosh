@@ -7,9 +7,13 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `0M3jbAU705ItzZKPdmh6kxRJR38fmvcf`
-  - bumped for libpcre3_1:8.31-2ubuntu2.1 vulnerability
-  - built from master (d2f73ee7636f2325bf6998670228682d194627c9)
+* `djw1b9mXYwbOSDPGJoFLktHLv79kbcz_`
+  - periodic bump to include STIGs
+  - built from develop (597cbcd96e631678f7d66c31e39a2ac7ddc6c89d)
+
+* `w02UF1DU9KaAxqxP_LcLiBp0P1.cZh3T`
+  - periodic bump to include STIGs
+  - built from develop (7437419b800cdaf2a163fc5606ec360032f37a28)
 
 * `tLeFEoNpFBrwBQbY5jjhOVpAVMSY7UHC`
   - USN-2932-1: Linux kernel (Vivid HWE) vulnerabilities
