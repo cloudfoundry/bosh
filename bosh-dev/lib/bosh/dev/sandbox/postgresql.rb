@@ -54,6 +54,12 @@ module Bosh::Dev::Sandbox
       table_names.each do |table_name|
         @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' > /dev/null 2>&1})
       end
+
+      sequence_name_cmd = %Q{psql -U postgres #{db_name} -c "select relname from pg_class where relkind = 'S';"}
+      sequence_names = `#{sequence_name_cmd}`.lines.to_a[2...-2] || []
+      sequence_names.each do |sequence_name|
+        @runner.run(%Q{psql -U postgres #{db_name} -c 'ALTER SEQUENCE #{sequence_name} RESTART WITH 1;' > /dev/null 2>&1})
+      end
     end
   end
 end
