@@ -64,7 +64,7 @@ module Bosh::Director
                                                          device_version, signature_id, name, severity, extension]
               cef_log_encoded = cef_log.force_encoding(Encoding::UTF_8)
 
-              Syslog::Logger.new('bosh.director').info(cef_log_encoded)
+              Syslog::Logger.new('vcap.bosh.director').info(cef_log_encoded)
             end
           end
         end
