@@ -39,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'templates' => [
             {'name' => 'mysql-template',
              'release' => 'fake-release',
-             'provides' => {'db' => {'as' => 'db', 'name' =>'db', 'type'=>'db'}},
+             'provides' => {'db' => {'as' => 'db'}},
              "properties" => {'mysql' => nil}
             }
           ],

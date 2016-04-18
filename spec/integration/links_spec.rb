@@ -1463,10 +1463,10 @@ Error 100: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Error 100: Unable to process links for deployment. Errors are:
-   - \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
-   - \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"
-   - \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("Error 100: Unable to process links for deployment. Errors are:")
+      expect(out).to include("- \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("- \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("- \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
     end
   end
 end
