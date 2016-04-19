@@ -174,22 +174,17 @@ module Bosh::Director
       end
 
       def event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
-        new_releases = next_releases - previous_releases
-        old_releases = previous_releases - next_releases
-        new_stemcells = next_stemcells - previous_stemcells
-        old_stemcells = previous_stemcells - next_stemcells
+        after_objects = {}
+        after_objects['releases'] = next_releases unless next_releases.empty?
+        after_objects['stemcells'] = next_stemcells unless next_stemcells.empty?
 
-        new_objects = {}
-        new_objects['releases'] = new_releases unless new_releases.empty?
-        new_objects['stemcells'] = new_stemcells unless new_stemcells.empty?
-
-        old_objects = {}
-        old_objects['releases'] = old_releases unless old_releases.empty?
-        old_objects['stemcells'] = old_stemcells unless old_stemcells.empty?
+        before_objects = {}
+        before_objects['releases'] = previous_releases unless previous_releases.empty?
+        before_objects['stemcells'] = previous_stemcells unless previous_stemcells.empty?
 
         context = {}
-        context['new'] = new_objects unless new_objects.empty?
-        context['old'] = old_objects unless old_objects.empty?
+        context['before'] = before_objects
+        context['after'] = after_objects
         context
       end
     end

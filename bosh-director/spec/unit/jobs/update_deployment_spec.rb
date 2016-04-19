@@ -138,7 +138,7 @@ module Bosh::Director::Jobs
           expect(event_2.timestamp).to eq(Time.now)
         end
 
-        context 'when new release and stemcell' do
+        context 'when there are releases and stemcells' do
           before do
             deployment_model = Bosh::Director::Models::Deployment.make
             deployment_stemcell = Bosh::Director::Models::Stemcell.make(name: 'stemcell', version: 'version-1')
@@ -155,7 +155,7 @@ module Bosh::Director::Jobs
               job.perform
             }.to change {
               Bosh::Director::Models::Event.count }.from(0).to(2)
-            expect(Bosh::Director::Models::Event.order(:id).last.context).to eq({"new" => {"releases" => ["release/version-1"], "stemcells" => ["stemcell/version-1"]}})
+            expect(Bosh::Director::Models::Event.order(:id).last.context).to eq({"before" => {}, "after" => {"releases" => ["release/version-1"], "stemcells" => ["stemcell/version-1"]}})
           end
         end
 
