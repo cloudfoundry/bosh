@@ -91,7 +91,7 @@ postgres/postgresql-9.4.6.tar.gz:
   object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
   sha: bd031beebd86bf149c497525dccf57eebe5a6add
   size: 23249307
-s3cli/s3cli-0.0.28-linux-amd64:
-  object_id: fcec1341-c5ec-41a0-a6fc-c7115e3cc812
-  sha: 6dde380bf7d9e29e5c9ad47ba8860561e031c864
-  size: 11465472
+s3cli/s3cli-0.0.31-linux-amd64:
+  object_id: a691b107-af1b-4087-b1cb-3ee0b7fd1045
+  sha: 32130fe8d775c33695dc83ec21ae41c97d804023
+  size: 11465536
