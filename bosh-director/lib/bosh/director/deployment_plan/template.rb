@@ -159,6 +159,7 @@ module Bosh::Director
           if kind == "consumes"
             errors = validate_consume_link(source, link_name, job_name)
           end
+          errors.concat(validate_link_def(source, link_name, job_name))
 
           if errors.size > 0
             raise errors.join("\n")
@@ -224,7 +225,12 @@ module Bosh::Director
           errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'.")
         end
 
-        if source.has_key?('name') || source.has_key?('type')
+        errors
+      end
+
+      def validate_link_def(source, link_name, job_name)
+        errors = []
+        if !source.nil? && (source.has_key?('name') || source.has_key?('type'))
           errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'. Please provide these keys in the release only.")
         end
 

@@ -8,7 +8,7 @@ Sequel.migration do
       String :action, :null => false
       String :object_type, :null => false
       String :object_name
-      String :error
+      String :error, :text => true
       String :task
       String :deployment
       String :instance

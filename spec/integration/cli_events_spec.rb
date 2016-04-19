@@ -67,24 +67,21 @@ describe 'cli: events', type: :integration do
     )
 
     instance_name = parse_first_instance_name(output)
-
     output = bosh_runner.run("events --deployment simple --task 6 --instance #{instance_name}")
     data = Support::TableHelpers::Parser.new(output).data
-    flexible_data = get_details(data, [ 'Action', 'Object type', 'Dep', 'Inst', 'Task'])
-
-    expect(flexible_data).to contain_exactly(
+    columns = ['Action', 'Object type', 'Dep', 'Inst', 'Task']
+    expect(get_details(data, columns)).to contain_exactly(
         {'Action' => 'delete', 'Object type' => 'instance', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'disk', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'vm', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
         {'Action' => 'delete', 'Object type' => 'vm', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name},
-        {'Action' => 'delete', 'Object type' => 'instance', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name}
-      )
+        {'Action' => 'delete', 'Object type' => 'instance', 'Task' => '6', 'Dep' => 'simple', 'Inst' => instance_name})
   end
 
   def get_details(table, keys)
     table.map do |hash|
-      hash.select do |key, value|
+      hash.select do |key, _|
         keys.include? key
       end
     end

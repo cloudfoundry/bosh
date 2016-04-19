@@ -21,7 +21,7 @@ module Bosh::Director
         let(:query) { nil }
         let(:syslog) { instance_double(Syslog::Logger) }
 
-        before { allow(Syslog::Logger).to receive(:new).with('bosh.director').and_return(syslog) }
+        before { allow(Syslog::Logger).to receive(:new).with('vcap.bosh.director').and_return(syslog) }
         before { allow(Socket).to receive(:gethostname).and_return('director-hostname') }
         before do
           allow(Socket).to receive(:ip_address_list).and_return([

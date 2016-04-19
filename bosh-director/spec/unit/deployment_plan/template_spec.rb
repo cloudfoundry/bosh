@@ -9,10 +9,10 @@ describe Bosh::Director::DeploymentPlan::Template do
 
     context 'given properly formated arguments' do
       before {
-        template.add_link_from_manifest('job_name', 'provides', 'link_name', {'name'=>'link_name','type'=>'type', 'properties'=>['plant'], 'from'=>'link_name'})
+        template.add_link_from_manifest('job_name', 'provides', 'link_name', {'properties'=>['plant'], 'from'=>'link_name'})
       }
       it 'should populate link_infos' do
-        expect(template.link_infos).to eq({"job_name"=>{"provides"=>{"link_name"=>{"name"=>"link_name", "type"=>"type","properties"=>["plant"], "from"=>"link_name"}}}})
+        expect(template.link_infos).to eq({"job_name"=>{"provides"=>{"link_name"=>{"properties"=>["plant"], "from"=>"link_name"}}}})
       end
     end
 
@@ -46,6 +46,18 @@ Cannot specify 'properties' without 'instances' for link 'link_name' in job 'foo
         link_config = {'type'=>'type', 'from'=>'link_name'}
 
         expect { template.add_link_from_manifest('job_name', 'consumes', 'link_name', link_config) }.to raise_error(/Cannot specify 'name' or 'type' properties in the manifest for link 'link_name' in job 'foo' in instance group 'job_name'. Please provide these keys in the release only./)
+      end
+
+      it 'should throw an error when "name" key is provided in a provides' do
+        link_config = {'name' => 'link_name'}
+
+        expect { template.add_link_from_manifest('job_name', 'provides', 'link_name', link_config) }.to raise_error(/Cannot specify 'name' or 'type' properties in the manifest for link 'link_name' in job 'foo' in instance group 'job_name'. Please provide these keys in the release only./)
+      end
+
+      it 'should throw an error when "type" key is provided in a provides' do
+        link_config = {'type'=>'type'}
+
+        expect { template.add_link_from_manifest('job_name', 'provides', 'link_name', link_config) }.to raise_error(/Cannot specify 'name' or 'type' properties in the manifest for link 'link_name' in job 'foo' in instance group 'job_name'. Please provide these keys in the release only./)
       end
 
       it 'should not throw an error when neither "name" or type" key is provided' do
