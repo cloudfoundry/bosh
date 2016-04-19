@@ -420,8 +420,12 @@ shared_examples_for 'every OS image' do
         its (:content) { should match /^log_group = root$/ }
       end
 
-      describe 'audit log files alerts administrator when storage capacity is less than 75mb (stig: V-38678)' do
+      describe 'audit log files triggers action when storage capacity is less than 75mb (stig: V-38678)' do
         its (:content) { should match /^space_left = 75$/ }
+      end
+
+      describe 'audit log files triggers action when storage capacity is less than 50mb (this must be less than space_left) (stig: V-38678)' do
+        its (:content) { should match /^admin_space_left = 50$/ }
       end
     end
   end
