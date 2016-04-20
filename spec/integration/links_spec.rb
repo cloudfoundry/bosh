@@ -486,7 +486,7 @@ Error 100: Unable to process links for deployment. Errors are:
         expect(out).to include('Started copying jobs > backup_database/c6802f3d21e6c2367520629c691ab07e0e49be6d. Done')
         expect(out).to include('Started copying jobs > database/6f16ca3fad0d120eefd91334f4c8d3584886cc3d. Done')
         expect(out).to include('Started copying jobs > mongo_db/2a32a7517a77bfa606a7a4ae0ae8097bf36505df. Done')
-        expect(out).to include('Started copying jobs > node/9bf2cb66c06889609404fbe10b3c8f597463bdb5. Done')
+        expect(out).to include('Started copying jobs > node/6cd263ed6b6cef423ab50664805c0f6d9987779f. Done')
         expect(out).to include('Done copying jobs')
 
         expect(out).to include("Exported release 'bosh-release/0+dev.1' for 'toronto-os/1'")
@@ -905,6 +905,23 @@ Error 100: Unable to process links for deployment. Errors are:
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
          }.to_not raise_error
+       end
+
+       it 'allows access to bootstrap node' do
+         deploy_simple_manifest(manifest_hash: first_manifest)
+
+         first_deployment_vm = director.vm('first_deployment_node', '0', deployment: 'first')
+         first_deployment_template = YAML.load(first_deployment_vm.read_job_template('node', 'config.yml'))
+
+         second_manifest['jobs'][0]['instances'] = 2
+         second_manifest['jobs'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+         second_manifest['jobs'][0]['networks'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+
+         deploy_simple_manifest(manifest_hash: second_manifest)
+
+         second_deployment_vm = director.vm('second_deployment_node', '0', deployment: 'second')
+         second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+         expect(second_deployment_template['instances']['node1_bootstrap_address']).to eq(first_deployment_template['instances']['node1_bootstrap_address'])
        end
 
        context 'when user does not specify a network for consumes' do

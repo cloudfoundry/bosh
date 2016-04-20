@@ -99,7 +99,7 @@ module Bosh
 
         if result.has_key?("instances")
           instance_array = result["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
           end
           return EvaluationLink.new(instance_array, result["properties"])
         end
@@ -129,7 +129,7 @@ module Bosh
           return ActiveElseBlock.new(self)
         else
           instance_array = link_found["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"])
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
           end
 
           yield EvaluationLink.new(instance_array, link_found["properties"])
