@@ -24,11 +24,17 @@ if [ "${os_type}" == "ubuntu" ] ; then
 fi
 
 if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
-    echo '
+     echo '
 -w /sbin/insmod -p x -k modules
 -w /sbin/rmmod -p x -k modules
 -w /sbin/modprobe -p x -k modules
--a always,exit -F arch=b64 -S init_module -S delete_module -k modules' >> $chroot/etc/audit/rules.d/audit.rules
+
+# /sbin/insmod, /sbin/rmmod, /sbin/modprobe are symlinks to /bin/kmod
+# Adding a rule for /bin/kmod because auditd does not follow symlinks
+-w /bin/kmod -p x -k modules
+
+# Adding finit_module since /bin/kmod uses finit_module
+-a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -k modules' >> $chroot/etc/audit/rules.d/audit.rules
 
     sed -i 's/^disk_error_action = .*$/disk_error_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
     sed -i 's/^disk_full_action = .*$/disk_full_action = SYSLOG/g' $chroot/etc/audit/auditd.conf
