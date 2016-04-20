@@ -99,7 +99,7 @@ module Bosh::Director
 
         begin
           Psych.parse(yml_string)
-        rescue Psych::SyntaxError => e
+        rescue Psych::Exception => e
           raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
         end
       end
