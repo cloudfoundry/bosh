@@ -435,7 +435,8 @@ shared_examples_for 'every OS image' do
       its(:content) { should match /^-w \/sbin\/insmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/rmmod -p x -k modules$/ }
       its(:content) { should match /^-w \/sbin\/modprobe -p x -k modules$/ }
-      its(:content) { should match /-a always,exit -F arch=b64 -S init_module -S delete_module -k modules/ }
+      its(:content) { should match /^-w \/bin\/kmod -p x -k modules$/ }
+      its(:content) { should match /-a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -k modules/ }
     end
   end
 

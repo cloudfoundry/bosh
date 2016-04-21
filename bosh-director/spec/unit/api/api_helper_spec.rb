@@ -52,4 +52,22 @@ describe Bosh::Director::Api::ApiHelper do
       }.to raise_exception(Bosh::Director::SystemError)
     end
   end
+
+  describe :validate_manifest_yml do
+    it 'should handle empty manifest' do
+      expect {
+        validate_manifest_yml('')
+      }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should not be empty')
+    end
+
+    it 'should handle Syntax Error' do
+      yml = <<-FOO
+foo
+  k: v
+FOO
+      expect {
+        validate_manifest_yml(yml)
+      }.to raise_exception(Bosh::Director::BadManifest, /Incorrect YAML structure of the uploaded manifest: /)
+    end
+  end
 end
