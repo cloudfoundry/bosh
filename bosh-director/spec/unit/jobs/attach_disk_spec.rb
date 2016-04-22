@@ -3,7 +3,6 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::AttachDisk do
 
-    let(:deployment) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }
@@ -19,8 +18,8 @@ module Bosh::Director
           'fake-username',
           Jobs::AttachDisk,
           "attach disk 'fake_disk_cid' to 'job_name/fake_instance_id'",
-          [deployment_name, job_name, instance_id, disk_cid], deployment)
-        Jobs::AttachDisk.enqueue('fake-username', deployment, job_name, instance_id, disk_cid, job_queue)
+          [deployment_name, job_name, instance_id, disk_cid], deployment_name)
+        Jobs::AttachDisk.enqueue('fake-username', deployment_name, job_name, instance_id, disk_cid, job_queue)
       end
     end
 
@@ -28,11 +27,15 @@ module Bosh::Director
 
     describe '#perform' do
       let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, vm_cid: vm_cid, state: instance_state) }
+      let!(:deployment_model) do
+        deployment_model = Models::Deployment.make(name: deployment_name)
+        deployment_model.add_instance(instance_model)
+        deployment_model
+      end
 
       before {
         allow(Config).to receive(:cloud)
         allow(Config).to receive(:current_job).and_return(update_job)
-        deployment.add_instance(instance_model)
       }
 
       context 'when the instance is stopped hard' do

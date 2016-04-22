@@ -61,15 +61,15 @@ module Bosh::Director
           instance = filter_by(deployment, uuid: index_or_id).first
         end
 
-        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment)
+        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options], deployment.name)
       end
 
       def fetch_instances(username, deployment, format)
-        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format, true], deployment)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format, true], deployment.name)
       end
 
       def fetch_instances_with_vm(username, deployment, format)
-        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format], deployment)
+        JobQueue.new.enqueue(username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, format], deployment.name)
       end
 
       def ssh(username, deployment, options)
