@@ -197,7 +197,7 @@ describe 'CentOS 7 OS image', os_image: true do
   context 'ensure audit package file have unmodified contents (stig: V-38637)' do
     # ignore auditd.conf, and audit.rules since we modify these files in
     # other stigs
-    describe command("rpm -V audit | grep -v 'auditd.conf' | grep -v 'audit.rules' | grep '^..5'") do
+    describe command("rpm -V audit | grep -v 'auditd.conf' | grep -v 'audit.rules' | grep -v 'syslog.conf' | grep '^..5'") do
       its (:stdout) { should be_empty }
     end
   end
