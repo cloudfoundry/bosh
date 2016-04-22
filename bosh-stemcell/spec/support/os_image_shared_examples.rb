@@ -428,6 +428,12 @@ shared_examples_for 'every OS image' do
         its (:content) { should match /^admin_space_left = 50$/ }
       end
     end
+
+    describe file('/etc/audisp/plugins.d/syslog.conf') do
+      describe 'auditd logs to syslog' do
+        its (:content) { should match /^active = yes$/ }
+      end
+    end
   end
 
   describe 'loading and unloading of dynamic kernel modules must be audited (stig: V-38580)' do
