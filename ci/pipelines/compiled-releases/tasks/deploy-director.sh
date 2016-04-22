@@ -33,6 +33,7 @@ vm_types:
 - name: default
   cloud_properties:
     instance_type: c4.large
+    availability_zone: us-east-1a
     ephemeral_disk:
       size: 8192
 
