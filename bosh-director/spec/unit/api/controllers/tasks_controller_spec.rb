@@ -73,15 +73,15 @@ module Bosh::Director
 
             context 'collection of tasks associated with different deployments' do
               before do
-                Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
+                Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1)
                 Models::Task.make(type: 'create_snapshot')
-                Models::Task.make(type: 'delete_deployment', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
+                Models::Task.make(type: 'delete_deployment', deployment_name: deployment_name_1)
                 Models::Task.make(type: 'delete_release')
                 Models::Task.make(type: 'delete_snapshot')
                 Models::Task.make(type: 'delete_stemcell')
-                Models::Task.make(type: 'run_errand', deployment_name: deployment_name_2, teams: 'team-rocket')
-                Models::Task.make(type: 'snapshot_deployment', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
-                Models::Task.make(type: 'update_deployment', deployment_name: deployment_name_2, teams: 'team-rocket')
+                Models::Task.make(type: 'run_errand', deployment_name: deployment_name_2)
+                Models::Task.make(type: 'snapshot_deployment', deployment_name: deployment_name_1)
+                Models::Task.make(type: 'update_deployment', deployment_name: deployment_name_2)
                 Models::Task.make(type: 'update_release')
                 Models::Task.make(type: 'update_stemcell')
               end
@@ -313,9 +313,11 @@ module Bosh::Director
           context 'user has readonly access' do
             before(:each) { basic_authorize 'reader', 'reader' }
 
-            it 'provides access if accessing task' do
-              get "/#{task.id}"
-              expect(last_response.status).to eq(200)
+            context "user has access to task's deployment" do
+              it 'provides access if accessing task' do
+                get "/#{task.id}"
+                expect(last_response.status).to eq(200)
+              end
             end
           end
 
@@ -343,8 +345,13 @@ module Bosh::Director
               expect(task_json['description']).to eq('fake-description')
             end
 
-            context 'user has access to task' do
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, teams: 'team-rocket,dev') }
+            context "user has access to task's deployment" do
+              before do
+                Models::Deployment.make(:name => deployment_name_1,
+                  :teams => 'team-rocket,dev'
+                )
+              end
+              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1) }
 
               it 'returns task' do
                 get "/#{task.id}"
@@ -352,8 +359,22 @@ module Bosh::Director
               end
             end
 
-            context 'user does not have access to task' do
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, teams: 'team-rocket') }
+            context "user does not have access to task's deployment" do
+              before do
+                Models::Deployment.make(:name => deployment_name_1,
+                  :teams => 'team-rocket'
+                )
+              end
+              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1) }
+
+              it 'returns task' do
+                get "/#{task.id}"
+                expect(last_response.status).to eq(200)
+              end
+            end
+
+            context "task's deployment got deleted" do
+              let(:task) { Models::Task.make(state: 'queued', deployment_name: 'removed') }
 
               it 'returns task' do
                 get "/#{task.id}"
@@ -363,24 +384,39 @@ module Bosh::Director
           end
 
           context 'user has team admin access' do
-            context "user doesn't have access to task" do
+            context "user doesn't have access to task's deployment" do
               before do
+                Models::Deployment.make(:name => deployment_name_1,
+                  :teams => 'team-rocket'
+                )
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
-
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, :teams => 'team-rocket') }
+              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1) }
               it 'returns 401' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(401)
               end
             end
 
-            context "user has access to task" do
+            context 'when task has no deployment' do
               before do
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
+              let(:task) { Models::Task.make(state: 'queued') }
+              it 'returns 401' do
+                get "/#{task.id}"
+                expect(last_response.status).to eq(401)
+              end
+            end
 
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, :teams => 'team-rocket,dev') }
+            context "user has access to task's deployment" do
+              before do
+                Models::Deployment.make(:name => deployment_name_1,
+                  :teams => 'team-rocket,dev'
+                )
+                basic_authorize 'dev-team-member', 'dev-team-member'
+              end
+              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1) }
               it 'returns 200' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(200)
@@ -506,20 +542,18 @@ module Bosh::Director
               Models::Task.make(
                 type: :update_deployment,
                 state: :queued,
-                deployment_name: deployment_name_1,
-                teams: 'team-rocket,dev',
+                deployment_name: deployment_name_1
               )
             end
             let(:task_2) do
               Models::Task.make(
                 type: :update_deployment,
                 state: :queued,
-                deployment_name: deployment_name_2,
-                teams: 'team-rocket',
+                deployment_name: deployment_name_2
               )
             end
             let(:task_deleted) do
-              Models::Task.make(type: :update_deployment, state: :queued, deployment_name: 'deleted', )
+              Models::Task.make(type: :update_deployment, state: :queued, deployment_name: 'deleted')
             end
 
             let(:task_no_deployment) { Models::Task.make(type: :update_deployment, state: :queued) }

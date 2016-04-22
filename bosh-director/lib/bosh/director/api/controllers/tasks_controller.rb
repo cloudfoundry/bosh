@@ -16,9 +16,9 @@ module Bosh::Director
           type = params[:type]
           task = @task_manager.find_task(params[:id])
           if type == 'debug' || type == 'cpi' || !type
-            @permission_authorizer.granted_or_raise(task, :admin, token_scopes)
+            check_access_to_task(task, :admin)
           elsif type == 'event' || type == 'result' || type == 'none'
-            @permission_authorizer.granted_or_raise(task, :read, token_scopes)
+            check_access_to_task(task, :read)
           else
             raise UnauthorizedToAccessDeployment, "Unknown type #{type}"
           end
@@ -89,7 +89,10 @@ module Bosh::Director
 
       get '/:id', scope: :list_tasks do
         task = @task_manager.find_task(params[:id])
-        if !@permission_authorizer.is_granted?(task, :read, token_scopes)
+        deployment_name = task.deployment_name
+        if deployment_name
+          check_access_to_deployment(deployment_name, :read)
+        elsif !@permission_authorizer.is_granted?(:director, :read, token_scopes)
           raise UnauthorizedToAccessDeployment,
             'One of the following scopes is required to access this task: ' +
               @permission_authorizer.list_expected_scope(:director, :read, token_scopes).join(', ')
@@ -130,6 +133,23 @@ module Bosh::Director
       end
 
       private
+
+      def check_access_to_task(task, scope)
+        if task.deployment_name
+          check_access_to_deployment(task.deployment_name, scope)
+        else
+          @permission_authorizer.granted_or_raise(:director, scope, token_scopes)
+        end
+      end
+
+      def check_access_to_deployment(deployment_name, scope)
+        begin
+          deployment = @deployment_manager.find_by_name(deployment_name)
+          @permission_authorizer.granted_or_raise(deployment, scope, token_scopes)
+        rescue DeploymentNotFound
+          @permission_authorizer.granted_or_raise(:director, :admin, token_scopes)
+        end
+      end
 
       def task_timeout?(task)
         # Some of the old task entries might not have the checkpoint_time
