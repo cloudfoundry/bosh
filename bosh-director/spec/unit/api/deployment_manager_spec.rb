@@ -84,5 +84,6 @@ module Bosh::Director
         expect(subject.find_by_name(deployment.name)).to eq deployment
       end
     end
+
   end
 end
