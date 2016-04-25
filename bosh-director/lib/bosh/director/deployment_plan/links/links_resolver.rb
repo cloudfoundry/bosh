@@ -33,7 +33,7 @@ module Bosh::Director
             job.add_resolved_link(link_name, link_path.manual_spec)
           else
             link_network = template.consumes_link_info(job.name, link_name)['network']
-            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network, job.name, template.name)
+            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network)
             link_spec = link_lookup.find_link_spec
 
             unless link_spec

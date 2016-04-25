@@ -158,6 +158,8 @@ module Bosh::Director
           errors = []
           if kind == "consumes"
             errors = validate_consume_link(source, link_name, job_name)
+          elsif kind == "provides"
+            errors.concat(validate_provide_link(link_name, job_name))
           end
           errors.concat(validate_link_def(source, link_name, job_name))
 
@@ -228,12 +230,23 @@ module Bosh::Director
         errors
       end
 
+      def validate_provide_link(link_name, job_name)
+
+        # Assumption: release spec has been parsed prior to the manifest being
+        # parsed. This way, we can check to see if there are any provides link being provided.
+        errors = []
+        if @link_infos[job_name]["provides"][link_name].empty?
+          errors.push("Job '#{job_name}' does not provide link '#{link_name}' in the release spec")
+        end
+
+        return errors
+      end
+
       def validate_link_def(source, link_name, job_name)
         errors = []
         if !source.nil? && (source.has_key?('name') || source.has_key?('type'))
           errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{job_name}'. Please provide these keys in the release only.")
         end
-
         errors
       end
 

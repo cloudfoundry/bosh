@@ -3,7 +3,7 @@ module Bosh::Director
     # tested in link_resolver_spec
 
     class LinkLookupFactory
-      def self.create(consumed_link, link_path, deployment_plan, link_network, consumes_job, consumes_template)
+      def self.create(consumed_link, link_path, deployment_plan, link_network)
         if link_path.deployment == deployment_plan.name
           PlannerLinkLookup.new(consumed_link, link_path, deployment_plan, link_network)
         else

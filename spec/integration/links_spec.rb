@@ -186,6 +186,30 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when link is not defined in provides spec but specified in manifest' do
+      let(:consume_job) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+          name: 'consume_job',
+          templates: [
+            {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
+          ],
+          instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [consume_job]
+        manifest
+      end
+
+      it 'should raise an error' do
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(/Job 'consume_job' does not provide link 'consumer_resource' in the release spec/)
+      end
+    end
+
     context 'when link is provided' do
       let(:links) do
         {
