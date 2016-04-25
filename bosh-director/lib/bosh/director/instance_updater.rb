@@ -75,17 +75,10 @@ module Bosh::Director
 
         recreated = false
         if needs_recreate?(instance_plan)
-          begin
-            recreate_parent_id = add_event(instance.deployment_model.name, 'recreate', instance.model.name, nil) if action == 'update'
-            @logger.debug('Failed to update in place. Recreating VM')
-            @disk_manager.unmount_disk_for(instance_plan)
-            @vm_recreator.recreate_vm(instance_plan, nil)
-            recreated = true
-          rescue Exception => e
-            raise e
-          ensure
-            add_event(instance.deployment_model.name, 'recreate', instance.model.name, nil, recreate_parent_id, e) if recreate_parent_id
-          end
+          @logger.debug('Failed to update in place. Recreating VM')
+          @disk_manager.unmount_disk_for(instance_plan)
+          @vm_recreator.recreate_vm(instance_plan, nil)
+          recreated = true
         end
 
         release_obsolete_ips(instance_plan)
@@ -137,7 +130,8 @@ module Bosh::Director
 
     def get_action_and_context(instance_plan)
       changes = instance_plan.changes
-      if changes.size == 1 && [:state,:recreate,:restart].include?(changes.first)
+      context = {}
+      if changes.size == 1 && [:state, :restart].include?(changes.first)
         action = case instance_plan.instance.virtual_state
           when 'started'
             'start'
@@ -148,16 +142,16 @@ module Bosh::Director
           else
             instance_plan.instance.virtual_state
         end
-       return action , {}
       else
+        context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
         if instance_plan.new?
-          return 'create', {}
+          action = 'create'
         else
-          context = {changes: changes.to_a}
-          context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
-          return 'update', context
+          context['changes'] = changes.to_a unless changes.size == 1 && changes.first == :recreate
+          action = needs_recreate?(instance_plan) ? 'recreate' : 'update'
         end
       end
+      return action, context
     end
 
     def release_obsolete_ips(instance_plan)

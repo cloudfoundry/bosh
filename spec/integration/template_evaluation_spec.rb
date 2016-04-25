@@ -55,6 +55,15 @@ describe 'template', type: :integration do
     expect(new_id).to match /[a-f0-9\-]/
 
     expect(new_id).to eq(original_id)
+
+    output = bosh_runner.run('events')
+    parser = Support::TableHelpers::Parser.new(scrub_event_time(scrub_random_cids(scrub_random_ids(output))))
+    expect(parser.data).to include(
+      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object type' => 'deployment', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'ID' => /[0-9]{1,3} <- [0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object type' => 'instance', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
+      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'recreate', 'Object type' => 'instance', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'id_job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
+      {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'update', 'Object type' => 'deployment', 'Task' => /[0-9]{1,3}/, 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+    )
   end
 
   it 'prints all template evaluation errors when there are errors in multiple release template files' do
