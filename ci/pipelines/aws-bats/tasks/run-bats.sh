@@ -61,6 +61,7 @@ properties:
   second_static_ip: $BAT_SECOND_STATIC_IP
   uuid: $(bosh status --uuid)
   pool_size: 1
+  availability_zone: us-east-1a
   stemcell:
     name: ${BAT_STEMCELL_NAME}
     version: latest
