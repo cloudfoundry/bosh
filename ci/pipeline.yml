@@ -269,6 +269,7 @@ jobs:
     public: true
     serial: true
     plan:
+    - { get: fuzz-interval-trigger, trigger: true }
     - { get: bosh-src, trigger: true, passed: [start-job] }
     - { get: bosh-load-tests-workspace }
 
