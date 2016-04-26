@@ -132,7 +132,7 @@ module Bosh::Director
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_excluding('skip_drain'))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'))
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -795,7 +795,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false],
-                    'fake-dep-name'
+                    deployment
                   ).and_return(task)
 
                   perform({})
@@ -807,7 +807,7 @@ module Bosh::Director
                     Jobs::RunErrand,
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true],
-                    'fake-dep-name'
+                    deployment
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
