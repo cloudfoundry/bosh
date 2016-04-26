@@ -46,4 +46,6 @@ if [ "${os_type}" == "centos" ] || [ "${os_type}" == "ubuntu" ] ; then
     sed -i 's/^log_group = .*$/log_group = root/g' $chroot/etc/audit/auditd.conf
     sed -i 's/^space_left = .*$/space_left = 75/g' $chroot/etc/audit/auditd.conf
     sed -i 's/^admin_space_left = .*$/admin_space_left = 50/g' $chroot/etc/audit/auditd.conf
+
+    sed -i 's/^active = .*$/active = yes/g' $chroot/etc/audisp/plugins.d/syslog.conf
 fi

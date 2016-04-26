@@ -376,7 +376,7 @@ EOF
   context 'ensure audit package file have unmodified contents (stig: V-38637)' do
     # ignore auditd.conf, auditd, and audit.rules since we modify these files in
     # other stigs
-    describe command("dpkg -V audit | grep -v 'auditd.conf' | grep -v 'default/auditd' | grep -v 'audit.rules' | grep '^..5'") do
+    describe command("dpkg -V audit | grep -v 'auditd.conf' | grep -v 'default/auditd' | grep -v 'audit.rules' | grep -v 'syslog.conf' | grep '^..5'") do
       its (:stdout) { should be_empty }
     end
   end

@@ -7,7 +7,13 @@ module Bosh::Dev
     def create_final
       Dir.chdir('release') do
         @cli_session.run_bosh('create release --force')
-        output = @cli_session.run_bosh('create release --force --final --with-tarball')
+
+        release_version = ''
+        unless ENV['BOSH_FINAL_RELEASE_VERSION'].nil?
+          release_version = " --version #{ENV['BOSH_FINAL_RELEASE_VERSION']}"
+        end
+
+        output = @cli_session.run_bosh("create release --force --final --with-tarball#{release_version}")
         output.scan(/Release tarball\s+\(.+\):\s+(.+)$/).first.first
       end
     end
