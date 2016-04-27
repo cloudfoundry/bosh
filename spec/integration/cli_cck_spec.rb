@@ -22,11 +22,30 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
   3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
-  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  4. Delete VM
+  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     recreate_vm = 3
     bosh_run_cck_with_resolution(3, recreate_vm)
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+  end
+
+  it 'deletes VMs with dead agents' do
+    current_sandbox.cpi.kill_agents
+
+    cloudcheck_response = scrub_random_ids(bosh_run_cck_with_resolution(3))
+    expect(cloudcheck_response).to_not match(regexp('No problems found'))
+    expect(cloudcheck_response).to match(regexp('3 unresponsive'))
+    expect(cloudcheck_response).to match(regexp("1. Skip for now
+  2. Reboot VM
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
+  4. Delete VM
+  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+
+    delete_vm = 4
+    bosh_run_cck_with_resolution(3, delete_vm)
+    cck_output = runner.run('cloudcheck --report')
+    expect(cck_output).to match(regexp('No problems found'))
   end
 
   it 'properly delete VMs references for VMs with dead agents' do
@@ -38,9 +57,10 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
   3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
-  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  4. Delete VM
+  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
-    delete_vm_reference = 4
+    delete_vm_reference = 5
     bosh_run_cck_with_resolution(3, delete_vm_reference)
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
@@ -79,7 +99,8 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to_not match(regexp('1. Skip for now
   2. Reboot VM
   3. Recreate VM using last known apply spec
-  4. Delete VM reference (DANGEROUS!)'))
+  4. Delete VM
+  5. Delete VM reference (DANGEROUS!)'))
 
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end

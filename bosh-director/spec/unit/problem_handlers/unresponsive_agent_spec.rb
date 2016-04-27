@@ -173,6 +173,25 @@ module Bosh::Director
       end
     end
 
+    describe 'delete_vm resolution' do
+
+      it 'skips deleting VM if agent is now alive' do
+        expect(@agent).to receive(:ping).and_return(:pong)
+
+        expect {
+          handler.apply_resolution(:delete_vm)
+        }.to raise_error(ProblemHandlerError, 'Agent is responding now, skipping resolution')
+      end
+
+      it 'deletes VM from IaaS' do
+        expect(@cloud).to receive(:delete_vm).with('vm-cid')
+        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
+        expect{
+          handler.apply_resolution(:delete_vm)
+        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+      end
+    end
+
     describe 'delete_vm_reference resolution' do
 
       it 'skips deleting VM ref if agent is now alive' do

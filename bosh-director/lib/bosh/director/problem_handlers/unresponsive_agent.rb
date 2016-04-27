@@ -37,6 +37,11 @@ module Bosh::Director
         action { validate; recreate_vm(@instance) }
       end
 
+      resolution :delete_vm do
+        plan { 'Delete VM' }
+        action { validate; delete_vm_from_iaas(@instance) }
+      end
+
       resolution :delete_vm_reference do
         plan { 'Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)' }
         action { validate; delete_vm_reference(@instance) }

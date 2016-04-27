@@ -38,9 +38,8 @@ module Bosh::Director
       instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
     end
 
-    def recreate_vm(instance_model)
-      @logger.debug("Recreating Vm: #{instance_model})")
-      existing_vm_env = instance_model.vm_env
+    def delete_vm_from_iaas(instance_model)
+      @logger.debug("Deleting Vm: #{instance_model})")
 
       validate_spec(instance_model.spec)
       validate_env(instance_model.vm_env)
@@ -56,7 +55,13 @@ module Bosh::Director
 
         @logger.warn("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
       end
+    end
 
+    def recreate_vm(instance_model)
+      @logger.debug("Recreating Vm: #{instance_model})")
+      delete_vm_from_iaas(instance_model)
+
+      existing_vm_env = instance_model.vm_env
       instance_plan_to_create = create_instance_plan(instance_model, existing_vm_env)
 
       vm_creator.create_for_instance_plan(
