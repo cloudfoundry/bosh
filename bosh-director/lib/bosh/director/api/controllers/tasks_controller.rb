@@ -56,27 +56,33 @@ module Bosh::Director
           ])
         end
 
-        deployment = params['deployment']
-        if deployment
-          dataset = dataset.filter(deployment_name: deployment)
-          deployment = @deployment_manager.find_by_name(deployment)
-          @permission_authorizer.granted_or_raise(deployment, :read, token_scopes)
-        end
+        tasks = dataset.order_by(Sequel.desc(:timestamp)).all
 
-        tasks = dataset.order_by(Sequel.desc(:timestamp)).map
-
-        unless @permission_authorizer.is_granted?(:director, :read, token_scopes)
-          permitted_deployments = @deployment_manager.all_by_name_asc.select { |deployment|
-              @permission_authorizer.is_granted?(deployment, :read, token_scopes)
-            }.map { |deployment| deployment.name }
-
-          tasks = tasks.select do |task|
-            next false unless task.deployment_name
-            permitted_deployments.include?(task.deployment_name)
+        permitted_tasks = Set.new
+        if @permission_authorizer.is_granted?(:director, :read, token_scopes) ||
+          @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+          permitted_tasks = Set.new(tasks)
+        else
+          tasks.each do |task|
+            if task.teams
+              teams = task.teams.split(',')
+              token_scopes.each do |scope|
+                teams.each do |t|
+                  if scope.include? t
+                    permitted_tasks << task
+                  end
+                end
+              end
+            end
           end
         end
 
-        tasks = tasks.map do |task|
+        deployment = params['deployment']
+        if deployment
+          permitted_tasks.select! {|task| task.deployment_name == deployment}
+        end
+
+        tasks = permitted_tasks.map do |task|
           if task_timeout?(task)
             task.state = :timeout
             task.save
