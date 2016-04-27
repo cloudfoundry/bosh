@@ -80,6 +80,8 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 ## Building a stemcell
 
+Note: **To speed stemcell building you can specify environment variable `BOSH_MICRO_ENABLED=no` to skip the microbosh building**
+
 ### Building the stemcell with published OS image
 
 Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh.io/stemcells](https://bosh.io/stemcells). Note that the last two arguments to the rake command are the S3 bucket and key of the OS image to use (i.e. in the example below, the .tgz will be downloaded from [http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz](http://bosh-os-images.s3.amazonaws.com/bosh-centos-7-os-image.tgz)). More info at OS\_IMAGES.
