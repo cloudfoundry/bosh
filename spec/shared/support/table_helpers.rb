@@ -28,7 +28,7 @@ module Support
       end
 
       def parse(content)
-        CSV.parse(clean(content), { col_sep: "|" }).map(&:compact)
+        CSV.parse(clean(content), { col_sep: "|", quote_char: "\x00" }).map(&:compact)
       end
     end
   end

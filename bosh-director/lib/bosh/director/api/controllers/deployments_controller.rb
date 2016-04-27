@@ -340,6 +340,7 @@ module Bosh::Director
         if deployment
           deployment_name = deployment['name']
           if deployment_name
+            options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
             @deployments_repo.find_or_create_by_name(deployment_name, options)
           end
         end
