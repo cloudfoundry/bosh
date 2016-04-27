@@ -51,6 +51,7 @@ jobs:
           BAT_VCAP_PASSWORD:          {{BAT_VCAP_PASSWORD}}
           BAT_STEMCELL_NAME:          {{BAT_STEMCELL_NAME_hvm_ubuntu}}
           stack_name:                 primary
+          UNSUPPORTED_BATS:           multiple_manual_networks,root_partition
 
       - task: teardown-director
         file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-director.yml

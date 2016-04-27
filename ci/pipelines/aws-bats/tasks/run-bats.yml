@@ -16,3 +16,4 @@ params:
   BAT_VCAP_PASSWORD:            replace-me
   BAT_STEMCELL_NAME:            replace-me
   stack_name:                   replace-me
+  UNSUPPORTED_BATS:             replace-me
