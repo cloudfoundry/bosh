@@ -25,10 +25,10 @@ describe 'cli: events', type: :integration do
     stable_data = get_details(data, ['ID', 'Time', 'User', 'Task'])
     flexible_data = get_details(data, [ 'Action', 'Object type', 'Object ID', 'Dep', 'Inst', 'Context'])
 
-    expect(stable_data).to all(include('Time' => 'xxx xxx xx xx:xx:xx UTC xxxx'))
-    expect(stable_data).to all(include('User' => 'test'))
-    expect(stable_data).to all(include('Task' => /[0-9]{1,3}|-/))
-    expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}/))
+    expect(stable_data).to all(include('Time' => /xxx xxx xx xx:xx:xx UTC xxxx|^$/))
+    expect(stable_data).to all(include('User' => /test|^$/))
+    expect(stable_data).to all(include('Task' => /[0-9]{1,3}|-|^$/))
+    expect(stable_data).to all(include('ID' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
     expect(flexible_data).to contain_exactly(
       {'Action' => 'delete', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
@@ -39,11 +39,14 @@ describe 'cli: events', type: :integration do
       {'Action' => 'delete', 'Object type' => 'vm', 'Object ID' => /[0-9]{1,5}/, 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'delete', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
-      {'Action' => 'update', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => "error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update...."},
+      {'Action' => 'update', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => "error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update....,"},
+      {'Action' => '', 'Object type' => '', 'Object ID' => '', 'Dep' => '', 'Inst' => '', 'Context' => 'before: {"releases"=>["bosh-release/0+dev.1"], "stemcells"=>["ubuntu-stemcell/1"]},'},
+      {'Action' => '', 'Object type' => '', 'Object ID' => '', 'Dep' => '', 'Inst' => '', 'Context' => 'after: {"releases"=>["bosh-release/0+dev.1"], "stemcells"=>["ubuntu-stemcell/1"]}'},
       {'Action' => 'start', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => "error: 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' is not running after update...."},
       {'Action' => 'start', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
-      {'Action' => 'create', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => '-'},
+      {'Action' => 'create', 'Object type' => 'deployment', 'Object ID' => 'simple', 'Dep' => 'simple', 'Inst' => '-', 'Context' => 'before: {},'},
+      {'Action' => '', 'Object type' => '', 'Object ID' => '', 'Dep' => '', 'Inst' => '', 'Context' => 'after: {"releases"=>["bosh-release/0+dev.1"], "stemcells"=>["ubuntu-stemcell/1"]}'},
       {'Action' => 'create', 'Object type' => 'instance', 'Object ID' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'create', 'Object type' => 'disk', 'Object ID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
       {'Action' => 'create', 'Object type' => 'disk', 'Object ID' => '-', 'Dep' => 'simple', 'Inst' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Context' => '-'},
@@ -62,26 +65,6 @@ describe 'cli: events', type: :integration do
       {'Action' => 'update', 'Object type' => 'runtime-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
       {'Action' => 'update', 'Object type' => 'cloud-config', 'Object ID' => '-', 'Dep' => '-', 'Inst' => '-', 'Context' => '-'},
     )
-
-=begin
-
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | disk           | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                      | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | disk           | -                                                                                     | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | vm             | 51404                                                                                 | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | vm             | -                                                                                     | x      | simple | foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx                                           | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | vm             | 51394                                                                                 | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | vm             | 51394                                                                                 | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | delete | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x <- x | xxx xxx xx xx:xx:xx UTC xxxx | test | create | vm             | [0-9]{1,3}                                                                                 | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | vm             | -                                                                                     | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | instance       | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | x      | simple | compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | create | deployment     | simple                                                                                | x      | -      | -                                                                                     | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | runtime-config | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
-| x      | xxx xxx xx xx:xx:xx UTC xxxx | test | update | cloud-config   | -                                                                                     | -    | -      | -                                                                                     | -                                                                                        |
-=end
 
     instance_name = parse_first_instance_name(output)
     output = bosh_runner.run("events --deployment simple --task 6 --instance #{instance_name}")
