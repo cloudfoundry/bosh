@@ -5,8 +5,10 @@ require 'bosh/dev/aws/deployment_account'
 require 'bosh/dev/vsphere/deployment_account'
 require 'bosh/dev/vcloud/deployment_account'
 require 'bosh/dev/automated_deploy'
+require 'bosh/dev/uri_provider'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/stemcell/stemcell'
+require 'bosh/stemcell/definition'
 require 'logging'
 
 module Bosh::Dev
