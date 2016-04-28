@@ -13,26 +13,51 @@ module Bosh::Dev
       subject { described_class.candidate(bucket_name) }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
-        before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
+        let(:environment) { { 'CANDIDATE_BUILD_NUMBER' => 'candidate'} }
+        before { stub_const('ENV', environment) }
 
         it { should be_a(Build::Candidate) }
         its(:number) { should eq('candidate') }
         its(:bucket) { should eq('fake-bucket') }
 
-        it 'uses DownloadAdapater as download adapter' do
-          download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
-          expect(Bosh::Dev::DownloadAdapter)
-            .to receive(:new)
-            .with(logger)
-            .and_return(download_adapter)
+        context 'when SKIP_PROMOTE_ARTIFACTS is set' do
+          let(:environment) { { 'CANDIDATE_BUILD_NUMBER' => 'candidate', 'SKIP_PROMOTE_ARTIFACTS' => 'gems,release'} }
 
-          build = instance_double('Bosh::Dev::Build::Local')
-          expect(Bosh::Dev::Build::Candidate)
-            .to receive(:new)
-            .with('candidate', 'fake-bucket', download_adapter, logger)
-            .and_return(build)
+          it 'uses DownloadAdapater as download adapter, constructed with skips' do
+            download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
+            expect(Bosh::Dev::DownloadAdapter)
+              .to receive(:new)
+                    .with(logger)
+                    .and_return(download_adapter)
 
-          expect(subject).to eq(build)
+            build = instance_double('Bosh::Dev::Build::Local')
+            expect(Bosh::Dev::Build::Candidate)
+              .to receive(:new)
+                    .with('candidate', 'fake-bucket', download_adapter, logger, ['gems', 'release'])
+                    .and_return(build)
+
+            expect(subject).to eq(build)
+          end
+        end
+
+        context 'when SKIP_PROMOTE_ARTIFACTS is not set' do
+          before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
+
+          it 'uses DownloadAdapater as download adapter' do
+            download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
+            expect(Bosh::Dev::DownloadAdapter)
+              .to receive(:new)
+                    .with(logger)
+                    .and_return(download_adapter)
+
+            build = instance_double('Bosh::Dev::Build::Local')
+            expect(Bosh::Dev::Build::Candidate)
+              .to receive(:new)
+                    .with('candidate', 'fake-bucket', download_adapter, logger, [])
+                    .and_return(build)
+
+            expect(subject).to eq(build)
+          end
         end
       end
 
@@ -41,28 +66,50 @@ module Bosh::Dev
         its(:number) { should eq('0000') }
         its(:bucket) { should eq('fake-bucket') }
 
-        it 'uses LocalDownloadAdapater as download adapter' do
-          download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
-          expect(Bosh::Dev::LocalDownloadAdapter)
-            .to receive(:new)
-            .with(logger)
-            .and_return(download_adapter)
+        context 'when SKIP_PROMOTE_ARTIFACTS is set' do
+          before { stub_const('ENV', 'SKIP_PROMOTE_ARTIFACTS' => 'gems,stemcells') }
 
-          build = instance_double('Bosh::Dev::Build::Local')
-          expect(Bosh::Dev::Build::Local)
-            .to receive(:new)
-            .with('0000', 'fake-bucket', download_adapter, logger)
-            .and_return(build)
+          it 'uses LocalDownloadAdapater as download adapter, constructed with skips' do
+            download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
+            expect(Bosh::Dev::LocalDownloadAdapter)
+              .to receive(:new)
+                    .with(logger)
+                    .and_return(download_adapter)
 
-          expect(subject).to eq(build)
+            build = instance_double('Bosh::Dev::Build::Local')
+            expect(Bosh::Dev::Build::Local)
+              .to receive(:new)
+                    .with('0000', 'fake-bucket', download_adapter, logger, ['gems', 'stemcells'])
+                    .and_return(build)
+
+            expect(subject).to eq(build)
+          end
+        end
+
+        context 'when SKIP_PROMOTE_ARTIFACTS is not set' do
+          it 'uses LocalDownloadAdapater as download adapter' do
+            download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
+            expect(Bosh::Dev::LocalDownloadAdapter)
+              .to receive(:new)
+                    .with(logger)
+                    .and_return(download_adapter)
+
+            build = instance_double('Bosh::Dev::Build::Local')
+            expect(Bosh::Dev::Build::Local)
+              .to receive(:new)
+                    .with('0000', 'fake-bucket', download_adapter, logger, [])
+                    .and_return(build)
+
+            expect(subject).to eq(build)
+          end
         end
       end
     end
 
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
-
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger) }
+    let(:skip_promote_artifacts) { [] }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, skip_promote_artifacts) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -241,14 +288,14 @@ module Bosh::Dev
           latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
           expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
-                                                      key: key,
-                                                      body: anything,
-                                                      public: true)
+                                                          key: key,
+                                                          body: anything,
+                                                          public: true)
 
           expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
-                                                      key: latest_key,
-                                                      body: anything,
-                                                      public: true)
+                                                          key: latest_key,
+                                                          body: anything,
+                                                          public: true)
 
           build.upload_stemcell(stemcell_archive)
 
@@ -274,14 +321,14 @@ module Bosh::Dev
           latest_key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
           expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
-                                                      key: key,
-                                                      body: anything,
-                                                      public: true)
+                                                          key: key,
+                                                          body: anything,
+                                                          public: true)
 
           expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
-                                                      key: latest_key,
-                                                      body: anything,
-                                                      public: true)
+                                                          key: latest_key,
+                                                          body: anything,
+                                                          public: true)
 
           build.upload_stemcell(stemcell_archive)
 
@@ -317,8 +364,19 @@ module Bosh::Dev
     end
   end
 
+  describe Build do
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+    let(:bucket_name) { 'fake-bucket' }
+
+    it 'constructs the appropriate PromotableArtifacts' do
+      expect(PromotableArtifacts).to receive(:new)
+                                       .with(anything, logger, {skip_artifacts: ['gems']}) # TODO: anything no
+      build = Build.new('123', bucket_name, download_adapter, logger, ['gems'])
+    end
+  end
+
   describe Build::Candidate do
-    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger) }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger, []) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -346,7 +404,7 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    subject { described_class.new('build-number', bucket_name, download_adapter, logger) }
+    subject { described_class.new('build-number', bucket_name, download_adapter, logger, []) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
     let(:bucket_name) { 'fake-bucket' }
 
@@ -385,7 +443,7 @@ module Bosh::Dev
         it 'uses download adapter to move stemcell to given location' do
           expect(download_adapter)
             .to receive(:download)
-            .with('tmp/fake-stemcell-name', '/output-directory/fake-stemcell-name')
+                  .with('tmp/fake-stemcell-name', '/output-directory/fake-stemcell-name')
           filename = perform
 
           expect(filename).to eq('fake-stemcell-name')
