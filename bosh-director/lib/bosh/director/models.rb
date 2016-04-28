@@ -26,6 +26,7 @@ require 'bosh/director/models/rendered_templates_archive'
 require 'bosh/director/models/lock'
 require 'delayed_job_sequel'
 require 'bosh/director/models/event'
+require 'bosh/director/models/team'
 
 module Bosh::Director
   module Models

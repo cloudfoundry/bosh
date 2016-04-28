@@ -8,6 +8,7 @@ module Bosh::Director::Models
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     many_to_one  :cloud_config
     many_to_one  :runtime_config
+    many_to_many :teams
 
     def validate
       validates_presence :name
@@ -24,14 +25,22 @@ module Bosh::Director::Models
       self.link_spec_json = Yajl::Encoder.encode(data)
     end
 
-    def self.transform_admin_team_scope_to_teams(token_scopes)
-      return [] if token_scopes.nil?
-      team_scopes = token_scopes.map do |scope|
-        match = scope.match(/\Abosh\.teams\.([^\.]*)\.admin\z/)
-        match[1] unless match.nil?
-      end
-      team_scopes.compact
+    def self.create_with_teams(attributes)
+      teams = attributes.delete(:teams)
+      deployment = create(attributes)
+      deployment.teams = teams
+      deployment
     end
+
+    def teams=(teams)
+      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
+        self.remove_all_teams
+        (teams || []).each do |t|
+          self.add_team(t)
+        end
+      end
+    end
+
   end
 
   Deployment.plugin :association_dependencies

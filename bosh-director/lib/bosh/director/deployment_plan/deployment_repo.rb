@@ -9,8 +9,8 @@ module Bosh::Director
         return deployment if deployment
 
         if options['scopes']
-          team_scopes = Bosh::Director::Models::Deployment.transform_admin_team_scope_to_teams(options['scopes'])
-          attributes.merge!(teams: team_scopes.join(','))
+          team_scopes = Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(options['scopes'])
+          attributes.merge!(teams: team_scopes)
         end
 
         create_for_attributes(attributes)
@@ -28,7 +28,8 @@ module Bosh::Director
                 "Invalid deployment name '#{attributes[:name]}', canonical name already taken ('#{canonical_name}')"
             end
           end
-          Bosh::Director::Models::Deployment.create(attributes)
+
+          Bosh::Director::Models::Deployment.create_with_teams(attributes)
         end
       end
     end

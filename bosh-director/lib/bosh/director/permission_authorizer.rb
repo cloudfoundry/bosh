@@ -73,8 +73,8 @@ module Bosh::Director
     end
 
     def subject_team_scopes(subject, permission)
-      permissions = subject.teams.nil? ? [] : subject.teams.split(',')
-      permissions.map{ |team_name| "bosh.teams.#{team_name}.#{permission}" }
+      teams = subject.teams.nil? ? [] : subject.teams
+      teams.map{ |team| "bosh.teams.#{team.name}.#{permission}" }
     end
 
     def intersect(valid_scopes, token_scopes)

@@ -905,8 +905,10 @@ module Bosh::Director
           release_version.add_template(template2)
         end
 
-        let!(:owned_deployment) { Models::Deployment.create(:name => 'owned_deployment', teams:'dev', manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
-        let!(:other_deployment) { Models::Deployment.create(:name => 'other_deployment', teams:'other', manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
+        let(:dev_team) { Models::Team.create(:name => 'dev') }
+        let(:other_team) { Models::Team.create(:name => 'other') }
+        let!(:owned_deployment) { Models::Deployment.create_with_teams(:name => 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
+        let!(:other_deployment) { Models::Deployment.create_with_teams(:name => 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
         describe 'when a user has dev team admin membership' do
 
           before {

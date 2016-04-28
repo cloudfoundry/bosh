@@ -65,10 +65,10 @@ module Bosh::Director
         else
           tasks.each do |task|
             if task.teams
-              teams = task.teams.split(',')
+              teams = task.teams
               token_scopes.each do |scope|
                 teams.each do |t|
-                  if scope.include? t
+                  if scope.include?(t.name)
                     permitted_tasks << task
                   end
                 end

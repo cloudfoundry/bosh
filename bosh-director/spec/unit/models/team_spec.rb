@@ -1,16 +1,17 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe Deployment do
+  describe Team do
     describe '#transform_team_scope_to_teams' do
-      it 'returns an array of team names from scope format' do
+      it 'returns an array of teams from scope format' do
         token_scopes = ['bosh.teams.prod.admin']
-        expect(Deployment.transform_admin_team_scope_to_teams(token_scopes)).to eq(['prod'])
+        team = Team.transform_admin_team_scope_to_teams(token_scopes)
+        expect(team[0].name).to eq('prod')
       end
 
       it 'returns an empty array if no valid token_scopes are found' do
         token_scopes = ['bosh.admin']
-        expect(Deployment.transform_admin_team_scope_to_teams(token_scopes)).to eq([])
+        expect(Team.transform_admin_team_scope_to_teams(token_scopes)).to eq([])
       end
     end
   end

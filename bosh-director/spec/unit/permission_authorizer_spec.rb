@@ -150,7 +150,12 @@ module Bosh::Director
 
       describe 'task' do
         describe 'deployment-specific' do
-          let(:acl_subject) { Models::Task.make(id: 1, deployment_name: 'test-deployment', teams: 'security' ) }
+          let(:teams) { [ Models::Team.make(name: 'security') ] }
+          let(:acl_subject) {
+            task = Models::Task.make(id: 1, deployment_name: 'test-deployment')
+            task.teams = teams
+            task
+          }
 
           describe 'admin rights' do
             let(:acl_right) { :admin }
@@ -211,7 +216,12 @@ module Bosh::Director
       end
 
       describe 'deployment' do
-        let(:acl_subject) { Models::Deployment.make(name: 'favorite', teams: 'security') }
+        let(:teams) { [ Models::Team.make(name: 'security'), Models::Team.make(name: 'bosh') ] }
+        let(:acl_subject) do
+          deployment = Models::Deployment.make(name: 'favorite')
+          deployment.teams = teams
+          deployment
+        end
 
         describe 'checking admin rights' do
           let(:acl_right) { :admin }

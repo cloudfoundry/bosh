@@ -11,7 +11,10 @@ module Bosh::Director
       let(:config) { Psych.load_file(asset('test-director-config.yml')) }
       let(:deployment_name) { 'deployment-name' }
       let(:task_remover) { instance_double('Bosh::Director::Api::TaskRemover') }
-      let(:deployment) { Models::Deployment.make(name: deployment_name, teams: 'security,spies') }
+      let(:teams) do
+        [Models::Team.make(name: 'security'), Models::Team.make(name: 'spies')]
+      end
+      let(:deployment) { Models::Deployment.create_with_teams(name: deployment_name, teams: teams) }
 
       before do
         Config.configure(config)
@@ -52,12 +55,12 @@ module Bosh::Director
         expect {
           described_class.new.create_task('fake-user', type, description, deployment)
         }.to change {
-          Models::Task.where(teams: 'security,spies').count
+          Models::Task.where(teams: teams).count
         }.from(0).to(1)
       end
 
       it 'does not reference teams when task is not deployment-specific' do
-        expect(described_class.new.create_task('fake-user', type, description, nil).teams).to be_nil
+        expect(described_class.new.create_task('fake-user', type, description, nil).teams).to be_empty
       end
     end
   end

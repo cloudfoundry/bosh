@@ -24,6 +24,8 @@ module Bosh::Director
 
       let(:deployment_name_1) { 'deployment1' }
       let(:deployment_name_2) { 'deployment2' }
+      let(:team_rocket) { Models::Team.make(name: 'team-rocket') }
+      let(:dev) { Models::Team.make(name: 'dev') }
 
       let(:config) do
         config = Config.load_hash(test_config)
@@ -73,15 +75,15 @@ module Bosh::Director
 
             context 'collection of tasks associated with different deployments' do
               before do
-                Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
+                make_task_with_team(type: 'attach_disk', deployment_name: deployment_name_1, teams: [team_rocket, dev])
+                make_task_with_team(type: 'delete_deployment', deployment_name: deployment_name_1, teams: [team_rocket, dev])
+                make_task_with_team(type: 'run_errand', deployment_name: deployment_name_2, teams: [team_rocket])
+                make_task_with_team(type: 'snapshot_deployment', deployment_name: deployment_name_1, teams: [team_rocket, dev])
+                make_task_with_team(type: 'update_deployment', deployment_name: deployment_name_2, teams: [team_rocket])
                 Models::Task.make(type: 'create_snapshot')
-                Models::Task.make(type: 'delete_deployment', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
                 Models::Task.make(type: 'delete_release')
                 Models::Task.make(type: 'delete_snapshot')
                 Models::Task.make(type: 'delete_stemcell')
-                Models::Task.make(type: 'run_errand', deployment_name: deployment_name_2, teams: 'team-rocket')
-                Models::Task.make(type: 'snapshot_deployment', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
-                Models::Task.make(type: 'update_deployment', deployment_name: deployment_name_2, teams: 'team-rocket')
                 Models::Task.make(type: 'update_release')
                 Models::Task.make(type: 'update_stemcell')
               end
@@ -90,8 +92,8 @@ module Bosh::Director
                 it 'filters tasks with that deployment name' do
                   get "/?deployment=#{deployment_name_1}"
                   expect(last_response.status).to eq(200)
-                  actual_ids = parsed_body.map { |attributes| attributes['id'] }
-                  expect(actual_ids).to match([8, 3, 1])
+                  deployment_names = parsed_body.map { |attributes| attributes['deployment'] }
+                  expect(deployment_names.uniq).to match([deployment_name_1])
                 end
               end
             end
@@ -205,12 +207,13 @@ module Bosh::Director
 
           context 'when user has readonly access' do
             before do
+              team_a = Models::Team.make(name: 'team_a')
               (1..20).map { |i|
-                Models::Task.make(
+                make_task_with_team(
                   :type => :update_deployment,
                   :state => :queued,
                   :deployment_name => "deployment_dev#{i%2}",
-                  :teams => i%2 == 0 ? 'team_a,team_rocket' : 'team-rocket,dev'
+                  :teams => i%2 == 0 ? [team_a, team_rocket] : [team_rocket, dev]
                 )
               }
 
@@ -227,7 +230,7 @@ module Bosh::Director
           context 'when user has team admin permissions' do
             before do
               Models::Task.make(type: 'update_stemcell', deployment_name: nil, teams: nil)
-              Models::Task.make(type: 'attach_disk', deployment_name: deployment_name_1, teams: 'team-rocket,dev')
+              make_task_with_team(type: 'attach_disk', deployment_name: deployment_name_1, teams: [team_rocket, dev])
             end
 
             before do
@@ -251,9 +254,10 @@ module Bosh::Director
             end
 
             context 'when task has a deployment associated with it and the deployment has already been deleted' do
+              let(:prod) { Models::Team.make(name: 'prod')}
               it 'should show up in the response' do
-                Models::Task.make(type: 'update_deployment', deployment_name: 'deleted_deployment', teams: 'team-rocket,prod')
-                Models::Task.make(type: 'delete_deployment', deployment_name: 'deleted_deployment', teams: 'team-rocket,dev')
+                make_task_with_team(type: 'update_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, prod])
+                make_task_with_team(type: 'delete_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, dev])
                 get '/'
                 expect(last_response.status).to eq(200)
 
@@ -300,7 +304,7 @@ module Bosh::Director
             end
 
             context 'user has access to task' do
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, teams: 'team-rocket,dev') }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, teams: [team_rocket, dev]) }
 
               it 'returns task' do
                 get "/#{task.id}"
@@ -309,7 +313,7 @@ module Bosh::Director
             end
 
             context 'user does not have access to task' do
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, teams: 'team-rocket') }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, teams: [team_rocket]) }
 
               it 'returns task' do
                 get "/#{task.id}"
@@ -324,7 +328,7 @@ module Bosh::Director
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
 
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, :teams => 'team-rocket') }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, :teams =>[team_rocket]) }
               it 'returns 401' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(401)
@@ -336,7 +340,7 @@ module Bosh::Director
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
 
-              let(:task) { Models::Task.make(state: 'queued', deployment_name: deployment_name_1, :teams => 'team-rocket,dev') }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, :teams => [team_rocket, dev]) }
               it 'returns 200' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(200)
@@ -459,19 +463,19 @@ module Bosh::Director
 
           context 'user has team admin access' do
             let(:task_1) do
-              Models::Task.make(
+              make_task_with_team(
                 type: :update_deployment,
                 state: :queued,
                 deployment_name: deployment_name_1,
-                teams: 'team-rocket,dev',
+                teams: [team_rocket, dev],
               )
             end
             let(:task_2) do
-              Models::Task.make(
+              make_task_with_team(
                 type: :update_deployment,
                 state: :queued,
                 deployment_name: deployment_name_2,
-                teams: 'team-rocket',
+                teams: [team_rocket],
               )
             end
             let(:task_deleted) do
@@ -481,11 +485,11 @@ module Bosh::Director
             let(:task_no_deployment) { Models::Task.make(type: :update_deployment, state: :queued) }
 
             before(:each) do
-              Models::Deployment.make(:name => deployment_name_1,
-                :teams => 'team-rocket,dev'
+              Models::Deployment.create_with_teams(:name => deployment_name_1,
+                :teams => [team_rocket, dev]
               )
-              Models::Deployment.make(:name => deployment_name_2,
-                :teams => 'team-rocket'
+              Models::Deployment.create_with_teams(:name => deployment_name_2,
+                :teams => [team_rocket]
               )
               basic_authorize 'dev-team-member', 'dev-team-member'
             end

@@ -195,6 +195,10 @@ module Bosh::Director::Models
     timestamp   { Time.now }
   end
 
+  Team.blueprint do
+    name      { Sham.name }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }
