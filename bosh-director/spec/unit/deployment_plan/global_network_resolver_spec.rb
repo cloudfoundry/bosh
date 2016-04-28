@@ -24,7 +24,7 @@ module Bosh::Director
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runtime_config) { Models::RuntimeConfig.make }
 
-        it 'returns manual network ranges with the same name from legacy deployments' do
+        it 'returns manual network ranges with the same name only from legacy deployments' do
           Models::Deployment.make(
             name: 'other-deployment-1',
             cloud_config: nil,
@@ -79,6 +79,21 @@ module Bosh::Director
                     'type' => 'dynamic',
                   }],
               })
+          )
+
+          Models::Deployment.make(
+            name: 'other-deployment-4',
+            cloud_config: cloud_config,
+            runtime_config: nil,
+            manifest: Psych.dump({
+              'networks' => [{
+                'name' => 'network-a',
+                'type' => 'manual',
+                'subnets' => [{
+                  'range' => '192.168.3.1/24',
+                }],
+              }],
+            })
           )
 
           reserved_ranges = global_network_resolver.reserved_legacy_ranges('network-a')
