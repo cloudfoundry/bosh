@@ -183,7 +183,7 @@ module Bosh::Director
         }.to raise_error(ProblemHandlerError, 'Agent is responding now, skipping resolution')
       end
 
-      it 'deletes VM from IaaS' do
+      it 'deletes VM from Cloud' do
         expect(@cloud).to receive(:delete_vm).with('vm-cid')
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
         expect{

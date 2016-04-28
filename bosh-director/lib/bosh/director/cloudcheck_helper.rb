@@ -38,7 +38,7 @@ module Bosh::Director
       instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
     end
 
-    def delete_vm_from_iaas(instance_model)
+    def delete_vm_from_cloud(instance_model)
       @logger.debug("Deleting Vm: #{instance_model})")
 
       validate_spec(instance_model.spec)
@@ -59,7 +59,7 @@ module Bosh::Director
 
     def recreate_vm(instance_model)
       @logger.debug("Recreating Vm: #{instance_model})")
-      delete_vm_from_iaas(instance_model)
+      delete_vm_from_cloud(instance_model)
 
       existing_vm_env = instance_model.vm_env
       instance_plan_to_create = create_instance_plan(instance_model, existing_vm_env)

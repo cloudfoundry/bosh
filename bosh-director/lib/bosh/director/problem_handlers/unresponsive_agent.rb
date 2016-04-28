@@ -39,7 +39,7 @@ module Bosh::Director
 
       resolution :delete_vm do
         plan { 'Delete VM' }
-        action { validate; delete_vm_from_iaas(@instance) }
+        action { validate; delete_vm_from_cloud(@instance) }
       end
 
       resolution :delete_vm_reference do
