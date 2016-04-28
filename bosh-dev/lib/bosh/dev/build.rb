@@ -18,9 +18,11 @@ module Bosh::Dev
     def self.candidate(bucket_name='bosh-ci-pipeline')
       logger = Logging.logger(STDERR)
       number = ENV['CANDIDATE_BUILD_NUMBER']
+      skip_promote_artifacts = ENV.fetch('SKIP_PROMOTE_ARTIFACTS', '').split(',')
+
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
-        Candidate.new(number, bucket_name, DownloadAdapter.new(logger), logger)
+        Candidate.new(number, bucket_name, DownloadAdapter.new(logger), logger, skip_promote_artifacts)
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
 
@@ -32,14 +34,14 @@ module Bosh::Dev
           subnum = '0000'
         end
 
-        Local.new(subnum, bucket_name, LocalDownloadAdapter.new(logger), logger)
+        Local.new(subnum, bucket_name, LocalDownloadAdapter.new(logger), logger, skip_promote_artifacts)
       end
     end
 
-    def initialize(number, bucket_name, download_adapter, logger)
+    def initialize(number, bucket_name, download_adapter, logger, skip_promote_artifacts)
       @number = number
       @logger = logger
-      @promotable_artifacts = PromotableArtifacts.new(self, logger)
+      @promotable_artifacts = PromotableArtifacts.new(self, logger, {:skip_artifacts => skip_promote_artifacts} )
       @bucket = bucket_name
       @upload_adapter = UploadAdapter.new
       @download_adapter = download_adapter
