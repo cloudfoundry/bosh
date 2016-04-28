@@ -3,7 +3,7 @@ require 'rspec/core/rake_task'
 
 task :bat do
   bat_test = ENV.fetch('BAT_TEST', 'spec')
-  unsupported_bats = ENV.fetch('SUPPORTED_BATS', '').split(',')
+  unsupported_bats = ENV.fetch('UNSUPPORTED_BATS', '').split(',')
 
   tags = []
   unsupported_bats.each do |t|
