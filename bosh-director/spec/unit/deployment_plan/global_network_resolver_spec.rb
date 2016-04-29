@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::GlobalNetworkResolver do
-    subject(:global_network_resolver) { DeploymentPlan::GlobalNetworkResolver.new(current_deployment) }
+    subject(:global_network_resolver) { DeploymentPlan::GlobalNetworkResolver.new(current_deployment, logger) }
 
     let(:current_deployment) do
       deployment_model = Models::Deployment.make(
@@ -34,7 +34,7 @@ module Bosh::Director
                     'name' => 'network-a',
                     'type' => 'manual',
                     'subnets' => [{
-                        'range' => '192.168.0.1/24',
+                        'range' => '192.168.0.0/24',
                       }],
                   }],
               })
@@ -55,7 +55,7 @@ module Bosh::Director
                   'name' => 'network-a',
                   'type' => 'manual',
                   'subnets' => [{
-                    'range' => '192.168.0.1/28',
+                    'range' => '192.168.0.0/28',
                     'reserved' => [
                       '192.168.0.0-192.168.0.5',
                       '192.168.0.7',
@@ -67,7 +67,7 @@ module Bosh::Director
                   'name' => 'network-b',
                   'type' => 'manual',
                   'subnets' => [{
-                    'range' => '192.168.1.1/24',
+                    'range' => '192.168.1.0/24',
                   }],
                 }
               ],
@@ -83,7 +83,7 @@ module Bosh::Director
                     'name' => 'network-a',
                     'type' => 'manual',
                     'subnets' => [{
-                        'range' => '192.168.2.1/24',
+                        'range' => '192.168.2.0/24',
                       }],
                   }],
               })
@@ -110,11 +110,21 @@ module Bosh::Director
                 'name' => 'network-a',
                 'type' => 'manual',
                 'subnets' => [{
-                  'range' => '192.168.3.1/24',
+                  'range' => '192.168.3.0/24',
                 }],
               }],
             })
           )
+
+          expect(logger).to receive(:info)
+            .with(/Following networks and individual IPs are reserved by non-cloud-config deployments:/)
+            .with(/192\.168\.0\.6/)
+            .with(/192\.168\.0\.10/)
+            .with(/192\.168\.0\.13/)
+            .with(/192\.168\.0\.8\/31/)
+            .with(/192\.168\.0\.14\/31/)
+            .with(/192\.168\.1\.0\/24/)
+            .with(/192\.168\.2\.0\/24/)
 
           reserved_ranges = global_network_resolver.reserved_legacy_ranges
 

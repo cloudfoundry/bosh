@@ -68,7 +68,7 @@ module Bosh
           @logger.info("Deployment plan options: #{plan_options}")
 
           deployment = Planner.new(attrs, deployment_manifest, cloud_config, runtime_config, deployment_model, plan_options)
-          global_network_resolver = GlobalNetworkResolver.new(deployment)
+          global_network_resolver = GlobalNetworkResolver.new(deployment, @logger)
 
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)

@@ -10,7 +10,8 @@ module Bosh::Director
       include Bosh::Director::ValidationHelper
       include IpUtil
 
-      def initialize(current_deployment)
+      def initialize(current_deployment, logger)
+        @logger = logger
         @current_deployment = current_deployment
       end
 
@@ -35,10 +36,28 @@ module Bosh::Director
           other_deployments.each do |deployment|
             add_networks_from_deployment(deployment, reserved_ranges)
           end
-
+          log_reserved_ranges(reserved_ranges)
           reserved_ranges
         end
       end
+
+      def log_reserved_ranges(reserved_ranges)
+        ip_range_sets = reserved_ranges
+                          .map {|r| r[1] }
+                          .inject {|total_set, network_set| total_set + network_set } || []
+        single_ips = []
+        ranges = []
+        ip_range_sets.each do |r|
+          if r.netmask == '/32'
+            single_ips << r.ip
+          else
+            ranges << r
+          end
+        end
+
+        @logger.info("Following networks and individual IPs are reserved by non-cloud-config deployments: Networks: #{ranges.join(', ')}; IPs: #{single_ips.join(', ')}")
+      end
+
 
       def add_networks_from_deployment(deployment, ranges)
         networks = safe_property(Psych.load(deployment.manifest), 'networks', :class => Array, :default => [])
