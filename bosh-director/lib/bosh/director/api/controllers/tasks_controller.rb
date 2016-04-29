@@ -28,12 +28,6 @@ module Bosh::Director
       get '/', scope: :list_tasks do
         dataset = Models::Task.dataset
 
-        if limit = params['limit']
-          limit = limit.to_i
-          limit = 1 if limit < 1
-          dataset = dataset.limit(limit)
-        end
-
         states = params['state'].to_s.split(',')
         if states.size > 0
           dataset = dataset.filter(:state => states)
@@ -56,30 +50,18 @@ module Bosh::Director
           ])
         end
 
-        tasks = dataset.order_by(Sequel.desc(:timestamp)).all
-
-        permitted_tasks = Set.new
-        if @permission_authorizer.is_granted?(:director, :read, token_scopes) ||
-          @permission_authorizer.is_granted?(:director, :admin, token_scopes)
-          permitted_tasks = Set.new(tasks)
-        else
-          tasks.each do |task|
-            if task.teams
-              teams = task.teams
-              token_scopes.each do |scope|
-                teams.each do |t|
-                  if scope.include?(t.name)
-                    permitted_tasks << task
-                  end
-                end
-              end
-            end
-          end
+        if limit = params['limit']
+          limit = limit.to_i
+          limit = 1 if limit < 1
         end
 
-        deployment = params['deployment']
-        if deployment
-          permitted_tasks.select! {|task| task.deployment_name == deployment}
+        if @permission_authorizer.is_granted?(:director, :read, token_scopes) ||
+          @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+          tasks = filter_task_by_deployment_and_teams(dataset, params['deployment'], nil, limit)
+          permitted_tasks = Set.new(tasks)
+        else
+          tasks = filter_task_by_deployment_and_teams(dataset, params['deployment'], token_scopes, limit)
+          permitted_tasks = Set.new(tasks)
         end
 
         tasks = permitted_tasks.map do |task|
@@ -90,8 +72,25 @@ module Bosh::Director
           @task_manager.task_to_hash(task)
         end
         content_type(:json)
+
+
         json_encode(tasks)
       end
+
+      def filter_task_by_deployment_and_teams(dataset, deployment, token_scopes, limit)
+          if deployment
+            dataset = dataset.where(deployment_name: deployment)
+          end
+          if token_scopes
+            teams = Models::Team.transform_admin_team_scope_to_teams(token_scopes)
+            dataset = dataset.where(teams: teams)
+          end
+          if limit
+            dataset = dataset.limit(limit)
+          end
+          dataset.order_by(Sequel.desc(:timestamp)).all
+      end
+
 
       get '/:id', scope: :list_tasks do
         task = @task_manager.find_task(params[:id])

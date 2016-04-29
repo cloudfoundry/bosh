@@ -24,6 +24,7 @@ module Bosh::Director
 
       let(:deployment_name_1) { 'deployment1' }
       let(:deployment_name_2) { 'deployment2' }
+      let(:deployment_name_3) { 'deployment3' }
       let(:team_rocket) { Models::Team.make(name: 'team-rocket') }
       let(:dev) { Models::Team.make(name: 'dev') }
 
@@ -235,6 +236,28 @@ module Bosh::Director
 
             before do
               basic_authorize 'dev-team-member', 'dev-team-member'
+            end
+
+            context 'when user does not have access to all tasks' do
+              before do
+                10.times do
+                  make_task_with_team(type: 'attach_disk', deployment_name: deployment_name_2, teams: [team_rocket, dev])
+                  make_task_with_team(type: 'attach_disk', deployment_name: deployment_name_3, teams: [team_rocket])
+                end
+              end
+              it 'shows the limit amount of tasks' do
+                get '/?limit=10'
+                expect(last_response.status).to eq(200)
+                expect(parsed_body.size).to eq(10)
+                expect(parsed_body.all?{ |e| e['deployment'] == 'deployment2' }).to eq(true)
+              end
+
+              it 'shows the limit amount of tasks and filter by deployment' do
+                get "/?deployment=#{deployment_name_2}&limit=11"
+                expect(last_response.status).to eq(200)
+                expect(parsed_body.size).to eq(10)
+                expect(parsed_body.all?{ |e| e['deployment'] == 'deployment2' }).to eq(true)
+              end
             end
 
             context 'if user has access to deployment' do

@@ -143,7 +143,7 @@ module Bosh::Director
             it 'to false' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_including('new' => false))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false))
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
@@ -151,7 +151,7 @@ module Bosh::Director
             it 'to true' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), 'my-test-deployment', hash_including('new' => true))
+                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => true))
                           .and_return(OpenStruct.new(:id => 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
