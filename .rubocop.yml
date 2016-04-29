@@ -1,3 +1,10 @@
+AllCops:
+  TargetRubyVersion: 1.9
+  Include:
+  - Rakefile
+  Exclude:
+  - bat/**/*
+
 # This one we might always want.
 Lint/AmbiguousRegexpLiteral:
   Enabled: false
