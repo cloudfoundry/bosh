@@ -5,20 +5,11 @@ groups:
       - bats-ubuntu
 
 jobs:
-  - name: bats-ubuntu
+
+  - name: setup-infrastructure
     serial: true
+    serial_groups: [infrastructure]
     plan:
-      - aggregate:
-        - {trigger: true,  get: bosh-aws-cpi-release}
-        - {trigger: false, get: stemcell, resource: aws-ubuntu-hvm-stemcell}
-        - {trigger: true,  get: bosh-src}
-        - {trigger: false, get: bats}
-        - {trigger: false, get: bosh-init}
-
-      - task: teardown-infrastructure
-        file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
-        params: *recreate-primary-params
-
       - task: setup-infrastructure
         file: bosh-src/ci/pipelines/aws-bats/tasks/setup-infrastructure.yml
         params: &recreate-primary-params
@@ -26,6 +17,25 @@ jobs:
           aws_secret_access_key:    {{aws_secret_key__primary}}
           region_name:              {{aws_region__primary}}
           stack_name:               primary
+
+  - name: teardown-infrastructure
+    serial: true
+    serial_groups: [infrastructure]
+    plan:
+      - task: teardown-infrastructure
+          file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
+          params: *recreate-primary-params
+
+  - name: bats-ubuntu
+    serial: true
+    serial_groups: [infrastructure]
+    plan:
+      - aggregate:
+        - {trigger: true,  get: bosh-aws-cpi-release}
+        - {trigger: false, get: stemcell, resource: aws-ubuntu-hvm-stemcell}
+        - {trigger: true,  get: bosh-src}
+        - {trigger: false, get: bats}
+        - {trigger: false, get: bosh-init}
 
       - task: create-dev-release
         file: bosh-src/ci/pipelines/aws-bats/tasks/create-dev-release.yml
