@@ -3,6 +3,8 @@ groups:
   - name: aws-bats
     jobs:
       - bats-ubuntu
+      - setup-infrastructure
+      - teardown-infrastructure
 
 jobs:
 
@@ -10,6 +12,7 @@ jobs:
     serial: true
     serial_groups: [infrastructure]
     plan:
+      - get: bosh-src
       - task: setup-infrastructure
         file: bosh-src/ci/pipelines/aws-bats/tasks/setup-infrastructure.yml
         params: &recreate-primary-params
@@ -22,9 +25,10 @@ jobs:
     serial: true
     serial_groups: [infrastructure]
     plan:
+      - get: bosh-src
       - task: teardown-infrastructure
-          file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
-          params: *recreate-primary-params
+        file: bosh-src/ci/pipelines/aws-bats/tasks/teardown-infrastructure.yml
+        params: *recreate-primary-params
 
   - name: bats-ubuntu
     serial: true
