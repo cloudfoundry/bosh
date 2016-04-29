@@ -62,7 +62,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'thin',             '~>1.5.0'
   spec.add_dependency 'yajl-ruby',        '~>1.2.0'
   spec.add_dependency 'membrane',         '~>1.1.0'
-  spec.add_dependency 'semi_semantic',    '~>1.1.0'
+  spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.1.0'
   spec.add_dependency 'unix-crypt',       '~>1.3.0'

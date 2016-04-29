@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class NullGlobalNetworkResolver
-      def reserved_legacy_ranges(something)
+      def reserved_legacy_ranges
         []
       end
     end
@@ -14,26 +14,29 @@ module Bosh::Director
         @current_deployment = current_deployment
       end
 
-      def reserved_legacy_ranges(network_name)
+      def reserved_legacy_ranges
         return Set.new unless @current_deployment.using_global_networking?
-        legacy_ranges.fetch(network_name, Set.new)
+
+        reserved_addresses = Set.new
+        legacy_ranges.each{|k,v| reserved_addresses += v }
+        reserved_addresses
       end
 
       private
 
       def legacy_ranges
         @reserved_legacy_ranges ||= begin
-          reserved_legacy_ranges = {}
+          reserved_ranges = {}
 
           other_deployments = Models::Deployment.where(cloud_config_id: nil).
             exclude(name: @current_deployment.name).
             exclude(manifest: nil).all
 
           other_deployments.each do |deployment|
-            add_networks_from_deployment(deployment, reserved_legacy_ranges)
+            add_networks_from_deployment(deployment, reserved_ranges)
           end
 
-          reserved_legacy_ranges
+          reserved_ranges
         end
       end
 

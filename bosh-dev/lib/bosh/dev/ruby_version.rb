@@ -16,8 +16,12 @@ module Bosh::Dev
         end
       end
 
+      def future_version
+        '2.3.1'
+      end
+
       def supported
-        @supported ||= [legacy_version, release_version]
+        @supported ||= [legacy_version, release_version, future_version]
       end
     end
   end

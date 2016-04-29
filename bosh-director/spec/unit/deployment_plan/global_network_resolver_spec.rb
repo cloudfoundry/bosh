@@ -19,12 +19,32 @@ module Bosh::Director
       )
     end
 
-    describe 'reserved_legacy_networks' do
+    describe '#reserved_legacy_ranges' do
       context 'when current deployment is using cloud config' do
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runtime_config) { Models::RuntimeConfig.make }
 
-        it 'returns manual network ranges with the same name from legacy deployments' do
+        it 'excludes networks from deployments with cloud config' do
+          Models::Deployment.make(
+            name: 'other-deployment-1',
+            cloud_config: cloud_config,
+            runtime_config: runtime_config,
+            manifest: Psych.dump({
+                'networks' => [{
+                    'name' => 'network-a',
+                    'type' => 'manual',
+                    'subnets' => [{
+                        'range' => '192.168.0.1/24',
+                      }],
+                  }],
+              })
+          )
+          reserved_ranges = global_network_resolver.reserved_legacy_ranges
+
+          expect(reserved_ranges).to be_empty
+        end
+
+        it 'returns manual network ranges from legacy deployments (deployments with no cloud config)' do
           Models::Deployment.make(
             name: 'other-deployment-1',
             cloud_config: nil,
@@ -81,7 +101,22 @@ module Bosh::Director
               })
           )
 
-          reserved_ranges = global_network_resolver.reserved_legacy_ranges('network-a')
+          Models::Deployment.make(
+            name: 'other-deployment-4',
+            cloud_config: cloud_config,
+            runtime_config: nil,
+            manifest: Psych.dump({
+              'networks' => [{
+                'name' => 'network-a',
+                'type' => 'manual',
+                'subnets' => [{
+                  'range' => '192.168.3.1/24',
+                }],
+              }],
+            })
+          )
+
+          reserved_ranges = global_network_resolver.reserved_legacy_ranges
 
           expect(reserved_ranges).to contain_exactly(
             NetAddr::CIDR.create('192.168.0.6/32'),
@@ -89,7 +124,8 @@ module Bosh::Director
             NetAddr::CIDR.create('192.168.0.10/32'),
             NetAddr::CIDR.create('192.168.0.13/32'),
             NetAddr::CIDR.create('192.168.0.14/31'),
-            NetAddr::CIDR.create('192.168.2.1/24')
+            NetAddr::CIDR.create('192.168.1.1/24'),
+            NetAddr::CIDR.create('192.168.2.1/24'),
           )
         end
 
@@ -101,28 +137,10 @@ module Bosh::Director
             manifest: nil
           )
 
-          reserved_ranges = global_network_resolver.reserved_legacy_ranges('network-a')
+          reserved_ranges = global_network_resolver.reserved_legacy_ranges
           expect(reserved_ranges).to be_empty
         end
 
-        it 'does not return networks with the same name from migrated deployments' do
-          Models::Deployment.make(
-            name: 'other-deployment-1',
-            cloud_config: cloud_config,
-            runtime_config: runtime_config,
-            manifest: Psych.dump({
-                'networks' => [{
-                    'name' => 'network-a',
-                    'type' => 'manual',
-                    'subnets' => [{
-                        'range' => '192.168.0.1/24',
-                      }],
-                  }],
-              })
-          )
-          reserved_ranges = global_network_resolver.reserved_legacy_ranges('network-a')
-          expect(reserved_ranges).to be_empty
-        end
       end
 
       context 'when current deployment is not using cloud config' do
@@ -147,7 +165,7 @@ module Bosh::Director
         end
 
         it 'is empty' do
-          expect(global_network_resolver.reserved_legacy_ranges(('network-a'))).to be_empty
+          expect(global_network_resolver.reserved_legacy_ranges).to be_empty
         end
       end
     end
