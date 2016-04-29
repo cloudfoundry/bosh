@@ -32,25 +32,16 @@ install_ruby() {
 
     echo "Installing ruby $version..."
     ruby-install --sha256 "$sha" ruby "$version"
+
+    source /etc/profile.d/chruby.sh
+
+    chruby "ruby-$version"
+    ruby -v
+    gem update --system
+    gem install bundler -v 1.11.2
+
 }
 
-install_ruby 2.3.1 4a7c5f52f205203ea0328ca8e1963a7a88cf1f7f0e246f857d595b209eac0a4d
-install_ruby 2.1.7 b02c1a5ecd718e3f6b316384d4ed6572f862a46063f5ae23d0340b0a245859b6
 install_ruby 1.9.3 ef588ed3ff53009b4c1833c83187ae252dd6c20db45e21a326cd4a16a102ef4c
-
-source /etc/profile.d/chruby.sh
-
-chruby "ruby-2.3.1"
-ruby -v
-echo "Installing bundler..."
-gem install bundler
-
-chruby "ruby-2.1.7"
-ruby -v
-echo "Installing bundler..."
-gem install bundler
-
-chruby "ruby-1.9.3"
-ruby -v
-echo "Installing bundler..."
-gem install bundler
+install_ruby 2.1.7 b02c1a5ecd718e3f6b316384d4ed6572f862a46063f5ae23d0340b0a245859b6
+install_ruby 2.3.1 4a7c5f52f205203ea0328ca8e1963a7a88cf1f7f0e246f857d595b209eac0a4d
