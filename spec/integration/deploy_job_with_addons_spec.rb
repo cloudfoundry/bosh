@@ -30,6 +30,29 @@ describe 'deploy job with addons', type: :integration do
     expect(template).to include("echo 'prop_value'")
   end
 
+  it 'raises an error if the addon job has the same name as an existing job in an instance group' do
+    target_and_login
+
+    Dir.mktmpdir do |tmpdir|
+      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
+      File.write(runtime_config_filename, Psych.dump(Bosh::Spec::Deployments.runtime_config_with_addon))
+      expect(bosh_runner.run("update runtime-config #{runtime_config_filename}")).to include("Successfully updated runtime config")
+    end
+
+    bosh_runner.run("upload release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
+
+    upload_stemcell
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    upload_cloud_config(manifest_hash: manifest_hash)
+
+    manifest_hash['releases'] = [{'name' => 'bosh-release', 'version' => '0.1-dev'}, {'name' => 'dummy2', 'version' => '0.2-dev'}]
+    manifest_hash['jobs'][0]['templates'] = [{'name' => 'dummy_with_properties', "release" => "dummy2"}]
+
+    expect{deploy_simple_manifest({manifest_hash: manifest_hash})}.to raise_error(RuntimeError, /Colocated job 'dummy_with_properties' is already added to the instance group 'foobar'/)
+  end
+
   it 'ensures that addon job properties are assigned' do
     target_and_login
 

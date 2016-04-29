@@ -201,8 +201,7 @@ module Bosh::Director
         @job.templates.each do |template|
           if all_names.count(template.name) > 1
             raise JobInvalidTemplates,
-                  "Colocated job template '#{template.name}' has the same name in multiple releases. " +
-                  "BOSH cannot currently colocate two job templates with identical names from separate releases."
+                  "Colocated job '#{template.name}' is already added to the instance group '#{@job.name}'"
           end
         end
       end

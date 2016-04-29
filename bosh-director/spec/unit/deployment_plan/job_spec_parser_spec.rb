@@ -479,8 +479,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               parser.parse(job_spec)
             }.to raise_error(
               Bosh::Director::JobInvalidTemplates,
-              "Colocated job template 'fake-template-name1' has the same name in multiple releases. " +
-              "BOSH cannot currently colocate two job templates with identical names from separate releases.",
+              "Colocated job 'fake-template-name1' is already added to the instance group 'fake-job-name'",
             )
           end
         end

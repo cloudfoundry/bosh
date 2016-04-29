@@ -126,11 +126,20 @@ module Bosh::Director
         end
       end
 
-      def merge_addon(job, templates, properties)
+      def merge_addon(job, addon_jobs, properties)
+        # iterate through deployment plan instance group jobs and see if any of them are the
+        # same name as the addon_job, if they are throw an error, otherwise add to instance group
         if job.templates
-          job.templates.concat(templates)
+          job.templates.each do |job_template|
+            addon_jobs.each do |addon_job_template|
+              if addon_job_template.name == job_template.name
+                raise "Colocated job '#{addon_job_template.name}' is already added to the instance group '#{job.name}'."
+              end
+            end
+          end
+          job.templates.concat(addon_jobs)
         else
-          job.templates = templates
+          job.templates = addon_jobs
         end
 
         if properties
