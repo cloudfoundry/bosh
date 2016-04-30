@@ -5,10 +5,13 @@ groups:
       - start-job
       - unit-1.9
       - unit-2.1
+      - unit-2.3
       - blobstore-client-integration
       - integration-1.9-postgres
       - integration-2.1-mysql
+      - integration-2.3-mysql
       - integration-2.1-postgres
+      - integration-2.3-postgres
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -34,12 +37,23 @@ groups:
       - publish-coverage
       - promote-candidate
 
+  - name: 2.3
+    jobs:
+      - start-job
+      - unit-2.3
+      - integration-2.3-mysql
+      - integration-2.3-postgres
+      - publish-coverage
+      - promote-candidate
+
   - name: mysql
     jobs:
       - start-job
       - unit-1.9
       - unit-2.1
+      - unit-2.3
       - integration-2.1-mysql
+      - integration-2.3-mysql
       - publish-coverage
       - promote-candidate
 
@@ -48,8 +62,10 @@ groups:
       - start-job
       - unit-1.9
       - unit-2.1
+      - unit-2.3
       - integration-1.9-postgres
       - integration-2.1-postgres
+      - integration-2.3-postgres
       - publish-coverage
       - promote-candidate
 
@@ -82,6 +98,17 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           RUBY_VERSION: 2.1.7
+
+  - name: unit-2.3
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        params:
+          RUBY_VERSION: 2.3.1
 
   - name: blobstore-client-integration
     public: true
@@ -199,6 +226,74 @@ jobs:
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
 
+  - name: integration-2.3-mysql
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-10"]
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-11"]
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-12"]
+          params:
+            DB:           mysql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
+
+  - name: integration-2.3-postgres
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-13"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      1,4,7,10,13,16,19,22
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-14"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      2,5,8,11,14,17,20,23
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration.yml
+          tags: ["bosh-integration-15"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.3.1
+            NUM_GROUPS: 24
+            GROUP:      3,6,9,12,15,18,21,24
+
   - name: load-tests-postgres
     public: true
     serial: true
@@ -212,7 +307,7 @@ jobs:
       tags: ["bosh-integration"]
       params:
         DB: postgresql
-        RUBY_VERSION: 2.1.7
+        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         put: slack-alert
@@ -234,7 +329,7 @@ jobs:
       tags: ["bosh-integration"]
       params:
         DB: postgresql
-        RUBY_VERSION: 2.1.7
+        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         put: slack-alert
@@ -256,7 +351,7 @@ jobs:
       tags: ["bosh-integration"]
       params:
         DB: mysql
-        RUBY_VERSION: 2.1.7
+        RUBY_VERSION: 2.3.1
         LEGACY: false
       on_failure:
         put: slack-alert
@@ -279,7 +374,7 @@ jobs:
       tags: ["bosh-integration"]
       params:
         DB: mysql
-        RUBY_VERSION: 2.1.7
+        RUBY_VERSION: 2.3.1
         LEGACY: true
       on_failure:
         put: slack-alert
@@ -301,7 +396,7 @@ jobs:
       file: bosh-fuzz-tests/ci/tasks/test.yml
       tags: ["bosh-integration"]
       params:
-        RUBY_VERSION: 2.1.7
+        RUBY_VERSION: 2.3.1
       on_failure:
         put: slack-alert
         params:
@@ -315,11 +410,14 @@ jobs:
     plan:
       - trigger: true
         passed:
-        - integration-2.1-mysql
-        - integration-1.9-postgres
-        - integration-2.1-postgres
-        - unit-2.1
         - unit-1.9
+        - unit-2.1
+        - unit-2.3
+        - integration-1.9-postgres
+        - integration-2.1-mysql
+        - integration-2.1-postgres
+        - integration-2.3-mysql
+        - integration-2.3-postgres
         - blobstore-client-integration
         get: bosh-src
       - task: publish
@@ -333,11 +431,14 @@ jobs:
     plan:
       - trigger: true
         passed:
-        - integration-2.1-mysql
-        - integration-1.9-postgres
-        - integration-2.1-postgres
-        - unit-2.1
         - unit-1.9
+        - unit-2.1
+        - unit-2.3
+        - integration-1.9-postgres
+        - integration-2.1-mysql
+        - integration-2.1-postgres
+        - integration-2.3-mysql
+        - integration-2.3-postgres
         - blobstore-client-integration
         get: bosh-src
       - {put: bosh-candidate, params: {repository: bosh-src}}
