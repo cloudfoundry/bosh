@@ -33,6 +33,7 @@ RUN apt-get install -y \
 	libmariadbclient-dev \
 	postgresql-9.4 \
 	postgresql-client-9.4 \
+	redis-server \
 	libpq-dev \
 	sqlite3 \
 	libsqlite3-dev \
