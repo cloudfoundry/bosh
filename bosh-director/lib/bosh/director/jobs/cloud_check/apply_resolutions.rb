@@ -41,6 +41,8 @@ module Bosh::Director
               raise Bosh::Director::ProblemHandlerError, error_message
             end
 
+            Bosh::Director::PostDeploymentScriptRunner.run_post_deploys_after_resurrection(@deployment)
+
             "#{count} resolved"
           end
         end
