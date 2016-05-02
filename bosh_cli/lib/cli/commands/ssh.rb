@@ -153,14 +153,30 @@ module Bosh::Cli
             gateway = nil
           end
 
-          yield sessions, gateway, ssh_session
+          begin
+            yield sessions, gateway, ssh_session
+          rescue IOError => io_error
+            handle_io_error(io_error)
+          end
         ensure
           nl
           say('Cleaning up ssh artifacts')
           ssh_session.cleanup
           indices = sessions.map { |session| session['id'] || session['index'] }
+          begin
+            gateway.shutdown! if gateway
+          rescue IOError => io_error
+            handle_io_error(io_error)
+          end
           director.cleanup_ssh(deployment_name, job, "^#{ssh_session.user}$", indices)
-          gateway.shutdown! if gateway
+        end
+      end
+
+      def handle_io_error(io_error)
+        if io_error.message.include?('closed stream')
+          warn("#{io_error}")
+        else
+          raise io_error
         end
       end
 
