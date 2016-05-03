@@ -11,4 +11,4 @@ run:
 
 params:
   CODECLIMATE_REPO_TOKEN: replace-me
-  RUBY_VERSION:           2.1.7
+  RUBY_VERSION:           2.3.1
