@@ -42,22 +42,60 @@ module Bosh::Director
       end
 
       def log_reserved_ranges(reserved_ranges)
-        ip_range_sets = reserved_ranges
-                          .map {|r| r[1] }
-                          .inject {|total_set, network_set| total_set + network_set } || []
-        single_ips = []
-        ranges = []
-        ip_range_sets.each do |r|
-          if r.netmask == '/32'
-            single_ips << r.ip
-          else
-            ranges << r
-          end
-        end
 
-        @logger.info("Following networks and individual IPs are reserved by non-cloud-config deployments: Networks: #{ranges.join(', ')}; IPs: #{single_ips.join(', ')}")
+        reserved_ranges = get_all_ranges(reserved_ranges)
+
+        reserved_ranges = sort_ranges(reserved_ranges)
+
+        reserved_ranges = min_max_tuples(reserved_ranges)
+
+        reserved_ranges = combine_ranges(reserved_ranges)
+
+        output = format_range_output(reserved_ranges)
+
+        @logger.info("Following networks and individual IPs are reserved by non-cloud-config deployments: #{output}")
       end
 
+      def format_range_output(reserved_ranges)
+        reserved_ranges.map {|r| r.first == r.last ? "#{r.first.ip}" : "#{r.first.ip}-#{r.last.ip}" }.join(', ')
+      end
+
+      def get_all_ranges(reserved_ranges)
+        reserved_ranges.values.map(&:to_a).flatten
+      end
+
+      def sort_ranges(reserved_ranges)
+        reserved_ranges.sort do|e1,e2|
+          e1.to_i <=> e2.to_i
+        end
+      end
+
+      def min_max_tuples(reserved_ranges)
+        reserved_ranges.map do |r|
+          [r.first(Objectify: true), r.last(Objectify: true)]
+        end
+      end
+
+      def combine_ranges(reserved_ranges)
+        i=0
+        combined_ranges = []
+
+        while i<reserved_ranges.length
+          temp = reserved_ranges[i]
+          can_combine = true
+          while can_combine
+            if !reserved_ranges[i+1].nil? && temp[1].succ == reserved_ranges[i+1][0]
+              temp[1] = reserved_ranges[i+1][1]
+              i+=1
+            else
+              can_combine = false
+            end
+          end
+          combined_ranges << temp
+          i+=1
+        end
+        combined_ranges
+      end
 
       def add_networks_from_deployment(deployment, ranges)
         networks = safe_property(Psych.load(deployment.manifest), 'networks', :class => Array, :default => [])
