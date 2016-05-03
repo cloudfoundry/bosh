@@ -53,7 +53,7 @@ update:
   canary_watch_time: 1000-30000
   update_watch_time: 1000-30000
 
-instance_groups:  
+instance_groups:
 - name: syslog_storer
   stemcell: default
   vm_type: default
@@ -78,7 +78,7 @@ instance_groups:
   jobs:
   - name: syslog_forwarder
     release: syslog
-    consumes: 
+    consumes:
       syslog_storer: { from: syslog_storer }
 EOF
 
@@ -90,10 +90,10 @@ cleanup() {
 bosh -d ./deployment.yml deploy
 
 # trigger auditd event
-bosh -d ./deployment.yml ssh syslog_forwarder 0 'echo "By logging in, I have triggered an audit event!"'
+bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo modprobe -r floppy && modprobe floppy'
 
 # check that syslog drain gets event
 download_destination=$(mktemp -d -t)
 bosh -d ./deployment.yml scp --download syslog_storer 0 /var/vcap/store/syslog_storer/syslog.log "${download_destination}"
 
-grep audit "${download_destination}/*" || echo "Syslog did not contain 'audit'!"
+grep floppy "${download_destination}/*" || echo "Syslog did not contain 'audit'!"
