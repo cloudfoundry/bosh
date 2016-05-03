@@ -19,10 +19,6 @@ nats/vendor/cache/daemons-1.1.9.gem:
   object_id: 688133be-f542-4a6a-b139-cd1290cedcd7
   sha: e73ba58fe9e948f7edc5017f91f53b8f0a955a37
   size: 32768
-nats/vendor/cache/eventmachine-1.0.3.gem:
-  object_id: 530fa989-bb5d-40ff-a723-8ab058006685
-  sha: f1d3c0cfcdca855b9b7efcaf9a6c907043349ac9
-  size: 225792
 nats/vendor/cache/json_pure-1.8.1.gem:
   object_id: ce934969-81b7-4d2b-a50c-48a9ee54d50b
   sha: 7b8f08852f734ef287468fe1676c1c4e7a9f678a
@@ -59,18 +55,6 @@ nginx/pcre-8.37.tar.gz:
   object_id: 7c107c29-c63b-4e95-8a13-698a835ae8b5
   sha: 4a24a20c61347d8da4edc86d5475aaf70ac146bb
   size: 2041593
-ruby/bundler-1.10.6.gem:
-  object_id: a7313017-fac0-4306-8610-4a050339d792
-  sha: 55a37fccd1c0cb5542d468e35d3be46dd0667f73
-  size: 251392
-ruby/ruby-2.1.7.tar.gz:
-  object_id: 3b5c759a-361b-4407-9933-4ad927fd7751
-  sha: e2e195a4a58133e3ad33b955c829bb536fa3c075
-  size: 15151458
-ruby/rubygems-2.4.8.tgz:
-  object_id: 25e5548c-2c64-4a30-9d4e-f7f7bae02578
-  sha: 0db6b2f1cdd2267fe19f1f875057c2f2ce9f5696
-  size: 447712
 postgres/postgresql-9.0.23.tar.gz:
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
@@ -95,3 +79,19 @@ s3cli/s3cli-0.0.31-linux-amd64:
   object_id: a691b107-af1b-4087-b1cb-3ee0b7fd1045
   sha: 32130fe8d775c33695dc83ec21ae41c97d804023
   size: 11465536
+nats/vendor/cache/eventmachine-1.0.4.gem:
+  object_id: b6a8625f-3e04-41d1-ae69-57841921e254
+  sha: 10fffa2d326e5fedc6aeaf65d2bd01d3c5e6f3ab
+  size: 227840
+ruby/bundler-1.11.2.gem:
+  object_id: 83872b1a-048f-4337-8d6e-295d0fb9f99f
+  sha: 8eb956dec72da753d3d2a2126c78508b17af434e
+  size: 263168
+ruby/ruby-2.3.1.tar.gz:
+  object_id: bcd99e02-ae75-4d74-beff-ab517520c75c
+  sha: c39b4001f7acb4e334cb60a0f4df72d434bef711
+  size: 17797997
+ruby/rubygems-2.6.4.tgz:
+  object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
+  sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
+  size: 478582

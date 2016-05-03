@@ -1,33 +1,44 @@
+#!/usr/bin/env bash
+
 set -e
 
-tar xzf ruby/yaml-0.1.5.tar.gz
+RUBY_VERSION=2.3.1
+RUBYGEMS_VERSION=2.6.4
+BUNDLER_VERSION=1.11.2
+LIBYAML_VERSION=0.1.5
+
+tar xzf "ruby/yaml-${LIBYAML_VERSION}.tar.gz"
 (
   set -e
-  cd yaml-0.1.5
+  cd "yaml-${LIBYAML_VERSION}"
+
   if [ "`uname -m`" == "ppc64le" ]; then
     cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./config
   fi
+
   CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-shared
   make
   make install
 )
 
-tar xzf ruby/ruby-*.tar.gz
+tar xzf "ruby/ruby-${RUBY_VERSION}.tar.gz"
 (
   set -e
-  cd ruby-2.1.7
+  cd "ruby-${RUBY_VERSION}"
+
   if [ "`uname -m`" == "ppc64le" ]; then
     cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./tool
   fi
+
   LDFLAGS="-Wl,-rpath -Wl,${BOSH_INSTALL_TARGET}" CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc --with-opt-dir=${BOSH_INSTALL_TARGET} --without-gmp
   make
   make install
 )
 
-tar zxvf ruby/rubygems-*.tgz
+tar zxvf "ruby/rubygems-${RUBYGEMS_VERSION}.tgz"
 (
   set -e
-  cd rubygems-2.4.8
+  cd "rubygems-${RUBYGEMS_VERSION}"
 
   ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb --no-ri --no-rdoc
 
@@ -37,4 +48,4 @@ tar zxvf ruby/rubygems-*.tgz
   fi
 )
 
-${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.10.6.gem --local --no-ri --no-rdoc
+${BOSH_INSTALL_TARGET}/bin/gem install "ruby/bundler-${BUNDLER_VERSION}.gem" --local --no-ri --no-rdoc
