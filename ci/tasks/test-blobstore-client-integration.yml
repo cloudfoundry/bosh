@@ -1,6 +1,11 @@
 ---
 platform: linux
-image: docker:///bosh/blobstore_client
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/blobstore_client
+
 inputs:
   - name: bosh-src
 run:
