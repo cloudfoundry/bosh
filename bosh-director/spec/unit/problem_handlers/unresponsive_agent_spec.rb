@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
+
   describe ProblemHandlers::UnresponsiveAgent do
 
     def make_handler(instance, cloud, _, data = {})
