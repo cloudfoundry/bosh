@@ -158,6 +158,7 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: uaa-release
+          - get: bosh-release
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-stemcell
       - task: deploy-director
@@ -191,6 +192,7 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: uaa-release
+          - get: bosh-release
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3146-stemcell
       - task: deploy-director
