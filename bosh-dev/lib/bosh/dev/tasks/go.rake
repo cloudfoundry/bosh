@@ -5,7 +5,7 @@ namespace :go do
     'go:install',
     'go:set_path',
     'go:set_bin',
-    'go:install_tools',
+    'go:install_golint',
   ]
 
   desc 'Download & Install Go'
@@ -31,16 +31,6 @@ namespace :go do
     # go installed applications
     ENV['GOBIN'] = File.absolute_path('go/gobin')
     ENV['PATH'] = "#{File.absolute_path('go/gobin')}:#{ENV['PATH']}"
-  end
-
-  desc 'Install Go Tools'
-  task :install_tools => ['go:install_vet', 'go:install_golint']
-
-  desc 'Install Vet'
-  task :install_vet do
-    vet_repo = 'golang.org/x/tools/cmd/vet'
-    sh("go get #{vet_repo}")
-    sh("go install #{vet_repo}")
   end
 
   desc 'Install GoLint'
