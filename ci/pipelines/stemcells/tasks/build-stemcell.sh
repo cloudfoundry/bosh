@@ -22,7 +22,8 @@ get_ip_from_vagrant_ssh_config() {
   echo $(echo "$config" | grep HostName | awk '{print $2}')
 }
 
-build_num=$(cat stemcell-version/number | cut -f1 -d.)
+# replace possible .0 suffix added by make-stemcell-version
+build_num=$(cat stemcell-version/number | sed 's/\.0$//g' | sed 's/\.0$//g')
 
 cd bosh-src
 
