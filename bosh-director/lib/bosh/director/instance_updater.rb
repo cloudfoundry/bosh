@@ -7,7 +7,7 @@ module Bosh::Director
     def self.new_instance_updater(ip_provider)
       logger = Config.logger
       cloud = Config.cloud
-      vm_deleter = VmDeleter.new(cloud, logger)
+      vm_deleter = VmDeleter.new(cloud, logger, {virtual_delete_vm: Config.enable_virtual_delete_vms})
       disk_manager = DiskManager.new(cloud, logger)
       job_renderer = JobRenderer.create
       arp_flusher = ArpFlusher.new
