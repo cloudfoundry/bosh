@@ -2,9 +2,13 @@
 
 set -e -x
 
-[ -f published-stemcell/version ] || exit 1
+# allow to specify custom env variable
+published_version=$BOSH_PUBLISHED_STEMCELL_VERSION
 
-published_version=$(cat published-stemcell/version)
+if [[ ! "$published_version" ]]; then
+	[ -f published-stemcell/version ] || exit 1
+	published_version=$(cat published-stemcell/version)
+fi
 
 # check for minor (only supports x and x.x)
 if [[ "$published_version" == *.* ]]; then
