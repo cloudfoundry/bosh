@@ -63,6 +63,10 @@ describe 'Bhm::Director' do
   context 'when director is running in UAA mode' do
     before do
       token_issuer = instance_double(CF::UAA::TokenIssuer)
+
+      allow(File).to receive(:exist?).with('fake-ca-cert').and_return(true)
+      allow(File).to receive(:read).with('fake-ca-cert').and_return("test")
+
       allow(CF::UAA::TokenIssuer).to receive(:new).with(
           'http://localhost:8080/uaa',
           'hm',

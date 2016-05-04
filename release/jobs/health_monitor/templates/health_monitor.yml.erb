@@ -7,7 +7,7 @@ director = {
   # default to empty string so it works in micro bosh
   'client_id' => p('hm.director_account.client_id', ''),
   'client_secret' => p('hm.director_account.client_secret', ''),
-  'ca_cert' => '/var/vcap/store/health_monitor/uaa.pem',
+  'ca_cert' => '/var/vcap/jobs/health_monitor/config/uaa.pem',
 }
 
 params = {
