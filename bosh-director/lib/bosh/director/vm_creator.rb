@@ -156,7 +156,7 @@ module Bosh::Director
       @logger.error("error creating vm: #{e.message}")
       if vm_cid
         parent_id = add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid)
-        @vm_deleter.delete_vm(vm_cid)
+        @vm_deleter.delete_vm(vm_cid) unless Config.enable_virtual_delete_vms
         add_event(instance_model.deployment.name, instance_model.name, 'delete', vm_cid, parent_id)
       end
       raise e
