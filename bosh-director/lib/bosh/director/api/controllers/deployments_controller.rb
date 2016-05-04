@@ -38,6 +38,7 @@ module Bosh::Director
 
     class DeploymentsController < BaseController
       register DeploymentsSecurity
+      include LegacyDeploymentHelper
 
       def initialize(config)
         super(config)
@@ -351,17 +352,22 @@ module Bosh::Director
       end
 
       post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
+
         manifest_text = request.body.read
         validate_manifest_yml(manifest_text)
 
+        manifest_hash = Psych.load(manifest_text)
+
+        ignore_cc = ignore_cloud_config?(manifest_hash)
+
         if deployment
-          before_manifest = Manifest.load_from_text(deployment.manifest, deployment.cloud_config, deployment.runtime_config)
+          before_manifest = Manifest.load_from_text(deployment.manifest, ignore_cc ? nil : deployment.cloud_config, deployment.runtime_config)
           before_manifest.resolve_aliases
         else
           before_manifest = Manifest.load_from_text(nil, nil, nil)
         end
 
-        after_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+        after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
         after_manifest = Manifest.load_from_text(
           manifest_text,

@@ -882,6 +882,28 @@ module Bosh::Director
               expect(JSON.parse(last_response.body)['diff']).to eq([])
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
             end
+
+            context 'when cloud config exists' do
+              let(:manifest_hash) { {'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+
+              it 'ignores cloud config if network section exists' do
+                Models::Deployment.create(
+                  :name => 'fake-dep-name-no-cloud-conf',
+                  :manifest => Psych.dump(manifest_hash),
+                  cloud_config: nil,
+                  runtime_config: runtime_config
+                )
+
+                Models::CloudConfig.make(manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
+
+                manifest_hash['networks'] = [{'name'=> 'network2'}]
+                diff = post '/fake-dep-name-no-cloud-conf/diff', Psych.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
+
+                expect(diff).not_to match /very-cloudy-network/
+                expect(diff).to match /non-cloudy-network/
+                expect(diff).to match /network2/
+              end
+            end
           end
 
           context 'accessing with invalid credentials' do

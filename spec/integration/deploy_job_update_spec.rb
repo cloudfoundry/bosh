@@ -78,13 +78,6 @@ describe 'deploy job update', type: :integration do
             upload_cloud_config(cloud_config_hash: cloud_config_hash)
           end
 
-          it 'fails to update deployment' do
-            set_deployment(manifest_hash: modified_legacy_manifest_hash)
-
-            deploy_output = deploy(failure_expected: true)
-            expect(deploy_output).to match(/Deployment manifest should not contain cloud config properties/)
-          end
-
           context 'when new deployment was updated to not contain cloud properties' do
             it 'succeeds and correctly reports changes' do
               set_deployment(manifest_hash: manifest_hash)

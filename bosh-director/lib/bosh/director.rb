@@ -50,6 +50,7 @@ require 'bosh/director/lock_helper'
 require 'bosh/director/validation_helper'
 require 'bosh/director/download_helper'
 require 'bosh/director/tagged_logger'
+require 'bosh/director/legacy_deployment_helper'
 
 require 'bosh/director/version'
 require 'bosh/director/config'
