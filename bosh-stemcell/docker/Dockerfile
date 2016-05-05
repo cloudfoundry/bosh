@@ -26,5 +26,3 @@ RUN /tmp/install-go.sh && rm /tmp/install-go.sh
 
 # this is unshare from ubuntu 15.10 so we can use the newer -fp flags
 ADD scripts/unshare /usr/bin/unshare
-
-USER ubuntu
