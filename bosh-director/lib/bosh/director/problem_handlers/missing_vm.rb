@@ -3,7 +3,7 @@ module Bosh::Director
     class MissingVM < Base
 
       register_as :missing_vm
-      auto_resolution :recreate_vm
+      auto_resolution :recreate_vm_skip_post_start
 
       def initialize(instance_id, data)
         super

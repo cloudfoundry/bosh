@@ -40,9 +40,9 @@ module Bosh::Director
       expect(handler).to be_kind_of(described_class)
     end
 
-    it 'should call recreate_vm when set to auto' do
-      allow(handler).to receive(:recreate_vm)
-      expect(handler).to receive(:recreate_vm).with(instance)
+    it 'should call recreate_vm_skip_post_start when set to auto' do
+      allow(handler).to receive(:recreate_vm_skip_post_start)
+      expect(handler).to receive(:recreate_vm_skip_post_start).with(instance)
       handler.auto_resolve
     end
 
