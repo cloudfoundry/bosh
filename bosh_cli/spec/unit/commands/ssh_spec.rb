@@ -320,22 +320,24 @@ describe Bosh::Cli::Command::Ssh do
               allow(net_ssh).to receive(:shutdown!)
             end
 
-            context 'when the gateway connection raises an IOError' do
-              let(:io_error_message) { 'an IOError message' }
+            context 'when the gateway connection raises an Exception' do
+              let(:error_message) { 'a message' }
               before do
+                allow(command).to receive(:warn)
+                allow(Process).to receive(:spawn)
                 allow(director).to receive(:get_task_result_log).with(42).
                     and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
               end
 
               context 'when closing the stream' do
-                before { allow(net_ssh).to receive(:close).and_raise(IOError, io_error_message) }
+                before { allow(net_ssh).to receive(:close).and_raise(Exception, error_message) }
 
                 it 'should raise the error' do
-                  expect { command.shell('dea/0') }.to raise_error(IOError, 'an IOError message')
+                  expect { command.shell('dea/0') }.to raise_error(Exception, 'a message')
                 end
 
                 context "with 'closed stream' in the error message" do
-                  let(:io_error_message) { 'closed stream' }
+                  let(:error_message) { 'closed stream' }
                   it 'should suppress the error' do
                     expect { command.shell('dea/0') }.to_not raise_error
                   end
@@ -343,14 +345,14 @@ describe Bosh::Cli::Command::Ssh do
               end
 
               context 'when shutting down the gateway' do
-                before { allow(net_ssh).to receive(:shutdown!).and_raise(IOError, io_error_message) }
+                before { allow(net_ssh).to receive(:shutdown!).and_raise(Exception, error_message) }
 
                 it 'should raise the error' do
-                  expect { command.shell('dea/0') }.to raise_error(IOError, 'an IOError message')
+                  expect { command.shell('dea/0') }.to raise_error(Exception, 'a message')
                 end
 
                 context "with 'closed stream' in the error message" do
-                  let(:io_error_message) { 'closed stream' }
+                  let(:error_message) { 'closed stream' }
 
                   it 'should suppress the error' do
                     expect { command.shell('dea/0') }.to_not raise_error

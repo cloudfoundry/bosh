@@ -132,7 +132,6 @@ PATH
     bosh-template (1.3232.1.0)
       semi_semantic (~> 1.2.0)
 
-
 PATH
   remote: bosh_cli_plugin_aws
   specs:
