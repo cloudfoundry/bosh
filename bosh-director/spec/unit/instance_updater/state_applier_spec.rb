@@ -92,6 +92,16 @@ module Bosh::Director
       expect(instance_model.spec).to eq(instance_plan.spec.full_spec)
     end
 
+    it 'can skip post start if run_post_start is false' do
+      expect(agent_client).to_not receive(:run_script).with('post-start', {})
+      state_applier.apply(update_config, false)
+    end
+
+    it 'runs post start by default' do
+      expect(agent_client).to receive(:run_script).with('post-start', {})
+      state_applier.apply(update_config)
+    end
+
     it 'cleans rendered templates after applying' do
       expect(agent_client).to receive(:apply).ordered
       expect(rendered_job_templates_cleaner).to receive(:clean).ordered

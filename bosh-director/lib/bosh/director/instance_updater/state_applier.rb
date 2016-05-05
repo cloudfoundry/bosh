@@ -9,7 +9,7 @@ module Bosh::Director
       @is_canary = options.fetch(:canary, false)
     end
 
-    def apply(update_config)
+    def apply(update_config, run_post_start = true)
       @instance.apply_vm_state(@instance_plan.spec)
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
@@ -23,7 +23,7 @@ module Bosh::Director
       end
 
       # for backwards compatibility with instances that don't have update config
-      if update_config
+      if update_config && run_post_start
         min_watch_time = @is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
         max_watch_time = @is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
 

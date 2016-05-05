@@ -15,8 +15,13 @@ module Bosh::Director
         action { }
       end
 
+      resolution :recreate_vm_skip_post_start do
+        plan { "Recreate VM for '#{@instance}' without waiting for processes to start" }
+        action { recreate_vm_skip_post_start(@instance) }
+      end
+
       resolution :recreate_vm do
-        plan { "Recreate VM for '#{@instance}'" }
+        plan { "Recreate VM for '#{@instance}' and wait for processes to start" }
         action { recreate_vm(@instance) }
       end
 

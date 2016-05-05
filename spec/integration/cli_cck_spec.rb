@@ -21,9 +21,10 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
     expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
-  4. Delete VM
-  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' without waiting for processes to start
+  4. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' and wait for processes to start
+  5. Delete VM
+  6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     recreate_vm = 3
     bosh_run_cck_with_resolution(3, recreate_vm)
@@ -38,9 +39,10 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
     expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
-  4. Delete VM
-  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' without waiting for processes to start
+  4. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' and wait for processes to start
+  5. Delete VM
+  6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     delete_vm = 4
     bosh_run_cck_with_resolution(3, delete_vm)
@@ -56,9 +58,10 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
     expect(cloudcheck_response).to match(regexp("1. Skip for now
   2. Reboot VM
-  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)'
-  4. Delete VM
-  5. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
+  3. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' without waiting for processes to start
+  4. Recreate VM for 'foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)' and wait for processes to start
+  5. Delete VM
+  6. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)"))
 
     delete_vm_reference = 5
     bosh_run_cck_with_resolution(3, delete_vm_reference)
@@ -72,8 +75,9 @@ describe 'cli: cloudcheck', type: :integration do
    expect(cloudcheck_response).to_not match(regexp('No problems found'))
    expect(cloudcheck_response).to match(regexp('1 missing'))
    expect(cloudcheck_response).to match(%r(1\. Skip for now
-  2\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)'
-  3\. Delete VM reference))
+  2\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)' without waiting for processes to start
+  3\. Recreate VM for 'foobar\/\d \(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\)' and wait for processes to start
+  4\. Delete VM reference))
   end
 
   it 'provides resolution options for missing disks' do

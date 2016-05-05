@@ -57,7 +57,11 @@ module Bosh::Director
       end
     end
 
-    def recreate_vm(instance_model)
+    def recreate_vm_skip_post_start(instance_model)
+      recreate_vm(instance_model, false)
+    end
+
+    def recreate_vm(instance_model, run_post_start = true)
       @logger.debug("Recreating Vm: #{instance_model})")
       delete_vm_from_cloud(instance_model)
 
@@ -96,7 +100,7 @@ module Bosh::Director
           cleaner,
           @logger,
           {}
-        ).apply(update_config)
+        ).apply(update_config, run_post_start)
       end
     end
 
