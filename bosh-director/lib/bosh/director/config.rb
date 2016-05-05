@@ -38,6 +38,7 @@ module Bosh::Director
         :enable_post_deploy,
         :generate_vm_passwords,
         :remove_dev_tools,
+        :enable_virtual_delete_vms,
       )
 
       attr_reader(
@@ -158,6 +159,8 @@ module Bosh::Director
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)
+
+        @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
         Bosh::Clouds::Config.configure(self)
 

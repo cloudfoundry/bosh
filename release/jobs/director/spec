@@ -111,6 +111,8 @@ properties:
   director.log_access_events_to_syslog:
     description: Access to api is logged to the syslog
     default: false
+  director.enable_virtual_delete_vms:
+    description: When true, bosh will not really delete vm from infrastructure when instance update, just destroy vm record in db
   director.flush_arp:
     description: Clear up arp entries when machines are recreated
     default: false

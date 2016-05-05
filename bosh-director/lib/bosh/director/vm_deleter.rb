@@ -5,6 +5,7 @@ module Bosh::Director
       @logger = logger
 
       force = options.fetch(:force, false)
+      @enable_virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
       @error_ignorer = ErrorIgnorer.new(force, @logger)
     end
 
@@ -26,7 +27,9 @@ module Bosh::Director
 
     def delete_vm(vm_cid)
       @logger.info('Deleting VM')
-      @error_ignorer.with_force_check { @cloud.delete_vm(vm_cid) }
+      @error_ignorer.with_force_check do
+        @cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
+      end
     end
 
     private
