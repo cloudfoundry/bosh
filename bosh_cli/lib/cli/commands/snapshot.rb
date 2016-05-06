@@ -7,7 +7,7 @@ module Bosh::Cli::Command
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
-      job, index = split_job⁄index(job, index)
+      job, index = split_job_and_index(job, index)
 
       snapshots = director.list_snapshots(deployment_name, job, index)
 
@@ -51,7 +51,7 @@ module Bosh::Cli::Command
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
-      job, index = split_job⁄index(job, index)
+      job, index = split_job_and_index(job, index)
 
       unless job && index
         unless confirmed?("Are you sure you want to take a snapshot of all deployment '#{deployment_name}'?")
@@ -101,7 +101,7 @@ module Bosh::Cli::Command
 
     private
 
-    def split_job⁄index(job, index)
+    def split_job_and_index(job, index)
       if job && !index
         job.split('/', 2)
       else

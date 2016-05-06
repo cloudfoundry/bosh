@@ -47,7 +47,7 @@ module Bosh::Cli::Command
       auth_required
       manifest = prepare_deployment_manifest
 
-      job_name, id, disk_cid = split_job⁄id(job_name, id, disk_cid)
+      job_name, id, disk_cid = split_job_and_index(job_name, id, disk_cid)
 
       status, result = director.attach_disk(manifest.name, job_name, id, disk_cid)
 
@@ -72,7 +72,7 @@ module Bosh::Cli::Command
       end
     end
 
-    def split_job⁄id(job_name, id, disk_cid)
+    def split_job_and_index(job_name, id, disk_cid)
       if disk_cid.nil?
         disk_cid = id
 
