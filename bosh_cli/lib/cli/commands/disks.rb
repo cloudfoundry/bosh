@@ -43,9 +43,12 @@ module Bosh::Cli::Command
 
     usage 'attach disk'
     desc 'Attaches an disk to an instance and replaces the current disk'
-    def attach(job_name, id, disk_cid)
+    def attach(job_name, id, disk_cid = nil)
       auth_required
       manifest = prepare_deployment_manifest
+
+      job_name, id, disk_cid = split_job⁄id(job_name, id, disk_cid)
+
       status, result = director.attach_disk(manifest.name, job_name, id, disk_cid)
 
       task_report(status, result, "Attached disk #{disk_cid} to #{job_name}/#{id}")
@@ -67,6 +70,20 @@ module Bosh::Cli::Command
       disks.sort do |a, b|
         Time.parse(b['orphaned_at']).to_i <=> Time.parse(a['orphaned_at']).to_i
       end
+    end
+
+    def split_job⁄id(job_name, id, disk_cid)
+      if disk_cid.nil?
+        disk_cid = id
+
+        job_name, id = job_name.split('/', 2)
+
+        if id.nil?
+          raise ArgumentError, 'wrong number of arguments'
+        end
+      end
+
+      [job_name, id, disk_cid]
     end
   end
 end
