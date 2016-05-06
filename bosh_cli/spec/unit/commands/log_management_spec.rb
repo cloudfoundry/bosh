@@ -7,6 +7,7 @@ describe Bosh::Cli::Command::LogManagement do
   let(:deployment) { 'mycloud' }
   let(:job) { 'dea' }
   let(:index) { '6' }
+  let(:job_and_index) { 'dea/6' }
   let(:id) { 'jobId123' }
   let(:instance_count) { 5 }
 
@@ -104,6 +105,11 @@ describe Bosh::Cli::Command::LogManagement do
           it 'successfully retrieves the log resource id when fetching logs by job id' do
             expect(director).to receive(:fetch_logs).with(deployment, job, id, 'job', nil).and_return('resource_id')
             command.fetch_logs(job, id)
+          end
+
+          it 'successfully retrieves the log resource id when fetching logs by job/index' do
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
+            command.fetch_logs(job_and_index)
           end
 
           it 'successfully retrieves the log resource id when fetching logs by job index' do

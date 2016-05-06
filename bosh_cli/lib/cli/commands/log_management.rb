@@ -1,3 +1,5 @@
+require 'cli/job_command_args'
+
 module Bosh::Cli
   module Command
     class LogManagement < Base
@@ -12,7 +14,7 @@ module Bosh::Cli
       option '--dir destination_directory', String, 'download directory'
       option '--all', 'deprecated'
 
-      def fetch_logs(job, index_or_id)
+      def fetch_logs(job, index_or_id = nil)
         auth_required
 
         manifest = prepare_deployment_manifest(show_state: true)
@@ -20,6 +22,7 @@ module Bosh::Cli
 
         logs_downloader = LogsDownloader.new(director, self)
 
+        job, index_or_id, _ = JobCommandArgs.new([job, index_or_id]).to_a
         resource_id = fetch_log_resource_id(manifest.name, index_or_id, job)
         logs_path = logs_downloader.build_destination_path(job, index_or_id, options[:dir] || Dir.pwd)
         logs_downloader.download(resource_id, logs_path)
