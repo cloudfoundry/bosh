@@ -61,6 +61,22 @@ describe Bosh::Cli::Command::Snapshot do
           command.list
         end
 
+        it 'list all snapshots for a job/index' do
+          expect(director).to receive(:list_snapshots).with('bosh', 'foo', '0').and_return([snapshots[0]])
+          expect(command).to receive(:say) do |display_output|
+            expect(display_output.to_s).to match_output '
+               +-------------------+--------------+---------------------------+-------+
+               | Job/ID            | Snapshot CID | Created at                | Clean |
+               +-------------------+--------------+---------------------------+-------+
+               | job/12xyz4561 (0) | snap0a       | 2015-12-21 14:53:28 -0800 | true  |
+               +-------------------+--------------+---------------------------+-------+
+              '
+          end
+          expect(command).to receive(:say).with('Snapshots total: 1')
+
+          command.list('foo/0')
+        end
+
         it 'list all snapshots for a job and index' do
           expect(director).to receive(:list_snapshots).with('bosh', 'foo', '0').and_return([snapshots[0]])
           expect(command).to receive(:say) do |display_output|
@@ -147,6 +163,14 @@ describe Bosh::Cli::Command::Snapshot do
           expect(director).to receive(:take_snapshot).with('bosh', 'foo', '0')
 
           command.take('foo', '0')
+        end
+      end
+
+      context 'for a job/index' do
+        it 'takes the snapshot' do
+          expect(director).to receive(:take_snapshot).with('bosh', 'foo', '0')
+
+          command.take('foo/0')
         end
       end
 

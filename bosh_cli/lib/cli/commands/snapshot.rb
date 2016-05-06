@@ -7,6 +7,8 @@ module Bosh::Cli::Command
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
 
+      job, index = split_job⁄index(job, index)
+
       snapshots = director.list_snapshots(deployment_name, job, index)
 
       if snapshots.empty?
@@ -48,6 +50,8 @@ module Bosh::Cli::Command
       auth_required
 
       deployment_name = prepare_deployment_manifest(show_state: true).name
+
+      job, index = split_job⁄index(job, index)
 
       unless job && index
         unless confirmed?("Are you sure you want to take a snapshot of all deployment '#{deployment_name}'?")
@@ -93,6 +97,16 @@ module Bosh::Cli::Command
       status, task_id = director.delete_all_snapshots(deployment_name)
 
       task_report(status, task_id, "Deleted all snapshots of deployment '#{deployment_name}'")
+    end
+
+    private
+
+    def split_job⁄index(job, index)
+      if job && !index
+        job.split('/', 2)
+      else
+        [job, index]
+      end
     end
   end
 end
