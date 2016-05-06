@@ -107,7 +107,7 @@ describe Bosh::Cli::Command::Snapshot do
           end
 
           context 'when the user confirms taking the snapshot' do
-            it 'deletes the snapshot' do
+            it 'takes the snapshot' do
               allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'bosh'))
               expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment 'bosh'?").and_return(true)
 
@@ -118,7 +118,7 @@ describe Bosh::Cli::Command::Snapshot do
           end
 
           context 'when the user does not confirms taking the snapshot' do
-            it 'does not delete the snapshot' do
+            it 'does not take the snapshot' do
               allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'bosh'))
               expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment 'bosh'?").and_return(false)
 
