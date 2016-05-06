@@ -83,7 +83,7 @@ module Bosh::Director
     # on the [min_watch_time..max_watch_time] interval.
     #
     # Tries to respect intervals but doesn't allow an interval to
-    # fall under 1 second.
+    # fall below 1 second or go over 15 seconds.
     # All times are in milliseconds.
     # @param [Numeric] min_watch_time minimum time to watch the jobs
     # @param [Numeric] max_watch_time maximum time to watch the jobs
@@ -91,7 +91,7 @@ module Bosh::Director
     def watch_schedule(min_watch_time, max_watch_time)
       delta = (max_watch_time - min_watch_time).to_f
       watch_intervals = 10
-      step = [1000, delta / (watch_intervals - 1)].max
+      step = [1000, delta / (watch_intervals - 1), 15000].sort[1]
 
       [min_watch_time] + ([step] * (delta / step).floor)
     end
