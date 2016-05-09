@@ -369,11 +369,8 @@ module Bosh::Director
 
         after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
         after_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.latest
-        after_manifest = Manifest.load_from_text(
-          manifest_text,
-          after_cloud_config,
-          after_runtime_config
-        )
+
+        after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_config)
         after_manifest.resolve_aliases
 
         redact =  params['redact'] != 'false'

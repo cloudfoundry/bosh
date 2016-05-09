@@ -23,12 +23,11 @@ module Bosh::Director
         logger.info('Reading deployment manifest')
 
         manifest_text = File.read(@manifest_file_path)
-        manfiest_hash = Psych.load(manifest_text)
+        manifest_hash = Psych.load(manifest_text)
         logger.debug("Manifest:\n#{manifest_text}")
 
-        ignore_cc = ignore_cloud_config?(manfiest_hash)
-        if ignore_cc
-          warning = "Ignoring cloud config. Manifest contains 'network' section."
+        if ignore_cloud_config?(manifest_hash)
+          warning = "Ignoring cloud config. Manifest contains 'networks' section."
           logger.debug(warning)
           @event_log.warn_deprecated(warning)
           cloud_config_model = nil
@@ -48,7 +47,7 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.manifest}")
         end
 
-        deployment_manifest = Manifest.load_from_hash(manfiest_hash, cloud_config_model, runtime_config_model)
+        deployment_manifest = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
 
         @deployment_name = deployment_manifest.to_hash['name']
 
