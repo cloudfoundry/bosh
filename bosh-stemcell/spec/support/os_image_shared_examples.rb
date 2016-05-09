@@ -85,6 +85,20 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'installed by rsyslog_logrotate' do
+    describe file('/etc/logrotate.d/rsyslog') do
+      it { should be_file }
+
+      it 'should reload rsyslog on rotate' do
+        should contain 'reload rsyslog >/dev/null 2>&1 || true'
+      end
+
+      it 'should not restart rsyslog on rotate so that logs are not lost' do
+        should_not contain 'restart rsyslog'
+      end
+    end
+  end
+
   context 'installed by rsyslog_config' do
     before do
       system("sudo mount --bind /dev #{backend.chroot_dir}/dev")
