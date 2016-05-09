@@ -47,4 +47,4 @@ echo "Switching to ruby $RUBY_VER..."
 chruby "ruby-$RUBY_VER"
 ruby -v
 echo "Installing bundler..."
-gem install bundler
+gem install bundler -v 1.11.2
