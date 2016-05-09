@@ -80,7 +80,7 @@ See below [Building the stemcell with local OS image](#building-the-stemcell-wit
 
 ## Building a stemcell
 
-Note: **To speed stemcell building you can specify environment variable `BOSH_MICRO_ENABLED=no` to skip the microbosh building**
+Note: **To speed stemcell building you can specify environment variable `BOSH_MICRO_ENABLED=no` when executing `bundle exec rake stemcell:...` to skip the microbosh building**
 
 ### Building the stemcell with published OS image
 
