@@ -127,7 +127,9 @@ module Bosh
         def list_events(options={})
           query_string = "/events"
           delimeter = "?"
-          [:before_id, :deployment, :instance, :task].each do |param|
+          options[:before_time] = URI.encode(options.delete(:before)) if options[:before]
+          options[:after_time] = URI.encode(options.delete(:after)) if options[:after]
+          [:before_id, :deployment, :instance, :task, :before_time, :after_time].each do |param|
             if options[param]
               query_string += "#{delimeter}#{ param.to_s}=#{options[param]}"
               delimeter = "&"
