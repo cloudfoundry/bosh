@@ -78,9 +78,8 @@ module Bosh::Dev
         candidate_sha = stage_args.fetch(:candidate_sha)
         stable_branch = stage_args.fetch(:stable_branch)
 
-        release_promoter = ReleaseChangePromoter.new(candidate_build_number, candidate_sha, @downloader, logger)
+        release_promoter = ReleaseChangePromoter.new(candidate_build_number, candidate_sha, @downloader, skip_release_promotion, logger)
         final_release_sha = release_promoter.promote
-
         @promoter.promote(final_release_sha, stable_branch)
 
         @tagger.tag_and_push(final_release_sha, candidate_build_number)
@@ -89,6 +88,12 @@ module Bosh::Dev
       # returns true if any stable tag contains the candidate_sha
       def promoted?(stage_args)
         @tagger.stable_tag_for?(stage_args.fetch(:candidate_sha))
+      end
+
+      private
+
+      def skip_release_promotion
+        @skip_release_promotion ||= ENV.fetch('SKIP_PROMOTE_ARTIFACTS', '').split(',').include?('release')
       end
     end
 
