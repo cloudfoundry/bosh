@@ -71,20 +71,6 @@ describe 'cli: deploy uploading', type: :integration do
       expect(output).to match /Expected SHA1 when specifying remote URL for release 'test_release'/
       expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
     end
-
-    it 'fails to deploy when the url is invalid' do
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest('http://example.com/invalid_url', 'abcd1234'))
-
-      target_and_login
-      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
-      bosh_runner.run("deployment #{deployment_manifest.path}")
-      bosh_runner.run("upload stemcell #{stemcell_filename}")
-
-      output = bosh_runner.run('deploy', failure_expected: true)
-      expect(output).to match /No release found/
-      expect(output).not_to match /Deployed 'minimal' to 'Test Director'/
-    end
   end
 
   context 'with a local release tarball' do
