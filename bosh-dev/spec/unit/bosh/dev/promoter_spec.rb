@@ -40,6 +40,8 @@ module Bosh::Dev
       let(:git_branch_merger) { instance_double('Bosh::Dev::GitBranchMerger', merge: nil) }
       let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
       let(:release_change_promoter) { instance_double('Bosh::Dev::ReleaseChangePromoter', promote: nil) }
+      let(:environment) { {} }
+      let(:should_skip_release_promotion) { false }
 
       before do
         allow(Build).to receive(:candidate).and_return(build)
@@ -52,9 +54,11 @@ module Bosh::Dev
           candidate_build_number,
           candidate_sha,
           download_adapter,
+          should_skip_release_promotion,
           logger
         ).and_return(release_change_promoter)
 
+        stub_const('ENV', environment)
       end
 
       subject(:promoter) do
@@ -79,6 +83,23 @@ module Bosh::Dev
             and_return([ 'fake-bat-sha', nil, instance_double('Process::Status', success?: true) ])
 
         allow(git_branch_merger).to receive(:branch_contains?).with(Promoter::BatsPromoterStage::BATS_STABLE_BRANCH, 'fake-bat-sha').and_return(false)
+      end
+
+      context 'when skipping release promotion' do
+        let(:environment) { {'SKIP_PROMOTE_ARTIFACTS' => 'release'} }
+        let(:should_skip_release_promotion) { true }
+
+        it 'should initialize the ReleaseChangePromoter so that it does not promote the release' do
+          expect(Bosh::Dev::ReleaseChangePromoter).to receive(:new).with(
+            candidate_build_number,
+            candidate_sha,
+            download_adapter,
+            should_skip_release_promotion,
+            logger
+          ).and_return(release_change_promoter)
+
+          promoter.promote
+        end
       end
 
       context 'when the current sha has never been promoted' do
