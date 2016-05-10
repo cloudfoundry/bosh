@@ -189,7 +189,7 @@ HERE
   } do
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
-      it { should contain('"Type": "HTTP"') }
+      it { should contain('"Type": "InstanceMetadata"') }
     end
   end
 
