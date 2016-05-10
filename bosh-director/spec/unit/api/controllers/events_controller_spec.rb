@@ -140,22 +140,151 @@ module Bosh::Director
         end
       end
 
-      context 'when before_id, instance, deployment and task are specified' do
+      context 'when several filters are specified' do
         before do
           basic_authorize 'admin', 'admin'
-          Models::Event.make('instance' => 'job/4')
-          Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name')
-          Models::Event.make('task' => 5)
-          Models::Event.make('deployment' => 'not the droid we are looking for')
         end
 
-        it 'returns the anded results' do
-          get '?instance=job/5&task=4&deployment=name&before_id=3'
+        context 'when before_id, instance, deployment and task are specified' do
+          before do
+            Models::Event.make('instance' => 'job/4')
+            Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name')
+            Models::Event.make('task' => 5)
+            Models::Event.make('deployment' => 'not the droid we are looking for')
+          end
+
+          it 'returns the anded results' do
+            get '?instance=job/5&task=4&deployment=name&before_id=3'
+            events = Yajl::Parser.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events[0]['instance']).to eq('job/5')
+            expect(events[0]['task']).to eq('4')
+            expect(events[0]['deployment']).to eq('name')
+          end
+        end
+
+        context 'when before and after are specified' do
+          before do
+            (1..20).each do |i|
+              Models::Event.make(:timestamp => timestamp + i)
+            end
+          end
+
+          it 'returns the correct results' do
+            get "?before_time=#{URI.encode(Models::Event.all[15].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.all[14].timestamp.to_s)}"
+            events = Yajl::Parser.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events.first['id']).to eq('16')
+          end
+        end
+
+        context 'when after and before_id are specified' do
+          before do
+            (1..20).each do |i|
+              Models::Event.make(:timestamp => timestamp+i)
+            end
+          end
+
+          it 'returns the correct result' do
+            get "?before_id=15&after_time=#{URI.encode(Models::Event.all[12].timestamp.to_s)}"
+            events = Yajl::Parser.parse(last_response.body)
+            expect(events.size).to eq(1)
+            expect(events.first['id']).to eq('14')
+          end
+        end
+      end
+
+      context 'when before is specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+        end
+
+        it 'returns STATUS 400 if before has wrong format' do
+          get "?before_time=Wrong"
+          expect(last_response.status).to eq(400)
+          expect(last_response.body).to eq("Invalid before parameter: 'Wrong' ")
+        end
+
+        it 'returns a list of events' do
+          (1..210).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?before_time=#{URI.encode(Models::Event.all[201].timestamp.to_s)}"
           events = Yajl::Parser.parse(last_response.body)
+
+          expect(events.size).to eq(200)
+          response_ids = events.map { |e| e['id'].to_i }
+          expected_ids = *(3..202)
+          expect(response_ids).to eq(expected_ids.reverse)
+        end
+
+        it 'supports date as Integer' do
+          (1..10).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?before_time=#{Models::Event.all[0].timestamp.to_i}"
+          events = Yajl::Parser.parse(last_response.body)
+
           expect(events.size).to eq(1)
-          expect(events[0]['instance']).to eq('job/5')
-          expect(events[0]['task']).to eq('4')
-          expect(events[0]['deployment']).to eq('name')
+          expect(events.first['id']).to eq('1')
+        end
+
+        it 'supports date as specified in the event table' do
+          (1..10).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?before_time=#{URI.encode(Models::Event.all[0].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+          events = Yajl::Parser.parse(last_response.body)
+
+          expect(events.size).to eq(1)
+          expect(events.first['id']).to eq('1')
+        end
+      end
+
+      context 'when after is specified' do
+        before do
+          basic_authorize 'admin', 'admin'
+        end
+
+        it 'returns STATUS 400 if after has wrong format' do
+          get "?after_time=Wrong"
+          expect(last_response.status).to eq(400)
+          expect(last_response.body).to eq("Invalid after parameter: 'Wrong' ")
+        end
+
+        it 'returns a list of events' do
+          (1..210).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?after_time=#{URI.encode(Models::Event.all[9].timestamp.to_s)}"
+          events = Yajl::Parser.parse(last_response.body)
+
+          expect(events.size).to eq(200)
+          response_ids = events.map { |e| e['id'].to_i }
+          expected_ids = *(11..210)
+          expect(response_ids).to eq(expected_ids.reverse)
+        end
+
+        it 'supports date as Integer' do
+          (1..10).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?after_time=#{Models::Event.all[8].timestamp.to_i}"
+          events = Yajl::Parser.parse(last_response.body)
+
+          expect(events.size).to eq(1)
+          expect(events.first['id']).to eq('10')
+        end
+
+        it 'supports date as specified in the event table' do
+          (1..10).each do |i|
+            Models::Event.make(:timestamp => timestamp+i)
+          end
+          get "?after_time=#{URI.encode(Models::Event.all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+          events = Yajl::Parser.parse(last_response.body)
+
+          expect(events.size).to eq(1)
+          expect(events.first['id']).to eq('10')
         end
       end
 
