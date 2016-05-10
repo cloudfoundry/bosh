@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `rZZbZGNdsqz5VLZNsOtO9o2NI7aTaej5`
+  - rsyslog is reloaded upon logrotation (instead of restarted)
+  - built from 256.x (de22afef97f7304bacf6c7fe08cd91430d1b56ec)
+
 * `nPfyi.7Z9VDhvwyVT0_m_M1OlwJOes5o`
   - USN-2959-1: OpenSSL vulnerabilities
   - built from 256.x (108a503ae3d5ee27959cf24a5dccdd592430de4c)
@@ -417,6 +421,10 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `CiUo.LMh2eoPIP668WYzbnhcPJD4sSwu`
+  - rsyslog is reloaded upon logrotation (instead of restarted)
+  - built from develop (de22afef97f7304bacf6c7fe08cd91430d1b56ec)
 
 * `sNzzvPR7ZvX8gBdSKLIgLxaR4KNGLoWM`
   - includes gov1 STIGs
