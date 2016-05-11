@@ -1,9 +1,6 @@
-FROM ubuntu:14.04
+FROM bosh/main-ruby-go
 
-RUN locale-gen en_US.UTF-8
-RUN dpkg-reconfigure locales
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+ENV PATH /opt/rubies/ruby-2.1.7/bin:$PATH
 
-ADD install-dependencies.sh /tmp/install-dependencies.sh
-RUN /tmp/install-dependencies.sh && rm /tmp/install-dependencies.sh
+ADD install-bosh.sh /tmp/install-bosh.sh
+RUN /tmp/install-bosh.sh && rm /tmp/install-bosh.sh
