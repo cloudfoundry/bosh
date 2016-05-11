@@ -19,7 +19,7 @@ module Bosh::Cli
       usage 'stop'
       desc 'Stop all jobs/job/instance'
       option '--soft', 'Stop process only'
-      option '--hard', 'Power off VM'
+      option '--hard', 'Delete the VM'
       option '--force', FORCE
       option '--skip-drain', SKIP_DRAIN
       def stop_job(job = '*', index_or_id = nil)
