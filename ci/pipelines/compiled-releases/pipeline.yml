@@ -93,8 +93,10 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: bosh-release
+            trigger: true
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-stemcell
+            trigger: true
       - task: deploy-director
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
@@ -126,8 +128,10 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: bosh-release
+            trigger: true
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3146-stemcell
+            trigger: true
       - task: deploy-director
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
@@ -158,9 +162,11 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: uaa-release
+            trigger: true
           - get: bosh-release
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-stemcell
+            trigger: true
       - task: deploy-director
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
@@ -192,9 +198,11 @@ jobs:
       - aggregate:
           - get: bosh-src
           - get: uaa-release
+            trigger: true
           - get: bosh-release
           - get: bosh-aws-cpi-release
           - get: ubuntu-trusty-3146-stemcell
+            trigger: true
       - task: deploy-director
         file: bosh-src/ci/pipelines/compiled-releases/tasks/deploy-director.yml
         input_mapping:
