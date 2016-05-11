@@ -7,8 +7,8 @@ if [ "" == "${1:-}" ] ; then
   exit 1
 fi
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 IMAGE_NAME="$1"
 DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/$IMAGE_NAME}
 
-cd "$IMAGE_NAME"
-docker build -t $DOCKER_IMAGE .
+docker run --privileged -v /opt/bosh:$DIR/../.. --workdir /opt/bosh -t -i $DOCKER_IMAGE
