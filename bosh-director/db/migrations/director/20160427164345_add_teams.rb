@@ -44,8 +44,4 @@ Sequel.migration do
       drop_column :teams
     end
   end
-
-  down do
-    drop_table :teams
-  end
 end
