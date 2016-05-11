@@ -14,12 +14,22 @@ module Bosh::Director::Models
       end
       team_names = team_scopes.compact
       team_names.map do |name|
-        found = find({name: name})
-        if !found
-          found = create({name: name})
-        end
-        found
+        create_or_find(name)
       end
+    end
+
+    private
+
+    # this fixes potential race condition when
+    # multiple creates happen at the same time
+    def self.create_or_find(name)
+      begin
+        found = create(name: name)
+      rescue Exception => e
+        found = find(name: name)
+        raise e if !found
+      end
+      found
     end
   end
 end
