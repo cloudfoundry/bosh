@@ -11,4 +11,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 IMAGE_NAME="$1"
 DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/$IMAGE_NAME}
 
-docker run --privileged -v /opt/bosh:$DIR/../.. --workdir /opt/bosh -t -i $DOCKER_IMAGE
+if [ $IMAGE_NAME == "os-image-stemcell-builder" ] ; then
+  USER_OPTION="--user ubuntu "
+fi
+
+exec docker run --privileged -v /opt/bosh:$DIR/../.. --workdir /opt/bosh $USER_OPTION -t -i $DOCKER_IMAGE

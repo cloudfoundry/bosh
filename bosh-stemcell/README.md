@@ -12,19 +12,18 @@ First make sure you have a local copy of this repository. If you already have a 
 
 ### Container-based
 
-The Docker-based environment files are located in `./docker`. To use them, first change into that directory...
+The Docker-based environment files are located in `ci/docker/os-image-stemcell-builder`...
 
-    host$ cd docker/
+    host$ cd ci/docker
 
 If you do not already have Docker running, use `vagrant` to start a new VM which has Docker, and then change back into the `./docker` directory...
 
     host$ vagrant up
     host$ vagrant ssh
-    vagrant$ cd /opt/bosh/bosh-stemcell/docker
 
 Once you have Docker running, run `./run`...
 
-    vagrant$ ./run
+    vagrant$ /opt/bosh/ci/docker/run os-image-stemcell-builder
     container$ whoami
     ubuntu
 
@@ -42,15 +41,16 @@ The Docker image is published to [`bosh/os-image-stemcell-builder`](https://hub.
 
 If you need to rebuild the image, first download the ovftool installer from VMWare. Details about this can be found at [my.vmware.com](https://my.vmware.com/group/vmware/details?downloadGroup=OVFTOOL410&productId=489). Specifically...
 
-0. Download the `*.bundle` file to this directory (`bosh-stemcell/docker`)
+0. Download the `*.bundle` file to the docker image directory (`ci/docker/os-image-stemcell-builder`)
 0. When upgrading versions, update `Dockerfile` with the new file path and SHA
 
 Rebuild the container with the `build` script...
 
-    vagrant$ ./build
+    vagrant$ ./build os-image-stemcell-builder
 
 When ready, `push` to DockerHub and use the credentials from LastPass...
 
+    vagrant$ cd os-image-stemcell-builder
     vagrant$ ./push
 
 
