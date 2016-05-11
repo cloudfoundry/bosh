@@ -138,6 +138,15 @@ module Bosh::Director
             expect { state_applier.apply(update_config) }.to raise_error
           end
         end
+        
+        context 'when the interval length is longer than 150 seconds' do
+          let(:update_watch_time) { '1000-301000' }
+
+          it 'divides the interval into 15 seconds steps' do
+            expect(state_applier).to receive(:sleep).with(15.0).exactly(20).times
+            expect { state_applier.apply(update_config) }.to raise_error
+          end
+        end
       end
 
       context 'when trying to start a job' do
