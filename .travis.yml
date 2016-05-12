@@ -6,9 +6,7 @@ before_install:
   - 'git config --global user.name "BOSH CI Push Pull"'
 
 install:
-  - 'gem uninstall bundler --all --executables --ignore-dependencies'
-  - 'gem install bundler -v 1.11.2'
-  - 'sudo apt-get install dnsutils'
+  - "sed -i .withbundler -e '/bundler/d' Gemfile"
   - 'bundle install --local --without development'
 
 rvm:
