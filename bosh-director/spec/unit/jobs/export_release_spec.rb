@@ -300,7 +300,7 @@ module Bosh::Director
 
         it 'should order the files in the tarball' do
           allow(blobstore_client).to receive(:get)
-          allow(blobstore_client).to receive(:create)
+          allow(blobstore_client).to receive(:create).and_return('blobstore_id')
           expect(archiver).to receive(:compress) { |download_dir, sources, output_path|
             expect(sources).to eq(['./release.MF', './jobs', './compiled_packages'])
             File.write(output_path, 'Some glorious content')
@@ -322,7 +322,7 @@ module Bosh::Director
               File.write(output_path, 'Some glorious content')
           }
 
-          expect(blobstore_client).to receive(:create)
+          expect(blobstore_client).to receive(:create).and_return('blobstore_id')
           expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby_compiled_package_sha1')
           expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres_compiled_package_sha1')
           expect(blobstore_client).to receive(:get).with('foo_blobstore_id', anything, sha1: 'foo_sha1')
@@ -364,7 +364,7 @@ version: 0.1-dev
 ))}
 
           allow(blobstore_client).to receive(:get)
-          allow(blobstore_client).to receive(:create)
+          allow(blobstore_client).to receive(:create).and_return('blobstore_id')
 
           job.perform
         end
@@ -377,6 +377,31 @@ version: 0.1-dev
            }
 
           job.perform
+        end
+
+        context 'that is successfully placed in the blobstore' do
+
+          let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'expected-sha1')}
+
+          it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
+            expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
+
+            allow(blobstore_client).to receive(:get)
+            allow(blobstore_client).to receive(:create).and_return(expected_blobstore_id)
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              File.write(output_path, 'Some glorious content')
+            }
+            allow(Digest::SHA1).to receive(:file).with(any_args).and_return(sha1_digest)
+
+            expect {
+              job.perform
+            }.to change(Bosh::Director::Models::EphemeralBlob, :count).from(0).to(1)
+
+            ephemeral_blob = Bosh::Director::Models::EphemeralBlob.first
+            expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
+            expect(ephemeral_blob.sha1).to eq('expected-sha1')
+
+          end
         end
       end
     end

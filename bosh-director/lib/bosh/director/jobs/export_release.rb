@@ -105,9 +105,16 @@ module Bosh::Director
 
         oid = blobstore_client.create(tarball_file)
 
+        tarball_hexdigest = Digest::SHA1.file(output_path).hexdigest
+
+        Bosh::Director::Models::EphemeralBlob.new(
+            blobstore_id: oid,
+            sha1: tarball_hexdigest
+        ).save
+
         {
-          :blobstore_id => oid,
-          :sha1 => Digest::SHA1.file(output_path).hexdigest,
+            :blobstore_id => oid,
+            :sha1 => tarball_hexdigest,
         }
       ensure
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
