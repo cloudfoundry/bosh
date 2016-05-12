@@ -4,18 +4,27 @@ module Bosh::Blobstore
   describe DavBlobstoreClient do
     subject { described_class.new(options) }
     let(:options) { {} }
-    let(:response) { double(HTTP::Message) }
-    let(:httpclient) { double(HTTPClient) }
+    let(:response) { instance_double(HTTP::Message) }
+    let(:httpclient) { instance_double(HTTPClient) }
     let(:ssl_config) { instance_double('HTTPClient::SSLConfig') }
+
+    let(:default_send_timeout) { 5 }
 
     before do
       allow(HTTPClient).to receive_messages(new: httpclient)
-      allow(httpclient).to receive_messages(ssl_config: ssl_config)
+      allow(httpclient).to receive_messages(ssl_config: ssl_config, send_timeout: default_send_timeout, :send_timeout= => nil)
+
       allow(ssl_config).to receive(:verify_mode=)
       allow(ssl_config).to receive(:verify_callback=)
     end
 
     it_implements_base_client_interface
+
+    it 'sets the send timeout to be considerably higher for big uploads' do
+      expect(httpclient).to receive(:send_timeout=).with(default_send_timeout * 11)
+
+      subject
+    end
 
     describe 'options' do
       before do
