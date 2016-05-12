@@ -6,7 +6,7 @@ before_install:
   - 'git config --global user.name "BOSH CI Push Pull"'
 
 install:
-  - "sed -i .withbundler -e '/bundler/d' Gemfile"
+  - "sed -i -e '/bundler/d' Gemfile"
   - 'bundle install --local --without development'
 
 rvm:
