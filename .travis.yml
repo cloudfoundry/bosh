@@ -4,6 +4,8 @@ before_install:
   - 'sudo apt-get update'
   - 'git config --global user.email "cf-bosh-eng+bosh-ci-push-pull@pivotallabs.com"'
   - 'git config --global user.name "BOSH CI Push Pull"'
+  - 'gem uninstall bundler --all --executables --ignore-dependencies'
+  - 'gem install bundler -v 1.11.2'
 
 install:
   - 'sudo apt-get install dnsutils'
