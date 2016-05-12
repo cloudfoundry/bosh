@@ -130,7 +130,7 @@ module Bosh
             message = 'Unable to process links for deployment. Errors are:'
 
             errors.each do |e|
-              message = "#{message}\n   - \"#{e.message.gsub(/\n/, "\n  ")}\""
+              message = "#{message}\n   - #{e.message.gsub(/\n/, "\n     ")}"
             end
 
             raise message
