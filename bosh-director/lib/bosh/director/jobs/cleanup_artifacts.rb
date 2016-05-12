@@ -24,6 +24,7 @@ module Bosh::Director
         blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
         compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger)
         @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger)
+        @ephemeral_blob_deleter = Jobs::Helpers::EphemeralBlobDeleter.new(blob_deleter, logger)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
         package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
@@ -86,7 +87,22 @@ module Bosh::Director
           end
         end
 
-        "Deleted #{unused_release_name_and_version.count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s)"
+        ephemeral_blobs = []
+        if @config['remove_all']
+          ephemeral_blobs = Models::EphemeralBlob.all
+          ephemeral_blob_stage = Config.event_log.begin_stage('Deleting ephemeral blobs', ephemeral_blobs.count)
+          ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+            ephemeral_blobs.each do |ephemeral_blob|
+              pool.process do
+                ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
+                  @ephemeral_blob_deleter.delete(ephemeral_blob, false)
+                end
+              end
+            end
+          end
+        end
+
+        "Deleted #{unused_release_name_and_version.count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{ephemeral_blobs.count} ephemeral blob(s)"
       end
     end
   end
