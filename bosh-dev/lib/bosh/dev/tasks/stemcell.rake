@@ -5,6 +5,7 @@ namespace :stemcell do
   task :build_light, [:stemcell_path, :virtualization_type] do |_, args|
     begin
       require 'bosh/stemcell/aws/light_stemcell'
+      require 'bosh/stemcell/archive'
       stemcell = Bosh::Stemcell::Archive.new(args.stemcell_path)
       regions = Array(ENV.fetch('BOSH_AWS_REGION', Bosh::Stemcell::Aws::Region::REGIONS))
       light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell, args.virtualization_type, regions)
