@@ -9,7 +9,7 @@ module Bosh::Director
       yield
     rescue => e
       raise unless @force
-      @logger.error('Force deleting is set, ignoring exception: #{e.inspect}\n#{e.backtrace.join("\n")}')
+      @logger.error("Force deleting is set, ignoring exception: #{e.inspect}\n#{e.backtrace.join("\n")}")
     end
   end
 end
