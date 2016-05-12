@@ -12,6 +12,9 @@ module Bosh
         super(options)
         @client = HTTPClient.new
 
+        # https://www.youtube.com/watch?v=4xgx4k83zzc
+        @client.send_timeout = @client.send_timeout * 11
+
         if @options[:ssl_no_verify]
           @client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
           @client.ssl_config.verify_callback = proc {}
