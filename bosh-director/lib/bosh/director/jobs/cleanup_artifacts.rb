@@ -21,14 +21,13 @@ module Bosh::Director
         @stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
         cloud = Config.cloud
-        blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
-        compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(blob_deleter, logger)
+        @blob_deleter = Jobs::Helpers::BlobDeleter.new(blobstore, logger)
+        compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(@blob_deleter, logger)
         @stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(cloud, compiled_package_deleter, logger)
-        @ephemeral_blob_deleter = Jobs::Helpers::EphemeralBlobDeleter.new(blob_deleter, logger)
         @releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
         @stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(@stemcell_manager)
-        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blob_deleter, logger)
-        template_deleter = Helpers::TemplateDeleter.new(blob_deleter, logger)
+        package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, @blob_deleter, logger)
+        template_deleter = Helpers::TemplateDeleter.new(@blob_deleter, logger)
         release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger)
         release_version_deleter =
           Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log)
@@ -93,7 +92,9 @@ module Bosh::Director
           ephemeral_blobs.each do |ephemeral_blob|
             pool.process do
               ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
-                @ephemeral_blob_deleter.delete(ephemeral_blob, false)
+                if @blob_deleter.delete(ephemeral_blob.blobstore_id, [], false)
+                  ephemeral_blob.destroy
+                end
               end
             end
           end
