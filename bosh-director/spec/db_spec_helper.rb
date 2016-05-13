@@ -41,7 +41,7 @@ module DBSpecHelper
     def migrate_all_before(migration_file)
       reset_database
       migration_file_full_path = File.join(@director_migrations_dir, migration_file)
-      files_to_migrate = Dir.glob("#{@director_migrations_dir}/*").select do |filename|
+      files_to_migrate = Dir.glob("#{@director_migrations_dir}/*").sort.select do |filename|
         filename < migration_file_full_path
       end
 
