@@ -2,6 +2,7 @@ module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
       include LockHelper
+      include LegacyDeploymentHelper
 
       @queue = :normal
 
@@ -15,18 +16,28 @@ module Bosh::Director
         @cloud_config_id = cloud_config_id
         @runtime_config_id = runtime_config_id
         @options = options
+        @event_log = Config.event_log
       end
 
       def perform
         logger.info('Reading deployment manifest')
 
         manifest_text = File.read(@manifest_file_path)
+        manifest_hash = Psych.load(manifest_text)
         logger.debug("Manifest:\n#{manifest_text}")
-        cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
-        if cloud_config_model.nil?
-          logger.debug("No cloud config uploaded yet.")
+
+        if ignore_cloud_config?(manifest_hash)
+          warning = "Ignoring cloud config. Manifest contains 'networks' section."
+          logger.debug(warning)
+          @event_log.warn_deprecated(warning)
+          cloud_config_model = nil
         else
-          logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
+          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+          if cloud_config_model.nil?
+            logger.debug("No cloud config uploaded yet.")
+          else
+            logger.debug("Cloud config:\n#{cloud_config_model.manifest}")
+          end
         end
 
         runtime_config_model = Bosh::Director::Models::RuntimeConfig[@runtime_config_id]
@@ -36,7 +47,8 @@ module Bosh::Director
           logger.debug("Runtime config:\n#{runtime_config_model.manifest}")
         end
 
-        deployment_manifest = Manifest.load_from_text(manifest_text, cloud_config_model, runtime_config_model)
+        deployment_manifest = Manifest.load_from_hash(manifest_hash, cloud_config_model, runtime_config_model)
+
         @deployment_name = deployment_manifest.to_hash['name']
 
         previous_releases, previous_stemcells = get_stemcells_and_releases
@@ -49,7 +61,7 @@ module Bosh::Director
 
           deployment_plan = nil
 
-          event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
+          event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest, cloud_config_model, runtime_config_model, @options)

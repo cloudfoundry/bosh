@@ -39,16 +39,16 @@ module Bosh::Director
               resolver = ProblemResolver.new(@deployment)
               resolved_problems, error_message = resolver.apply_resolutions(resolutions(jobs))
 
-              'scan and fix complete'
-            end
-            if resolved_problems > 0
-              PostDeploymentScriptRunner.run_post_deploys_after_resurrection(@deployment)
+              if resolved_problems > 0
+                PostDeploymentScriptRunner.run_post_deploys_after_resurrection(@deployment)
+              end
             end
 
             if error_message
               raise Bosh::Director::ProblemHandlerError, error_message
             end
 
+            'scan and fix complete'
           rescue Lock::TimeoutError
             raise 'Unable to get deployment lock, maybe a deployment is in progress. Try again later.'
           end

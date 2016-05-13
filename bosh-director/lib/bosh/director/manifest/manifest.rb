@@ -3,9 +3,14 @@ require 'set'
 module Bosh::Director
   class Manifest
     def self.load_from_text(manifest_text, cloud_config, runtime_config)
+      manifest_text ||= '{}'
+      self.load_from_hash(YAML.load(manifest_text), cloud_config, runtime_config)
+    end
+
+    def self.load_from_hash(manifest_hash, cloud_config, runtime_config)
       cloud_config_hash =  cloud_config.nil? ? nil : cloud_config.manifest
       runtime_config_hash = runtime_config.nil? ? nil : runtime_config.manifest
-      manifest_hash = manifest_text.nil? ? {} : Psych.load(manifest_text)
+      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
       new(manifest_hash, cloud_config_hash, runtime_config_hash)
     end
 

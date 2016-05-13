@@ -16,9 +16,9 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
     "Settings": {
       "Sources": [
         {
-          "Type": "HTTP",
+          "Type": "InstanceMetadata",
           "URI": "http://169.254.169.254",
-          "UserDataPath": "/computeMetadata/v1/instance/attributes/user_data",
+          "SettingsPath": "/computeMetadata/v1/instance/attributes/bosh_settings",
           "Headers": {
             "Metadata-Flavor": "Google"
           }
@@ -26,7 +26,7 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
       ],
 
       "UseServerName": true,
-      "UseRegistry": true
+      "UseRegistry": false
     }
   }
 }

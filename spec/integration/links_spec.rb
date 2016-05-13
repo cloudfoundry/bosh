@@ -463,9 +463,9 @@ Error 100: Unable to render instance groups for deployment. Errors are:
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
 Error 100: Unable to process links for deployment. Errors are:
-   - "Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-     simple.mysql.database.db
-     simple.postgres.backup_database.backup_db"
+   - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
+        simple.mysql.database.db
+        simple.postgres.backup_database.backup_db
           EOF
         end
       end
@@ -1505,9 +1505,9 @@ Error 100: Unable to process links for deployment. Errors are:
 
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error 100: Unable to process links for deployment. Errors are:")
-      expect(out).to include("- \"Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
-      expect(out).to include("- \"Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
-      expect(out).to include("- \"Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'\"")
+      expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
 end

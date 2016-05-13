@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
+
   describe ProblemHandlers::UnresponsiveAgent do
 
     def make_handler(instance, cloud, _, data = {})
@@ -146,13 +147,13 @@ module Bosh::Director
           allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
         end
 
-        it 'recreates the VM' do
+        def expect_vm_to_be_created
           allow(@agent).to receive(:ping).and_raise(RpcTimeout)
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], { 'key1' => 'value1' })
-                                  .and_return('new-vm-cid')
+            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1'})
+                 .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
@@ -164,7 +165,61 @@ module Bosh::Director
 
           expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
           expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
+        end
 
+        context 'when update is specified' do
+          let(:spec) do
+            {
+              'deployment' => 'simple',
+              'job' => {'name' => 'job'},
+              'index' => 0,
+              'vm_type' => {
+                'name' => 'fake-vm-type',
+                'cloud_properties' => {'foo' => 'bar'},
+              },
+              'stemcell' => {
+                'name' => 'stemcell-name',
+                'version' => '3.0.2'
+              },
+              'networks' => networks,
+              'template_hashes' => {},
+              'configuration_hash' => {'configuration' => 'hash'},
+              'rendered_templates_archive' => {'some' => 'template'},
+              'env' => {'key1' => 'value1'},
+              'update' => {
+                'canaries' => 1,
+                'max_in_flight' => 10,
+                'canary_watch_time' => '1000-30000',
+                'update_watch_time' => '1000-30000'
+              }
+            }
+          end
+
+          it 'recreates the VM and skips post_start script' do
+            expect_vm_to_be_created
+
+            expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
+            handler.apply_resolution(:recreate_vm_skip_post_start)
+
+            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          end
+
+          it 'recreates the VM and runs post_start script' do
+            allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+
+            expect_vm_to_be_created
+            expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
+            handler.apply_resolution(:recreate_vm)
+
+            expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
+            expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          end
+
+        end
+
+        it 'recreates the VM' do
+          expect_vm_to_be_created
           handler.apply_resolution(:recreate_vm)
 
           expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil

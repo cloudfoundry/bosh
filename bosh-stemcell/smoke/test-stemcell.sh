@@ -90,10 +90,12 @@ cleanup() {
 bosh -d ./deployment.yml deploy
 
 # trigger auditd event
-bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo modprobe -r floppy && modprobe floppy'
+bosh -d ./deployment.yml ssh syslog_forwarder 0 'sudo modprobe -r floppy'
+bosh -d ./deployment.yml ssh syslog_forwarder 0 'logger -t vcap some vcap message'
 
 # check that syslog drain gets event
 download_destination=$(mktemp -d -t)
-bosh -d ./deployment.yml scp --download syslog_storer 0 /var/vcap/store/syslog_storer/syslog.log "${download_destination}"
+bosh -d ./deployment.yml scp --download syslog_storer 0 /var/vcap/store/syslog_storer/syslog.log $download_destination
 
-grep floppy "${download_destination}/*" || echo "Syslog did not contain 'audit'!"
+grep 'COMMAND=/sbin/modprobe -r floppy' $download_destination/syslog.log.syslog_storer. || ( echo "Syslog did not contain 'audit'!" ; exit 1 )
+grep 'some vcap message' $download_destination/syslog.log.syslog_storer. || ( echo "Syslog did not contain 'vcap'!" ; exit 1 )

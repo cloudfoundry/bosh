@@ -35,17 +35,13 @@ Sequel.migration do
     end
 
     create_table :tasks_teams do
-      foreign_key :task_id, :tasks, :null => false
-      foreign_key :team_id, :teams, :null => false
+      foreign_key :task_id, :tasks, :null => false, :on_delete => :cascade
+      foreign_key :team_id, :teams, :null => false, :on_delete => :cascade
       unique [:task_id, :team_id]
     end
 
     alter_table(:tasks) do
       drop_column :teams
     end
-  end
-
-  down do
-    drop_table :teams
   end
 end

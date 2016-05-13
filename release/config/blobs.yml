@@ -59,10 +59,6 @@ postgres/postgresql-9.0.23.tar.gz:
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
   size: 19776342
-postgres/postgresql-9.4.5.tar.gz:
-  object_id: aa6fa8b1-870f-43c3-9858-542dae89344f
-  sha: 5278d04093f3cb2e00796fae15b2e33406844d01
-  size: 23211720
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
   sha: 74dd87a9537f98fc93cace2252424ae1c6c46fbf
@@ -71,10 +67,6 @@ mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
   sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
   size: 4639216
-postgres/postgresql-9.4.6.tar.gz:
-  object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
-  sha: bd031beebd86bf149c497525dccf57eebe5a6add
-  size: 23249307
 s3cli/s3cli-0.0.31-linux-amd64:
   object_id: a691b107-af1b-4087-b1cb-3ee0b7fd1045
   sha: 32130fe8d775c33695dc83ec21ae41c97d804023
@@ -95,3 +87,7 @@ ruby/rubygems-2.6.4.tgz:
   object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
   sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
   size: 478582
+postgres/postgresql-9.4.7.tar.gz:
+  object_id: 10fcb23d-61a6-46ba-a605-dad1e510fa39
+  sha: 4629ee9e20019c3e6c5ecb7722687f37c3988c26
+  size: 23288560

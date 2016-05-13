@@ -155,8 +155,8 @@ module Bosh::Cli
 
           begin
             yield sessions, gateway, ssh_session
-          rescue IOError => io_error
-            handle_io_error(io_error)
+          rescue Exception => error
+            handle_closed_stream_error(error)
           end
         ensure
           nl
@@ -165,18 +165,18 @@ module Bosh::Cli
           indices = sessions.map { |session| session['id'] || session['index'] }
           begin
             gateway.shutdown! if gateway
-          rescue IOError => io_error
-            handle_io_error(io_error)
+          rescue Exception => error
+            handle_closed_stream_error(error)
           end
           director.cleanup_ssh(deployment_name, job, "^#{ssh_session.user}$", indices)
         end
       end
 
-      def handle_io_error(io_error)
-        if io_error.message.include?('closed stream')
-          warn("#{io_error}")
+      def handle_closed_stream_error(error)
+        if error.message.include?('closed stream')
+          warn("#{error}")
         else
-          raise io_error
+          raise error
         end
       end
 
