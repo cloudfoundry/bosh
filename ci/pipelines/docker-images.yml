@@ -46,7 +46,7 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: {{branch}}
       paths:
-        - "ci/docker/**/*"
+        - "ci/docker"
 
   - name: compiled-release-image
     type: docker-image
