@@ -289,7 +289,7 @@ module Bosh::Director
 
             expect {
               deleter.delete_instance_plans([instance_plan], event_log_stage)
-            }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+            }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(1)
           end
         end
       end
