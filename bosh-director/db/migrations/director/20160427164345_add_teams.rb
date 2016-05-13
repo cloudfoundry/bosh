@@ -16,6 +16,7 @@ Sequel.migration do
                    .map { |d| d[:teams].split(',') }
                    .flatten
                    .uniq
+                   .map { |team| [team] }
 
     self[:teams].import([:name], team_names)
 
