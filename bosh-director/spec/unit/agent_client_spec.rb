@@ -77,6 +77,13 @@ module Bosh::Director
       end
     end
 
+    def self.it_acts_as_message_with_timeout(message_name)
+      it 'waits for results with timeout' do
+        expect(client).to receive(:send_message_with_timeout).exactly(1).times
+        client.public_send(message_name, 'fake', 'args')
+      end
+    end
+
     context 'task is asynchronous' do
       describe 'it has agent_task_id' do
         subject(:client) { AgentClient.with_vm_credentials_and_agent_id(nil, 'fake-agent-id') }
@@ -184,7 +191,11 @@ module Bosh::Director
           end
         end
 
+        context 'task can time out' do
+          it_acts_as_message_with_timeout :stop
+        end
       end
+
     end
 
     context 'task is fired and forgotten' do
@@ -655,6 +666,31 @@ module Bosh::Director
           expect(client).to receive(:sleep).with(1.0)
 
           client.wait_for_task('fake-task-id')
+        end
+      end
+
+      context 'when timeout is passed' do
+        let(:fake_timeout_ticks) { 3 }
+
+        it 'uses the timeout if one is passed' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+          timeout = Timeout.new(fake_timeout_ticks)
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'running',
+              'value' => 'fake-return-value',
+            }
+          }
+
+          allow(nats_rpc).to receive(:send_request).with(
+              'fake-service-name.fake-client-id', hash_including(method: :get_task, arguments: ['fake-task-id']))
+                               .and_yield(nats_rpc_response)
+
+          expect(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL).exactly(fake_timeout_ticks).times
+          expect(timeout).to receive(:timed_out?).exactly(fake_timeout_ticks).times.and_return(false)
+          expect(timeout).to receive(:timed_out?).and_return(true)
+          expect(client.wait_for_task('fake-task-id', timeout)).to eq('fake-return-value')
         end
       end
     end

@@ -7,6 +7,8 @@ module Bosh::Director
 
     DEFAULT_POLL_INTERVAL = 1.0
 
+    DEFAULT_MESSAGE_TIMEOUT = 300 # 5 minutes
+
     # in case of timeout errors
     GET_TASK_MAX_RETRIES = 2
 
@@ -129,17 +131,18 @@ module Bosh::Director
     end
 
     def stop(*args)
-      send_message(:stop, *args)
+      timeout = Timeout.new(DEFAULT_MESSAGE_TIMEOUT)
+      send_message_with_timeout(:stop, timeout, *args)
     end
 
     def run_errand(*args)
       start_task(:run_errand, *args)
     end
 
-    def wait_for_task(agent_task_id, &blk)
+    def wait_for_task(agent_task_id, timeout = nil, &blk)
       task = get_task_status(agent_task_id)
 
-      while task['state'] == 'running'
+      until task['state'] != 'running' || (timeout && timeout.timed_out?)
         blk.call if block_given?
         sleep(DEFAULT_POLL_INTERVAL)
         task = get_task_status(agent_task_id)
@@ -296,6 +299,16 @@ module Bosh::Director
       task = start_task(method_name, *args)
       if task['agent_task_id']
         wait_for_task(task['agent_task_id'], &blk)
+      else
+        task['value']
+      end
+    end
+
+    def send_message_with_timeout(method_name, timeout, *args, &blk)
+      task = start_task(method_name, *args)
+
+      if task['agent_task_id']
+        wait_for_task(task['agent_task_id'], timeout, &blk)
       else
         task['value']
       end
