@@ -13,7 +13,7 @@ module Bosh::Director
 
       DBSpecHelper.migrate(migration_file)
 
-      teams = db[:deployments].all
+      teams = db[:teams].all
       expect(teams.count).to eq(3)
       expect(teams[0][:name]).to eq('prod')
       expect(teams[1][:name]).to eq('the-best')
