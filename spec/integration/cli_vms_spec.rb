@@ -85,6 +85,7 @@ VMS
     expect(output).to include('CID')
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
+    expect(output).to include('Ignored')
 
     expect(output).to include('foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
     expect(output).to include('foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
@@ -92,6 +93,7 @@ VMS
     expect(output).to include('zone-1')
     expect(output).to include('zone-2')
     expect(output).to include('zone-3')
+    expect(output.scan(/\| xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \| active       \| false   \|/).count).to eq(3)
 
     expect(scrub_random_ids(bosh_runner.run('vms --dns'))).to include(<<VMS)
 +-------------------------------------------------+---------+--------+---------+-------------+-----------------------------------------------------------+

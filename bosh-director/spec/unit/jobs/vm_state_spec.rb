@@ -148,6 +148,32 @@ module Bosh::Director
         job.perform
       end
 
+      it 'should get the default ignored status of a vm' do
+        instance
+        stub_agent_get_state_to_return_state_with_vitals
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ignored']).to be(false)
+        end
+
+        job.perform
+      end
+
+      it 'should get the ignored status of a vm when updated' do
+        instance.update(ignored: true)
+        stub_agent_get_state_to_return_state_with_vitals
+        job = Jobs::VmState.new(@deployment.id, 'full')
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['ignored']).to be(true)
+        end
+
+        job.perform
+      end
+
       it 'should return disk cid info when active disks found' do
         Models::PersistentDisk.create(
           instance: instance,

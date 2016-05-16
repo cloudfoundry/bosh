@@ -55,6 +55,8 @@ describe 'cli: deployment process', type: :integration do
     expect(output).to include('Disk CID')
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
+    expect(output).to include('Ignored')
+    expect(output.scan(/\| xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \| active       \| false   \|/).count).to eq(3)
 
     output = bosh_runner.run('instances --dns')
     expect(scrub_random_ids(output)).to match_output '
