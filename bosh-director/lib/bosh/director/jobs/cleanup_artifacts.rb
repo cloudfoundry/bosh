@@ -88,14 +88,10 @@ module Bosh::Director
 
         ephemeral_blobs = Models::EphemeralBlob.all
         ephemeral_blob_stage = Config.event_log.begin_stage('Deleting ephemeral blobs', ephemeral_blobs.count)
-        ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-          ephemeral_blobs.each do |ephemeral_blob|
-            pool.process do
-              ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
-                if @blob_deleter.delete(ephemeral_blob.blobstore_id, [], false)
-                  ephemeral_blob.destroy
-                end
-              end
+        ephemeral_blobs.each do |ephemeral_blob|
+          ephemeral_blob_stage.advance_and_track("#{ephemeral_blob.blobstore_id}") do
+            if @blob_deleter.delete(ephemeral_blob.blobstore_id, [], false)
+              ephemeral_blob.destroy
             end
           end
         end

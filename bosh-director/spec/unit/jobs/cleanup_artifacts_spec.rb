@@ -74,8 +74,8 @@ module Bosh::Director
           before do
             Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
             Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
-            allow(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
-            allow(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
 
@@ -253,8 +253,8 @@ module Bosh::Director
           before do
             Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
             Bosh::Director::Models::EphemeralBlob.new(blobstore_id: 'ephemeral_blob_id_2', sha1: 'smurf2').save
-            allow(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
-            allow(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_1')
+            expect(blobstore).to receive(:delete).with('ephemeral_blob_id_2')
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
 
