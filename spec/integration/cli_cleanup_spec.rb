@@ -9,15 +9,19 @@ describe 'cli: cleanup', type: :integration do
 
       bosh_runner.run("upload release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       set_deployment({manifest_hash: Bosh::Spec::Deployments.minimal_legacy_manifest})
       deploy({})
       bosh_runner.run("export release test_release/1 toronto-os/1")
+      bosh_runner.run("export release test_release/1 centos-7/3001")
     }
 
     it 'should clean up compiled ephemeral blobs of compiled releases' do
-      output = bosh_runner.run(clean_command)
+      output = scrub_random_ids(bosh_runner.run(clean_command))
 
-      expect(output).to include('Started deleting ephemeral blobs >')
+      expect(output).to include('Started deleting ephemeral blobs > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done')
+      expect(output.scan(/Started deleting ephemeral blobs > xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Done/).count).to eq(2)
+      expect(output).to include('Done deleting ephemeral blobs')
       expect(output).to include('Cleanup complete')
     end
   end
