@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `TtMChc77Z.r8mYkG.OvEVaAUpzjRyHbx`
+  - USN-2977-1: Linux kernel (Vivid HWE) vulnerability
+  - build from 256.x (0bb431cd8cffbb2b22589eb98ccddeee8177ef05)
+
 * `rZZbZGNdsqz5VLZNsOtO9o2NI7aTaej5`
   - rsyslog is reloaded upon logrotation (instead of restarted)
   - built from 256.x (de22afef97f7304bacf6c7fe08cd91430d1b56ec)
