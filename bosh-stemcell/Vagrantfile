@@ -86,7 +86,7 @@ EOS
       mkdir -p /bosh/tmp
 
       chown -R ubuntu:ubuntu /bosh
-    #  gem update --system
+      gem update --system
       gem install bundler --version 1.11.2 --no-ri --no-rdoc
       ( cd /bosh && bundle install --local )
 
