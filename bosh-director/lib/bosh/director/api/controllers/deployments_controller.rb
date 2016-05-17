@@ -47,6 +47,7 @@ module Bosh::Director
         @property_manager = Api::PropertyManager.new
         @instance_manager = Api::InstanceManager.new
         @deployments_repo = DeploymentPlan::DeploymentRepo.new
+        @instance_ignore_manager = Api::InstanceIgnoreManager.new
       end
 
       get '/:deployment/jobs/:job/:index_or_id' do
@@ -152,6 +153,11 @@ module Bosh::Director
 
         payload = json_decode(request.body)
         @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
+      end
+
+      put '/:deployment/instancegroups/:instancegroup/:id/ignore', consumes: :json do
+        payload = json_decode(request.body)
+        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignored'])
       end
 
       post '/:deployment/jobs/:job/:index_or_id/snapshots' do

@@ -230,6 +230,22 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
+          it 'allows putting the job instance into different ignored state' do
+            deployment = Models::Deployment.
+                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            instance = Models::Instance.
+                create(:deployment => deployment, :job => 'dea',
+                       :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
+            expect(instance.ignored).to be(false)
+            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignored' => true), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(instance.reload.ignored).to be(true)
+
+            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignored' => false), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(instance.reload.ignored).to be(false)
+          end
+
           it 'gives a nice error when uploading non valid manifest' do
             deployment = Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
@@ -934,8 +950,8 @@ module Bosh::Director
         describe 'when a user has dev team admin membership' do
 
           before {
-            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started)
-            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started)
+            Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C')
+            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6')
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']
@@ -1013,6 +1029,15 @@ module Bosh::Director
             end
             it 'denies access to other deployment' do
               expect(put('/other_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+            end
+          end
+
+          context 'PUT /:deployment/instancegroups/:instancegroup/:id/ignore' do
+            it 'allows access to owned deployment' do
+              expect(put('/owned_deployment/instancegroups/dea/F0753566-CA8E-4B28-AD63-7DB3903CD98C/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
+            end
+            it 'denies access to other deployment' do
+              expect(put('/other_deployment/instancegroups/dea/72652FAA-1A9C-4803-8423-BBC3630E49C6/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
             end
           end
 
