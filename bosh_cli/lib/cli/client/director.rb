@@ -379,6 +379,12 @@ module Bosh
           put(url, 'application/json', payload)
         end
 
+        def change_instance_ignore_state(deployment_name, instance_group_name, id, ignore_state)
+          url     = "/deployments/#{deployment_name}/instancegroups/#{instance_group_name}/#{id}/ignore"
+          payload = JSON.generate('ignore' => ignore_state)
+          put(url, 'application/json', payload)
+        end
+
         def fetch_logs(deployment_name, job_name, index, log_type,
           filters = nil, options = {})
           options = options.dup

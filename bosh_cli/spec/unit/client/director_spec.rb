@@ -519,6 +519,16 @@ describe Bosh::Cli::Client::Director do
       @director.change_vm_resurrection_for_all(false)
     end
 
+    it 'changes instance ignored state' do
+      expect(@director).to receive(:request).with(:put,
+          '/deployments/foo/instancegroups/dea/90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA/ignore',
+          'application/json',
+          '{"ignore":true}',
+          {},
+          {})
+      @director.change_instance_ignore_state('foo', 'dea', '90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA', true)
+    end
+
     it 'gets task state' do
       expect(@director).to receive(:get).
         with("/tasks/#{task_number}").
