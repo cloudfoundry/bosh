@@ -24,18 +24,18 @@ module Bosh::Director
           let(:instance_group_name) { 'INSTANCE_GROUP' }
           let(:instance_group_id) { '4153fb47-1565-4873-a541-3c50e4bfec04' }
 
-          it 'should change ignored state to true' do
+          it 'should change ignore state to true' do
             expect(instance_lookup).to receive(:by_uuid)
             expect(instance_lookup).to_not receive(:by_attributes)
-            expect(instance).to receive(:ignored=).with(true).ordered
+            expect(instance).to receive(:ignore=).with(true).ordered
             expect(instance).to receive(:save).ordered
             ignore_instance_manager.set_ignore_state_for_instance(deployment_name, instance_group_name, instance_group_id, true)
           end
 
-          it 'should change ignored state to false' do
+          it 'should change ignore state to false' do
             expect(instance_lookup).to receive(:by_uuid)
             expect(instance_lookup).to_not receive(:by_attributes)
-            expect(instance).to receive(:ignored=).with(false).ordered
+            expect(instance).to receive(:ignore=).with(false).ordered
             expect(instance).to receive(:save).ordered
             ignore_instance_manager.set_ignore_state_for_instance(deployment_name, instance_group_name, instance_group_id, false)
           end

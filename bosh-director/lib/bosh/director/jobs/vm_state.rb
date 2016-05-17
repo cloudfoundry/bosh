@@ -61,7 +61,7 @@ module Bosh::Director
           :az => instance.availability_zone,
           :id => instance.uuid,
           :bootstrap => instance.bootstrap,
-          :ignored => instance.ignored
+          :ignore => instance.ignore
         }
       end
 

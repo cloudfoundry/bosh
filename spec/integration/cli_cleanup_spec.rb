@@ -45,7 +45,7 @@ describe 'cli: cleanup', type: :integration do
 
       bosh_runner.run('delete deployment deployment-a')
 
-      puts bosh_runner.run(clean_command)
+      bosh_runner.run(clean_command)
 
       expect(bosh_runner.run('disks --orphaned')).to include(disk_cid)
 

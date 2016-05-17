@@ -79,7 +79,7 @@ module Bosh::Cli::Command
           if has_disk_cid
             headings += ['Disk CID']
           end
-          headings += ['Agent ID', 'Resurrection', 'Ignored']
+          headings += ['Agent ID', 'Resurrection', 'Ignore']
         end
 
         if options[:dns]
@@ -157,7 +157,7 @@ module Bosh::Cli::Command
           if options[:details]
             row << instance['vm_cid']
             row << (instance['disk_cid'] || 'n/a') if has_disk_cid
-            row += [instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active', instance['ignored'].nil? ? 'n/a' : instance['ignored']]
+            row += [instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active', instance['ignore'].nil? ? 'n/a' : instance['ignore']]
           end
 
           if options[:dns]

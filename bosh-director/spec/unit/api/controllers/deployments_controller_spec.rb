@@ -230,20 +230,20 @@ module Bosh::Director
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
-          it 'allows putting the job instance into different ignored state' do
+          it 'allows putting the job instance into different ignore state' do
             deployment = Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
-            expect(instance.ignored).to be(false)
-            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignored' => true), { 'CONTENT_TYPE' => 'application/json' }
+            expect(instance.ignore).to be(false)
+            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
-            expect(instance.reload.ignored).to be(true)
+            expect(instance.reload.ignore).to be(true)
 
-            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignored' => false), { 'CONTENT_TYPE' => 'application/json' }
+            put '/foo/instancegroups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', Yajl::Encoder.encode('ignore' => false), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
-            expect(instance.reload.ignored).to be(false)
+            expect(instance.reload.ignore).to be(false)
           end
 
           it 'gives a nice error when uploading non valid manifest' do

@@ -157,7 +157,7 @@ module Bosh::Director
 
       put '/:deployment/instancegroups/:instancegroup/:id/ignore', consumes: :json do
         payload = json_decode(request.body)
-        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignored'])
+        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
       end
 
       post '/:deployment/jobs/:job/:index_or_id/snapshots' do

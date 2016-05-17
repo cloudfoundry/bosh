@@ -85,7 +85,7 @@ VMS
     expect(output).to include('CID')
     expect(output).to include('Agent ID')
     expect(output).to include('Resurrection')
-    expect(output).to include('Ignored')
+    expect(output).to include('Ignore')
 
     expect(output).to include('foobar/0 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')
     expect(output).to include('foobar/1 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)')

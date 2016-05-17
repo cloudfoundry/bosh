@@ -148,27 +148,27 @@ module Bosh::Director
         job.perform
       end
 
-      it 'should get the default ignored status of a vm' do
+      it 'should get the default ignore status of a vm' do
         instance
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['ignored']).to be(false)
+          expect(status['ignore']).to be(false)
         end
 
         job.perform
       end
 
-      it 'should get the ignored status of a vm when updated' do
-        instance.update(ignored: true)
+      it 'should get the ignore status of a vm when updated' do
+        instance.update(ignore: true)
         stub_agent_get_state_to_return_state_with_vitals
         job = Jobs::VmState.new(@deployment.id, 'full')
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          expect(status['ignored']).to be(true)
+          expect(status['ignore']).to be(true)
         end
 
         job.perform

@@ -6,18 +6,18 @@ module Bosh::Cli::Command
     usage "ignore instance"
     desc "Ignore an instance. 'name_and_id' should be in the form of {name}/{id}"
     def ignore(name_and_id)
-      change_ignored_state(name_and_id, true)
+      change_ignore_state(name_and_id, true)
     end
 
     usage "unignore instance"
     desc "Unignore an instance. 'name_and_id' should be in the form of {name}/{id}"
     def unignore(name_and_id)
-      change_ignored_state(name_and_id, false)
+      change_ignore_state(name_and_id, false)
     end
 
     private
 
-    def change_ignored_state(name_and_id, desired_state)
+    def change_ignore_state(name_and_id, desired_state)
       auth_required
       deployment_required
 

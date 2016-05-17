@@ -1,7 +1,7 @@
 Sequel.migration do
   change do
     alter_table(:instances) do
-      add_column(:ignored, TrueClass, :default => false)
+      add_column(:ignore, TrueClass, :default => false)
     end
   end
 end
