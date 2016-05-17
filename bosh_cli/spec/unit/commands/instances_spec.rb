@@ -513,7 +513,7 @@ describe Bosh::Cli::Command::Instances do
           perform
         end
 
-        it 'shows t when the instance is ignored' do
+        it 'shows true when the instance is ignored' do
           vm1_state['ignored'] = true
           expect(command).to receive(:say) do |table|
             expect(table.to_s).to match_output '
@@ -521,6 +521,25 @@ describe Bosh::Cli::Command::Instances do
               | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignored |
               +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
               | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       | true    |
+              |          |         |     |         | 192.168.0.2 |         |           |          |              |         |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
+              | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false   |
+              |          |         |     |         | 192.168.0.4 |         |           |          |              |         |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
+            '
+          end
+          expect(command).to receive(:say).with('Instances total: 2')
+          perform
+        end
+
+        it 'shows n/a when the director does not return ignored' do
+          vm1_state.delete('ignored')
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output '
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
+              | Instance | State   | AZ  | VM Type | IPs         | VM CID  | Disk CID  | Agent ID | Resurrection | Ignored |
+              +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
+              | job1/0   | running | az1 | rp1     | 192.168.0.1 | vm-cid1 | disk-cid1 | agent1   | paused       | n/a     |
               |          |         |     |         | 192.168.0.2 |         |           |          |              |         |
               +----------+---------+-----+---------+-------------+---------+-----------+----------+--------------+---------+
               | job2/0   | running | az2 | rp1     | 192.168.0.3 | vm-cid2 | disk-cid2 | agent2   | paused       | false   |

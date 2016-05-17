@@ -254,7 +254,7 @@ describe Bosh::Cli::Command::Vms do
           perform
         end
 
-        it 'shows Ignored as t when true' do
+        it 'shows Ignored as true when true' do
           vm_state['ignored'] = true
 
           expect(command).to receive(:say) do |table|
@@ -268,6 +268,50 @@ describe Bosh::Cli::Command::Vms do
             '
           end
           expect(command).to receive(:say).with('VMs total: 1')
+          perform
+        end
+
+        it 'shows Ignored as n/a when not returned by the director' do
+          vm_state.delete('ignored')
+
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output '
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+              | VM     | State   | VM Type | IPs         | CID  | Agent ID | Resurrection | Ignored |
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+              | job1/0 | awesome | rp1     | 192.168.0.1 | cid1 | agent1   | paused       | n/a     |
+              |        |         |         | 192.168.0.2 |      |          |              |         |
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+            '
+          end
+          expect(command).to receive(:say).with('VMs total: 1')
+          perform
+        end
+
+        it 'shows Ignored as n/a when not returned by the director' do
+          vm_state2 = vm_state.clone
+
+          vm_state.delete('ignored')
+          vm_state['index'] = 0
+
+          vm_state2['ignored'] = false
+          vm_state2['index'] = 1
+
+          allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state, vm_state2] }
+
+          expect(command).to receive(:say) do |table|
+            expect(table.to_s).to match_output '
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+              | VM     | State   | VM Type | IPs         | CID  | Agent ID | Resurrection | Ignored |
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+              | job1/0 | awesome | rp1     | 192.168.0.1 | cid1 | agent1   | paused       | n/a     |
+              |        |         |         | 192.168.0.2 |      |          |              |         |
+              | job1/1 | awesome | rp1     | 192.168.0.1 | cid1 | agent1   | paused       | false   |
+              |        |         |         | 192.168.0.2 |      |          |              |         |
+              +--------+---------+---------+-------------+------+----------+--------------+---------+
+            '
+          end
+          expect(command).to receive(:say).with('VMs total: 2')
           perform
         end
       end

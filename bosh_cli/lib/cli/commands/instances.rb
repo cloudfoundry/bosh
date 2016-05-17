@@ -157,7 +157,7 @@ module Bosh::Cli::Command
           if options[:details]
             row << instance['vm_cid']
             row << (instance['disk_cid'] || 'n/a') if has_disk_cid
-            row += [instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active', instance['ignored']]
+            row += [instance['agent_id'], instance['resurrection_paused'] ? 'paused' : 'active', instance['ignored'].nil? ? 'n/a' : instance['ignored']]
           end
 
           if options[:dns]

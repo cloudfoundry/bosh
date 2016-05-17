@@ -83,7 +83,7 @@ module Bosh::Cli::Command
           row << ips
 
           if options[:details]
-            row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active', vm['ignored']]
+            row += [vm['vm_cid'], vm['agent_id'], vm['resurrection_paused'] ? 'paused' : 'active', vm['ignored'].nil? ? 'n/a' : vm['ignored']]
           end
 
           if options[:dns]
