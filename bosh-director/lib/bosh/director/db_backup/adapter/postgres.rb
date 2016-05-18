@@ -16,7 +16,6 @@ module Bosh
             stdout, stderr, status = Open3.capture3(
               env,
               'pg_dump',
-              '--clean',
               '--host',     @db_config.fetch('host'),
               '--port',     @db_config.fetch('port').to_s,
               '--username', @db_config.fetch('user'),

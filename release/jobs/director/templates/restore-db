@@ -15,6 +15,13 @@ pass=$4
 db_name=$5
 backup_file=$6
 
+db_su=$user
+
+if [ "$host" = '127.0.0.1' ] || [ "$host" = 'localhost' ] || [ "$host" = '::1' ]
+then
+    db_su=vcap
+fi
+
 PATH=/var/vcap/bosh/bin:$PATH
 
 REGISTRY_EXISTS=false
@@ -63,6 +70,8 @@ done
 if [ "$adapter" = 'postgres' ];then
     export PGPASSWORD=$pass
 
+    psql -U$db_su -h$host $db_name -c"drop schema public cascade; create schema public;"
+    psql -U$db_su -h$host $db_name -c"grant all on schema public to $db_su; grant all on schema public to public;"
     tar -xzvf $backup_file -O | psql -U$user -h$host $db_name
 
 elif [ "$adapter" = 'mysql2' ];then
