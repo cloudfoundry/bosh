@@ -26,7 +26,6 @@ describe Bosh::Director::DbBackup::Adapter::Postgres do
           expect(Open3).to receive(:capture3).with(
             {'PGPASSWORD' => 'fake-password'},
             'pg_dump',
-            '--clean',
             '--host',     'host.com',
             '--port',     '5432',
             '--username', 'user1',
@@ -45,7 +44,6 @@ describe Bosh::Director::DbBackup::Adapter::Postgres do
           expect(Open3).to receive(:capture3).with(
             {},
             'pg_dump',
-            '--clean',
             '--host',     'host.com',
             '--port',     '5432',
             '--username', 'user1',
