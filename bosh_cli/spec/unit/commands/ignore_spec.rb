@@ -72,6 +72,8 @@ module Bosh::Cli
       end
 
       context 'when "name_and_id" is invalid' do
+        before { allow(command).to receive(:deployment).and_return('fake-dep-path') }
+
         it 'should raise an ArgumentError exception when ignore param is nil' do
           expect {
             command.ignore(nil)
@@ -98,6 +100,8 @@ module Bosh::Cli
       end
 
       context 'when "name_and_id" is valid' do
+        before { allow(command).to receive(:deployment).and_return('fake-dep-path') }
+
         describe 'changing the state' do
           it 'should request the ignore state to be true' do
             expect(director).to receive(:change_instance_ignore_state).with(deployment, 'dea', '6B0DE211-5EAA-4D13-90E6-34D47D2C1284', true)
