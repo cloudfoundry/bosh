@@ -337,7 +337,7 @@ module Bosh::Dev::Sandbox
 
     def setup_database(db_opts)
       if db_opts[:type] == 'mysql'
-        @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
+        @database = Mysql.new(@name, @logger, Bosh::Core::Shell.new, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
         # all postgres connections go through this proxy (for testing automatic reconnect)
