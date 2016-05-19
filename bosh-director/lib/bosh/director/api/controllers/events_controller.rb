@@ -18,7 +18,7 @@ module Bosh::Director
 
         if params['before_time']
           begin
-            before_datetime = timestamp_filter_value(params['before_time']) + 1
+            before_datetime = timestamp_filter_value(params['before_time'])
           rescue ArgumentError
             status(400)
             body("Invalid before parameter: '#{params['before_time']}' ")

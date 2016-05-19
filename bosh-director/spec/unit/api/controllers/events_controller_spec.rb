@@ -168,7 +168,7 @@ module Bosh::Director
           end
 
           it 'returns the correct results' do
-            get "?before_time=#{URI.encode(Models::Event.all[15].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.all[14].timestamp.to_s)}"
+            get "?before_time=#{URI.encode(Models::Event.all[16].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.all[14].timestamp.to_s)}"
             events = Yajl::Parser.parse(last_response.body)
             expect(events.size).to eq(1)
             expect(events.first['id']).to eq('16')
@@ -209,9 +209,9 @@ module Bosh::Director
           get "?before_time=#{URI.encode(Models::Event.all[201].timestamp.to_s)}"
           events = Yajl::Parser.parse(last_response.body)
 
-          expect(events.size).to eq(200)
+          expect(events.size).to eq(200) # 200 limit
           response_ids = events.map { |e| e['id'].to_i }
-          expected_ids = *(3..202)
+          expected_ids = *(2..201) # exclusive
           expect(response_ids).to eq(expected_ids.reverse)
         end
 
@@ -219,7 +219,7 @@ module Bosh::Director
           (1..10).each do |i|
             Models::Event.make(:timestamp => timestamp+i)
           end
-          get "?before_time=#{Models::Event.all[0].timestamp.to_i}"
+          get "?before_time=#{Models::Event.all[1].timestamp.to_i}"
           events = Yajl::Parser.parse(last_response.body)
 
           expect(events.size).to eq(1)
@@ -230,7 +230,7 @@ module Bosh::Director
           (1..10).each do |i|
             Models::Event.make(:timestamp => timestamp+i)
           end
-          get "?before_time=#{URI.encode(Models::Event.all[0].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+          get "?before_time=#{URI.encode(Models::Event.all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
           events = Yajl::Parser.parse(last_response.body)
 
           expect(events.size).to eq(1)
