@@ -7,26 +7,8 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-      let(:config) { Config.load_hash(test_config) }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       before { basic_authorize 'admin', 'admin' }
-
-      after do
-        FileUtils.rm_rf(temp_dir)
-      end
 
       it 'sets the date header' do
         get '/'

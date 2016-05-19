@@ -7,24 +7,7 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-
-      let(:config) { Config.load_hash(test_config) }
-
-      after { FileUtils.rm_rf(temp_dir) }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
       it 'requires auth' do
         delete '/fake-id'
@@ -48,7 +31,7 @@ module Bosh::Director
 
         context 'when the task does not exist' do
           it 'responds with status 404' do
-            delete '/unknown-task'
+            delete '/999999'
             expect(last_response.status).to eq(404)
           end
         end

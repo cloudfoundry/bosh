@@ -7,20 +7,8 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:temp_dir) { Dir.mktmpdir }
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
 
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
+      let(:temp_dir) { Dir.mktmpdir }
 
       let(:deployment_name_1) { 'deployment1' }
       let(:deployment_name_2) { 'deployment2' }
@@ -29,7 +17,7 @@ module Bosh::Director
       let(:dev) { Models::Team.make(name: 'dev') }
 
       let(:config) do
-        config = Config.load_hash(test_config)
+        config = Config.load_hash(SpecHelper.spec_get_director_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
@@ -178,7 +166,7 @@ module Bosh::Director
                   get '/?verbose=1'
                   expect(last_response.status).to eq(200)
                   actual_ids = parsed_body.map { |attributes| attributes['id'] }
-                  actual_tasks = Models::Task.filter(id: actual_ids)
+                  actual_tasks = Models::Task.filter(id: actual_ids).order(:id)
                   expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
                 end
               end
@@ -188,7 +176,7 @@ module Bosh::Director
                   get '/?verbose=2'
                   expect(last_response.status).to eq(200)
                   actual_ids = parsed_body.map { |attributes| attributes['id'] }
-                  actual_tasks = Models::Task.filter(id: actual_ids)
+                  actual_tasks = Models::Task.filter(id: actual_ids).order(:id)
                   expect(actual_tasks).to match(all_tasks)
                 end
               end
@@ -198,7 +186,7 @@ module Bosh::Director
                   get '/'
                   expect(last_response.status).to eq(200)
                   actual_ids = parsed_body.map { |attributes| attributes['id'] }
-                  actual_tasks = Models::Task.filter(id: actual_ids)
+                  actual_tasks = Models::Task.filter(id: actual_ids).order(:id)
 
                   expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
                 end
@@ -249,7 +237,7 @@ module Bosh::Director
                 get '/?limit=10'
                 expect(last_response.status).to eq(200)
                 expect(parsed_body.size).to eq(10)
-                expect(parsed_body.all?{ |e| e['deployment'] == 'deployment2' }).to eq(true)
+                expect(parsed_body.all?{ |e| e['deployment'] != 'deployment3' }).to eq(true)
               end
 
               it 'shows the limit amount of tasks and filter by deployment' do
@@ -420,7 +408,7 @@ module Bosh::Director
               task = Models::Task.new
               task.state = 'done'
               task.type = :update_deployment
-              task.timestamp = Time.now.to_i
+              task.timestamp = Time.now
               task.description = 'description'
               task.output = temp_dir
               task.save

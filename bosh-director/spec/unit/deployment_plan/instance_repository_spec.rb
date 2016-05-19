@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   describe '#fetch_existing' do
     let(:existing_instance) do
       Bosh::Director::Models::Instance.make(
-        deployment_id: 'deployment-id',
+        deployment_id: '33',
         job: 'job-name',
         index: 1,
         state: 'started',

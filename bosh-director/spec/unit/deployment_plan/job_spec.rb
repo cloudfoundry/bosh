@@ -73,7 +73,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     let(:spec) do
       {
         'name' => 'foobar',
-        'template' => 'foo',
         'release' => 'appcloud',
         'vm_type' => 'dea',
         'stemcell' => 'dea',
@@ -198,7 +197,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     let(:spec) do
       {
         'name' => 'foobar',
-        'template' => 'foo',
         'release' => 'appcloud',
         'vm_type' => 'dea',
         'stemcell' => 'dea',
@@ -532,7 +530,6 @@ describe Bosh::Director::DeploymentPlan::Job do
     let(:spec) do
       {
         'name' => 'foobar',
-        'template' => 'foo',
         'release' => 'appcloud',
         'instances' => 1,
         'vm_type' => 'dea',

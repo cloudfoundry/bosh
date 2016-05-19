@@ -75,7 +75,7 @@ module Bosh::Director
                                           problems[0].id.to_s => 'ignore',
                                           problems[1].id.to_s => 'ignore',
                                           problems[2].id.to_s => 'ignore',
-                                          'foobar' => 'ignore',
+                                          '9999999' => 'ignore',
                                           '318' => 'do_stuff'
                                       })
 

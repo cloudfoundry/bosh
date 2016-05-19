@@ -8,15 +8,12 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
-      let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
-      let(:temp_dir) { Dir.mktmpdir }
+      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:timestamp) { Time.now }
 
       before do
         App.new(config)
       end
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       context 'events' do
         before do

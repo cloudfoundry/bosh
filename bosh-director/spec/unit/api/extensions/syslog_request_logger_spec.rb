@@ -8,7 +8,7 @@ module Bosh::Director
     if RUBY_VERSION.to_i > 1
       describe Extensions::SyslogRequestLogger do
         include Rack::Test::Methods
-        let(:config_hash) { Psych.load(spec_asset('test-director-config.yml')) }
+        let(:config_hash) { SpecHelper.spec_get_director_config }
         let(:config) do
           config = Config.load_hash(config_hash)
           identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)

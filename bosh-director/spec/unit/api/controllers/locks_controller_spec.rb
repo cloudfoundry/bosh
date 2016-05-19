@@ -8,7 +8,7 @@ module Bosh::Director
 
     subject(:app) { described_class.new(config) }
     let(:config) do
-      config = Config.load_hash(Psych.load(spec_asset('test-director-config.yml')))
+      config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       config
@@ -31,7 +31,7 @@ module Bosh::Director
       end
 
       context 'when there are current locks' do
-        let(:lock_timeout) { Time.now + 1.second }
+        let(:lock_timeout) { Time.now.change(:usec => 0) + 1.second }
 
         let(:lock_uid) { SecureRandom.uuid }
 
@@ -47,9 +47,9 @@ module Bosh::Director
           expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
-          timeout_str = lock_timeout.strftime('%s.%6N')
+          timeout_str = lock_timeout.strftime('%s.000000')
           expect(body).to eq([
-            { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' =>timeout_str },
+            { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' => timeout_str },
             { 'type' => 'stemcells', 'resource' => %w(test-stemcell), 'timeout' => timeout_str},
             { 'type' => 'release', 'resource' => %w(test-release), 'timeout' => timeout_str },
             { 'type' => 'compile', 'resource' => %w(test-package test-stemcell), 'timeout' => timeout_str },

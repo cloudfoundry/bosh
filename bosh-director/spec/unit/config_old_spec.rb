@@ -6,7 +6,8 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { Psych.load(spec_asset('test-director-config.yml')) }
+  let(:test_config) { SpecHelper.spec_get_director_config }
+
 
   context 'max_tasks' do
     it 'can set max_tasks in config' do
@@ -120,6 +121,10 @@ describe Bosh::Director::Config do
 
     before do
       allow(Sequel).to receive(:connect).and_return(database_connection)
+    end
+
+    after do
+      Bosh::Director::Config.db = nil
     end
 
     it 'configures a new database connection' do

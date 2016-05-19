@@ -2,8 +2,34 @@
 
 set -e
 
+export RUBY_VERSION=2.3.1
+
+
 source bosh-src/ci/tasks/utils.sh
 check_param RUBY_VERSION
+
+echo "Starting $DB..."
+case "$DB" in
+  mysql)
+    sudo service mysql start
+    ;;
+  postgresql)
+    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+
+    su postgres -c '
+      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PGDATA=/tmp/postgres
+      export PGLOGS=/tmp/log/postgres
+      mkdir -p $PGDATA
+      mkdir -p $PGLOGS
+      initdb -U postgres -D $PGDATA
+      pg_ctl start -w -l $PGLOGS/server.log -o "-N 400"
+    '
+    ;;
+  *)
+    echo $"Usage: DB={mysql|postgresql} $0 {commands}"
+    exit 1
+esac
 
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION

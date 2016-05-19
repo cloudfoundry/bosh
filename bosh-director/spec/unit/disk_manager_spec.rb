@@ -419,7 +419,7 @@ module Bosh::Director
         conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
           orphan_disk: conflicting_orphan_disk,
           snapshot_cid: 'existing_cid',
-          snapshot_created_at: 0
+          snapshot_created_at: Time.now
         )
 
         snapshot = Models::Snapshot.make(
@@ -495,9 +495,9 @@ module Bosh::Director
       let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago) }
       let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
       let(:orphan_disk_cid_2) { orphan_disk_2.disk_cid }
-      let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: 0, snapshot_cid: 'snap-cid-a') }
-      let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: 0, snapshot_cid: 'snap-cid-b') }
-      let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: 0, snapshot_cid: 'snap-cid-2') }
+      let!(:orphan_disk_snapshot_1a) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-a') }
+      let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b') }
+      let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2') }
       before do
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)

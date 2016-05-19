@@ -6,6 +6,12 @@ module Bosh::Director
         attributes = {name: name}
         deployment = Bosh::Director::Models::Deployment.find(attributes)
 
+        if deployment and deployment.name != name
+          # mysql database is case-insensitive by default, so we might have a
+          # deployment which doesn't exactly match the requested name
+          deployment = nil
+        end
+
         return deployment if deployment
 
         if options['scopes']

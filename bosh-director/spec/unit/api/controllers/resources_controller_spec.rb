@@ -7,19 +7,6 @@ module Bosh::Director
       include Rack::Test::Methods
 
       let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
 
       let(:director_app) { App.new(config) }
 
@@ -28,7 +15,18 @@ module Bosh::Director
       let(:existing_resource_id) { director_app.blobstores.blobstore.create('some data') }
       let(:resource_manager) { ResourceManager.new(director_app.blobstores.blobstore) }
       subject(:app) { described_class.new(config, resource_manager) }
-      let(:config) { Config.load_hash(test_config) }
+
+      let(:config) {
+        config = SpecHelper.spec_get_director_config
+        blobstore_dir = File.join(temp_dir, 'blobstore')
+        FileUtils.mkdir_p(blobstore_dir)
+        config['dir'] = temp_dir
+        config['blobstore'] = {
+          'provider' => 'local',
+          'options' => {'blobstore_path' => blobstore_dir}
+        }
+        Config.load_hash(config)
+      }
 
       it 'requires auth' do
         get "/#{existing_resource_id}"

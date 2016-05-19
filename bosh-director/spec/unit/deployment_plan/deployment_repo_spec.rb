@@ -110,8 +110,7 @@ module Bosh
               found = Models::Deployment.filter(name: 'new')
               expect(found.count).to eq(1)
               deployment = found.first
-              expect(deployment.teams[0].name).to eq('production')
-              expect(deployment.teams[1].name).to eq('dev')
+              expect(deployment.teams.map(&:name).sort).to eq(['dev','production'])
             end
           end
         end

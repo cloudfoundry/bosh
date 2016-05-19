@@ -154,7 +154,8 @@ module Bosh::Director
           end
         end
 
-        describe '#persist_updates!' do
+        # '@todo mysql2 seems to have issues with transactions and threads (i.e. example is wrapped in transaction, but locks are threaded in the test)'
+        describe '#persist_updates!', :if => ENV['DB'] != "mysql" do
           before do
             setup_global_config_and_stubbing
           end
@@ -269,7 +270,7 @@ module Bosh::Director
         end
 
         def setup_global_config_and_stubbing
-          Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml')))
+          Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
           allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
         end
       end

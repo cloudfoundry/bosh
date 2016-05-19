@@ -15,9 +15,7 @@ module Bosh::Director
 
       teams = db[:teams].all
       expect(teams.count).to eq(3)
-      expect(teams[0][:name]).to eq('prod')
-      expect(teams[1][:name]).to eq('the-best')
-      expect(teams[2][:name]).to eq('aspiring')
+      expect(teams.map{|i| i[:name]}.sort).to eq(['aspiring','prod','the-best'])
     end
 
     it 'preserves the teams associated with a deployment using a many-to-many table' do
@@ -28,10 +26,8 @@ module Bosh::Director
 
       deployments_teams = db[:deployments_teams].all
       expect(deployments_teams.count).to eq(4)
-      expect(deployments_teams[0]).to eq({deployment_id: 1, team_id: 1})
-      expect(deployments_teams[1]).to eq({deployment_id: 1, team_id: 2})
-      expect(deployments_teams[2]).to eq({deployment_id: 2, team_id: 1})
-      expect(deployments_teams[3]).to eq({deployment_id: 2, team_id: 3})
+      expect(deployments_teams.select{|i| i[:deployment_id] == 1}.map{|i| i[:team_id]}.sort).to eq([1,2])
+      expect(deployments_teams.select{|i| i[:deployment_id] == 2}.map{|i| i[:team_id]}.sort).to eq([1,3])
     end
 
     it 'should check that deployments_teams has unique deployment_id and team_id pairs' do

@@ -4,7 +4,7 @@ module Bosh::Director::Jobs
   describe UpdateDeployment do
     subject(:job) { UpdateDeployment.new(manifest_path, cloud_config_id, runtime_config_id, options) }
 
-    let(:config) { Bosh::Director::Config.load_file(asset('test-director-config.yml'))}
+    let(:config) { Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config)}
     let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
     let(:manifest_path) { directory.add_file('deployment.yml', manifest_content) }
     let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }

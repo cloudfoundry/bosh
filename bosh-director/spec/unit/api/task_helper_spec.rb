@@ -8,7 +8,7 @@ module Bosh::Director
 
       let(:type) { 'type' }
       let(:description) { 'description' }
-      let(:config) { Psych.load_file(asset('test-director-config.yml')) }
+      let(:config) { SpecHelper.spec_get_director_config }
       let(:deployment_name) { 'deployment-name' }
       let(:task_remover) { instance_double('Bosh::Director::Api::TaskRemover') }
       let(:teams) do

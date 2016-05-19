@@ -8,7 +8,7 @@ module Bosh::Director
 
     subject(:app) { Api::Controllers::CloudConfigsController.new(config) }
     let(:config) do
-      config = Config.load_hash(Psych.load(spec_asset('test-director-config.yml')))
+      config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       config

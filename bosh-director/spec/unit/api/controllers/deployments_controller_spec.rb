@@ -8,24 +8,8 @@ module Bosh::Director
 
       subject(:app) { described_class.new(config) }
 
-      let(:temp_dir) { Dir.mktmpdir }
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
-
-
       let(:config) do
-        config = Config.load_hash(test_config)
+        config = Config.load_hash(SpecHelper.spec_get_director_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
@@ -50,8 +34,6 @@ module Bosh::Director
         App.new(config)
         basic_authorize 'admin', 'admin'
       end
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       describe 'the date header' do
         it 'is present' do
@@ -151,7 +133,7 @@ module Bosh::Director
             it 'to true' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => true))
+                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true))
                           .and_return(OpenStruct.new(:id => 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }

@@ -54,7 +54,7 @@ module Bosh::Director
       DBSpecHelper.migrate(migration_file)
 
       expect(db[:instances].count).to eq(6)
-      instances = db[:instances].all
+      instances = db[:instances].all.sort_by{|v| v[:id]}
       expect(instances[0][:spec_json]).to be_nil
       expect(instances[1][:spec_json]).to eq('{"update":{"serial":false}}')
       expect(instances[2][:spec_json]).to eq('{"update":{"serial":true}}')

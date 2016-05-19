@@ -8,29 +8,13 @@ module Bosh::Director
 
       subject(:app) { described_class.new(config) }
       let(:config) do
-        config = Config.load_hash(test_config)
+        config = Config.load_hash(SpecHelper.spec_get_director_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
       end
-      let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
-
-        config = Psych.load(spec_asset('test-director-config.yml'))
-        config['dir'] = temp_dir
-        config['blobstore'] = {
-          'provider' => 'local',
-          'options' => {'blobstore_path' => blobstore_dir}
-        }
-        config['snapshots']['enabled'] = true
-        config
-      end
 
       before { App.new(config) }
-
-      after { FileUtils.rm_rf(temp_dir) }
 
       it 'requires auth' do
         get '/'
@@ -261,7 +245,7 @@ module Bosh::Director
           end
 
           it 'satisfies inspect release calls' do
-            release_version = Models::ReleaseVersion.find(:version => 1)
+            release_version = Models::ReleaseVersion.find(:version => '1')
 
             dummy_template = Models::Template.make(
                 :release_id => 1,
