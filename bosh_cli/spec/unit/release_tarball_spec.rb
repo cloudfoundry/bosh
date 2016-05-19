@@ -261,4 +261,36 @@ foo: bar
       end
     end
   end
+
+  describe 'validate_packages' do
+    context 'when unpacking packages fails' do
+      before do
+        allow(release_tarball).to receive(:unpack).and_return(false)
+      end
+
+      it 'should say "Unpacking packages"' do
+        allow(release_tarball).to receive(:say)
+        begin
+          release_tarball.validate_packages
+        rescue
+          expect(release_tarball).to have_received(:say).with("%-60s " % "Unpacking packages", "")
+        end
+      end
+
+      it 'should raise a validation error' do
+        expect{release_tarball.validate_packages}.to raise_error(Bosh::Cli::ValidationHalted)
+      end
+
+      it 'should have "Unable to unpack packages" in the validation errors list' do
+        begin
+          release_tarball.validate_packages
+        rescue Bosh::Cli::ValidationHalted
+          expect(release_tarball.errors).not_to be_empty
+          expect(release_tarball.errors[0]).to eq("Unable to unpack packages")
+        end
+      end
+
+    end
+  end
+
 end

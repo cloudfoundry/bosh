@@ -133,7 +133,7 @@ describe 'upload release', type: :integration do
 
     release_filename = spec_asset('release_invalid_checksum.tgz')
     out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
-    expect(out).to match /Release is invalid, please fix, verify and upload again/
+    expect(out).to match /Release is invalid or disk space is low, please fix, verify and upload again/
   end
 
   # ~32s
