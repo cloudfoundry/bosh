@@ -28,7 +28,7 @@ module Bosh::Dev::Sandbox
 
     def drop_db
       @logger.info("Dropping postgres database #{db_name}")
-      @runner.run(%Q{psql -U postgres -c 'drop database "#{db_name}";' > /dev/null 2>&1})
+      @runner.run(%Q{echo 'revoke connect on database "#{db_name}" from public; drop database "#{db_name}";' | psql -U postgres})
     end
 
     def current_tasks

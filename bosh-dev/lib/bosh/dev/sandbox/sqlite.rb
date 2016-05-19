@@ -11,6 +11,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
       @username = nil
       @password = nil
+      @port = nil
       @adapter = 'sqlite'
     end
 
@@ -24,7 +25,7 @@ module Bosh::Dev::Sandbox
 
     def drop_db
       @logger.info("Dropping sqlite database #{db_name}")
-      `rm #{@db_name}`
+      @runner.run("rm #{@db_name}")
     end
 
     def current_tasks

@@ -86,6 +86,7 @@ jobs:
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
+        privileged: true
         params:
           RUBY_VERSION: 1.9.3
           DB: postgresql
@@ -110,6 +111,7 @@ jobs:
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
+        privileged: true
         params:
           RUBY_VERSION: 2.3.1
           DB: mysql
@@ -122,6 +124,7 @@ jobs:
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
+        privileged: true
         params:
           RUBY_VERSION: 2.3.1
           DB: postgresql
