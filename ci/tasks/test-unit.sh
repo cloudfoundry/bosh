@@ -26,8 +26,11 @@ case "$DB" in
       pg_ctl start -w -l $PGLOGS/server.log -o "-N 400"
     '
     ;;
+  sqlite)
+    echo "Using sqlite"
+    ;;
   *)
-    echo $"Usage: DB={mysql|postgresql} $0 {commands}"
+    echo "Usage: DB={mysql|postgresql|sqlite} $0 {commands}"
     exit 1
 esac
 

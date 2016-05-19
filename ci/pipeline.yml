@@ -4,7 +4,10 @@ groups:
     jobs:
       - start-job
       - unit-1.9
+      - unit-1.9-postgres
       - unit-2.3
+      - unit-2.3-mysql
+      - unit-2.3-postgres
       - blobstore-client-integration
       - integration-1.9-postgres
       - integration-2.3-mysql
@@ -21,6 +24,7 @@ groups:
     jobs:
       - start-job
       - unit-1.9
+      - unit-1.9-postgres
       - integration-1.9-postgres
       - publish-coverage
       - promote-candidate
@@ -29,6 +33,8 @@ groups:
     jobs:
       - start-job
       - unit-2.3
+      - unit-2.3-mysql
+      - unit-2.3-postgres
       - integration-2.3-mysql
       - integration-2.3-postgres
       - publish-coverage
@@ -37,8 +43,7 @@ groups:
   - name: mysql
     jobs:
       - start-job
-      - unit-1.9
-      - unit-2.3
+      - unit-2.3-mysql
       - integration-2.3-mysql
       - publish-coverage
       - promote-candidate
@@ -46,8 +51,8 @@ groups:
   - name: postgres
     jobs:
       - start-job
-      - unit-1.9
-      - unit-2.3
+      - unit-1.9-postgres
+      - unit-2.3-postgres
       - integration-1.9-postgres
       - integration-2.3-postgres
       - publish-coverage
@@ -71,6 +76,19 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           RUBY_VERSION: 1.9.3
+          DB: sqlite
+
+  - name: unit-1.9-postgres
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        params:
+          RUBY_VERSION: 1.9.3
+          DB: postgresql
 
   - name: unit-2.3
     public: true
@@ -82,6 +100,31 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           RUBY_VERSION: 2.3.1
+          DB: sqlite
+
+  - name: unit-2.3-mysql
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        params:
+          RUBY_VERSION: 2.3.1
+          DB: mysql
+
+  - name: unit-2.3-postgres
+    public: true
+    serial: true
+    plan:
+      - { get: bosh-src, trigger: true, passed: [start-job] }
+
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        params:
+          RUBY_VERSION: 2.3.1
+          DB: postgresql
 
   - name: blobstore-client-integration
     public: true
