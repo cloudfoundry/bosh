@@ -380,7 +380,10 @@ jobs:
       - trigger: true
         passed:
         - unit-1.9
+        - unit-1.9-postgres
         - unit-2.3
+        - unit-2.3-mysql
+        - unit-2.3-postgres
         - integration-1.9-postgres
         - integration-2.3-mysql
         - integration-2.3-postgres
