@@ -9,7 +9,6 @@ server {
 
   location / {
     root /var/vcap/store/blobstore/store/;
-    client_body_temp_path /var/vcap/store/blobstore/tmp/uploads;
 
     dav_methods DELETE PUT;
     create_full_put_path on;
