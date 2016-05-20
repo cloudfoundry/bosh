@@ -149,4 +149,45 @@ describe 'stop command', type: :integration do
       result
     end
   end
+
+  describe 'timing out on a blocking job' do
+    let(:manifest_hash) do
+      manifest_hash = Bosh::Spec::Deployments.test_release_manifest
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 1)]
+      manifest_hash
+    end
+
+    before do
+      current_sandbox.reconfigure(stop_message_timeout: 2)
+      current_sandbox.reset
+    end
+
+    context 'when the agent takes longer to stop than the director timeout' do
+      before do
+        deploy_from_scratch(manifest_hash: manifest_hash)
+        vm_cid = director.vms.first.cid
+        current_sandbox.cpi.setup_dummy_nats_supervisor_with_delay(vm_cid, 3)
+      end
+
+      it 'times out after defined timeout' do
+        bosh_runner.run('stop')
+        debug_log = bosh_runner.run('task last --debug --raw')
+        expect(debug_log).to match(/Task \S+ timed out/)
+      end
+    end
+
+    context 'when the agent stops before the director timeout' do
+      before do
+        deploy_from_scratch(manifest_hash: manifest_hash)
+        vm_cid = director.vms.first.cid
+        current_sandbox.cpi.setup_dummy_nats_supervisor_with_delay(vm_cid, 1)
+      end
+
+      it 'does not time out' do
+        bosh_runner.run('stop')
+        debug_log = bosh_runner.run('task last --debug --raw')
+        expect(debug_log).to_not match(/Task \S+ timed out/)
+      end
+    end
+  end
 end

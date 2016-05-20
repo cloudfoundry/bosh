@@ -39,6 +39,7 @@ module Bosh::Director
         :generate_vm_passwords,
         :remove_dev_tools,
         :director_ips,
+        :stop_message_timeout
       )
 
       attr_reader(
@@ -160,6 +161,7 @@ module Bosh::Director
         @remove_dev_tools = config['remove_dev_tools']
         @director_ips = config.fetch('director_ips', [])
         @record_events = config.fetch('record_events', false)
+        @stop_message_timeout = config.fetch('stop_message_timeout', 300)
 
         Bosh::Clouds::Config.configure(self)
 

@@ -111,7 +111,7 @@ describe 'Links', type: :integration do
         name: 'mongo',
         templates: [{'name' => 'mongo_db'}],
         instances: 1,
-        static_ips: ['192.168.1.13']
+        static_ips: ['192.168.1.13'],
       )
       job_spec['azs'] = ['z1']
       job_spec
@@ -1119,7 +1119,7 @@ Error 100: Unable to process links for deployment. Errors are:
           expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'global_network'./)
         end
 
-        context 'user has duplicate implicit links provided in two jobs over seprate networks' do
+        context 'user has duplicate implicit links provided in two jobs over separate networks' do
 
           let(:mysql_job_spec) do
             job_spec = Bosh::Spec::Deployments.simple_job(

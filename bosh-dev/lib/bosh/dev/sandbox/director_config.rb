@@ -16,7 +16,8 @@ module Bosh::Dev::Sandbox
       :enable_post_deploy,
       :generate_vm_passwords,
       :remove_dev_tools,
-      :director_ips
+      :director_ips,
+      :stop_message_timeout
 
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
@@ -44,6 +45,7 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])
+      @stop_message_timeout = attrs.fetch(:stop_message_timeout, 300)
     end
 
     def render(template_path)

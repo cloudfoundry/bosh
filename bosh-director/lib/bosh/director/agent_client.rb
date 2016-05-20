@@ -7,7 +7,7 @@ module Bosh::Director
 
     DEFAULT_POLL_INTERVAL = 1.0
 
-    DEFAULT_MESSAGE_TIMEOUT = 300 # 5 minutes
+    STOP_MESSAGE_TIMEOUT = 300 # 5 minutes
 
     # in case of timeout errors
     GET_TASK_MAX_RETRIES = 2
@@ -39,6 +39,7 @@ module Bosh::Director
       @client_id = client_id
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 45
+      @stop_message_timeout = options[:stop_message_timeout] || STOP_MESSAGE_TIMEOUT
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
 
@@ -131,7 +132,7 @@ module Bosh::Director
     end
 
     def stop(*args)
-      timeout = Timeout.new(DEFAULT_MESSAGE_TIMEOUT)
+      timeout = Timeout.new(@stop_message_timeout)
       send_message_with_timeout(:stop, timeout, *args)
     end
 
@@ -147,6 +148,8 @@ module Bosh::Director
         sleep(DEFAULT_POLL_INTERVAL)
         task = get_task_status(agent_task_id)
       end
+
+      @logger.debug("Task #{agent_task_id} timed out") if (timeout && timeout.timed_out?)
 
       task['value']
     end

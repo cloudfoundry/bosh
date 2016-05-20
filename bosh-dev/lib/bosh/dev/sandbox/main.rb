@@ -163,7 +163,8 @@ module Bosh::Dev::Sandbox
         enable_post_deploy: @enable_post_deploy,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
-        director_ips: @director_ips
+        director_ips: @director_ips,
+        stop_message_timeout: @stop_message_timeout
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -266,6 +267,7 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
+      @stop_message_timeout = options.fetch(:stop_message_timeout, 300)
     end
 
     def certificate_path
