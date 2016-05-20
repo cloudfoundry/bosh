@@ -380,7 +380,7 @@ module Bosh
         end
 
         def change_instance_ignore_state(deployment_name, instance_group_name, id, ignore_state)
-          url     = "/deployments/#{deployment_name}/instancegroups/#{instance_group_name}/#{id}/ignore"
+          url     = "/deployments/#{deployment_name}/instance_groups/#{instance_group_name}/#{id}/ignore"
           payload = JSON.generate('ignore' => ignore_state)
           put(url, 'application/json', payload)
         end

@@ -521,7 +521,7 @@ describe Bosh::Cli::Client::Director do
 
     it 'changes instance ignore state' do
       expect(@director).to receive(:request).with(:put,
-          '/deployments/foo/instancegroups/dea/90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA/ignore',
+          '/deployments/foo/instance_groups/dea/90FDC5D7-AB28-44EF-BFE0-E6AEE88BCBCA/ignore',
           'application/json',
           '{"ignore":true}',
           {},

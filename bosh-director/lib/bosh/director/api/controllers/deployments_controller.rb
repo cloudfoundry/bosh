@@ -155,7 +155,7 @@ module Bosh::Director
         @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
       end
 
-      put '/:deployment/instancegroups/:instancegroup/:id/ignore', consumes: :json do
+      put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
         payload = json_decode(request.body)
         @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
       end
