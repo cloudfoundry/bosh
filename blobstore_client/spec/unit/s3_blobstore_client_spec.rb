@@ -49,6 +49,9 @@ module Bosh::Blobstore
               port: 8080,
               host: 'our.userdefined.com',
               s3_force_path_style: true,
+              upload_options: {
+                server_side_encryption: 'AES256',
+              },
             })
         end
 
@@ -61,6 +64,14 @@ module Bosh::Blobstore
             access_key_id: 'KEY',
             secret_access_key: 'SECRET',
           )).twice.and_return(blob)
+
+          expect(blob).to receive(:upload_file) do |_, options|
+            expect(options).to eq({
+              server_side_encryption: 'AES256',
+              content_type: 'application/octet-stream',
+              multipart_threshold: 33333,
+            })
+          end
 
           client.create_file('foo', 'file')
         end
