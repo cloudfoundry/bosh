@@ -273,6 +273,25 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when virtual_delete_vm option is passed in' do
+          let(:options) { {virtual_delete_vm: true} }
+
+          it 'deletes snapshots, persistent disk, releases old reservations, vm should not delete from cloud' do
+            expect(stopper).to receive(:stop)
+            expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
+            expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
+            expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+            expect(ip_provider).to receive(:release).with(reservation)
+
+            expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
+            expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
+
+            expect {
+              deleter.delete_instance_plans([instance_plan], event_log_stage)
+            }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
+          end
+        end
       end
     end
   end
