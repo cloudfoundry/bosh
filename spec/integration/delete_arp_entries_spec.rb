@@ -35,7 +35,7 @@ describe 'delete arp entries', type: :integration do
 
       agent_log_0 = File.read("#{current_sandbox.agent_tmp_path}/agent.#{agent_id_0}.log")
 
-      expect(agent_log_0).to include('Running async action delete_arp_entries')
+      expect(agent_log_0).to include('Running sync action delete_arp_entries')
       expect(agent_log_0).to include('"method":"delete_arp_entries","arguments":[{"ips":["192.168.1.3"]')
     end
   end
