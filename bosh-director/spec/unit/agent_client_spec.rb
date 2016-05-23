@@ -702,11 +702,19 @@ module Bosh::Director
       before { allow(Config).to receive(:nats_rpc).and_return(nats_rpc) }
 
       it 'should timeout and continue on after 5 minutes' do
-        client = AgentClient.new('fake-service-name', 'fake-client-id')
+        handle_method_response = {
+          'agent_task_id' => 'fake-task-id',
+          'value' => 'fake-return-value',
+          'state' => 'running',
+        }
+
         timeout = Timeout.new(fake_timeout_ticks)
 
-        allow(nats_rpc).to receive(:send_request)
-                             .with('fake-service-name.fake-client-id', hash_including(method: :stop))
+        allow(Timeout).to receive(:new).and_return(timeout)
+        client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+        expect(client).to receive(:handle_method).with(:stop, []).once.and_return(handle_method_response)
+        expect(client).to receive(:handle_method).with(:get_task, ['fake-task-id']).exactly(fake_timeout_ticks + 1).times.and_return(handle_method_response)
 
         expect(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL).exactly(fake_timeout_ticks).times
         expect(timeout).to receive(:timed_out?).exactly(fake_timeout_ticks).times.and_return(false)

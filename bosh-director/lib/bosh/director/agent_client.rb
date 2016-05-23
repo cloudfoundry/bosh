@@ -142,14 +142,15 @@ module Bosh::Director
 
     def wait_for_task(agent_task_id, timeout = nil, &blk)
       task = get_task_status(agent_task_id)
+      timed_out = false
 
-      until task['state'] != 'running' || (timeout && timeout.timed_out?)
+      until task['state'] != 'running' || (timeout && timed_out = timeout.timed_out?)
         blk.call if block_given?
         sleep(DEFAULT_POLL_INTERVAL)
         task = get_task_status(agent_task_id)
       end
 
-      @logger.debug("Task #{agent_task_id} timed out") if (timeout && timeout.timed_out?)
+      @logger.debug("Task #{agent_task_id} timed out") if timed_out
 
       task['value']
     end

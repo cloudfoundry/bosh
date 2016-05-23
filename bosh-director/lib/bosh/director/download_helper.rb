@@ -43,7 +43,7 @@ module Bosh::Director
           end
         end
       end
-    rescue URI::Error, SocketError, Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
+    rescue URI::Error, SocketError, ::Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
            Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
       @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{e.inspect}") if @logger
       raise ResourceError, "Downloading remote #{resource} failed. Check task debug log for details."
