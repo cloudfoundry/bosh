@@ -16,6 +16,7 @@ describe Bosh::Director::Jobs::ScheduledBackup do
 
   describe 'DJ job class expectations' do
     let(:job_type) { :scheduled_backup }
+    let(:queue) { :normal }
     it_behaves_like 'a DJ job'
   end
 

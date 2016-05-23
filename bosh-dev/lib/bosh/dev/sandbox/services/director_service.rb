@@ -31,7 +31,7 @@ module Bosh::Dev::Sandbox
       @worker_processes = 3.times.map do |index|
         Service.new(
           %W[bosh-director-worker -c #{@director_config} -i #{index}],
-          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal'}},
+          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
           @logger,
         )
       end
