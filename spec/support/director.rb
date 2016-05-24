@@ -128,6 +128,19 @@ module Bosh::Spec
       return output, !failed
     end
 
+    def raw_task_events(task_id)
+      result = @runner.run("task #{task_id} --raw")
+      event_list = []
+      result.each_line do |line|
+        begin
+          event = Yajl::Parser.new.parse(line)
+          event_list << event if event
+        rescue Yajl::ParseError
+        end
+      end
+      event_list
+    end
+
     def kill_vm_and_wait_for_resurrection(vm)
       vm.kill_agent
       resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300)

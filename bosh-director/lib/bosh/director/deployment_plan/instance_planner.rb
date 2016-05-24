@@ -8,6 +8,12 @@ module Bosh
         end
 
         def plan_job_instances(job, desired_instances, existing_instance_models)
+
+          ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore == true }
+          unless ignored_instances_count == 0
+            desired_instances, existing_instance_models = reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
+          end
+
           network_planner = NetworkPlanner::Planner.new(@logger)
           placement_plan = PlacementPlanner::Plan.new(@instance_plan_factory, network_planner, @logger)
           vip_networks, non_vip_networks = job.networks.to_a.partition(&:vip?)
@@ -35,6 +41,18 @@ module Bosh
           obsolete_existing_instances.map do |obsolete_existing_instance|
             @instance_plan_factory.obsolete_instance_plan(obsolete_existing_instance)
           end
+        end
+
+        def reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
+          if (desired_instances.length == existing_instance_models.length) && existing_instance_models.length != 0
+            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+            modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.length)
+          elsif (desired_instances.length > existing_instance_models.length) && existing_instance_models.length != 0
+            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+            modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
+          end
+
+          return modified_desired_instances, modified_existing_instance_models
         end
 
         private
