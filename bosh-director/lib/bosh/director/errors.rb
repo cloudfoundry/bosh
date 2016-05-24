@@ -226,6 +226,7 @@ module Bosh::Director
   DeploymentDuplicateAvailabilityZoneName = err(190017)
   DeploymentInvalidMigratedFromJob = err(190018)
   DeploymentInvalidResourceSpecification = err(190019)
+  DeploymentContainsIgnoredInstances = err(190020)
 
   DiskTypeInvalidDiskSize = err(200001)
 

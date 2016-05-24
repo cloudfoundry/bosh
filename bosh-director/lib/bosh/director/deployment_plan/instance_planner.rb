@@ -10,7 +10,7 @@ module Bosh
         def plan_job_instances(job, desired_instances, existing_instance_models)
 
           ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore == true }
-          unless ignored_instances_count == 0
+          if ignored_instances_count != 0 && existing_instance_models.count != 0
             desired_instances, existing_instance_models = reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           end
 
@@ -44,12 +44,25 @@ module Bosh
         end
 
         def reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
-          if (desired_instances.length == existing_instance_models.length) && existing_instance_models.length != 0
+          if desired_instances.count == existing_instance_models.count
             modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
             modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.length)
-          elsif (desired_instances.length > existing_instance_models.length) && existing_instance_models.length != 0
+          elsif desired_instances.count > existing_instance_models.count
             modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
             modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
+          else
+
+            if ignored_instances_count > desired_instances.count
+              raise DeploymentContainsIgnoredInstances, "Instance Group '#{existing_instance_models.first.job}' has #{ignored_instances_count} ignored instances." +
+                  "You requested to have #{desired_instances.count} instances of that instance group. Deleting ignored instances is not allowed."
+            elsif ignored_instances_count == desired_instances.count
+              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+              modified_desired_instances = []
+            else
+              # TODO: to be continued
+              modified_desired_instances = desired_instances
+              modified_existing_instance_models = existing_instance_models
+            end
           end
 
           return modified_desired_instances, modified_existing_instance_models

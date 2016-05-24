@@ -411,9 +411,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       it 'should reject the ignored instances and remove the same amount from the desired instances' do
         desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-        existing_instance0 = BD::Models::Instance.make(job: 'foo-job0', index: 0, availability_zone: az.name, ignore: true)
-        existing_instance1 = BD::Models::Instance.make(job: 'foo-job1', index: 1, availability_zone: az.name, ignore: true)
-        existing_instance2 = BD::Models::Instance.make(job: 'foo-job2', index: 2, availability_zone: az.name)
+        existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
+        existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+        existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name)
 
         new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance, desired_instance],
                                                                                                                                 [existing_instance0, existing_instance1, existing_instance2],
@@ -428,8 +428,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'when the desired instances are greater than existing instances' do
       it 'should reject the ignored instances and remove the same amount from the desired instances' do
         desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
-        existing_instance0 = BD::Models::Instance.make(job: 'foo-job0', index: 0, availability_zone: az.name, ignore: true)
-        existing_instance1 = BD::Models::Instance.make(job: 'foo-job1', index: 1, availability_zone: az.name)
+        existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
+        existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name)
 
         new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance, desired_instance],
                                                                                                                                 [existing_instance0, existing_instance1],
@@ -439,6 +439,29 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expect(new_existing_instances.length).to eq(1)
         expect(new_existing_instances.first.ignore).to eq(false)
       end
+    end
+
+    context 'when the desired instances are less than existing instances' do
+
+      context 'when the ignored instances are greater than desired instances' do
+        it 'should fail' do
+          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
+          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
+          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+
+          expect {
+            instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance],
+                                                                                   [existing_instance0, existing_instance1, existing_instance2],
+                                                                                   3)
+          }.to raise_error(
+             Bosh::Director::DeploymentContainsIgnoredInstances,
+             "Instance Group 'foo-job' has 3 ignored instances." +
+                 'You requested to have 2 instances of that instance group. Deleting ignored instances is not allowed.'
+          )
+        end
+      end
+
     end
   end
 
