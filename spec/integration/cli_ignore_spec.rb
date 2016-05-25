@@ -49,8 +49,6 @@ describe 'ignore/unignore instance', type: :integration do
         # ignore first VM
         initial_vms = director.vms
         foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}.first
-        foobar2_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}.first
-        foobar3_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar3'}.first
 
         bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
 
@@ -248,7 +246,6 @@ describe 'ignore/unignore instance', type: :integration do
     context 'when the existing instances is larger than the desired ones' do
 
       context 'when the ignored instances is larger than the desired ones' do
-
         it "should fail to deploy" do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
           cloud_config = Bosh::Spec::Deployments.simple_cloud_config
@@ -301,7 +298,6 @@ describe 'ignore/unignore instance', type: :integration do
           event_list_1 = director.raw_task_events('last')
           expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(5)
 
-          # ignore first VM
           initial_vms = director.vms
 
           foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
@@ -312,6 +308,7 @@ describe 'ignore/unignore instance', type: :integration do
           bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
           bosh_runner.run("ignore instance #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}")
 
+          # ===================================================
           # redeploy with different foobar1 templates
           manifest_hash['jobs'].clear
           manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
@@ -342,6 +339,90 @@ describe 'ignore/unignore instance', type: :integration do
         end
       end
 
+      context 'when the ignored instances is less than the desired ones' do
+
+        it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest
+          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 5})
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+          event_list_1 = director.raw_task_events('last')
+          expect(event_list_1.select { |e| e['stage'] == 'Updating job' && e['state'] == 'started' }.count).to eq(6)
+
+          initial_vms = director.vms
+          foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
+          foobar1_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[1]
+
+          bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+          bosh_runner.run("ignore instance #{foobar1_vm2.job_name}/#{foobar1_vm2.instance_uuid}")
+
+          # ===================================================
+          # redeploy with different foobar1 templates
+          manifest_hash['jobs'].clear
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+              name: 'foobar1',
+              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              instances: 3
+          )
+          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+
+          deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+          event_list_2 = director.raw_task_events('last')
+
+          expect(
+              event_list_2.select { |e|
+                (e['stage'] == 'Deleting unneeded instances') &&
+                (e['state'] == 'started') &&
+                (e['tags'].include? 'foobar1')
+              }.count
+          ).to eq(2)
+
+          expect(
+              event_list_2.select { |e|
+                (e['stage'] == 'Deleting unneeded instances') &&
+                    (e['state'] == 'started')
+              }.count
+          ).to eq(2)
+
+          expect(
+              event_list_2.select { |e|
+                (e['stage'] == 'Updating job') &&
+                (e['state'] == 'started') &&
+                (e['tags'].include? 'foobar1')
+              }.count
+          ).to eq(1)
+
+          expect(
+              event_list_2.select { |e|
+                (e['stage'] == 'Updating job') &&
+                (e['state'] == 'started')
+              }.count
+          ).to eq(1)
+
+          expect(
+              event_list_2.none? do |e|
+                (e['task'].include? foobar1_vm1.instance_uuid) ||
+                (e['task'].include? foobar1_vm2.instance_uuid)
+              end
+          ).to eq(true)
+
+          modified_vms = director.vms
+
+          expect(modified_vms.count).to eq(4)
+
+          expect(modified_vms.select{ |vm| vm.ignore == 'true' }.count).to eq(2)
+          expect(modified_vms.select{ |vm| vm.ignore == 'true' && vm.job_name == 'foobar1' }.count).to eq(2)
+          expect(modified_vms.select{ |vm| vm.job_name == 'foobar1' }.count).to eq(3)
+          expect(modified_vms.select{ |vm| vm.job_name == 'foobar2' }.count).to eq(1)
+          expect(modified_vms.select{ |vm| vm.instance_uuid == foobar1_vm1.instance_uuid }.count).to eq(1)
+          expect(modified_vms.select{ |vm| vm.instance_uuid == foobar1_vm2.instance_uuid }.count).to eq(1)
+        end
+      end
     end
   end
 end

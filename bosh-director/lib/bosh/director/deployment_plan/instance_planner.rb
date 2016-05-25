@@ -45,23 +45,21 @@ module Bosh
 
         def reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           if desired_instances.count == existing_instance_models.count
-            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
             modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.length)
           elsif desired_instances.count > existing_instance_models.count
-            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+            modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
             modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
           else
-
             if ignored_instances_count > desired_instances.count
               raise DeploymentContainsIgnoredInstances, "Instance Group '#{existing_instance_models.first.job}' has #{ignored_instances_count} ignored instances." +
                   "You requested to have #{desired_instances.count} instances of that instance group. Deleting ignored instances is not allowed."
             elsif ignored_instances_count == desired_instances.count
-              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore == true }
+              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
               modified_desired_instances = []
             else
-              # TODO: to be continued
-              modified_desired_instances = desired_instances
-              modified_existing_instance_models = existing_instance_models
+              modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
+              modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
             end
           end
 

@@ -415,9 +415,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
         existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name)
 
-        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance, desired_instance],
-                                                                                                                                [existing_instance0, existing_instance1, existing_instance2],
-                                                                                                                                2)
+        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances(
+          [desired_instance, desired_instance, desired_instance],
+          [existing_instance0, existing_instance1, existing_instance2],
+          2
+        )
 
         expect(new_desired_instances.length).to eq(1)
         expect(new_existing_instances.length).to eq(1)
@@ -431,9 +433,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
         existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name)
 
-        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance, desired_instance],
-                                                                                                                                [existing_instance0, existing_instance1],
-                                                                                                                                1)
+        new_desired_instances, new_existing_instances  = instance_planner.reject_ignored_instances_and_modify_desired_instances(
+          [desired_instance, desired_instance, desired_instance],
+          [existing_instance0, existing_instance1],
+          1
+        )
 
         expect(new_desired_instances.length).to eq(2)
         expect(new_existing_instances.length).to eq(1)
@@ -448,12 +452,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
           existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
           existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
-          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name, ignore: true)
 
           expect {
-            instance_planner.reject_ignored_instances_and_modify_desired_instances([desired_instance, desired_instance],
-                                                                                   [existing_instance0, existing_instance1, existing_instance2],
-                                                                                   3)
+            instance_planner.reject_ignored_instances_and_modify_desired_instances(
+              [desired_instance, desired_instance],
+              [existing_instance0, existing_instance1, existing_instance2],
+              3
+            )
           }.to raise_error(
              Bosh::Director::DeploymentContainsIgnoredInstances,
              "Instance Group 'foo-job' has 3 ignored instances." +
@@ -462,6 +468,45 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         end
       end
 
+      context 'when the ignored instances are equal to desired instances' do
+        it 'should only keeps the ignored instances' do
+          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
+          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
+          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name, ignore: true)
+          existing_instance3 = BD::Models::Instance.make(job: 'foo-job', index: 3, availability_zone: az.name)
+
+          new_desired_instances, new_existing_instances = instance_planner.reject_ignored_instances_and_modify_desired_instances(
+              [desired_instance, desired_instance, desired_instance],
+              [existing_instance0, existing_instance1, existing_instance2, existing_instance3],
+              3
+          )
+
+          expect(new_desired_instances.length).to eq(0)
+          expect(new_existing_instances.length).to eq(1)
+          expect(new_existing_instances.first.ignore).to eq(false)
+        end
+      end
+
+      context 'when the ignored instances are less than the desired instances' do
+        it 'should keep all ignored instances inaddition to whatever is left' do
+          desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, deployment)
+          existing_instance0 = BD::Models::Instance.make(job: 'foo-job', index: 0, availability_zone: az.name, ignore: true)
+          existing_instance1 = BD::Models::Instance.make(job: 'foo-job', index: 1, availability_zone: az.name, ignore: true)
+          existing_instance2 = BD::Models::Instance.make(job: 'foo-job', index: 2, availability_zone: az.name)
+          existing_instance3 = BD::Models::Instance.make(job: 'foo-job', index: 3, availability_zone: az.name)
+
+          new_desired_instances, new_existing_instances = instance_planner.reject_ignored_instances_and_modify_desired_instances(
+              [desired_instance, desired_instance, desired_instance],
+              [existing_instance0, existing_instance1, existing_instance2, existing_instance3],
+              2
+          )
+
+          expect(new_desired_instances.length).to eq(1)
+          expect(new_existing_instances.length).to eq(2)
+          expect(new_existing_instances.none?(&:ignore)).to eq(true)
+        end
+      end
     end
   end
 
