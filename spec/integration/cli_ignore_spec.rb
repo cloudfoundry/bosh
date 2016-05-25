@@ -424,5 +424,74 @@ describe 'ignore/unignore instance', type: :integration do
         end
       end
     end
+
+    context 'when --recreate flag is passed' do
+      it 'should recreate needed vms but leave the ignored ones alone' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 3})
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        # ignore first VM
+        initial_vms = director.vms
+        foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[0]
+        foobar1_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[1]
+        foobar1_vm3 = initial_vms.select{ |vm| vm.job_name == 'foobar1'}[2]
+
+        foobar2_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}[0]
+        foobar2_vm2 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}[1]
+        foobar2_vm3 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}[2]
+
+        bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+            name: 'foobar1',
+            templates: [
+                {'name' => 'job_1_with_pre_start_script'},
+                {'name' => 'job_2_with_pre_start_script'}
+            ],
+            instances: 3)
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+
+        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, recreate: true)
+
+        after_event_list = director.raw_task_events('last')
+
+        modified_vms = director.vms
+
+        expect(
+            after_event_list.none? do |e|
+              (e['stage'] == 'Updating job') && (e['task'].include? foobar1_vm1.instance_uuid)
+            end
+        ).to eq(true)
+
+        expect(
+            after_event_list.select { |e|
+              (e['stage'] == 'Updating job') && (e['state'] == 'started') && (e['tags'].include? 'foobar1')
+            }.count
+        ).to eq(2)
+
+        expect(
+            modified_vms.none? do |vm|
+              vm.agent_id == foobar1_vm2.agent_id ||
+              vm.agent_id == foobar1_vm3.agent_id ||
+              vm.agent_id == foobar2_vm1.agent_id ||
+              vm.agent_id == foobar2_vm2.agent_id ||
+              vm.agent_id == foobar2_vm3.agent_id
+            end
+        ).to eq(true)
+
+        expect(
+            modified_vms.select { |vm|
+              vm.agent_id == foobar1_vm1.agent_id
+            }.count
+        ).to eq(1)
+      end
+    end
   end
 end
