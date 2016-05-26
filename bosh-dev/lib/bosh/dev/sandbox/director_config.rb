@@ -15,8 +15,7 @@ module Bosh::Dev::Sandbox
       :users_in_manifest,
       :enable_post_deploy,
       :generate_vm_passwords,
-      :remove_dev_tools,
-      :director_ips
+      :remove_dev_tools
 
     def initialize(attrs, port_provider)
       @director_ruby_port = port_provider.get_port(:director_ruby)
@@ -43,7 +42,6 @@ module Bosh::Dev::Sandbox
       @enable_post_deploy = attrs.fetch(:enable_post_deploy, false)
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
-      @director_ips = attrs.fetch(:director_ips, [])
     end
 
     def render(template_path)
