@@ -35,7 +35,7 @@ module Bosh::Director::DeploymentPlan
             }]
         },
         [],
-        GlobalNetworkResolver.new(plan, [], logger),
+        GlobalNetworkResolver.new(plan, logger),
         logger
       )
     }

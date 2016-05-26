@@ -550,7 +550,5 @@ else
   agent_blobstore_options['password'] = p('blobstore.agent.password')
 end
 
-params['director_ips'] = spec.networks.to_h.values.select{ |net| net.type == nil || net.type == 'manual' }.map(&:ip)
-
 JSON.dump(params)
 %>

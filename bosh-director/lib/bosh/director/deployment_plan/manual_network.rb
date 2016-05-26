@@ -11,7 +11,7 @@ module Bosh::Director
       def self.parse(network_spec, availability_zones, global_network_resolver, logger)
         name = safe_property(network_spec, "name", :class => String)
 
-        reserved_ranges = global_network_resolver.reserved_ranges
+        reserved_ranges = global_network_resolver.reserved_legacy_ranges
         subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
         subnets = []
         subnet_specs.each do |subnet_spec|

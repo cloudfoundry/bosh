@@ -88,7 +88,7 @@ module Bosh::Director
           deployment.add_release(release)
 
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(@logger).parse(cloud_config.manifest,
-            DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
+            DeploymentPlan::GlobalNetworkResolver.new(deployment, logger),
             DeploymentPlan::IpProviderFactory.new(deployment.using_global_networking?, @logger))
 
           deployment.add_job(job_parser.parse({
@@ -123,7 +123,7 @@ module Bosh::Director
           allow_any_instance_of(DeploymentPlan::ReleaseVersion).to receive(:bind_model).and_return(nil)
 
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(@logger).parse(cloud_config.manifest,
-            DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
+            DeploymentPlan::GlobalNetworkResolver.new(deployment, logger),
             DeploymentPlan::IpProviderFactory.new(deployment.using_global_networking?, @logger))
 
           deployment.add_job(job_parser.parse({
