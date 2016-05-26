@@ -1,5 +1,5 @@
-require 'cli/job_command_args'
-require 'cli/resurrection'
+require 'bosh/cli/job_command_args'
+require 'bosh/cli/resurrection'
 
 module Bosh::Cli
   module Command

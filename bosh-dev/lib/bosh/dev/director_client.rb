@@ -1,4 +1,4 @@
-require 'cli'
+require 'bosh/cli'
 require 'yaml'
 require 'bosh/dev/bosh_cli_session'
 

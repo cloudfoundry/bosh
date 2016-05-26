@@ -1,4 +1,4 @@
-require 'cli/client/uaa/client'
+require 'bosh/cli/client/uaa/client'
 
 module Bosh
   module Cli

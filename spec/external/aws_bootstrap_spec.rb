@@ -1,5 +1,5 @@
 require "spec_helper"
-require "cli"
+require "bosh/cli"
 require "bosh_cli_plugin_aws"
 
 describe 'bosh_cli_plugin_aws_external' do

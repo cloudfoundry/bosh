@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'cli/deployment_manifest'
+require 'bosh/cli/deployment_manifest'
 
 describe Bosh::Cli::DeploymentManifest do
   let(:manifest_hash) do

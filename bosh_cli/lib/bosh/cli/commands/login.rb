@@ -1,7 +1,7 @@
-require 'cli/basic_login_strategy'
-require 'cli/uaa_login_strategy'
-require 'cli/client/uaa/client'
-require 'cli/terminal'
+require 'bosh/cli/basic_login_strategy'
+require 'bosh/cli/uaa_login_strategy'
+require 'bosh/cli/client/uaa/client'
+require 'bosh/cli/terminal'
 
 module Bosh::Cli::Command
   class Login < Base

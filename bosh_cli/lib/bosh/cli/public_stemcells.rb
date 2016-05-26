@@ -2,7 +2,7 @@ require 'httpclient'
 require 'rexml/rexml'
 REXML.autoload :Document, 'rexml/document'
 
-require 'cli/public_stemcell'
+require 'bosh/cli/public_stemcell'
 
 module Bosh::Cli
   class PublicStemcells

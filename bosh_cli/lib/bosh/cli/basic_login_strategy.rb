@@ -1,5 +1,5 @@
-require 'cli/core_ext'
-require 'cli/errors'
+require 'bosh/cli/core_ext'
+require 'bosh/cli/errors'
 
 module Bosh
   module Cli

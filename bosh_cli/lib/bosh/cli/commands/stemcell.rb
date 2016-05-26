@@ -1,5 +1,5 @@
-require 'cli/public_stemcell_presenter'
-require 'cli/public_stemcells'
+require 'bosh/cli/public_stemcell_presenter'
+require 'bosh/cli/public_stemcells'
 
 module Bosh::Cli
   class Command::Stemcell < Command::Base

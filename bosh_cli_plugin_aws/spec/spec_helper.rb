@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
 
 require 'webmock/rspec'
-require 'cli'
+require 'bosh/cli'
 require 'bosh/cli/commands/aws'
 require 'bosh_cli_plugin_aws'
 

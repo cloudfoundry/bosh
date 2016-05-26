@@ -1,5 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'cli/job_state'
+require 'bosh/cli/job_state'
 
 module Bosh::Cli
   module Command

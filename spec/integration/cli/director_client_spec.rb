@@ -1,6 +1,6 @@
 require 'spec_helper'
-require 'cli/client/director'
-require 'cli/client/credentials'
+require 'bosh/cli/client/director'
+require 'bosh/cli/client/credentials'
 
 describe 'Director Client', type: :integration do
   with_reset_sandbox_before_each

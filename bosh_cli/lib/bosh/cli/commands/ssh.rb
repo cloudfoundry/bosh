@@ -1,5 +1,5 @@
-require 'cli/job_command_args'
-require 'cli/ssh_session'
+require 'bosh/cli/job_command_args'
+require 'bosh/cli/ssh_session'
 
 module Bosh::Cli
   module Command
