@@ -9,8 +9,8 @@ module Bosh
 
         def plan_job_instances(job, desired_instances, existing_instance_models)
 
-          ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore == true }
-          if ignored_instances_count != 0 && existing_instance_models.count != 0
+          ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore }
+          if ignored_instances_count > 0 && existing_instance_models.count > 0
             desired_instances, existing_instance_models = reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           end
 
