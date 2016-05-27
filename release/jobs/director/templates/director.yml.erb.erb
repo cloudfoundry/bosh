@@ -550,7 +550,7 @@ else
   agent_blobstore_options['password'] = p('blobstore.agent.password')
 end
 
-params['director_ips'] = spec.networks.to_h.values.select{ |net| net.type == nil || net.type == 'manual' }.map(&:ip)
+params['director_ips'] = Socket.ip_address_list.reject { |addr| !addr.ip? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
 
 JSON.dump(params)
 %>

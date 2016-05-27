@@ -1,6 +1,7 @@
 require 'rspec'
 require 'yaml'
 require 'bosh/template/evaluation_context'
+require 'bosh/deployer/microbosh_job_instance'
 require 'json'
 
 describe 'director.yml.erb.erb' do
@@ -110,42 +111,18 @@ describe 'director.yml.erb.erb' do
 
     describe 'director ips' do
       before do
-        deployment_manifest_fragment['networks'] = {
-          'default' => {
-            'ip'=> '10.10.0.11',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {'subnet'=> 'subnet-b1ea9a99'},
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.6'],
-            'gateway' => '10.10.0.1',
-            'dns_record_name' => '0.bosh.default.bosh-director.bosh',
-          },
-          'private' => {
-            'ip'=> '10.11.0.16',
-            'type' => 'manual',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {'subnet'=> 'subnet-b1ea9a55'},
-            'default' => [],
-            'dns' => ['10.11.0.6'],
-            'gateway' => '10.11.0.1',
-            'dns_record_name' => '0.bosh.private.bosh-director.bosh',
-          },
-          'vip_network' => {
-            'type' => 'vip',
-            'ip'=> '52.20.102.193',
-            'cloud_properties'=> {},
-            'dns_record_name' => '0.bosh.vip-network.bosh-director.bosh'
-          },
-          'dynamic' => {
-            'type' => 'dynamic',
-            'cloud_properties'=> {},
-            'dns_record_name' => '0.bosh.vip-network.bosh-director.bosh'
-          }
-        }
+        allow(Socket).to receive(:ip_address_list).and_return([
+                                                                instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4_loopback?: true, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '10.11.0.16', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4_loopback?: false, ipv6_loopback?: true),
+                                                                instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                              ])
+
       end
 
       it 'should parse the manual network ips off of the spec' do
-        expect(parsed_yaml['director_ips']).to eq(['10.10.0.11','10.11.0.16'])
+        expect(parsed_yaml['director_ips']).to eq(['10.10.0.6','10.11.0.16', 'fe80::10bf:eff:fe2c:7405%eth0'])
       end
     end
 
