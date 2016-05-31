@@ -84,8 +84,18 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
       before { allow(output).to receive(:tty?).and_return(true) }
 
       it 'prints deprecation message in red with a blank line after it' do
-        add_output('{"time":1394598750, "type": "deprecation", "message": "fake-warning-msg1"}')
-        expect(rendered_output).to eq('Deprecation: fake-warning-msg1'.make_red + "\n")
+        add_output('{"time":1394598750, "type": "deprecation", "message": "fake-deprecation-msg1"}')
+        expect(rendered_output).to eq('Deprecation: fake-deprecation-msg1'.make_red + "\n")
+      end
+    end
+
+    context 'when received output contains warning event' do
+      before { Bosh::Cli::Config.colorize = true }
+      before { allow(output).to receive(:tty?).and_return(true) }
+
+      it 'prints warning message in yellow with a blank line after it' do
+        add_output('{"time":1394598750, "type": "warning", "message": "fake-warning-msg1"}')
+        expect(rendered_output).to eq('  Warning: fake-warning-msg1'.make_yellow + "\n")
       end
     end
 

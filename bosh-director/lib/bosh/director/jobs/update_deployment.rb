@@ -68,6 +68,10 @@ module Bosh::Director
             deployment_plan.bind_models
           end
 
+          unless deployment_plan.instance_models.none? { |instance| instance.ignore }
+            @event_log.warn('You have ignored instances. No changes will be reflected on them.')
+          end
+
           next_releases, next_stemcells  = get_stemcells_and_releases
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
