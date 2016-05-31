@@ -73,6 +73,10 @@ if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
   params['keep_unreachable_vms'] = keep_unreachable_vms
 end
 
+if_p('director.enable_virtual_delete_vms') do |enable_virtual_delete_vms|
+	params['enable_virtual_delete_vms'] = enable_virtual_delete_vms
+end
+
 params['scan_and_fix'] = {
   'auto_fix_stateful_nodes' => p('director.auto_fix_stateful_nodes')
 }

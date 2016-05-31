@@ -30,7 +30,7 @@ module Bosh::Director
           instance_deleter = InstanceDeleter.new(ip_provider, dns_manager, disk_manager, force: @force)
           deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, dns_manager, Config.max_threads)
 
-          vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, force: @force)
+          vm_deleter = Bosh::Director::VmDeleter.new(@cloud, logger, @force, Config.enable_virtual_delete_vms)
           deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter)
           add_event(parent_id)
 
