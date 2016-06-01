@@ -38,6 +38,28 @@ describe 'ignore/unignore instance', type: :integration do
     expect(director.vm(vm3.job_name, vm3.instance_uuid).ignore).to eq('false')
   end
 
+  it 'fails when deleting deployment that has ignored instances even when using force flag' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+    manifest_hash['jobs'].clear
+    manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+    foobar1_vm1 = director.vms.first
+    bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+
+    output, exit_code = bosh_runner.run("delete deployment simple", failure_expected: true, return_exit_code: true)
+    expect(exit_code).to_not eq(0)
+    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which  contains ignored instance(s). Operation not allowed.")
+
+    output, exit_code = bosh_runner.run("delete deployment simple --force", failure_expected: true, return_exit_code: true)
+    puts output
+    expect(exit_code).to_not eq(0)
+    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which  contains ignored instance(s). Operation not allowed.")
+  end
+
   context 'when there are ignored instances and a deploy happens' do
 
     context 'when the number of instance groups did not change between deployments' do
