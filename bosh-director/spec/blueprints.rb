@@ -199,6 +199,12 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
+  LocalDnsRecord.blueprint do
+    name      { Sham.name }
+    ip        { Sham.ip }
+    timestamp { Time.new }
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }
