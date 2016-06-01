@@ -473,7 +473,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
               3
             )
           }.to raise_error(
-             Bosh::Director::DeploymentContainsIgnoredInstances,
+             Bosh::Director::DeploymentIgnoredInstancesModification,
              "Instance Group 'foo-job' has 3 ignored instances." +
                  'You requested to have 2 instances of that instance group. Deleting ignored instances is not allowed.'
           )
@@ -538,5 +538,20 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(obsolete_instance_plan.existing_instance).to eq(existing_instance_thats_obsolete)
       expect(obsolete_instance_plan).to be_obsolete
     end
+
+    it 'fails when trying to delete instance groups with ignored instances' do
+      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-job', index: 0)
+      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-job', index: 1, ignore: true)
+
+      existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
+
+      expect {
+        instance_planner.plan_obsolete_jobs([job], existing_instances)
+      }.to raise_error(
+         Bosh::Director::DeploymentIgnoredInstancesDeletion,
+         "You are trying to delete instance group 'bar-job', which  contains ignored instance(s). Operation not allowed."
+      )
+    end
+
   end
 end

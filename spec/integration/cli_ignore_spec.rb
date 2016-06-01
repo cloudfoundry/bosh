@@ -505,6 +505,31 @@ describe 'ignore/unignore instance', type: :integration do
         ).to eq(1)
       end
     end
+
+    context 'when an attempt is made to delete an instance group from deployment' do
+      it 'fails if the instance group contains ignored vms' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        initial_vms = director.vms
+        foobar1_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar1' && vm.index == '0'}.first
+        bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+
+        output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
+
+        expect(exit_code).to_not eq(0)
+        expect(output).to include("Error 190021: You are trying to delete instance group 'foobar1', which  contains ignored instance(s). Operation not allowed.")
+      end
+    end
   end
 
   context 'when starting/stoping/restarting/recreating instances' do

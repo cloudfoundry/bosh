@@ -39,6 +39,14 @@ module Bosh
             desired_job_names.include?(existing_instance_model.job) ||
               migrating_job_names.include?(existing_instance_model.job)
           end
+
+          obsolete_existing_instances.each do |instance_model|
+            if instance_model.ignore
+              raise DeploymentIgnoredInstancesDeletion, "You are trying to delete instance group '#{instance_model.job}', which " +
+                  ' contains ignored instance(s). Operation not allowed.'
+            end
+          end
+
           obsolete_existing_instances.map do |obsolete_existing_instance|
             @instance_plan_factory.obsolete_instance_plan(obsolete_existing_instance)
           end
@@ -53,7 +61,7 @@ module Bosh
             modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
           else
             if ignored_instances_count > desired_instances.count
-              raise DeploymentContainsIgnoredInstances, "Instance Group '#{existing_instance_models.first.job}' has #{ignored_instances_count} ignored instances." +
+              raise DeploymentIgnoredInstancesModification, "Instance Group '#{existing_instance_models.first.job}' has #{ignored_instances_count} ignored instances." +
                   "You requested to have #{desired_instances.count} instances of that instance group. Deleting ignored instances is not allowed."
             elsif ignored_instances_count == desired_instances.count
               modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
