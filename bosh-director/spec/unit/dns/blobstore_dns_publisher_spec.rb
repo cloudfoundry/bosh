@@ -10,13 +10,20 @@ module Bosh::Director
     describe '#publish' do
       context 'when blobstore publication succeeds' do
         context 'when some dns records are passed' do
-          it 'uploads' do
+          before {
             expect(blobstore).to receive(:create).with({:records => dns_records}.to_json).and_return('fake-blob-id')
+          }
 
+          it 'uploads' do
             blobstore_id = dns.publish(dns_records)
             expect(blobstore_id).to_not be_nil
 
             expect(blobstore.exists?(blobstore_id)).to_not be_nil
+          end
+
+          it 'adds new entry to LocalDnsBlob table' do
+            blobstore_id = dns.publish(dns_records)
+            expect(Bosh::Director::Models::LocalDnsBlob.find(:blobstore_id => blobstore_id)).to_not be_nil
           end
         end
 
@@ -123,6 +130,44 @@ module Bosh::Director
           it 'silently ignores deletes on non-present entries' do
             expect{ dns.delete_dns_record('test-10.%.bosh') }.to_not change{ Bosh::Director::Models::LocalDnsRecord.count }
           end
+        end
+      end
+    end
+
+    describe '#cleanup_blobs' do
+      context 'when there are no entries' do
+        it 'does not do anything' do
+          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
+          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
+          expect{ dns.cleanup_blobs }.to_not change{ Bosh::Director::Models::LocalDnsBlob.count }
+          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
+          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
+        end
+      end
+
+      context 'when there is one entry' do
+        before {
+          Bosh::Director::Models::LocalDnsBlob.make
+        }
+
+        it 'leaves the only and newest blob' do
+          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
+          expect{ dns.cleanup_blobs }.to_not change{ Bosh::Director::Models::LocalDnsBlob.count }
+          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(1)
+          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count)
+        end
+      end
+
+      context 'when there are some entries' do
+        before {
+          3.times{Bosh::Director::Models::LocalDnsBlob.make}
+        }
+
+        it 'leaves the newest blob' do
+          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
+          expect{ dns.cleanup_blobs }.to change{ Bosh::Director::Models::LocalDnsBlob.count }.from(3).to(1)
+          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(3)
+          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count + 2)
         end
       end
     end
