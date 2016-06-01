@@ -11,6 +11,7 @@ module Bosh
 
           ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore }
           if ignored_instances_count > 0 && existing_instance_models.count > 0
+            fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
             desired_instances, existing_instance_models = reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           end
 
@@ -106,6 +107,16 @@ module Bosh
             network_plans = NetworkPlanner::ReservationReconciler.new(instance_plan, @logger)
                               .reconcile(instance_plan.instance.existing_network_reservations)
             instance_plan.network_plans = network_plans
+          end
+        end
+
+        def fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
+          ignored_models = existing_instance_models.select{|instance| instance.ignore}
+          ignored_models.each do |model|
+            unless job.instance_states["#{model.index}"].nil?
+              raise JobInstanceIgnored, "You are trying to change the state of the ignored instance '#{model.job}/#{model.uuid}'. " +
+                  'This operation is not allowed. You need to unignore it first.'
+            end
           end
         end
 

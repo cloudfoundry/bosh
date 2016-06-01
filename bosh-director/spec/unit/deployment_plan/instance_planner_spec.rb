@@ -76,6 +76,18 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when there are ignored instances' do
+      it 'fails if specifically changing the state of ignored vms' do
+        existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, ignore: true)
+        job.instance_states = {'0' => "stopped"}
+        expect {
+          instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])
+        }.to raise_error(
+          Bosh::Director::JobInstanceIgnored,
+          "You are trying to change the state of the ignored instance 'foo-job/#{existing_instance_model.uuid}'. " +
+              "This operation is not allowed. You need to unignore it first."
+        )
+      end
+
       it 'filters out ignored instances' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-job', index: 0, ignore: true)
         instance_plans = instance_planner.plan_job_instances(job, [desired_instance], [existing_instance_model])

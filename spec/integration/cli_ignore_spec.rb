@@ -587,7 +587,6 @@ describe 'ignore/unignore instance', type: :integration do
         # Targeting and instance group
         # ========================================================================================
 
-        # ===========================================
         stop_output = bosh_runner.run("stop foobar1")
         expect(stop_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
         expect(stop_output).to_not include('Started updating job foobar1 > foobar1/0')
@@ -655,6 +654,22 @@ describe 'ignore/unignore instance', type: :integration do
         # ========================================================================================
         # Targeting a specific ignored instance
         # ========================================================================================
+        stop_output, stop_exit_code = bosh_runner.run("stop #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
+        expect(stop_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        expect(stop_exit_code).to_not eq(0)
+
+        start_output, start_exit_code = bosh_runner.run("start #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
+        expect(start_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        expect(start_exit_code).to_not eq(0)
+
+        restart_output, restart_exit_code = bosh_runner.run("restart #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
+        expect(restart_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        expect(restart_exit_code).to_not eq(0)
+
+        recreate_output, recreate_exit_code = bosh_runner.run("recreate #{ignored_vm.job_name} #{ignored_vm.instance_uuid}", failure_expected: true, return_exit_code: true)
+        expect(recreate_output).to include("Error 140021: You are trying to change the state of the ignored instance 'foobar1/#{ignored_vm.instance_uuid}'. This operation is not allowed. You need to unignore it first.")
+        expect(recreate_exit_code).to_not eq(0)
+
       end
     end
   end
