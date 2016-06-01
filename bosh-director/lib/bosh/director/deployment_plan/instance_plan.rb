@@ -245,7 +245,7 @@ module Bosh
           changed
         end
 
-        def currently_detached?
+        def already_detached?
           return false if new?
 
           @existing_instance.state == 'detached'

@@ -54,7 +54,7 @@ module Bosh::Director
           return
         end
 
-        unless instance_plan.currently_detached?
+        unless instance_plan.already_detached?
           Preparer.new(instance_plan, agent(instance), @logger).prepare
 
           stop(instance_plan)
@@ -63,7 +63,7 @@ module Bosh::Director
 
         if instance.state == 'detached'
           @logger.info("Detaching instance #{instance}")
-          unless instance_plan.currently_detached?
+          unless instance_plan.already_detached?
             @disk_manager.unmount_disk_for(instance_plan)
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             @vm_deleter.delete_for_instance(instance_model)
