@@ -6,7 +6,7 @@ module Bosh::Director
 
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
-    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
+    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger, false, false) }
     let(:arp_flusher) { ArpFlusher.new }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter, disk_manager, job_renderer, arp_flusher) }
     let(:job_renderer) { instance_double(JobRenderer, render_job_instance: nil) }

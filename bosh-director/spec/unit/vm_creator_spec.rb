@@ -9,7 +9,7 @@ describe Bosh::Director::VmCreator do
 
   let(:disk_manager) { Bosh::Director::DiskManager.new(cloud, logger) }
   let(:cloud) { instance_double('Bosh::Cloud') }
-  let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger)}
+  let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger, false, false)}
   let(:job_renderer) { instance_double(Bosh::Director::JobRenderer) }
   let(:arp_flusher) { instance_double(Bosh::Director::ArpFlusher) }
   let(:agent_client) do
