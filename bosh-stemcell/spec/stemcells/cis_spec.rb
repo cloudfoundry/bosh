@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'CIS test case verification', { } do
+describe 'CIS test case verification', { stemcell_image: true, cis_check: true } do
 
   it 'confirms that all CIS test cases ran' do
     expected_base_cis_test_cases = %W{
