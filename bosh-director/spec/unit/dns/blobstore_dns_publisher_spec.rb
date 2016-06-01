@@ -4,7 +4,8 @@ require 'blobstore_client/null_blobstore_client'
 module Bosh::Director
   describe BlobstoreDnsPublisher do
     let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
-    subject(:dns) { BlobstoreDnsPublisher.new blobstore }
+    let(:domain_name) { 'fake-domain-name' }
+    subject(:dns) { BlobstoreDnsPublisher.new(blobstore, domain_name) }
     let(:dns_records) { [['fake-ip0', 'fake-name0'], ['fake-ip1', 'fake-name1']]}
 
     describe '#publish' do
@@ -53,83 +54,18 @@ module Bosh::Director
     describe '#export_dns_records' do
       context 'when local store has DNS records' do
         before {
-          Bosh::Director::Models::LocalDnsRecord.make(:ip => '192.0.2.1', :name => 'test-1.name.bosh')
-          Bosh::Director::Models::LocalDnsRecord.make(:ip => '192.0.2.10', :name => 'test-10.name.bosh')
+          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'name' => 'instance1', 'id' => 'uuid1', 'networks' => { 'net-name1' => { 'ip' => '192.0.2.101' }, 'net-name3' => { 'ip' => '192.0.3.101' } }})
+          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'name' => 'instance2', 'id' => 'uuid2', 'networks' => { 'net-name2' => { 'ip' => '192.0.2.102' } }})
         }
 
         it 'exports the records' do
-          expect(dns.export_dns_records).to eq([['192.0.2.1', 'test-1.name.bosh'], ['192.0.2.10', 'test-10.name.bosh']])
+          expect(dns.export_dns_records).to eq([['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"], ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"], ['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
         end
       end
 
       context 'when local store has no DNS records' do
         it 'exports empty records' do
           expect(dns.export_dns_records).to eq([])
-        end
-      end
-    end
-
-    describe '#persist_dns_record' do
-      context 'when dns record does not already exist' do
-        it 'adds new [ip, name] to the DB' do
-          dns.persist_dns_record('192.0.2.1', 'test-1.name.bosh')
-          expect(Bosh::Director::Models::LocalDnsRecord.find(:ip => '192.0.2.1', :name => 'test-1.name.bosh')).to_not be_nil
-        end
-      end
-
-      context 'when dns record already exists' do
-        let(:timestamp) { Time.new('2001-01-01 01:01:01') }
-        before {
-          Bosh::Director::Models::LocalDnsRecord.make(:ip => '192.0.2.10', :name => 'test-10.name.bosh', :timestamp => timestamp)
-        }
-
-        it 'updates the record' do
-          dns.persist_dns_record('192.0.2.11', 'test-10.name.bosh')
-          expect(Bosh::Director::Models::LocalDnsRecord.find(:ip => '192.0.2.10', :name => 'test-10.name.bosh')).to be_nil
-          expect(Bosh::Director::Models::LocalDnsRecord.find(:ip => '192.0.2.11', :name => 'test-10.name.bosh')).to_not be_nil
-        end
-
-        it 'ignores updates if record did not change' do
-          dns.persist_dns_record('192.0.2.10', 'test-10.name.bosh')
-          record = Bosh::Director::Models::LocalDnsRecord.find(:ip => '192.0.2.10', :name => 'test-10.name.bosh')
-          expect(record).to_not be_nil
-          expect(record.timestamp).to_not eq(timestamp)
-        end
-      end
-    end
-
-    describe '#delete_dns_record' do
-      context 'when dns record does not already exist' do
-        it 'silently ignores deletes on non-present entries' do
-          expect{ dns.delete_dns_record('test-10.name.bosh') }.to_not change{ Bosh::Director::Models::LocalDnsRecord.count }
-        end
-      end
-
-      context 'when dns record already exists' do
-        before {
-          Bosh::Director::Models::LocalDnsRecord.make(:ip => '192.0.2.10', :name => 'test-10.name.bosh')
-        }
-
-        it 'deletes the entry' do
-          expect { dns.delete_dns_record('test-10.name.bosh') }.to change{ Bosh::Director::Models::LocalDnsRecord.count }.from(1).to(0)
-        end
-      end
-
-      context 'backwards compatibility with old deployments missing dns records' do
-        context 'when there is a positive match' do
-          before {
-            Bosh::Director::Models::LocalDnsRecord.make(:ip => '192.0.2.10', :name => 'test-10.name.bosh')
-          }
-
-          it 'deletes entry'do
-            expect { dns.delete_dns_record('test-10.%.bosh') }.to change{ Bosh::Director::Models::LocalDnsRecord.count }.from(1).to(0)
-          end
-        end
-
-        context 'when there is no match' do
-          it 'silently ignores deletes on non-present entries' do
-            expect{ dns.delete_dns_record('test-10.%.bosh') }.to_not change{ Bosh::Director::Models::LocalDnsRecord.count }
-          end
         end
       end
     end

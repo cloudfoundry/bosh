@@ -33,6 +33,7 @@ module Bosh::Director
 
           error_ignorer.with_force_check do
             @dns_manager.delete_dns_for_instance(instance_model)
+            @dns_manager.publish_dns_records
           end
 
           error_ignorer.with_force_check do
