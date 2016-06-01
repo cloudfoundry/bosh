@@ -46,7 +46,7 @@ module Bosh::Director
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
-      InstanceUpdater::InstanceState.with_instance_update(instance.model) do
+      update_procedure = lambda do
         # Optimization to only update DNS if nothing else changed.
         if dns_change_only?(instance_plan)
           @logger.debug('Only change is DNS configuration')
@@ -59,6 +59,11 @@ module Bosh::Director
 
           stop(instance_plan)
           take_snapshot(instance)
+
+          if instance.state == 'stopped'
+            instance.update_state
+            return
+          end
         end
 
         if instance.state == 'detached'
@@ -103,10 +108,7 @@ module Bosh::Director
         )
         state_applier.apply(instance_plan.desired_instance.job.update)
       end
-    rescue Exception => e
-      raise e
-    ensure
-      add_event(instance.deployment_model.name, action, instance.model.name, nil, parent_id, e) if parent_id
+      InstanceUpdater::InstanceState.with_instance_update_and_event_creation(instance.model, parent_id, instance.deployment_model.name, action, &update_procedure)
     end
 
     private

@@ -1,142 +1,103 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe InstanceReuser do
-    let(:reuser) { described_class.new }
-    let(:reservation) { instance_double('Bosh::Director::NetworkReservation') }
-    let(:network_settings) { {} }
-    let(:instance) { instance_double(DeploymentPlan::Instance) }
+  describe InstanceUpdater do
+    let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
+    let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider) }
+    let(:agent_client) { instance_double(AgentClient) }
+    let(:instance_model) { Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: 'started', job: 'job-1', credentials: {'user' => 'secret'}, agent_id: 'scool', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}}) }
+    let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
+    let(:instance) do
+      az = DeploymentPlan::AvailabilityZone.new('az-1', {})
+      vm_type = DeploymentPlan::VmType.new({'name' => 'small_vm'})
+      stemcell = DeploymentPlan::Stemcell.new('ubuntu_stemcell', 'ubuntu_1', 'ubuntu', '8')
+      instance = DeploymentPlan::Instance.new('job-1', 0, 'stopped', vm_type, [], stemcell, {}, false, deployment_model, {}, az, logger)
+      instance.bind_existing_instance_model(instance_model)
 
-    let!(:stemcell_model) { Models::Stemcell.make(name: 'stemcell-name', version: '1') }
+      instance
+    end
+    let(:instance_plan) do
+      job = instance_double(DeploymentPlan::Job, default_network: {})
+      desired_instance = DeploymentPlan::DesiredInstance.new(job)
+      instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance)
+      allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
 
-    let(:stemcell) do
-      stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, '1')
-      stemcell.bind_model(Models::Deployment.make)
-      stemcell
+      instance_plan
     end
 
-    let(:different_stemcell) do
-      model = Models::Stemcell.make(name: 'different-stemcell-name', version: '1')
-      stemcell = DeploymentPlan::Stemcell.new('different-stemcell-name-alias', model.name, nil, model.version)
-      stemcell.bind_model(Models::Deployment.make)
-      stemcell
+    before do
+      allow(Config).to receive(:cloud).and_return(instance_double(Bosh::Cloud))
+      allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
+      allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
+      allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
+      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(instance_double(Bosh::Blobstore::Client))
     end
 
-    let(:stemcell_of_same_name_and_version) do
-      stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, '1')
-      stemcell.bind_model(Models::Deployment.make)
-      stemcell
-    end
-
-    let(:second_stemcell) { Models::Stemcell.make }
-    let(:second_instance) { Object.new }
-
-    describe '#add_in_use_instance' do
-      it 'should add a instance to the InstanceReuser' do
-        expect(reuser.get_num_instances(stemcell)).to eq(0)
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.get_num_instances(stemcell)).to eq(1)
+    context 'when stopping instances' do
+      before do
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
-      it 'should not offer an added in use instance until it is released' do
-        expect(reuser.get_instance(stemcell)).to be_nil
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.get_instance(stemcell)).to be_nil
-        reuser.release_instance(instance)
-        expect(reuser.get_instance(stemcell)).to eq(instance)
-        expect(reuser.get_instance(stemcell)).to be_nil
-      end
-    end
+      it 'should exit early without updating spec of instance' do
+        expect(instance_model.state).to eq('started')
+        expect(Models::Event.count).to eq 0
 
-    describe '#get_instance' do
-      it 'should make the instance unavailable' do
-        reuser.add_in_use_instance(instance, stemcell)
-        reuser.release_instance(instance)
-        reuser.get_instance(stemcell)
-        expect(reuser.get_instance(stemcell)).to be_nil
-      end
+        expect(agent_client).to receive(:stop)
+        expect(agent_client).to receive(:drain).and_return(0.1)
+        expect(agent_client).not_to receive(:apply)
 
-      it 'should return instances based on the stemcell name and version' do
-        reuser.add_in_use_instance(instance, stemcell)
-        reuser.release_instance(instance)
-        expect(reuser.get_num_instances(stemcell_of_same_name_and_version)).to eq(1)
-        expect(reuser.get_num_instances(second_stemcell)).to eq(0)
-        expect(reuser.get_instance(stemcell_of_same_name_and_version)).to eq(instance)
+        updater.update(instance_plan)
+
+        expect(instance_model.state).to eq('stopped')
+        expect(instance_model.update_completed).to eq true
+        expect(Models::Event.count).to eq 2
       end
     end
 
-    describe '#get_num_total_instances' do
-      it 'should return the total count of instances across all stemcells' do
-        expect(reuser.total_instance_count).to eq(0)
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.total_instance_count).to eq(1)
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.total_instance_count).to eq(2)
-        reuser.add_in_use_instance(instance, different_stemcell)
-        expect(reuser.total_instance_count).to eq(3)
+    context 'when changing DNS' do
+      before do
+        allow(instance_plan).to receive(:changes).and_return([:dns])
+      end
+
+      it 'should exit early without interacting at all with the agent' do
+        instance_model.update(dns_record_names: ['old.dns.record'])
+        expect(instance_model.state).to eq('started')
+        expect(Models::Event.count).to eq 0
+
+        expect(AgentClient).not_to receive(:with_vm_credentials_and_agent_id)
+
+        subnet_spec = {
+          'range' => '10.10.10.0/24',
+          'gateway' => '10.10.10.1',
+        }
+        subnet = DeploymentPlan::ManualNetworkSubnet.parse('my-network', subnet_spec, ['az-1'], [])
+        network = DeploymentPlan::ManualNetwork.new('my-network', [subnet], logger)
+        reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
+        instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
+        updater.update(instance_plan)
+
+        expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
+        expect(instance_model.update_completed).to eq true
+        expect(Models::Event.count).to eq 2
       end
     end
 
-    describe '#get_num_instances' do
-      it 'should return the total count of in use instances and idle instances from the given stemcell' do
-        expect(reuser.get_num_instances(stemcell)).to eq(0)
-
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.get_num_instances(stemcell)).to eq(1)
-        reuser.release_instance(instance)
-        expect(reuser.get_num_instances(stemcell)).to eq(1)
-
-        reuser.add_in_use_instance(second_instance, second_stemcell)
-        expect(reuser.get_num_instances(stemcell)).to eq(1)
-        expect(reuser.get_num_instances(second_stemcell)).to eq(1)
+    context 'when something goes wrong in the update procedure' do
+      before do
+        allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with({'user' => 'secret'}, 'scool').and_return(agent_client)
+        allow(instance_plan).to receive(:changes).and_return([:state])
       end
-    end
 
-    describe '#each' do
-      it 'should iterate in use instances and idle instances' do
-        reuser.add_in_use_instance(instance, stemcell)
-        reuser.release_instance(instance)
-        reuser.add_in_use_instance(second_instance, second_stemcell)
+      it 'should always add an event recording the error' do
+        expect(Models::Event.count).to eq 0
 
-        iterated = []
-        reuser.each do |instance|
-          iterated << instance
-        end
+        drain_error = RpcRemoteException.new('Oh noes!')
+        expect(agent_client).to receive(:drain).and_raise(drain_error)
 
-        expect(iterated).to match_array([instance, second_instance])
-      end
-    end
-
-    describe '#release_instance' do
-      context 'when the instance is in use' do
-        it 'makes it available again' do
-          reuser.add_in_use_instance(instance, stemcell)
-          reuser.get_instance(stemcell)
-          reuser.release_instance(instance)
-          expect(reuser.get_instance(stemcell)).to eq(instance)
-        end
-      end
-    end
-
-    describe '#remove_instance' do
-      it 'should remove an instance' do
-        reuser.add_in_use_instance(instance, stemcell)
-        expect(reuser.get_num_instances(stemcell)).to eq(1)
-        reuser.remove_instance(instance)
-        expect(reuser.get_num_instances(stemcell)).to eq(0)
-      end
-    end
-
-    describe '#remove_idle_instance_not_matching_stemcell' do
-      it 'should remove an instance belonging to any stemcell not matching the given stemcell' do
-        reuser.add_in_use_instance(instance, stemcell)
-        reuser.release_instance(instance)
-        reuser.add_in_use_instance(second_instance, second_stemcell)
-        reuser.release_instance(second_instance)
-
-        expect(reuser.remove_idle_instance_not_matching_stemcell(stemcell)).to eq(second_instance)
-        expect(reuser.get_instance(second_stemcell)).to eq(nil)
-        expect(reuser.get_instance(stemcell)).to eq(instance)
+        expect { updater.update(instance_plan) }.to raise_error drain_error
+        expect(Models::Event.map(&:error)).to eq([nil, 'Oh noes!'])
       end
     end
   end
