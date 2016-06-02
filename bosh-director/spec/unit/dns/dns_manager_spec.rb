@@ -348,6 +348,12 @@ module Bosh::Director
         end
       end
 
+      describe '#delete_dns_for_instance' do
+        it 'returns with no errors' do
+          dns_manager.delete_dns_for_instance(instance_model)
+        end
+      end
+
       describe '#migrate_legacy_records' do
         it 'does not migrate' do
           dns_manager.migrate_legacy_records(instance_model)

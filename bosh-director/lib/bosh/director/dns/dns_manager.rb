@@ -84,6 +84,8 @@ module Bosh::Director
     end
 
     def delete_dns_for_instance(instance_model)
+      return if !dns_enabled?
+
       current_dns_records = @local_dns_repo.find(instance_model)
       if current_dns_records.empty?
         # for backwards compatibility when old instances
