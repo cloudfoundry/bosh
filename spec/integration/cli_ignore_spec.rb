@@ -62,98 +62,111 @@ describe 'ignore/unignore instance', type: :integration do
 
   context 'when there are ignored instances and a deploy happens' do
 
-    it 'does not run pre-start, post-start, and post deploy scripts on the ignored vms' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    context 'when there are pre-start, post-start, and post deploy scripts' do
+      with_reset_sandbox_before_each(enable_post_deploy: true)
 
-      manifest_hash['jobs'].clear
-      manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
-          name: 'foobar1',
-          templates: [
-              {'name' => 'job_1_with_pre_start_script'},
-              {'name' => 'job_with_post_start_script'}
-          ],
-          instances: 2)
+      it 'does not run them on the ignored vms' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
 
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        manifest_hash['jobs'].clear
+        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+            name: 'foobar1',
+            templates: [
+                {'name' => 'job_1_with_pre_start_script'},
+                {'name' => 'job_with_post_start_script'},
+                {'name' => 'job_1_with_post_deploy_script'}
+            ],
+            instances: 2)
 
-      initial_vms = director.vms
-      foobar1_vm1 = initial_vms[0]
-      foobar1_vm2 = initial_vms[1]
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-      agent_id_1 = foobar1_vm1.agent_id
-      agent_id_2 = foobar1_vm2.agent_id
+        initial_vms = director.vms
+        foobar1_vm1 = initial_vms[0]
+        foobar1_vm2 = initial_vms[1]
 
-      # ==========================================================
-      # Pre-Start
-      vm1_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
-      expect(vm1_job_1_pre_start_stdout).to match_output %(
-        message on stdout of job 1 pre-start script
-        template interpolation works in this script: this is pre_start_message_1
-      )
+        agent_id_1 = foobar1_vm1.agent_id
+        agent_id_2 = foobar1_vm2.agent_id
 
-      vm2_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
-      expect(vm2_job_1_pre_start_stdout).to match_output %(
-        message on stdout of job 1 pre-start script
-        template interpolation works in this script: this is pre_start_message_1
-      )
+        # ==========================================================
+        # Pre-Start
+        vm1_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+        expect(
+            vm1_job_1_pre_start_stdout.scan(/message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1/).count
+        ).to eq(1)
 
-      # ==========================================================
-      # Post-Start
-      vm1_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
-      expect(vm1_job_1_post_start_stdout).to match_output %(
-        message on stdout of job post-start script
-        template interpolation works in this script: this is post_start_message
-      )
+        vm2_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+        expect(
+            vm2_job_1_pre_start_stdout.scan(/message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1/).count
+        ).to eq(1)
 
-      vm2_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
-      expect(vm2_job_1_post_start_stdout).to match_output %(
-        message on stdout of job post-start script
-        template interpolation works in this script: this is post_start_message
-      )
+        # ==========================================================
+        # Post-Start
+        vm1_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
+        expect(
+            vm1_job_1_post_start_stdout.scan(/message on stdout of job post-start script\ntemplate interpolation works in this script: this is post_start_message/).count
+        ).to eq(1)
 
-      # ==========================================================
-      # TODO: Post-Deploy
+        vm2_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
+        expect(
+            vm2_job_1_post_start_stdout.scan(/message on stdout of job post-start script\ntemplate interpolation works in this script: this is post_start_message/).count
+        ).to eq(1)
 
-      # ==========================================================
-      # Ignore
-      bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
-      bosh_runner.run("restart")
+        # ==========================================================
+        # Post-Deploy
+        vm1_job_1_post_deploy_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(
+            vm1_job_1_post_deploy_stdout.scan(/message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1/).count
+        ).to eq(1)
 
-      # ==========================================================
-      # Pre-Start
-      vm1_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
-      expect(vm1_job_1_pre_start_stdout).to match_output %(
-        message on stdout of job 1 pre-start script
-        template interpolation works in this script: this is pre_start_message_1
-      )
+        vm2_job_1_post_deploy_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(
+            vm2_job_1_post_deploy_stdout.scan(/message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1/).count
+        ).to eq(1)
 
-      vm2_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
-      expect(vm2_job_1_pre_start_stdout).to match_output %(
-        message on stdout of job 1 pre-start script
-        template interpolation works in this script: this is pre_start_message_1
-        message on stdout of job 1 pre-start script
-        template interpolation works in this script: this is pre_start_message_1
-      )
+        # ==========================================================
+        # Ignore instance
+        # ==========================================================
+        bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
+        bosh_runner.run("restart")
 
-      # ==========================================================
-      # Post-Start
-      vm1_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
-      expect(vm1_job_1_post_start_stdout).to match_output %(
-        message on stdout of job post-start script
-        template interpolation works in this script: this is post_start_message
-      )
+        # ==========================================================
+        # Pre-Start
+        vm1_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+        expect(
+            vm1_job_1_pre_start_stdout.scan(/message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1/).count
+        ).to eq(1)
 
-      vm2_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
-      expect(vm2_job_1_post_start_stdout).to match_output %(
-        message on stdout of job post-start script
-        template interpolation works in this script: this is post_start_message
-        message on stdout of job post-start script
-        template interpolation works in this script: this is post_start_message
-      )
 
-      # ==========================================================
-      # TODO: Post-Deploy
+        vm2_job_1_pre_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_pre_start_script/pre-start.stdout.log")
+        expect(
+            vm2_job_1_pre_start_stdout.scan(/message on stdout of job 1 pre-start script\ntemplate interpolation works in this script: this is pre_start_message_1/).count
+        ).to eq(2)
+
+        # ==========================================================
+        # Post-Start
+        vm1_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
+        expect(
+            vm1_job_1_post_start_stdout.scan(/message on stdout of job post-start script\ntemplate interpolation works in this script: this is post_start_message/).count
+        ).to eq(1)
+
+        vm2_job_1_post_start_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_with_post_start_script/post-start.stdout.log")
+        expect(
+            vm2_job_1_post_start_stdout.scan(/message on stdout of job post-start script\ntemplate interpolation works in this script: this is post_start_message/).count
+        ).to eq(2)
+
+        # ==========================================================
+        # Post-Deploy
+        vm1_job_1_post_deploy_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_1}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(
+            vm1_job_1_post_deploy_stdout.scan(/message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1/).count
+        ).to eq(1)
+
+        vm2_job_1_post_deploy_stdout = File.read("#{current_sandbox.agent_tmp_path}/agent-base-dir-#{agent_id_2}/data/sys/log/job_1_with_post_deploy_script/post-deploy.stdout.log")
+        expect(
+            vm2_job_1_post_deploy_stdout.scan(/message on stdout of job 1 post-deploy script\ntemplate interpolation works in this script: this is post_deploy_message_1/).count
+        ).to eq(2)
+      end
     end
 
     context 'when the number of instance groups did not change between deployments' do
