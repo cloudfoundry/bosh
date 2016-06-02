@@ -58,7 +58,8 @@ module Bosh::Stemcell
         "spec/stemcells/#{operating_system_spec_name}_spec.rb",
         "spec/stemcells/#{agent.name}_agent_spec.rb",
         "spec/stemcells/#{infrastructure.name}_spec.rb",
-        'spec/stemcells/stig_spec.rb'
+        'spec/stemcells/stig_spec.rb',
+        'spec/stemcells/cis_spec.rb'
       ].join(' ')
     end
 

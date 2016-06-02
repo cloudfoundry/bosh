@@ -112,17 +112,17 @@ describe 'director.yml.erb.erb' do
     describe 'director ips' do
       before do
         allow(Socket).to receive(:ip_address_list).and_return([
-                                                                instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4_loopback?: true, ipv6_loopback?: false),
-                                                                instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
-                                                                instance_double(Addrinfo, ip_address: '10.11.0.16', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
-                                                                instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4_loopback?: false, ipv6_loopback?: true),
-                                                                instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: true, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '10.11.0.16', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: false, ipv6_loopback?: false),
+                                                                instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4?: false, ipv6?: true, ipv4_loopback?: false, ipv6_loopback?: true),
+                                                                instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4?: false, ipv6?: true, ipv4_loopback?: false, ipv6_loopback?: false),
                                                               ])
 
       end
 
       it 'should parse the manual network ips off of the spec' do
-        expect(parsed_yaml['director_ips']).to eq(['10.10.0.6','10.11.0.16', 'fe80::10bf:eff:fe2c:7405%eth0'])
+        expect(parsed_yaml['director_ips']).to eq(['10.10.0.6','10.11.0.16'])
       end
     end
 

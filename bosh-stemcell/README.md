@@ -106,7 +106,7 @@ and you can copy files to and from it using `scp localfile remote:/path/to/desti
 At this point, you should be ssh'd and running within your container or AWS instance in the `bosh` directory. Start by installing the latest dependencies before continuing to a specific build task...
 
     $ echo $PWD
-    /opt/bosh
+    /opt/bosh (unless you are running on an AWS instance, then it is /bosh)
     $ bundle install --local
 
 
