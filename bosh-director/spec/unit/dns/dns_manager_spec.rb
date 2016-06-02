@@ -125,6 +125,24 @@ module Bosh::Director
       end
     end
 
+    describe '#cleanup_dns_records' do
+      context 'when dns_publisher is enabled' do
+        let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+        let(:dns_publisher) { BlobstoreDnsPublisher.new(blobstore, 'fake-domain-name') }
+
+        it 'calls cleanup_blobs and publish on the dns_publisher' do
+          expect(dns_publisher).to receive(:cleanup_blobs).and_return([])
+          dns_manager.cleanup_dns_records
+        end
+      end
+
+      context 'when dns_publisher is disabled' do
+        it 'calls nothing on the dns_publisher' do
+          dns_manager.cleanup_dns_records
+        end
+      end
+    end
+
     describe '#find_dns_record_names_by_instance' do
       context 'instance model is not set' do
         let(:instance_model) { nil }

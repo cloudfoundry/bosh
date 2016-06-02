@@ -144,6 +144,12 @@ module Bosh::Director
       end
     end
 
+    def cleanup_dns_records
+      if publisher_enabled?
+        @dns_publisher.cleanup_blobs
+      end
+    end
+
     def find_dns_record_names_by_instance(instance_model)
       instance_model.nil? ? [] : instance_model.dns_record_names.to_a.compact
     end
