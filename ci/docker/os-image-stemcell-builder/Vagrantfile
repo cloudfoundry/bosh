@@ -1,0 +1,49 @@
+VAGRANTFILE_API_VERSION = '2'
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # trusty (latest), virtualbox only
+  config.vm.box = 'ubuntu/trusty64'
+
+  config.vm.provider(:virtualbox) do |v|
+    v.name = 'bosh-os-image-stemcell-docker-builder'
+    v.customize ['modifyvm', :id, '--cpus', '4']
+    v.customize ['modifyvm', :id, '--memory', '4096']
+  end
+
+  config.vm.synced_folder('../../../', '/opt/bosh')
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    if ENV["http_proxy"]
+      config.proxy.http        = ENV["http_proxy"]
+      config.apt_proxy.http    = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      config.proxy.https        = ENV["https_proxy"]
+      config.apt_proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy     = ENV["no_proxy"]
+    end
+  end
+
+  config.vm.provision('docker')
+
+  config.vm.provision :shell do |shell|
+    shell.inline = <<-BASH
+      # We need to upgrade to the latest version of docker otherwise devicemapper doesn't work under Ubuntu
+      #  `devicemapper Error mounting '/dev/mapper/docker-8:...`
+      apt-get update
+      apt-get install apt-transport-https ca-certificates
+      apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+      echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' > /etc/apt/sources.list.d/docker.list
+      apt-get update
+      apt-get purge lxc-docker
+      apt-cache policy docker-engine
+      apt-get install -y docker-engine
+      # the centos build process runs into an error if we use the default aufs; devicemapper seems to work
+      # see https://github.com/docker/docker/issues/6980
+      echo 'DOCKER_OPTS="${DOCKER_OPTS:-} -s devicemapper "' >> /etc/default/docker
+      service docker restart
+    BASH
+  end
+end
