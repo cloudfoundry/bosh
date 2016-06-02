@@ -57,10 +57,14 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   it 'does not resurrect stateless nodes when paused' do
     deploy_from_scratch
 
-    bosh_runner.run('vm resurrection foobar 0 off')
-    original_vm = director.vm('foobar', '0')
-    original_vm.kill_agent
+    bosh_runner.run('vm resurrection off')
+    bosh_runner.run('vm resurrection foobar 1 on')
+
+    director.vm('foobar', '0').kill_agent
+    director.vm('foobar', '1').kill_agent
+
     expect(director.wait_for_vm('foobar', '0', 150)).to be_nil
+    expect(director.wait_for_vm('foobar', '1', 10)).to be_nil
   end
 
   # ~4m

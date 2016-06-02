@@ -443,7 +443,8 @@ module Bosh::Director
       end
 
       def deployment_has_instance_to_resurrect?(deployment)
-        false if deployment.nil?
+        return false if deployment.nil?
+        return false if @resurrector_manager.pause_for_all?
         instances = @instance_manager.filter_by(deployment, resurrection_paused: false)
         instances.any?
       end

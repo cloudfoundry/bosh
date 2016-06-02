@@ -17,18 +17,15 @@ module Bosh::Director
 
       describe 'API calls' do
         describe 'resurrection' do
-          it 'allows putting all job instances into different resurrection_paused values' do
-            deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump('foo' => 'bar'))
-            instances = [
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '0', state: 'started'),
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '1', state: 'started'),
-              Models::Instance.create(deployment: deployment, job: 'dea', index: '2', state: 'started'),
-            ]
+          it 'sets global resurrection to true' do
             put '/', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
-            instances.each do |instance|
-              expect(instance.reload.resurrection_paused).to be(true)
-            end
+            expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('true')
+          end
+          it 'sets global resurrection to false' do
+            put '/', Yajl::Encoder.encode('resurrection_paused' => false), { 'CONTENT_TYPE' => 'application/json' }
+            expect(last_response.status).to eq(200)
+            expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('false')
           end
         end
 

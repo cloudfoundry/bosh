@@ -610,41 +610,64 @@ module Bosh::Director
             put '/mycloud/problems', Yajl::Encoder.encode('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
+        end
 
-          it 'scans and fixes problems' do
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+        describe 'resurrection' do
+          let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
 
-            db_job = Bosh::Director::Jobs::DBJob.new(job_class, 0, ['mycloud',
-                                                                    [['job', 0], ['job', 1], ['job', 6]], false])
+          def should_not_enqueue_scan_and_fix
+            expect(Bosh::Director::Jobs::DBJob).not_to receive(:new).with(
+              Jobs::CloudCheck::ScanAndFix,
+              kind_of(Numeric),
+              ['mycloud',
+              [['job', 0]], false])
+            expect(Delayed::Job).not_to receive(:enqueue)
+            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+            expect(last_response).not_to be_redirect
+          end
 
+          def should_enqueue_scan_and_fix
             expect(Bosh::Director::Jobs::DBJob).to receive(:new).with(
-                                                       Jobs::CloudCheck::ScanAndFix,
-                                                       kind_of(Numeric),
-                                                       ['mycloud',
-                                                        [['job', 0], ['job', 1], ['job', 6]], false]).and_return(db_job)
-            expect(Delayed::Job).to receive(:enqueue).with(
-                                        db_job)
-
-            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
+              Jobs::CloudCheck::ScanAndFix,
+              kind_of(Numeric),
+              ['mycloud',
+              [['job', 0]], false])
+            expect(Delayed::Job).to receive(:enqueue)
+            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
             expect_redirect_to_queued_task(last_response)
           end
 
-          context 'when resurrection is off' do
-            it 'does not run scan_and_fix task' do
-              instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
-              instance1 = Models::Instance.make(deployment: deployment, job: 'job', index: 1, resurrection_paused: true)
+          context 'when global resurrection is not set' do
+            it 'scans and fixes problems' do
+              Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+              should_enqueue_scan_and_fix
+            end
+          end
 
-              db_job = Bosh::Director::Jobs::DBJob.new(job_class, 0, ['mycloud',
-                                                                      [['job', 0], ['job', 1]], false])
+          context 'when global resurrection is set' do
+            before { Models::DirectorAttribute.make(name: 'resurrection_paused', value: resurrection_paused) }
 
-              expect(Bosh::Director::Jobs::DBJob).not_to receive(:new).with(
-                                                         Jobs::CloudCheck::ScanAndFix,
-                                                         kind_of(Numeric),
-                                                         ['mycloud',
-                                                          [['job', 0], ['job', 1]], false])
-              expect(Delayed::Job).not_to receive(:enqueue)
-              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1]}), {'CONTENT_TYPE' => 'application/json'}
-              expect(last_response).not_to be_redirect
+            context 'when global resurrection is on' do
+              let (:resurrection_paused) {'false'}
+
+              it 'does not run scan_and_fix task if instances resurrection is off' do
+                Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
+                should_not_enqueue_scan_and_fix
+              end
+
+              it 'runs scan_and_fix task if instances resurrection is on' do
+                Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+                should_enqueue_scan_and_fix
+              end
+            end
+
+            context 'when global resurrection is off' do
+              let (:resurrection_paused) {'true'}
+
+              it 'does not run scan_and_fix task if instances resurrection is off' do
+                Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
+                should_not_enqueue_scan_and_fix
+              end
             end
           end
         end
