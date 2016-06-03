@@ -18,7 +18,7 @@ module Bosh::Director
         parse_stemcells
         parse_properties
         parse_releases
-        parse_update
+        parse_update(options['canaries'], options['max_in_flight'])
         parse_jobs
 
         @deployment
@@ -64,8 +64,10 @@ module Bosh::Director
         end
       end
 
-      def parse_update
+      def parse_update(canaries, max_in_flight)
         update_spec = safe_property(@deployment_manifest, 'update', :class => Hash)
+        update_spec['canaries'] = canaries if canaries
+        update_spec['max_in_flight'] = max_in_flight if max_in_flight
         @deployment.update = UpdateConfig.new(update_spec)
       end
 

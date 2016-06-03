@@ -9,7 +9,8 @@ module Bosh::Director
     let(:cloud_config) { Models::CloudConfig.make }
 
     describe '#parse' do
-      let(:parsed_deployment) { subject.parse(manifest_hash) }
+      let(:options) { {} }
+      let(:parsed_deployment) { subject.parse(manifest_hash, options) }
       let(:deployment_model) { Models::Deployment.make }
       let(:manifest_hash) do
         {
@@ -275,6 +276,25 @@ module Bosh::Director
               and_return(update)
 
             expect(parsed_deployment.update).to eq(update)
+          end
+
+          context 'when canaries value is present in options' do
+              let(:options) { { 'canaries'=> '42' } }
+              it 'overwrites canaries value in manifest' do
+                expect(DeploymentPlan::UpdateConfig).to receive(:new)
+                  .with( {'foo'=> 'bar', 'canaries' => '42'} )
+                  .and_return(update_config)
+                parsed_deployment.update
+              end
+          end
+          context 'when max_in_flight value is present in options' do
+            let(:options) { { 'max_in_flight'=> '42' } }
+            it 'overwrites max_in_flight value in manifest' do
+              expect(DeploymentPlan::UpdateConfig).to receive(:new)
+                .with( {'foo'=> 'bar', 'max_in_flight' => '42'} )
+                .and_return(update_config)
+              parsed_deployment.update
+            end
           end
         end
 

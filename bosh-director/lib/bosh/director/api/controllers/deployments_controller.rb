@@ -75,7 +75,10 @@ module Bosh::Director
             }
           }
         }
+
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
+        options['canaries'] = params[:canaries] if !!params['canaries']
+        options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest_file_path = prepare_yml_file(StringIO.new(deployment.manifest), 'deployment', true)

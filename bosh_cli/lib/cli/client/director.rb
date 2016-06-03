@@ -355,11 +355,15 @@ module Bosh
           options = options.dup
 
           skip_drain = !!options.delete(:skip_drain)
+          canaries = options.delete(:canaries)
+          max_in_flight = options.delete(:max_in_flight)
 
           url = "/deployments/#{deployment_name}/jobs/#{job}"
           url += "/#{index_or_id}" if index_or_id
           url += "?state=#{new_state}"
           url += "&skip_drain=true" if skip_drain
+          url += "&max_in_flight=#{max_in_flight}" if max_in_flight
+          url += "&canaries=#{canaries}" if canaries
 
           options[:payload]      = manifest_yaml
           options[:content_type] = 'text/yaml'

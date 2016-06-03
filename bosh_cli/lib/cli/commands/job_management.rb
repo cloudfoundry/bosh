@@ -6,11 +6,16 @@ module Bosh::Cli
     class JobManagement < Base
       FORCE = 'Proceed even when there are other manifest changes'
       SKIP_DRAIN = 'Skip running drain script'
+      MAX_IN_FLIGHT = 'Overwrites max_in_flight value in the manifest'
+      CANARIES = 'Overwrites canaries value in the manifest'
+
 
       # bosh start
       usage 'start'
       desc 'Start all jobs/job/instance'
       option '--force', FORCE
+      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
+      option '--canaries [canaries]', CANARIES
       def start_job(job = '*', index_or_id = nil)
         change_job_state(:start, job, index_or_id)
       end
@@ -21,6 +26,8 @@ module Bosh::Cli
       option '--soft', 'Stop process only'
       option '--hard', 'Delete the VM'
       option '--force', FORCE
+      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
+      option '--canaries [canaries]', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def stop_job(job = '*', index_or_id = nil)
         if hard?
@@ -34,6 +41,8 @@ module Bosh::Cli
       usage 'restart'
       desc 'Restart all jobs/job/instance (soft stop + start)'
       option '--force', FORCE
+      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
+      option '--canaries [canaries]', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def restart_job(job = '*', index_or_id = nil)
         change_job_state(:restart, job, index_or_id)
@@ -43,6 +52,8 @@ module Bosh::Cli
       usage 'recreate'
       desc 'Recreate all jobs/job/instance (hard stop + start)'
       option '--force', FORCE
+      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
+      option '--canaries [canaries]', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def recreate_job(job = '*', index_or_id = nil)
         change_job_state(:recreate, job, index_or_id)
@@ -53,7 +64,11 @@ module Bosh::Cli
       def change_job_state(state, job, index_or_id = nil)
         auth_required
         manifest = parse_manifest(state)
-        job_state = JobState.new(self, manifest, skip_drain: skip_drain?)
+        options = {skip_drain: skip_drain?}
+        options[:canaries] = canaries if canaries
+        options[:max_in_flight] = max_in_flight if max_in_flight
+
+        job_state = JobState.new(self, manifest, options)
         status, task_id, completion_desc = job_state.change(state, job, index_or_id, force?)
         task_report(status, task_id, completion_desc)
       end
@@ -72,6 +87,14 @@ module Bosh::Cli
 
       def skip_drain?
         !!options[:skip_drain]
+      end
+
+      def canaries
+        options[:canaries]
+      end
+
+      def max_in_flight
+        options[:max_in_flight]
       end
 
       def parse_manifest(operation)

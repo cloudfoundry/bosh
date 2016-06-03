@@ -201,9 +201,11 @@ module Bosh::Director
             it_behaves_like 'change state'
           end
 
+          let(:deployment) do
+            Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
+          end
+
           it 'allows putting the job instance into different resurrection_paused values' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
@@ -213,8 +215,6 @@ module Bosh::Director
           end
 
           it 'allows putting the job instance into different ignore state' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21')
@@ -229,8 +229,6 @@ module Bosh::Director
           end
 
           it 'gives a nice error when uploading non valid manifest' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
@@ -243,9 +241,7 @@ module Bosh::Director
           end
 
           it 'should not validate body content when content.length is zero' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            instance = Models::Instance.
+            Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
 
@@ -255,13 +251,12 @@ module Bosh::Director
           end
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
-            deployment = Models::Deployment.create(:name => 'foo')
+            deployment
             put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect(last_response.status).to eq(400)
           end
 
           it 'can get job information' do
-            deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', uuid: 'fake_uuid', state: 'started')
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
@@ -283,6 +278,32 @@ module Bosh::Director
           it 'should return 404 if the instance cannot be found' do
             get '/foo/jobs/nats/0', {}
             expect(last_response.status).to eq(404)
+          end
+
+          context 'with a "canaries" param' do
+            it 'overrides the canaries value from the manifest' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                  .with(anything(), anything(), anything(), anything(), anything(), hash_including('canaries'=>'42') )
+                  .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?canaries=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with a "max_in_flight" param' do
+            it 'overrides the "max_in_flight" value from the manifest' do
+              deployment
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                      .with(anything(), anything(), anything(), anything(), anything(), hash_including('max_in_flight'=>'42') )
+                      .and_return(OpenStruct.new(:id => 1))
+
+              put '/foo/jobs/dea?max_in_flight=42', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response).to be_redirect
+            end
           end
 
           describe 'draining' do
