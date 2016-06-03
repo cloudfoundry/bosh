@@ -118,7 +118,7 @@ module Bosh::Director
         validate_packages
 
         cloud = Config.cloud
-        vm_deleter = VmDeleter.new(cloud, @logger)
+        vm_deleter = VmDeleter.new(cloud, @logger, false, Config.enable_virtual_delete_vms)
         disk_manager = DiskManager.new(cloud, @logger)
         job_renderer = JobRenderer.create
         arp_flusher = ArpFlusher.new

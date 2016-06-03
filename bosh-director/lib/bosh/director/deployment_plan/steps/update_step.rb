@@ -8,7 +8,7 @@ module Bosh::Director
           @cloud = cloud
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
+          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger, false, Config.enable_virtual_delete_vms)
           @disk_manager = DiskManager.new(@cloud, @logger)
           job_renderer = JobRenderer.create
           arp_flusher = ArpFlusher.new

@@ -17,7 +17,7 @@ module Bosh::Director
     end
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-    let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil) }
+    let(:dns_manager) { instance_double(DnsManager, delete_dns_for_instance: nil, cleanup_dns_records: nil, publish_dns_records: nil) }
     let(:options) { {} }
     let(:deleter) { InstanceDeleter.new(ip_provider, dns_manager, disk_manager, options) }
     let(:disk_manager) { DiskManager.new(cloud, logger) }
@@ -170,6 +170,8 @@ module Bosh::Director
         it 'drains, deletes snapshots, dns records, persistent disk, releases old reservations' do
           expect(stopper).to receive(:stop)
           expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+          expect(dns_manager).to receive(:cleanup_dns_records)
+          expect(dns_manager).to receive(:publish_dns_records)
           expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
           expect(ip_provider).to receive(:release).with(reservation)
 
@@ -196,6 +198,8 @@ module Bosh::Director
             it 'deletes snapshots, persistent disk, releases old reservations' do
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+              expect(dns_manager).to receive(:cleanup_dns_records)
+              expect(dns_manager).to receive(:publish_dns_records)
               expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -220,6 +224,8 @@ module Bosh::Director
               expect(stopper).to receive(:stop)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+              expect(dns_manager).to receive(:cleanup_dns_records)
+              expect(dns_manager).to receive(:publish_dns_records)
               expect(ip_provider).to receive(:release).with(reservation)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
@@ -235,6 +241,8 @@ module Bosh::Director
           context 'when deleting dns fails' do
             before do
               allow(dns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
+              allow(dns_manager).to receive(:cleanup_dns_records)
+              allow(dns_manager).to receive(:publish_dns_records)
             end
 
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
@@ -271,6 +279,29 @@ module Bosh::Director
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
               }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
             end
+          end
+        end
+
+        context 'when virtual_delete_vm option is passed in' do
+          let(:options) { {virtual_delete_vm: true} }
+
+          it 'deletes snapshots, persistent disk, releases old reservations, vm should not be deleted from cloud' do
+
+            expect(stopper).to receive(:stop)
+            expect(cloud).not_to receive(:delete_vm)
+
+            expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
+            expect(dns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
+            expect(dns_manager).to receive(:cleanup_dns_records)
+            expect(dns_manager).to receive(:publish_dns_records)
+            expect(ip_provider).to receive(:release).with(reservation)
+
+            expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/5 (my-uuid-1)')
+            expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
+
+            expect {
+              deleter.delete_instance_plans([instance_plan], event_log_stage)
+            }.to change { Models::Instance.where(vm_cid: 'fake-vm-cid').count}.from(1).to(0)
           end
         end
       end

@@ -218,6 +218,7 @@ module Bosh::Stemcell
           "spec/stemcells/#{agent.name}_agent_spec.rb",
           "spec/stemcells/#{infrastructure.name}_spec.rb",
           "spec/stemcells/stig_spec.rb",
+          "spec/stemcells/cis_spec.rb",
         ].join(' ')
 
         expect(subject.stemcell_rspec_command).to eq(expected_rspec_command)
