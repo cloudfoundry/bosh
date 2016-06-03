@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Job do
-  subject(:job)    { Bosh::Director::DeploymentPlan::Job.parse(plan, spec, event_log, logger) }
+  subject(:job)    { Bosh::Director::DeploymentPlan::Job.parse(plan, spec, event_log, logger, parse_options) }
+  let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
@@ -67,6 +68,61 @@ describe Bosh::Director::DeploymentPlan::Job do
 
     allow(foo_template).to receive(:has_template_scoped_properties).and_return(false)
     allow(bar_template).to receive(:has_template_scoped_properties).and_return(false)
+  end
+
+  describe '#parse' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'release' => 'appcloud',
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'env' => {'key' => 'value'},
+        'instances' => 1,
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => props,
+        'template' => %w(foo bar),
+        'update' => update
+      }
+    end
+
+    let(:props) do
+      {
+        'cc_url' => 'www.cc.com',
+        'deep_property' => {
+          'unneeded' => 'abc',
+          'dont_override' => 'def'
+        },
+        'dea_max_memory' => 1024
+      }
+    end
+
+    before do
+      allow(plan).to receive(:properties).and_return(props)
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+    end
+
+    context 'when parse_options contain canaries' do
+      let(:parse_options) { {'canaries' => 42} }
+      let(:update) { { 'canaries' => 22 } }
+
+      it 'overrides canaries value with one from parse_options' do
+        expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
+          .with( parse_options, nil)
+        job
+      end
+    end
+
+    context 'when parse_options contain max_in_flight' do
+      let(:parse_options) { {'max_in_flight' => 42} }
+      let(:update) { { 'max_in_flight' => 22 } }
+
+      it 'overrides max_in_flight value with one from parse_options' do
+        expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
+          .with( parse_options, nil)
+        job
+      end
+    end
   end
 
   describe '#bind_properties' do

@@ -14,8 +14,8 @@ module Bosh::Cli
       usage 'start'
       desc 'Start all jobs/job/instance'
       option '--force', FORCE
-      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
-      option '--canaries [canaries]', CANARIES
+      option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
+      option '--canaries CANARIES', CANARIES
       def start_job(job = '*', index_or_id = nil)
         change_job_state(:start, job, index_or_id)
       end
@@ -26,8 +26,8 @@ module Bosh::Cli
       option '--soft', 'Stop process only'
       option '--hard', 'Delete the VM'
       option '--force', FORCE
-      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
-      option '--canaries [canaries]', CANARIES
+      option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
+      option '--canaries CANARIES', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def stop_job(job = '*', index_or_id = nil)
         if hard?
@@ -41,8 +41,8 @@ module Bosh::Cli
       usage 'restart'
       desc 'Restart all jobs/job/instance (soft stop + start)'
       option '--force', FORCE
-      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
-      option '--canaries [canaries]', CANARIES
+      option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
+      option '--canaries CANARIES', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def restart_job(job = '*', index_or_id = nil)
         change_job_state(:restart, job, index_or_id)
@@ -52,8 +52,8 @@ module Bosh::Cli
       usage 'recreate'
       desc 'Recreate all jobs/job/instance (hard stop + start)'
       option '--force', FORCE
-      option '--max-in-flight [max_in_flight]', MAX_IN_FLIGHT
-      option '--canaries [canaries]', CANARIES
+      option '--max-in-flight MAX_IN_FLIGHT', MAX_IN_FLIGHT
+      option '--canaries CANARIES', CANARIES
       option '--skip-drain', SKIP_DRAIN
       def recreate_job(job = '*', index_or_id = nil)
         change_job_state(:recreate, job, index_or_id)

@@ -280,7 +280,7 @@ module Bosh::Director
 
           context 'when canaries value is present in options' do
               let(:options) { { 'canaries'=> '42' } }
-              it 'overwrites canaries value in manifest' do
+              it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::UpdateConfig).to receive(:new)
                   .with( {'foo'=> 'bar', 'canaries' => '42'} )
                   .and_return(update_config)
@@ -289,7 +289,7 @@ module Bosh::Director
           end
           context 'when max_in_flight value is present in options' do
             let(:options) { { 'max_in_flight'=> '42' } }
-            it 'overwrites max_in_flight value in manifest' do
+            it "replaces max_in_flight value from job's update section with option's value" do
               expect(DeploymentPlan::UpdateConfig).to receive(:new)
                 .with( {'foo'=> 'bar', 'max_in_flight' => '42'} )
                 .and_return(update_config)
@@ -344,23 +344,53 @@ module Bosh::Director
 
             it 'delegates to Job to parse job specs' do
               expect(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               expect(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect(parsed_deployment.jobs).to eq([job1, job2])
             end
 
+            context 'when canaries value is present in options' do
+              let(:options) { { 'canaries'=> '42' } }
+              it "replaces canaries value from job's update section with option's value" do
+                expect(DeploymentPlan::Job).to receive(:parse)
+                  .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
+                  .and_return(job1)
+
+                expect(DeploymentPlan::Job).to receive(:parse).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
+                  and_return(job2)
+
+                parsed_deployment.jobs
+              end
+            end
+
+            context 'when max_in_flight value is present in options' do
+              let(:options) { { 'max_in_flight'=> '42' } }
+              it "replaces max_in_flight value from job's update section with option's value" do
+                expect(DeploymentPlan::Job).to receive(:parse)
+                   .with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, options)
+                   .and_return(job1)
+
+                expect(DeploymentPlan::Job).to receive(:parse).
+                  with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, options).
+                  and_return(job2)
+
+                parsed_deployment.jobs
+              end
+            end
+
             it 'allows to look up job by name' do
               allow(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
 
@@ -393,11 +423,11 @@ module Bosh::Director
 
             it 'raises an error' do
               allow(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job1-name'}, event_log, logger, {}).
                 and_return(job1)
 
               allow(DeploymentPlan::Job).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger, {}).
                 and_return(job2)
 
               expect {
