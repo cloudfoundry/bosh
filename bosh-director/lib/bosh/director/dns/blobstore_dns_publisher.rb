@@ -17,7 +17,7 @@ module Bosh::Director
       Models::Instance.all.map do |instance|
         spec = instance.spec
         spec['networks'].each do |network_name, network|
-          hosts << [ network['ip'], spec['id'] + '.' + spec['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + @domain_name ]
+          hosts << [ network['ip'], spec['id'] + '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + @domain_name ]
         end
       end
       hosts

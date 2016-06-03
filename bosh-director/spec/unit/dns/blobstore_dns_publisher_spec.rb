@@ -54,8 +54,8 @@ module Bosh::Director
     describe '#export_dns_records' do
       context 'when local store has DNS records' do
         before {
-          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'name' => 'instance1', 'id' => 'uuid1', 'networks' => { 'net-name1' => { 'ip' => '192.0.2.101' }, 'net-name3' => { 'ip' => '192.0.3.101' } }})
-          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'name' => 'instance2', 'id' => 'uuid2', 'networks' => { 'net-name2' => { 'ip' => '192.0.2.102' } }})
+          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'job' => { 'name' => 'instance1' }, 'id' => 'uuid1', 'networks' => { 'net-name1' => { 'ip' => '192.0.2.101' }, 'net-name3' => { 'ip' => '192.0.3.101' } }})
+          Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment', 'index' => 0, 'job' => { 'name' => 'instance2' }, 'id' => 'uuid2', 'networks' => { 'net-name2' => { 'ip' => '192.0.2.102' } }})
         }
 
         it 'exports the records' do
