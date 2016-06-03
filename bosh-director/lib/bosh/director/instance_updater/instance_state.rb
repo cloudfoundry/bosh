@@ -23,7 +23,7 @@ module Bosh::Director
             deployment: deployment_name,
             instance: instance_model.name,
             error: e,
-            context: nil
+            context: {}
           })
       end
     end
