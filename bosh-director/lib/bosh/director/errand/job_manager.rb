@@ -11,8 +11,8 @@ module Bosh::Director
       vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger, false, Config.enable_virtual_delete_vms)
       @disk_manager = DiskManager.new(cloud, logger)
       @job_renderer = JobRenderer.create
-      arp_flusher = ArpFlusher.new
-      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager, @job_renderer, arp_flusher)
+      agent_broadcaster = AgentBroadcaster.new
+      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter, @disk_manager, @job_renderer, agent_broadcaster)
     end
 
     def create_missing_vms

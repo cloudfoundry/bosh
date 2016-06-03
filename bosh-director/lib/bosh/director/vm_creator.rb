@@ -7,13 +7,13 @@ module Bosh::Director
     include EncryptionHelper
     include PasswordHelper
 
-    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher)
+    def initialize(cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
       @cloud = cloud
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
       @job_renderer = job_renderer
-      @arp_flusher = arp_flusher
+      @agent_broadcaster = agent_broadcaster
     end
 
     def create_for_instance_plans(instance_plans, ip_provider)
@@ -70,7 +70,7 @@ module Bosh::Director
             network['ip']
           end.compact
 
-          @arp_flusher.delete_arp_entries(instance_model.vm_cid, ip_addresses)
+          @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
         instance.update_trusted_certs

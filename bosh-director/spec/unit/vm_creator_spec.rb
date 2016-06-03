@@ -4,14 +4,14 @@ require 'timecop'
 describe Bosh::Director::VmCreator do
 
   subject { Bosh::Director::VmCreator.new(
-    cloud, logger, vm_deleter, disk_manager, job_renderer, arp_flusher
+    cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
   ) }
 
   let(:disk_manager) { Bosh::Director::DiskManager.new(cloud, logger) }
   let(:cloud) { instance_double('Bosh::Cloud') }
   let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger, false, false)}
   let(:job_renderer) { instance_double(Bosh::Director::JobRenderer) }
-  let(:arp_flusher) { instance_double(Bosh::Director::ArpFlusher) }
+  let(:agent_broadcaster) { instance_double(Bosh::Director::AgentBroadcaster) }
   let(:agent_client) do
     instance_double(
       Bosh::Director::AgentClient,
@@ -104,7 +104,7 @@ describe Bosh::Director::VmCreator do
     allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
     allow(job).to receive(:instance_plans).and_return([instance_plan])
     allow(job_renderer).to receive(:render_job_instance).with(instance_plan)
-    allow(arp_flusher).to receive(:delete_arp_entries)
+    allow(agent_broadcaster).to receive(:delete_arp_entries)
     allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
   end
 
@@ -173,7 +173,7 @@ describe Bosh::Director::VmCreator do
     )
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-    expect(arp_flusher).to have_received(:delete_arp_entries).with(instance_model.vm_cid, ["192.168.1.3"])
+    expect(agent_broadcaster).to have_received(:delete_arp_entries).with(instance_model.vm_cid, ["192.168.1.3"])
   end
 
   it "does not flush the arp cache when arp_flush set to false" do
@@ -188,7 +188,7 @@ describe Bosh::Director::VmCreator do
     )
 
     subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-    expect(arp_flusher).not_to have_received(:delete_arp_entries).with(instance_model.vm_cid, ["192.168.1.3"])
+    expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(instance_model.vm_cid, ["192.168.1.3"])
 
   end
 

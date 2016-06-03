@@ -104,6 +104,10 @@ module Bosh::Director
       fire_and_forget(:delete_arp_entries, *args)
     end
 
+    def sync_dns(*args)
+      fire_and_forget(:sync_dns, *args)
+    end
+
     def update_settings(certs)
       begin
         send_message(:update_settings, {"trusted_certs" => certs})
