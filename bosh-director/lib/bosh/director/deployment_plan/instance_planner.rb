@@ -10,7 +10,8 @@ module Bosh
         def plan_job_instances(job, desired_instances, existing_instance_models)
 
           ignored_instances_count = existing_instance_models.count{ |instance| instance.ignore }
-          if ignored_instances_count > 0 && existing_instance_models.count > 0
+          if ignored_instances_count > 0
+            @logger.info("Found #{ignored_instances_count} ignored instance(s). Will avoid doing any changes to them.")
             fail_if_specifically_changing_state_of_ignored_vms(job, existing_instance_models)
             desired_instances, existing_instance_models = reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           end
@@ -54,19 +55,24 @@ module Bosh
 
         def reject_ignored_instances_and_modify_desired_instances(desired_instances, existing_instance_models, ignored_instances_count)
           if desired_instances.count == existing_instance_models.count
+            @logger.info("Desired instances count, #{desired_instances.count}, is equal to existing instances, #{existing_instance_models.count}")
             modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
             modified_desired_instances = desired_instances.slice(0, modified_existing_instance_models.length)
           elsif desired_instances.count > existing_instance_models.count
+            @logger.info("Desired instances count, #{desired_instances.count}, is greater than existing instances, #{existing_instance_models.count}")
             modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
             modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
           else
+            @logger.info("Desired instances count, #{desired_instances.count}, is less than existing instances, #{existing_instance_models.count}")
             if ignored_instances_count > desired_instances.count
               raise DeploymentIgnoredInstancesModification, "Instance Group '#{existing_instance_models.first.job}' has #{ignored_instances_count} ignored instances." +
                   "You requested to have #{desired_instances.count} instances of that instance group. Deleting ignored instances is not allowed."
             elsif ignored_instances_count == desired_instances.count
+              @logger.info("Ignored instances count, #{ignored_instances_count}, is equal to desired instances, #{desired_instances.count}")
               modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
               modified_desired_instances = []
             else
+              @logger.info("Ignored instances count, #{ignored_instances_count}, is less than desired instances, #{desired_instances.count}")
               modified_existing_instance_models =  existing_instance_models.reject{ |instance| instance.ignore }
               modified_desired_instances = desired_instances.slice(0, desired_instances.length - ignored_instances_count)
             end

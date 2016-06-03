@@ -68,7 +68,7 @@ module Bosh::Director
             deployment_plan.bind_models
           end
 
-          unless deployment_plan.instance_models.none? { |instance| instance.ignore }
+          if deployment_plan.instance_models.any?(&:ignore)
             @event_log.warn('You have ignored instances. No changes will be reflected on them.')
           end
 

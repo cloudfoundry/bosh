@@ -757,7 +757,7 @@ describe 'ignore/unignore instance', type: :integration do
         expect(vms_after_recreate[3].agent_id).to_not eq(foobar2_vm_1.agent_id)
 
         # ========================================================================================
-        # Targeting and instance group
+        # Targeting an instance group
         # ========================================================================================
 
         stop_output = bosh_runner.run("stop foobar1")
