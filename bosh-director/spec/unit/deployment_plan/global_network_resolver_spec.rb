@@ -2,8 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::GlobalNetworkResolver do
-    subject(:global_network_resolver) { DeploymentPlan::GlobalNetworkResolver.new(current_deployment, logger) }
-
+    subject(:global_network_resolver) { DeploymentPlan::GlobalNetworkResolver.new(current_deployment, director_ips, logger) }
+    let(:runtime_config) { nil }
+    let(:cloud_config) { nil }
+    let(:director_ips) { [] }
     let(:current_deployment) do
       deployment_model = Models::Deployment.make(
         name: 'current-deployment',
@@ -19,11 +21,41 @@ module Bosh::Director
       )
     end
 
+    describe '#reserved_ranges' do
+      it "ignores deployments that don't have a manifest" do
+        Models::Deployment.make(
+          name: 'other-deployment',
+          cloud_config: nil,
+          runtime_config: nil,
+          manifest: nil
+        )
 
-    describe '#reserved_legacy_ranges' do
+        reserved_ranges = global_network_resolver.reserved_ranges
+        expect(reserved_ranges).to be_empty
+      end
+
+      describe 'when initialized with director ips' do
+        let(:director_ips) { ['192.168.1.11', '10.10.0.4'] }
+        describe 'when using global networking' do
+          let(:cloud_config) { Models::CloudConfig.make }
+
+          it 'returns the director IPs as ranges' do
+            expect(global_network_resolver.reserved_ranges).to contain_exactly(
+              NetAddr::CIDR.create('192.168.1.11/32'),
+              NetAddr::CIDR.create('10.10.0.4/32'),
+            )
+          end
+        end
+
+        describe 'when not using global networking' do
+          let(:cloud_config) { nil }
+          it 'returns an empty set' do
+            expect(global_network_resolver.reserved_ranges).to be_empty
+          end
+        end
+      end
 
       context 'when deploying with cloud config after legacy deployments' do
-        let (:runtime_config){ nil }
         let(:cloud_config) do
           Models::CloudConfig.make({
             manifest: {
@@ -41,9 +73,8 @@ module Bosh::Director
             }
           })
         end
-        let(:runtime_config) { nil }
 
-        it 'does not suck' do
+        before do
           Models::Deployment.make(
             name: 'dummy1',
             cloud_config: nil,
@@ -74,8 +105,10 @@ module Bosh::Director
               }],
             })
           )
+        end
 
-          expect(global_network_resolver.reserved_legacy_ranges).not_to be_empty
+        it 'returns reserved ranges' do
+          expect(global_network_resolver.reserved_ranges).not_to be_empty
         end
       end
 
@@ -98,12 +131,10 @@ module Bosh::Director
                   }],
               })
           )
-          reserved_ranges = global_network_resolver.reserved_legacy_ranges
-
-          expect(reserved_ranges).to be_empty
+          expect(global_network_resolver.reserved_ranges).to be_empty
         end
 
-        context 'when have stale deployments' do
+        context 'when have legacy deployments' do
           before do
             Models::Deployment.make(
               name: 'other-deployment-1',
@@ -178,7 +209,7 @@ module Bosh::Director
           end
 
           it 'returns manual network ranges from legacy deployments (deployments with no cloud config)' do
-            reserved_ranges = global_network_resolver.reserved_legacy_ranges
+            reserved_ranges = global_network_resolver.reserved_ranges
             expect(reserved_ranges).to contain_exactly(
               NetAddr::CIDR.create('192.168.0.6/32'),
               NetAddr::CIDR.create('192.168.0.8/31'),
@@ -194,19 +225,17 @@ module Bosh::Director
 
             expect(logger).to receive(:info).with('Following networks and individual IPs are reserved by non-cloud-config deployments: ' +
                     '192.168.0.6, 192.168.0.8-192.168.0.10, 192.168.0.13-192.168.0.15, 192.168.1.0-192.168.2.255')
-            global_network_resolver.reserved_legacy_ranges
+            global_network_resolver.reserved_ranges
           end
-        end
-        it "ignores deployments that don't have a manifest" do
-          Models::Deployment.make(
-            name: 'other-deployment',
-            cloud_config: nil,
-            runtime_config: nil,
-            manifest: nil
-          )
 
-          reserved_ranges = global_network_resolver.reserved_legacy_ranges
-          expect(reserved_ranges).to be_empty
+          context 'when director ips has values' do
+            let(:director_ips) { ['192.168.1.11', '10.10.0.4'] }
+            it 'logs the director ips as ranges too'  do
+              expect(logger).to receive(:info).with('Following networks and individual IPs are reserved by non-cloud-config deployments: ' +
+                '10.10.0.4, 192.168.0.6, 192.168.0.8-192.168.0.10, 192.168.0.13-192.168.0.15, 192.168.1.0-192.168.2.255')
+              global_network_resolver.reserved_ranges
+            end
+          end
         end
       end
 
@@ -232,7 +261,7 @@ module Bosh::Director
         end
 
         it 'is empty' do
-          expect(global_network_resolver.reserved_legacy_ranges).to be_empty
+          expect(global_network_resolver.reserved_ranges).to be_empty
         end
       end
     end

@@ -10,7 +10,7 @@ module Bosh::Director
       }
     }
     let(:event_log) { Config.event_log }
-    let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_legacy_ranges: []) }
+    let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_ranges: []) }
     let(:ip_provider_factory) { Bosh::Director::DeploymentPlan::IpProviderFactory.new(false, logger) }
 
     describe '#parse' do

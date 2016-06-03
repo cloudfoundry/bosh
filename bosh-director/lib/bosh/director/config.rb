@@ -38,6 +38,7 @@ module Bosh::Director
         :enable_post_deploy,
         :generate_vm_passwords,
         :remove_dev_tools,
+        :director_ips,
       )
 
       attr_reader(
@@ -157,6 +158,7 @@ module Bosh::Director
         @enable_post_deploy = config.fetch('enable_post_deploy', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
+        @director_ips = config.fetch('director_ips', [])
         @record_events = config.fetch('record_events', false)
 
         Bosh::Clouds::Config.configure(self)

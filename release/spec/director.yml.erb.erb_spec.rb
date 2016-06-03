@@ -64,7 +64,8 @@ describe 'director.yml.erb.erb' do
           'user_management' => { 'provider' => 'local' },
           'trusted_certs' => "test_trusted_certs\nvalue",
         }
-      }
+      },
+      'networks' => {}
     }
   end
 
@@ -105,6 +106,47 @@ describe 'director.yml.erb.erb' do
 
     it 'should keep dynamic, COMPONENT-based logging paths' do
       expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
+    end
+
+    describe 'director ips' do
+      before do
+        deployment_manifest_fragment['networks'] = {
+          'default' => {
+            'ip'=> '10.10.0.11',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {'subnet'=> 'subnet-b1ea9a99'},
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.10.0.6'],
+            'gateway' => '10.10.0.1',
+            'dns_record_name' => '0.bosh.default.bosh-director.bosh',
+          },
+          'private' => {
+            'ip'=> '10.11.0.16',
+            'type' => 'manual',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {'subnet'=> 'subnet-b1ea9a55'},
+            'default' => [],
+            'dns' => ['10.11.0.6'],
+            'gateway' => '10.11.0.1',
+            'dns_record_name' => '0.bosh.private.bosh-director.bosh',
+          },
+          'vip_network' => {
+            'type' => 'vip',
+            'ip'=> '52.20.102.193',
+            'cloud_properties'=> {},
+            'dns_record_name' => '0.bosh.vip-network.bosh-director.bosh'
+          },
+          'dynamic' => {
+            'type' => 'dynamic',
+            'cloud_properties'=> {},
+            'dns_record_name' => '0.bosh.vip-network.bosh-director.bosh'
+          }
+        }
+      end
+
+      it 'should parse the manual network ips off of the spec' do
+        expect(parsed_yaml['director_ips']).to eq(['10.10.0.11','10.11.0.16'])
+      end
     end
 
     context 'when domain name specified without all other dns properties' do
