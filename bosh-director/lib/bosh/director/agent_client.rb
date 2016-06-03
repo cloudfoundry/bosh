@@ -3,7 +3,7 @@ require 'bosh/director/agent_message_converter'
 module Bosh::Director
   class AgentClient
 
-    PROTOCOL_VERSION = 2
+    PROTOCOL_VERSION = 3
 
     DEFAULT_POLL_INTERVAL = 1.0
 
