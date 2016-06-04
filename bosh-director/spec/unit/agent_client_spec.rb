@@ -722,6 +722,19 @@ module Bosh::Director
 
         client.stop
       end
+
+      it 'should suppress timeout errors received from the agent' do
+        allow(Timeout).to receive(:new).and_return(Timeout.new(fake_timeout_ticks))
+
+        client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+        expect(Config.logger).to receive(:warn).with("Ignoring stop timeout error from the agent: #<Bosh::Director::RpcRemoteException: Timed out waiting for service 'foo'.>")
+
+        expect(client).to receive(:handle_method).with(:stop, []).once.and_return({ 'agent_task_id' => 'fake-task-id' })
+        expect(client).to receive(:handle_method).and_raise(RpcRemoteException, "Timed out waiting for service 'foo'.")
+
+        client.stop
+      end
     end
   end
 end

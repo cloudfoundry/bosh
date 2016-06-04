@@ -133,7 +133,15 @@ module Bosh::Director
 
     def stop(*args)
       timeout = Timeout.new(@stop_message_timeout)
-      send_message_with_timeout(:stop, timeout, *args)
+      begin
+        send_message_with_timeout(:stop, timeout, *args)
+      rescue Exception => e
+        if e.message.include? 'Timed out waiting for service'
+          @logger.warn("Ignoring stop timeout error from the agent: #{e.inspect}")
+        else
+          raise
+        end
+      end
     end
 
     def run_errand(*args)
