@@ -43,22 +43,10 @@ nats/vendor/cache/yajl-ruby-1.1.0.gem:
   object_id: 9d949fd3-d8d9-45f0-92ab-4a8f5a9abc56
   sha: b22512fc1bd68f495f4538d3e29735da494bea04
   size: 559616
-nginx/headers-more-v0.25.tgz:
-  object_id: 62f787d7-b4e2-4530-b105-d0eade4d6728
-  sha: 514bc3df30b24eb0a06533f1ebaa579b898990f5
-  size: 27973
-nginx/nginx-1.4.5.tar.gz:
-  object_id: 3ccf2492-9a27-4de8-a179-c88bc6f95f30
-  sha: 96c1aecd314f73a3c30a0db8c39ad15ddacb074e
-  size: 768728
 nginx/nginx-upload-module-2.2.tar.gz:
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
   sha: 74ccd116525a155db76f92a1cd484d9516a70398
   size: 28505
-nginx/pcre-8.37.tar.gz:
-  object_id: 7c107c29-c63b-4e95-8a13-698a835ae8b5
-  sha: 4a24a20c61347d8da4edc86d5475aaf70ac146bb
-  size: 2041593
 redis/redis-3.0.2.tar.gz:
   object_id: 033ba3ad-dea6-4a18-910f-e7d0f244d8ef
   sha: a38755fe9a669896f7c5d8cd3ebbf76d59712002
@@ -95,3 +83,15 @@ postgres/postgresql-9.4.6.tar.gz:
   object_id: 5e7c0628-e8b4-46c4-933e-6e6bd388f5db
   sha: bd031beebd86bf149c497525dccf57eebe5a6add
   size: 23249307
+nginx/headers-more-nginx-module-0.30.tar.gz:
+  object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
+  sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
+  size: 27793
+nginx/nginx-1.4.7.tar.gz:
+  object_id: 4731e583-9995-4dfd-bad8-6bcce6b55f87
+  sha: e13b5b23f9be908b69652b0c394a95e9029687e3
+  size: 769153
+nginx/pcre-8.38.tar.gz:
+  object_id: e875ffbb-b669-476a-bad8-fffe854adef5
+  sha: 3ab418d0026c2a4e693ec783bd60660debc32b8f
+  size: 2053336
