@@ -52,11 +52,11 @@ describe 'ignore/unignore instance', type: :integration do
 
     output, exit_code = bosh_runner.run("delete deployment simple", failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which  contains ignored instance(s). Operation not allowed.")
+    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
 
     output, exit_code = bosh_runner.run("delete deployment simple --force", failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
-    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which  contains ignored instance(s). Operation not allowed.")
+    expect(output).to include("Error 190021: You are trying to delete deployment 'simple', which contains ignored instance(s). Operation not allowed.")
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
@@ -675,7 +675,7 @@ describe 'ignore/unignore instance', type: :integration do
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).to_not eq(0)
-        expect(output).to include("Error 190021: You are trying to delete instance group 'foobar1', which  contains ignored instance(s). Operation not allowed.")
+        expect(output).to include("Error 190021: You are trying to delete instance group 'foobar1', which contains ignored instance(s). Operation not allowed.")
       end
     end
   end

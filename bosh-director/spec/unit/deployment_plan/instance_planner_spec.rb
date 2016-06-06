@@ -549,7 +549,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         instance_planner.plan_obsolete_jobs([job], existing_instances)
       }.to raise_error(
          Bosh::Director::DeploymentIgnoredInstancesDeletion,
-         "You are trying to delete instance group 'bar-job', which  contains ignored instance(s). Operation not allowed."
+         "You are trying to delete instance group 'bar-job', which contains ignored instance(s). Operation not allowed."
       )
     end
 

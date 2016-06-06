@@ -44,7 +44,7 @@ module Bosh
           obsolete_existing_instances.each do |instance_model|
             if instance_model.ignore
               raise DeploymentIgnoredInstancesDeletion, "You are trying to delete instance group '#{instance_model.job}', which " +
-                  ' contains ignored instance(s). Operation not allowed.'
+                  'contains ignored instance(s). Operation not allowed.'
             end
           end
 

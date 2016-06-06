@@ -64,7 +64,7 @@ module Bosh::Director
         deployment_model.instances.each do |instance_model|
           if instance_model.ignore
             raise DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment '#{deployment_model.name}', which " +
-                ' contains ignored instance(s). Operation not allowed.'
+                'contains ignored instance(s). Operation not allowed.'
           end
         end
       end
