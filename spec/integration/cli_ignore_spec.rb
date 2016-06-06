@@ -310,7 +310,7 @@ describe 'ignore/unignore instance', type: :integration do
         foobar2_vm1 = initial_vms.select{ |vm| vm.job_name == 'foobar2'}.first
         bosh_runner.run("ignore instance #{foobar1_vm1.job_name}/#{foobar1_vm1.instance_uuid}")
 
-        # redelpoy with different foobar1 templates
+        # redeploy with different foobar1 templates
         manifest_hash['jobs'].clear
         manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
             name: 'foobar1',
@@ -499,7 +499,7 @@ describe 'ignore/unignore instance', type: :integration do
         end
       end
 
-      context 'when the ignored instances is less than the desired ones' do
+      context 'when the ignored instances are fewer than the desired ones' do
 
         it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
           manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -704,12 +704,12 @@ describe 'ignore/unignore instance', type: :integration do
         # ===========================================
         # TODO: make sure no jobs are started when all are already started
         start_output = bosh_runner.run("start")
-        expect(start_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(start_output).to_not include('Started updating job foobar1 > foobar1/0')
 
         # ===========================================
         stop_output = bosh_runner.run("stop")
-        expect(stop_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(stop_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(stop_output).to include('Started updating job foobar1 > foobar1/1')
         expect(stop_output).to include('Started updating job foobar1 > foobar1/2')
@@ -724,7 +724,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         # ===========================================
         restart_output = bosh_runner.run("restart")
-        expect(restart_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(restart_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(restart_output).to include('Started updating job foobar1 > foobar1/1')
         expect(restart_output).to include('Started updating job foobar1 > foobar1/2')
@@ -739,7 +739,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         # ===========================================
         recreate_output = bosh_runner.run("recreate")
-        expect(recreate_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(recreate_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(recreate_output).to include('Started updating job foobar1 > foobar1/1')
         expect(recreate_output).to include('Started updating job foobar1 > foobar1/2')
@@ -761,7 +761,7 @@ describe 'ignore/unignore instance', type: :integration do
         # ========================================================================================
 
         stop_output = bosh_runner.run("stop foobar1")
-        expect(stop_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(stop_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(stop_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(stop_output).to include('Started updating job foobar1 > foobar1/1')
         expect(stop_output).to include('Started updating job foobar1 > foobar1/2')
@@ -775,7 +775,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         # ===========================================
         start_output = bosh_runner.run("start foobar1")
-        expect(start_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(start_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(start_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(start_output).to include('Started updating job foobar1 > foobar1/1')
         expect(start_output).to include('Started updating job foobar1 > foobar1/2')
@@ -789,7 +789,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         # ===========================================
         restart_output = bosh_runner.run("restart foobar1")
-        expect(restart_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(restart_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(restart_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(restart_output).to include('Started updating job foobar1 > foobar1/1')
         expect(restart_output).to include('Started updating job foobar1 > foobar1/2')
@@ -807,7 +807,7 @@ describe 'ignore/unignore instance', type: :integration do
 
         # ===========================================
         recreate_output = bosh_runner.run("recreate foobar1")
-        expect(recreate_output).to include('Warning: You have ignored instances. No changes will be reflected on them.')
+        expect(recreate_output).to include('Warning: You have ignored instances. They will not be changed.')
         expect(recreate_output).to_not include('Started updating job foobar1 > foobar1/0')
         expect(recreate_output).to include('Started updating job foobar1 > foobar1/1')
         expect(recreate_output).to include('Started updating job foobar1 > foobar1/2')
