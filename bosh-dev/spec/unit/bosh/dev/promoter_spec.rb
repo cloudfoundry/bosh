@@ -77,8 +77,6 @@ module Bosh::Dev
 
         allow(Open3).to receive(:capture3).with("git ls-tree #{stable_tag_sha} -- bat | awk '{ print $3 }'", chdir: Dir.pwd).
             and_return([ 'fake-bat-sha', nil, instance_double('Process::Status', success?: true) ])
-
-        allow(git_branch_merger).to receive(:branch_contains?).with(Promoter::BatsPromoterStage::BATS_STABLE_BRANCH, 'fake-bat-sha').and_return(false)
       end
 
       context 'when the current sha has never been promoted' do
@@ -122,7 +120,6 @@ module Bosh::Dev
       context 'when the current sha has been promoted before' do
         before do
           allow(git_tagger).to receive(:stable_tag_for?).with(candidate_sha).and_return(true)
-          allow(git_branch_merger).to receive(:branch_contains?).with(Promoter::BatsPromoterStage::BATS_STABLE_BRANCH, 'fake-bat-sha').and_return(true)
         end
 
         it 'skips git promotion' do
