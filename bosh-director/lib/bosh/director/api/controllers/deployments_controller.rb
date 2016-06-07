@@ -444,7 +444,7 @@ module Bosh::Director
 
       def deployment_has_instance_to_resurrect?(deployment)
         false if deployment.nil?
-        instances = @instance_manager.filter_by(deployment, resurrection_paused: false)
+        instances = @instance_manager.filter_by(deployment, resurrection_paused: false, ignore: false)
         instances.any?
       end
 

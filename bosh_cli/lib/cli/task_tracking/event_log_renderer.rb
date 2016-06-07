@@ -71,11 +71,18 @@ module Bosh::Cli::TaskTracking
 
       if event['type'] == 'deprecation'
         show_deprecation(event)
+      elsif event['type'] == 'warning'
+        show_warning(event)
       elsif event['error']
         show_error(event)
       else
         show_stage_or_task(event)
       end
+    end
+
+    def show_warning(event)
+      msg = "  Warning: #{event['message']}"
+      @printer.print(:line_around, msg.make_yellow)
     end
 
     def show_deprecation(event)

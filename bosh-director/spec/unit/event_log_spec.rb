@@ -73,7 +73,7 @@ describe Bosh::Director::EventLog::Log do
   it 'issues deprecation warnings' do
     time = Time.now
     Timecop.freeze(time) do
-      event_log.warn_deprecated('warning message')
+      event_log.warn_deprecated('deprecation message')
     end
 
     expect(sent_events).to eq(
@@ -81,6 +81,23 @@ describe Bosh::Director::EventLog::Log do
         {
           'time' => time.to_i,
           'type' => 'deprecation',
+          'message' => 'deprecation message',
+        }
+      ],
+    )
+  end
+
+  it 'issues generic warnings' do
+    time = Time.now
+    Timecop.freeze(time) do
+      event_log.warn('warning message')
+    end
+
+    expect(sent_events).to eq(
+      [
+        {
+          'time' => time.to_i,
+          'type' => 'warning',
           'message' => 'warning message',
         }
       ],
