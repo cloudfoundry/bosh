@@ -647,6 +647,16 @@ module Bosh::Director
               expect(last_response).not_to be_redirect
             end
           end
+
+          context 'when there are only ignored vms' do
+
+            it 'does not call the resurrector' do
+              Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: false, ignore: true)
+
+              put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+              expect(last_response).not_to be_redirect
+            end
+          end
         end
 
         describe 'snapshots' do

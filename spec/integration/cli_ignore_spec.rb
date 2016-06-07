@@ -680,7 +680,7 @@ describe 'ignore/unignore instance', type: :integration do
     end
   end
 
-  context 'when starting/stoping/restarting/recreating instances' do
+  context 'when starting/stopping/restarting/recreating instances' do
 
     context 'when not specifying an instance group name' do
       it 'should change the state of all instances except the ignored ones' do
@@ -844,6 +844,50 @@ describe 'ignore/unignore instance', type: :integration do
         expect(recreate_exit_code).to_not eq(0)
 
       end
+    end
+  end
+
+  context 'when HM notifies director to scan & fix an ignored VM', hm: true do
+    before { current_sandbox.health_monitor_process.start }
+    after { current_sandbox.health_monitor_process.stop }
+
+    it 'should not scan & fix the ignored VM' do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+
+      manifest_hash['jobs'].clear
+      manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+      manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+      orig_vms = director.vms
+
+      ignored_vm =        orig_vms.select{|vm| vm.job_name == 'foobar1' && vm.index == '0'}.first
+      foobar1_vm_2_orig = orig_vms.select{|vm| vm.job_name == 'foobar1' && vm.index == '1'}.first
+      foobar2_vm_1_orig = orig_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '0'}.first
+      foobar2_vm_2_orig = orig_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '1'}.first
+
+      bosh_runner.run("ignore instance #{ignored_vm.job_name}/#{ignored_vm.instance_uuid}")
+
+      ignored_vm.kill_agent
+      foobar2_vm_1_orig.kill_agent
+
+      director.wait_for_vm('foobar2', '0', 300)
+
+      new_vms = director.vms
+
+      ignored_vm_new =   new_vms.select{|vm| vm.job_name == 'foobar1' && vm.index == '0'}.first
+      foobar1_vm_2_new = new_vms.select{|vm| vm.job_name == 'foobar1' && vm.index == '1'}.first
+      foobar2_vm_1_new = new_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '0'}.first
+      foobar2_vm_2_new = new_vms.select{|vm| vm.job_name == 'foobar2' && vm.index == '1'}.first
+
+      expect(ignored_vm_new.cid).to       eq(ignored_vm.cid)
+      expect(foobar1_vm_2_new.cid).to     eq(foobar1_vm_2_orig.cid)
+      expect(foobar2_vm_1_new.cid).to_not eq(foobar2_vm_1_orig.cid)
+      expect(foobar2_vm_2_new.cid).to     eq(foobar2_vm_2_orig.cid)
+
+      expect(ignored_vm_new.last_known_state).to eq('unresponsive agent')
     end
   end
 end
