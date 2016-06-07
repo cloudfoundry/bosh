@@ -89,7 +89,7 @@ module Bosh::Director
       dns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
       dns_manager.flush_dns_cache
 
-      InstanceUpdater::InstanceState.with_instance_update(instance_model) do
+      cloud_check_procedure = lambda do
         cleaner = RenderedJobTemplatesCleaner.new(instance_model, App.instance.blobstores.blobstore, @logger)
 
         # for backwards compatibility with instances that don't have update config
@@ -103,6 +103,7 @@ module Bosh::Director
           {}
         ).apply(update_config, run_post_start)
       end
+      InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
     end
 
     private

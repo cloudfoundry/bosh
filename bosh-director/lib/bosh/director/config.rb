@@ -41,6 +41,7 @@ module Bosh::Director
         :director_ips,
         :stop_message_timeout,
         :enable_virtual_delete_vms,
+        :local_dns,
       )
 
       attr_reader(
@@ -163,6 +164,7 @@ module Bosh::Director
         @director_ips = config.fetch('director_ips', [])
         @record_events = config.fetch('record_events', false)
         @stop_message_timeout = config.fetch('stop_message_timeout', 300)
+        @local_dns = config.fetch('local_dns', false)
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
