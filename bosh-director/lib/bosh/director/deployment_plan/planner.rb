@@ -353,6 +353,10 @@ module Bosh::Director
       end
 
       def vm_extension(name)
+        unless @vm_extensions.has_key?(name)
+          raise "The vm_extension '#{name}' has not been configured in cloud-config."
+        end
+
         @vm_extensions[name]
       end
 
