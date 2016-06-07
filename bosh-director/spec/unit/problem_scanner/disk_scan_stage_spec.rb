@@ -44,6 +44,16 @@ module Bosh::Director
         end
       end
 
+      context 'when instance is ignored' do
+        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, vm_cid: 'fake-vm-cid', ignore: true) }
+
+        it 'does not register missing disk problem' do
+          expect(problem_register).to_not receive(:problem_found).with(:missing_disk, disk)
+          expect(event_logger).to receive(:track_and_log).with('0 OK, 0 missing, 0 inactive, 0 mount-info mismatch')
+          disk_scanner.scan
+        end
+      end
+
       context 'when cloud does not implement has_disk?' do
         before do
           allow(cloud).to receive(:has_disk?).and_raise(Bosh::Clouds::NotImplemented)
