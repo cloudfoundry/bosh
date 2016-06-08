@@ -414,6 +414,13 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  describe 'IPv6 should be disabled (stig: V-38546)' do
+    context file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      its (:content) { should match /^net\.ipv6\.conf\.all\.disable_ipv6=1$/ }
+      its (:content) { should match /^net\.ipv6\.conf\.default\.disable_ipv6=1$/ }
+    end
+  end
+
   describe 'auditd configuration' do
     describe file('/var/log/audit') do
       it { should be_directory }
