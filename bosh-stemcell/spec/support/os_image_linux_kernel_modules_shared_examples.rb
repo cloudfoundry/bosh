@@ -78,4 +78,9 @@ shared_examples_for 'a Linux kernel module configured OS image' do
       it { should contain 'install udf /bin/true' }
     end
   end
+  context 'disable RDS (CIS-7.5.3)' do
+    describe file('/etc/modprobe.d/blacklist.conf') do
+      it { should contain 'install rds /bin/true' }
+    end
+  end
 end
