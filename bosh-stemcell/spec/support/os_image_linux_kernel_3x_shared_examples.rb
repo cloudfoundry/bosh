@@ -48,6 +48,14 @@ shared_examples_for 'a Linux kernel 3.x based OS image' do
         should contain /^net.ipv4.conf.default.rp_filter=1$/
       end
 
+      it 'should disable ipv6 router advertisements on all interfaces (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.all.accept_ra=0$/
+      end
+
+      it 'should disable ipv6 router advertisements by default (CIS-7.3.1)' do
+        should contain /^net.ipv6.conf.default.accept_ra=0$/
+      end
+
       it 'should disable response to broadcast requests (CIS-7.2.5)' do
         should contain /^net.ipv4.icmp_echo_ignore_broadcasts=1$/
       end
