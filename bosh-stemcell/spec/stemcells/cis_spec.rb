@@ -19,11 +19,13 @@ describe 'CIS test case verification', { stemcell_image: true, cis_check: true }
         expected_cis_test_cases = expected_base_cis_test_cases + [
           'CIS-7.5.3',
           'CIS-7.2.5',
+          'CIS-7.2.6'
         ]
       when 'centos'
         expected_cis_test_cases = expected_base_cis_test_cases + [
           'CIS-7.5.3',
           'CIS-7.2.5',
+          'CIS-7.2.6'
         ]
       when 'rhel'
         expected_cis_test_cases = expected_base_cis_test_cases + [
