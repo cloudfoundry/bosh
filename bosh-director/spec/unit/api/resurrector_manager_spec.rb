@@ -87,6 +87,17 @@ module Bosh::Director
             expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('false')
           end
         end
+
+        context 'setting pause several times' do
+          it 'creates one record in DB' do
+            expect(Models::DirectorAttribute.where(name: 'resurrection_paused').count).to eq(0)
+            3.times do
+              resurrection_manager.set_pause_for_all(false)
+            end
+            expect(Models::DirectorAttribute.where(name: 'resurrection_paused').count).to eq(1)
+            expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('false')
+          end
+        end
       end
 
       describe 'pause_for_all?' do
